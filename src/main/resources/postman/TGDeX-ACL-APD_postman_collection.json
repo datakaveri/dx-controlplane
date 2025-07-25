@@ -1,0 +1,2704 @@
+{
+  "info": {
+    "_postman_id": "be72618e-726c-4e22-a872-e53698a21cab",
+    "name": "TGDEX-ACL-APD",
+    "description": "**TGDEX-ACL-APD-Server** **Collection**:  \nThe \"TGAI-ACL-APD-Server\" collection is a comprehensive set of APIs that encompass three essential aspects of access management within a system:\n\n1. **Token Management (Token)**:\n    - This component of the collection provides the means to acquire an Identity Access Token, which is a fundamental requirement for executing various functionalities within the system, including Policy and Access Request APIs.\n2. **Access Request Management **:\n    - The \"TGAI-ACL-APD\" collection includes APIs that streamline the creation, deletion, and retrieval of user-generated access requests. These access requests define access control rules and permissions, ensuring a structured approach to asset management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "23856712"
+  },
+  "item": [
+    {
+      "name": "token",
+      "item": [
+        {
+          "name": "1 - Get Org Admin Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json = pm.response.json();",
+                  "pm.environment.set(\"adminToken\", json.access_token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{clientId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "{{adminUser}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPass}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "https://staging.keycloak.update.iudx.io/auth/realms/tgdex-pilot/protocol/openid-connect/token",
+              "protocol": "https",
+              "host": [
+                "staging",
+                "keycloak",
+                "update",
+                "iudx",
+                "io"
+              ],
+              "path": [
+                "auth",
+                "realms",
+                "tgdex-pilot",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2 - Get Provider Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json = pm.response.json();",
+                  "pm.environment.set(\"providerToken\", json.access_token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{clientId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "{{testUser}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{testPass}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "https://staging.keycloak.update.iudx.io/auth/realms/tgdex-pilot/protocol/openid-connect/token",
+              "protocol": "https",
+              "host": [
+                "staging",
+                "keycloak",
+                "update",
+                "iudx",
+                "io"
+              ],
+              "path": [
+                "auth",
+                "realms",
+                "tgdex-pilot",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3 - Get User Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json = pm.response.json();",
+                  "pm.environment.set(\"userToken\", json.access_token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{clientId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "{{userName}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{userPassword}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "https://staging.keycloak.update.iudx.io/auth/realms/tgdex-pilot/protocol/openid-connect/token",
+              "protocol": "https",
+              "host": [
+                "staging",
+                "keycloak",
+                "update",
+                "iudx",
+                "io"
+              ],
+              "path": [
+                "auth",
+                "realms",
+                "tgdex-pilot",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4 - Get Consumer Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json = pm.response.json();",
+                  "pm.environment.set(\"consumerToken\", json.access_token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{clientId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "{{consumerName}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{consumerPassword}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "https://staging.keycloak.update.iudx.io/auth/realms/tgdex-pilot/protocol/openid-connect/token",
+              "protocol": "https",
+              "host": [
+                "staging",
+                "keycloak",
+                "update",
+                "iudx",
+                "io"
+              ],
+              "path": [
+                "auth",
+                "realms",
+                "tgdex-pilot",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "The collection comprises APIs that provide the Identity Access Token, which is essential for executing Access Request APIs."
+    },
+    {
+      "name": "access request",
+      "item": [
+        {
+          "name": "200 Create Access Request: Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:success\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\"itemId\": \"{{itemId}}\",\n\"requestType\": \"DOWNLOAD\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request"
+              ]
+            },
+            "description": "This API allows users to create a new policy request. Users can submit their requests for specific policies using this endpoint."
+          },
+          "response": []
+        },
+        {
+          "name": "200 Create Access Request with additionalInfo: Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:success\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"itemId\": \"{{itemIdForAdditionalInfo}}\",\n    \"requestType\": \"DOWNLOAD\",\n    \"additionalInfo\": {\n        \"name\": \"Miles Davis\",\n        \"email\": \"miles@davis.org\",\n        \"phone\": 987654321,\n        \"purpose\": \"testing\",\n        \"description\": \"The resource would be used for testing the abcd application in which services are offered free of cost for public welfare\"\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request"
+              ]
+            },
+            "description": "This API allows users to create a new policy request. Users can submit their requests for specific policies using this endpoint."
+          },
+          "response": []
+        },
+        {
+          "name": "400 Create Access Request: Bad Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 400 (Bad Request)\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:badRequest\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Bad Request\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\"itemId\": \"ae2b8b01-f642-411a-babb-cbd1b75fa2a1\",\n\"requestType\": \"AJDFJ\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "401 Create Access Request: Unauthorized",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 404 (Not Found)\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:invalidAuthorizationToken\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Not Authorized\");",
+                  "    pm.expect(body).to.have.property(\"detail\", \"Token is invalid\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{providerToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\"itemId\": \"{{item_id}}\",\n\"requestType\": \"DOWNLOAD\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "403 Create Access Request: Forbidden",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 403 (Forbidden)\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:forbidden\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Forbidden\");",
+                  "",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\"itemId\": \"{{itemIdForForbiddenResponse}}\",\n\"requestType\": \"DOWNLOAD\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "404 Create Access Request: Not Found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 404 (Not Found)\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:notFound\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Not Found\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\"itemId\": \"a347c5b6-5281-4749-9eab-89784d8f8f98\",\n\"requestType\": \"DOWNLOAD\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "409 Create Access Request: Conflict",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 409 (Conflict)\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:conflict\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Conflict\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\"itemId\": \"{{itemId}}\",\n\"requestType\": \"DOWNLOAD\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "200 Get Access Request: Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonResult = JSON.parse(responseBody).results",
+                  "for(const props of jsonResult){",
+                  "if(props.status=='PENDING')",
+                  "    {",
+                  "        console.log(props.requestId)",
+                  "        postman.setEnvironmentVariable(\"requestId\", props.requestId);",
+                  "        break;",
+                  "    }",
+                  "}",
+                  "",
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:success\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{providerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/provider?assetType=adex:DataBank",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "provider"
+              ],
+              "query": [
+                {
+                  "key": "requestStatus",
+                  "value": "GRANTED",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "requestId:desc;createdAt:asc",
+                  "disabled": true
+                },
+                {
+                  "key": "assetType",
+                  "value": "adex:DataBank"
+                }
+              ]
+            },
+            "description": "Users can utilize this API to retrieve a list of all the policy requests they have generated or retrieve a list of all the policy requests which are generated for them. It provides an overview of the existing requests."
+          },
+          "response": []
+        },
+        {
+          "name": "200 Get Organization Access Request: Success For Org Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonResult = JSON.parse(responseBody).results",
+                  "for(const props of jsonResult){",
+                  "if(props.status=='PENDING')",
+                  "    {",
+                  "        console.log(props.requestId)",
+                  "        postman.setEnvironmentVariable(\"requestId\", props.requestId);",
+                  "        break;",
+                  "    }",
+                  "}",
+                  "",
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:success\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/organisation?assetType=adex:DataBank",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "organisation"
+              ],
+              "query": [
+                {
+                  "key": "requestStatus",
+                  "value": "GRANTED",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "requestId:desc;createdAt:asc",
+                  "disabled": true
+                },
+                {
+                  "key": "assetType",
+                  "value": "adex:DataBank"
+                }
+              ]
+            },
+            "description": "Users can utilize this API to retrieve a list of all the policy requests they have generated or retrieve a list of all the policy requests which are generated for them. It provides an overview of the existing requests."
+          },
+          "response": []
+        },
+        {
+          "name": "200 Get Provider Report: Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{providerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/provider/report",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "provider",
+                "report"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "GRANTED",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "requestId:desc;createdAt:asc",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Users can utilize this API to retrieve a list of all the policy requests they have generated or retrieve a list of all the policy requests which are generated for them. It provides an overview of the existing requests."
+          },
+          "response": []
+        },
+        {
+          "name": "200 Get Provider Report: Success Copy",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/organisation/report",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "organisation",
+                "report"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "GRANTED",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "requestId:desc;createdAt:asc",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Users can utilize this API to retrieve a list of all the policy requests they have generated or retrieve a list of all the policy requests which are generated for them. It provides an overview of the existing requests."
+          },
+          "response": []
+        },
+        {
+          "name": "400 Get Provider Report: No access request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{providerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/provider/report?status=GRANTED&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "provider",
+                "report"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "GRANTED"
+                },
+                {
+                  "key": "timerel",
+                  "value": "after"
+                },
+                {
+                  "key": "time",
+                  "value": "2022-06-26T07:19:11.325746"
+                },
+                {
+                  "key": "sort",
+                  "value": "requestId:desc;createdAt:asc"
+                }
+              ]
+            },
+            "description": "Users can utilize this API to retrieve a list of all the policy requests they have generated or retrieve a list of all the policy requests which are generated for them. It provides an overview of the existing requests."
+          },
+          "response": []
+        },
+        {
+          "name": "400 Get Provider Report: Bad Request [invalid sort param]",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{providerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/provider/report?status=GRANTED&sort=assetId:asc;",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "provider",
+                "report"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "GRANTED"
+                },
+                {
+                  "key": "sort",
+                  "value": "assetId:asc;"
+                }
+              ]
+            },
+            "description": "Users can utilize this API to retrieve a list of all the policy requests they have generated or retrieve a list of all the policy requests which are generated for them. It provides an overview of the existing requests."
+          },
+          "response": []
+        },
+        {
+          "name": "401 Get Provider Report: Unauthorized",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{providerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/provider/report?status=GRANTED&sort=assetId:asc;",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "provider",
+                "report"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "GRANTED"
+                },
+                {
+                  "key": "sort",
+                  "value": "assetId:asc;"
+                }
+              ]
+            },
+            "description": "Users can utilize this API to retrieve a list of all the policy requests they have generated or retrieve a list of all the policy requests which are generated for them. It provides an overview of the existing requests."
+          },
+          "response": []
+        },
+        {
+          "name": "403 Get Provider Report: Forbidden [Consumer trying to generate the report]",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/provider/report",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "provider",
+                "report"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "GRANTED",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "requestId:desc;createdAt:asc",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Users can utilize this API to retrieve a list of all the policy requests they have generated or retrieve a list of all the policy requests which are generated for them. It provides an overview of the existing requests."
+          },
+          "response": []
+        },
+        {
+          "name": "200 Get OrgAdmin Report: Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/organisation/report",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "organisation",
+                "report"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "GRANTED",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "requestId:desc;createdAt:asc",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Users can utilize this API to retrieve a list of all the policy requests they have generated or retrieve a list of all the policy requests which are generated for them. It provides an overview of the existing requests."
+          },
+          "response": []
+        },
+        {
+          "name": "400 Get OrgAdmin Report: No Access Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/organisation/report",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "organisation",
+                "report"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "GRANTED",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "requestId:desc;createdAt:asc",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Users can utilize this API to retrieve a list of all the policy requests they have generated or retrieve a list of all the policy requests which are generated for them. It provides an overview of the existing requests."
+          },
+          "response": []
+        },
+        {
+          "name": "400 Get OrgAdmin Report: Invalid query param",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/organisation/report",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "organisation",
+                "report"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "GRANTED",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "requestId:desc;createdAt:asc",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Users can utilize this API to retrieve a list of all the policy requests they have generated or retrieve a list of all the policy requests which are generated for them. It provides an overview of the existing requests."
+          },
+          "response": []
+        },
+        {
+          "name": "401 Get OrgAdmin Report: Unauthorized",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{providerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/organisation/report",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "organisation",
+                "report"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "GRANTED",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "requestId:desc;createdAt:asc",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Users can utilize this API to retrieve a list of all the policy requests they have generated or retrieve a list of all the policy requests which are generated for them. It provides an overview of the existing requests."
+          },
+          "response": []
+        },
+        {
+          "name": "403 Get OrgAdmin Report: Forbidden [Provider trying to generate the report]",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/organisation/report",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "organisation",
+                "report"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "GRANTED",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "requestId:desc;createdAt:asc",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Users can utilize this API to retrieve a list of all the policy requests they have generated or retrieve a list of all the policy requests which are generated for them. It provides an overview of the existing requests."
+          },
+          "response": []
+        },
+        {
+          "name": "200 Get Consumer Access Request: Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonResult = JSON.parse(responseBody).results",
+                  "for(const props of jsonResult){",
+                  "if(props.status=='PENDING')",
+                  "    {",
+                  "        console.log(props.requestId)",
+                  "        postman.setEnvironmentVariable(\"requestId\", props.requestId);",
+                  "        break;",
+                  "    }",
+                  "}",
+                  "",
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:success\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/consumer",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "consumer"
+              ]
+            },
+            "description": "Users can utilize this API to retrieve a list of all the policy requests they have generated or retrieve a list of all the policy requests which are generated for them. It provides an overview of the existing requests."
+          },
+          "response": []
+        },
+        {
+          "name": "200 Get Consumer Access Request: Success with pagination",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonResult = JSON.parse(responseBody).results",
+                  "for(const props of jsonResult){",
+                  "if(props.status=='PENDING')",
+                  "    {",
+                  "        console.log(props.requestId)",
+                  "        postman.setEnvironmentVariable(\"requestId\", props.requestId);",
+                  "        break;",
+                  "    }",
+                  "}",
+                  "",
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:success\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/consumer",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "consumer"
+              ]
+            },
+            "description": "Users can utilize this API to retrieve a list of all the policy requests they have generated or retrieve a list of all the policy requests which are generated for them. It provides an overview of the existing requests."
+          },
+          "response": []
+        },
+        {
+          "name": "401 Get Access Request: Unauthorized",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 401 (Not Authorized)\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:invalidAuthorizationToken\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Not Authorized\");",
+                  "    pm.expect(body).to.have.property(\"detail\", \"Token is invalid\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "sdfsfgsfg",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/consumer",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "consumer"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Access Request for PUT",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:success\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\"itemId\": \"{{itemIdForUpdating}}\",\n\"requestType\": \"DOWNLOAD\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request"
+              ]
+            },
+            "description": "This API allows users to create a new policy request. Users can submit their requests for specific policies using this endpoint."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Access Request for Put",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonResult = JSON.parse(responseBody).results",
+                  "for(const props of jsonResult){",
+                  "if(props.status=='PENDING')",
+                  "    {",
+                  "        console.log(props.requestId)",
+                  "        postman.setEnvironmentVariable(\"requestId\", props.requestId);",
+                  "        break;",
+                  "    }",
+                  "}",
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:success\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/consumer",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "consumer"
+              ]
+            },
+            "description": "Users can utilize this API to retrieve a list of all the policy requests they have generated or retrieve a list of all the policy requests which are generated for them. It provides an overview of the existing requests."
+          },
+          "response": []
+        },
+        {
+          "name": "200 Put Access Request: Success [Reject]",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:success\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{providerToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"requestId\": \"23573a0e-d6e6-41a0-9276-9cb0d2870256\",\n    \"status\": \"rejected\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "200 Put Access Request: Success [Reject] For Org Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:success\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"requestId\": \"833841ba-7935-4985-ac81-08c4ac7b4743\",\n    \"status\": \"rejected\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Access Request for Put",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:success\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\"itemId\": \"{{itemIdForUpdating}}\",\n\"requestType\": \"DOWNLOAD\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request"
+              ]
+            },
+            "description": "This API allows users to create a new policy request. Users can submit their requests for specific policies using this endpoint."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Access Request for Put (For Fetching the new request)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonResult = JSON.parse(responseBody).results",
+                  "for(const props of jsonResult){",
+                  "if(props.status=='PENDING')",
+                  "    {",
+                  "        console.log(props.requestId)",
+                  "        postman.setEnvironmentVariable(\"requestId\", props.requestId);",
+                  "        break;",
+                  "    }",
+                  "}",
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:success\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{providerToken}}",
+                "type": "text",
+                "disabled": true
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/consumer",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "consumer"
+              ]
+            },
+            "description": "Users can utilize this API to retrieve a list of all the policy requests they have generated or retrieve a list of all the policy requests which are generated for them. It provides an overview of the existing requests."
+          },
+          "response": []
+        },
+        {
+          "name": "403 Put Access Request: Forbidden",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 403 (Forbidden)\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:forbidden\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Forbidden\");",
+                  "    pm.expect(body).to.have.property(\"detail\", \"The access request does not belong to the given provider\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{providerToken}}",
+                "type": "text"
+              },
+              {
+                "key": "",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"requestId\": \"ad603271-7302-450d-9700-b350367d8dd7\",\n    \"status\": \"granted\",\n    \"expiryAt\": \"2026-03-05T20:00:19\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "200 Put Access Request: Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:success\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{providerToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestId\": \"c768961b-622c-4e0e-b47d-957165419fee\",\n  \"status\": \"granted\",\n  \"expiryAt\": \"2026-03-05T20:00:19\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request"
+              ]
+            },
+            "description": "This API provides the capability to grant or reject policy requests. Users can use this endpoint to make decisions on the submitted requests, thereby managing policy access."
+          },
+          "response": []
+        },
+        {
+          "name": "200 Put Access Request: Success For Org Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:success\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{providerToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestId\": \"833841ba-7935-4985-ac81-08c4ac7b4743\",\n  \"status\": \"granted\",\n  \"expiryAt\": \"2026-03-05T20:00:19\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request"
+              ]
+            },
+            "description": "This API provides the capability to grant or reject policy requests. Users can use this endpoint to make decisions on the submitted requests, thereby managing policy access."
+          },
+          "response": []
+        },
+        {
+          "name": "409 Put Access Request: Conflict [Access request already granted]",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "",
+                  "// Test the response code",
+                  "pm.test(\"response is 409 (Conflict)\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:conflict\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Conflict\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"requestId\": \"ad603271-7302-450d-9700-b350367d8dd7\",\n    \"status\": \"granted\",\n    \"expiryAt\": \"3000-03-05T20:00:19\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Access Request: Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonResult = JSON.parse(responseBody).results",
+                  "for(const props of jsonResult){",
+                  "if(props.status=='PENDING')",
+                  "    {",
+                  "        console.log(props.requestId)",
+                  "        postman.setEnvironmentVariable(\"requestId\", props.requestId);",
+                  "        break;",
+                  "    }",
+                  "}",
+                  "",
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:success\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/consumer",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "consumer"
+              ]
+            },
+            "description": "Users can utilize this API to retrieve a list of all the policy requests they have generated or retrieve a list of all the policy requests which are generated for them. It provides an overview of the existing requests."
+          },
+          "response": []
+        },
+        {
+          "name": "400 Put Access Request: Bad Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 400 (Bad Request)\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:badRequest\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Bad Request\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{providerToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"requestId\": \"{{requestId}}\",\n    \"status\": \"granted\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "401 Put Access Request: Unauthorized",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 401 (Not Authorized)\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:invalidAuthorizationToken\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Not Authorized\");",
+                  "    pm.expect(body).to.have.property(\"detail\", \"Token is invalid\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{consumerToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"requestId\": \"d9e85db7-c4b7-4471-a95d-75b4e39f4b50\",\n    \"status\": \"granted\",\n    \"expiryAt\": \"2024-03-05T20:00:19\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "404 Put Access Request: Not Found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 404 (Not Found)\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:notFound\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Not Found\");",
+                  "    pm.expect(body).to.have.property(\"detail\", \"Access request not found\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{providerToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"requestId\": \"d9e86db7-c4b7-4471-a95d-75b4e39f4b51\",\n    \"status\": \"granted\",\n    \"expiryAt\": \"2026-03-05T20:00:19\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "This collection enables users to initiate policy requests, retrieve a list of generated requests, remove policy requests, and offers functionality to either approve or reject these requests."
+    },
+    {
+      "name": "check access",
+      "item": [
+        {
+          "name": "200 Check access request : Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:success\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itemId\": \"{{itemIdForUpdating}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/has_access",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "has_access"
+              ]
+            },
+            "description": "This API allows users to create a new policy request. Users can submit their requests for specific policies using this endpoint."
+          },
+          "response": []
+        },
+        {
+          "name": "400 Check access request : Bad Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 400 (Bad Request)\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:badRequest\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Bad Request\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{consumerDelegateToken}}",
+                "type": "text",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\"itemId\": \"{{itemId}}\",\n\"requestType\": \"DOWNLOAD\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/has_access",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "has_access"
+              ]
+            },
+            "description": "This API allows users to create a new policy request. Users can submit their requests for specific policies using this endpoint."
+          },
+          "response": []
+        },
+        {
+          "name": "401 Check access request : Unauthorized",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 401 (Not Authorized)\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:invalidAuthorizationToken\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Not Authorized\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{consumerToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{consumerDelegateToken}}",
+                "type": "text",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itemId\": \"{{itemId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/has_access",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "has_access"
+              ]
+            },
+            "description": "This API allows users to create a new policy request. Users can submit their requests for specific policies using this endpoint."
+          },
+          "response": []
+        },
+        {
+          "name": "403 Check access request : Forbidden",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 403 (Forbidden)\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response",
+                  "pm.test(\"Check response body\", function () {    ",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:no-access\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Forbidden\");",
+                  "    }",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{consumerDelegateToken}}",
+                "type": "text",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itemId\": \"ae2b8b01-f642-411a-babb-cbd1b75fa2a1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{basePath}}/access_request/has_access",
+              "host": [
+                "{{baseUrl}}{{basePath}}"
+              ],
+              "path": [
+                "access_request",
+                "has_access"
+              ]
+            },
+            "description": "This API allows users to create a new policy request. Users can submit their requests for specific policies using this endpoint."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ]
+}

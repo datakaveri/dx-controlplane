@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Asset Access Request Notification</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+</head>
+<body>
+<p>Asset Access Request Notification</p>
+<p>Hello ${PROVIDER_FIRST_NAME} ${PROVIDER_LAST_NAME},</p>
+<p>
+    <strong>${CONSUMER_FIRST_NAME} ${CONSUMER_LAST_NAME}</strong>
+    (Email: <a href="mailto:${CONSUMER_EMAIL_ID}">${CONSUMER_EMAIL_ID}</a>)
+    has requested access to your asset:
+</p>
+<p>
+    <strong>Asset Name:</strong> ${ASSET_NAME}<br/>
+    <strong>Asset Description:</strong> ${ASSET_DESCRIPTION}
+</p>
+<p>
+    To review and approve this request, please visit:<br/>
+    <a href="${PUBLISHER_PANEL_URL}">${PUBLISHER_PANEL_URL}</a>
+</p>
+<p>
+    Regards,<br/>
+    ${SENDER_NAME}
+</p>
+</body>
+</html>

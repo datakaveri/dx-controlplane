@@ -1,0 +1,1 @@
+ALTER TABLE compute_role ADD additional_info JSONB DEFAULT '{}';

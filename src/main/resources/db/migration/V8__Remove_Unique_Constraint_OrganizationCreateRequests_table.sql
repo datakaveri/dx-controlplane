@@ -1,0 +1,2 @@
+ALTER TABLE organization_create_requests
+DROP CONSTRAINT IF EXISTS organization_create_requests_name_key;

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Provider Role Request Status</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      color: #333333;
+      line-height: 1.6;
+    }
+    .container {
+      width: 80%;
+      margin: auto;
+    }
+    .header {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+    .footer {
+      margin-top: 30px;
+      font-size: 14px;
+      color: #777777;
+    }
+    a {
+      color: #1a73e8;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <p class="header">Provider Role Request Status</p>
+
+  <p>Hello ${USER_FIRST_NAME},</p>
+  <p>
+    Your provider role request for organization has been ${STATUS} by your Organization Manager.
+  </p>
+  <p>
+    ${APPROVED_MESSAGE}
+  </p>
+  <p>
+    For more information, please visit:<br/>
+    <a href="${ADMIN_PORTAL_URL}">${ADMIN_PORTAL_URL}</a>
+  </p>
+
+  <p class="footer">
+    Regards,<br/>
+    ${SENDER_NAME}
+  </p>
+</div>
+</body>
+</html>

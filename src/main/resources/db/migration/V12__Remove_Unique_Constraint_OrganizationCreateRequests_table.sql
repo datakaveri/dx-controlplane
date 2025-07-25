@@ -1,0 +1,1 @@
+ALTER TABLE organization_create_requests DROP CONSTRAINT unique_manager_email;

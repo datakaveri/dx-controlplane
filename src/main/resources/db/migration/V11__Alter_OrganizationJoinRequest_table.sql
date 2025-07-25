@@ -1,0 +1,1 @@
+ALTER TABLE organization_join_requests DROP CONSTRAINT organization_join_requests_user_id_key;

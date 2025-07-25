@@ -1,0 +1,141 @@
+{
+  "id": "7d3e5ad3-e962-4231-a877-63c42a4bb1a7",
+  "name": "TGDAI ACL-APD",
+  "values": [
+    {
+      "key": "providerToken",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "consumerToken",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "baseUrl",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "basePath",
+      "value": "/dx/apd/acl/v1",
+      "enabled": true
+    },
+    {
+      "key": "requestId",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "itemId",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "itemIdForUpdating",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "itemIdForAdditionalInfo",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "kcHost",
+      "value": "https://staging.keycloak.update.iudx.io/",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "realm",
+      "value": "tgdex",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "testUser",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "testPass",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "adminUser",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "adminPass",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "clientId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "any",
+      "enabled": true
+    },
+    {
+      "key": "userToken",
+      "value": "",
+      "type": "any",
+      "enabled": true
+    },
+    {
+      "key": "userName",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "userPassword",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "itemIdForForbiddenResponse",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "consumerName",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "consumerPassword",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "consumerToken",
+      "value": "",
+      "type": "any",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2025-06-04T10:10:40.472Z",
+  "_postman_exported_using": "Postman/9.31.30"
+}
