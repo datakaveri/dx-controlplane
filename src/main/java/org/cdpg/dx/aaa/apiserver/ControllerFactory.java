@@ -22,11 +22,14 @@ import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.kyc.controller.KYCController;
 import org.cdpg.dx.aaa.kyc.factory.KYCFactory;
 import org.cdpg.dx.aaa.kyc.handler.KYCHandler;
+import org.cdpg.dx.aaa.list.controller.ListController;
+import org.cdpg.dx.aaa.list.factory.ListControllerFactory;
 import org.cdpg.dx.aaa.organization.factory.OrganizationControllerFactory;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.aaa.user.service.UserServiceImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
+import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.email.service.EmailService;
@@ -39,11 +42,14 @@ public class ControllerFactory {
   private ControllerFactory() {}
 
   public static List<ApiController> createControllers(Vertx vertx, JsonObject config) {
+
+    final String docIndex = config.getString("docIndex");
+    final String vocContext = config.getString("vocContext");
+
     PostgresService pgService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
     DataBrokerService dataBrokerService =
         DataBrokerService.createProxy(vertx, DATA_BROKER_SERVICE_ADDRESS);
     EmailService emailService = EmailService.createProxy(vertx, EMAIL_SERVICE_ADDRESS);
-
 
     AuditingHandler auditingHandler = new AuditingHandler(dataBrokerService);
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
@@ -62,13 +68,15 @@ public class ControllerFactory {
             userService,
             creditService);
 
-    AssetHandler assetHandler = AssetFactory.createHandler(pgService, config, emailComposer);
-    ApiController assetController = new AssetController(assetHandler,auditingHandler);
+    ElasticsearchService esService =
+        ElasticsearchService.createProxy(vertx, ELASTIC_SERVICE_ADDRESS);
 
+    AssetHandler assetHandler = AssetFactory.createHandler(pgService, config, emailComposer);
+    ApiController assetController = new AssetController(assetHandler, auditingHandler);
 
     ApiController creditApiController =
         CreditControllerFactory.create(creditService, emailComposer, userService);
-    KYCHandler kycHandler = KYCFactory.createHandler(vertx, config, creditService,pgService);
+    KYCHandler kycHandler = KYCFactory.createHandler(vertx, config, creditService, pgService);
     ApiController kycController = new KYCController(kycHandler);
     ApiController organizationController =
         OrganizationControllerFactory.create(
@@ -78,11 +86,13 @@ public class ControllerFactory {
         new AdminHandler(userService, keycloakUserService, creditService, organizationService);
     ApiController adminController = new AdminController(adminHandler);
 
-
     AccessRequestController accessRequestController =
         AccessRequestFactory.createAccessRequestController(vertx, config);
 
     AccessReportController accessReportController = AccessReportFactory.create(pgService, vertx);
+
+    final ListController listController =
+        ListControllerFactory.createListController(esService, auditingHandler, docIndex);
 
     // TODO create other controllers
 

@@ -25,4 +25,6 @@ public class DxErrorCodes {
   public static final int FORBIDDEN_NO_ACCESS = 12011;
   public static final int FORBIDDEN_ACCESS_PENDING = 12012;
   public static final int FORBIDDEN_ACCESS_REJECTED = 12013;
+  public static final int ES_ERROR = 12000;
+
 }

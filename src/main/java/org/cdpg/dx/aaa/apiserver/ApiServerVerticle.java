@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.auth.authentication.handler.KeycloakJwtAuthHandler;
+import org.cdpg.dx.auth.authentication.handler.OptionalJwtAuthHandler;
 import org.cdpg.dx.auth.authentication.provider.JwtAuthProvider;
 import org.cdpg.dx.common.FailureHandler;
 import org.cdpg.dx.common.HttpStatusCode;
@@ -72,6 +73,7 @@ public class ApiServerVerticle extends AbstractVerticle {
               RouterBuilder routerBuilder = cf.resultAt(0);
               JWTAuth jwtAuth = cf.resultAt(1);
               AuthenticationHandler authHandler = new KeycloakJwtAuthHandler(jwtAuth);
+                AuthenticationHandler optionalAuth = new OptionalJwtAuthHandler(jwtAuth);
               try {
 
                 LOGGER.debug("Adding platform handlers...");
@@ -84,6 +86,7 @@ public class ApiServerVerticle extends AbstractVerticle {
                     new RouterBuilderOptions().setMountResponseContentTypeHandler(true);
                 routerBuilder.setOptions(factoryOptions);
                 routerBuilder.securityHandler("authorization", authHandler);
+                  routerBuilder.securityHandler("optionalAuth", optionalAuth);
 
                 controllers.forEach(controller -> controller.register(routerBuilder));
 
