@@ -28,6 +28,7 @@
         <restassured.version>5.4.0</restassured.version>
         <openjdk.version>21</openjdk.version>
         <keycloak.version>24.0.4</keycloak.version>
+        <elastic-search-rest-client>8.17.3</elastic-search-rest-client>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <exec.mainClass>org.cdpg.dx.deploy.Deployer</exec.mainClass>
         <exec.mainClassDev>org.cdpg.dx.deploy.Deployer
@@ -158,6 +159,19 @@
             <artifactId>postgresql</artifactId>
             <version>42.7.2</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>elasticsearch-rest-client</artifactId>
+            <version>${elastic-search-rest-client}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>co.elastic.clients</groupId>
+            <artifactId>elasticsearch-java</artifactId>
+            <version>${elastic-search-rest-client}</version>
+        </dependency>
+
         <!-- Packages for Vertx metrics through micrometer  -->
         <dependency>
             <groupId>io.vertx</groupId>
