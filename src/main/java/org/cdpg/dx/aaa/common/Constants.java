@@ -87,6 +87,13 @@ public class Constants {
     public static final String OPEN = "OPEN";
     public static final String PRIVATE = "PRIVATE";
     public static final String RESTRICTED = "RESTRICTED";
+    public static final String VALIDATION_FAILURE_MSG = "Validation failed";
+
+    public static final String ITEM_STATUS = "itemStatus";
+    public static final String ACTIVE = "ACTIVE";
+    public static final String ITEM_CREATED_AT = "itemCreatedAt";
+    public static final String LAST_UPDATED = "lastUpdated";
+
 
     /** GeoRels. */
     public static final String GEOREL_WITHIN = "within";
