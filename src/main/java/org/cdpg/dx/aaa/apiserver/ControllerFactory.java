@@ -19,6 +19,8 @@ import org.cdpg.dx.aaa.asset.handler.AssetHandler;
 import org.cdpg.dx.aaa.credit.factory.CreditControllerFactory;
 import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
+import org.cdpg.dx.aaa.item.controller.ItemController;
+import org.cdpg.dx.aaa.item.factory.ItemControllerFactory;
 import org.cdpg.dx.aaa.kyc.controller.KYCController;
 import org.cdpg.dx.aaa.kyc.factory.KYCFactory;
 import org.cdpg.dx.aaa.kyc.handler.KYCHandler;
@@ -26,6 +28,8 @@ import org.cdpg.dx.aaa.list.controller.ListController;
 import org.cdpg.dx.aaa.list.factory.ListControllerFactory;
 import org.cdpg.dx.aaa.organization.factory.OrganizationControllerFactory;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
+import org.cdpg.dx.aaa.search.controller.SearchController;
+import org.cdpg.dx.aaa.search.factory.SearchControllerFactory;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.aaa.user.service.UserServiceImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
@@ -93,6 +97,11 @@ public class ControllerFactory {
 
     final ListController listController =
         ListControllerFactory.createListController(esService, auditingHandler, docIndex);
+    final SearchController searchController =
+        SearchControllerFactory.createSearchController(esService, auditingHandler, docIndex);
+    final ItemController itemController =
+        ItemControllerFactory.createCrudController(
+            auditingHandler, esService, docIndex, vocContext);
 
     // TODO create other controllers
 
