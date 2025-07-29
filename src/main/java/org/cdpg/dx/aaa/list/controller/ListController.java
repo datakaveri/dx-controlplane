@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.list.controller;
 
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.LIST_AVAILABLE_FILTER;
 import static org.cdpg.dx.aaa.common.Constants.RESULTS;
 
 import io.vertx.ext.web.RoutingContext;
@@ -26,7 +27,7 @@ public class ListController implements ApiController {
   @Override
   public void register(RouterBuilder builder) {
     builder
-        .operation("LIST_AVAILABLE_FILTER")
+        .operation(LIST_AVAILABLE_FILTER)
         .handler(this::handleGetAvailableFilters)
         .handler(auditingHandler::handleApiAudit);
     LOGGER.debug("List Controller registered");

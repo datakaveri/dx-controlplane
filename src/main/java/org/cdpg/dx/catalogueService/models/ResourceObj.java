@@ -17,7 +17,7 @@ import java.util.UUID;
  * @param itemId The unique ID of the resource item.
  * @param providerId The unique ID of the provider who owns the resource.
  * @param resourceGroupId The unique ID of the resource group to which the resource belongs (can be
- * null).
+ *     null).
  * @param resourceServerUrl The resource server URL to which the resource item belong.
  * @param isGroupLevelResource Boolean which is true when the resource is Rs-Group and vice-versa.
  */
@@ -49,63 +49,17 @@ public class ResourceObj {
     super();
   }
 
+  public ResourceObj(JsonObject json) {
+    ResourceObjConverter.fromJson(json, this);
+  }
+
   public JsonObject toJson() {
     JsonObject jsonObject = new JsonObject();
     ResourceObjConverter.toJson(this, jsonObject);
     return jsonObject;
   }
 
-  public ResourceObj(JsonObject json) {
-    ResourceObjConverter.fromJson(json, this);
-  }
-
   /**
-   *
-   * @param itemId The unique ID of the resource item
-   * @return ResourceObj instance
-   */
-  public ResourceObj setItemId(UUID itemId) {
-    this.itemId = itemId;
-    return this;
-  }
-
-  /**
-   * @param providerId  The unique ID of the provider who owns the resource.
-   * @return ResourceObj instance
-   */
-  public ResourceObj setProviderId(UUID providerId) {
-    this.providerId = providerId;
-    return this;
-  }
-
-  /**
-   *
-   * @param  resourceGroupId The unique ID of the resource group to which the resource belongs (can
-   *     be null).
-   * @return ResourceObj instance
-   */
-  public ResourceObj setResourceGroupId(UUID resourceGroupId) {
-    this.resourceGroupId = resourceGroupId;
-    return this;
-  }
-
-  /**
-   *
-   * @param resourceServerUrl The resource server URL to which the resource item belong
-   * @return ResourceObj instance
-   */
-  public ResourceObj setResourceServerUrl(String resourceServerUrl) {
-    this.resourceServerUrl = resourceServerUrl;
-    return this;
-  }
-
-  public ResourceObj setItemType(ItemType itemType) {
-    this.itemType = itemType;
-    return this;
-  }
-
-  /**
-   *
    * @param groupLevelResource Boolean which is true when the resource is Rs-Group and vice-verse.
    * @return ResourceObj instance
    */
@@ -124,12 +78,30 @@ public class ResourceObj {
   }
 
   /**
+   * @param itemId The unique ID of the resource item
+   * @return ResourceObj instance
+   */
+  public ResourceObj setItemId(UUID itemId) {
+    this.itemId = itemId;
+    return this;
+  }
+
+  /**
    * Get the provider ID of the resource/resource_group.
    *
    * @return The provider ID as a UUID.
    */
   public UUID getProviderId() {
     return providerId;
+  }
+
+  /**
+   * @param providerId The unique ID of the provider who owns the resource.
+   * @return ResourceObj instance
+   */
+  public ResourceObj setProviderId(UUID providerId) {
+    this.providerId = providerId;
+    return this;
   }
 
   /**
@@ -142,12 +114,31 @@ public class ResourceObj {
   }
 
   /**
+   * @param resourceGroupId The unique ID of the resource group to which the resource belongs (can
+   *     be null).
+   * @return ResourceObj instance
+   */
+  public ResourceObj setResourceGroupId(UUID resourceGroupId) {
+    this.resourceGroupId = resourceGroupId;
+    return this;
+  }
+
+  /**
    * Get the resource server URL of the resource.
    *
    * @return The resource server URL as a String.
    */
   public String getResourceServerUrl() {
     return resourceServerUrl;
+  }
+
+  /**
+   * @param resourceServerUrl The resource server URL to which the resource item belong
+   * @return ResourceObj instance
+   */
+  public ResourceObj setResourceServerUrl(String resourceServerUrl) {
+    this.resourceServerUrl = resourceServerUrl;
+    return this;
   }
 
   /**
@@ -160,6 +151,11 @@ public class ResourceObj {
     return itemType;
   }
 
+  public ResourceObj setItemType(ItemType itemType) {
+    this.itemType = itemType;
+    return this;
+  }
+
   /**
    * Tells if the resource is resource level or resource group level
    *
@@ -168,5 +164,4 @@ public class ResourceObj {
   public boolean getIsGroupLevelResource() {
     return isGroupLevelResource;
   }
-
 }
