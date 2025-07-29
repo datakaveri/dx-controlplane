@@ -112,6 +112,6 @@ public class ControllerFactory {
         adminController,
         accessRequestController,
         accessReportController,
-        assetController);
+        assetController,listController,searchController,itemController);
   }
 }
