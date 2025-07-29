@@ -231,4 +231,21 @@ public class AdminHandler {
       }
     });
   }
+
+  public void deactivateDxUserById(RoutingContext ctx) {
+    UUID userId = RequestHelper.getPathParamAsUUID(ctx, "id");
+
+    keycloakUserService.disableUser(userId)
+      .onSuccess(response -> {
+        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+          RoutingContextHelper.getRequestPath(ctx), "POST", "Deactivate User");
+        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        ResponseBuilder.sendSuccess(ctx, "User deactivated successfully");
+      })
+      .onFailure(err -> {
+        LOGGER.error("Failed to deactivate DxUser: {}", err.getMessage(), err);
+        ctx.fail(err);
+      });
+
+  }
 }

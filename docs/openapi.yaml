@@ -4377,6 +4377,25 @@ paths:
       operationId: post-auth-v1-user-deactivate
       security:
         - authorization: [ ]
+  /auth/v1/admin/{id}/deactivate:
+    post:
+      summary: (Admin) Deactivate User Account
+      tags:
+        - User APIs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the user
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+      operationId: post-auth-v1-admin-id-deactivate
+      security:
+        - authorization: [ ]
   /auth/v1/user/{id}:
     parameters:
       - name: id
