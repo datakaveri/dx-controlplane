@@ -2881,6 +2881,22 @@ paths:
       summary: Create Credit Request
       tags:
         - Credit APIs
+      requestBody:
+        description: >
+          - `additional_info` : Optional extra details about requester and intent
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                additional_info:
+                  description: >
+                    Used to define additional information to access data for educational, research,
+                    testing, non-commercial, or academic purposes.
+                  type: object
+                  minProperties: 1
+                  maxProperties: 10
       responses:
         '200':
           description: OK
@@ -2902,8 +2918,6 @@ paths:
                         type: string
                       userName:
                         type: string
-                      amount:
-                        type: integer
                       status:
                         type: string
                       requestedAt:
@@ -2920,7 +2934,6 @@ paths:
                       id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
                       userId: 436cb796-5826-458b-a914-a54721f70997
                       userName: test test
-                      amount: 10000
                       status: pending
                       requestedAt: '2025-06-04T09:47:27.323861'
                       processedAt: '2025-06-04T09:47:27.323861'
@@ -2934,7 +2947,6 @@ paths:
                       id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
                       userId: 436cb796-5826-458b-a914-a54721f70997
                       userName: test test
-                      amount: 10000
                       status: pending
                       requestedAt: '2025-06-04T09:47:27.323861'
                       processedAt: '2025-06-04T09:47:27.323861'
@@ -2943,21 +2955,6 @@ paths:
 
       security:
         - authorization: [ ]
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                amount:
-                  type: number
-                  format: double
-                  x-stoplight:
-                    id: 37g76x7a4vgf8
-            examples:
-              Example 1:
-                value:
-                  amount: 2000
     put:
       summary: Update Credit Request Status
       tags:
@@ -4497,8 +4494,8 @@ paths:
         - Entity
 
       description: |
-        Insert an item into the catalogue where the item's body specifies the type of item and 
-        instance name. id, itemCreatedAt and itemStatus are added by server. Items maybe subClasses of type 
+        Insert an item into the catalogue where the item's body specifies the type of item and
+        instance name. id, itemCreatedAt and itemStatus are added by server. Items maybe subClasses of type
         [IUDXEntity](https://voc.iudx.org.in/IUDXEntity). Depending on this, some properties maybe mandatory. The json schema for the different types can be found [here](https://github.com/datakaveri/iudx-catalogue-server/tree/master/src/main/resources/iudx/catalogue/server/validator). In the future, we will serve schemas from our own servers.
       operationId: create item
       security:
@@ -4561,28 +4558,28 @@ paths:
         - Entity
       description: |
         Update an item where the body contains a fully valid item with id. Relationship links like
-        organizationId and "name" are not allowed to be updated. 
+        organizationId and "name" are not allowed to be updated.
         itemStatus is added by backend.
         Items maybe subClasses of type [IUDXEntity](https://voc.iudx.org.in/IUDXEntity). Depending on this, some properties maybe mandatory.
         The json schema for the different types can be found [here](https://github.com/datakaveri/iudx-catalogue-server/tree/master/src/main/resources/iudx/catalogue/server/validator). In the future, we will serve schemas from our own servers.
         #### Non-updateable fields
         In case update of these fields is required, it is recommended to delete the item
         and re-upload it.
-        
+
         1. adex:DataBank
            - id
            - organizationId
-           - name 
+           - name
            - type (1st element in array non-modifiable)
            - itemStatus
-        
+
         2. adex:AiModel
            - id
            - name
            - provider
            - type (1st element in array non-modifiable)
            - itemStatus
-        
+
         3. adex:Apps
            - id
            - name
@@ -4780,7 +4777,7 @@ paths:
         - List
       summary: List available filter values
       description: |
-        Retrieve available filter values for specified indexed fields (e.g., tags, department, fileFormat, etc.) based on optional search criteria. 
+        Retrieve available filter values for specified indexed fields (e.g., tags, department, fileFormat, etc.) based on optional search criteria.
         This API is intended to assist user interfaces by listing current values from the catalogue, based on indexed fields in Elasticsearch.
       operationId: listAvailableFilters
       security:
@@ -4997,7 +4994,7 @@ paths:
 
         #### Supported `searchType` values in `searchCriteria`:
 
-        - `term`: Property-based filtering using exact or fuzzy match. Accepts one or more 
+        - `term`: Property-based filtering using exact or fuzzy match. Accepts one or more
         values. (OR logic on values.)
         - `betweenTemporal`: Requires exactly **two** ISO 8601 datetime strings — interpreted as start and end time.
         - `beforeTemporal`: Requires exactly **one** ISO 8601 datetime string — filters entries before the given time.
@@ -5035,10 +5032,10 @@ paths:
         ```
 
         #### Limits and Filters
-        - Pagination: Use `size` and `page` parameters to paginate results.  
-          For example, `size=100&page=2` returns 100 results starting from the 101st record (i.e., page 2).  
+        - Pagination: Use `size` and `page` parameters to paginate results.
+          For example, `size=100&page=2` returns 100 results starting from the 101st record (i.e., page 2).
           Internally, the offset is calculated as `offset = size * (page - 1)`.
-        - Field Filtering: Use the `filter` parameter to specify a subset of fields to return.  
+        - Field Filtering: Use the `filter` parameter to specify a subset of fields to return.
           For example, `filter=[id]` returns only the `id` field for each result.
         - Limits: The sum of the internally calculated `offset` and `size` must be less than or equal to `10,000` to prevent overly large queries.
 
@@ -5066,7 +5063,7 @@ paths:
           in: query
           description: >
             This parameter allows sorting the results by up to 3 fields, separated by a semicolon (;).
-            The format for each field is `fieldName:asc` or `fieldName:desc`. 
+            The format for each field is `fieldName:asc` or `fieldName:desc`.
             For example: `itemCreatedAt:desc;dataReadiness:asc;name:desc` will sort by creation date (descending),
             then dataReadiness (ascending), then name (descending).
           required: false
@@ -5308,7 +5305,7 @@ paths:
         - Number of Potential Applications (`type=adex:Apps`)
         - Distribution by `type` after applying department/tags/date filters
 
-        > 📌 Aggregation is always based on `type.keyword`.  
+        > 📌 Aggregation is always based on `type.keyword`.
         > The `results` object contains key-value pairs for each `type`.
       security:
         - optionalAuth: []
