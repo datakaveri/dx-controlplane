@@ -41,18 +41,18 @@ public class AdminController implements ApiController {
                 .operation("put-auth-v1-user-password")
                 .handler(adminHandler::updatePassword);
 
-        routerBuilder
-                .operation("post-auth-v1-user-deactivate")
-                .handler(adminHandler::deactivateDxUser);
+      routerBuilder
+        .operation("post-auth-v1-user-update")
+        .handler(adminHandler::updateUserStatus);
 
       routerBuilder
         .operation("delete-auth-v1-user-id")
         .handler(adminHandler::deleteDxUser);
 
       routerBuilder
-        .operation("post-auth-v1-admin-id-deactivate")
+        .operation("post-auth-v1-admin-id-update")
         .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
-        .handler(adminHandler::deactivateDxUserById);
+        .handler(adminHandler::updateDxUserStatusById);
 
     }
 }
