@@ -22,6 +22,7 @@ import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.item.service.ItemService;
+import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 
 public class ItemExistenceValidator {
@@ -69,7 +70,7 @@ public class ItemExistenceValidator {
                 promise.complete(request);
               } else {
                 LOGGER.debug("Fail: DB Error: " + err.getLocalizedMessage());
-                promise.fail(VALIDATION_FAILURE_MSG);
+                promise.fail(new DxBadRequestException(VALIDATION_FAILURE_MSG));
               }
             })
         .onSuccess(

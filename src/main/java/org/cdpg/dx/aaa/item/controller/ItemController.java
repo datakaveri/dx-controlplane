@@ -257,14 +257,7 @@ public class ItemController implements ApiController {
         .onFailure(
             err -> {
               LOGGER.error("Delete item failed", err);
-              ctx.response()
-                  .setStatusCode(400)
-                  .end(
-                      new RespBuilder()
-                          .withType(TYPE_OPERATION_NOT_ALLOWED)
-                          .withTitle(TITLE_OPERATION_NOT_ALLOWED)
-                          .withDetail(err.getMessage())
-                          .getResponse());
+              ctx.fail(err);
             });
   }
 
