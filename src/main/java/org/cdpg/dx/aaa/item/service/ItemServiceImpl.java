@@ -18,6 +18,7 @@ import org.cdpg.dx.aaa.common.ResponseModel;
 import org.cdpg.dx.aaa.item.model.Item;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.item.util.ItemFactory;
+import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.database.elastic.model.QueryDecoder;
 import org.cdpg.dx.database.elastic.model.QueryModel;
@@ -146,7 +147,7 @@ public class ItemServiceImpl implements ItemService {
               LOGGER.debug("Item with ID {} found for deletion", id);
               if (ElasticsearchResponse.getTotalHits() > 1) {
                 LOGGER.debug("Item with ID {} has multiple associated entities", id);
-                promise.fail("Item has associated entities and cannot be deleted");
+                promise.fail(new DxConflictException("Item has associated entities and cannot be deleted"));
               } else if (ElasticsearchResponse.getTotalHits() < 1) {
                 LOGGER.debug("Item with ID {} not found for deletion", id);
                 promise.fail("Item not found for deletion");
