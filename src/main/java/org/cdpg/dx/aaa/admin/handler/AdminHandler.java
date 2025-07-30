@@ -182,7 +182,7 @@ public class AdminHandler {
           ResponseBuilder.sendSuccess(ctx, "User deactivated successfully");
         })
         .onFailure(err -> {
-          LOGGER.error("Failed to deactivate DxUser: {}", err.getMessage(), err.getCause());
+          LOGGER.error("Failed to deactivate DxUser: {}", err.getMessage());
           ctx.fail(err);
         });
     }
@@ -196,7 +196,7 @@ public class AdminHandler {
           ResponseBuilder.sendSuccess(ctx, "User activated successfully");
         })
         .onFailure(err -> {
-          LOGGER.error("Failed to activate DxUser: {}", err.getMessage(), err.getCause());
+          LOGGER.error("Failed to activate DxUser: {}", err.getMessage(), err);
           ctx.fail(err);
         });
     }
@@ -281,7 +281,7 @@ public class AdminHandler {
           ResponseBuilder.sendSuccess(ctx, "User activated successfully");
         })
         .onFailure(err -> {
-          LOGGER.error("Failed to activate DxUser: {}", err.getMessage(), err.getCause());
+          LOGGER.error("Failed to activate DxUser: {}", err.getMessage());
           ctx.fail(err);
         });
     }
@@ -295,7 +295,7 @@ public class AdminHandler {
           ResponseBuilder.sendSuccess(ctx, "User deactivated successfully");
         })
         .onFailure(err -> {
-          LOGGER.error("Failed to deactivate DxUser: {}", err.getMessage(), err.getCause());
+          LOGGER.error("Failed to deactivate DxUser: {},{}", err.getMessage(), err.getCause());
           ctx.fail(err);
         });
     }
