@@ -4366,22 +4366,35 @@ paths:
           required: true
       security:
         - authorization: [ ]
-  /auth/v1/user/deactivate:
+  /auth/v1/user/update:
     post:
       summary: (User) Deactivate User Account
       tags:
         - Role APIs
+      requestBody:
+        description: Status type - Activate or Deactivate
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                status:
+                  type: string
+              required:
+                - status
       responses:
         '200':
           description: OK
-      operationId: post-auth-v1-user-deactivate
+      operationId: post-auth-v1-user-update
       security:
         - authorization: [ ]
-  /auth/v1/admin/{id}/deactivate:
+  /auth/v1/admin/{id}/update:
     post:
-      summary: (Admin) Deactivate User Account
+      summary: (Admin) Deactivate/Activate User Account
       tags:
-        - User APIs
+        - Role APIs
       parameters:
         - name: id
           in: path
@@ -4390,10 +4403,23 @@ paths:
           schema:
             type: string
             format: uuid
+      requestBody:
+        description: Status type - Activate or Deactivate
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                status:
+                  type: string
+              required:
+                - status
       responses:
         '200':
           description: OK
-      operationId: post-auth-v1-admin-id-deactivate
+      operationId: post-auth-v1-admin-id-update
       security:
         - authorization: [ ]
   /auth/v1/user/{id}:
