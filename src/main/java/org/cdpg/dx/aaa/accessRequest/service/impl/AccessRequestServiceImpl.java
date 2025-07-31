@@ -2,8 +2,10 @@ package org.cdpg.dx.aaa.accessRequest.service.impl;
 
 import static org.cdpg.dx.aaa.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
 import static org.cdpg.dx.aaa.accessRequest.dao.config.DbConstants.DB_STATUS;
+import static org.cdpg.dx.catalogueService.config.Constants.*;
 
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -13,12 +15,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.accessRequest.dao.AccessRequestDao;
 import org.cdpg.dx.aaa.accessRequest.dao.model.AccessRequestDto;
+import org.cdpg.dx.aaa.accessRequest.dao.model.AssetType;
 import org.cdpg.dx.aaa.accessRequest.dao.model.Status;
 import org.cdpg.dx.aaa.accessRequest.service.AccessRequestService;
-import org.cdpg.dx.catalogueService.service.CatalogueService;
+import org.cdpg.dx.aaa.item.service.ItemService;
+import org.cdpg.dx.aaa.item.util.GetItemRequest;
+import org.cdpg.dx.catalogueService.models.Asset;
 import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.common.exception.DxCreateAccessRequestForbiddenException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
+import org.cdpg.dx.common.exception.DxInternalServerErrorException;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.model.RequestType;
 import org.cdpg.dx.common.request.PaginatedRequest;
@@ -28,12 +34,11 @@ public class AccessRequestServiceImpl implements AccessRequestService {
 
   private static final Logger LOGGER = LogManager.getLogger(AccessRequestServiceImpl.class);
 
-  private final CatalogueService catalogueService;
   private final AccessRequestDao accessRequestDao;
+  private final ItemService itemService;
 
-  public AccessRequestServiceImpl(
-      CatalogueService catalogueService, AccessRequestDao accessRequestDao) {
-    this.catalogueService = Objects.requireNonNull(catalogueService);
+  public AccessRequestServiceImpl(ItemService itemService, AccessRequestDao accessRequestDao) {
+    this.itemService = itemService;
     this.accessRequestDao = Objects.requireNonNull(accessRequestDao);
   }
 
@@ -63,11 +68,19 @@ public class AccessRequestServiceImpl implements AccessRequestService {
                 return Future.failedFuture(
                     new DxConflictException("Access request already exists"));
               }
-              return catalogueService.fetchAsset(itemId.toString());
+              GetItemRequest request = new GetItemRequest(itemId.toString(), "");
+              return itemService.getItem(request);
             })
         .compose(
-            asset -> {
-              LOGGER.debug("Fetched asset: {}", asset);
+            responseModel -> {
+              if (responseModel.getElasticsearchResponses().isEmpty()) {
+                String message = "Item not found for ID: " + itemId;
+                LOGGER.error(message);
+                return Future.failedFuture(new DxForbiddenException(message));
+              }
+              JsonObject itemJson = responseModel.getElasticsearchResponses().getFirst();
+              Asset asset = parseAndGetAsset(itemJson, itemId.toString());
+
               /*Forbidden if the provider id is equal to the consumer id
               as provider cannot create an access request for his resource*/
               if (asset.getProviderId().equals(consumer.sub().toString())) {
@@ -163,5 +176,53 @@ public class AccessRequestServiceImpl implements AccessRequestService {
   public Future<PaginatedResult<AccessRequestDto>> listAccessRequestForProvider(
       PaginatedRequest paginatedRequest) {
     return accessRequestDao.getAllWithFilters(paginatedRequest);
+  }
+
+  private Asset parseAndGetAsset(JsonObject result, String id) {
+    LOGGER.debug("Asset info : {}", result.encodePrettily());
+    try {
+      String assetName = result.getString(ASSET_NAME_KEY, "").trim();
+      String provider = result.getString(OWNER_ID);
+      String organizationId = result.getString(ORGANIZATION_ID);
+      String shortDescription = result.getString(SHORT_DESCRIPTION, "").trim();
+
+      AssetType catAssetType = null;
+      JsonArray typeArray = result.getJsonArray(TYPE);
+      if (typeArray != null) {
+        for (Object type : typeArray) {
+          String typeStr = type.toString();
+          catAssetType = AssetType.fromString(typeStr);
+        }
+      }
+
+      // Validation
+      if (provider == null
+          || assetName.isEmpty()
+          || catAssetType == null
+          || organizationId == null
+          || shortDescription == null) {
+        LOGGER.error("Asset metadata invalid for id: {}", id);
+        LOGGER.error(
+            "Provider: {}, AssetName: {}, AssetType: {}, OrgId: {}, shortDescription : {}",
+            provider,
+            assetName,
+            catAssetType,
+            organizationId,
+            shortDescription);
+        throw new DxInternalServerErrorException("Incomplete asset metadata from catalogue");
+      }
+
+      return new Asset()
+          .setItemId(id)
+          .setProviderId(provider)
+          .setOrganizationId(organizationId)
+          .setAssetType(catAssetType.getAssetType())
+          .setAssetName(assetName)
+          .setShortDescription(shortDescription);
+
+    } catch (Exception e) {
+      LOGGER.error("Error building asset from catalogue metadata: {}", e.getMessage(), e);
+      throw new DxInternalServerErrorException("Incomplete asset metadata from catalogue");
+    }
   }
 }

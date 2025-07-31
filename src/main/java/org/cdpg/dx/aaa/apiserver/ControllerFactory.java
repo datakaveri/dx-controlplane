@@ -91,7 +91,8 @@ public class ControllerFactory {
     ApiController adminController = new AdminController(adminHandler);
 
     AccessRequestController accessRequestController =
-        AccessRequestFactory.createAccessRequestController(vertx, config);
+        AccessRequestFactory.createAccessRequestController(
+            pgService, esService, emailService, keycloakUserService, auditingHandler, config);
 
     AccessReportController accessReportController = AccessReportFactory.create(pgService, vertx);
 
