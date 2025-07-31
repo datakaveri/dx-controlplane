@@ -160,20 +160,44 @@ public class AdminHandler {
       });
   }
 
-  public void deactivateDxUser(RoutingContext ctx) {
+  public void updateUserStatus(RoutingContext ctx) {
     User user = ctx.user();
 
-    keycloakUserService.disableUser(UUID.fromString(user.subject()))
-      .onSuccess(response -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx), "POST", "Deactivate User");
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, "User deactivated successfully");
-      })
-      .onFailure(err -> {
-        LOGGER.error("Failed to deactivate DxUser: {}", err.getMessage(), err);
-        ctx.fail(err);
-      });
+    JsonObject status = ctx.body().asJsonObject();
+    String statusValue = status.getString("status");
+
+
+    if(statusValue == null || (!statusValue.equalsIgnoreCase("activate") && !statusValue.equalsIgnoreCase("deactivate"))) {
+      ctx.fail(new DxBadRequestException("Invalid status value. Must be 'activate' or 'deactivate'."));
+      return;
+    }
+
+    if(statusValue.equalsIgnoreCase("deactivate")) {
+      keycloakUserService.disableUser(UUID.fromString(user.subject()))
+        .onSuccess(response -> {
+          AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+            RoutingContextHelper.getRequestPath(ctx), "POST", "Deactivate User");
+          RoutingContextHelper.setAuditingLog(ctx, auditLog);
+          ResponseBuilder.sendSuccess(ctx, "User deactivated successfully");
+        })
+        .onFailure(err -> {
+          LOGGER.error("Failed to deactivate DxUser: {}", err.getMessage(), err);
+          ctx.fail(err);
+        });
+    }
+    else {
+      keycloakUserService.enableUser(UUID.fromString(user.subject()))
+        .onSuccess(response -> {
+          AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+            RoutingContextHelper.getRequestPath(ctx), "POST", "Activate User");
+          RoutingContextHelper.setAuditingLog(ctx, auditLog);
+          ResponseBuilder.sendSuccess(ctx, "User activated successfully");
+        })
+        .onFailure(err -> {
+          LOGGER.error("Failed to activate DxUser: {}", err.getMessage(), err);
+          ctx.fail(err);
+        });
+    }
 
   }
 
@@ -232,20 +256,44 @@ public class AdminHandler {
     });
   }
 
-  public void deactivateDxUserById(RoutingContext ctx) {
+  public void updateDxUserStatusById(RoutingContext ctx) {
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "id");
 
-    keycloakUserService.disableUser(userId)
-      .onSuccess(response -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx), "POST", "Deactivate User");
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, "User deactivated successfully");
-      })
-      .onFailure(err -> {
-        LOGGER.error("Failed to deactivate DxUser: {}", err.getMessage(), err);
-        ctx.fail(err);
-      });
+    JsonObject status = ctx.body().asJsonObject();
 
+    String statusValue = status.getString("status");
+
+
+    if(statusValue == null || (!statusValue.equalsIgnoreCase("activate") && !statusValue.equalsIgnoreCase("deactivate"))) {
+      ctx.fail(new DxBadRequestException("Invalid status value. Must be 'activate' or 'deactivate'."));
+      return;
+    }
+
+    if(statusValue.equalsIgnoreCase("activate")) {
+      keycloakUserService.enableUser(userId)
+        .onSuccess(response -> {
+          AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+            RoutingContextHelper.getRequestPath(ctx), "POST", "Activate User");
+          RoutingContextHelper.setAuditingLog(ctx, auditLog);
+          ResponseBuilder.sendSuccess(ctx, "User activated successfully");
+        })
+        .onFailure(err -> {
+          LOGGER.error("Failed to activate DxUser: {}", err.getMessage(), err);
+          ctx.fail(err);
+        });
+    }
+    else {
+      keycloakUserService.disableUser(userId)
+        .onSuccess(response -> {
+          AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+            RoutingContextHelper.getRequestPath(ctx), "POST", "Deactivate User");
+          RoutingContextHelper.setAuditingLog(ctx, auditLog);
+          ResponseBuilder.sendSuccess(ctx, "User deactivated successfully");
+        })
+        .onFailure(err -> {
+          LOGGER.error("Failed to deactivate DxUser: {}", err.getMessage(), err);
+          ctx.fail(err);
+        });
+    }
   }
 }

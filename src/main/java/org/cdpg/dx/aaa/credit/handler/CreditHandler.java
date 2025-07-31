@@ -1,6 +1,8 @@
 package org.cdpg.dx.aaa.credit.handler;
 
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
@@ -28,6 +30,7 @@ import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.cdpg.dx.aaa.credit.util.Constants.*;
 import static org.cdpg.dx.aaa.credit.models.Status.GRANTED;
@@ -51,7 +54,9 @@ public class CreditHandler {
 
 
   public void createCreditRequest(RoutingContext ctx) {
-    JsonObject creditRequestJson = ctx.body().asJsonObject();
+    JsonObject creditRequestJson = Optional.ofNullable(ctx.body().asJsonObject())
+      .orElse(new JsonObject());
+
 
     CreditRequest creditRequest;
     User user = ctx.user();
@@ -69,7 +74,7 @@ public class CreditHandler {
           RoutingContextHelper.getRequestPath(ctx), "POST", "Credit Request Created");
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
         ResponseBuilder.sendSuccess(ctx, requests);
-        Future<Void> future = emailComposer.sendEmailForCreditRequest(user);
+        emailComposer.sendEmailForCreditRequest(user);
 
 
 
@@ -93,10 +98,42 @@ public class CreditHandler {
 
     creditService.getAllCreditRequests(request)
       .onSuccess(result -> {
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx,  result.data(), result.paginationInfo());
+        List<CreditRequest> creditRequests = result.data();
+
+        List<Future> futures = creditRequests.stream()
+          .map(cr -> {
+            UUID userId = cr.userId();
+            Promise<JsonObject> promise = Promise.promise();
+
+            creditService.getBalance(userId)
+              .onSuccess(balance -> {
+                JsonObject enriched = new JsonObject()
+                  .put("creditRequest", JsonObject.mapFrom(cr))
+                  .put("balance", balance);
+                promise.complete(enriched);
+              })
+              .onFailure(err -> {
+                LOGGER.warn("Failed to get balance for user {}: {}", userId, err.getMessage());
+                JsonObject enriched = new JsonObject()
+                  .put("creditRequest", JsonObject.mapFrom(cr))
+                  .put("balance", 0.0); // fallback
+                promise.complete(enriched);
+              });
+
+            return promise.future();
+          })
+          .collect(Collectors.toList());
+
+        CompositeFuture.all(futures)
+          .onSuccess(cf -> {
+            List<JsonObject> enrichedList = cf.list();
+            RoutingContextHelper.setAuditingLog(ctx, auditLog);
+            ResponseBuilder.sendSuccess(ctx, enrichedList, result.paginationInfo());
+          })
+          .onFailure(ctx::fail);
       })
       .onFailure(ctx::fail);
+
 
   }
 
