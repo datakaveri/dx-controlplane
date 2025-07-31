@@ -1,8 +1,6 @@
 pipeline {
   environment {
-    devRegistry = 'ghcr.io/datakaveri/aaa-dev'
-    deplRegistry = 'ghcr.io/datakaveri/aaa-depl'
-    testRegistry = 'ghcr.io/datakaveri/aaa-test:latest'
+    devRegistry = 'ghcr.io/datakaveri/controlplane-dev'
     registryUri = 'https://ghcr.io'
     registryCredential = 'datakaveri-ghcr'
     GIT_HASH = GIT_COMMIT.take(7)
@@ -18,7 +16,7 @@ pipeline {
       steps{
         script {
           echo 'Pulled - ' + env.GIT_BRANCH
-          deplImage = docker.build( deplRegistry, "-f ./docker/depl.dockerfile .")
+          devImage = docker.build( deplRegistry, "-f ./docker/dev.dockerfile .")
         }
       }
     }
@@ -42,7 +40,7 @@ pipeline {
           steps {
             script {
               docker.withRegistry( registryUri, registryCredential ) {
-                deplImage.push("tgdex-5.6.0-${env.GIT_HASH}")
+                devImage.push("1.0.0-${env.GIT_HASH}")
               }
             }
           }
@@ -50,7 +48,7 @@ pipeline {
         stage('Docker Swarm deployment') {
           steps {
             script {
-              sh "ssh azureuser@docker-swarm 'docker service update auth-tgdex_auth-tgdex --image ghcr.io/datakaveri/aaa-depl:tgdex-5.6.0-${env.GIT_HASH}'"
+              sh "ssh azureuser@docker-swarm 'docker service update controlplane-tgdex_controlplane-tgdex --image ghcr.io/datakaveri/controlplane-dev:1.0.0-${env.GIT_HASH}'"
               sh 'sleep 15'
               sh '''#!/bin/bash 
               response_code=$(curl -s -o /dev/null -w \'%{http_code}\\n\' --connect-timeout 5 --retry 5 --retry-connrefused -XGET https://authvertx.iudx.io/apis)
