@@ -251,11 +251,16 @@ public class AccessRequestController implements ApiController {
 
                 // todo: AuditingLog should be created after email is sent successfully
 
-                AuditLog auditLog = AuditingHelper.createAuditLog(accessRequestDto, ctx.user(),
-                    RoutingContextHelper.getRequestPath(ctx), "PUT", "Download Access Granted", organizationId, providerOrganizationName);
+                AuditLog auditLog =
+                    AuditingHelper.createAuditLog(
+                        accessRequestDto,
+                        ctx.user(),
+                        RoutingContextHelper.getRequestPath(ctx),
+                        "PUT",
+                        "Download Access Granted",
+                        organizationId,
+                        providerOrganizationName);
                 RoutingContextHelper.setAuditingLog(ctx, auditLog);
-
-
               })
           .onFailure(
               err -> {
@@ -271,10 +276,16 @@ public class AccessRequestController implements ApiController {
                 Future<Void> future =
                     emailComposer.sendEmailForUpdateAccessRequest(accessRequestDto, status);
 
-                AuditLog auditLog = AuditingHelper.createAuditLog(accessRequestDto, ctx.user(),
-                    RoutingContextHelper.getRequestPath(ctx), "PUT", "Download Access Rejected", organizationId, providerOrganizationName);
+                AuditLog auditLog =
+                    AuditingHelper.createAuditLog(
+                        accessRequestDto,
+                        ctx.user(),
+                        RoutingContextHelper.getRequestPath(ctx),
+                        "PUT",
+                        "Download Access Rejected",
+                        organizationId,
+                        providerOrganizationName);
                 RoutingContextHelper.setAuditingLog(ctx, auditLog);
-
               })
           .onFailure(
               err -> {
@@ -299,8 +310,15 @@ public class AccessRequestController implements ApiController {
         .onSuccess(
             accessRequestDto -> {
               Future<Void> future = emailComposer.sendEmailForCreateAccessRequest(accessRequestDto);
-              AuditLog auditLog = AuditingHelper.createAuditLog(accessRequestDto, ctx.user(),
-                  RoutingContextHelper.getRequestPath(ctx), "POST", "Download Access Requested", organizationId, consumerOrganizationName);
+              AuditLog auditLog =
+                  AuditingHelper.createAuditLog(
+                      accessRequestDto,
+                      ctx.user(),
+                      RoutingContextHelper.getRequestPath(ctx),
+                      "POST",
+                      "Download Access Requested",
+                      organizationId,
+                      consumerOrganizationName);
               RoutingContextHelper.setAuditingLog(ctx, auditLog);
 
               ResponseBuilder.sendSuccess(ctx, "Request inserted successfully!");
