@@ -16,7 +16,7 @@ pipeline {
       steps{
         script {
           echo 'Pulled - ' + env.GIT_BRANCH
-          devImage = docker.build( deplRegistry, "-f ./docker/dev.dockerfile .")
+          devImage = docker.build( devRegistry, "-f ./docker/dev.dockerfile .")
         }
       }
     }
