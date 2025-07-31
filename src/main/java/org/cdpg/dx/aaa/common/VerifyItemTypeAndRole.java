@@ -71,9 +71,15 @@ public class VerifyItemTypeAndRole implements Handler<RoutingContext> {
   private void createMap() {
     List<ItemType> providerItemTypes = new ArrayList<>();
     List<ItemType> cosAdminItemTypes = new ArrayList<>();
+    List<ItemType> orgAdminItemTypes = new ArrayList<>();
     providerItemTypes.add(AI_MODEL);
     providerItemTypes.add(DATA_BANK);
     cosAdminItemTypes.add(APPS);
+    orgAdminItemTypes.add(AI_MODEL);
+    orgAdminItemTypes.add(DATA_BANK);
+    orgAdminItemTypes.add(APPS);
+    this.roleItemTypeMap.put(DxRole.ORG_ADMIN, providerItemTypes);
+
     this.roleItemTypeMap.put(DxRole.PROVIDER, providerItemTypes);
     this.roleItemTypeMap.put(DxRole.COS_ADMIN, cosAdminItemTypes);
   }
