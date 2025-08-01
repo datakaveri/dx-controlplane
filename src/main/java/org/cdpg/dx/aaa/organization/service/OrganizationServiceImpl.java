@@ -154,13 +154,20 @@ public class OrganizationServiceImpl implements OrganizationService {
             //TODO need to revert the update status and create organisation request if fails
             return Future.all(
               keycloakUserService.addRoleToUser(request.requestedBy(), DxRole.ORG_ADMIN),
+              keycloakUserService.addRoleToUser(request.requestedBy(), DxRole.PROVIDER),
               keycloakUserService.setOrganisationDetails(request.requestedBy(), createdOrg.id(), createdOrg.orgName())
             ).compose(compositeResult -> {
-              boolean roleAssigned = compositeResult.resultAt(0);
-              boolean orgDetailsSet = compositeResult.resultAt(1);
+              boolean roleAssigned1 = compositeResult.resultAt(0);
+              boolean roleAssigned2 = compositeResult.resultAt(1);
 
-              if (!roleAssigned) {
+              boolean orgDetailsSet = compositeResult.resultAt(2);
+
+              if (!roleAssigned1) {
                 return Future.failedFuture("Failed to assign ORG_ADMIN role to user");
+              }
+
+              if (!roleAssigned2) {
+                return Future.failedFuture("Failed to assign PROVIDER role to user");
               }
 
               if (!orgDetailsSet) {

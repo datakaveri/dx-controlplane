@@ -1139,9 +1139,18 @@ paths:
           \ application/json' \\\n  --data-raw '<payload>'\n"
   /auth/v1/organisations/requests:
     get:
-      summary: Get all organisation creation requests
+      summary: 'AAA-001-PF Admin: Get Organisation Creation requests'
       tags:
         - Organisation APIs
+      operationId: get-auth-v1-organisations-request
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+        - $ref: '#/components/parameters/EntityTypeParam'
+        - $ref: '#/components/parameters/StatusParam'
+        - $ref: '#/components/parameters/OrgNameParam'
+        - $ref: '#/components/parameters/OrgSectorParam'
       responses:
         '200':
           description: OK
@@ -1277,66 +1286,99 @@ paths:
                       hasNext: true
                       hasPrevious: false
         '401':
-          description: Unauthorized
+          description: Unauthorized – Token invalid/expired or user not authorized
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - type
-                  - title
-                  - detail
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  detail:
-                    type: string
-              examples:
-                Example 1:
-                  value:
-                    type: urn:dx:as:InvalidAuthenticationToken
-                    title: Token authentication failed
-                    detail: Inactive Token
-                Example 2:
-                  value:
-                    type: urn:dx:aaa:notAuthorized
-                    title: Not Authorized
-                    detail: Unauthorized
-                Example 3:
-                  value:
-                    type: urn:dx:aaa:notAuthorized
-                    title: Not Authorized
-                    detail: Missing Bearer token
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  detail:
-                    type: string
-              examples:
-                Example 1:
-                  value:
-                    type: urn:dx:as:MissingInformation
-                    title: Joining requests not found
-                    detail: No joining requests
-      operationId: get-auth-v1-organisations-request
-
+                $ref: '#/components/schemas/Unauthorized'
       security:
         - authorization: [ ]
-    parameters: [ ]
     post:
-      summary: New organisation creation request
+      summary: 'AAA-002-New User: New organisation creation request'
       tags:
         - Organisation APIs
+      operationId: post-auth-v1-organisations-request
+      requestBody:
+        description: |
+          - `name` : Name of the organization
+          - `logo_path` : Path to the logo of the organization
+          - `entity_type` : Type of the organization (e.g., Startup, Private, Government)
+          - `org_sector` : Sector of the organization (e.g., Technology, Healthcare)
+          - `website_link` : Website link of the organization
+          - `address` : Address of the organization
+          - `certificate_path` : Path to the certificate of the organization
+          - `pancard_path` : Path to the PAN card of the user
+          - `emp_id` : Employee ID of the organization
+          - `job_title` : Job title of the person making the request
+          - `phone_no` : Phone number of the organization
+          - `organisation_documents` : Path to the organization documents
+          - `manager_email` : Email of the organization manager
+          - `relevant_doc_path` : Path to any relevant document
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - entity_type
+                - org_sector
+                - website_link
+                - address
+                - certificate_path
+                - pancard_path
+                - emp_id
+                - job_title
+                - phone_no
+                - organisation_documents
+                - manager_email
+              properties:
+                name:
+                  type: string
+                logo_path:
+                  type: string
+                entity_type:
+                  type: string
+                org_sector:
+                  type: string
+                website_link:
+                  type: string
+                address:
+                  type: string
+                certificate_path:
+                  type: string
+                pancard_path:
+                  type: string
+                emp_id:
+                  type: string
+                job_title:
+                  type: string
+                phone_no:
+                  type: string
+                organisation_documents:
+                  type: string
+                manager_email:
+                  type: string
+                relevant_doc_path:
+                  type: string
+                  nullable: true
+            examples:
+              Example 1:
+                value:
+                  name: Quantum Labs
+                  logo_path: /assets/logos/quantumlabs.png
+                  entity_type: Startup
+                  org_sector: Research & Development
+                  website_link: https://quantumlabs.io
+                  address: 42 Tech Boulevard, Hyderabad, India
+                  certificate_path: /docs/certificates/quantum_cert.pdf
+                  pancard_path: /docs/ids/quantum_pancard.pdf
+                  emp_id: EMP98765
+                  job_title: Operations Lead
+                  phone_no: +91-9123456789
+                  organisation_documents: /docs/organisations/quantum_docs.zip
+                  manager_email: manager@gmail.com
+                  relevant_doc_path: null
       responses:
         '200':
           description: OK
@@ -1374,6 +1416,7 @@ paths:
                         type: string
                       relevantDocPath:
                         type: string
+                        nullable: true
                       status:
                         type: string
                       userName:
@@ -1388,38 +1431,13 @@ paths:
                         type: string
                       orgDocuments:
                         type: string
+                        nullable: true
                       createdAt:
                         type: string
                       updatedAt:
                         type: string
                       tableName:
                         type: string
-                x-examples:
-                  Example 1:
-                    type: urn:dx:aaa:success
-                    title: Success
-                    result:
-                      id: 4202493c-7c64-49b0-8f61-2000ca3d147c
-                      requestedBy: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                      name: Quants Sandbox
-                      logoPath: /logos/ai.png
-                      entityType: Private
-                      orgSector: Technology
-                      websiteLink: https://ai.example.com
-                      address: 123 Quant Labs, Bangalore, India
-                      certificatePath: /documents/certificate.pdf
-                      pancardPath: /documents/pancard.pdf
-                      relevantDocPath: null
-                      status: pending
-                      userName: test test
-                      empId: EMP12345
-                      jobTitle: Manager
-                      orgManagerphoneNo: +91-9876543210
-                      managerEmail: manager@gmail.com
-                      orgDocuments: null
-                      createdAt: '2025-06-03T16:25:25.167724'
-                      updatedAt: '2025-06-03T16:25:25.167724'
-                      tableName: organization_create_requests
               examples:
                 Example 1:
                   value:
@@ -1447,6 +1465,7 @@ paths:
                       createdAt: '2025-06-03T16:25:25.167724'
                       updatedAt: '2025-06-03T16:25:25.167724'
                       tableName: organization_create_requests
+
         '401':
           description: Unauthorized
           content:
@@ -1460,17 +1479,13 @@ paths:
                     type: string
                   detail:
                     type: string
-                x-examples:
-                  Example 1:
-                    type: urn:dx:as:InvalidAuthenticationToken
-                    title: Token authentication failed
-                    detail: Inactive Token
               examples:
                 Example 1:
                   value:
                     type: urn:dx:as:InvalidAuthenticationToken
                     title: Token authentication failed
                     detail: Inactive Token
+
         '409':
           description: Conflict
           content:
@@ -1484,75 +1499,36 @@ paths:
                     type: string
                   detail:
                     type: string
-                x-examples:
-                  Example 1:
-                    type: urn:dx:aaa:conflict
-                    title: Conflict
-                    detail: 'ERROR: duplicate key value violates unique constraint
-                      "organization_create_requests_name_key" (23505)'
               examples:
                 Example 1:
                   value:
                     type: urn:dx:aaa:conflict
                     title: Conflict
-                    detail: 'ERROR: duplicate key value violates unique constraint
-                      "organization_create_requests_name_key" (23505)'
-      operationId: post-auth-v1-organisations-request
+                    detail: 'ERROR: duplicate key value violates unique constraint "organization_create_requests_name_key" (23505)'
+
+      security:
+        - authorization: [ ]
+  /auth/v1/organisations/requests/approve:
+    post:
+      summary: 'AAA-003-PF Admin: Approve creation of new organisation'
+      tags:
+        - Organisation APIs
+      operationId: post-auth-v1-approve-create_org
+      security:
+        - authorization: [ ]
       requestBody:
         content:
           application/json:
             schema:
               type: object
               properties:
-                name:
+                req_id:
                   type: string
-                logo_path:
+                status:
                   type: string
-                entity_type:
-                  type: string
-                org_sector:
-                  type: string
-                website_link:
-                  type: string
-                address:
-                  type: string
-                certificate_path:
-                  type: string
-                pancard_path:
-                  type: string
-                emp_id:
-                  type: string
-                job_title:
-                  type: string
-                phone_no:
-                  type: string
-                organisation_documents:
-                  type: string
-                manager_email:
-                  type: string
-              x-examples:
-                Example 1:
-                  name: Quantum Labs
-                  logo_path: /assets/logos/quantumlabs.png
-                  entity_type: Startup
-                  org_sector: Research & Development
-                  website_link: https://quantumlabs.io
-                  address: 42 Tech Boulevard, Hyderabad, India
-                  certificate_path: /docs/certificates/quantum_cert.pdf
-                  pancard_path: /docs/ids/quantum_pancard.pdf
-                  emp_id: EMP98765
-                  job_title: Operations Lead
-                  phone_no: +91-9123456789
-                  organisation_documents: /docs/organisations/quantum_docs.zip
-                  manager_email: manager@gmail.com
-
-      security:
-        - authorization: [ ]
-  /auth/v1/organisations/requests/approve:
-    post:
-      summary: Approve creation of new organisation
-      tags:
-        - Organisation APIs
+              required:
+                - req_id
+                - status
       responses:
         '201':
           description: Created
@@ -1636,20 +1612,6 @@ paths:
                     title: Conflict
                     detail: 'ERROR: duplicate key value violates unique constraint
                       "organizations_name_key" (23505)'
-      operationId: post-auth-v1-approve-create_org
-
-      security:
-        - authorization: [ ]
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                req_id:
-                  type: string
-                status:
-                  type: string
   /auth/v1/organisations/{id}/join_requests:
     parameters:
       - name: id
@@ -5456,8 +5418,44 @@ components:
           - between
           - before
           - after
+          -
+    OrgNameParam:
+      name: name
+      in: query
+      description: |
+        The name of the organization sector to filter by.
+        This parameter is used to filter entities based on their organizational sector.
+      required: false
+      schema:
+        type: string
+    EntityTypeParam:
+      name: entity_type
+      in: query
+      description:
+        The type of entity to filter by.
+        This parameter is used to filter entities based on their type.
+      required: false
+      schema:
+        type: string
+    OrgSectorParam:
+      name: org_sector
+      in: query
+      description:
+        The sector of the organization to filter by.
+        This parameter is used to filter entities based on their organizational sector.
+      required: false
+      schema:
+        type: string
 
-
+    StatusParam:
+      name: status
+      in: query
+      description:
+        The status of the asset request to filter by.
+        This parameter is used to filter asset requests based on their status such as 'pending' , 'granted' and 'rejected'.
+      required: false
+      schema:
+        type: string
   schemas:
     AssetRequest:
       type: object
