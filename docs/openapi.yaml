@@ -4749,6 +4749,29 @@ paths:
           schema:
             type: string
             format: uuid
+      requestBody:
+        description: Update item status and data upload status
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                publishStatus:
+                  type: string
+                  enum:
+                    - ACTIVE
+                    - PENDING
+                    - DECLINED
+                  description: Status of the item publication
+                  example: ACTIVE
+                dataUploadStatus:
+                  type: boolean
+                  description: Whether data has been uploaded for this item
+                  example: true
+            example:
+              publishStatus: "ACTIVE"
+              dataUploadStatus: true
       responses:
         '200':
           description: Successfully updated
@@ -4757,16 +4780,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/successResponseWithObjects'
               examples:
-                Delete Success:
+                Patch Success:
                   value:
                     type: 'urn:dx:cat:Success'
                     title: Success
                     results:
-                      type: object
-                      properties:
-                        - doc_id: sd
-                        - status: active
-                    detail: 'Success: Item deleted successfully'
+                      - id: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
+                    detail: 'Success: Item patched successfully'
         '400':
           description: Invalid uuid format
           content:
