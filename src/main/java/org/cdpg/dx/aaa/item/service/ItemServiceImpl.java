@@ -18,6 +18,8 @@ import org.cdpg.dx.aaa.common.ResponseModel;
 import org.cdpg.dx.aaa.item.model.Item;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.item.util.ItemFactory;
+import org.cdpg.dx.aaa.item.util.PatchItemRequest;
+import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.database.elastic.model.QueryDecoder;
@@ -74,7 +76,7 @@ public class ItemServiceImpl implements ItemService {
     Promise<ResponseModel> promise = Promise.promise();
 
     QueryDecoder queryDecoder = new QueryDecoder();
-    QueryModel queryModel = queryDecoder.getItemQueryModel(request.getItemId());
+    QueryModel queryModel = queryDecoder.getItemSubQueryModel(request.getItemId());
 
     LOGGER.debug("Retrieving item with ID: {}", queryModel.toJson());
 
@@ -109,6 +111,54 @@ public class ItemServiceImpl implements ItemService {
             });
 
     return promise.future();
+  }
+
+  @Override
+  public Future<Void> patchItem(PatchItemRequest patchItemRequest) {
+    LOGGER.debug("Updating item: {}", patchItemRequest.getItemId());
+    Promise<Void> promise = Promise.promise();
+
+    if (patchItemRequest.getItemId() == null || patchItemRequest.getItemId().isBlank()) {
+      return Future.failedFuture("ID not present in request");
+    }
+
+    QueryModel queryModel = queryDecoder.getItemSubQueryModel(patchItemRequest.getItemId(),patchItemRequest.getSubId());
+    String id = patchItemRequest.getItemId();
+
+    elasticsearchService
+            .getSingleDocument(docIndex, queryModel.getQueries())
+            .onSuccess(
+                    result -> {
+                      LOGGER.debug("Item with ID {} found for update", id);
+                       if (ElasticsearchResponse.getTotalHits() < 1) {
+                        LOGGER.debug("Item with ID {} not found for update", id);
+                        promise.fail(new DxBadRequestException("Item not found for update"));
+                      } else {
+                        LOGGER.debug("Update item with ID: {}", id);
+                        String docId = result.getDocId();
+                        LOGGER.debug("Result {}",result.getSource());
+                        QueryModel patchQueryModel = new QueryModel();
+                        patchQueryModel.createQueryModelFromDocument(patchItemRequest.getRequestBody());
+                        elasticsearchService.updateDocument(docIndex, docId, patchQueryModel)
+                                .onSuccess(
+                                        v -> {
+                                          LOGGER.debug("Item with ID {} updated successfully", id);
+                                          promise.complete();
+                                        })
+                                .onFailure(
+                                        failure -> {
+                                          LOGGER.error(
+                                                  "Failed to update item with ID {}: {}",
+                                                  id,
+                                                  failure.getMessage());
+                                          promise.fail(new DxBadRequestException("Failed to update item: " + failure.getMessage()));
+                                        });
+                      }
+                    })
+            .onFailure(promise::fail);
+
+    return promise.future();
+
   }
 
   @Override
