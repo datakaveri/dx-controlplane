@@ -16,4 +16,5 @@ public interface AssetService {
 
   Future<Boolean> updateAssetRequestStatus(UUID requestId, Status status);
 
+  Future<Boolean> getAssetRequestById(UUID requestId, UUID userId);
 }

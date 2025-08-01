@@ -32,7 +32,7 @@ public class AssetFactory {
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
     AssetRequestDAO assetRequestDAO = new AssetRequestDAOImpl(postgresService);
 
-    AssetService assetService = new AssetServiceImpl(assetRequestDAO,keycloakUserService,config);
+    AssetService assetService = new AssetServiceImpl(assetRequestDAO,config);
 
     return new AssetHandler(assetService, emailComposer, keycloakUserService);
   }

@@ -7,12 +7,12 @@ import org.cdpg.dx.aaa.asset.models.AssetRequest;
 import org.cdpg.dx.aaa.asset.models.Status;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.exception.BaseDxException;
+import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.NoRowFoundException;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
-import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +20,6 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.cdpg.dx.aaa.accessRequest.dao.model.Status.*;
 import static org.cdpg.dx.aaa.asset.util.Constants.*;
 import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
 
@@ -30,12 +29,10 @@ public class AssetServiceImpl implements AssetService {
   private static final Logger LOGGER = LoggerFactory.getLogger(AssetServiceImpl.class);
 
   private final AssetRequestDAO assetRequestDAO;
-  private final KeycloakUserService keycloakUserService;
   private final JsonObject config;
 
-  public AssetServiceImpl(AssetRequestDAO assetRequestDAO, KeycloakUserService keycloakUserService, JsonObject config) {
+  public AssetServiceImpl(AssetRequestDAO assetRequestDAO, JsonObject config) {
     this.assetRequestDAO = assetRequestDAO;
-    this.keycloakUserService = keycloakUserService;
     this.config = config;
   }
 
@@ -69,7 +66,7 @@ public class AssetServiceImpl implements AssetService {
         } else if (Status.REJECTED.getStatus().equals(status.getStatus())) {
           return Future.succeededFuture(true);
         } else {
-          return Future.failedFuture(new BaseDxException("Invalid status for asset request"));
+          return Future.failedFuture(new DxBadRequestException("Invalid status for asset request"));
         }
       })
       .recover(throwable -> {
@@ -82,4 +79,21 @@ public class AssetServiceImpl implements AssetService {
       });
   }
 
+  public Future<Boolean> getAssetRequestById(UUID requestId,UUID userId) {
+
+    Map<String, Object> conditionMap = Map.of(
+      ASSET_ID, requestId.toString() ,
+      USER_ID, userId.toString()
+    );
+
+    return assetRequestDAO.getAllWithFilters(conditionMap)
+      .compose(assetRequest -> {
+        if (assetRequest != null && !assetRequest.isEmpty()) { // assetRequest exists
+          return Future.succeededFuture(true); //return true
+        } else {
+          return Future.succeededFuture(false); // return false
+        }
+      });
+
+  }
 }

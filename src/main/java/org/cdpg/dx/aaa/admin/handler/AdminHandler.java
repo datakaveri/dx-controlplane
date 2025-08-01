@@ -71,7 +71,7 @@ public class AdminHandler {
         ResponseBuilder.sendSuccess(ctx, response);
       })
       .onFailure(err -> {
-        LOGGER.error("Failed to get DxUser info: {}", err.getMessage(), err);
+        LOGGER.error("Failed to get DxUser info: {}", err.getMessage(), err.getCause());
         ctx.fail(err);
       });
   }
@@ -175,26 +175,28 @@ public class AdminHandler {
     if(statusValue.equalsIgnoreCase("deactivate")) {
       keycloakUserService.disableUser(UUID.fromString(user.subject()))
         .onSuccess(response -> {
+          LOGGER.info("User {} deactivated successfully in Keycloak", user.subject());
           AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
             RoutingContextHelper.getRequestPath(ctx), "POST", "Deactivate User");
           RoutingContextHelper.setAuditingLog(ctx, auditLog);
           ResponseBuilder.sendSuccess(ctx, "User deactivated successfully");
         })
         .onFailure(err -> {
-          LOGGER.error("Failed to deactivate DxUser: {}", err.getMessage(), err);
+          LOGGER.error("Failed to deactivate DxUser: {}", err.getMessage(), err.getCause());
           ctx.fail(err);
         });
     }
     else {
       keycloakUserService.enableUser(UUID.fromString(user.subject()))
         .onSuccess(response -> {
+          LOGGER.info("User {} activated successfully in Keycloak", user.subject());
           AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
             RoutingContextHelper.getRequestPath(ctx), "POST", "Activate User");
           RoutingContextHelper.setAuditingLog(ctx, auditLog);
           ResponseBuilder.sendSuccess(ctx, "User activated successfully");
         })
         .onFailure(err -> {
-          LOGGER.error("Failed to activate DxUser: {}", err.getMessage(), err);
+          LOGGER.error("Failed to activate DxUser: {}", err.getMessage(), err.getCause());
           ctx.fail(err);
         });
     }
@@ -272,26 +274,28 @@ public class AdminHandler {
     if(statusValue.equalsIgnoreCase("activate")) {
       keycloakUserService.enableUser(userId)
         .onSuccess(response -> {
+          LOGGER.info("User {} activated successfully by PF Admin in Keycloak", userId);
           AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
             RoutingContextHelper.getRequestPath(ctx), "POST", "Activate User");
           RoutingContextHelper.setAuditingLog(ctx, auditLog);
           ResponseBuilder.sendSuccess(ctx, "User activated successfully");
         })
         .onFailure(err -> {
-          LOGGER.error("Failed to activate DxUser: {}", err.getMessage(), err);
+          LOGGER.error("Failed to activate DxUser: {}", err.getMessage(), err.getCause());
           ctx.fail(err);
         });
     }
     else {
       keycloakUserService.disableUser(userId)
         .onSuccess(response -> {
+          LOGGER.info("User {} deactivated successfully by PF Admin in Keycloak", userId);
           AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
             RoutingContextHelper.getRequestPath(ctx), "POST", "Deactivate User");
           RoutingContextHelper.setAuditingLog(ctx, auditLog);
           ResponseBuilder.sendSuccess(ctx, "User deactivated successfully");
         })
         .onFailure(err -> {
-          LOGGER.error("Failed to deactivate DxUser: {}", err.getMessage(), err);
+          LOGGER.error("Failed to deactivate DxUser: {}", err.getMessage(), err.getCause());
           ctx.fail(err);
         });
     }
