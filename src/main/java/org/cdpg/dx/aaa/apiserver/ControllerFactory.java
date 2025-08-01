@@ -2,6 +2,7 @@ package org.cdpg.dx.aaa.apiserver;
 
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.*;
 
+import co.elastic.clients.elasticsearch.sql.DeleteAsyncRequest;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import java.util.List;
@@ -21,6 +22,8 @@ import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.item.controller.ItemController;
 import org.cdpg.dx.aaa.item.factory.ItemControllerFactory;
+import org.cdpg.dx.aaa.item.service.ItemService;
+import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.aaa.kyc.controller.KYCController;
 import org.cdpg.dx.aaa.kyc.factory.KYCFactory;
 import org.cdpg.dx.aaa.kyc.handler.KYCHandler;
@@ -54,13 +57,17 @@ public class ControllerFactory {
     DataBrokerService dataBrokerService =
         DataBrokerService.createProxy(vertx, DATA_BROKER_SERVICE_ADDRESS);
     EmailService emailService = EmailService.createProxy(vertx, EMAIL_SERVICE_ADDRESS);
+    ElasticsearchService esService =
+      ElasticsearchService.createProxy(vertx, ELASTIC_SERVICE_ADDRESS);
+
+    ItemService itemService = new ItemServiceImpl(esService, docIndex);
 
     AuditingHandler auditingHandler = new AuditingHandler(dataBrokerService);
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
     CreditService creditService =
         CreditControllerFactory.createService(pgService, keycloakUserService, config);
     OrganizationService organizationService =
-        OrganizationControllerFactory.createService(pgService, keycloakUserService);
+        OrganizationControllerFactory.createService(pgService, keycloakUserService, itemService);
     UserService userService =
         new UserServiceImpl(keycloakUserService, organizationService, creditService);
     EmailComposer emailComposer =
@@ -72,8 +79,7 @@ public class ControllerFactory {
             userService,
             creditService);
 
-    ElasticsearchService esService =
-        ElasticsearchService.createProxy(vertx, ELASTIC_SERVICE_ADDRESS);
+
 
     AssetHandler assetHandler = AssetFactory.createHandler(pgService, config, emailComposer);
     ApiController assetController = new AssetController(assetHandler, auditingHandler);

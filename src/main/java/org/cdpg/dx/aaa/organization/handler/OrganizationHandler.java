@@ -302,29 +302,46 @@ public class OrganizationHandler {
               .onFailure(ctx::fail);
   }
 
-    public void deleteOrganisationUserById(RoutingContext ctx) {
-        UUID  orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
-        UUID userId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
+  public void deleteOrganisationUserById(RoutingContext ctx) {
+    UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
+    UUID userId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
 
-      if (orgId == null || userId == null) {
-        ctx.fail(new DxNotFoundException("Organization ID or User ID is missing"));
-        return;
-      }
-
-        organizationService.deleteOrganizationUser(orgId, userId)
-                .onSuccess(deleted -> {
-                    if (deleted) {
-                        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-                                RoutingContextHelper.getRequestPath(ctx), "DELETE", "Delete Organisation User");
-                        RoutingContextHelper.setAuditingLog(ctx, auditLog);
-                        ResponseBuilder.sendSuccess(ctx, "Deleted Organisation User");
-                    } else {
-                        ctx.fail(new DxNotFoundException( "Organisation User Not Found"));
-                    }
-                })
-                .onFailure(ctx::fail);
-
+    if (orgId == null || userId == null) {
+      ctx.fail(new DxNotFoundException("Organization ID or User ID is missing"));
+      return;
     }
+
+    UUID orgAdminId = UUID.fromString(ctx.user().subject());
+
+    userService.getUserInfoByID(userId)
+      .compose(ar -> {
+        Future<Boolean> deletionFuture;
+        if (ar.roles().contains("provider")) {
+          deletionFuture = organizationService.deleteProviderUser(userId, orgAdminId, orgId);
+        } else {
+          deletionFuture = organizationService.deleteOrganizationUser(userId, orgId);
+        }
+
+        return deletionFuture.compose(deleted -> {
+          if (deleted) {
+            LOGGER.info("User with ID {} deleted successfully from Organization ID {}", userId, orgId);
+
+            AuditLog auditLog = AuditingHelper.createAuditLog(
+              ctx.user(), RoutingContextHelper.getRequestPath(ctx), "DELETE", "Delete User"
+            );
+            RoutingContextHelper.setAuditingLog(ctx, auditLog);
+            ResponseBuilder.sendSuccess(ctx, "Deleted User");
+
+            return Future.succeededFuture();
+          } else {
+            return Future.failedFuture(new DxNotFoundException("User Not Found"));
+          }
+        });
+      })
+      .onFailure(ctx::fail);
+  }
+
+
 
     public void getOrganisationUserInfo(RoutingContext ctx) {
         UUID  orgId = RequestHelper.getPathParamAsUUID(ctx, "id");

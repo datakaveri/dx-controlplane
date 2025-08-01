@@ -62,6 +62,7 @@ public interface OrganizationService {
   //delete from orgUser Table
   Future<Boolean> deleteOrganizationUser(UUID orgId,UUID userId);
 
+  Future<Boolean> deleteProviderUser(UUID userId, UUID orgAdminId, UUID orgId);
 
   Future<PaginatedResult<OrganizationUser>> getOrganizationUsers(PaginatedRequest paginatedRequest); //UUID orgId
 

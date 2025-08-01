@@ -1,15 +1,14 @@
 package org.cdpg.dx.aaa.organization.service;
 
 import io.vertx.core.Future;
+import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.organization.dao.*;
 import org.cdpg.dx.aaa.organization.models.*;
 import org.cdpg.dx.aaa.organization.config.Constants;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.request.PaginatedRequest;
-import org.cdpg.dx.common.response.DxErrorResponse;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
-import org.cdpg.dx.database.postgres.models.QueryResult;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,14 +31,16 @@ public class OrganizationServiceImpl implements OrganizationService {
   private final OrganizationJoinRequestDAO joinRequestDAO;
   private final ProviderRoleRequestDAO providerRequestDAO;
   private final KeycloakUserService keycloakUserService;
+  private final ItemService itemService;
 
-  public OrganizationServiceImpl(OrganizationDAOFactory factory, KeycloakUserService keycloakUserService) {
+  public OrganizationServiceImpl(OrganizationDAOFactory factory, KeycloakUserService keycloakUserService,ItemService itemService) {
     this.createRequestDAO = factory.organizationCreateRequest();
     this.orgUserDAO = factory.organizationUserDAO();
     this.orgDAO = factory.organizationDAO();
     this.joinRequestDAO = factory.organizationJoinRequestDAO();
     this.providerRequestDAO = factory.providerRoleRequestDAO();
     this.keycloakUserService = keycloakUserService;
+    this.itemService = itemService;
   }
 
   @Override
@@ -348,6 +349,26 @@ public class OrganizationServiceImpl implements OrganizationService {
               "organisation_name", ""
             ))
             .compose(v->keycloakUserService.removeRoleFromUser(userId, DxRole.PROVIDER))
+            .onFailure(err -> LOGGER.error("Failed to update user attributes in Keycloak after deleting organization user", err))
+            .map(v -> true);
+        } else {
+          return Future.succeededFuture(false);
+        }
+      });
+  }
+
+  @Override
+  public Future<Boolean> deleteProviderUser(UUID userId, UUID orgAdminId, UUID orgId) {
+    return orgUserDAO.deleteUserByOrgId(orgId, userId)
+      .compose(deleted -> {
+        if (deleted) {
+
+          return keycloakUserService.updateUserAttributes(userId, Map.of(
+              "organisation_id", "",
+              "organisation_name", ""
+            ))
+            .compose(v->keycloakUserService.removeRoleFromUser(userId, DxRole.PROVIDER))
+            .compose(ar->itemService.ownerShipTransfer(userId.toString(),orgAdminId.toString(),orgId.toString()))
             .onFailure(err -> LOGGER.error("Failed to update user attributes in Keycloak after deleting organization user", err))
             .map(v -> true);
         } else {
