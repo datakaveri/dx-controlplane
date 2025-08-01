@@ -294,8 +294,60 @@ public class ItemServiceImpl implements ItemService {
 
     return promise.future();
   }
+    @Override
+    public Future<Void> ownerShipTransfer(String oldOwnerId, String newOwnerId, String organizationId) {
+        LOGGER.debug("Starting ownership transfer from {} to {} in organization {}",
+                oldOwnerId, newOwnerId, organizationId);
 
-  private boolean ownershipCheck(ElasticsearchResponse response, String subId) {
+        if (isNullOrEmpty(oldOwnerId)) {
+            String errorMsg = "Old owner ID cannot be null or empty";
+            LOGGER.error(errorMsg);
+            return Future.failedFuture(errorMsg);
+        }
+
+        if (isNullOrEmpty(newOwnerId)) {
+            String errorMsg = "New owner ID cannot be null or empty";
+            LOGGER.error(errorMsg);
+            return Future.failedFuture(errorMsg);
+        }
+
+        if (isNullOrEmpty(organizationId)) {
+            String errorMsg = "Organization ID cannot be null or empty";
+            LOGGER.error(errorMsg);
+            return Future.failedFuture(errorMsg);
+        }
+
+        if (oldOwnerId.equals(newOwnerId)) {
+            String errorMsg = "Old owner ID and new owner ID cannot be the same";
+            LOGGER.error(errorMsg);
+            return Future.failedFuture(errorMsg);
+        }
+
+        try {
+            QueryModel ownerShipTransferQuery = queryDecoder.ownerShipTransferQuery(oldOwnerId, newOwnerId, organizationId);
+            LOGGER.debug("Query for ownership transfer: {}", ownerShipTransferQuery.getQueries().toJson());
+            return elasticsearchService.updateDocumentsByQuery(ownerShipTransferQuery.getQueries(), docIndex)
+                    .onSuccess(result -> LOGGER.debug("Ownership transfer from {} to {} completed successfully",
+                            oldOwnerId, newOwnerId))
+                    .onFailure(failure -> {
+                        LOGGER.error("Ownership transfer from {} to {} failed: {}",
+                                oldOwnerId, newOwnerId, failure.getMessage());
+                    Future.failedFuture("Ownership transfer failed: " + failure.getMessage());
+                    })
+                    .mapEmpty();
+
+        } catch (Exception e) {
+            LOGGER.error("Failed to create ownership transfer query for oldOwner: {}, newOwner: {}, org: {}",
+                    oldOwnerId, newOwnerId, organizationId, e);
+            return Future.failedFuture("Failed to create ownership transfer query: " + e.getMessage());
+        }
+    }
+
+    private boolean isNullOrEmpty(String str) {
+        return str == null || str.trim().isEmpty();
+    }
+
+    private boolean ownershipCheck(ElasticsearchResponse response, String subId) {
     JsonObject source = response.getSource();
     String accessPolicy = source.getString("accessPolicy");
     String ownerUserId = source.getString("ownerUserId");
