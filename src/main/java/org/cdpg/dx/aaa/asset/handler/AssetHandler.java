@@ -14,10 +14,7 @@ import org.cdpg.dx.aaa.credit.handler.CreditHandler;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.models.ProviderRoleRequest;
 import org.cdpg.dx.auditing.model.AuditLog;
-import org.cdpg.dx.common.exception.DxBadRequestException;
-import org.cdpg.dx.common.exception.DxForbiddenException;
-import org.cdpg.dx.common.exception.DxInternalServerErrorException;
-import org.cdpg.dx.common.exception.DxUnauthorizedException;
+import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
@@ -69,9 +66,7 @@ public class AssetHandler {
     }
 
      UUID userId = UUID.fromString(userIdStr);
-
     assetRequestJson.put("user_id", user.subject());
-
     AssetRequest assetRequest;
     try {
       assetRequest = AssetRequest.fromJson(assetRequestJson);
@@ -80,18 +75,37 @@ public class AssetHandler {
       return;
     }
 
-    keycloakUserService.getUserById(userId).compose(v -> {
-      if (v.roles().contains("org_admin") && v.roles().contains("provider")) {
-        return assetService.createAssetRequest(assetRequest);
+    UUID assetId = assetRequest.assetId();
+    if (assetId == null) {
+      ctx.fail(new DxBadRequestException("Asset ID is required"));
+      return;
+    }
+
+    assetService.getAssetRequestById(assetId,userId).onSuccess(existingRequest -> {
+      if (existingRequest == true) {
+        ctx.fail(new DxConflictException("Asset request already exists for asset ID and userId"));
       } else {
-        return Future.failedFuture(new DxForbiddenException("User is not authorized to create asset request"));
+        keycloakUserService.getUserById(userId).compose(v -> {
+          if (v.roles() != null && v.roles().contains("org_admin") && v.roles().contains("provider")) {
+            LOGGER.info("User {} is authorized and creating asset request for asset {}", userId, assetId);
+            return assetService.createAssetRequest(assetRequest);
+          } else {
+            return Future.failedFuture(new DxForbiddenException("User is not authorized to create asset request"));
+          }
+        }).onSuccess(requests -> {
+          AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+            RoutingContextHelper.getRequestPath(ctx), "POST", "Created Asset Request");
+          RoutingContextHelper.setAuditingLog(ctx, auditLog);
+          ResponseBuilder.sendSuccess(ctx, "Created Asset Request");
+        }).onFailure(ctx::fail);
+
       }
-    }).onSuccess(requests -> {
-      AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-        RoutingContextHelper.getRequestPath(ctx), "POST", "Created Asset Request");
-      RoutingContextHelper.setAuditingLog(ctx, auditLog);
-      ResponseBuilder.sendSuccess(ctx, "Created Request");
-    }).onFailure(ctx::fail);
+    }).onFailure(err -> {
+      LOGGER.error("Error checking existing asset request: {}", err.getMessage(), err);
+      ctx.fail(new DxInternalServerErrorException("Error checking existing asset request"));
+    });
+
+
 
 
   }
