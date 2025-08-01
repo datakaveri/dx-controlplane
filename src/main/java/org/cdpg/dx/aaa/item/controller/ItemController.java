@@ -4,6 +4,7 @@ import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.*;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.ID;
 import static org.cdpg.dx.aaa.common.Constants.*;
 
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonArray;
@@ -19,11 +20,10 @@ import org.cdpg.dx.aaa.common.CheckIfTokenPresent;
 import org.cdpg.dx.aaa.common.VerifyItemTypeAndRole;
 import org.cdpg.dx.aaa.item.model.Item;
 import org.cdpg.dx.aaa.item.service.ItemService;
-import org.cdpg.dx.aaa.item.util.GetItemRequest;
-import org.cdpg.dx.aaa.item.util.ItemExistenceValidator;
-import org.cdpg.dx.aaa.item.util.ItemFactory;
-import org.cdpg.dx.aaa.item.util.RespBuilder;
+import org.cdpg.dx.aaa.item.util.*;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
+import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
+import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.response.ResponseBuilder;
 
 public class ItemController implements ApiController {
@@ -36,6 +36,7 @@ public class ItemController implements ApiController {
   private final ItemExistenceValidator itemExistenceValidator;
   private final CheckIfTokenPresent checkIfTokenPresent = new CheckIfTokenPresent();
   private final VerifyItemTypeAndRole verifyItemTypeAndRole = new VerifyItemTypeAndRole();
+  Handler<RoutingContext> orgAdminAccessHandler = AuthorizationHandler.forRoles(DxRole.ORG_ADMIN);
 
   public ItemController(
       AuditingHandler auditingHandler, ItemService itemService, String vocContext) {
@@ -72,6 +73,12 @@ public class ItemController implements ApiController {
         .handler(this::handleCreateOrUpdateItem)
         .handler(auditingHandler::handleApiAudit);
 
+    builder.operation(PATCH_ITEM)
+            .handler(checkIfTokenPresent)
+            .handler(orgAdminAccessHandler)
+            .handler(this::handlePatchItem)
+            .handler(auditingHandler::handleApiAudit);
+
     LOGGER.debug("Item Controller registered");
   }
 
@@ -106,6 +113,31 @@ public class ItemController implements ApiController {
             });
   }
 
+  private void handlePatchItem(RoutingContext ctx) {
+    LOGGER.debug("Handling patch item");
+    String id = ctx.queryParams().get("id");
+
+    if (id == null || id.isBlank()) {
+      ctx.response().setStatusCode(400).
+              end(new RespBuilder().withType(TYPE_INVALID_SYNTAX).
+                      withTitle(TITLE_INVALID_SYNTAX).withDetail(DETAIL_ID_NOT_FOUND).getResponse());
+      return;
+    }
+    String kcId = "";
+    kcId = ctx.user().principal().getString(SUB);
+    LOGGER.debug("Keycloak ID: {},12aa: {}", kcId,id);
+    JsonObject body = ctx.body().asJsonObject();
+    LOGGER.debug("Patch item request body: {}", body);
+    PatchItemRequest patchItemRequest =new PatchItemRequest(id,kcId,body);
+
+    itemService.patchItem(patchItemRequest).onSuccess(v -> ctx.response().setStatusCode(200).
+            end(new RespBuilder().withType(TYPE_SUCCESS)
+                    .withTitle(TITLE_SUCCESS).withResult(new JsonArray().add(new JsonObject().put(ID, id)))
+                    .withDetail("Success: Item patched successfully").getResponse())).onFailure(err -> {
+      LOGGER.error("Patch item failed", err);
+      ctx.fail(err);
+    });
+  }
   private String extractAndValidateItemType(
       RoutingContext ctx, JsonObject body, HttpServerResponse response) {
     try {

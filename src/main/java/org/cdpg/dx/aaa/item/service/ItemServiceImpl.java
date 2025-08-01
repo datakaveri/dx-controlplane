@@ -18,6 +18,8 @@ import org.cdpg.dx.aaa.common.ResponseModel;
 import org.cdpg.dx.aaa.item.model.Item;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.item.util.ItemFactory;
+import org.cdpg.dx.aaa.item.util.PatchItemRequest;
+import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.database.elastic.model.QueryDecoder;
@@ -74,7 +76,7 @@ public class ItemServiceImpl implements ItemService {
     Promise<ResponseModel> promise = Promise.promise();
 
     QueryDecoder queryDecoder = new QueryDecoder();
-    QueryModel queryModel = queryDecoder.getItemQueryModel(request.getItemId());
+    QueryModel queryModel = queryDecoder.getItemSubQueryModel(request.getItemId());
 
     LOGGER.debug("Retrieving item with ID: {}", queryModel.toJson());
 
@@ -109,6 +111,54 @@ public class ItemServiceImpl implements ItemService {
             });
 
     return promise.future();
+  }
+
+  @Override
+  public Future<Void> patchItem(PatchItemRequest patchItemRequest) {
+    LOGGER.debug("Updating item: {}", patchItemRequest.getItemId());
+    Promise<Void> promise = Promise.promise();
+
+    if (patchItemRequest.getItemId() == null || patchItemRequest.getItemId().isBlank()) {
+      return Future.failedFuture("ID not present in request");
+    }
+
+    QueryModel queryModel = queryDecoder.getItemSubQueryModel(patchItemRequest.getItemId(),patchItemRequest.getSubId());
+    String id = patchItemRequest.getItemId();
+
+    elasticsearchService
+            .getSingleDocument(docIndex, queryModel.getQueries())
+            .onSuccess(
+                    result -> {
+                      LOGGER.debug("Item with ID {} found for update", id);
+                       if (ElasticsearchResponse.getTotalHits() < 1) {
+                        LOGGER.debug("Item with ID {} not found for update", id);
+                        promise.fail(new DxBadRequestException("Item not found for update"));
+                      } else {
+                        LOGGER.debug("Update item with ID: {}", id);
+                        String docId = result.getDocId();
+                        LOGGER.debug("Result {}",result.getSource());
+                        QueryModel patchQueryModel = new QueryModel();
+                        patchQueryModel.createQueryModelFromDocument(patchItemRequest.getRequestBody());
+                        elasticsearchService.updateDocument(docIndex, docId, patchQueryModel)
+                                .onSuccess(
+                                        v -> {
+                                          LOGGER.debug("Item with ID {} updated successfully", id);
+                                          promise.complete();
+                                        })
+                                .onFailure(
+                                        failure -> {
+                                          LOGGER.error(
+                                                  "Failed to update item with ID {}: {}",
+                                                  id,
+                                                  failure.getMessage());
+                                          promise.fail(new DxBadRequestException("Failed to update item: " + failure.getMessage()));
+                                        });
+                      }
+                    })
+            .onFailure(promise::fail);
+
+    return promise.future();
+
   }
 
   @Override
@@ -244,8 +294,60 @@ public class ItemServiceImpl implements ItemService {
 
     return promise.future();
   }
+    @Override
+    public Future<Void> ownerShipTransfer(String oldOwnerId, String newOwnerId, String organizationId) {
+        LOGGER.debug("Starting ownership transfer from {} to {} in organization {}",
+                oldOwnerId, newOwnerId, organizationId);
 
-  private boolean ownershipCheck(ElasticsearchResponse response, String subId) {
+        if (isNullOrEmpty(oldOwnerId)) {
+            String errorMsg = "Old owner ID cannot be null or empty";
+            LOGGER.error(errorMsg);
+            return Future.failedFuture(errorMsg);
+        }
+
+        if (isNullOrEmpty(newOwnerId)) {
+            String errorMsg = "New owner ID cannot be null or empty";
+            LOGGER.error(errorMsg);
+            return Future.failedFuture(errorMsg);
+        }
+
+        if (isNullOrEmpty(organizationId)) {
+            String errorMsg = "Organization ID cannot be null or empty";
+            LOGGER.error(errorMsg);
+            return Future.failedFuture(errorMsg);
+        }
+
+        if (oldOwnerId.equals(newOwnerId)) {
+            String errorMsg = "Old owner ID and new owner ID cannot be the same";
+            LOGGER.error(errorMsg);
+            return Future.failedFuture(errorMsg);
+        }
+
+        try {
+            QueryModel ownerShipTransferQuery = queryDecoder.ownerShipTransferQuery(oldOwnerId, newOwnerId, organizationId);
+            LOGGER.debug("Query for ownership transfer: {}", ownerShipTransferQuery.getQueries().toJson());
+            return elasticsearchService.updateDocumentsByQuery(ownerShipTransferQuery.getQueries(), docIndex)
+                    .onSuccess(result -> LOGGER.debug("Ownership transfer from {} to {} completed successfully",
+                            oldOwnerId, newOwnerId))
+                    .onFailure(failure -> {
+                        LOGGER.error("Ownership transfer from {} to {} failed: {}",
+                                oldOwnerId, newOwnerId, failure.getMessage());
+                    Future.failedFuture("Ownership transfer failed: " + failure.getMessage());
+                    })
+                    .mapEmpty();
+
+        } catch (Exception e) {
+            LOGGER.error("Failed to create ownership transfer query for oldOwner: {}, newOwner: {}, org: {}",
+                    oldOwnerId, newOwnerId, organizationId, e);
+            return Future.failedFuture("Failed to create ownership transfer query: " + e.getMessage());
+        }
+    }
+
+    private boolean isNullOrEmpty(String str) {
+        return str == null || str.trim().isEmpty();
+    }
+
+    private boolean ownershipCheck(ElasticsearchResponse response, String subId) {
     JsonObject source = response.getSource();
     String accessPolicy = source.getString("accessPolicy");
     String ownerUserId = source.getString("ownerUserId");

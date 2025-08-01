@@ -4733,6 +4733,79 @@ paths:
           source: |
             curl --location --request DELETE 'https://example-cat.com/iudx/cat/v1/item?id=uuid' \
             --header 'token: <token>'
+  /iudx/cat/v1/organisation/asset:
+    patch:
+      tags:
+        - Organisation
+      description: Patch an item used to update the status from pending to active if the item exist.
+      operationId: patch item
+      security:
+        - authorization: []
+      parameters:
+        - name: id
+          in: query
+          description: ID of the DX Entity
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/successResponseWithObjects'
+              examples:
+                Delete Success:
+                  value:
+                    type: 'urn:dx:cat:Success'
+                    title: Success
+                    results:
+                      type: object
+                      properties:
+                        - doc_id: sd
+                        - status: active
+                    detail: 'Success: Item deleted successfully'
+        '400':
+          description: Invalid uuid format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/unAuthorizedAccess'
+              examples:
+                Invalid uuid:
+                  value:
+                    type: 'urn:dx:cat:InvalidSyntax'
+                    title: "Invalid Syntax"
+                    detail: "Fail: The syntax of the id is incorrect"
+        '401':
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/unAuthorizedAccess'
+        '404':
+          description: Didn't find the item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/unAuthorizedAccess'
+              examples:
+                Item not found to Delete:
+                  value:
+                    type: 'urn:dx:cat:ItemNotFound'
+                    title: "Item is not found"
+                    details: "Fail: Doc doesn't exist, can't perform operation"
+      servers:
+        - url: 'https://example-cat.com/iudx/cat/v1'
+          description: Production Instance
+      x-codeSamples:
+        - lang: cURL
+          label: delete item
+          source: |
+            curl --location --request DELETE 'https://example-cat.com/iudx/cat/v1/item?id=uuid' \
+            --header 'token: <token>'
   /iudx/cat/v1/list:
     post:
       tags:

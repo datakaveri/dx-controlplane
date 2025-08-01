@@ -316,6 +316,9 @@ public class Constants {
       "?filter_path=took,hits.total.value,hits.hits._source,hits.hits._id";
   public static final String TYPE_KEY = "type";
   public static final String ID_KEYWORD = "id.keyword";
+  public static final String OWNER_USER_ID_KEYWORD = "ownerUserId.keyword";
+  public static final String ORGANIZATION_ID_KEYWORD = "organizationId.keyword";
+
   public static final String DOC_COUNT = "doc_count";
   public static final String SUMMARY_KEY = "_summary";
   public static final String GEOSUMMARY_KEY = "_geosummary";
