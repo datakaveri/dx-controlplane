@@ -171,19 +171,41 @@ public class QueryDecoder {
     return boolQuery;
   }
 
-  public QueryModel getItemQueryModel(String id) {
+  public QueryModel getItemSubQueryModel(String id, String subId) {
 
     QueryModel q = new QueryModel();
 
     QueryModel boolQuery = new QueryModel(QueryType.BOOL);
     QueryModel idTermQuery = new QueryModel(QueryType.TERM);
     idTermQuery.setQueryParameters(Map.of(FIELD, ID_KEYWORD, VALUE, id));
+    List<QueryModel> filterQueries = new ArrayList<>();
+    filterQueries.add(idTermQuery);
 
-    boolQuery.setMustQueries(List.of(idTermQuery));
+    if(!subId.isBlank())
+    {
+      QueryModel subTermQuery = new QueryModel(QueryType.TERM);
+      subTermQuery.setQueryParameters(Map.of(FIELD, OWNER_USER_ID_KEYWORD, VALUE, subId));
+      filterQueries.add(subTermQuery);
+    }
+    boolQuery.setMustQueries(filterQueries);
     q.setQueries(boolQuery);
     return q;
   }
 
+  public QueryModel getItemSubQueryModel(String id) {
+
+    QueryModel q = new QueryModel();
+
+    QueryModel boolQuery = new QueryModel(QueryType.BOOL);
+    QueryModel idTermQuery = new QueryModel(QueryType.TERM);
+    idTermQuery.setQueryParameters(Map.of(FIELD, ID_KEYWORD, VALUE, id));
+    List<QueryModel> filterQueries = new ArrayList<>();
+    filterQueries.add(idTermQuery);
+
+    boolQuery.setMustQueries(filterQueries);
+    q.setQueries(boolQuery);
+    return q;
+  }
   private QueryModel getBoolQuery(Map<FilterType, List<QueryModel>> filterQueries) {
     QueryModel boolQuery = new QueryModel(QueryType.BOOL);
     for (Map.Entry<FilterType, List<QueryModel>> entry : filterQueries.entrySet()) {
