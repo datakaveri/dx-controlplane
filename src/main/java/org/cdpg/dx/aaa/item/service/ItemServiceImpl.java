@@ -93,7 +93,7 @@ public class ItemServiceImpl implements ItemService {
 
               if (ownershipCheck(response, request.getSubId())) {
                 LOGGER.debug("Ownership check passed for item with ID: {}", request.getItemId());
-                ResponseModel responseModel = new ResponseModel(List.of(response));
+                ResponseModel responseModel = new ResponseModel(List.of(response),1,1);
                 responseModel.setTotalHits(totalHits);
                 promise.complete(responseModel);
               } else {
