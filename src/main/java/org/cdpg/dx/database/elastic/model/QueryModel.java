@@ -739,6 +739,7 @@ public class QueryModel {
    * @return Elasticsearch Script object, or null if no script configuration is available.
    */
   public Script toElasticsearchScript() {
+    LOGGER.debug("Converting QueryModel to Elasticsearch Script "+scriptSource);
     // Check if the QueryModel contains the necessary script-related properties
     if (scriptSource != null && !scriptSource.isEmpty()) {
       Script.Builder scriptBuilder = new Script.Builder();
@@ -759,6 +760,7 @@ public class QueryModel {
 
       return scriptBuilder.build();
     }
+    LOGGER.debug("boolean {}", scriptSource != null && !scriptSource.isEmpty());
     // Return null if there's no script source provided in the QueryModel
     return null;
   }

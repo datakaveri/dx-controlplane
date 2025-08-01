@@ -5,6 +5,8 @@ import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
 import static org.cdpg.dx.database.elastic.util.Constants.*;
 
 import java.util.*;
+
+import net.sf.saxon.expr.Component;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.common.exception.DxEsException;
@@ -217,6 +219,40 @@ public class QueryDecoder {
       }
     }
     return boolQuery;
+  }
+
+  public QueryModel ownerShipTransferQuery(String oldOwnerId, String newOwnerId,String organizationId) {
+    QueryModel updateByQueryModel = new QueryModel();
+
+    QueryModel boolQuery = new QueryModel();
+    boolQuery.setQueryType(QueryType.BOOL);
+
+    List<QueryModel> mustQueries = new ArrayList<>();
+
+    QueryModel ownerUserIdQuery = new QueryModel();
+    ownerUserIdQuery.setQueryType(QueryType.TERM);
+    ownerUserIdQuery.setQueryParameters(Map.of(FIELD, OWNER_USER_ID_KEYWORD,VALUE, oldOwnerId));
+
+    QueryModel orgIdQuery = new QueryModel();
+    orgIdQuery.setQueryType(QueryType.TERM);
+    orgIdQuery.setQueryParameters(Map.of(FIELD, ORGANIZATION_ID_KEYWORD,VALUE, organizationId));
+
+    mustQueries.add(ownerUserIdQuery);
+    mustQueries.add(orgIdQuery);
+
+    boolQuery.setMustQueries(mustQueries);
+
+    boolQuery.setScriptSource("ctx._source.ownerUserId = params.newOwner");
+    boolQuery.setScriptLanguage("painless");
+
+    Map<String, Object> scriptParams = new HashMap<>();
+    scriptParams.put("newOwner", newOwnerId);
+    boolQuery.setScriptParams(scriptParams);
+
+    updateByQueryModel.setQueries(boolQuery);
+
+    return updateByQueryModel;
+
   }
 
   public QueryModel setCountAggregations() {
