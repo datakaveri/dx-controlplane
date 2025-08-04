@@ -90,7 +90,7 @@ public class ControllerFactory {
     ApiController kycController = new KYCController(kycHandler);
     ApiController organizationController =
         OrganizationControllerFactory.create(
-            organizationService, userService, auditingHandler, emailComposer, vertx, pgService);
+            organizationService, userService, auditingHandler, emailComposer, vertx, pgService,creditService,keycloakUserService);
 
     AdminHandler adminHandler =
         new AdminHandler(userService, keycloakUserService, creditService, organizationService);

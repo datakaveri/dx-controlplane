@@ -9,6 +9,7 @@ import io.vertx.ext.web.RoutingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.audit.util.AuditingHelper;
+import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.models.*;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
@@ -16,6 +17,7 @@ import org.cdpg.dx.aaa.organization.util.ProviderRoleRequestMapper;
 import org.cdpg.dx.aaa.orgReport.service.OrganizationCreateReportService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.AuditLog;
+import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
@@ -25,6 +27,8 @@ import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.PaginationInfo;
 import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
+import org.cdpg.dx.keycloak.config.KeycloakConstants;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 import java.util.List;
 import java.util.Map;
@@ -45,13 +49,17 @@ public class OrganizationHandler {
     private final UserService userService;
     private final EmailComposer emailComposer;
     private final OrganizationCreateReportService organizationCreateReportService;
+    private final KeycloakUserService keycloakUserService;
+    private final CreditService creditService;
 
 
-  public OrganizationHandler(OrganizationService organizationService, UserService userService , EmailComposer emailComposer, OrganizationCreateReportService organizationCreateReportService) {
+  public OrganizationHandler(OrganizationService organizationService, UserService userService , EmailComposer emailComposer, OrganizationCreateReportService organizationCreateReportService,CreditService creditService, KeycloakUserService keycloakUserService) {
         this.organizationService = organizationService;
         this.userService = userService;
         this.emailComposer = emailComposer;
         this.organizationCreateReportService = organizationCreateReportService;
+        this.creditService = creditService;
+        this.keycloakUserService = keycloakUserService;
     }
 
     public void updateOrganisationById(RoutingContext ctx) {
@@ -314,36 +322,69 @@ public class OrganizationHandler {
     UUID orgAdminId = UUID.fromString(ctx.user().subject());
 
     userService.getUserInfoByID(userId)
-      .compose(ar -> {
+      .compose(user -> {
+        if (user == null) {
+          return Future.failedFuture(new DxNotFoundException("User not found"));
+        }
+
+        if (user.roles().contains(KeycloakConstants.ADMIN_ROLE)) {
+          return Future.failedFuture(new DxBadRequestException("Cannot delete admin user"));
+        }
+
         Future<Boolean> deletionFuture;
-        if (ar.roles().contains("provider")) {
+        if (user.roles().contains("provider")) {
           deletionFuture = organizationService.deleteProviderUser(userId, orgAdminId, orgId);
         } else {
           deletionFuture = organizationService.deleteOrganizationUser(userId, orgId);
         }
 
         return deletionFuture.compose(deleted -> {
-          if (deleted) {
-            LOGGER.info("User with ID {} deleted successfully from Organization ID {}", userId, orgId);
-
-            AuditLog auditLog = AuditingHelper.createAuditLog(
-              ctx.user(), RoutingContextHelper.getRequestPath(ctx), "DELETE", "Delete User"
-            );
-            RoutingContextHelper.setAuditingLog(ctx, auditLog);
-            ResponseBuilder.sendSuccess(ctx, "Deleted User");
-
-            return Future.succeededFuture();
-          } else {
-            return Future.failedFuture(new DxNotFoundException("User Not Found"));
+          if (!deleted) {
+            return Future.failedFuture(new DxNotFoundException("User not found in organization"));
           }
+
+          // Proceed with cleanup chain
+          return organizationService.deleteOrganizationJoinRequest(orgId, userId)
+            .recover(err -> {
+              LOGGER.warn("Failed to delete join request: {}", err.getMessage());
+              return Future.succeededFuture();
+            })
+            .compose(v -> organizationService.deleteProviderRoleRequest(orgId,userId)
+              .recover(err -> {
+                LOGGER.warn("Failed to delete provider role request: {}", err.getMessage());
+                return Future.succeededFuture();
+              }))
+            .compose(v -> creditService.deleteCreditRequest(userId)
+              .recover(err -> {
+                LOGGER.warn("Failed to delete credit request: {}", err.getMessage());
+                return Future.succeededFuture();
+              }))
+            .compose(v -> creditService.deleteComputeRoleRequest(userId)
+              .recover(err -> {
+                LOGGER.warn("Failed to delete compute request: {}", err.getMessage());
+                return Future.succeededFuture();
+              }))
+            .compose(v -> keycloakUserService.deleteUser(userId)
+              .recover(err -> {
+                LOGGER.warn("Failed to delete user from Keycloak: {}", err.getMessage());
+                return Future.succeededFuture();
+              }))
+            .map(v -> true); // final success flag to trigger outer onSuccess
         });
+      })
+      .onSuccess(v -> {
+        LOGGER.info("User {} deleted completely from Organization {}", userId, orgId);
+        AuditLog auditLog = AuditingHelper.createAuditLog(
+          ctx.user(), RoutingContextHelper.getRequestPath(ctx), "DELETE", "Deleted User with Cleanup"
+        );
+        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        ResponseBuilder.sendSuccess(ctx, "User deleted successfully from Organization and System");
       })
       .onFailure(ctx::fail);
   }
 
 
-
-    public void getOrganisationUserInfo(RoutingContext ctx) {
+  public void getOrganisationUserInfo(RoutingContext ctx) {
         UUID  orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
         UUID userId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
 

@@ -2559,8 +2559,11 @@ paths:
           format: uuid
     delete:
       summary: Delete User by ID
+      operationId: delete-auth-v1-organisations-users-id
       tags:
         - Organisation APIs
+      security:
+        - authorization: [ ]
       responses:
         '200':
           description: OK
@@ -2575,32 +2578,13 @@ paths:
                     type: string
                   detail:
                     type: string
-                x-examples:
-                  Example 1:
-                    type: urn:dx:aaa:success
-                    title: Success
-                    detail: Deleted Organisation User
               examples:
                 Example 1:
                   value:
                     type: urn:dx:aaa:success
                     title: Success
                     detail: Deleted Organisation User
-      operationId: delete-auth-v1-organisations-users-id
-      parameters:
-        - schema:
-            type: string
-          in: query
-          name: user_id
-          description: UUID of user
-        - schema:
-            type: string
-          in: query
-          description: UUID of organization
-          name: id
 
-      security:
-        - authorization: [ ]
     put:
       summary: Update Organization User Role
       tags:
