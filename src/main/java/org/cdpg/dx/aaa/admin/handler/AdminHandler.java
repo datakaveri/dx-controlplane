@@ -228,6 +228,11 @@ public class AdminHandler {
             LOGGER.error("Failed to delete organization join request: {}", err.getMessage(), err);
             ctx.fail(err);
           })
+          .compose(p->organizationService.deleteProviderRoleRequest(orgId, userId))
+          .onFailure(err -> {
+            LOGGER.error("Failed to delete provider role request: {}", err.getMessage(), err);
+            ctx.fail(err);
+          })
           .compose(q->creditService.deleteCreditRequest(userId))
           .onFailure(err -> {
             LOGGER.error("Failed to delete credit request: {}", err.getMessage(), err);

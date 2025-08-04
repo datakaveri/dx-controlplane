@@ -54,6 +54,7 @@ public class AssetHandler {
     User user = ctx.user();
     LOGGER.debug("User: {}", user);
     if (user == null || user.subject() == null || user.principal() == null) {
+      LOGGER.error("User not found in context");
       ctx.fail(new DxForbiddenException("User not found"));
       return;
     }
@@ -61,6 +62,7 @@ public class AssetHandler {
     String userIdStr = user.subject();
 
     if (userIdStr == null || userIdStr.isEmpty()) {
+      LOGGER.error("User ID is null or empty");
       ctx.fail(new DxForbiddenException("User not found"));
       return;
     }
@@ -71,12 +73,14 @@ public class AssetHandler {
     try {
       assetRequest = AssetRequest.fromJson(assetRequestJson);
     } catch (Exception e) {
+      LOGGER.error("Invalid asset request body: {}", e.getMessage(), e);
       ctx.fail(new DxBadRequestException("Invalid asset request body: " + e.getMessage()));
       return;
     }
 
     UUID assetId = assetRequest.assetId();
     if (assetId == null) {
+      LOGGER.error("Asset ID is required for asset request");
       ctx.fail(new DxBadRequestException("Asset ID is required"));
       return;
     }
