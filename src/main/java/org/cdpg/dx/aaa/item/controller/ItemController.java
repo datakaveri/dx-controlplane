@@ -100,7 +100,6 @@ public class ItemController implements ApiController {
     validateItemExistence(response, itemType, doc, method, validationPromise);
 
     doc.remove(HTTP_METHOD);
-
     validationPromise
         .future()
         .onComplete(
@@ -176,6 +175,7 @@ public class ItemController implements ApiController {
       String kcId = ctx.user().principal().getString(SUB);
       String orgName = ctx.user().principal().getString(ORG_NAME);
       body.put(PROVIDER_USER_ID, kcId).put(DEPARTMENT, orgName).put(UPLOADED_BY, orgName);
+      body.put("roles", ctx.user().principal().getJsonObject("realm_access").getJsonArray("roles").add("org_admin"));
     }
     return body;
   }
@@ -214,6 +214,7 @@ public class ItemController implements ApiController {
   private void processItemCreationOrUpdate(
       HttpServerResponse response, String method, JsonObject body) {
     try {
+      body.remove("roles");
       Item item = ItemFactory.parse(body);
       if (REQUEST_POST.equalsIgnoreCase(method)) {
         itemService

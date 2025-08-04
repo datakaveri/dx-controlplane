@@ -1,17 +1,14 @@
 package org.cdpg.dx.aaa.organization.service;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.ext.auth.User;
-import io.vertx.ext.web.RoutingContext;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.organization.models.*;
 import org.cdpg.dx.aaa.organization.config.Constants;
 import org.cdpg.dx.aaa.organization.dao.*;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.request.PaginatedRequest;
-import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.util.PaginationInfo;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
@@ -20,8 +17,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import io.vertx.core.Future;
 import static org.mockito.Mockito.when;
@@ -55,6 +50,9 @@ class OrganizationServiceTest {
   @Mock
   private KeycloakUserService keycloakUserService;
 
+  @Mock
+  private ItemService itemService;
+
   private OrganizationServiceImpl organizationService;
 
 
@@ -71,7 +69,7 @@ class OrganizationServiceTest {
 //    when(factory.providerRoleRequestDAO()).thenReturn(providerRequestDAO);
 
     // Create the service under test
-    organizationService = new OrganizationServiceImpl(factory, keycloakUserService);
+    organizationService = new OrganizationServiceImpl(factory, keycloakUserService,itemService);
 
     vertxTestContext.completeNow();
   }
