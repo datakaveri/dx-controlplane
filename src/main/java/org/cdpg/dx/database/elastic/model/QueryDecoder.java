@@ -237,10 +237,6 @@ public class QueryDecoder {
     orgIdQuery.setQueryType(QueryType.TERM);
     orgIdQuery.setQueryParameters(Map.of(FIELD, ORGANIZATION_ID_KEYWORD,VALUE, organizationId));
 
-    QueryModel IdQuery = new QueryModel();
-    IdQuery.setQueryType(QueryType.TERM);
-    IdQuery.setQueryParameters(Map.of(FIELD, ID_KEYWORD,VALUE, "f2ba41e6-5d8d-40fe-ab35-bdfeda96994c"));
-
     mustQueries.add(ownerUserIdQuery);
     mustQueries.add(orgIdQuery);
 
