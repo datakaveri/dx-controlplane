@@ -339,7 +339,7 @@ public class DataBankItem implements Item {
     json.put("department", department);
     json.put("id", id);
     json.put("itemStatus", itemStatus);
-    json.put("itemCreatedAt", itemCreatedAt != null ? itemCreatedAt.toString() : null);
+    json.put("itemCreatedAt", itemCreatedAt != null ? itemCreatedAt : null);
     json.put("@context", context);
 
     json.put("fileFormat", fileFormat);

@@ -1,5 +1,7 @@
 package org.cdpg.dx.database.elastic.util;
 
+import com.hazelcast.map.impl.PartitioningStrategyFactory;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.regex.Pattern;
@@ -371,6 +373,7 @@ public class Constants {
   public static final String COS = "cos";
   public static final String OWNER = "owner";
   public static final String COS_ADMIN = "cos_admin";
+  public static final String ORG_ADMIN = "org_admin";
   public static final String PROVIDER_USER_ID = "ownerUserId";
   public static final String RESOURCE_SERVER_URL = "resourceServerRegURL";
   public static final String COS_ITEM = "cos";
