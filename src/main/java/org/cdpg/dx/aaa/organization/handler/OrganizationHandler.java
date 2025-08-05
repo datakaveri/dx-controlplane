@@ -335,7 +335,7 @@ public class OrganizationHandler {
         if (user.roles().contains("provider")) {
           deletionFuture = organizationService.deleteProviderUser(userId, orgAdminId, orgId);
         } else {
-          deletionFuture = organizationService.deleteOrganizationUser(userId, orgId);
+          deletionFuture = organizationService.deleteOrganizationUser(orgId, userId);
         }
 
         return deletionFuture.compose(deleted -> {
@@ -378,7 +378,7 @@ public class OrganizationHandler {
           ctx.user(), RoutingContextHelper.getRequestPath(ctx), "DELETE", "Deleted User with Cleanup"
         );
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, "User deleted successfully from Organization and System");
+        ResponseBuilder.sendSuccess(ctx, "User deleted successfully from DB and Keycloak");
       })
       .onFailure(ctx::fail);
   }
