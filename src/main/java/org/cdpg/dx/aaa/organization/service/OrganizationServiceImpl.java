@@ -118,7 +118,7 @@ public class OrganizationServiceImpl implements OrganizationService {
   }
 
 
-  private Future<Boolean> createOrganizationFromRequest(UUID requestId) {
+  public Future<Boolean> createOrganizationFromRequest(UUID requestId) {
     return createRequestDAO.get(requestId)
       .compose(request -> {
         Organization org = new Organization(
@@ -247,7 +247,7 @@ public class OrganizationServiceImpl implements OrganizationService {
       });
   }
 
-  private Future<Boolean> addUserToOrganizationFromRequest(UUID requestId) {
+  public Future<Boolean> addUserToOrganizationFromRequest(UUID requestId) {
     return joinRequestDAO.get(requestId)
       .compose(joinRequest -> {
         UUID orgId = joinRequest.organizationId();
@@ -368,10 +368,7 @@ public class OrganizationServiceImpl implements OrganizationService {
               "organisation_name", ""
             ))
             .compose(v->keycloakUserService.removeRoleFromUser(userId, DxRole.PROVIDER))
-            .compose(ar->{
-              LOGGER.info("User {} removed from organization {}, transferring ownership to admin {}", userId, orgId, orgAdminId);
-              return itemService.ownerShipTransfer(userId.toString(),orgAdminId.toString(),orgId.toString());
-            })
+            .compose(ar-> itemService.ownerShipTransfer(userId.toString(), orgAdminId.toString(), orgId.toString()))
             .onFailure(err -> LOGGER.error("Failed to update user attributes in Keycloak after deleting organization user", err))
             .map(v -> true);
         } else {
