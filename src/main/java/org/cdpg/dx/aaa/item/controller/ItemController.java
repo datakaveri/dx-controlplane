@@ -175,7 +175,7 @@ public class ItemController implements ApiController {
       String kcId = ctx.user().principal().getString(SUB);
       String orgName = ctx.user().principal().getString(ORG_NAME);
       body.put(PROVIDER_USER_ID, kcId).put(DEPARTMENT, orgName).put(UPLOADED_BY, orgName);
-      body.put("roles", ctx.user().principal().getJsonObject("realm_access").getJsonArray("roles").add("org_admin"));
+      body.put("roles", ctx.user().principal().getJsonObject("realm_access").getJsonArray("roles"));
     }
     return body;
   }
