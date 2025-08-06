@@ -18,6 +18,7 @@ public record UserCredit(
   UUID id,
   UUID userId,
   double balance,
+  LocalDateTime expirationDate,
   LocalDateTime updatedAt
 ) implements BaseEntity<UserCredit> {
 
@@ -29,8 +30,10 @@ public record UserCredit(
           : null,
         UUID.fromString(requireNonNull(json.getString(Constants.USER_ID), Constants.USER_ID)),
         json.getDouble(Constants.BALANCE),
+        parseDateTime(json.getString(Constants.EXPIRATION_DATE)),
         parseDateTime(json.getString(Constants.UPDATED_AT))
       );
+
     } catch (IllegalArgumentException e) {
       throw new DxValidationException("Missing or invalid field: " + e.getMessage());
     }
@@ -42,6 +45,7 @@ public record UserCredit(
     if (id != null) json.put(Constants.USER_CREDIT_ID, id.toString());
     json.put(Constants.USER_ID, userId.toString());
     json.put(Constants.BALANCE, balance);
+    if (expirationDate != null) json.put(Constants.EXPIRATION_DATE, expirationDate.format(FORMATTER));
     if (updatedAt != null) json.put(Constants.UPDATED_AT, updatedAt.format(FORMATTER));
     return json;
   }
@@ -52,6 +56,7 @@ public record UserCredit(
     if (id != null) map.put(Constants.USER_CREDIT_ID, id);
     map.put(Constants.USER_ID, userId.toString());
     map.put(Constants.BALANCE, balance);
+    if (expirationDate != null) map.put(Constants.EXPIRATION_DATE, expirationDate.format(FORMATTER));
     if (updatedAt != null) map.put(Constants.UPDATED_AT, updatedAt.format(FORMATTER));
     return map;
   }

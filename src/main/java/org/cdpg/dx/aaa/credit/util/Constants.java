@@ -21,6 +21,7 @@ public class Constants {
   public static final String USER_CREDIT_ID = "id";
   public static final String BALANCE ="balance";
   public static final String UPDATED_AT ="updated_at";
+  public static final String EXPIRATION_DATE = "expiration_date";
 
   // CREDIT DEDUCTION TABLE
   public static final String CREDIT_TRANSACTION_TABLE="credit_transactions";

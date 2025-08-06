@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.credit.service;
 
+import co.elastic.clients.elasticsearch.ingest.Local;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
@@ -56,16 +57,17 @@ public class CreditServiceImpl implements CreditService {
   }
 
   @Override
-  public Future<CreditTransaction> updateCreditRequestStatus(UUID requestId, Status status, UUID transactedBy,Double amount) {
+  public Future<CreditTransaction> updateCreditRequestStatus(UUID requestId, Status status, UUID transactedBy,Double amount,String expirationDate) {
     LOGGER.info("Updating credit request status for requestId: {} to: {}", requestId, status);
     return creditRequestDAO.update(
         Map.of(CREDIT_REQUEST_ID, requestId.toString()),
-        Map.of(STATUS, status.getStatus()))
+        Map.of(STATUS, status.getStatus())
+        )
       .compose(updated -> {
         if (status != GRANTED) {
           return Future.succeededFuture(null); // No transaction needed
         }
-        return processCreditGrant(requestId, transactedBy,amount);
+        return processCreditGrant(requestId, transactedBy,amount,expirationDate);
       })
       .recover(err -> {
         BaseDxException dxEx = BaseDxException.from(err);
@@ -76,40 +78,52 @@ public class CreditServiceImpl implements CreditService {
       });
   }
 
-  private Future<CreditTransaction> processCreditGrant(UUID requestId, UUID transactedBy,Double amount) {
+  private Future<CreditTransaction> processCreditGrant(UUID requestId, UUID transactedBy, Double amount,String expirationDate) {
     return creditRequestDAO.get(requestId).compose(cr -> {
       UUID userId = cr.userId();
       LocalDateTime requestedAt = cr.requestedAt();
 
       return userCreditDAO.get(userId)
-        .compose(userCredit -> {
-          double balance = userCredit.balance();
-          double newBalance = balance + amount;
+        .recover(err -> {
+          LOGGER.error("Failed to get user credit for userId {}: {}", userId, err.getMessage());
+          return Future.failedFuture(new DxValidationException("User needs to have compute access"));
+        }).compose(userCredit -> {
+        return isValidCredit(userCredit).compose(isValidJson -> {
 
-          LOGGER.info("Current balance: {}, New balance: {}", balance, newBalance);
+            LOGGER.info("Updated Expiry Time: {}", expirationDate);
 
-          Map<String, Object> updateMap = Map.of(BALANCE, newBalance);
+            Double currentBalance = userCredit.balance()>0 ? userCredit.balance() : 0.0;
+          Double newBalance = isValidJson ? currentBalance + amount : amount;
+
+          LOGGER.info("Current balance: {}, New balance: {}", currentBalance, newBalance);
+
+          Map<String, Object> updateMap = Map.of(
+            BALANCE, newBalance,
+            EXPIRATION_DATE,expirationDate
+          );
           Map<String, Object> conditionMap = Map.of(USER_ID, userId.toString());
 
-          return userCreditDAO.update(conditionMap, updateMap)
-            .compose(updated -> {
-              CreditTransaction transaction = new CreditTransaction(
-                null,
-                userId,
-                amount,
-                transactedBy,
-                TransactionStatus.SUCCESS.getStatus(),
-                TransactionType.CREDIT.getType(),
-                null,
-                requestedAt,
-                newBalance
-              );
+          return userCreditDAO.update(conditionMap, updateMap).compose(updated -> {
+            CreditTransaction transaction = new CreditTransaction(
+              null,
+              userId,
+              amount,
+              transactedBy,
+              TransactionStatus.SUCCESS.getStatus(),
+              TransactionType.CREDIT.getType(),
+              null,
+              requestedAt,
+              newBalance
+            );
 
-              return creditTransactionDAO.create(transaction);
-            });
+            return creditTransactionDAO.create(transaction);
+          });
         });
+      });
     });
   }
+
+
 
   @Override
   public Future<CreditTransaction> addCredits(CreditTransaction creditTransaction)
@@ -180,7 +194,8 @@ public class CreditServiceImpl implements CreditService {
         return Future.failedFuture(new DxConflictException("Duplicate transaction request"));
       }
 
-      return getBalance(userId).compose(balance -> {
+      return getBalance(userId).compose(res -> {
+        Double balance = res.getDouble("balance");
         if (balance < amount) {
           return Future.failedFuture(new DxValidationException("No sufficient balance"));
         }
@@ -254,8 +269,7 @@ public class CreditServiceImpl implements CreditService {
         UUID userId = req.userId();
 
         if (GRANTED.equals(status)) {
-          //TODO Assigining 1000 when user get compute role
-          return userCreditDAO.create(new UserCredit(null, userId, config.getInteger("initialCreditBalance"), LocalDateTime.now()))
+          return userCreditDAO.create(new UserCredit(null, userId, config.getInteger("initialCreditBalance"),LocalDateTime.now().plusDays(30), LocalDateTime.now()))
             .recover(dxEx -> {
               if (dxEx instanceof UniqueConstraintViolationException) {
                 LOGGER.info("UserCredit already exists, continuing role assignment.");
@@ -297,18 +311,46 @@ public class CreditServiceImpl implements CreditService {
     return computeRoleDAO.hasUserComputeAccess(userId);
   }
 
-  @Override
-  public Future<Double> getBalance(UUID userId) {
+  //expiresAt , Balance ,
+    @Override
+    public Future<JsonObject> getBalance(UUID userId) {
     LOGGER.info("Fetching balance for userId: {}", userId);
+
     return userCreditDAO.get(userId)
-      .map(result -> {
-        Double balance = result.toJson().getDouble("balance");
-        return balance != null ? balance : 0.0;
+      .compose(result -> {
+         return isValidCredit(result).compose(isValid -> {
+          if (!isValid) {
+            LOGGER.warn("Invalid credit for userId: {}", userId);
+            return Future.failedFuture(
+              new DxValidationException("User does not have valid credits or has insufficient balance")
+            );
+          }
+
+          Double balance = result.toJson().getDouble("balance");
+          LocalDateTime expiry = result.expirationDate();
+
+          LOGGER.info("Balance for userId {}: {}, Expiry: {}", userId, balance, expiry);
+
+          return Future.succeededFuture(
+            new JsonObject()
+              .put(EXPIRATION_DATE, expiry)
+              .put(BALANCE, balance != null ? balance : 0.0)
+              .put("isValid", true)
+          );
+        });
       })
       .recover(err -> {
-        if (err.getMessage() != null && err.getMessage().toLowerCase().contains("no rows")) {
-          return Future.succeededFuture(0.0);
+        if (err.getMessage() != null) {
+          LOGGER.warn("Credit Invalid for user {}", userId);
+          return Future.succeededFuture(
+            new JsonObject()
+              .put(BALANCE, 0.0)
+              .put("isValid", false)
+              .put(EXPIRATION_DATE, (String) null)
+          );
         }
+
+        LOGGER.error("Failed to fetch balance for userId: {}", userId, err);
         return Future.failedFuture(err);
       });
   }
@@ -412,7 +454,33 @@ public class CreditServiceImpl implements CreditService {
   }
 
 
+  private Future<Boolean> isValidCredit(UserCredit result) {
+    if (result == null) {
+      return Future.succeededFuture(false);
+    }
 
+    Double balance = result.toJson().getDouble("balance");
+    LocalDateTime expiry = result.expirationDate();
 
+    Boolean isValid = false;
+
+    if(balance==null) {
+      LOGGER.info("Balance is null for userId: {}", result.userId());
+      throw new DxValidationException("balance is null");
+    }
+    else if(balance==0.0)
+    {
+      LOGGER.info("Balance is 0.0 for userId: {}", result.userId());
+    }
+    else if(expiry==null || expiry.isBefore(LocalDateTime.now())) {
+      LOGGER.info("Expiry is null or in the past for userId: {}", result.userId());
+    }
+    else {
+      isValid = true;
+    }
+
+    return Future.succeededFuture(isValid);
+  }
 
 }
+

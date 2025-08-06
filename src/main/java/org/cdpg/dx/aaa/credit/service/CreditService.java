@@ -1,6 +1,7 @@
 package org.cdpg.dx.aaa.credit.service;
 
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.aaa.credit.models.*;
 import org.cdpg.dx.aaa.organization.models.Organization;
 import org.cdpg.dx.common.request.PaginatedRequest;
@@ -16,7 +17,7 @@ public interface CreditService {
 
   Future<PaginatedResult<CreditRequest>> getAllCreditRequests(PaginatedRequest paginatedRequest);
 
-  Future<CreditTransaction> updateCreditRequestStatus(UUID requestId, Status status,UUID transactedBy,Double amount); //done -> on approval will create a new entry in userCredit table
+  Future<CreditTransaction> updateCreditRequestStatus(UUID requestId, Status status,UUID transactedBy,Double amount,String expirationDate); //done -> on approval will create a new entry in userCredit table
 
   // ************ USER CREDIT *********
 
@@ -24,7 +25,7 @@ public interface CreditService {
 
   Future<CreditTransaction> addCredits(CreditTransaction creditTransaction);
 
-  Future<Double> getBalance(UUID userId);
+  Future<JsonObject> getBalance(UUID userId);
 
   // ************ COMPUTE ROLE **********
 
