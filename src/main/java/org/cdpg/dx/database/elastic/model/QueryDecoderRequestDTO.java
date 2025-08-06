@@ -7,6 +7,7 @@ public class QueryDecoderRequestDTO {
   private Integer size;
   private Integer page;
   private String id;
+  private String organisationId;
   private List<String> filter;
   private TextSearchRequestDTO textSearchRequest;
   private SearchCriteriaRequestDTO searchCriteriaRequest;
@@ -14,7 +15,7 @@ public class QueryDecoderRequestDTO {
   private InstanceFilterRequestDTO instanceFilterRequest;
   private ResponseFilterRequestDTO responseFilterRequest;
   private List<OrderBy> sort;
-
+  private String requestType;
   public QueryDecoderRequestDTO(
       String searchType,
       Integer size,
@@ -26,7 +27,7 @@ public class QueryDecoderRequestDTO {
       AccessPolicyRequestDTO accessPolicyRequest,
       InstanceFilterRequestDTO instanceFilterRequest,
       ResponseFilterRequestDTO responseFilterRequest,
-      List<OrderBy> sort) {
+      List<OrderBy> sort,String requestType) {
     this.searchType = searchType;
     this.size = size;
     this.page = page;
@@ -38,8 +39,20 @@ public class QueryDecoderRequestDTO {
     this.instanceFilterRequest = instanceFilterRequest;
     this.responseFilterRequest = responseFilterRequest;
     this.sort = sort;
+    this.requestType=requestType;
   }
 
+  public QueryDecoderRequestDTO(
+          Integer size,
+          Integer page,
+          List<OrderBy> sort,String organizationId,String requestType
+  ) {
+    this.size = size;
+    this.page = page;
+    this.sort = sort;
+    this.organisationId = organizationId;
+    this.requestType=requestType;
+  }
   public List<OrderBy> getSort() {
     return sort;
   }
@@ -88,6 +101,13 @@ public class QueryDecoderRequestDTO {
     this.filter = filter;
   }
 
+  public String getOrganisationId() {
+    return organisationId;
+  }
+
+  public String getRequestType() {
+    return requestType;
+  }
   public TextSearchRequestDTO getTextSearchRequest() {
     return textSearchRequest;
   }

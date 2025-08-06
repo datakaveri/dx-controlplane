@@ -17,6 +17,7 @@ public class QueryDecoder {
   private static final Logger LOGGER = LogManager.getLogger(QueryDecoder.class);
 
   public QueryModel getQueryModel(QueryDecoderRequestDTO request) {
+
     String searchType = request.getSearchType();
     boolean isValidQuery = false;
 
@@ -79,6 +80,32 @@ public class QueryDecoder {
     return q;
   }
 
+  public QueryModel getOrganisationAssetsQuery(QueryDecoderRequestDTO request) {
+    LOGGER.debug("getOrganisationAssetsQuery - {}", request);
+    Map<String, Object> matchParams = new HashMap<>();
+    matchParams.put(FIELD, ORGANIZATION_ID_KEYWORD);
+    matchParams.put(VALUE, request.getOrganisationId());
+
+    QueryModel matchQuery = new QueryModel(QueryType.MATCH, matchParams);
+
+    // Create the bool query with the match query in the must clause
+    QueryModel boolQuery = new QueryModel();
+    boolQuery.setQueryType(QueryType.BOOL);
+    boolQuery.setMustQueries(List.of(matchQuery));
+
+    QueryModel q= new QueryModel();
+    q.setQueries(boolQuery);
+    if (request.getSize() != null) {
+      int size = request.getSize();
+      q.setLimit(String.valueOf(size));
+      if (request.getPage() != null) {
+        int offset = (request.getPage() - 1) * size;
+        q.setOffset(String.valueOf(offset));
+      }
+
+    }
+    return q;
+  }
   public QueryModel listMultipleItemTypesQuery(QueryDecoderRequestDTO request) {
     LOGGER.debug("listMultipleItemTypesQuery - {}", request);
     Map<FilterType, List<QueryModel>> queryMap = new HashMap<>();
