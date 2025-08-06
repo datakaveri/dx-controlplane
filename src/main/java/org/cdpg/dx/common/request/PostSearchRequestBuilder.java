@@ -26,6 +26,7 @@ public class PostSearchRequestBuilder {
   private RoutingContext routingContext;
   private String defaultSortBy = "itemCreatedAt";
   private String defaultOrder = "desc";
+  private String requestType = "search";
 
   public PostSearchRequestBuilder(RoutingContext routingContext) {
     this.routingContext = routingContext;
@@ -59,7 +60,7 @@ public class PostSearchRequestBuilder {
         getAccessPolicyRequest(isAssetSearch, getSub(routingContext)),
         getInstanceFilterRequest(requestBody),
         getResponseFilterRequest(requestBody),
-        extractSortOrders());
+        extractSortOrders(),requestType);
   }
 
   public int getSize(MultiMap params) {
