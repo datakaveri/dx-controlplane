@@ -2,22 +2,22 @@ openapi: 3.0.2
 info:
   title: Telangana-Data-Exchange-ACL-Server + DX Authentication, Authorization, and
     Accounting (AAA) Server
-  version: 1.0.0 & 5.6.0
+  version: 1.1.0
   description: "\n# Introduction\n\n**Telangana Data Exchange (TgDeX) Access Control\
     \ List (ACL) Server** are designed for creating and managing policies for consumers\
     \ and consumer delegates.\nThis allows providers and provider delegates to control\
     \ access to their resources by consumers and consumer delegates.\nThis API specification\
     \ for ACL APD requires a bearer token from the **Data Exchange (DX) Keycloak**\
     \ for authentication purposes.\n\n# Configurations\n- **Server**: \n  - In the\
-    \ doc, we display the server url to be https://example-apd.com with the hostname\
-    \ as example-apd.com\n  - This could be configured according to the deployment\n\
+    \ doc, we display the server url to be https://example.com with the hostname\
+    \ as example.com\n  - This could be configured according to the deployment\n\
     - **Base path**:\n     - Base path is the path on which API is served, relative\
     \ to the host\n     - It is the initial part of the API\n     - These base path\
     \ values could be configured according to the deployment\n     - The base path\
     \ for [DX AAA Server](https://github.com/datakaveri/iudx-aaa-server) is set to\
-    \ `/auth/v1`\n     - The base path for [DX Catalogue Server](https://github.com/datakaveri/iudx-catalogue-server)\
-    \ is set to `/iudx/cat/v1`\n     - All the APIs except `/verify` endpoint contain\
-    \ `/dx/apd/acl/v1` as it's base path\n- **Request Samples**:\n  - The `<tokenValue>`\
+    \ `/iudx/v2/auth`\n     - The base path for [DX Catalogue Server](https://github.com/datakaveri/iudx-catalogue-server)\
+    \ is set to `/iudx/v2/cat`\n     - All the APIs except `/verify` endpoint contain\
+    \ `/iudx/acl/apd/v2` as it's base path\n- **Request Samples**:\n  - The `<tokenValue>`\
     \ in the header of request sample could be replaced with respective token value\
     \ [Also refer Tokens section [here](#section/Tokens)]\n  - The `<payload>` in\
     \ the request sample could be replaced with the payload given adjacent to the\
@@ -47,12 +47,11 @@ info:
   license:
     name: Apache 2.0
 servers:
-  - url: https://cos.iudx.org.in
-    description: Production
-  - url: https://authvertx.iudx.io
-    description: Development
+  - url: https://example.com
+    description: example server
+
 paths:
-  /dx/apd/acl/v1/access_request:
+  /iudx/acl/apd/v2/access_request:
     post:
       tags:
         - Access Request
@@ -213,12 +212,12 @@ paths:
       x-codeSamples:
         - lang: cURL
           label: Create access request
-          source: "curl --location --request POST 'https://example-apd.com/dx/apd/acl/v1/policies/requests'\
+          source: "curl --location --request POST 'https://example.com/iudx/acl/apd/v2/policies/requests'\
           \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type:\
           \ application/json' \\\n  --data-raw '<payload>'\n"
         - lang: cURL
           label: Create access request with additional info
-          source: "curl --location --request POST 'https://example-apd.com/dx/apd/acl/v1/policies/requests'\
+          source: "curl --location --request POST 'https://example.com/iudx/acl/apd/v2/policies/requests'\
           \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type:\
           \ application/json' \\\n  --data-raw '<payload>'\n"
     put:
@@ -378,15 +377,15 @@ paths:
       x-codeSamples:
         - lang: cURL
           label: Reject access request
-          source: "curl --location --request PUT 'https://example-apd.com/dx/apd/acl/v1/policies/requests'\
+          source: "curl --location --request PUT 'https://example.com/iudx/acl/apd/v2/policies/requests'\
           \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type:\
           \ application/json' \\\n  --data-raw '<payload>'\n"
         - lang: cURL
           label: Approve access request
-          source: "curl --location --request PUT 'https://example-apd.com/dx/apd/acl/v1/policies/requests'\
+          source: "curl --location --request PUT 'https://example.com/iudx/acl/apd/v2/policies/requests'\
           \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type:\
           \ application/json' \\\n  --data-raw '<payload>'\n"
-  /dx/apd/acl/v1/access_request/provider:
+  /iudx/acl/apd/v2/access_request/provider:
     get:
       tags:
         - Access Request
@@ -512,26 +511,26 @@ paths:
       x-codeSamples:
         - lang: cURL
           label: Get access requests
-          source: 'curl --location --request GET ''https://example-apd.com/dx/apd/acl/v1/access_request/provider''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider''
           \
 
           '
           --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: Get access request with status
-          source: 'curl --location --request GET ''https://example-apd.com/dx/apd/acl/v1/access_request/provider?requestStatus=GRANTED''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider?requestStatus=GRANTED''
           \
 
           '
           --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: With pagination query params
-          source: 'curl --location --request GET ''https://example-apd.com/dx/apd/acl/v1/access_request/provider?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
           \
 
           '
           --header 'Authorization: <tokenValue>'
-  /dx/apd/acl/v1/access_request/provider/report:
+  /iudx/acl/apd/v2/access_request/provider/report:
     get:
       tags:
         - Access Request
@@ -626,26 +625,26 @@ paths:
       x-codeSamples:
         - lang: cURL
           label: Get access requests
-          source: 'curl --location --request GET ''https://example-apd.com/dx/apd/acl/v1/access_request/provider/report''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider/report''
           \
 
           '
           --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: Get access request with status
-          source: 'curl --location --request GET ''https://example-apd.com/dx/apd/acl/v1/access_request/provider/report?requestStatus=GRANTED''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider/report?requestStatus=GRANTED''
           \
 
           '
           --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: With pagination query params
-          source: 'curl --location --request GET ''https://example-apd.com/dx/apd/acl/v1/access_request/provider/report?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider/report?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
           \
 
           '
           --header 'Authorization: <tokenValue>'
-  /dx/apd/acl/v1/access_request/organisation/report:
+  /iudx/acl/apd/v2/access_request/organisation/report:
     get:
       tags:
         - Access Request
@@ -743,26 +742,26 @@ paths:
       x-codeSamples:
         - lang: cURL
           label: Get access requests
-          source: 'curl --location --request GET ''https://example-apd.com/dx/apd/acl/v1/access_request/organisation/report''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/organisation/report''
           \
 
           '
           --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: Get access request with status
-          source: 'curl --location --request GET ''https://example-apd.com/dx/apd/acl/v1/access_request/organisation/report?requestStatus=GRANTED''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/organisation/report?requestStatus=GRANTED''
           \
 
           '
           --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: With pagination query params
-          source: 'curl --location --request GET ''https://example-apd.com/dx/apd/acl/v1/access_request/organisation/report?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/organisation/report?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
           \
 
           '
           --header 'Authorization: <tokenValue>'
-  /dx/apd/acl/v1/access_request/organisation:
+  /iudx/acl/apd/v2/access_request/organisation:
     get:
       tags:
         - Access Request
@@ -893,26 +892,26 @@ paths:
       x-codeSamples:
         - lang: cURL
           label: Get access requests
-          source: 'curl --location --request GET ''https://example-apd.com/dx/apd/acl/v1/access_request/provider''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider''
           \
 
           '
           --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: Get access request with status
-          source: 'curl --location --request GET ''https://example-apd.com/dx/apd/acl/v1/access_request/provider?requestStatus=GRANTED''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider?requestStatus=GRANTED''
           \
 
           '
           --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: With pagination query params
-          source: 'curl --location --request GET ''https://example-apd.com/dx/apd/acl/v1/access_request/provider?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
           \
 
           '
           --header 'Authorization: <tokenValue>'
-  /dx/apd/acl/v1/access_request/consumer:
+  /iudx/acl/apd/v2/access_request/consumer:
     get:
       tags:
         - Access Request
@@ -1017,26 +1016,26 @@ paths:
       x-codeSamples:
         - lang: cURL
           label: Get consumer access requests
-          source: 'curl --location --request GET ''https://example-apd.com/dx/apd/acl/v1/access_request/consumer''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/consumer''
           \
 
           '
           --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: Get consumer access request with status
-          source: 'curl --location --request GET ''https://example-apd.com/dx/apd/acl/v1/access_request/consumer?requestStatus=GRANTED''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/consumer?requestStatus=GRANTED''
           \
 
           '
           --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: With pagination query params
-          source: 'curl --location --request GET ''https://example-apd.com/dx/apd/acl/v1/access_request/consumer?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/consumer?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
           \
 
           '
           --header 'Authorization: <tokenValue>'
-  /dx/apd/acl/v1/access_request/has_access:
+  /iudx/acl/apd/v2/access_request/has_access:
     post:
       tags:
         - Access Request
@@ -1134,10 +1133,10 @@ paths:
       x-codeSamples:
         - lang: cURL
           label: Check access request
-          source: "curl --location --request POST 'https://example-apd.com/dx/apd/acl/v1/access_request/has_access'\
+          source: "curl --location --request POST 'https://example.com/iudx/acl/apd/v2/access_request/has_access'\
           \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type:\
           \ application/json' \\\n  --data-raw '<payload>'\n"
-  /auth/v1/organisations/requests:
+  /iudx/v2/auth/organisations/requests:
     get:
       summary: 'AAA-001-PF Admin: Get Organisation Creation requests'
       tags:
@@ -1508,7 +1507,7 @@ paths:
 
       security:
         - authorization: [ ]
-  /auth/v1/organisations/requests/approve:
+  /iudx/v2/auth/organisations/requests/approve:
     post:
       summary: 'AAA-003-PF Admin: Approve creation of new organisation'
       tags:
@@ -1612,7 +1611,7 @@ paths:
                     title: Conflict
                     detail: 'ERROR: duplicate key value violates unique constraint
                       "organizations_name_key" (23505)'
-  /auth/v1/organisations/{id}/join_requests:
+  /iudx/v2/auth/organisations/{id}/join_requests:
     parameters:
       - name: id
         in: path
@@ -1847,7 +1846,7 @@ paths:
                 value:
                   job_title: Employee
                   emp_id: EMP8790
-  /auth/v1/organisations/{id}/join_requests/{req_id}:
+  /iudx/v2/auth/organisations/{id}/join_requests/{req_id}:
     parameters:
       - name: id
         in: path
@@ -1951,7 +1950,7 @@ paths:
                     detail: Unauthorized
         '404':
           description: Join request not found
-  /auth/v1/organisations:
+  /iudx/v2/auth/organisations:
     get:
       summary: List All Organisations
       tags:
@@ -2116,7 +2115,7 @@ paths:
 
       security:
         - authorization: [ ]
-  /auth/v1/organisations/{id}:
+  /iudx/v2/auth/organisations/{id}:
     parameters:
       - schema:
           type: string
@@ -2360,7 +2359,7 @@ paths:
 
       security:
         - authorization: [ ]
-  /auth/v1/organisations/{id}/users:
+  /iudx/v2/auth/organisations/{id}/users:
     parameters:
       - name: id
         in: path
@@ -2541,7 +2540,7 @@ paths:
 
       security:
         - authorization: [ ]
-  /auth/v1/organisations/{id}/users/{user_id}:
+  /iudx/v2/auth/organisations/{id}/users/{user_id}:
     parameters:
       - name: id
         in: path
@@ -2559,11 +2558,8 @@ paths:
           format: uuid
     delete:
       summary: Delete User by ID
-      operationId: delete-auth-v1-organisations-users-id
       tags:
         - Organisation APIs
-      security:
-        - authorization: [ ]
       responses:
         '200':
           description: OK
@@ -2578,13 +2574,32 @@ paths:
                     type: string
                   detail:
                     type: string
+                x-examples:
+                  Example 1:
+                    type: urn:dx:aaa:success
+                    title: Success
+                    detail: Deleted Organisation User
               examples:
                 Example 1:
                   value:
                     type: urn:dx:aaa:success
                     title: Success
                     detail: Deleted Organisation User
+      operationId: delete-auth-v1-organisations-users-id
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: user_id
+          description: UUID of user
+        - schema:
+            type: string
+          in: query
+          description: UUID of organization
+          name: id
 
+      security:
+        - authorization: [ ]
     put:
       summary: Update Organization User Role
       tags:
@@ -2655,7 +2670,7 @@ paths:
 
       security:
         - authorization: [ ]
-  /auth/v1/user/credit/balance:
+  /iudx/v2/auth/user/credit/balance:
     get:
       operationId: get-auth-v1-user-credit-balance
       summary: Get the specified user's credit balance
@@ -2682,7 +2697,7 @@ paths:
           description: User credit record not found
         '500':
           description: Internal server error
-  /auth/v1/admin/user/credit/balance/{id}:
+  /iudx/v2/auth/admin/user/credit/balance/{id}:
     parameters:
       - name: id
         in: path
@@ -2717,7 +2732,7 @@ paths:
           description: User credit record not found
         '500':
           description: Internal server error
-  /auth/v1/credit/request:
+  /iudx/v2/auth/credit/request:
     get:
       summary: Get all credit requests by status
       tags:
@@ -2994,7 +3009,7 @@ paths:
                 value:
                   id: 3225340e-78f6-4a75-ac85-91fb39022b3b
                   status: pending
-  /auth/v1/admin/user/credit/deduct:
+  /iudx/v2/auth/admin/user/credit/deduct:
     put:
       summary: Deduct User Credit (COS ADMIN)
       tags:
@@ -3075,7 +3090,7 @@ paths:
                   requested_at: '2025-05-29T19:07:00'
       security:
         - authorization: [ ]
-  /auth/v1/admin/user/credit/add:
+  /iudx/v2/auth/admin/user/credit/add:
     put:
       operationId: put-auth-v1-user-credit-add
       summary: Add credits to user's balance amount
@@ -3135,7 +3150,7 @@ paths:
                     requestedAt: '2025-05-29T19:07:00'
                     updatedBalance: 19950
                     tableName: credit_transactions
-  /auth/v1/compute/requests:
+  /iudx/v2/auth/compute/requests:
     get:
       summary: Get All Pending ComputeRole Requests
       tags:
@@ -3306,7 +3321,7 @@ paths:
 
       security:
         - authorization: [ ]
-  /auth/v1/compute/requests/{id}:
+  /iudx/v2/auth/compute/requests/{id}:
     parameters:
       - name: id
         in: path
@@ -3366,7 +3381,7 @@ paths:
               Example 1:
                 value:
                   status: granted
-  /auth/v1/kyc/verify:
+  /iudx/v2/auth/kyc/verify:
     post:
       summary: Verify KYC
       tags:
@@ -3388,7 +3403,7 @@ paths:
                   type: string
                 code_verifier:
                   type: string
-  /auth/v1/kyc/confirm/{id}:
+  /iudx/v2/auth/kyc/confirm/{id}:
     get:
       summary: Confirm KYC verification
       tags:
@@ -3406,7 +3421,7 @@ paths:
 
       security:
         - authorization: [ ]
-  /auth/v1/organization/user/provider_role/requests:
+  /iudx/v2/auth/organization/user/provider_role/requests:
     get:
       summary: Get All pending provider role requests
       tags:
@@ -3446,7 +3461,7 @@ paths:
                   type: string
                   x-stoplight:
                     id: l9svqkwc3ik2j
-  /auth/v1/organization/user/provider_role/requests/{id}:
+  /iudx/v2/auth/organization/user/provider_role/requests/{id}:
     parameters:
       - name: id
         in: path
@@ -3476,7 +3491,7 @@ paths:
                   type: string
                   x-stoplight:
                     id: idttjmml4yni9
-  /auth/v1/user:
+  /iudx/v2/auth/user:
     get:
       summary: (User) Get User Information
       tags:
@@ -3662,7 +3677,7 @@ paths:
                   type: string
                   x-stoplight:
                     id: 66hcqj28wo7vu
-  /auth/v1/user/password:
+  /iudx/v2/auth/user/password:
     put:
       summary: (User) Change Password
       description: 'Allows the logged-in user to change their password.
@@ -3724,7 +3739,7 @@ paths:
           description: Unauthorized - Missing or invalid authentication token
         '500':
           description: Internal Server Error
-  /auth/v1/admin/user/{id}:
+  /iudx/v2/auth/admin/user/{id}:
     parameters:
       - schema:
           type: string
@@ -3821,7 +3836,7 @@ paths:
 
       security:
         - authorization: [ ]
-  /auth/v1/admin/user:
+  /iudx/v2/auth/admin/user:
     get:
       summary: (COS Admin) Get All Users Info
       tags:
@@ -4022,7 +4037,7 @@ paths:
 
       security:
         - authorization: [ ]
-  /auth/v1/organization/user/provider:
+  /iudx/v2/auth/organization/user/provider:
     post:
       operationId: post-auth-v1-organization-user-provider
       summary: Grant provider role to user
@@ -4056,7 +4071,7 @@ paths:
 
       security:
         - authorization: [ ]
-  /auth/v1/user/update:
+  /iudx/v2/auth/user/update:
     post:
       summary: (User) Deactivate User Account
       tags:
@@ -4080,7 +4095,7 @@ paths:
       operationId: post-auth-v1-user-update
       security:
         - authorization: [ ]
-  /auth/v1/admin/{id}/update:
+  /iudx/v2/auth/admin/{id}/update:
     post:
       summary: (Admin) Deactivate/Activate User Account
       tags:
@@ -4112,7 +4127,7 @@ paths:
       operationId: post-auth-v1-admin-id-update
       security:
         - authorization: [ ]
-  /auth/v1/user/{id}:
+  /iudx/v2/auth/user/{id}:
     parameters:
       - name: id
         in: path
@@ -4131,7 +4146,7 @@ paths:
       operationId: delete-auth-v1-user-id
       security:
         - authorization: [ ]
-  /auth/v1/kyc/revoke:
+  /iudx/v2/auth/kyc/revoke:
     post:
       summary: Revoke KYC Verification
       tags:
@@ -4142,7 +4157,7 @@ paths:
       operationId: post-auth-v1-kyc-revoke
       security:
         - authorization: [ ]
-  /auth/v1/organisations/requests/report:
+  /iudx/v2/auth/organisations/requests/report:
     get:
       summary: Get Report for Organsation Create Request
       tags:
@@ -4153,7 +4168,7 @@ paths:
       operationId: get-auth-v1-organisations-requests-report
       security:
         - authorization: [ ]
-  /auth/v1/organisations/report:
+  /iudx/v2/auth/organisations/report:
     get:
       summary: Your GET endpoint
       tags:
@@ -4164,7 +4179,7 @@ paths:
       operationId: get-auth-v1-organisations-report
       security:
         - authorization: [ ]
-  /auth/v1/organisations/{id}/join_requests/report:
+  /iudx/v2/auth/organisations/{id}/join_requests/report:
     get:
       summary: Your GET endpoint
       tags:
@@ -4182,7 +4197,7 @@ paths:
         in: path
         required: true
         description: UUID of the organisation
-  /auth/v1/compute/requests/report:
+  /iudx/v2/auth/compute/requests/report:
     get:
       summary: Your GET endpoint
       tags:
@@ -4193,7 +4208,7 @@ paths:
       operationId: get-auth-v1-compute-requests-report
       security:
         - authorization: [ ]
-  /auth/v1/organization/user/provider_role/requests/report:
+  /iudx/v2/auth/organization/user/provider_role/requests/report:
     get:
       summary: Your GET endpoint
       tags:
@@ -4204,7 +4219,7 @@ paths:
       operationId: get-auth-v1-organization-user-provider_role-requests-report
       security:
         - authorization: [ ]
-  /auth/v1/credit/request/report:
+  /iudx/v2/auth/credit/request/report:
     get:
       summary: Your GET endpoint
       tags:
@@ -4215,7 +4230,7 @@ paths:
       operationId: get-auth-v1-credit-request-report
       security:
         - authorization: [ ]
-  /auth/v1/asset/request:
+  /iudx/v2/auth/asset/request:
     post:
       summary: Create Asset Request
       tags:
@@ -4365,7 +4380,7 @@ paths:
       security:
         - authorization: [ ]
 
-  /auth/v1/asset/request/{id}:
+  /iudx/v2/auth/asset/request/{id}:
     put:
       summary: Update Asset Request Status
       tags:
@@ -4434,7 +4449,7 @@ paths:
       security:
         - authorization: [ ]
 
-  /iudx/cat/v1/item:
+  /iudx/v2/cat/item:
     post:
       tags:
         - Entity
@@ -4487,14 +4502,12 @@ paths:
                     type: 'urn:dx:cat:InvalidAuthorizationToken'
                     title: 'Token is invalid'
                     detail: 'failed to decode/validate jwt token : Invalid format for JWT'
-      servers:
-        - url: 'https://example-cat.com/iudx/cat/v1'
-          description: Production Instance
+
       x-codeSamples:
         - lang: cURL
           label: create item cURL
           source: |
-            curl --location --request POST 'https://example-cat.com/iudx/cat/v1/item/' \
+            curl --location --request POST 'https://example.com/iudx/v2/cat/item/' \
             --header 'Authorization: Bearer <keycloak_token>' \
             --header 'Content-Type: application/json' \
             --data-raw '<payload>'
@@ -4533,7 +4546,7 @@ paths:
            - itemStatus
       operationId: update item
       security:
-        - authorization: []
+        - authorization: [ ]
 
       requestBody:
         required: true
@@ -4580,14 +4593,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/updateItemNotFound'
-      servers:
-        - url: 'https://example-cat.com/iudx/cat/v1'
-          description: Production Instance
+
       x-codeSamples:
         - lang: cURL
           label: update item cURL
           source: |
-            curl --location --request PUT 'https://example-cat.com/iudx/cat/v1/item/' \
+            curl --location --request PUT 'https://example.com/iudx/v2/cat/item/' \
             --header 'token: <token>' \
             --header 'Content-Type: application/json' \
             --data-raw '<payload>'
@@ -4601,7 +4612,7 @@ paths:
         If a Bearer token is provided in the Authorization header, the request will be authenticated and an audit log entry will be created for a **View** operation.
       operationId: get item
       security:
-        - optionalAuth: []
+        - optionalAuth: [ ]
       parameters:
         - name: id
           in: query
@@ -4640,21 +4651,19 @@ paths:
                   [ ]
                 details: "doc doesn't exist"
 
-      servers:
-        - url: 'https://example-cat.com/iudx/cat/v1'
-          description: Production Instance
+
       x-codeSamples:
         - lang: cURL
           label: item by id
           source: |
-            curl --location --request GET 'https://example-cat.com/iudx/cat/v1/item?id=uuid'
+            curl --location --request GET 'https://example.com/iudx/v2/cat/item?id=uuid'
     delete:
       tags:
         - Entity
       description: Delete an item
       operationId: delete item
       security:
-        - authorization: []
+        - authorization: [ ]
       parameters:
         - name: id
           in: query
@@ -4708,23 +4717,21 @@ paths:
                     type: 'urn:dx:cat:ItemNotFound'
                     title: "Item is not found"
                     details: "Fail: Doc doesn't exist, can't perform operation"
-      servers:
-        - url: 'https://example-cat.com/iudx/cat/v1'
-          description: Production Instance
+
       x-codeSamples:
         - lang: cURL
           label: delete item
           source: |
-            curl --location --request DELETE 'https://example-cat.com/iudx/cat/v1/item?id=uuid' \
+            curl --location --request DELETE 'https://example.com/iudx/v2/cat/item?id=uuid' \
             --header 'token: <token>'
-  /iudx/cat/v1/organisation/asset:
+  /iudx/v2/cat/organisation/asset:
     patch:
       tags:
         - Organisation
       description: Patch an item used to update the status from pending to active if the item exist.
       operationId: patch item
       security:
-        - authorization: []
+        - authorization: [ ]
       parameters:
         - name: id
           in: query
@@ -4801,16 +4808,14 @@ paths:
                     type: 'urn:dx:cat:ItemNotFound'
                     title: "Item is not found"
                     details: "Fail: Doc doesn't exist, can't perform operation"
-      servers:
-        - url: 'https://example-cat.com/iudx/cat/v1'
-          description: Production Instance
+
       x-codeSamples:
         - lang: cURL
           label: delete item
           source: |
-            curl --location --request DELETE 'https://example-cat.com/iudx/cat/v1/item?id=uuid' \
+            curl --location --request DELETE 'https://example.com/iudx/v2/cat/item?id=uuid' \
             --header 'token: <token>'
-  /iudx/cat/v1/list:
+  /iudx/v2/cat/list:
     post:
       tags:
         - List
@@ -4820,7 +4825,7 @@ paths:
         This API is intended to assist user interfaces by listing current values from the catalogue, based on indexed fields in Elasticsearch.
       operationId: listAvailableFilters
       security:
-        - optionalAuth: []
+        - optionalAuth: [ ]
       requestBody:
         required: true
         content:
@@ -4918,14 +4923,12 @@ paths:
                   detail:
                     type: string
                     example: "Wrong Item Type"
-      servers:
-        - url: 'https://example-cat.com/iudx/cat/v1'
-          description: Production Instance
+
       x-codeSamples:
         - lang: cURL
           label: list indexed filter values
           source: |
-            curl --location 'https://example-cat.com/iudx/cat/v1/list' \
+            curl --location 'https://example.com/iudx/v2/cat/list' \
             --header 'Content-Type: application/json' \
             --data '{
               "searchCriteria": [
@@ -4937,7 +4940,7 @@ paths:
               ],
               "filter": ["tags", "department", "organizationType", "fileFormat", "dataReadiness"]
             }'
-  /iudx/cat/v1/search:
+  /iudx/v2/cat/search:
     post:
       tags:
         - Discovery
@@ -5080,7 +5083,7 @@ paths:
 
       operationId: search
       security:
-        - optionalAuth: []
+        - optionalAuth: [ ]
       parameters:
         - name: page
           in: query
@@ -5187,14 +5190,12 @@ paths:
                     "title": "failed"
                     "type": "urn:dx:cat:InvalidPropertyValue"
                     "detail": "The limit + offset should be between 1 to 10000"
-      servers:
-        - url: 'https://example-cat.com/iudx/cat/v1'
-          description: Production Instance
+
       x-codeSamples:
         - lang: cURL
           label: search by item type
           source: |
-            curl --location --request POST 'https://example-cat.com/iudx/cat/v1/search?size=100&page=1' \
+            curl --location --request POST 'https://example.com/iudx/v2/cat/search?size=100&page=1' \
               --header 'Content-Type: application/json' \
               --data '{
                 "searchCriteria": [
@@ -5209,7 +5210,7 @@ paths:
         - lang: cURL
           label: search by text
           source: |
-            curl --location --request POST 'https://example-cat.com/iudx/cat/v1/search?size=100&page=1' \
+            curl --location --request POST 'https://example.com/iudx/v2/cat/search?size=100&page=1' \
             --header 'Content-Type: application/json' \
             --data '{
               "q": "sat",
@@ -5220,7 +5221,7 @@ paths:
         - lang: cURL
           label: Temporal search
           source: |
-            curl --location --request POST 'https://example-cat.com/iudx/cat/v1/search?size=50&page=1' \
+            curl --location --request POST 'https://example.com/iudx/v2/cat/search?size=50&page=1' \
             --header 'Content-Type: application/json' \
             --data '{
               "searchCriteria": [
@@ -5240,7 +5241,7 @@ paths:
         - lang: cURL
           label: Range search
           source: |
-            curl --location --request POST 'https://example-cat.com/iudx/cat/v1/search?size=25&page=1' \
+            curl --location --request POST 'https://example.com/iudx/v2/cat/search?size=25&page=1' \
             --header 'Content-Type: application/json' \
             --data '{
               "searchCriteria": [
@@ -5260,7 +5261,7 @@ paths:
         - lang: cURL
           label: complex search
           source: |
-            curl --location --request POST 'https://example-cat.com/iudx/cat/v1/search?size=25&page=1' \
+            curl --location --request POST 'https://example.com/iudx/v2/cat/search?size=25&page=1' \
             --header 'Content-Type: application/json' \
             --data '{
               "searchCriteria": [
@@ -5287,7 +5288,7 @@ paths:
               ],
               "filter": ["id", "type", "department", "itemCreatedAt", "dataReadiness"]
             }'
-  /iudx/cat/v1/search/myassets:
+  /iudx/v2/cat/search/myassets:
     post:
       summary: Search assets created by the current authenticated user
       description: >
@@ -5302,7 +5303,7 @@ paths:
       tags:
         - Discovery
       security:
-        - authorization: []
+        - authorization: [ ]
       requestBody:
         description: Request body containing unified search filters
         required: true
@@ -5325,7 +5326,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Missing or invalid authentication token
-  /iudx/cat/v1/count:
+  /iudx/v2/cat/count:
     post:
       tags:
         - Discovery
@@ -5347,7 +5348,7 @@ paths:
         > 📌 Aggregation is always based on `type.keyword`.
         > The `results` object contains key-value pairs for each `type`.
       security:
-        - optionalAuth: []
+        - optionalAuth: [ ]
       operationId: count
       requestBody:
         required: true
