@@ -5390,7 +5390,7 @@ paths:
         - authorization: [ ]
       requestBody:
         description: Request body containing unified search filters
-        required: false
+        required: true
         content:
           application/json:
             schema:
