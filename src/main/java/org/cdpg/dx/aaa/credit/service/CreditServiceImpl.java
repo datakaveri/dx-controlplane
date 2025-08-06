@@ -474,7 +474,6 @@ public class CreditServiceImpl implements CreditService {
     }
     else if(expiry==null || expiry.isBefore(LocalDateTime.now())) {
       LOGGER.info("Expiry is null or in the past for userId: {}", result.userId());
-      throw new DxValidationException("Expiration date is over.");
     }
     else {
       isValid = true;
