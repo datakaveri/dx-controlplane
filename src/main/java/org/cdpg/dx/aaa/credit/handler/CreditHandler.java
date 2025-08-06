@@ -29,6 +29,7 @@ import org.cdpg.dx.common.util.PaginationInfo;
 import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,6 +37,8 @@ import static org.cdpg.dx.aaa.credit.util.Constants.*;
 import static org.cdpg.dx.aaa.credit.models.Status.GRANTED;
 import static org.cdpg.dx.aaa.credit.util.Constants.ALLOWED_FILTER_MAP_FOR_COMPUTE_ROLE;
 import static org.cdpg.dx.aaa.credit.util.Constants.CREATED_AT;
+import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
+import static org.cdpg.dx.common.util.DateTimeHelper.parseDateTime;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
 public class CreditHandler {
@@ -106,10 +109,10 @@ public class CreditHandler {
             Promise<JsonObject> promise = Promise.promise();
 
             creditService.getBalance(userId)
-              .onSuccess(balance -> {
+              .onSuccess(res -> {
                 JsonObject enriched = new JsonObject()
                   .put("creditRequest", JsonObject.mapFrom(cr))
-                  .put("balance", balance);
+                  .put("balance", res.getString("balance"));
                 promise.complete(enriched);
               })
               .onFailure(err -> {
@@ -153,8 +156,8 @@ public class CreditHandler {
   public void getBalanceofUser(RoutingContext ctx) {
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "id");
     creditService.getBalance(userId)
-      .onSuccess(balance -> {
-        ResponseBuilder.sendSuccess(ctx,new JsonObject(Map.of("user_id", userId, "balance", balance)));
+      .onSuccess(res -> {
+        ResponseBuilder.sendSuccess(ctx,new JsonObject(Map.of("user_id", userId, "balance", res.getDouble("balance"))));
       })
       .onFailure(ctx::fail);
   }
@@ -171,6 +174,24 @@ public class CreditHandler {
     UUID transactedBy = UUID.fromString(user.subject());
     Status status = Status.fromString(creditRequestJson.getString("status"));
     UUID requestId = UUID.fromString(creditRequestJson.getString("id"));
+    String expirationDate = creditRequestJson.getString("expiration_date");
+
+    if( expirationDate == null || expirationDate =="")
+    {
+      throw new DxBadRequestException("Expiration date is required");
+    }
+
+    try
+    {
+      LocalDateTime.parse(expirationDate, FORMATTER);
+    }
+    catch (Exception e) {
+      throw new DxBadRequestException("Invalid expiration date format. Expected format: " + FORMATTER);
+    }
+
+    if(parseDateTime(expirationDate).isBefore(java.time.LocalDateTime.now())) {
+      throw new DxBadRequestException("Expiration date must be in the future");
+    }
 
     Double amount = null;
 
@@ -181,7 +202,7 @@ public class CreditHandler {
 
     amount = creditRequestJson.getDouble("amount");
 
-    creditService.updateCreditRequestStatus( requestId, status, transactedBy,amount)
+    creditService.updateCreditRequestStatus( requestId, status, transactedBy,amount,expirationDate)
       .onSuccess(transaction -> {
         AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
           RoutingContextHelper.getRequestPath(ctx), "PUT", "Credit Request Status Updated");
@@ -302,6 +323,8 @@ public class CreditHandler {
       .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
       .allowedSortFields(ALLOWED_FILTER_MAP_FOR_COMPUTE_ROLE.keySet())
       .build();
+
+
 
     creditService.getAllComputeRequests(request)
       .compose(result->

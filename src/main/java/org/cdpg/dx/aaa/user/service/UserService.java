@@ -25,6 +25,7 @@ public interface UserService {
                         getUserInfoByID(userIdExtractor.apply(item))
                                 .map(user -> {
                                     JsonObject enriched = baseJsonMapper.apply(item);
+                                    System.out.println("Fetching ORG ID!!!: " + user.organisationId());
                                     enriched.put("roles", user.roles());
                                     enriched.put("account_enabled", user.account_enabled());
                                     return enriched;

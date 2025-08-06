@@ -1,0 +1,2 @@
+ALTER TABLE user_credits
+ADD COLUMN expiration_date TIMESTAMP WITHOUT TIME ZONE;
