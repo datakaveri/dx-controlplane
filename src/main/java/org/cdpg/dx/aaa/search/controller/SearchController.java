@@ -78,6 +78,7 @@ public class SearchController implements ApiController {
 
     } catch (Exception e) {
       LOGGER.error("Error processing search request: {}", e.getMessage(), e);
+      ctx.fail(e);
     }
   }
 
@@ -121,12 +122,11 @@ public class SearchController implements ApiController {
               })
           .onFailure(
               err -> {
-                LOGGER.error("Search request failed: {}", err.getMessage(), err);
+                LOGGER.error("Asset request failed: {}", err.getMessage(), err);
                 ctx.fail(err);
               });
-
     } catch (Exception e) {
-      LOGGER.error("Error processing search request: {}", e.getMessage(), e);
+      LOGGER.error("Error processing asset request: {}", e.getMessage(), e);
     }
   }
 }
