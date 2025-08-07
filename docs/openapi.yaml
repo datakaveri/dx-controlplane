@@ -4754,13 +4754,8 @@ paths:
                     - DECLINED
                   description: Status of the item publication
                   example: ACTIVE
-                dataUploadStatus:
-                  type: boolean
-                  description: Whether data has been uploaded for this item
-                  example: true
             example:
               publishStatus: "ACTIVE"
-              dataUploadStatus: true
       responses:
         '200':
           description: Successfully updated

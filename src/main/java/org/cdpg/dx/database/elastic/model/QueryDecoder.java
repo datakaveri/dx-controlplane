@@ -6,7 +6,6 @@ import static org.cdpg.dx.database.elastic.util.Constants.*;
 
 import java.util.*;
 
-import net.sf.saxon.expr.Component;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.common.exception.DxEsException;
@@ -200,41 +199,40 @@ public class QueryDecoder {
     return boolQuery;
   }
 
-  public QueryModel getItemSubQueryModel(String id, String subId) {
+  public QueryModel getItemIdOrgIdQueryModel(String id, String orgId) {
+        List<QueryModel> filterQueries = buildIdTermQuery(id);
 
-    QueryModel q = new QueryModel();
+        if (!orgId.isBlank()) {
+          LOGGER.debug("getItemIdOrgIdQueryModel - orgId: {}", orgId);
+            QueryModel ordIdTermQuery = new QueryModel(QueryType.TERM);
+            ordIdTermQuery.setQueryParameters(Map.of(FIELD, ORGANIZATION_ID_KEYWORD, VALUE, orgId));
+            filterQueries.add(ordIdTermQuery);
+        }
 
-    QueryModel boolQuery = new QueryModel(QueryType.BOOL);
-    QueryModel idTermQuery = new QueryModel(QueryType.TERM);
-    idTermQuery.setQueryParameters(Map.of(FIELD, ID_KEYWORD, VALUE, id));
-    List<QueryModel> filterQueries = new ArrayList<>();
-    filterQueries.add(idTermQuery);
-
-    if(!subId.isBlank())
-    {
-      QueryModel subTermQuery = new QueryModel(QueryType.TERM);
-      subTermQuery.setQueryParameters(Map.of(FIELD, OWNER_USER_ID_KEYWORD, VALUE, subId));
-      filterQueries.add(subTermQuery);
+        return buildBooleanQuery(filterQueries);
     }
-    boolQuery.setMustQueries(filterQueries);
-    q.setQueries(boolQuery);
-    return q;
-  }
 
-  public QueryModel getItemSubQueryModel(String id) {
+    public QueryModel getItemIdQueryModel(String id) {
+        return buildBooleanQuery(buildIdTermQuery(id));
+    }
 
-    QueryModel q = new QueryModel();
+    private List<QueryModel> buildIdTermQuery(String id) {
+        QueryModel idTermQuery = new QueryModel(QueryType.TERM);
+        idTermQuery.setQueryParameters(Map.of(FIELD, ID_KEYWORD, VALUE, id));
+        List<QueryModel> filterQueries = new ArrayList<>();
+        filterQueries.add(idTermQuery);
+        return filterQueries;
+    }
 
-    QueryModel boolQuery = new QueryModel(QueryType.BOOL);
-    QueryModel idTermQuery = new QueryModel(QueryType.TERM);
-    idTermQuery.setQueryParameters(Map.of(FIELD, ID_KEYWORD, VALUE, id));
-    List<QueryModel> filterQueries = new ArrayList<>();
-    filterQueries.add(idTermQuery);
+    private QueryModel buildBooleanQuery(List<QueryModel> filterQueries) {
+        QueryModel boolQuery = new QueryModel(QueryType.BOOL);
+        boolQuery.setMustQueries(filterQueries);
 
-    boolQuery.setMustQueries(filterQueries);
-    q.setQueries(boolQuery);
-    return q;
-  }
+        QueryModel query = new QueryModel();
+        query.setQueries(boolQuery);
+        return query;
+    }
+
   private QueryModel getBoolQuery(Map<FilterType, List<QueryModel>> filterQueries) {
     QueryModel boolQuery = new QueryModel(QueryType.BOOL);
     for (Map.Entry<FilterType, List<QueryModel>> entry : filterQueries.entrySet()) {
