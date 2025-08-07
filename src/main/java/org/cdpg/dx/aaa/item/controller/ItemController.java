@@ -24,6 +24,9 @@ import org.cdpg.dx.aaa.item.util.*;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.common.exception.DxBadRequestException;
+import org.cdpg.dx.common.exception.DxInternalServerErrorException;
+import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.response.ResponseBuilder;
 
 public class ItemController implements ApiController {
@@ -88,7 +91,7 @@ public class ItemController implements ApiController {
 
     JsonObject body = ctx.body().asJsonObject();
 
-    String itemType = extractAndValidateItemType(ctx, body, response);
+    String itemType = extractAndValidateItemType(ctx, body);
     if (itemType == null) return;
 
     JsonObject doc = injectKeycloakInfoIfApplicable(ctx, body, itemType);
@@ -97,7 +100,7 @@ public class ItemController implements ApiController {
     doc.put(CONTEXT, vocContext);
 
     Promise<JsonObject> validationPromise = Promise.promise();
-    validateItemExistence(response, itemType, doc, method, validationPromise);
+    validateItemExistence(ctx, itemType, doc, method, validationPromise);
 
     doc.remove(HTTP_METHOD);
     validationPromise
@@ -105,10 +108,10 @@ public class ItemController implements ApiController {
         .onComplete(
             result -> {
               if (result.failed()) {
-                handleValidationFailure(response, result.cause());
+                handleValidationFailure(ctx, result.cause());
                 return;
               }
-              processItemCreationOrUpdate(response, method, result.result());
+              processItemCreationOrUpdate(ctx, method, result.result());
             });
   }
 
@@ -117,9 +120,7 @@ public class ItemController implements ApiController {
     String id = ctx.queryParams().get("id");
 
     if (id == null || id.isBlank()) {
-      ctx.response().setStatusCode(400).
-              end(new RespBuilder().withType(TYPE_INVALID_SYNTAX).
-                      withTitle(TITLE_INVALID_SYNTAX).withDetail(DETAIL_ID_NOT_FOUND).getResponse());
+      ctx.fail(new DxBadRequestException(DETAIL_ID_NOT_FOUND));
       return;
     }
     String orgId = "";
@@ -129,16 +130,15 @@ public class ItemController implements ApiController {
     LOGGER.debug("Patch item request body: {}", body);
     PatchItemRequest patchItemRequest =new PatchItemRequest(id,orgId,body);
 
-    itemService.patchItem(patchItemRequest).onSuccess(v -> ctx.response().setStatusCode(200).
-            end(new RespBuilder().withType(TYPE_SUCCESS)
-                    .withTitle(TITLE_SUCCESS).withResult(new JsonArray().add(new JsonObject().put(ID, id)))
-                    .withDetail("Success: Item patched successfully").getResponse())).onFailure(err -> {
+    itemService.patchItem(patchItemRequest).onSuccess(v -> {
+      ResponseBuilder.sendSuccess(ctx, "Success: Item patched successfully",new JsonArray().add(new JsonObject().put("id", id)));
+    }).onFailure(err -> {
       LOGGER.error("Patch item failed", err);
       ctx.fail(err);
     });
   }
   private String extractAndValidateItemType(
-      RoutingContext ctx, JsonObject body, HttpServerResponse response) {
+      RoutingContext ctx, JsonObject body) {
     try {
       JsonArray typeArray = body.getJsonArray(TYPE);
       if (typeArray == null || typeArray.isEmpty()) {
@@ -156,12 +156,7 @@ public class ItemController implements ApiController {
       return itemType;
     } catch (Exception e) {
       LOGGER.error("Invalid 'type' field", e);
-      sendError(
-          response,
-          400,
-          TYPE_INVALID_SCHEMA,
-          TITLE_INVALID_SCHEMA,
-          "Invalid type for item/type not present");
+      ctx.fail(new DxBadRequestException("Invalid type for item/type not present"));
       return null;
     }
   }
@@ -181,7 +176,7 @@ public class ItemController implements ApiController {
   }
 
   private void validateItemExistence(
-      HttpServerResponse response,
+      RoutingContext ctx,
       String itemType,
       JsonObject body,
       String method,
@@ -191,102 +186,64 @@ public class ItemController implements ApiController {
       case ITEM_TYPE_DATA_BANK -> itemExistenceValidator.validateDataBank(body, method, promise);
       case ITEM_TYPE_APPS -> itemExistenceValidator.validateApps(body, method, promise);
       default ->
-          sendError(
-              response,
-              400,
-              TYPE_INVALID_SCHEMA,
-              TITLE_INVALID_SCHEMA,
-              "Unsupported item type: " + itemType);
+              ctx.fail(new DxBadRequestException("Unsupported item type: " + itemType));
     }
   }
 
-  private void handleValidationFailure(HttpServerResponse response, Throwable cause) {
+  private void handleValidationFailure(RoutingContext ctx, Throwable cause) {
     String msg = cause.getMessage();
     LOGGER.error("Item validation failed: {}", msg);
     if ("validation failed. Incorrect id".equalsIgnoreCase(msg)) {
-      sendError(
-          response, 400, TYPE_INVALID_UUID, TITLE_INVALID_UUID, "Syntax of the UUID is incorrect");
+      ctx.fail(new DxBadRequestException("Syntax of the UUID is incorrect"));
     } else {
-      sendError(response, 400, TYPE_LINK_VALIDATION_FAILED, TITLE_LINK_VALIDATION_FAILED, msg);
+      ctx.fail(new DxBadRequestException(msg));
     }
   }
 
-  private void processItemCreationOrUpdate(
-      HttpServerResponse response, String method, JsonObject body) {
+  private void processItemCreationOrUpdate(RoutingContext ctx, String method, JsonObject body) {
     try {
       body.remove("roles");
       Item item = ItemFactory.parse(body);
       if (REQUEST_POST.equalsIgnoreCase(method)) {
         itemService
             .createItem(item)
-            .onSuccess(res -> sendSuccess(response, 201, "Success: Item created", item.toJson()))
-            .onFailure(err -> handleOperationError(response, err));
+            .onSuccess(res -> {
+              ResponseBuilder.sendCreated(ctx, "Success: Item created", item.toJson());
+            })
+            .onFailure(err -> handleOperationError(ctx, err));
       } else {
         itemService
             .updateItem(item)
             .onSuccess(
                 res -> {
                   LOGGER.debug("Item updated successfully: {}", item);
-                  sendSuccess(response, 200, "Success: Item updated successfully", item.toJson());
+                    ResponseBuilder.sendSuccess(ctx, item.toJson());
                 })
-            .onFailure(err -> handleOperationError(response, err));
+            .onFailure(err -> handleOperationError(ctx, err));
       }
     } catch (Exception e) {
       LOGGER.error("Failed to parse item into model", e);
-      sendError(response, 400, TYPE_INVALID_SYNTAX, TITLE_INVALID_SYNTAX, e.getMessage());
+      ctx.fail(new DxBadRequestException(e.getMessage()));
     }
   }
 
-  private void sendError(
-      HttpServerResponse res, int status, String type, String title, String detail) {
-    res.setStatusCode(status)
-        .end(new RespBuilder().withType(type).withTitle(title).withDetail(detail).getResponse());
-  }
-
-  private void sendSuccess(HttpServerResponse res, int status, String detail, JsonObject doc) {
-    res.setStatusCode(status)
-        .end(
-            new RespBuilder()
-                .withType(TYPE_SUCCESS)
-                .withTitle(TITLE_SUCCESS)
-                .withDetail(detail)
-                .withResult(doc)
-                .getResponse());
-  }
-
-  private void handleOperationError(HttpServerResponse res, Throwable err) {
+  private void handleOperationError(RoutingContext ctx, Throwable err) {
     LOGGER.error("Item operation failed", err);
-    sendError(res, 400, TYPE_OPERATION_NOT_ALLOWED, TITLE_OPERATION_NOT_ALLOWED, err.getMessage());
+    ctx.fail(new DxBadRequestException(err.getMessage()));
   }
 
   private void handleDeleteItem(RoutingContext ctx) {
     String id = ctx.queryParams().get("id");
 
     if (id == null || id.isBlank()) {
-      ctx.response()
-          .setStatusCode(400)
-          .end(
-              new RespBuilder()
-                  .withType(TYPE_INVALID_SYNTAX)
-                  .withTitle(TITLE_INVALID_SYNTAX)
-                  .withDetail(DETAIL_ID_NOT_FOUND)
-                  .getResponse());
-      return;
+      ctx.fail(new DxBadRequestException("Item ID is required"));
     }
 
     itemService
         .deleteItem(id)
         .onSuccess(
             v ->
-                ctx.response()
-                    .setStatusCode(200)
-                    .end(
-                        new RespBuilder()
-                            .withType(TYPE_SUCCESS)
-                            .withTitle(TITLE_SUCCESS)
-                            .withResult(new JsonArray().add(new JsonObject().put(ID, id)))
-                            .withDetail("Success: Item deleted successfully")
-                            .getResponse()))
+                    ResponseBuilder.sendSuccess(ctx, "Success: Item deleted successfully"))
         .onFailure(
             err -> {
               LOGGER.error("Delete item failed", err);
@@ -299,7 +256,7 @@ public class ItemController implements ApiController {
     LOGGER.debug("Received GET request for item with ID '{}'", itemId);
 
     if (itemId == null || itemId.isBlank()) {
-      routingContext.fail(400, new IllegalArgumentException("Item ID is required"));
+      routingContext.fail( new DxBadRequestException("Item ID is required"));
       return;
     }
 
@@ -315,16 +272,7 @@ public class ItemController implements ApiController {
             responseModel -> {
               if (responseModel.getTotalHits() == 0) {
                 LOGGER.error("Fail: Item not found");
-                routingContext
-                    .response()
-                    .setStatusCode(404)
-                    .end(
-                        new RespBuilder()
-                            .withType(TYPE_ITEM_NOT_FOUND)
-                            .withTitle("error")
-                            .withDetail("doc doesn't exist")
-                            .withResult()
-                            .getResponse());
+                routingContext.fail(new DxNotFoundException("doc doesn't exist"));
               } else {
                 LOGGER.debug("Item retrieved successfully for ID '{}'", itemId);
                 ResponseBuilder.sendSuccess(
@@ -336,7 +284,7 @@ public class ItemController implements ApiController {
         .onFailure(
             err -> {
               LOGGER.error("Error retrieving item with ID '{}': {}", itemId, err.getMessage());
-              routingContext.fail(500, err);
+              routingContext.fail(new DxInternalServerErrorException(err.getMessage()));
             });
   }
 }
