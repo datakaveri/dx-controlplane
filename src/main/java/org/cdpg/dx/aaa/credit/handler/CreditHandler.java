@@ -176,7 +176,7 @@ public class CreditHandler {
     UUID requestId = UUID.fromString(creditRequestJson.getString("id"));
     String expirationDate = creditRequestJson.getString("expiration_date");
 
-    if( expirationDate == null || expirationDate =="")
+    if( expirationDate == null || expirationDate.isEmpty())
     {
       throw new DxBadRequestException("Expiration date is required");
     }
