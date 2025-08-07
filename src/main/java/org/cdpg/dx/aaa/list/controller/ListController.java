@@ -51,7 +51,7 @@ public class ListController implements ApiController {
         .onFailure(
             failureHandler -> {
               LOGGER.error(
-                  "Failed to fetch activity logs: {}", failureHandler.getMessage(), failureHandler);
+                  "Failed to fetch activity logs: {}", failureHandler.getMessage());
               routingContext.fail(failureHandler);
             });
   }

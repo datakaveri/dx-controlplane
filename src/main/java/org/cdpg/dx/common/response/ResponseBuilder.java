@@ -63,6 +63,9 @@ public class ResponseBuilder {
   public static <T> void sendSuccess(RoutingContext ctx, T result, PaginationInfo pageInfo) {
     send(ctx, HttpStatusCode.SUCCESS, null, result, pageInfo);
   }
+  public static <T> void sendSuccess(RoutingContext ctx, String detail, T result) {
+    send(ctx, HttpStatusCode.SUCCESS, detail, result, null);
+  }
 
   public static <T> void sendCreated(RoutingContext ctx, String detail, T result) {
     send(ctx, HttpStatusCode.CREATED, detail, result, null);
