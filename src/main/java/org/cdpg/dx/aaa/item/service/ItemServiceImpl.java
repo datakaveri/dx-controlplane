@@ -76,7 +76,7 @@ public class ItemServiceImpl implements ItemService {
     Promise<ResponseModel> promise = Promise.promise();
 
     QueryDecoder queryDecoder = new QueryDecoder();
-    QueryModel queryModel = queryDecoder.getItemSubQueryModel(request.getItemId());
+    QueryModel queryModel = queryDecoder.getItemIdQueryModel(request.getItemId());
 
     LOGGER.debug("Retrieving item with ID: {}", queryModel.toJson());
 
@@ -122,7 +122,7 @@ public class ItemServiceImpl implements ItemService {
       return Future.failedFuture("ID not present in request");
     }
 
-    QueryModel queryModel = queryDecoder.getItemSubQueryModel(patchItemRequest.getItemId(),patchItemRequest.getSubId());
+    QueryModel queryModel = queryDecoder.getItemIdOrgIdQueryModel(patchItemRequest.getItemId(),patchItemRequest.getOrgId());
     String id = patchItemRequest.getItemId();
 
     elasticsearchService

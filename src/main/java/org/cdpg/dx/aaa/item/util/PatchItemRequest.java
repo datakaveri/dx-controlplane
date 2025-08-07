@@ -5,11 +5,11 @@ import io.vertx.core.json.JsonObject;
 public class PatchItemRequest {
 
     private final String itemId;
-    private final String subId;
+    private final String orgId;
     private final JsonObject requestBody;
     public PatchItemRequest(String itemId, String subId, JsonObject requestBody) {
         this.itemId = itemId;
-        this.subId = subId;
+        this.orgId = subId;
         this.requestBody = requestBody;
     }
 
@@ -17,8 +17,8 @@ public class PatchItemRequest {
         return itemId;
     }
 
-    public String getSubId() {
-        return subId;
+    public String getOrgId() {
+        return orgId;
     }
 
     public JsonObject getRequestBody() {

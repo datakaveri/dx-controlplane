@@ -122,12 +122,12 @@ public class ItemController implements ApiController {
                       withTitle(TITLE_INVALID_SYNTAX).withDetail(DETAIL_ID_NOT_FOUND).getResponse());
       return;
     }
-    String kcId = "";
-    kcId = ctx.user().principal().getString(SUB);
-    LOGGER.debug("Keycloak ID: {},12aa: {}", kcId,id);
+    String orgId = "";
+    orgId = ctx.user().principal().getString(ORGANISATION_ID);
+    LOGGER.debug("Keycloak ID: {},12aa: {}", orgId,id);
     JsonObject body = ctx.body().asJsonObject();
     LOGGER.debug("Patch item request body: {}", body);
-    PatchItemRequest patchItemRequest =new PatchItemRequest(id,kcId,body);
+    PatchItemRequest patchItemRequest =new PatchItemRequest(id,orgId,body);
 
     itemService.patchItem(patchItemRequest).onSuccess(v -> ctx.response().setStatusCode(200).
             end(new RespBuilder().withType(TYPE_SUCCESS)
