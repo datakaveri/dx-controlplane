@@ -1,5 +1,7 @@
 package org.cdpg.dx.aaa.credit.models;
 
+import org.cdpg.dx.common.exception.DxBadRequestException;
+
 public enum Status {
   PENDING("pending"),
   REJECTED("rejected"),
@@ -22,7 +24,7 @@ public enum Status {
        return status;
     }
 
-    throw new IllegalArgumentException("Invalid status: " + statusStr);
+    throw new DxBadRequestException("Invalid status:" + statusStr);
 
   }
 

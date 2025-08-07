@@ -58,24 +58,31 @@ public class CreditServiceImpl implements CreditService {
 
   @Override
   public Future<CreditTransaction> updateCreditRequestStatus(UUID requestId, Status status, UUID transactedBy,Double amount,String expirationDate) {
-    LOGGER.info("Updating credit request status for requestId: {} to: {}", requestId, status);
-    return creditRequestDAO.update(
+    return creditRequestDAO.get(requestId).compose(cr -> {
+
+      if (cr.status().equalsIgnoreCase(GRANTED.getStatus()) || cr.status().equalsIgnoreCase(REJECTED.getStatus())) {
+        LOGGER.warn("Credit request with ID {} is already {}, cannot update status", requestId, cr.status());
+        return Future.failedFuture(new DxValidationException("Credit request is already granted/rejected"));
+      }
+
+      return creditRequestDAO.update(
         Map.of(CREDIT_REQUEST_ID, requestId.toString()),
         Map.of(STATUS, status.getStatus())
-        )
-      .compose(updated -> {
+      ).compose(updated -> {
         if (status != GRANTED) {
+          LOGGER.info("Credit request with ID {} is not granted, no further processing needed", requestId);
           return Future.succeededFuture(null); // No transaction needed
         }
-        return processCreditGrant(requestId, transactedBy,amount,expirationDate);
-      })
-      .recover(err -> {
+        return processCreditGrant(requestId, transactedBy, amount, expirationDate);
+      }).recover(err -> {
         BaseDxException dxEx = BaseDxException.from(err);
         if (dxEx instanceof NoRowFoundException) {
           return Future.failedFuture(new DxNotFoundException("No request found with given ID", dxEx));
         }
         return Future.failedFuture(dxEx);
       });
+
+    });
   }
 
   private Future<CreditTransaction> processCreditGrant(UUID requestId, UUID transactedBy, Double amount,String expirationDate) {
