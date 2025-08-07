@@ -325,6 +325,10 @@ public class Constants {
     public static final String DETAIL_INVALID_SCHEMA = "Invalid schema provided";
     public static final String NO_CONTENT_AVAILABLE = "No Content Available";
 
+
+    // COMMON KC CONSTANTS
+
+    public static final String ORGANISATION_ID="organisation_id";
 }
 
 
