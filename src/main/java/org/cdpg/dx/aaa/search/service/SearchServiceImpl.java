@@ -31,34 +31,40 @@ public class SearchServiceImpl implements SearchService {
   }
 
   @Override
-  public Future<ResponseModel> postSearch(QueryDecoderRequestDTO queryDecoderRequestDTO) {
+  public Future<ResponseModel> postSearch(QueryDecoderRequestDTO requestDTO) {
     try {
-      // Derive SEARCH_TYPE from DTO for logging/debugging purposes
-      String searchType = queryDecoderRequestDTO.getSearchType();
-      LOGGER.info("search type {}", searchType);
+      QueryModel queryModel = buildQueryModel(requestDTO);
+      applySorting(queryModel, requestDTO);
 
-      // Use the new decoder to get the QueryModel
-      QueryDecoder queryDecoder = new QueryDecoder();
-      QueryModel queryModel = queryDecoder.getQueryModel(queryDecoderRequestDTO);
-      if (queryDecoderRequestDTO.getSort() != null && !queryDecoderRequestDTO.getSort().isEmpty()) {
-        Map<String, String> sortFields =
-            queryDecoderRequestDTO.getSort().stream()
-                .collect(
-                    Collectors.toMap(OrderBy::getColumn, sort -> sort.getDirection().toString()));
-        queryModel.setSortFields(sortFields);
-      }
+      return elasticsearchService.search(docIndex, queryModel, SOURCE_ONLY)
+              .map(results -> new ResponseModel(results, requestDTO.getSize(), requestDTO.getPage()))
+              .onFailure(err -> LOGGER.error("Search execution failed: {}", err.getMessage()));
 
-      // Perform search
-      return elasticsearchService
-          .search(docIndex, queryModel, SOURCE_ONLY)
-          .map(
-              results ->
-                  new ResponseModel(
-                      results, queryDecoderRequestDTO.getSize(), queryDecoderRequestDTO.getPage()))
-          .onFailure(err -> LOGGER.error("Search execution failed: {}", err.getMessage()));
     } catch (Exception e) {
       LOGGER.error("Error during postSearch: {}", e.getMessage(), e);
       return Future.failedFuture(new DxBadRequestException("Failed to process search request"));
+    }
+  }
+
+  private QueryModel buildQueryModel(QueryDecoderRequestDTO requestDTO) {
+    String requestType = requestDTO.getRequestType();
+    QueryDecoder queryDecoder = new QueryDecoder();
+
+    if ("organisationAssetSearch".equalsIgnoreCase(requestType)) {
+      return queryDecoder.getOrganisationAssetsQuery(requestDTO);
+    } else if ("search".equalsIgnoreCase(requestType)) {
+      return queryDecoder.getQueryModel(requestDTO);
+    } else {
+      throw new DxBadRequestException("Unsupported request type: {}" + requestType);
+    }
+  }
+
+  private void applySorting(QueryModel queryModel, QueryDecoderRequestDTO requestDTO) {
+    List<OrderBy> sortList = requestDTO.getSort();
+    if (sortList != null && !sortList.isEmpty()) {
+      Map<String, String> sortFields = sortList.stream()
+              .collect(Collectors.toMap(OrderBy::getColumn, sort -> sort.getDirection().toString()));
+      queryModel.setSortFields(sortFields);
     }
   }
 

@@ -4809,9 +4809,93 @@ paths:
 
       x-codeSamples:
         - lang: cURL
-          label: delete item
+          label: patch item
           source: |
-            curl --location --request DELETE 'https://example.com/iudx/v2/cat/item?id=uuid' \
+            curl --location --request PATCH 'https://example.com/iudx/v2/organisation/asset?id=uuid' \
+            --header 'token: <token>'
+            --data-raw '{
+              "publishStatus": "ACTIVE",
+              "dataUploadStatus": true
+            }'
+    get:
+      tags:
+        - Organisation
+      description: Get all the asset belonging to a particular organisation.
+      operationId: get items
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: size
+          in: query
+          description: Page size for pagination
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 100
+        - name: sort
+          in: query
+          description: >
+            This parameter allows sorting the results by up to 3 fields, separated by a semicolon (;).
+            The format for each field is `fieldName:asc` or `fieldName:desc`.
+            For example: `itemCreatedAt:desc;dataReadiness:asc;name:desc` will sort by creation date (descending),
+            then dataReadiness (ascending), then name (descending).
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: All the query parameters yielded results.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/successResponseForAutocompleteFuzzyTextSearch'
+                  - $ref: '#/components/schemas/successResponseForSearchByItemType'
+                  - $ref: '#/components/schemas/successResponseForRangeSearch'
+                  - $ref: '#/components/schemas/successResponseForTemporalSearch'
+        '400':
+          description: Invalid uuid format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/unAuthorizedAccess'
+              examples:
+                Invalid uuid:
+                  value:
+                    type: 'urn:dx:cat:InvalidSyntax'
+                    title: "Invalid Syntax"
+                    detail: "Fail: The syntax of the id is incorrect"
+        '401':
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/unAuthorizedAccess'
+        '404':
+          description: Didn't find the item
+          content:
+            application/json:
+              examples:
+                Item not found to Delete:
+                  value:
+                    type: 'urn:dx:cat:ItemNotFound'
+                    title: "Item is not found"
+                    details: "Fail: Doc doesn't exist, can't perform operation"
+
+      x-codeSamples:
+        - lang: cURL
+          label: get items
+          source: |
+            curl --location --request GET 'https://example.com/iudx/v2/cat?sort=dataReadiness:asc&page=1' \
             --header 'token: <token>'
   /iudx/v2/cat/list:
     post:

@@ -3,6 +3,7 @@ package org.cdpg.dx.aaa.search.controller;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.*;
 import static org.cdpg.dx.aaa.common.Constants.RESULTS;
 
+import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -11,14 +12,17 @@ import org.cdpg.dx.aaa.apiserver.ApiController;
 import org.cdpg.dx.aaa.common.CheckIfTokenPresent;
 import org.cdpg.dx.aaa.search.service.SearchService;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
+import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
+import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.common.request.OrganisationAssetRequestBuilder;
 import org.cdpg.dx.common.request.PostSearchRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
 
-/** Controller for handling search endpoints. */
 public class SearchController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(SearchController.class);
   private static final CheckIfTokenPresent TOKEN_CHECK = new CheckIfTokenPresent();
+  Handler<RoutingContext> orgAdminAccessHandler = AuthorizationHandler.forRoles(DxRole.ORG_ADMIN);
 
   private final SearchService searchService;
   private final AuditingHandler auditingHandler;
@@ -31,102 +35,110 @@ public class SearchController implements ApiController {
   @Override
   public void register(RouterBuilder builder) {
     builder
-        .operation(POST_SEARCH)
-        .handler(this::handleSearch)
-        .handler(auditingHandler::handleApiAudit);
+            .operation(POST_SEARCH)
+            .handler(this::handleSearch)
+            .handler(auditingHandler::handleApiAudit);
 
     builder
-        .operation(POST_COUNT_SEARCH)
-        .handler(this::handleCount)
-        .handler(auditingHandler::handleApiAudit);
+            .operation(POST_COUNT_SEARCH)
+            .handler(this::handleCount)
+            .handler(auditingHandler::handleApiAudit);
 
     builder
-        .operation(ASSET_SEARCH)
-        .handler(TOKEN_CHECK)
-        .handler(this::handleAsset)
-        .handler(auditingHandler::handleApiAudit);
+            .operation(ASSET_SEARCH)
+            .handler(TOKEN_CHECK)
+            .handler(this::handleAsset)
+            .handler(auditingHandler::handleApiAudit);
+
+    builder.operation(GET_ITEMS)
+            .handler(TOKEN_CHECK)
+            .handler(orgAdminAccessHandler)
+            .handler(this::handleOrganisationGetItems)
+            .handler(auditingHandler::handleApiAudit);
 
     LOGGER.debug(
-        "Registered SearchController operations: {}, {}, {}",
-        POST_SEARCH,
-        POST_COUNT_SEARCH,
-        ASSET_SEARCH);
+            "Registered SearchController operations: {}, {}, {}",
+            POST_SEARCH,
+            POST_COUNT_SEARCH,
+            ASSET_SEARCH);
+  }
+
+  private void handleOrganisationGetItems(RoutingContext ctx) {
+    LOGGER.debug("Received GET Asset request on '{}'", GET_ITEMS);
+    try {
+      QueryDecoderRequestDTO queryDecoder = OrganisationAssetRequestBuilder.fromRoutingContext(ctx).build();
+      processSearchRequest(ctx, queryDecoder);
+    } catch (Exception e) {
+      LOGGER.error("Error processing asset request: {}", e.getMessage());
+      ctx.fail(e);
+    }
   }
 
   private void handleSearch(RoutingContext ctx) {
     LOGGER.debug("Received POST request on at search'{}'", POST_SEARCH);
     try {
       QueryDecoderRequestDTO queryDecoder =
-          PostSearchRequestBuilder.fromRoutingContext(ctx)
-              .setAssetSearch(false)
-              .setCountApi(false)
-              .build();
-      searchService
-          .postSearch(queryDecoder)
-          .onSuccess(
-              searchService -> {
-                ResponseBuilder.sendSuccess(
-                    ctx,
-                    searchService.getElasticsearchResponses(),
-                    searchService.getPaginationInfo());
-              })
-          .onFailure(
-              err -> {
-                LOGGER.error("Search request failed: {}", err.getMessage(), err);
-                ctx.fail(err);
-              });
-
+              PostSearchRequestBuilder.fromRoutingContext(ctx)
+                      .setAssetSearch(false)
+                      .setCountApi(false)
+                      .build();
+      processSearchRequest(ctx, queryDecoder);
     } catch (Exception e) {
-      LOGGER.error("Error processing search request: {}", e.getMessage(), e);
+      LOGGER.error("Error processing search request: {}", e.getMessage());
+      ctx.fail(e);
+    }
+  }
+
+  private void handleAsset(RoutingContext ctx) {
+    LOGGER.debug("Received POST Asset request on '{}'", ASSET_SEARCH);
+    try {
+      QueryDecoderRequestDTO queryDecoder =
+              PostSearchRequestBuilder.fromRoutingContext(ctx)
+                      .setAssetSearch(true)
+                      .setCountApi(false)
+                      .build();
+      processSearchRequest(ctx, queryDecoder);
+    } catch (Exception e) {
+      LOGGER.error("Error processing asset request: {}", e.getMessage());
       ctx.fail(e);
     }
   }
 
   private void handleCount(RoutingContext ctx) {
     LOGGER.debug("Received POST Count request on '{}'", POST_COUNT_SEARCH);
-    QueryDecoderRequestDTO queryDecoderRequestDTO =
-        PostSearchRequestBuilder.fromRoutingContext(ctx)
-            .setAssetSearch(false)
-            .setCountApi(true)
-            .build();
-    searchService
-        .postCount(queryDecoderRequestDTO)
-        .onSuccess(
-            response -> {
-              ResponseBuilder.sendSuccess(ctx, response.getResponse().getJsonArray(RESULTS));
-            })
-        .onFailure(
-            err -> {
-              LOGGER.error("Count request failed: {}", err.getMessage(), err);
-              ctx.fail(err);
-            });
+    try {
+      QueryDecoderRequestDTO queryDecoderRequestDTO =
+              PostSearchRequestBuilder.fromRoutingContext(ctx)
+                      .setAssetSearch(false)
+                      .setCountApi(true)
+                      .build();
+      searchService
+              .postCount(queryDecoderRequestDTO)
+              .onSuccess(
+                      response -> ResponseBuilder.sendSuccess(ctx, response.getResponse().getJsonArray(RESULTS)))
+              .onFailure(
+                      err -> {
+                        LOGGER.error("Count request failed: {}", err.getMessage());
+                        ctx.fail(err);
+                      });
+    } catch (Exception e) {
+      LOGGER.error("Error processing count request: {}", e.getMessage());
+      ctx.fail(e);
+    }
   }
 
-  private void handleAsset(RoutingContext ctx) {
-    LOGGER.debug("Received POST Asset request on '{}'", ASSET_SEARCH);
-    // Reuse search handler logic
-    try {
-      var queryDecoder =
-          PostSearchRequestBuilder.fromRoutingContext(ctx)
-              .setAssetSearch(true)
-              .setCountApi(false)
-              .build();
-      searchService
-          .postSearch(queryDecoder)
-          .onSuccess(
-              searchService -> {
-                ResponseBuilder.sendSuccess(
-                    ctx,
-                    searchService.getElasticsearchResponses(),
-                    searchService.getPaginationInfo());
-              })
-          .onFailure(
-              err -> {
-                LOGGER.error("Asset request failed: {}", err.getMessage(), err);
-                ctx.fail(err);
-              });
-    } catch (Exception e) {
-      LOGGER.error("Error processing asset request: {}", e.getMessage(), e);
-    }
+  private void processSearchRequest(RoutingContext ctx, QueryDecoderRequestDTO queryDecoder) {
+    searchService
+            .postSearch(queryDecoder)
+            .onSuccess(
+                    result -> ResponseBuilder.sendSuccess(
+                            ctx,
+                            result.getElasticsearchResponses(),
+                             result.getPaginationInfo()))
+            .onFailure(
+                    err -> {
+                      LOGGER.error("Search request failed: {}", err.getMessage());
+                      ctx.fail(err);
+                    });
   }
 }
