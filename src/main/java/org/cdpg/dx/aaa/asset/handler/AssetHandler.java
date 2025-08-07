@@ -90,7 +90,7 @@ public class AssetHandler {
         ctx.fail(new DxConflictException("Asset request already exists for asset ID and userId"));
       } else {
         keycloakUserService.getUserById(userId).compose(v -> {
-          if (v.roles() != null && v.roles().contains("org_admin") && v.roles().contains("provider")) {
+          if (v.roles() != null && v.roles().contains("provider")) {
             LOGGER.info("User {} is authorized and creating asset request for asset {}", userId, assetId);
             return assetService.createAssetRequest(assetRequest);
           } else {
@@ -108,9 +108,6 @@ public class AssetHandler {
       LOGGER.error("Error checking existing asset request: {}", err.getMessage(), err);
       ctx.fail(new DxInternalServerErrorException("Error checking existing asset request"));
     });
-
-
-
 
   }
 

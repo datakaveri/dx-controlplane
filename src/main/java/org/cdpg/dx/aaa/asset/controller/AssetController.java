@@ -26,7 +26,7 @@ public class AssetController implements ApiController {
     routerBuilder
       .operation("post-auth-v1-asset-request")
       .handler(auditingHandler::handleApiAudit)
-      .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
+      .handler(AuthorizationHandler.forRoles(DxRole.PROVIDER))
       .handler(assetHandler::createAssetRequest);
 
     routerBuilder
