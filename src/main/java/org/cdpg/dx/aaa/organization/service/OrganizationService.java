@@ -98,5 +98,7 @@ public interface OrganizationService {
 
   Future<Boolean> deleteProviderRoleRequest(UUID orgId, UUID userId);
 
+  Future<UUID> getUserOrgAdminId(UUID orgId);
+
 }
 

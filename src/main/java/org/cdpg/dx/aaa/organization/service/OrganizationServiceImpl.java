@@ -348,8 +348,6 @@ public class OrganizationServiceImpl implements OrganizationService {
               "organisation_id", "",
               "organisation_name", ""
             ))
-            .compose(v->keycloakUserService.removeRoleFromUser(userId, DxRole.PROVIDER))
-            .onFailure(err -> LOGGER.error("Failed to update user attributes in Keycloak after deleting organization user", err))
             .map(v -> true);
         } else {
           return Future.succeededFuture(false);
@@ -362,7 +360,6 @@ public class OrganizationServiceImpl implements OrganizationService {
     return orgUserDAO.deleteUserByOrgId(orgId, userId)
       .compose(deleted -> {
         if (deleted) {
-
           return keycloakUserService.updateUserAttributes(userId, Map.of(
               "organisation_id", "",
               "organisation_name", ""
@@ -693,6 +690,21 @@ public class OrganizationServiceImpl implements OrganizationService {
         }
         return Future.succeededFuture(true);
       });
+    });
+  }
+
+  @Override
+  public Future<UUID> getUserOrgAdminId(UUID orgId) {
+    Map<String, Object> conditionMap = Map.of(
+      Constants.ORGANIZATION_ID, orgId.toString(),
+      Constants.ROLE, Role.ADMIN.getRoleName()
+    );
+
+    return orgUserDAO.getAllWithFilters(conditionMap).compose(orgUsers -> {
+      if (orgUsers.isEmpty()) {
+        return Future.failedFuture(new DxNotFoundException("No organization admin found for the given organization ID"));
+      }
+      return Future.succeededFuture(orgUsers.get(0).userId());
     });
   }
 

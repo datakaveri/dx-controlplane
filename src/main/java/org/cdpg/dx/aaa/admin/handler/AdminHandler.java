@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.audit.util.AuditingHelper;
 import org.cdpg.dx.aaa.credit.service.CreditService;
+import org.cdpg.dx.aaa.organization.models.ProviderRoleRequest;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.AuditLog;
@@ -64,7 +65,7 @@ public class AdminHandler {
 
     userService.getUserInfoByID(userId)
       .compose(userService::getUserInfo)
-      .onSuccess( response -> {
+      .onSuccess(response -> {
         AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
           RoutingContextHelper.getRequestPath(ctx), "GET", "Get User Info by ID");
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
@@ -167,12 +168,12 @@ public class AdminHandler {
     String statusValue = status.getString("status");
 
 
-    if(statusValue == null || (!statusValue.equalsIgnoreCase("activate") && !statusValue.equalsIgnoreCase("deactivate"))) {
+    if (statusValue == null || (!statusValue.equalsIgnoreCase("activate") && !statusValue.equalsIgnoreCase("deactivate"))) {
       ctx.fail(new DxBadRequestException("Invalid status value. Must be 'activate' or 'deactivate'."));
       return;
     }
 
-    if(statusValue.equalsIgnoreCase("deactivate")) {
+    if (statusValue.equalsIgnoreCase("deactivate")) {
       keycloakUserService.disableUser(UUID.fromString(user.subject()))
         .onSuccess(response -> {
           LOGGER.info("User {} deactivated successfully in Keycloak", user.subject());
@@ -185,8 +186,7 @@ public class AdminHandler {
           LOGGER.error("Failed to deactivate DxUser: {}", err.getMessage(), err.getCause());
           ctx.fail(err);
         });
-    }
-    else {
+    } else {
       keycloakUserService.enableUser(UUID.fromString(user.subject()))
         .onSuccess(response -> {
           LOGGER.info("User {} activated successfully in Keycloak", user.subject());
@@ -204,63 +204,77 @@ public class AdminHandler {
   }
 
   public void deleteDxUser(RoutingContext ctx) {
-    UUID userId = RequestHelper.getPathParamAsUUID(ctx, "id");
+    User user = ctx.user();
+    UUID userId = UUID.fromString(user.subject());
 
-    userService.getUserInfoByID(userId).onComplete(ar -> {
-      if (ar.failed() || ar.result() == null) {
-        ctx.fail(new IllegalArgumentException("User not found"));
-        return;
-      }
+    userService.getUserInfoByID(userId).compose(userInfo -> {
+        if (userInfo == null) {
+          return Future.failedFuture(new IllegalArgumentException("User not found"));
+        }
 
-      var userInfo = ar.result();
-      UUID orgId = UUID.fromString(userInfo.organisationId());
+        if (userInfo.roles().contains(KeycloakConstants.ORG_ADMIN_ROLE)) {
+          return Future.failedFuture(new DxBadRequestException("Cannot delete org admin user"));
+        }
 
-      if (userInfo.roles().contains(KeycloakConstants.ADMIN_ROLE)) {
-        ctx.fail(new DxBadRequestException("Cannot delete admin user"));
-      } else {
-        organizationService.deleteOrganizationUser(orgId, userId)
-          .onFailure(err -> {
-            LOGGER.error("Failed to delete organization user : {}", err.getMessage(), err);
-            ctx.fail(err);
-          })
-          .compose(p->organizationService.deleteOrganizationJoinRequest(orgId, userId))
-          .onFailure(err -> {
-            LOGGER.error("Failed to delete organization join request: {}", err.getMessage(), err);
-            ctx.fail(err);
-          })
-          .compose(p->organizationService.deleteProviderRoleRequest(orgId, userId))
-          .onFailure(err -> {
-            LOGGER.error("Failed to delete provider role request: {}", err.getMessage(), err);
-            ctx.fail(err);
-          })
-          .compose(q->creditService.deleteCreditRequest(userId))
-          .onFailure(err -> {
-            LOGGER.error("Failed to delete credit request: {}", err.getMessage(), err);
-            ctx.fail(err);
-          })
-          .compose(r->creditService.deleteComputeRoleRequest(userId))
-          .onFailure(err -> {
-            LOGGER.error("Failed to delete compute request: {}", err.getMessage(), err);
-            ctx.fail(err);
-          })
-          .compose(s -> keycloakUserService.deleteUser(userId))
-          .onFailure(err -> {
-            LOGGER.error("Failed to delete user in Keycloak: {}", err.getMessage(), err);
-            ctx.fail(err);
-          })
-          .onSuccess(response -> {
-            LOGGER.info("User {} deleted from organization {}", userId, orgId);
-            AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-              RoutingContextHelper.getRequestPath(ctx), "DELETE", "Delete User");
-            RoutingContextHelper.setAuditingLog(ctx, auditLog);
-            ResponseBuilder.sendSuccess(ctx, "User deleted successfully from Keycloak and DB");
-          })
-          .onFailure(err -> {
-            LOGGER.error("Failed to delete DxUser: {}", err.getMessage(), err);
-            ctx.fail(err);
+        if (userInfo.roles().contains(KeycloakConstants.PF_ADMIN_ROLE)) {
+          return Future.failedFuture(new DxBadRequestException("Cannot delete cos admin user"));
+        }
+
+        LOGGER.info("Organization ID is : {}", userInfo.organisationId());
+
+        // If user has organization
+        if (userInfo.organisationId() != null && !userInfo.organisationId().isEmpty()) {
+          UUID orgId = UUID.fromString(userInfo.organisationId());
+
+          return organizationService.getUserOrgAdminId(orgId).compose(orgAdminId -> {
+            if (orgAdminId == null) {
+              return Future.failedFuture(new IllegalArgumentException("Organization admin not found for organization: " + orgId));
+            }
+
+            if (orgAdminId.equals(userId)) {
+              return Future.failedFuture(new DxBadRequestException("Cannot delete organization admin user"));
+            }
+
+            Future<Void> chain = Future.succeededFuture();
+
+            // If provider role → deleteProviderUser first
+            if (userInfo.roles().contains(KeycloakConstants.PROVIDER_ROLE)) {
+              chain = chain.compose(v -> organizationService.deleteProviderUser(userId, orgAdminId, orgId)
+                .mapEmpty());
+            }
+            else
+            {
+              chain = chain.compose(v -> organizationService.deleteOrganizationUser(orgId, userId)
+                .mapEmpty());
+            }
+
+            chain = chain
+              .compose(v -> organizationService.deleteOrganizationJoinRequest(orgId, userId)
+                .onSuccess(r -> LOGGER.info("Join request deleted for user {}", userId))
+                .mapEmpty())
+              .compose(v -> keycloakUserService.deleteUser(userId)
+                .onSuccess(r -> LOGGER.info("User {} deleted from Keycloak", userId))
+                .mapEmpty());
+
+            return chain;
           });
-      }
-    });
+        }
+
+        // If no organization, just delete user in Keycloak
+        return keycloakUserService.deleteUser(userId)
+          .onSuccess(r -> LOGGER.info("User {} deleted from Keycloak", userId))
+          .mapEmpty();
+      })
+      .onSuccess(v -> {
+        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+          RoutingContextHelper.getRequestPath(ctx), "DELETE", "Delete User");
+        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        ResponseBuilder.sendSuccess(ctx, "User deleted successfully from Keycloak and DB");
+      })
+      .onFailure(err -> {
+        LOGGER.error("Failed to delete user: {}", err.getMessage(), err);
+        ctx.fail(err);
+      });
   }
 
   public void updateDxUserStatusById(RoutingContext ctx) {
@@ -271,12 +285,12 @@ public class AdminHandler {
     String statusValue = status.getString("status");
 
 
-    if(statusValue == null || (!statusValue.equalsIgnoreCase("activate") && !statusValue.equalsIgnoreCase("deactivate"))) {
+    if (statusValue == null || (!statusValue.equalsIgnoreCase("activate") && !statusValue.equalsIgnoreCase("deactivate"))) {
       ctx.fail(new DxBadRequestException("Invalid status value. Must be 'activate' or 'deactivate'."));
       return;
     }
 
-    if(statusValue.equalsIgnoreCase("activate")) {
+    if (statusValue.equalsIgnoreCase("activate")) {
       keycloakUserService.enableUser(userId)
         .onSuccess(response -> {
           LOGGER.info("User {} activated successfully by PF Admin in Keycloak", userId);
@@ -289,8 +303,7 @@ public class AdminHandler {
           LOGGER.error("Failed to activate DxUser: {}", err.getMessage(), err.getCause());
           ctx.fail(err);
         });
-    }
-    else {
+    } else {
       keycloakUserService.disableUser(userId)
         .onSuccess(response -> {
           LOGGER.info("User {} deactivated successfully by PF Admin in Keycloak", userId);
