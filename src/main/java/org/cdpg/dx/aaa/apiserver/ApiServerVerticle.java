@@ -1,6 +1,7 @@
 package org.cdpg.dx.aaa.apiserver;
 
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.*;
+import static org.cdpg.dx.common.config.CorsUtil.allowedOrigins;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -49,7 +50,7 @@ public class ApiServerVerticle extends AbstractVerticle {
   @Override
   public void start() {
     port = config().getInteger("httpPort", 8443);
-    CorsUtil.allowedOrigins = config().getJsonArray("corsAllowedOrigin").getList();
+    allowedOrigins = config().getJsonArray("corsAllowedOrigin").getList();
 
     // Register the module for default Vert.x ObjectMapper
     ObjectMapper mapper = DatabindCodec.mapper();
@@ -163,7 +164,7 @@ public class ApiServerVerticle extends AbstractVerticle {
   private void configureCorsHandler(Router router) {
     CorsHandler corsHandler = CorsHandler.create();
 
-    for (String origin : CorsUtil.allowedOrigins) {
+    for (String origin : allowedOrigins) {
       corsHandler.addOrigin(origin);
     }
 
