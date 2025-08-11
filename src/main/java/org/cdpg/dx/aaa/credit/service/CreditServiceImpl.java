@@ -430,6 +430,7 @@ public class CreditServiceImpl implements CreditService {
     return Future.succeededFuture(true);
   }
 
+
   public Future<Boolean> deleteComputeRoleRequest(UUID userId)
   {
     Map<String,Object> filter = Map.of(
@@ -488,6 +489,30 @@ public class CreditServiceImpl implements CreditService {
 
     return Future.succeededFuture(isValid);
   }
+
+  @Override
+  public Future<UserCredit> getExpirationDateByUserId(UUID userId) {
+    Map<String, Object> filter = Map.of(
+      Constants.USER_ID, userId.toString()
+    );
+
+    return userCreditDAO.getAllWithFilters(filter)
+      .compose(userCredits -> {
+        if (userCredits.isEmpty()) {
+          return Future.failedFuture(new DxNotFoundException("No user credit found for userId: " + userId));
+        }
+        return Future.succeededFuture(userCredits.get(0)); // Return the first matching UserCredit
+      })
+      .recover(err -> {
+        BaseDxException dxEx = BaseDxException.from(err);
+        if (dxEx instanceof NoRowFoundException) {
+          return Future.failedFuture(new DxNotFoundException("No matching userId found in userCredit table", dxEx));
+        }
+        return Future.failedFuture(dxEx);
+      });
+  }
+
+
 
 }
 

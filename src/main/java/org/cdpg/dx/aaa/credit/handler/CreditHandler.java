@@ -108,19 +108,27 @@ public class CreditHandler {
             UUID userId = cr.userId();
             Promise<JsonObject> promise = Promise.promise();
 
-            creditService.getBalance(userId)
-              .onSuccess(res -> {
-                JsonObject enriched = new JsonObject()
-                  .put("creditRequest", JsonObject.mapFrom(cr))
-                  .put("balance", res.getString("balance"));
-                promise.complete(enriched);
+            Future<JsonObject> balanceFuture = creditService.getBalance(userId)
+              .map(res -> new JsonObject().put("balance", res.getString("balance")))
+              .otherwise(new JsonObject().put("balance", 0.0));
+
+            Future<JsonObject> expiryFuture = creditService.getExpirationDateByUserId(userId)
+              .map(res -> new JsonObject().put("expirationDate", res.expirationDate().toString()))
+              .otherwise(new JsonObject().put("expirationDate", (String) null));
+
+            CompositeFuture.all(balanceFuture, expiryFuture)
+              .onSuccess(cf -> {
+                JsonObject creditRequestJson = JsonObject.mapFrom(cr)
+                  .mergeIn(cf.resultAt(0)) // balance
+                  .mergeIn(cf.resultAt(1)); // expiration date
+                promise.complete(creditRequestJson);
               })
               .onFailure(err -> {
-                LOGGER.warn("Failed to get balance for user {}: {}", userId, err.getMessage());
-                JsonObject enriched = new JsonObject()
-                  .put("creditRequest", JsonObject.mapFrom(cr))
-                  .put("balance", 0.0); // fallback
-                promise.complete(enriched);
+                LOGGER.warn("Failed to get extra info for user {}: {}", userId, err.getMessage());
+                JsonObject creditRequestJson = JsonObject.mapFrom(cr)
+                  .put("balance", 0.0)
+                  .put("expirationDate", (String) null);
+                promise.complete(creditRequestJson);
               });
 
             return promise.future();
@@ -136,9 +144,9 @@ public class CreditHandler {
           .onFailure(ctx::fail);
       })
       .onFailure(ctx::fail);
-
-
   }
+
+
 
 
   public void getBalance(RoutingContext ctx) {

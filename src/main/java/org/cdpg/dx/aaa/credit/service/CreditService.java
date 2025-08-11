@@ -50,4 +50,6 @@ public interface CreditService {
   Future<Boolean> deleteComputeRoleRequest(UUID userId);
 
   Future<Boolean> deleteCreditRequest(UUID userId);
+
+  Future<UserCredit> getExpirationDateByUserId(UUID userId);
 }
