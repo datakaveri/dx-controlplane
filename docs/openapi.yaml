@@ -4125,15 +4125,7 @@ paths:
       operationId: post-auth-v1-admin-id-update
       security:
         - authorization: [ ]
-  /iudx/v2/auth/user/{id}:
-    parameters:
-      - name: id
-        in: path
-        required: true
-        description: UUID of the user
-        schema:
-          type: string
-          format: uuid
+  /iudx/v2/auth/user/delete:
     delete:
       summary: (User) Delete User Account
       tags:
@@ -4141,7 +4133,7 @@ paths:
       responses:
         '200':
           description: OK
-      operationId: delete-auth-v1-user-id
+      operationId: delete-auth-v1-user
       security:
         - authorization: [ ]
   /iudx/v2/auth/kyc/revoke:

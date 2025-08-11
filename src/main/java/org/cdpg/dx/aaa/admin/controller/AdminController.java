@@ -36,7 +36,6 @@ public class AdminController implements ApiController {
         routerBuilder
                 .operation("put-auth-v1-user")
                 .handler(adminHandler::updateDxUserInfo);
-
         routerBuilder
                 .operation("put-auth-v1-user-password")
                 .handler(adminHandler::updatePassword);
@@ -46,7 +45,7 @@ public class AdminController implements ApiController {
         .handler(adminHandler::updateUserStatus);
 
       routerBuilder
-        .operation("delete-auth-v1-user-id")
+        .operation("delete-auth-v1-user")
         .handler(adminHandler::deleteDxUser);
 
       routerBuilder

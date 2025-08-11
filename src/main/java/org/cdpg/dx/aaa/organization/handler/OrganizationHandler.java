@@ -327,7 +327,7 @@ public class OrganizationHandler {
           return Future.failedFuture(new DxNotFoundException("User not found"));
         }
 
-        if (user.roles().contains(KeycloakConstants.ADMIN_ROLE)) {
+        if (user.roles().contains(KeycloakConstants.ORG_ADMIN_ROLE)) {
           return Future.failedFuture(new DxBadRequestException("Cannot delete admin user"));
         }
 
@@ -342,46 +342,30 @@ public class OrganizationHandler {
           if (!deleted) {
             return Future.failedFuture(new DxNotFoundException("User not found in organization"));
           }
-
-          // Proceed with cleanup chain
           return organizationService.deleteOrganizationJoinRequest(orgId, userId)
             .recover(err -> {
               LOGGER.warn("Failed to delete join request: {}", err.getMessage());
               return Future.succeededFuture();
             })
-            .compose(v -> organizationService.deleteProviderRoleRequest(orgId,userId)
+            .compose(v -> organizationService.deleteProviderRoleRequest(orgId, userId)
               .recover(err -> {
                 LOGGER.warn("Failed to delete provider role request: {}", err.getMessage());
                 return Future.succeededFuture();
-              }))
-            .compose(v -> creditService.deleteCreditRequest(userId)
-              .recover(err -> {
-                LOGGER.warn("Failed to delete credit request: {}", err.getMessage());
-                return Future.succeededFuture();
-              }))
-            .compose(v -> creditService.deleteComputeRoleRequest(userId)
-              .recover(err -> {
-                LOGGER.warn("Failed to delete compute request: {}", err.getMessage());
-                return Future.succeededFuture();
-              }))
-            .compose(v -> keycloakUserService.deleteUser(userId)
-              .recover(err -> {
-                LOGGER.warn("Failed to delete user from Keycloak: {}", err.getMessage());
-                return Future.succeededFuture();
-              }))
-            .map(v -> true); // final success flag to trigger outer onSuccess
+              })
+            )
+            .onSuccess(v -> {
+              LOGGER.info("User {} deleted completely from Organization {}", userId, orgId);
+              AuditLog auditLog = AuditingHelper.createAuditLog(
+                ctx.user(), RoutingContextHelper.getRequestPath(ctx), "DELETE", "Deleted User with Cleanup"
+              );
+              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              ResponseBuilder.sendSuccess(ctx, "User deleted successfully from DB and Keycloak");
+            })
+            .onFailure(ctx::fail);
         });
-      })
-      .onSuccess(v -> {
-        LOGGER.info("User {} deleted completely from Organization {}", userId, orgId);
-        AuditLog auditLog = AuditingHelper.createAuditLog(
-          ctx.user(), RoutingContextHelper.getRequestPath(ctx), "DELETE", "Deleted User with Cleanup"
-        );
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, "User deleted successfully from DB and Keycloak");
-      })
-      .onFailure(ctx::fail);
+      });
   }
+
 
 
   public void getOrganisationUserInfo(RoutingContext ctx) {
