@@ -1,6 +1,7 @@
 package org.cdpg.dx.database.elastic.model;
 
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_AI_MODEL;
+import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_APPS;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
 import static org.cdpg.dx.database.elastic.util.Constants.*;
 
@@ -45,8 +46,12 @@ public class QueryDecoder {
     new AccessPolicyQueryDecorator(queryMap, request.getAccessPolicyRequest()).add();
     QueryModel excludeDatabankFalse = buildUploadStatusExclusion(ITEM_TYPE_DATA_BANK);
     QueryModel excludeAiModelFalse = buildUploadStatusExclusion(ITEM_TYPE_AI_MODEL);
+    QueryModel excludePendingApps =
+        buildPendingPublishStatusExclusion(List.of(ITEM_TYPE_DATA_BANK, ITEM_TYPE_AI_MODEL,
+            ITEM_TYPE_APPS));
     queryMap.get(FilterType.MUST_NOT).add(excludeDatabankFalse);
     queryMap.get(FilterType.MUST_NOT).add(excludeAiModelFalse);
+    queryMap.get(FilterType.MUST_NOT).add(excludePendingApps);
 
     if (searchType != null && searchType.matches(RESPONSE_FILTER_REGEX)) {
       new ResponseFilterDecorator(queryMap, request.getResponseFilterRequest()).add();
@@ -118,8 +123,12 @@ public class QueryDecoder {
 
     QueryModel excludeDatabankFalse = buildUploadStatusExclusion(ITEM_TYPE_DATA_BANK);
     QueryModel excludeAiModelFalse = buildUploadStatusExclusion(ITEM_TYPE_AI_MODEL);
+    QueryModel excludePendingApps =
+        buildPendingPublishStatusExclusion(List.of(ITEM_TYPE_DATA_BANK, ITEM_TYPE_AI_MODEL,
+            ITEM_TYPE_APPS));
     queryMap.get(FilterType.MUST_NOT).add(excludeDatabankFalse);
     queryMap.get(FilterType.MUST_NOT).add(excludeAiModelFalse);
+    queryMap.get(FilterType.MUST_NOT).add(excludePendingApps);
 
     QueryModel finalQuery = new QueryModel();
     finalQuery.setQueries(getBoolQuery(queryMap));
@@ -161,6 +170,20 @@ public class QueryDecoder {
                             VALUE, itemType)),
                 new QueryModel(QueryType.TERM)
                     .setQueryParameters(Map.of(FIELD, DATA_UPLOAD_STATUS, VALUE, false))));
+  }
+
+  private QueryModel buildPendingPublishStatusExclusion(List<String> itemTypes) {
+    return new QueryModel(QueryType.BOOL)
+        .setMustQueries(
+            List.of(
+                new QueryModel(QueryType.TERMS)
+                    .setQueryParameters(
+                        Map.of(
+                            FIELD, TYPE_KEYWORD,
+                            VALUE, itemTypes)),
+                new QueryModel(QueryType.TERM)
+                    .setQueryParameters(Map.of(FIELD, PUBLISH_STATUS + KEYWORD_KEY, VALUE,
+                        PENDING))));
   }
 
   private QueryModel buildGetParentObjectInfoQuery(QueryDecoderRequestDTO request) {
