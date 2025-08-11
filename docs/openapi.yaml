@@ -2856,8 +2856,6 @@ paths:
                     Used to define additional information to access data for educational, research,
                     testing, non-commercial, or academic purposes.
                   type: object
-                  minProperties: 1
-                  maxProperties: 10
       responses:
         '200':
           description: OK
