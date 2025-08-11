@@ -1,6 +1,7 @@
 package org.cdpg.dx.aaa.item.util;
 
 import static org.cdpg.dx.aaa.common.Constants.*;
+import static org.cdpg.dx.database.elastic.util.Constants.COS_ADMIN;
 import static org.cdpg.dx.database.elastic.util.Constants.DATA_UPLOAD_STATUS;
 import static org.cdpg.dx.database.elastic.util.Constants.DETAIL_ITEM_NOT_FOUND;
 import static org.cdpg.dx.database.elastic.util.Constants.MEDIA_URL;
@@ -10,6 +11,7 @@ import static org.cdpg.dx.database.elastic.util.Constants.PUBLISH_STATUS;
 
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.JsonArray;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
@@ -65,24 +67,35 @@ public class ItemExistenceValidator {
 
     itemService
         .itemWithTheNameExists(ITEM_TYPE_APPS, request.getString(NAME))
-        .onFailure(
-            err -> {
-              if (err.getMessage().equals(DETAIL_ITEM_NOT_FOUND)) {
-                promise.complete(request);
-              } else {
-                LOGGER.debug("Fail: DB Error: " + err.getLocalizedMessage());
-                promise.fail(new DxBadRequestException(VALIDATION_FAILURE_MSG));
-              }
-            })
-        .onSuccess(
-            res -> {
-              if (REQUEST_POST.equalsIgnoreCase(method)
-                  && ElasticsearchResponse.getTotalHits() > 0) {
-                promise.fail("Fail: Apps item already exists");
-              } else {
-                promise.complete(request);
-              }
-            });
+        .onFailure(err -> {
+          if (DETAIL_ITEM_NOT_FOUND.equals(err.getMessage())) {
+            if (REQUEST_POST.equalsIgnoreCase(method)) {
+              setPublishStatus(request);
+            }
+            promise.complete(request);
+          } else {
+            LOGGER.debug("Fail: DB Error: {}", err.getLocalizedMessage());
+            promise.fail(new DxBadRequestException(VALIDATION_FAILURE_MSG));
+          }
+        })
+        .onSuccess(res -> {
+          if (REQUEST_POST.equalsIgnoreCase(method)
+              && ElasticsearchResponse.getTotalHits() > 0) {
+            promise.fail("Fail: Apps item already exists");
+          } else {
+            if (REQUEST_POST.equalsIgnoreCase(method)) {
+              setPublishStatus(request);
+            }
+            promise.complete(request);
+          }
+        });
+  }
+
+  private void setPublishStatus(JsonObject request) {
+    JsonArray roles = request.getJsonArray("roles", new JsonArray());
+    request.put(PUBLISH_STATUS,
+        (roles.contains(ORG_ADMIN) || roles.contains(COS_ADMIN)) ? ACTIVE : PENDING
+    );
   }
 
   public void validateAiModel(JsonObject request, String method, Promise<JsonObject> promise) {
