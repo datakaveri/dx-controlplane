@@ -201,9 +201,10 @@ public class Constants {
     public static final String DATABASE_ERROR = "DB Error. Check logs for more information";
 
     /** Operation type. */
-    public static final String INSERT = "insert";
-    public static final String UPDATE = "update";
-    public static final String DELETE = "delete";
+    public static final String VIEW = "View";
+    public static final String CREATE = "Create";
+    public static final String UPDATE = "Update";
+    public static final String DELETE = "Delete";
 
     /** Limits/Constraints. */
     public static final long COORDINATES_SIZE = 10;
