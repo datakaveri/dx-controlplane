@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.credit.handler;
 
+import co.elastic.clients.elasticsearch.ingest.Local;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -182,42 +183,44 @@ public class CreditHandler {
     UUID transactedBy = UUID.fromString(user.subject());
     Status status = Status.fromString(creditRequestJson.getString("status"));
     UUID requestId = UUID.fromString(creditRequestJson.getString("id"));
-    String expirationDate = creditRequestJson.getString("expiration_date");
-
-    if( expirationDate == null || expirationDate.isEmpty())
-    {
-      throw new DxBadRequestException("Expiration date is required");
-    }
-
-    try
-    {
-      LocalDateTime.parse(expirationDate, FORMATTER);
-    }
-    catch (Exception e) {
-      throw new DxBadRequestException("Invalid expiration date format. Expected format: " + FORMATTER);
-    }
-
-    if(parseDateTime(expirationDate).isBefore(java.time.LocalDateTime.now())) {
-      throw new DxBadRequestException("Expiration date must be in the future");
-    }
-
-    Double amount = null;
 
     if (status == Status.GRANTED && creditRequestJson.getValue("amount") == null) {
       throw new DxBadRequestException("Amount is required for GRANTED status");
     }
 
+    String expirationDate=null;
+    if(status == GRANTED) {
 
-    amount = creditRequestJson.getDouble("amount");
+      expirationDate = creditRequestJson.getString("expiration_date");
 
-    creditService.updateCreditRequestStatus( requestId, status, transactedBy,amount,expirationDate)
+      if (expirationDate == null || expirationDate.isEmpty()) {
+        throw new DxBadRequestException("Expiration date is required");
+      }
+
+      try {
+        LocalDateTime.parse(expirationDate, FORMATTER);
+      } catch (Exception e) {
+        throw new DxBadRequestException("Invalid expiration date format. Expected format: " + FORMATTER);
+      }
+
+      if (parseDateTime(expirationDate).isBefore(java.time.LocalDateTime.now())) {
+        throw new DxBadRequestException("Expiration date must be in the future");
+      }
+
+    }
+
+      Double amount = null;
+      amount = creditRequestJson.getDouble("amount");
+
+    creditService.updateCreditRequestStatus(requestId, status, transactedBy, amount, expirationDate)
       .onSuccess(transaction -> {
         AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
           RoutingContextHelper.getRequestPath(ctx), "PUT", "Credit Request Status Updated");
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx,  transaction);
-        Future<Void> future = emailComposer.sendUserEmailForCreditApproval(requestId,status);
-      }).onFailure(ctx::fail);
+        ResponseBuilder.sendSuccess(ctx, transaction);
+        emailComposer.sendUserEmailForCreditApproval(requestId, status);
+      })
+      .onFailure(ctx::fail);
 
   }
 

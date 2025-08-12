@@ -21,7 +21,6 @@ public record CreditRequest(
   String userName,
   JsonObject additionalInfo,
   String status,
-  LocalDateTime expirationDate,
   LocalDateTime requestedAt,
   LocalDateTime processedAt
 ) implements BaseEntity<CreditRequest> {
@@ -38,7 +37,6 @@ public record CreditRequest(
         json.getString(Constants.STATUS) != null
           ? json.getString(Constants.STATUS)
           : Status.PENDING.getStatus(),
-        parseDateTime(json.getString(Constants.EXPIRATION_DATE)),
         parseDateTime(json.getString(Constants.REQUESTED_AT)),
         parseDateTime(json.getString(Constants.PROCESSED_AT))
       );
@@ -56,7 +54,6 @@ public record CreditRequest(
     json.put(Constants.USER_NAME, userName.toString());
     if (additionalInfo != null) json.put(Constants.ADDITONAL_INFO, additionalInfo); // <-- new field
     if (status != null && !status.isEmpty()) json.put(Constants.STATUS, status);
-    if (expirationDate!= null) json.put(Constants.EXPIRATION_DATE, expirationDate.format(FORMATTER));
     if (requestedAt != null) json.put(Constants.REQUESTED_AT, requestedAt.format(FORMATTER));
     if (processedAt != null) json.put(Constants.PROCESSED_AT, processedAt.format(FORMATTER));
 
@@ -72,7 +69,6 @@ public record CreditRequest(
     map.put(Constants.USER_NAME, userName.toString());
     if (additionalInfo != null) map.put(Constants.ADDITONAL_INFO, additionalInfo);
     if (status != null && !status.isEmpty()) map.put(Constants.STATUS, status);
-    if (expirationDate!= null) map.put(Constants.EXPIRATION_DATE, expirationDate.format(FORMATTER));
     if (requestedAt != null) map.put(Constants.REQUESTED_AT, requestedAt.format(FORMATTER));
     if (processedAt != null) map.put(Constants.PROCESSED_AT, processedAt.format(FORMATTER));
 
