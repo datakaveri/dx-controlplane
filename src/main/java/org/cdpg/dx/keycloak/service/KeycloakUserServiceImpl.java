@@ -61,12 +61,27 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
         });
     }
 
+  @Override
+  public Future<Integer> getTotalCount() {
+    return BlockingExecutionUtil.runBlocking(() -> {
+
+        try {
+          return usersResource().count();
+        }
+        catch(Exception e) {
+            LOGGER.error("Failed to retrieve total user count from Keycloak: {}", e.getMessage(), e);
+            throw new KeycloakServiceException("Failed to retrieve total user count", e);
+        }
+  });
+  }
+
     @Override
     public Future<List<DxUser>> getUsers(int page, int size, String name) {
         return BlockingExecutionUtil.runBlocking(() -> {
             try {
                 //System.out.println("Fetching users from Keycloak: page=" + page + ", size=" + size + ", enabled=" + enabled);
-                List<UserRepresentation> reps = usersResource().search(
+
+              List<UserRepresentation> reps = usersResource().search(
                         name,          // search string
                         (page-1) * size,   // first (offset)
                         size,          // max
