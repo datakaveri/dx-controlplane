@@ -216,7 +216,6 @@ public class AdminHandler {
     }
 
   }
-
   public void deleteDxUser(RoutingContext ctx) {
     User user = ctx.user();
     UUID userId = UUID.fromString(user.subject());
@@ -236,7 +235,6 @@ public class AdminHandler {
 
         LOGGER.info("Organization ID is : {}", userInfo.organisationId());
 
-        // If user has organization
         if (userInfo.organisationId() != null && !userInfo.organisationId().isEmpty()) {
           UUID orgId = UUID.fromString(userInfo.organisationId());
 
@@ -249,41 +247,47 @@ public class AdminHandler {
               return Future.failedFuture(new DxBadRequestException("Cannot delete organization admin user"));
             }
 
-            Future<Void> chain = Future.succeededFuture();
+            Future<Boolean> chain = Future.succeededFuture();
 
-            // If provider role → deleteProviderUser first
             if (userInfo.roles().contains(KeycloakConstants.PROVIDER_ROLE)) {
               LOGGER.info("Deleting provider user with ID: {}", userId);
               chain = chain.compose(v -> organizationService.deleteProviderUser(userId, orgAdminId, orgId)
                 .mapEmpty());
-            }
-            else
-            {
+            } else {
               chain = chain.compose(v -> organizationService.deleteOrganizationUser(orgId, userId)
                 .mapEmpty());
             }
 
             chain = chain
               .compose(v -> organizationService.deleteOrganizationJoinRequest(orgId, userId)
-                .onSuccess(r -> LOGGER.info("Join request deleted for user {}", userId))
-                .mapEmpty())
+                .recover(err -> {
+                  LOGGER.warn("Failed to delete join request for user {}: {}", userId, err.getMessage());
+                  return Future.succeededFuture();
+                })
+              )
               .compose(v -> organizationService.deleteProviderRoleRequest(orgId, userId)
-                .onSuccess(r -> LOGGER.info("Provider request deleted for user {}", userId))
-                .mapEmpty())
-              .compose(v -> creditService.deleteCreditRequest(userId)
-                .onSuccess(r -> LOGGER.info("Credit request deleted for user {}", userId))
-                .mapEmpty())
-              .compose(v -> creditService.deleteComputeRoleRequest(userId)
-                .onSuccess(r -> LOGGER.info("Compute request deleted for user {}", userId))
-                .mapEmpty());
-
+                .recover(err -> {
+                  LOGGER.warn("Failed to delete provider role request for user {}: {}", userId, err.getMessage());
+                  return Future.succeededFuture();
+                }));
             return chain;
           });
         }
 
         return keycloakUserService.deleteUser(userId)
           .onSuccess(r -> LOGGER.info("User {} deleted from Keycloak", userId))
-          .mapEmpty();
+          .mapEmpty()
+          .compose(v -> creditService.deleteCreditRequest(userId)
+            .recover(err -> {
+              LOGGER.warn("Failed to delete credit request for user {}: {}", userId, err.getMessage());
+              return Future.succeededFuture();
+            })
+          )
+          .compose(v -> creditService.deleteComputeRoleRequest(userId)
+            .recover(err -> {
+              LOGGER.warn("Failed to delete compute request for user {}: {}", userId, err.getMessage());
+              return Future.succeededFuture();
+            }));
       })
       .onSuccess(v -> {
         AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
@@ -296,6 +300,8 @@ public class AdminHandler {
         ctx.fail(err);
       });
   }
+
+
 
   public void updateDxUserStatusById(RoutingContext ctx) {
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "id");
