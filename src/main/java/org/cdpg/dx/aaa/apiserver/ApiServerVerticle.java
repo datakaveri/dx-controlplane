@@ -177,7 +177,7 @@ public class ApiServerVerticle extends AbstractVerticle {
         .allowedHeader("Content-Type")
         .allowedHeader("Authorization")
         .allowedHeader("Origin")
-        .allowCredentials(true);
+        .allowCredentials(false);
 
     router.route().handler(corsHandler);
   }
