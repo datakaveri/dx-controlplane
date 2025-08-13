@@ -110,7 +110,7 @@ public class AdminHandler {
               .put("totalPages", totalPages);
 
             JsonObject response = new JsonObject()
-              .put("users", array)
+              .put("result", array)
               .put("paginationInfo", paginationInfo);
 
             return response;
@@ -267,15 +267,20 @@ public class AdminHandler {
               .compose(v -> organizationService.deleteOrganizationJoinRequest(orgId, userId)
                 .onSuccess(r -> LOGGER.info("Join request deleted for user {}", userId))
                 .mapEmpty())
-              .compose(v -> keycloakUserService.deleteUser(userId)
-                .onSuccess(r -> LOGGER.info("User {} deleted from Keycloak", userId))
+              .compose(v -> organizationService.deleteProviderRoleRequest(orgId, userId)
+                .onSuccess(r -> LOGGER.info("Provider request deleted for user {}", userId))
+                .mapEmpty())
+              .compose(v -> creditService.deleteCreditRequest(userId)
+                .onSuccess(r -> LOGGER.info("Credit request deleted for user {}", userId))
+                .mapEmpty())
+              .compose(v -> creditService.deleteComputeRoleRequest(userId)
+                .onSuccess(r -> LOGGER.info("Compute request deleted for user {}", userId))
                 .mapEmpty());
 
             return chain;
           });
         }
 
-        // If no organization, just delete user in Keycloak
         return keycloakUserService.deleteUser(userId)
           .onSuccess(r -> LOGGER.info("User {} deleted from Keycloak", userId))
           .mapEmpty();
