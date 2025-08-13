@@ -1,5 +1,8 @@
 package org.cdpg.dx.common.response;
 
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.HEADER_ALLOW_ORIGIN;
+import static org.cdpg.dx.common.config.CorsUtil.allowedOrigins;
+
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import org.cdpg.dx.common.HttpStatusCode;
@@ -30,13 +33,21 @@ public class ResponseBuilder {
     DxResponse<T> response =
         new DxResponse<>(status.getUrn(), status.getDescription(), detail, result, pageInfo);
     String requestOrigin = ctx.request().getHeader("Origin");
-    ctx.response()
-        .putHeader("Content-Type", "application/json")
-        .putHeader("Access-Control-Allow-Origin", requestOrigin != null ? requestOrigin : "*")
-        .putHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-        .putHeader("Access-Control-Allow-Headers", "Authorization, Content-Type")
-        .setStatusCode(status.getValue())
-        .end(JsonObject.mapFrom(response).encode());
+    if (allowedOrigins != null && requestOrigin != null && allowedOrigins.contains(requestOrigin)
+        || allowedOrigins.contains("*")) {
+      ctx.response()
+          .putHeader("Content-Type", "application/json")
+          .putHeader(HEADER_ALLOW_ORIGIN, requestOrigin)
+          .putHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+          .putHeader("Access-Control-Allow-Headers", "Authorization, Content-Type")
+          .setStatusCode(status.getValue())
+          .end(JsonObject.mapFrom(response).encode());
+    } else {
+      ctx.response()
+          .putHeader("Content-Type", "application/json")
+          .setStatusCode(status.getValue())
+          .end(JsonObject.mapFrom(response).encode());
+    }
   }
 
   public static void sendSuccess(RoutingContext ctx, String detail) {
