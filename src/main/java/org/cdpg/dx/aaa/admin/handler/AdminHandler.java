@@ -18,6 +18,7 @@ import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
+import org.cdpg.dx.common.util.PaginationInfo;
 import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.util.RoutingContextHelper;
@@ -83,7 +84,7 @@ public class AdminHandler {
     PaginatedRequest request = PaginationRequestBuilder.from(ctx).build();
     String name = ctx.queryParam("search_term").stream().findFirst().orElse(null);
 
-    keycloakUserService.getUsers(request.page(), request.size(), name)
+    keycloakUserService.getTotalCount().compose(totalCount -> keycloakUserService.getUsers(request.page(), request.size(), name)
       .compose(users -> {
         List<Future> futures = new ArrayList<>();
         for (DxUser user : users) {
@@ -95,20 +96,33 @@ public class AdminHandler {
             for (int i = 0; i < cf.size(); i++) {
               array.add(cf.resultAt(i));
             }
-            return array;
+
+            int totalPages = (int) Math.ceil((double) totalCount / request.size());
+            boolean hasNext = request.page() < totalPages;
+            boolean hasPrevious = request.page() > 1;
+
+            JsonObject paginationInfo = new JsonObject()
+              .put("page", request.page())
+              .put("size", request.size())
+              .put("totalCount", totalCount)
+              .put("hasNext", hasNext)
+              .put("hasPrevious", hasPrevious)
+              .put("totalPages", totalPages);
+
+            JsonObject response = new JsonObject()
+              .put("users", array)
+              .put("paginationInfo", paginationInfo);
+
+            return response;
           });
-      })
-      .onSuccess(response -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx), "GET", "Get All DxUsers");
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, response);
-      })
-      .onFailure(err -> {
-        LOGGER.error("Failed to get all DxUsers: {}", err.getMessage(), err);
-        ctx.fail(err);
-      });
+      })).onSuccess(response -> {
+      ctx.response()
+        .putHeader("Content-Type", "application/json")
+        .end(response.encode());
+    }).onFailure(ctx::fail);
   }
+
+
 
   public void updateDxUserInfo(RoutingContext ctx) {
     User user = ctx.user();
@@ -239,6 +253,7 @@ public class AdminHandler {
 
             // If provider role → deleteProviderUser first
             if (userInfo.roles().contains(KeycloakConstants.PROVIDER_ROLE)) {
+              LOGGER.info("Deleting provider user with ID: {}", userId);
               chain = chain.compose(v -> organizationService.deleteProviderUser(userId, orgAdminId, orgId)
                 .mapEmpty());
             }

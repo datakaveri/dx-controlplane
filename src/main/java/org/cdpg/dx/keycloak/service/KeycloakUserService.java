@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.UUID;
 
 public interface KeycloakUserService {
+    Future<Integer> getTotalCount();
+
     Future<List<DxUser>> getUsers(int page, int size, String name);
     Future<DxUser> getUserById(UUID userId);
     Future<Boolean> updateUserAttributes(UUID userId, Map<String, String> attributes);
