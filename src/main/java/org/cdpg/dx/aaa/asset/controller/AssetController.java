@@ -32,7 +32,7 @@ public class AssetController implements ApiController {
     routerBuilder
       .operation("get-auth-v1-asset-request")
       .handler(auditingHandler::handleApiAudit)
-      .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
+      .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.CONSUMER))
       .handler(assetHandler::getAllAssetRequests);
 
     routerBuilder
