@@ -101,25 +101,18 @@ public class AdminHandler {
             boolean hasNext = request.page() < totalPages;
             boolean hasPrevious = request.page() > 1;
 
-            JsonObject paginationInfo = new JsonObject()
-              .put("page", request.page())
-              .put("size", request.size())
-              .put("totalCount", totalCount)
-              .put("hasNext", hasNext)
-              .put("hasPrevious", hasPrevious)
-              .put("totalPages", totalPages);
+            PaginationInfo paginationInfo = new PaginationInfo(request.page(),request.size(),totalCount,totalPages,hasNext,hasPrevious);
 
-            JsonObject response = new JsonObject()
-              .put("result", array)
-              .put("paginationInfo", paginationInfo);
-
-            return response;
+            Map<String, Object> resultMap = new HashMap<>();
+            resultMap.put("result", array);
+            resultMap.put("paginationInfo", paginationInfo);
+            return resultMap;
           });
       })).onSuccess(response -> {
       AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
         RoutingContextHelper.getRequestPath(ctx), "GET", "Get DxUser Info");
       RoutingContextHelper.setAuditingLog(ctx, auditLog);
-      ResponseBuilder.sendSuccess(ctx, response);
+      ResponseBuilder.sendSuccess(ctx, response.get("result"), (PaginationInfo) response.get("paginationInfo"));
     }).onFailure(ctx::fail);
   }
 
