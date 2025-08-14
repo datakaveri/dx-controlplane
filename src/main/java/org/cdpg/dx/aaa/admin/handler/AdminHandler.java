@@ -116,9 +116,10 @@ public class AdminHandler {
             return response;
           });
       })).onSuccess(response -> {
-      ctx.response()
-        .putHeader("Content-Type", "application/json")
-        .end(response.encode());
+      AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+        RoutingContextHelper.getRequestPath(ctx), "GET", "Get DxUser Info");
+      RoutingContextHelper.setAuditingLog(ctx, auditLog);
+      ResponseBuilder.sendSuccess(ctx, response);
     }).onFailure(ctx::fail);
   }
 
