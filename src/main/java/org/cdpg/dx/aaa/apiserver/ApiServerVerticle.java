@@ -30,7 +30,6 @@ import org.cdpg.dx.auth.authentication.handler.OptionalJwtAuthHandler;
 import org.cdpg.dx.auth.authentication.provider.JwtAuthProvider;
 import org.cdpg.dx.common.FailureHandler;
 import org.cdpg.dx.common.HttpStatusCode;
-import org.cdpg.dx.common.config.CorsUtil;
 import org.cdpg.dx.common.util.BlockingExecutionUtil;
 
 public class ApiServerVerticle extends AbstractVerticle {
@@ -74,7 +73,7 @@ public class ApiServerVerticle extends AbstractVerticle {
               RouterBuilder routerBuilder = cf.resultAt(0);
               JWTAuth jwtAuth = cf.resultAt(1);
               AuthenticationHandler authHandler = new KeycloakJwtAuthHandler(jwtAuth);
-                AuthenticationHandler optionalAuth = new OptionalJwtAuthHandler(jwtAuth);
+              AuthenticationHandler optionalAuth = new OptionalJwtAuthHandler(jwtAuth);
               try {
 
                 LOGGER.debug("Adding platform handlers...");
@@ -87,7 +86,7 @@ public class ApiServerVerticle extends AbstractVerticle {
                     new RouterBuilderOptions().setMountResponseContentTypeHandler(true);
                 routerBuilder.setOptions(factoryOptions);
                 routerBuilder.securityHandler("authorization", authHandler);
-                  routerBuilder.securityHandler("optionalAuth", optionalAuth);
+                routerBuilder.securityHandler("optionalAuth", optionalAuth);
 
                 controllers.forEach(controller -> controller.register(routerBuilder));
 
@@ -174,10 +173,11 @@ public class ApiServerVerticle extends AbstractVerticle {
         .allowedMethod(HttpMethod.OPTIONS)
         .allowedMethod(HttpMethod.PUT)
         .allowedMethod(HttpMethod.DELETE)
+        .allowedMethod(HttpMethod.PATCH)
         .allowedHeader("Content-Type")
         .allowedHeader("Authorization")
         .allowedHeader("Origin")
-        .allowCredentials(true);
+        .allowCredentials(false);
 
     router.route().handler(corsHandler);
   }
