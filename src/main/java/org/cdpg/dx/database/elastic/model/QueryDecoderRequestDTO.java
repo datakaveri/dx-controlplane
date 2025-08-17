@@ -8,6 +8,7 @@ public class QueryDecoderRequestDTO {
   private Integer page;
   private String id;
   private String organisationId;
+  private String publishStatus;
   private List<String> filter;
   private TextSearchRequestDTO textSearchRequest;
   private SearchCriteriaRequestDTO searchCriteriaRequest;
@@ -45,12 +46,16 @@ public class QueryDecoderRequestDTO {
   public QueryDecoderRequestDTO(
           Integer size,
           Integer page,
-          List<OrderBy> sort,String organizationId,String requestType
+          List<OrderBy> sort,
+          String organizationId,
+          String publishStatus,
+          String requestType
   ) {
     this.size = size;
     this.page = page;
     this.sort = sort;
     this.organisationId = organizationId;
+    this.publishStatus = publishStatus;
     this.requestType=requestType;
   }
   public List<OrderBy> getSort() {
@@ -75,6 +80,14 @@ public class QueryDecoderRequestDTO {
 
   public void setPage(Integer page) {
     this.page = page;
+  }
+
+  public String getPublishStatus() {
+    return publishStatus;
+  }
+
+  public void setPublishStatus(String publishStatus) {
+    this.publishStatus = publishStatus;
   }
 
   public String getSearchType() {
