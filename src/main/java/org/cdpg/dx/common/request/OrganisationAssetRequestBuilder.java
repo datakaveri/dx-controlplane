@@ -34,8 +34,16 @@ public class OrganisationAssetRequestBuilder {
         return new QueryDecoderRequestDTO(
                 getSize(params),
                 getPage(params),
-                extractSortOrders(),getOrgId(routingContext),requestType);
+                extractSortOrders(),
+                getOrgId(routingContext), 
+                getPublishStatus(params),
+                requestType);
     }
+
+    private String getPublishStatus(MultiMap params) {
+        return params.get(PUBLISH_STATUS);
+    }
+
     public int getSize(MultiMap params) {
         return params.get(SIZE_KEY) != null ? Integer.parseInt(params.get(SIZE_KEY)) : 100;
     }

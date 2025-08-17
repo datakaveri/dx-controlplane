@@ -95,10 +95,25 @@ public class QueryDecoder {
     // Create the bool query with the match query in the must clause
     QueryModel boolQuery = new QueryModel();
     boolQuery.setQueryType(QueryType.BOOL);
-    boolQuery.setMustQueries(List.of(matchQuery));
+    List<QueryModel> mustQueries = new ArrayList<>();
+    mustQueries.add(matchQuery);
 
-    QueryModel q= new QueryModel();
+    // Add publishStatus filter if present in request
+    if (request.getPublishStatus() != null && !request.getPublishStatus().isEmpty()) {
+      Map<String, Object> statusParams = new HashMap<>();
+      statusParams.put(FIELD, "publishStatus.keyword");
+      statusParams.put(VALUE, request.getPublishStatus());
+
+      QueryModel statusQuery = new QueryModel(QueryType.MATCH, statusParams);
+      mustQueries.add(statusQuery);
+    }
+
+    boolQuery.setMustQueries(mustQueries);
+
+    QueryModel q = new QueryModel();
     q.setQueries(boolQuery);
+
+    // Pagination support
     if (request.getSize() != null) {
       int size = request.getSize();
       q.setLimit(String.valueOf(size));
@@ -106,10 +121,11 @@ public class QueryDecoder {
         int offset = (request.getPage() - 1) * size;
         q.setOffset(String.valueOf(offset));
       }
-
     }
+
     return q;
   }
+
   public QueryModel listMultipleItemTypesQuery(QueryDecoderRequestDTO request) {
     LOGGER.debug("listMultipleItemTypesQuery - {}", request);
     Map<FilterType, List<QueryModel>> queryMap = new HashMap<>();
