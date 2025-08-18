@@ -5366,7 +5366,7 @@ paths:
 
         Supports property-based, temporal, and numeric range filters, as well as
         full-text search.
-      operationId: myAssetsSearch
+      operationId: post myAssetsSearch
       tags:
         - Discovery
       security:
@@ -5378,6 +5378,55 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/SearchCriteriaRequest'
+      responses:
+        '200':
+          description: A successful search response with assets owned by the user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          description: Invalid request query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid authentication token
+    get:
+      summary: Search assets created by the current authenticated user
+      description: >
+        Returns assets owned by the current authenticated user.  
+        This endpoint automatically filters results to only include items where
+        `ownerUserId` matches the authenticated user's `sub` value from the token,  
+        irrespective of publish status or data upload status.  
+        No other filters are applied.
+      operationId: get myAssetsSearch
+      tags:
+        - Discovery
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: sort
+          in: query
+          description: Sort order in the format `field:order` (e.g. `itemCreatedAt:desc`)
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Page number for pagination
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          description: Number of results per page
+          required: false
+          schema:
+            type: integer
+            default: 10
       responses:
         '200':
           description: A successful search response with assets owned by the user

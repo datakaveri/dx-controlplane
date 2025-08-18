@@ -101,6 +101,10 @@ public class PostSearchRequestBuilder {
     boolean hasFilter = false;
     StringBuilder typeBuilder = new StringBuilder();
 
+    if (isAssetSearch) {
+      typeBuilder.append(SEARCH_TYPE_MY_ASSETS_ALL);
+      hasFilter = true;
+    }
     if (body.getJsonArray(SEARCH_CRITERIA_KEY) != null
         && !body.getJsonArray(SEARCH_CRITERIA_KEY).isEmpty()) {
       typeBuilder.append(SEARCH_TYPE_CRITERIA);
