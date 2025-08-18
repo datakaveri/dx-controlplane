@@ -66,6 +66,8 @@ public class Constants {
   public static final String ATTRIBUTE_SEARCH_REGEX = "(.*)attributeSearch(.*)";
   public static final String SEARCH_CRITERIA_REGEX = "(.*)searchCriteria(.*)";
 
+  public static final String MY_ASSETS_SEARCH_REGEX = "(.*)myAssetsAll(.*)";
+
   public static final String GEOSEARCH_REGEX = "(.*)geoSearch(.*)";
   public static final String RESPONSE_FILTER_GEO = "responseFilter_geoSearch_";
   public static final String RESPONSE_FILTER_REGEX = "(.*)responseFilter(.*)";
@@ -431,6 +433,7 @@ public class Constants {
   public static final String RESPONSE_FILTER = "responseFilter_";
   public static final String SEARCH_TYPE_CRITERIA = "searchCriteria_"; // used in SEARCH_TYPE value
   public static final String SEARCH_CRITERIA_KEY = "searchCriteria";
+  public static final String SEARCH_TYPE_MY_ASSETS_ALL = "myAssetsAll_";
   public static final String MESSAGE = "detail";
   public static final String RESULTS = "results";
   public static final String METHOD = "method";

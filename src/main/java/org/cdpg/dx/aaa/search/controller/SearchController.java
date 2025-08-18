@@ -14,6 +14,7 @@ import org.cdpg.dx.aaa.search.service.SearchService;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.common.request.GetSearchRequestBuilder;
 import org.cdpg.dx.common.request.OrganisationAssetRequestBuilder;
 import org.cdpg.dx.common.request.PostSearchRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
@@ -45,10 +46,16 @@ public class SearchController implements ApiController {
             .handler(auditingHandler::handleApiAudit);
 
     builder
-            .operation(ASSET_SEARCH)
+            .operation(POST_ASSET_SEARCH)
             .handler(TOKEN_CHECK)
-            .handler(this::handleAsset)
+            .handler(this::handlePostAsset)
             .handler(auditingHandler::handleApiAudit);
+
+    builder
+        .operation(GET_ASSET_SEARCH)
+        .handler(TOKEN_CHECK)
+        .handler(this::handleGetAsset)
+        .handler(auditingHandler::handleApiAudit);
 
     builder.operation(GET_ITEMS)
             .handler(TOKEN_CHECK)
@@ -60,7 +67,8 @@ public class SearchController implements ApiController {
             "Registered SearchController operations: {}, {}, {}",
             POST_SEARCH,
             POST_COUNT_SEARCH,
-            ASSET_SEARCH);
+            POST_ASSET_SEARCH,
+            GET_ASSET_SEARCH);
   }
 
   private void handleOrganisationGetItems(RoutingContext ctx) {
@@ -89,14 +97,28 @@ public class SearchController implements ApiController {
     }
   }
 
-  private void handleAsset(RoutingContext ctx) {
-    LOGGER.debug("Received POST Asset request on '{}'", ASSET_SEARCH);
+  private void handlePostAsset(RoutingContext ctx) {
+    LOGGER.debug("Received POST Asset request on '{}'", POST_ASSET_SEARCH);
     try {
       QueryDecoderRequestDTO queryDecoder =
               PostSearchRequestBuilder.fromRoutingContext(ctx)
                       .setAssetSearch(true)
                       .setCountApi(false)
                       .build();
+      processSearchRequest(ctx, queryDecoder);
+    } catch (Exception e) {
+      LOGGER.error("Error processing asset request: {}", e.getMessage());
+      ctx.fail(e);
+    }
+  }
+
+  private void handleGetAsset(RoutingContext ctx) {
+    LOGGER.debug("Received GET Asset request on '{}'", GET_ASSET_SEARCH);
+    try {
+      QueryDecoderRequestDTO queryDecoder =
+          GetSearchRequestBuilder.fromRoutingContext(ctx)
+              .setAssetSearch(true)
+              .build();
       processSearchRequest(ctx, queryDecoder);
     } catch (Exception e) {
       LOGGER.error("Error processing asset request: {}", e.getMessage());

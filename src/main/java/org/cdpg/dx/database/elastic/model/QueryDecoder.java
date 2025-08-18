@@ -16,6 +16,21 @@ import org.cdpg.dx.database.elastic.util.QueryType;
 public class QueryDecoder {
   private static final Logger LOGGER = LogManager.getLogger(QueryDecoder.class);
 
+  /**
+   * Apply default exclusion filters and access policy constraints
+   * only for non-asset searches.
+   *
+   * Rules:
+   * - For normal searches:
+   *   - Add {@link AccessPolicyQueryDecorator} to enforce access policy rules.
+   *   - Exclude DataBank and AiModel items with {@code dataUploadStatus = false}.
+   *   - Exclude DataBank, AiModel, and Apps with {@code publishStatus = PENDING}.
+   *
+   * - For asset searches (searchType matching {@code MY_ASSETS_SEARCH_REGEX} i.e. "myAssetsAll_*"):
+   *   - Skip these exclusions to allow owners to view all their assets
+   *     regardless of upload or publish status.
+   */
+
   public QueryModel getQueryModel(QueryDecoderRequestDTO request) {
 
     String searchType = request.getSearchType();
@@ -44,14 +59,22 @@ public class QueryDecoder {
     }
 
     new AccessPolicyQueryDecorator(queryMap, request.getAccessPolicyRequest()).add();
-    QueryModel excludeDatabankFalse = buildUploadStatusExclusion(ITEM_TYPE_DATA_BANK);
-    QueryModel excludeAiModelFalse = buildUploadStatusExclusion(ITEM_TYPE_AI_MODEL);
-    QueryModel excludePendingApps =
-        buildPendingPublishStatusExclusion(List.of(ITEM_TYPE_DATA_BANK, ITEM_TYPE_AI_MODEL,
-            ITEM_TYPE_APPS));
-    queryMap.get(FilterType.MUST_NOT).add(excludeDatabankFalse);
-    queryMap.get(FilterType.MUST_NOT).add(excludeAiModelFalse);
-    queryMap.get(FilterType.MUST_NOT).add(excludePendingApps);
+
+    // Exclude blocks only if NOT myAssetsAll search
+    if (!searchType.matches(MY_ASSETS_SEARCH_REGEX)) {
+      QueryModel excludeDatabankFalse = buildUploadStatusExclusion(ITEM_TYPE_DATA_BANK);
+      QueryModel excludeAiModelFalse = buildUploadStatusExclusion(ITEM_TYPE_AI_MODEL);
+      QueryModel excludePendingApps =
+          buildPendingPublishStatusExclusion(List.of(ITEM_TYPE_DATA_BANK, ITEM_TYPE_AI_MODEL,
+              ITEM_TYPE_APPS));
+      queryMap.get(FilterType.MUST_NOT).add(excludeDatabankFalse);
+      queryMap.get(FilterType.MUST_NOT).add(excludeAiModelFalse);
+      queryMap.get(FilterType.MUST_NOT).add(excludePendingApps);
+    }
+
+    if (searchType.matches(MY_ASSETS_SEARCH_REGEX)) {
+      isValidQuery = true;
+    }
 
     if (searchType != null && searchType.matches(RESPONSE_FILTER_REGEX)) {
       new ResponseFilterDecorator(queryMap, request.getResponseFilterRequest()).add();

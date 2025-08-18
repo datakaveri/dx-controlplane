@@ -55,7 +55,8 @@ public class ApiConstants {
   public static final String POST_SEARCH = "search";
   public static final String POST_COUNT_SEARCH = "count";
   public static final String ID = "id";
-  public static final String ASSET_SEARCH = "myAssetsSearch";
+  public static final String POST_ASSET_SEARCH = "post myAssetsSearch";
+  public static final String GET_ASSET_SEARCH = "get myAssetsSearch";
 
 
   public static final String CONTEXT = "@context";
