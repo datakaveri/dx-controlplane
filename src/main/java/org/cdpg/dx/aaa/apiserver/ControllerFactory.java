@@ -17,6 +17,8 @@ import org.cdpg.dx.aaa.admin.handler.AdminHandler;
 import org.cdpg.dx.aaa.asset.controller.AssetController;
 import org.cdpg.dx.aaa.asset.factory.AssetFactory;
 import org.cdpg.dx.aaa.asset.handler.AssetHandler;
+import org.cdpg.dx.aaa.clientSecret.controller.ClientController;
+import org.cdpg.dx.aaa.clientSecret.factory.ClientControllerFactory;
 import org.cdpg.dx.aaa.credit.factory.CreditControllerFactory;
 import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
@@ -33,6 +35,8 @@ import org.cdpg.dx.aaa.organization.factory.OrganizationControllerFactory;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.search.controller.SearchController;
 import org.cdpg.dx.aaa.search.factory.SearchControllerFactory;
+import org.cdpg.dx.aaa.token.controller.TokenController;
+import org.cdpg.dx.aaa.token.factory.TokenControllerFactory;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.aaa.user.service.UserServiceImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
@@ -58,7 +62,7 @@ public class ControllerFactory {
         DataBrokerService.createProxy(vertx, DATA_BROKER_SERVICE_ADDRESS);
     EmailService emailService = EmailService.createProxy(vertx, EMAIL_SERVICE_ADDRESS);
     ElasticsearchService esService =
-      ElasticsearchService.createProxy(vertx, ELASTIC_SERVICE_ADDRESS);
+        ElasticsearchService.createProxy(vertx, ELASTIC_SERVICE_ADDRESS);
 
     ItemService itemService = new ItemServiceImpl(esService, docIndex);
 
@@ -79,8 +83,6 @@ public class ControllerFactory {
             userService,
             creditService);
 
-
-
     AssetHandler assetHandler = AssetFactory.createHandler(pgService, config, emailComposer);
     ApiController assetController = new AssetController(assetHandler, auditingHandler);
 
@@ -90,7 +92,14 @@ public class ControllerFactory {
     ApiController kycController = new KYCController(kycHandler);
     ApiController organizationController =
         OrganizationControllerFactory.create(
-            organizationService, userService, auditingHandler, emailComposer, vertx, pgService,creditService,keycloakUserService);
+            organizationService,
+            userService,
+            auditingHandler,
+            emailComposer,
+            vertx,
+            pgService,
+            creditService,
+            keycloakUserService);
 
     AdminHandler adminHandler =
         new AdminHandler(userService, keycloakUserService, creditService, organizationService);
@@ -112,6 +121,10 @@ public class ControllerFactory {
 
     // TODO create other controllers
 
+    ClientController controller = ClientControllerFactory.create(pgService);
+
+    TokenController tokenController = TokenControllerFactory.create(pgService, config, vertx);
+
     return List.of(
         organizationController,
         creditApiController,
@@ -119,6 +132,11 @@ public class ControllerFactory {
         adminController,
         accessRequestController,
         accessReportController,
-        assetController,listController,searchController,itemController);
+        assetController,
+        listController,
+        searchController,
+        itemController,
+        controller,
+        tokenController);
   }
 }
