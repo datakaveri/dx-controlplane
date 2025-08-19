@@ -4437,6 +4437,486 @@ paths:
       security:
         - authorization: [ ]
 
+  /iudx/v2/auth/client:
+    post:
+      tags:
+        - APIs
+      description: |
+        Create a new client in the system.  
+        Requires a valid authorization token.  
+        The client will be created with a unique ID and secret.
+      operationId: post-create-client-secret
+      security:
+        - authorization: [ ]
+      responses:
+        "201":
+          description: Client credentials created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: "urn:dx:as:Success"
+                  title:
+                    type: string
+                    example: "Created client credentials"
+                  results:
+                    type: object
+                    properties:
+                      userId:
+                        type: string
+                        format: uuid
+                        example: "b3a12c3e-7f25-4a8e-9c82-89d4ff0b24ef"
+                      clientId:
+                        type: string
+                        format: uuid
+                        example: "6d0b58c3-c0c4-48af-bca2-4f255c0e73a7"
+                      clientSecret:
+                        type: string
+                        example: "73b66ab55ba4d07ea487310679aa0689b4bd2c9d"
+        "401":
+          description: Unauthorized – missing or invalid token
+        "409":
+          description: Conflict – client already exists
+
+  /iudx/auth/v2/jwks:
+    get:
+      operationId: get-auth-v1-jwks
+      summary: Get public key in JWKS format.
+      tags:
+        - Certificate API
+
+      responses:
+        '200':
+          description: Successfully generated the public key in JWKS format.
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  keys:
+                    type: array
+                    uniqueItems: true
+                    minItems: 1
+                    items:
+                      required:
+                        - kty
+                        - x5t#S256
+                        - crv
+                        - kid
+                        - x5c
+                        - x
+                        - y
+                      properties:
+                        kty:
+                          type: string
+                          minLength: 1
+                        x5t#S256:
+                          type: array
+                          minLength: 1
+                        crv:
+                          type: string
+                          minLength: 1
+                        kid:
+                          type: string
+                          minLength: 1
+                        x5c:
+                          type: string
+                          minLength: 1
+                        x:
+                          type: string
+                          minLength: 1
+                        y:
+                          type: string
+                          minLength: 1
+                required:
+                  - keys
+                x-examples:
+                  example-1:
+                  keys:
+                    - kty: EC
+                      x5t#S256: tCrGI3X7KS4WhHwGqR89Z6lWwPidOAb_CFYCzQpQN3M
+                      crv: P-256
+                      kid: ES256
+                      x5c:
+                        - MIIBnDCCAT+gAwIBAgIEEC1BXTAMBggqhkjOPQQDAgUAMEIxCTAHBgNVBAYTADEJMAcGA1UECBMAMQkwBwYDVQQHEwAxCTAHBgNVBAoTADEJMAcGA1UECxMAMQkwBwYDVQQDEwAwHhcNMjMwNjA1MDUwODQ4WhcNMjQwNjA0MDUwODQ4WjBCMQkwBwYDVQQGEwAxCTAHBgNVBAgTADEJMAcGA1UEBxMAMQkwBwYDVQQKEwAxCTAHBgNVBAsTADEJMAcGA1UEAxMAMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAErVwOLOln7NhUdfZOQFfTOtJ62AgdKUeYZm8DgWCWJHaaXT95dipr94zJM+inSuqohVFCTxjajdTH8/O9JO43rKMhMB8wHQYDVR0OBBYEFNH2u8eeqj3509HAFJQS4F5NF4TQMAwGCCqGSM49BAMCBQADSQAwRgIhAL7zHYdN6PFTccFm1y07X0t2mJxNfgOaxihTi2tA9D8AAiEAomGmBvXA72X1gfhK3dhaDSd52BN1fUP/ALYNiyuXHg0=
+                      x: rVwOLOln7NhUdfZOQFfTOtJ62AgdKUeYZm8DgWCWJHY
+                      y: ml0_eXYqa_eMyTPop0rqqIVRQk8Y2o3Ux_PzvSTuN6w
+
+              examples:
+                Certificate:
+                  value:
+                    keys:
+                      - kty: EC
+                        x5t#S256: tCrGI3X7KS4WhHwGqR89Z6lWwPidOAb_CFYCzQpQN3M
+                        crv: P-256
+                        kid: ES256
+                        x5c:
+                          - MIIBnDCCAT+gAwIBAgIEEC1BXTAMBggqhkjOPQQDAgUAMEIxCTAHBgNVBAYTADEJMAcGA1UECBMAMQkwBwYDVQQHEwAxCTAHBgNVBAoTADEJMAcGA1UECxMAMQkwBwYDVQQDEwAwHhcNMjMwNjA1MDUwODQ4WhcNMjQwNjA0MDUwODQ4WjBCMQkwBwYDVQQGEwAxCTAHBgNVBAgTADEJMAcGA1UEBxMAMQkwBwYDVQQKEwAxCTAHBgNVBAsTADEJMAcGA1UEAxMAMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAErVwOLOln7NhUdfZOQFfTOtJ62AgdKUeYZm8DgWCWJHaaXT95dipr94zJM+inSuqohVFCTxjajdTH8/O9JO43rKMhMB8wHQYDVR0OBBYEFNH2u8eeqj3509HAFJQS4F5NF4TQMAwGCCqGSM49BAMCBQADSQAwRgIhAL7zHYdN6PFTccFm1y07X0t2mJxNfgOaxihTi2tA9D8AAiEAomGmBvXA72X1gfhK3dhaDSd52BN1fUP/ALYNiyuXHg0=
+                        x: rVwOLOln7NhUdfZOQFfTOtJ62AgdKUeYZm8DgWCWJHY
+                        y: ml0_eXYqa_eMyTPop0rqqIVRQk8Y2o3Ux_PzvSTuN6w
+      description: Get the public key in JWKS format to authenticate/validate the generated JWT using `/auth/v1/token`
+
+  /iudx/auth/v2/token:
+    parameters: [ ]
+    post:
+      summary: Create Token
+      operationId: post-auth-v1-token
+      responses:
+        '200':
+          description: Access token has been successfully generated upon required validation and authentication.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  type:
+                    type: string
+                    minLength: 1
+                  title:
+                    type: string
+                    minLength: 1
+                  results:
+                    type: object
+                    properties:
+                      accessToken:
+                        type: string
+                        minLength: 1
+                      expiry:
+                        type: number
+                      server:
+                        type: string
+                        minLength: 1
+                    required:
+                      - accessToken
+                      - expiry
+                      - server
+                required:
+                  - type
+                  - title
+                  - results
+                x-examples:
+                  example-1:
+                    type: 'urn:dx:as:Success'
+                    title: Token created
+                    results:
+                      accessToken: eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiIzNDliNGI1NS0wMjUxLTQ5MGUtYmVlOS0wMGYzYTVkM2U2NDMiLCJpc3MiOiJhdXRoLnRlc3QuY29tIiwiYXVkIjoiZm9vYmFyLml1ZHguaW8iLCJleHAiOjE2MjY4MzY3ODQsImlhdCI6MTYyNjc5MzU4NCwiaWlkIjoicmc6ZXhhbXBsZS5jb20vNzllN2JmYTYyZmFkNmM3NjViYWM2OTE1NGMyZjI0Yzk0Yzk1MjIwYS9yZXNvdXJjZS1ncm91cCIsInJvbGUiOiJjb25zdW1lciIsImNvbnMiOnt9fQ.eAWKamrRdV4c1MPuoLU6j0bWB6iiM_of5F3LA-_DZGhyu_6aFP4cmCI1Y3ZN2ZRklOSGcrL5aHC8Ccga6dtTrg
+                      expiry: 1626836784
+                      server: foobar.iudx.io
+              examples:
+                Example:
+                  value:
+                    type: 'urn:dx:as:Success'
+                    title: Token created
+                    results:
+                      accessToken: eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiIzNDliNGI1NS0wMjUxLTQ5MGUtYmVlOS0wMGYzYTVkM2U2NDMiLCJpc3MiOiJhdXRoLnRlc3QuY29tIiwiYXVkIjoiZm9vYmFyLml1ZHguaW8iLCJleHAiOjE2MjY4MzY3ODQsImlhdCI6MTYyNjc5MzU4NCwiaWlkIjoicmc6ZXhhbXBsZS5jb20vNzllN2JmYTYyZmFkNmM3NjViYWM2OTE1NGMyZjI0Yzk0Yzk1MjIwYS9yZXNvdXJjZS1ncm91cCIsInJvbGUiOiJjb25zdW1lciIsImNvbnMiOnt9fQ.eAWKamrRdV4c1MPuoLU6j0bWB6iiM_of5F3LA-_DZGhyu_6aFP4cmCI1Y3ZN2ZRklOSGcrL5aHC8Ccga6dtTrg
+                      expiry: 1626836784
+                      server: foobar.iudx.io
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+        '400':
+          description: Generally for missing or invalid payload details.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  type:
+                    type: string
+                    minLength: 1
+                  title:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+                required:
+                  - type
+                  - title
+                  - detail
+              examples:
+                Invalid Role:
+                  value:
+                    type: 'urn:dx:as:InvalidRole'
+                    title: Role not defined
+                    detail: Role not defined
+        '401':
+          description: |-
+            - Unauthorized - `token` invalid/expired
+            - Unauthorized - `clientId` & `clientSecret` invalid/not match
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+              examples:
+                Missing Authentication Details:
+                  value:
+                    type: 'urn:dx:as:MissingAuthenticationToken'
+                    title: Missing auth details
+                    detail: Missing auth details
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+        '403':
+          description: |-
+            - User does not have the correct role for the request
+            - APD verification failed
+            - The user is required to interact with the APD
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                APD needs interaction:
+                  value:
+                    type: 'urn:dx:as:MissingInformation'
+                    title: APD interaction required
+                    detail: The APD requires extra information to grant access. Please use the apdToken and visit the link to interact with the APD
+                    context:
+                      apdToken: eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJmY2JlY2QxOC0yZWNiLTQwNjYtOGE5ZS1mMDczYWFjYmU1NzkiLCJpc3MiOiJhdXRodmVydHguaXVkeC5pbyIsImF1ZCI6ImF1dGhkZXYuaXVkeC5pbyIsImV4cCI6MTY0ODg0MzEwNCwiaWF0IjoxNjQ4Nzk5OTA0LCJzaWQiOiI5ZGQ2NjNlZS02NWExLTQ4ZTctYTJiMC0wNTQwMmY5ZjlkOWYiLCJsaW5rIjoiYXV0aGRldi5pdWR4LmlvIn0.lP3Dn7aroXqVUdp0fbTh1uhrnjwo5Yx3l1lKorEIKhjzZivgBWkflbVN9Lly0yq5gefvYYXgf01nxmU3QNA2EQ
+                      expiry: 1648843104
+                      server: authdev.iudx.io
+                      link: authdev.iudx.io
+                APD policy verification failed (deny):
+                  value:
+                    type: 'urn:dx:as:InvalidInput'
+                    title: Policy evaluation failed
+                    detail: 'Not allowed, please contact APD Admin'
+                No valid policy found:
+                  value:
+                    type: 'urn:dx:as:InvalidInput'
+                    title: Policy evaluation failed
+                    detail: policy not found
+      parameters:
+        - schema:
+            type: string
+            minLength: 1
+            maxLength: 4000
+            example: Bearer <JWT>
+          in: header
+          name: Authorization
+          description: Keycloak Issued token
+        - schema:
+            type: string
+            format: uuid
+            minLength: 36
+            maxLength: 36
+            pattern: '^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$'
+          in: header
+          name: clientId
+          description: AAA Client ID
+        - schema:
+            type: string
+            maxLength: 40
+            pattern: '^[0-9a-f]{40}$'
+            minLength: 40
+            example: 73b66ab55ba4d07ea487310679aa0689b4bd2c9d
+          in: header
+          description: AAA Client Secret
+          name: clientSecret
+        - schema:
+            type: string
+            format: uuid
+            minLength: 36
+            maxLength: 36
+            pattern: '^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$'
+          in: header
+          name: delegationId
+          description: Delegation ID obtained from GET /delegations (in case delegate wants a token)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: ''
+              type: object
+              properties:
+                itemId:
+                  type: string
+                  minLength: 1
+                  pattern: '^[a-zA-Z0-9_\-\.]+$'
+                  maxLength: 100
+                itemType:
+                  type: string
+                  enum:
+                    - resource_server
+                    - resource
+                    - resource_group
+                    - cos
+                role:
+                  type: string
+                  enum:
+                    - provider
+                    - delegate
+                    - consumer
+                    - admin
+                    - cos_admin
+                context:
+                  type: object
+              required:
+                - itemId
+                - itemType
+                - role
+            examples:
+              Consumer requesting resource group:
+                value:
+                  itemId: a007f760-8580-4401-81c1-b123da3de06f
+                  itemType: resource_group
+                  role: consumer
+              Consumer requesting resource server (for access to public resources):
+                value:
+                  itemId: rs.iudx.org.in
+                  itemType: resource_server
+                  role: consumer
+              Consumer requesting resource:
+                value:
+                  itemId: 31b3da3a-84da-4923-b425-a9c5469c169f
+                  itemType: resource
+                  role: consumer
+              Provider requesting resource group:
+                value:
+                  itemId: a007f760-8580-4401-81c1-b123da3de06f
+                  itemType: resource_group
+                  role: provider
+              Delegate requesting for resource:
+                value:
+                  itemId: 31b3da3a-84da-4923-b425-a9c5469c169f
+                  itemType: resource
+                  role: delegate
+              Admin of RS requesting resource server:
+                value:
+                  itemId: rs.iudx.org.in
+                  itemType: resource_server
+                  role: admin
+              Identity token for resource server as provider:
+                value:
+                  itemId: rs.iudx.org.in
+                  itemType: resource_server
+                  role: provider
+              Identity token for COS Admin for COS:
+                value:
+                  itemId: cos.iudx.org.in
+                  itemType: cos
+                  role: cos_admin
+              Requesting resource with context object in body:
+                value:
+                  itemId: a007f760-8580-4401-81c1-b123da3de06f
+                  itemType: resource_group
+                  role: consumer
+                  context:
+                    accessId: 1e5aad64-102c-4688-892f-c6a1f5f4d476
+                    accessType: PERMANENT_ACCESS
+        description: |-
+          - `itemId` : the string value of the id of the resource
+            - e.g. `31b3da3a-84da-4923-b425-a9c5469c169f`
+          - `itemType` : the kind of item the desired resource is
+          - `role` : the role as which the user wants to get token for
+          - `context` : a JSON object containing any extra information. The user may use this field to convey information to an APD in case the requested resource is backed by an APD policy
+        required: true
+      description: |
+        Request for a JWT (token). One can generate token using either by providing token header or providing clientId and clientSecret in the header. 
+
+        **NOTE : Either the JWT token in the `Authorization` header or `clientId`+`clientSecret` headers are required, not both**
+
+        # Identity Token
+        An Identity token is used by a user to identify themself to a resource server or APD.
+          - Valid item types - `resource_server`, `cos` in case of COS admin
+          - Item ID - URL of the resource server or COS
+
+        ## Conditions    
+          - If role is `admin`, the user must own/be the admin of the resource server.
+          - If role is `cos_admin`, the user must be the COS Admin and the `itemId` must be the COS URL.
+          - For any other role, the user must have the role for the particular resource server. 
+          - Users can be permitted to obtain identity tokens with the `admin` role if required.**
+
+        # Access Token
+        An Access token is used to gain access to an Item on a resource server.
+
+          ## Tokens for providers
+           - Valid item types - `resource`, `resource_group` 
+           - Users with the `provider` role can get tokens for all of the resources that belong to them without having to set any specific policies to access them.
+
+          ## Tokens for delegates
+          ### Delegation ID header
+          - **The `delegationId` header must be included - the ID can be obtained by calling the GET /delegations API**
+          - **The delegation ID determines which user + role + resource server the token request is being made on behalf by the delegate**  
+        ---
+          - Valid item types - `resource`, `resource_group` 
+          - In case the delegate is making the request on behalf of a consumer, a token is issued if a successful APD verification takes place for the requested item and the associated consumer
+          - In case the delegate is making the request on behalf of a provider,, a token is issued if the associated provider owns the item
+          - On a successful token request, the access token will contain information about the delegator's user ID and role. See _JWT Access Token Response Structure_
+
+          ## Tokens for consumers
+          - Valid item types - `resource`, `resource_group`
+          - Consumers are granted tokens if there is a successful APD verification for the requested item and associated consumer
+
+          ## Tokens for admins
+           **Admins are only permitted to get identity tokens.**
+
+          ## JWT Access Token Response Structure
+           The JWT is signed using the ES256 algorithm (`alg:ES256`).
+
+           A valid DX AAA access token contains the following fields:
+           - `sub` : `userId` of the user for whom the token is issued
+           - `iss` : this tag contains the url of the server from the where the token was issued(DX auth server)
+           - `aud` : the 'audience' tag contains the url of the server for which the token is valid
+           - `exp` : when the token will expire in Unix format
+           - `iat` : indicates when the token was issued in Unix format
+           - `iid` : resource type and resource id of the item for which the token is valid
+           - `role` : role of the user 
+           - `cons` : the constraints that the resource server recognizes. Constraints sent back by the APD are included here. 
+           - `rg` : when the requested item is a resource, this field exists containing the associated resource group ID
+           - `did` : when role is `delegate`, contains the user ID of the delegator
+           - `drl` : when the role is `delegate`, contains the role for which the delegated action is made
+
+          # APD Verification 
+
+        For all access token requests for a consumer, the AAA server queries the APD associated with the requested item  with relevant information to verify if the consumer has access to the item. The APD may respond in three ways:
+        - **Allow** : The user has access. The AAA server generates the access token based on the constraints defined in the policy and sends it back.
+            - In case the APD send constraints, these constraints will be put into the `apd` key in the JWT token in a JSON object called `apdConstraints`  
+
+        - **Deny** : The user does not have access. The AAA server returns a `403 Forbidden`.
+        - **Deny but the APD needs interaction** : The APD provides a mechanism for the user to interact with it. This interaction **may or may not** result in the user being given access. The AAA server sends a `403 Forbidden` but includes a special **APD JWT token** that the user must use when interacting with the APD. 
+
+        ## Context object for extra information
+        An APD may require extra information during evaluation. Any such information can be included in the `context` JSON object field in the API request body. 
+
+        In case an APD requires particular keys in the `context` object, The APD can send a **Deny** response with the details of the required keys and information.
+
+        ## JWT APD Token Response Structure
+          The JWT is signed using the ES256 algorithm (`alg:ES256`).
+
+         A valid DX AAA APD token contains the following fields:
+         - `sub` : `userId` of the user for whom the token is issued
+         - `iss` : this tag contains the url of the server from the where the token was issued(DX auth server)
+         - `aud` : the 'audience' tag contains the url of the server for which the token is valid - in this case, will be the APD URL
+         - `exp` : when the token will expire in Unix format
+         - `iat` : indicates when the token was issued in unix format
+         - `sid` : a session ID sent by the APD
+         - `link` : a link to which the user can interact with the APD 
+
+      tags:
+        - Token APIs
+      security:
+        - optionalAuth: [ ]
+
+
+
+
   /iudx/v2/cat/item:
     post:
       tags:

@@ -3,7 +3,9 @@ package org.cdpg.dx.aaa.apiserver;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.*;
 import static org.cdpg.dx.common.config.CorsUtil.allowedOrigins;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.vertx.core.AbstractVerticle;
@@ -51,14 +53,16 @@ public class ApiServerVerticle extends AbstractVerticle {
     port = config().getInteger("httpPort", 8443);
     allowedOrigins = config().getJsonArray("corsAllowedOrigin").getList();
 
-    // Register the module for default Vert.x ObjectMapper
     ObjectMapper mapper = DatabindCodec.mapper();
     mapper.registerModule(new JavaTimeModule());
     mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+    DatabindCodec.mapper().setPropertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE);
 
-    ObjectMapper prettyMapper = DatabindCodec.prettyMapper();
-    prettyMapper.registerModule(new JavaTimeModule());
-    prettyMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    ObjectMapper prettyMapper = mapper.copy();
+    prettyMapper.enable(SerializationFeature.INDENT_OUTPUT);
+    DatabindCodec.prettyMapper()
+        .setPropertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE);
 
     Future<RouterBuilder> routerFuture = RouterBuilder.create(vertx, "docs/openapi.yaml");
     Future<JWTAuth> authFuture = JwtAuthProvider.init(vertx, config());
