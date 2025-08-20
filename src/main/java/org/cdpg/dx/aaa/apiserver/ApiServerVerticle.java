@@ -167,8 +167,14 @@ public class ApiServerVerticle extends AbstractVerticle {
   private void configureCorsHandler(Router router) {
     CorsHandler corsHandler = CorsHandler.create();
 
-    for (String origin : allowedOrigins) {
-      corsHandler.addOrigin(origin);
+    if (allowedOrigins.contains("*")) {
+      corsHandler = CorsHandler.create("*").allowCredentials(false);
+    } else {
+      corsHandler = CorsHandler.create();
+      for (String origin : allowedOrigins) {
+        corsHandler.addOrigin(origin);
+      }
+      corsHandler.allowCredentials(true);
     }
 
     corsHandler
@@ -180,8 +186,7 @@ public class ApiServerVerticle extends AbstractVerticle {
         .allowedMethod(HttpMethod.PATCH)
         .allowedHeader("Content-Type")
         .allowedHeader("Authorization")
-        .allowedHeader("Origin")
-        .allowCredentials(false);
+        .allowedHeader("Origin");
 
     router.route().handler(corsHandler);
   }

@@ -98,8 +98,7 @@ public class TokenServiceImpl implements TokenService {
       KeyStore ks = options.loadKeyStore(vertx);
       ;
 
-      String keyAlias = "ES256";
-      ECKey ecKey = ECKey.load(ks, keyAlias, keystorePassword.toCharArray());
+      ECKey ecKey = ECKey.load(ks, JWT_ALGORITHM, keystorePassword.toCharArray());
 
       JWKSet jwkSet = new JWKSet(ecKey.toPublicJWK());
 
