@@ -17,19 +17,19 @@ import io.vertx.core.net.KeyStoreOptions;
 import io.vertx.ext.auth.jwt.JWTAuth;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
-import io.vertx.ext.web.handler.AuthenticationHandler;
-import io.vertx.ext.web.handler.BodyHandler;
-import io.vertx.ext.web.handler.CorsHandler;
-import io.vertx.ext.web.handler.TimeoutHandler;
+import io.vertx.ext.web.handler.*;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.ext.web.openapi.RouterBuilderOptions;
 import io.vertx.serviceproxy.HelperUtils;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.auth.authentication.handler.AAAJwtAuthHandler;
 import org.cdpg.dx.auth.authentication.handler.KeycloakJwtAuthHandler;
 import org.cdpg.dx.auth.authentication.handler.OptionalJwtAuthHandler;
 import org.cdpg.dx.auth.authentication.provider.JwtAuthProvider;
+import org.cdpg.dx.auth.authentication.util.ChainedJwtAuthHandler;
+import org.cdpg.dx.auth.authentication.util.TokenIssuer;
 import org.cdpg.dx.common.FailureHandler;
 import org.cdpg.dx.common.HttpStatusCode;
 import org.cdpg.dx.common.util.BlockingExecutionUtil;
@@ -65,20 +65,33 @@ public class ApiServerVerticle extends AbstractVerticle {
         .setPropertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE);
 
     Future<RouterBuilder> routerFuture = RouterBuilder.create(vertx, "docs/openapi.yaml");
-    Future<JWTAuth> authFuture = JwtAuthProvider.init(vertx, config());
-    // init SharedWorkerExecutor for this vertical
+      Future<JWTAuth> keyCloakFuture = JwtAuthProvider.init(vertx, config(), TokenIssuer.KEYCLOAK);
+      Future<JWTAuth> aaaAuthFuture = JwtAuthProvider.init(vertx, config(), TokenIssuer.AAA);    // init SharedWorkerExecutor for this vertical
     BlockingExecutionUtil.initialize(vertx);
 
     List<ApiController> controllers = ControllerFactory.createControllers(vertx, config());
 
-    Future.all(routerFuture, authFuture)
+      Future.all(routerFuture, aaaAuthFuture,keyCloakFuture)
         .onSuccess(
             cf -> {
               RouterBuilder routerBuilder = cf.resultAt(0);
-              JWTAuth jwtAuth = cf.resultAt(1);
-              AuthenticationHandler authHandler = new KeycloakJwtAuthHandler(jwtAuth);
-              AuthenticationHandler optionalAuth = new OptionalJwtAuthHandler(jwtAuth);
-              try {
+                JWTAuth aaaJwtAuth = cf.resultAt(1);
+                JWTAuth keyCloakJwtAuth = cf.resultAt(2);
+
+              AuthenticationHandler keycloakJwtAuthHandler = new KeycloakJwtAuthHandler(keyCloakJwtAuth);
+              AuthenticationHandler optionalAuth = new OptionalJwtAuthHandler(keyCloakJwtAuth);
+              AuthenticationHandler aaaAuthHandler = new AAAJwtAuthHandler(aaaJwtAuth);
+
+                AuthenticationHandler chainedAuth = new ChainedJwtAuthHandler(
+                        List.of(aaaAuthHandler,keycloakJwtAuthHandler)
+                );
+
+//                AuthenticationHandler keycloakJwtAuthHandler = JWTAuthHandler.create(keyCloakJwtAuth);
+//                AuthenticationHandler optionalAuth = new OptionalJwtAuthHandler(keyCloakJwtAuth);
+//                AuthenticationHandler aaaAuthHandler = JWTAuthHandler.create(aaaJwtAuth);
+//                AuthenticationHandler a=ChainAuthHandler.any().add(aaaAuthHandler).add(keycloakJwtAuthHandler);
+
+                try {
 
                 LOGGER.debug("Adding platform handlers...");
                 int timeout = config().getInteger("timeout", 100000); // Configurable timeout
@@ -89,7 +102,7 @@ public class ApiServerVerticle extends AbstractVerticle {
                 RouterBuilderOptions factoryOptions =
                     new RouterBuilderOptions().setMountResponseContentTypeHandler(true);
                 routerBuilder.setOptions(factoryOptions);
-                routerBuilder.securityHandler("authorization", authHandler);
+                routerBuilder.securityHandler("authorization", chainedAuth);
                 routerBuilder.securityHandler("optionalAuth", optionalAuth);
 
                 controllers.forEach(controller -> controller.register(routerBuilder));

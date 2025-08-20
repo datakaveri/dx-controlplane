@@ -9,6 +9,7 @@ import io.vertx.ext.web.validation.ParameterProcessorException;
 import io.vertx.ext.web.validation.RequestPredicateException;
 import io.vertx.json.schema.ValidationException;
 import io.vertx.serviceproxy.HelperUtils;
+import org.apache.http.HttpException;
 import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,8 +26,8 @@ public class FailureHandler implements Handler<RoutingContext> {
 
   public void handle(RoutingContext context) {
     Throwable failure = context.failure();
-//    failure.printStackTrace();
     LOGGER.info("FailureHandler: {}", failure.getClass());
+
     if (failure == null) {
       LOGGER.warn("FailureHandler triggered without an actual Throwable. Possibly context.fail(statusCode) was used.");
       failure = new RuntimeException("Unknown server error");
