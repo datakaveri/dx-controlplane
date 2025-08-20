@@ -33,6 +33,7 @@ public class ResponseBuilder {
     DxResponse<T> response =
         new DxResponse<>(status.getUrn(), status.getDescription(), detail, result, pageInfo);
     String requestOrigin = ctx.request().getHeader("Origin");
+    System.out.printf("requestOrigin: %s, allowedOrigins: %s%n", requestOrigin, allowedOrigins);
     if (allowedOrigins != null && requestOrigin != null && allowedOrigins.contains(requestOrigin)
         || allowedOrigins.contains("*")) {
       ctx.response()
