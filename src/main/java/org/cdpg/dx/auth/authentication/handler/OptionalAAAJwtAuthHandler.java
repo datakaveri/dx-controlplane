@@ -23,6 +23,7 @@ public class OptionalAAAJwtAuthHandler implements AuthenticationHandler {
     String token = BearerTokenExtractor.extract(ctx);
     if (token == null || token.isBlank()) {
       LOGGER.warn("Missing or invalid Authorization header");
+      ctx.put("auth_failed", false);
       ctx.next();
       return;
     }

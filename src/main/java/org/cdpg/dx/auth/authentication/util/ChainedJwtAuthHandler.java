@@ -17,6 +17,13 @@ public record ChainedJwtAuthHandler(List<AuthenticationHandler> handlers) implem
     }
 
     private void verifyNext(RoutingContext ctx, int index) {
+//        if (index >= handlers.size() && isOptional) {
+//            LOGGER.debug("Authentication failed at all handlers, returning 401");
+//            ctx.fail(new DxUnauthorizedException(ctx.get("auth_error"))); // no valid token
+//            return;
+//        }
+
+
         if (index >= handlers.size()) {
             LOGGER.debug("Authentication failed at all handlers, returning 401");
             ctx.fail(new DxUnauthorizedException(ctx.get("auth_error"))); // no valid token
@@ -32,6 +39,6 @@ public record ChainedJwtAuthHandler(List<AuthenticationHandler> handlers) implem
             LOGGER.warn("Authentication failed at handler {}", handler.getClass().getSimpleName());
             ctx.put("auth_failed", false);
             verifyNext(ctx, index + 1); // try next handler
-        } else ctx.next();
+        }
     }
 }

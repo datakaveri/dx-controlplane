@@ -23,7 +23,8 @@ public class OptionalKeyCloakJwtAuthHandler implements AuthenticationHandler {
     String token = BearerTokenExtractor.extract(ctx);
     if (token == null || token.isBlank()) {
       LOGGER.warn("Missing or invalid Authorization header");
-      ctx.next();
+        ctx.put("auth_failed", false);
+        ctx.next();
       return;
     }
 

@@ -17,7 +17,8 @@ public record KeycloakJwtAuthHandler(JWTAuth jwtAuth) implements AuthenticationH
         String token = BearerTokenExtractor.extract(ctx);
         if (token == null || token.isBlank()) {
             LOGGER.warn("Missing or invalid Authorization header");
-            ctx.next(); // Let next handler try
+            ctx.put("auth_error", "Missing Bearer token in Authorization header");
+            ctx.put("auth_failed", true);
             return;
         }
 
