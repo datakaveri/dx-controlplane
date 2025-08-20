@@ -22,7 +22,8 @@ public class AAAJwtAuthHandler implements AuthenticationHandler {
         String token = BearerTokenExtractor.extract(ctx);
         if (token == null || token.isBlank()) {
             LOGGER.warn("Missing or invalid Authorization header");
-            ctx.next(); // Let next handler try
+            ctx.put("auth_error", "Missing Bearer token in Authorization header");
+            ctx.put("auth_failed", true);
             return;
         }
 
@@ -38,7 +39,6 @@ public class AAAJwtAuthHandler implements AuthenticationHandler {
                         // do NOT call ctx.fail(ar.cause());
                         ctx.put("auth_failed", true);
                         ctx.put("auth_error", ar.cause().getMessage());
-                        ctx.next(); // always continue to allow next handler to try
                     }
                 });
     }
