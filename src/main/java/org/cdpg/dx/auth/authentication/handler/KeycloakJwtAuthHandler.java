@@ -4,19 +4,12 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.jwt.JWTAuth;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.AuthenticationHandler;
-import io.vertx.ext.web.handler.impl.AuthenticationHandlerImpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.auth.authentication.util.BearerTokenExtractor;
-import org.cdpg.dx.common.exception.DxUnauthorizedException;
 
-public class KeycloakJwtAuthHandler extends AuthenticationHandlerImpl {
+public record KeycloakJwtAuthHandler(JWTAuth jwtAuth) implements AuthenticationHandler {
     private static final Logger LOGGER = LogManager.getLogger(KeycloakJwtAuthHandler.class);
-    private final JWTAuth jwtAuth;
-
-    public KeycloakJwtAuthHandler(JWTAuth jwtAuth) {
-        this.jwtAuth = jwtAuth;
-    }
 
     @Override
     public void handle(RoutingContext ctx) {
@@ -36,13 +29,10 @@ public class KeycloakJwtAuthHandler extends AuthenticationHandlerImpl {
                         ctx.put("auth_failed", false);
                         ctx.next();
                     } else {
-
                         LOGGER.warn("Auth failed: {}", ar.cause().getMessage());
-                        // do NOT call ctx.fail(ar.cause());
                         ctx.put("auth_error", ar.cause().getMessage());
                         ctx.put("auth_failed", true);
                     }
-                    // always continue
                 });
     }
 }

@@ -38,7 +38,6 @@ public class AAAJwtAuthHandler implements AuthenticationHandler {
                         // do NOT call ctx.fail(ar.cause());
                         ctx.put("auth_failed", true);
                         ctx.put("auth_error", ar.cause().getMessage());
-                        ctx.next(); // always continue to allow next handler to try
                     }
                 });
     }

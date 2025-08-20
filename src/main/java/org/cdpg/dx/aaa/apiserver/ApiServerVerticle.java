@@ -26,7 +26,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.auth.authentication.handler.AAAJwtAuthHandler;
 import org.cdpg.dx.auth.authentication.handler.KeycloakJwtAuthHandler;
-import org.cdpg.dx.auth.authentication.handler.OptionalJwtAuthHandler;
+import org.cdpg.dx.auth.authentication.handler.OptionalAAAJwtAuthHandler;
+import org.cdpg.dx.auth.authentication.handler.OptionalKeyCloakJwtAuthHandler;
 import org.cdpg.dx.auth.authentication.provider.JwtAuthProvider;
 import org.cdpg.dx.auth.authentication.util.ChainedJwtAuthHandler;
 import org.cdpg.dx.auth.authentication.util.TokenIssuer;
@@ -74,22 +75,17 @@ public class ApiServerVerticle extends AbstractVerticle {
       Future.all(routerFuture, aaaAuthFuture,keyCloakFuture)
         .onSuccess(
             cf -> {
-              RouterBuilder routerBuilder = cf.resultAt(0);
+                RouterBuilder routerBuilder = cf.resultAt(0);
                 JWTAuth aaaJwtAuth = cf.resultAt(1);
                 JWTAuth keyCloakJwtAuth = cf.resultAt(2);
 
-              AuthenticationHandler keycloakJwtAuthHandler = new KeycloakJwtAuthHandler(keyCloakJwtAuth);
-              AuthenticationHandler optionalAuth = new OptionalJwtAuthHandler(keyCloakJwtAuth);
-              AuthenticationHandler aaaAuthHandler = new AAAJwtAuthHandler(aaaJwtAuth);
+                AuthenticationHandler keycloakJwtAuthHandler = new KeycloakJwtAuthHandler(keyCloakJwtAuth);
+                AuthenticationHandler optionalKeyCloakAuth = new OptionalKeyCloakJwtAuthHandler(keyCloakJwtAuth);
+                AuthenticationHandler optionalAAAAuth = new OptionalAAAJwtAuthHandler(aaaJwtAuth);
+                AuthenticationHandler aaaAuthHandler = new AAAJwtAuthHandler(aaaJwtAuth);
 
-                AuthenticationHandler chainedAuth = new ChainedJwtAuthHandler(
-                        List.of(aaaAuthHandler,keycloakJwtAuthHandler)
-                );
-
-//                AuthenticationHandler keycloakJwtAuthHandler = JWTAuthHandler.create(keyCloakJwtAuth);
-//                AuthenticationHandler optionalAuth = new OptionalJwtAuthHandler(keyCloakJwtAuth);
-//                AuthenticationHandler aaaAuthHandler = JWTAuthHandler.create(aaaJwtAuth);
-//                AuthenticationHandler a=ChainAuthHandler.any().add(aaaAuthHandler).add(keycloakJwtAuthHandler);
+                AuthenticationHandler chainedAuth = new ChainedJwtAuthHandler(List.of(keycloakJwtAuthHandler, aaaAuthHandler));
+                AuthenticationHandler optionalChainedAuth = new ChainedJwtAuthHandler(List.of(optionalKeyCloakAuth, optionalAAAAuth));
 
                 try {
 
@@ -103,7 +99,7 @@ public class ApiServerVerticle extends AbstractVerticle {
                     new RouterBuilderOptions().setMountResponseContentTypeHandler(true);
                 routerBuilder.setOptions(factoryOptions);
                 routerBuilder.securityHandler("authorization", chainedAuth);
-                routerBuilder.securityHandler("optionalAuth", optionalAuth);
+                routerBuilder.securityHandler("optionalAuth", optionalChainedAuth);
 
                 controllers.forEach(controller -> controller.register(routerBuilder));
 
