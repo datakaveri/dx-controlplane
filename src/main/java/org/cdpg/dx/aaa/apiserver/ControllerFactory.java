@@ -1,8 +1,9 @@
 package org.cdpg.dx.aaa.apiserver;
 
+import static org.cdpg.dx.aaa.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
+import static org.cdpg.dx.aaa.accessRequest.dao.config.DbConstants.REQUEST_TABLE;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.*;
 
-import co.elastic.clients.elasticsearch.sql.DeleteAsyncRequest;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import java.util.List;
@@ -11,6 +12,9 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.accessReport.controller.AccessReportController;
 import org.cdpg.dx.aaa.accessReport.factory.AccessReportFactory;
 import org.cdpg.dx.aaa.accessRequest.controller.AccessRequestController;
+import org.cdpg.dx.aaa.accessRequest.dao.AccessRequestDao;
+import org.cdpg.dx.aaa.accessRequest.dao.impl.AccessRequestDaoImpl;
+import org.cdpg.dx.aaa.accessRequest.dao.model.AccessRequestDto;
 import org.cdpg.dx.aaa.accessRequest.factory.AccessRequestFactory;
 import org.cdpg.dx.aaa.admin.controller.AdminController;
 import org.cdpg.dx.aaa.admin.handler.AdminHandler;
@@ -64,7 +68,10 @@ public class ControllerFactory {
     ElasticsearchService esService =
         ElasticsearchService.createProxy(vertx, ELASTIC_SERVICE_ADDRESS);
 
-    ItemService itemService = new ItemServiceImpl(esService, docIndex);
+    AccessRequestDao accessRequestDao =
+        new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
+
+    ItemService itemService = new ItemServiceImpl(esService, docIndex, accessRequestDao);
 
     AuditingHandler auditingHandler = new AuditingHandler(dataBrokerService);
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
@@ -117,7 +124,7 @@ public class ControllerFactory {
         SearchControllerFactory.createSearchController(esService, auditingHandler, docIndex);
     final ItemController itemController =
         ItemControllerFactory.createCrudController(
-            auditingHandler, esService, docIndex, vocContext);
+            auditingHandler, esService, pgService, docIndex, vocContext);
 
     // TODO create other controllers
 

@@ -2,7 +2,6 @@ package org.cdpg.dx.aaa.accessRequest.factory;
 
 import static org.cdpg.dx.aaa.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
 import static org.cdpg.dx.aaa.accessRequest.dao.config.DbConstants.REQUEST_TABLE;
-import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.*;
 
 import io.vertx.core.json.JsonObject;
 import java.util.logging.Logger;
@@ -36,11 +35,11 @@ public class AccessRequestFactory {
       AuditingHandler auditingHandler,
       JsonObject config) {
 
-    ItemService itemService =
-        new ItemServiceImpl(elasticsearchService, config.getString("docIndex"));
-
     AccessRequestDao accessRequestDao =
         new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
+
+    ItemService itemService =
+        new ItemServiceImpl(elasticsearchService, config.getString("docIndex"), accessRequestDao);
 
     AccessRequestService accessRequestService =
         new AccessRequestServiceImpl(itemService, accessRequestDao);
