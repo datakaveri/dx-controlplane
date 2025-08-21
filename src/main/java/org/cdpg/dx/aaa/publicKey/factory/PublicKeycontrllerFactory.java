@@ -10,8 +10,11 @@ public class PublicKeycontrllerFactory {
 
   public static PublicController create(JsonObject config, Vertx vertx) {
 
-    String keyStorePath = config.getString("keyStorePath");
-    String keyStorePassword = config.getString("keyStorePassword");
+
+
+    String keyStorePath = config.getString("keystorePath");
+    String keyStorePassword = config.getString("keystorePassword");
+
 
     PublicService publicService = new PublicServiceImpl(keyStorePath, keyStorePassword, vertx);
 
