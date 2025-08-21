@@ -2,7 +2,6 @@ package org.cdpg.dx.aaa.apiserver;
 
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.*;
 
-import co.elastic.clients.elasticsearch.sql.DeleteAsyncRequest;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import java.util.List;
@@ -33,6 +32,8 @@ import org.cdpg.dx.aaa.list.controller.ListController;
 import org.cdpg.dx.aaa.list.factory.ListControllerFactory;
 import org.cdpg.dx.aaa.organization.factory.OrganizationControllerFactory;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
+import org.cdpg.dx.aaa.publicKey.controller.PublicController;
+import org.cdpg.dx.aaa.publicKey.factory.PublicKeycontrllerFactory;
 import org.cdpg.dx.aaa.search.controller.SearchController;
 import org.cdpg.dx.aaa.search.factory.SearchControllerFactory;
 import org.cdpg.dx.aaa.token.controller.TokenController;
@@ -125,6 +126,8 @@ public class ControllerFactory {
 
     TokenController tokenController = TokenControllerFactory.create(pgService, config, vertx);
 
+    PublicController publicController = PublicKeycontrllerFactory.create(config, vertx);
+
     return List.of(
         organizationController,
         creditApiController,
@@ -137,6 +140,7 @@ public class ControllerFactory {
         searchController,
         itemController,
         controller,
-        tokenController);
+        tokenController,
+        publicController);
   }
 }

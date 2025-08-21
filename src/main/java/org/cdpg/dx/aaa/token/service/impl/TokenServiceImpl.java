@@ -50,44 +50,45 @@ public class TokenServiceImpl implements TokenService {
 
   @Override
   public Future<JsonObject> createToken(String clientId, String clientSecret) {
+    // Hash client credentials before lookup
     String hashedClientId = getHashedString(clientId.trim());
     String hashedClientSecret = getHashedString(clientSecret.trim());
 
-    int expirationMillis = TokenExpirationMinutes * 60 * 1000;
+    // Expiration in seconds (JWT standard)
+    int expirationSeconds = TokenExpirationMinutes * 60;
 
+    // JWT Options
     JWTOptions options =
         new JWTOptions()
             .setAlgorithm(JWT_ALGORITHM)
-            .setExpiresInSeconds(expirationMillis)
-            .setIssuer(issuer); // better than putting in header
+            .setExpiresInSeconds(expirationSeconds) // ✅ expects seconds
+            .setIssuer(issuer);
 
     return clientcredetialService
         .getUserIdByClientIdAndSecret(hashedClientId, hashedClientSecret)
         .compose(keycloakUserService::getUserById)
         .compose(
             user -> {
-              // Build claims from user
-
+              // Debug logs
               LOGGER.debug("Generating token for user: {}", user.sub());
-              LOGGER.debug("Using issuer: {}", issuer);
-              LOGGER.debug("Token expiration time (minutes): {}", TokenExpirationMinutes);
-              LOGGER.debug("Adudience: CLAIM_AUDIENCE");
+              LOGGER.debug("Issuer: {}", issuer);
+              LOGGER.debug("Token expiration (minutes): {}", TokenExpirationMinutes);
+              LOGGER.debug("Audience: CLAIM_AUDIENCE");
 
-              // todo : need to identify the audience either from config or from user
-
+              // TODO: dynamically determine audience (from config or user attributes)
               JsonObject claims =
                   TokenClaimsBuilder.buildClaims(
                       user, issuer, "CLAIM_AUDIENCE", TokenExpirationMinutes);
 
-              // Generate token string
+              // Generate signed token
               String token = provider.generateToken(claims, options);
 
-              // Wrap in JsonObject
+              // Response
               return Future.succeededFuture(
                   new JsonObject()
                       .put("access_token", token)
-                      .put("token_type", "bearer")
-                      .put("expires_in", TokenExpirationMinutes * 60));
+                      .put("token_type", "jwt")
+                      .put("expires_in_minutes", TokenExpirationMinutes)); // ✅ extra convenience
             });
   }
 
@@ -96,8 +97,6 @@ public class TokenServiceImpl implements TokenService {
     try {
       JksOptions options = new JksOptions().setPath(keystorePath).setPassword(keystorePassword);
       KeyStore ks = options.loadKeyStore(vertx);
-      ;
-
       ECKey ecKey = ECKey.load(ks, JWT_ALGORITHM, keystorePassword.toCharArray());
 
       JWKSet jwkSet = new JWKSet(ecKey.toPublicJWK());
