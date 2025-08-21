@@ -123,6 +123,15 @@
       "required":["postgresOptions", "commonOptions", "keycloakOptions", "KYCOptions","emailOptions", "emailConfig"],
       "serverTimeoutMs": 30000,
       "corsRegexString":"^https://.+\\.iudx\\.org\\.in$"
+    },
+    {
+      "id": "org.cdpg.dx.aaa.apiserver.ApdApiServerVerticle",
+      "verticleInstances": 1,
+      "isWorkerVerticle": false,
+      "httpPort":8444,
+      "required":["postgresOptions", "commonOptions","emailOptions", "emailConfig"],
+      "serverTimeoutMs": 30000,
+      "corsRegexString":"^https://.+\\.iudx\\.org\\.in$"
     }
   ]
 }

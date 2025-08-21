@@ -7,10 +7,10 @@ import io.vertx.core.json.JsonObject;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.accessReport.controller.AccessReportController;
-import org.cdpg.dx.aaa.accessReport.factory.AccessReportFactory;
-import org.cdpg.dx.aaa.accessRequest.controller.AccessRequestController;
-import org.cdpg.dx.aaa.accessRequest.factory.AccessRequestFactory;
+//import org.cdpg.dx.aaa.accessReport.controller.AccessReportController;
+//import org.cdpg.dx.aaa.accessReport.factory.AccessReportFactory;
+//import org.cdpg.dx.aaa.accessRequest.controller.AccessRequestController;
+//import org.cdpg.dx.aaa.accessRequest.factory.AccessRequestFactory;
 import org.cdpg.dx.aaa.admin.controller.AdminController;
 import org.cdpg.dx.aaa.admin.handler.AdminHandler;
 import org.cdpg.dx.aaa.asset.controller.AssetController;
@@ -106,11 +106,11 @@ public class ControllerFactory {
         new AdminHandler(userService, keycloakUserService, creditService, organizationService);
     ApiController adminController = new AdminController(adminHandler);
 
-    AccessRequestController accessRequestController =
-        AccessRequestFactory.createAccessRequestController(
-            pgService, esService, emailService, keycloakUserService, auditingHandler, config);
-
-    AccessReportController accessReportController = AccessReportFactory.create(pgService, vertx);
+//    AccessRequestController accessRequestController =
+//      AccessRequestFactory.createAccessRequestController(
+//        pgService, esService, emailService, keycloakUserService, auditingHandler, config);
+//
+//    AccessReportController accessReportController = AccessReportFactory.create(pgService, vertx);
 
     final ListController listController =
         ListControllerFactory.createListController(esService, auditingHandler, docIndex);
@@ -133,8 +133,8 @@ public class ControllerFactory {
         creditApiController,
         kycController,
         adminController,
-        accessRequestController,
-        accessReportController,
+//        accessRequestController,
+//        accessReportController,
         assetController,
         listController,
         searchController,

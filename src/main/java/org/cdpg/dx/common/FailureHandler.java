@@ -1,24 +1,19 @@
 package org.cdpg.dx.common;
 
-import static org.cdpg.dx.aaa.accessRequest.config.Constants.*;
-
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.validation.BodyProcessorException;
 import io.vertx.ext.web.validation.ParameterProcessorException;
 import io.vertx.ext.web.validation.RequestPredicateException;
 import io.vertx.json.schema.ValidationException;
-import io.vertx.serviceproxy.HelperUtils;
-import org.apache.http.HttpException;
 import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.common.config.CorsUtil;
 import org.cdpg.dx.common.response.DxErrorResponse;
 import org.cdpg.dx.common.util.ExceptionHttpStatusMapper;
 import org.cdpg.dx.common.util.ThrowableUtils;
 
-import java.time.LocalDateTime;
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.*;
 
 public class FailureHandler implements Handler<RoutingContext> {
 

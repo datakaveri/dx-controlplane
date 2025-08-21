@@ -91,7 +91,6 @@ public class OrganizationHandler {
                     ResponseBuilder.sendSuccess(ctx, "Organisation deleted Successfully!");
                 })
                 .onFailure(ctx::fail);
-
     }
 
 

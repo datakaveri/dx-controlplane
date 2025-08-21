@@ -1,11 +1,6 @@
-package org.cdpg.dx.aaa.apiserver;
+package org.cdpg.dx.acl.apiserver;
 
-import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.*;
-import static org.cdpg.dx.common.config.CorsUtil.allowedOrigins;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.vertx.core.AbstractVerticle;
@@ -17,27 +12,30 @@ import io.vertx.core.net.KeyStoreOptions;
 import io.vertx.ext.auth.jwt.JWTAuth;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
-import io.vertx.ext.web.handler.*;
+import io.vertx.ext.web.handler.AuthenticationHandler;
+import io.vertx.ext.web.handler.BodyHandler;
+import io.vertx.ext.web.handler.CorsHandler;
+import io.vertx.ext.web.handler.TimeoutHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.ext.web.openapi.RouterBuilderOptions;
 import io.vertx.serviceproxy.HelperUtils;
-import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.auth.authentication.handler.AAAJwtAuthHandler;
 import org.cdpg.dx.auth.authentication.handler.KeycloakJwtAuthHandler;
-import org.cdpg.dx.auth.authentication.handler.OptionalAAAJwtAuthHandler;
-import org.cdpg.dx.auth.authentication.handler.OptionalKeyCloakJwtAuthHandler;
+import org.cdpg.dx.auth.authentication.handler.OptionalJwtAuthHandler;
 import org.cdpg.dx.auth.authentication.provider.JwtAuthProvider;
-import org.cdpg.dx.auth.authentication.util.ChainedJwtAuthHandler;
-import org.cdpg.dx.auth.authentication.util.TokenIssuer;
 import org.cdpg.dx.common.FailureHandler;
 import org.cdpg.dx.common.HttpStatusCode;
 import org.cdpg.dx.common.config.URNConstants;
 import org.cdpg.dx.common.util.BlockingExecutionUtil;
 
-public class ApiServerVerticle extends AbstractVerticle {
-  private static final Logger LOGGER = LogManager.getLogger(ApiServerVerticle.class);
+import java.util.List;
+
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.*;
+import static org.cdpg.dx.common.config.CorsUtil.allowedOrigins;
+
+public class ApdApiServerVerticle extends AbstractVerticle {
+  private static final Logger LOGGER = LogManager.getLogger(ApdApiServerVerticle.class);
   private int port;
   private HttpServer server;
   private Router router;
@@ -52,44 +50,33 @@ public class ApiServerVerticle extends AbstractVerticle {
 
   @Override
   public void start() {
-
-    port = config().getInteger("httpPort", 8443);
+    port = config().getInteger("httpPort", 8444);
     allowedOrigins = config().getJsonArray("corsAllowedOrigin").getList();
 
+    // Register the module for default Vert.x ObjectMapper
     ObjectMapper mapper = DatabindCodec.mapper();
     mapper.registerModule(new JavaTimeModule());
     mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-    mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
-    DatabindCodec.mapper().setPropertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE);
 
-    ObjectMapper prettyMapper = mapper.copy();
-    prettyMapper.enable(SerializationFeature.INDENT_OUTPUT);
-    DatabindCodec.prettyMapper()
-        .setPropertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE);
+    ObjectMapper prettyMapper = DatabindCodec.prettyMapper();
+    prettyMapper.registerModule(new JavaTimeModule());
+    prettyMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-    Future<RouterBuilder> routerFuture = RouterBuilder.create(vertx, "docs/openapi.yaml");
-      Future<JWTAuth> keyCloakFuture = JwtAuthProvider.init(vertx, config(), TokenIssuer.KEYCLOAK);
-      Future<JWTAuth> aaaAuthFuture = JwtAuthProvider.init(vertx, config(), TokenIssuer.AAA);    // init SharedWorkerExecutor for this vertical
+    Future<RouterBuilder> routerFuture = RouterBuilder.create(vertx, "docs/openapi2.yaml");
+    Future<JWTAuth> authFuture = JwtAuthProvider.init(vertx, config());
+    // init SharedWorkerExecutor for this vertical
     BlockingExecutionUtil.initialize(vertx);
 
-    List<ApiController> controllers = ControllerFactory.createControllers(vertx, config());
+    List<ApdApiController> controllers = ControllerFactory.createControllers(vertx, config());
 
-      Future.all(routerFuture, aaaAuthFuture,keyCloakFuture)
+    Future.all(routerFuture, authFuture)
         .onSuccess(
             cf -> {
-                RouterBuilder routerBuilder = cf.resultAt(0);
-                JWTAuth aaaJwtAuth = cf.resultAt(1);
-                JWTAuth keyCloakJwtAuth = cf.resultAt(2);
-
-                AuthenticationHandler keycloakJwtAuthHandler = new KeycloakJwtAuthHandler(keyCloakJwtAuth);
-                AuthenticationHandler optionalKeyCloakAuth = new OptionalKeyCloakJwtAuthHandler(keyCloakJwtAuth);
-                AuthenticationHandler optionalAAAAuth = new OptionalAAAJwtAuthHandler(aaaJwtAuth);
-                AuthenticationHandler aaaAuthHandler = new AAAJwtAuthHandler(aaaJwtAuth);
-
-                AuthenticationHandler chainedAuth = new ChainedJwtAuthHandler(List.of(keycloakJwtAuthHandler, aaaAuthHandler));
-                AuthenticationHandler optionalChainedAuth = new ChainedJwtAuthHandler(List.of(optionalKeyCloakAuth, optionalAAAAuth));
-
-                try {
+              RouterBuilder routerBuilder = cf.resultAt(0);
+              JWTAuth jwtAuth = cf.resultAt(1);
+              AuthenticationHandler authHandler = new KeycloakJwtAuthHandler(jwtAuth);
+              AuthenticationHandler optionalAuth = new OptionalJwtAuthHandler(jwtAuth);
+              try {
 
                 LOGGER.debug("Adding platform handlers...");
                 int timeout = config().getInteger("timeout", 100000); // Configurable timeout
@@ -100,8 +87,8 @@ public class ApiServerVerticle extends AbstractVerticle {
                 RouterBuilderOptions factoryOptions =
                     new RouterBuilderOptions().setMountResponseContentTypeHandler(true);
                 routerBuilder.setOptions(factoryOptions);
-                routerBuilder.securityHandler("authorization", chainedAuth);
-                routerBuilder.securityHandler("optionalAuth", optionalChainedAuth);
+                routerBuilder.securityHandler("authorization", authHandler);
+                routerBuilder.securityHandler("optionalAuth", optionalAuth);
 
                 controllers.forEach(controller -> controller.register(routerBuilder));
 
@@ -124,7 +111,7 @@ public class ApiServerVerticle extends AbstractVerticle {
                     .handler(
                         routingContext -> {
                           HttpServerResponse response = routingContext.response();
-                          response.sendFile("docs/openapi.yaml");
+                          response.sendFile("docs/openapi2.yaml");
                         });
                 router
                     .get(ROUTE_DOC)
@@ -153,7 +140,7 @@ public class ApiServerVerticle extends AbstractVerticle {
                         http -> {
                           if (http.succeeded()) {
                             printDeployedEndpoints(router);
-                            LOGGER.info("ApiServerVerticle  deployed on port: {}", port);
+                            LOGGER.info("ApdApiServerVerticle  deployed on port: {}", port);
                           } else {
                             LOGGER.error(
                                 "HTTP server failed to start: {}",
@@ -178,14 +165,8 @@ public class ApiServerVerticle extends AbstractVerticle {
   private void configureCorsHandler(Router router) {
     CorsHandler corsHandler = CorsHandler.create();
 
-    if (allowedOrigins.contains("*")) {
-      corsHandler = CorsHandler.create("*").allowCredentials(false);
-    } else {
-      corsHandler = CorsHandler.create();
-      for (String origin : allowedOrigins) {
-        corsHandler.addOrigin(origin);
-      }
-      corsHandler.allowCredentials(true);
+    for (String origin : allowedOrigins) {
+      corsHandler.addOrigin(origin);
     }
 
     corsHandler
@@ -197,7 +178,8 @@ public class ApiServerVerticle extends AbstractVerticle {
         .allowedMethod(HttpMethod.PATCH)
         .allowedHeader("Content-Type")
         .allowedHeader("Authorization")
-        .allowedHeader("Origin");
+        .allowedHeader("Origin")
+        .allowCredentials(false);
 
     router.route().handler(corsHandler);
   }
