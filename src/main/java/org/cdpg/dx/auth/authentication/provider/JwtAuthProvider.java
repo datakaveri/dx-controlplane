@@ -22,10 +22,7 @@ public class JwtAuthProvider {
   private static long refreshTimerId;
 
   public static Future<JWTAuth> init(Vertx vertx, JsonObject config, TokenIssuer tokenIssuer) {
-    String certUrl =
-        tokenIssuer.equals(TokenIssuer.AAA)
-            ? config.getString("aaaCertUrl")
-            : config.getString("keycloakCertUrl");
+    String certUrl = config.getString("keycloakCertUrl");
 
     long refreshMs = config.getLong("jwksRefreshIntervalMs", 6 * 60 * 60 * 1000L); // default: 6h
 
