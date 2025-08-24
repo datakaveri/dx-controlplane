@@ -71,7 +71,12 @@ public class ControllerFactory {
 
     ItemService itemService = new ItemServiceImpl(esService, docIndex);
 
-    AuditingHandler auditingHandler = new AuditingHandler(dataBrokerService);
+    String auditingExchange = config.getString("auditingExchange");
+    String routingKey = config.getString("auditingRoutingKey");
+
+    AuditingHandler auditingHandler =
+        new AuditingHandler(dataBrokerService, auditingExchange, routingKey);
+
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
     CreditService creditService =
         CreditControllerFactory.createService(pgService, keycloakUserService, config);

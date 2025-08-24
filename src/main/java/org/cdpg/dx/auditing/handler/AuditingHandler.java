@@ -1,10 +1,5 @@
 package org.cdpg.dx.auditing.handler;
 
-import static org.cdpg.dx.auditing.util.Constants.AUDITING_EXCHANGE;
-import static org.cdpg.dx.auditing.util.Constants.ROUTING_KEY;
-import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DATA_BROKER_SERVICE_ADDRESS;
-
-import io.vertx.core.Vertx;
 import io.vertx.ext.web.RoutingContext;
 import java.util.List;
 import java.util.Optional;
@@ -17,10 +12,17 @@ import org.cdpg.dx.databroker.service.DataBrokerService;
 public class AuditingHandler {
   private static final Logger LOGGER = LogManager.getLogger(AuditingHandler.class);
   private static final List<Integer> STATUS_CODES_TO_AUDIT = List.of(200, 201, 204);
-  private final DataBrokerService databrokerService;
 
-  public AuditingHandler(DataBrokerService databrokerService) {
-    this.databrokerService = databrokerService ;}
+  private final DataBrokerService databrokerService;
+  private final String auditingExchange;
+  private final String routingKey;
+
+  public AuditingHandler(
+      DataBrokerService databrokerService, String auditingExchange, String routingKey) {
+    this.auditingExchange = auditingExchange;
+    this.routingKey = routingKey;
+    this.databrokerService = databrokerService;
+  }
 
   public void handleApiAudit(RoutingContext context) {
     context.addBodyEndHandler(
@@ -53,7 +55,7 @@ public class AuditingHandler {
         log -> {
           LOGGER.info("auditLogData : {}", log.toJson().toString());
           databrokerService
-              .publishMessageInternal(log.toJson(), AUDITING_EXCHANGE, ROUTING_KEY)
+              .publishMessageInternal(log.toJson(), auditingExchange, routingKey)
               .onSuccess(success -> LOGGER.info("Auditing log published successfully"))
               .onFailure(
                   failure ->
