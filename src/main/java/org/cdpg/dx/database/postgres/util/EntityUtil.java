@@ -25,6 +25,12 @@ public class EntityUtil {
     }
   }
 
+  public static <T> void putIfNonEmpty(Map<String, Object> map, String key, T value) {
+    if (value != null) {
+      map.put(key, value);
+    }
+  }
+
   public static UUID parseUUID(String value, String name) {
     if (value != null && !value.isEmpty()) {
       return UUID.fromString(value);
