@@ -5746,6 +5746,238 @@ paths:
                     title: "Invalid Search Type"
                     detail: "Only 'term' and range/temporal filters are supported for count aggregation."
 
+  /iudx/v2/ingestion:
+    post:
+      security:
+        - authorization: [ ]
+      tags:
+        - Data Ingestion Adaptor
+      summary: Register ingestion adapter
+      operationId: registerAdapter
+
+      x-codeSamples:
+        - lang: 'cURL'
+          label: 'ingestion'
+          source: |
+            curl --location --request POST 'https://example.com/iudx/v2/ingestion' \
+            --header 'Authorization: <tokenValue>'
+            --header 'Content-Type: application/json' \
+            --data-raw '<payload>'
+
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/registeradapterrequest'
+        required: true
+      responses:
+        201:
+          description: 'Successful registration of ingestion adapter'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/registeradapter'
+
+        401:
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/standardInvalidTokenErrorResponse"
+          description: |-
+            - Unauthorized - `token` invalid/expired
+            - Unauthorized - `clientId` & `clientSecret` invalid/not match
+
+        404:
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/standardResourceNotFoundErrorResponse"
+          description: 'Adapter Not Found'
+
+        409:
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/standardResourceAlreadyExistErrorResponse"
+          description: 'Adapter Already Exists'
+
+      description: |
+        Ingestion API allows a provider to register an ingestion adapter with DX(Data exchange) Resource Server. Based on the input provided, the API validates the access control of the user with DX(Data exchange) Auth server to allow or deny access to the API. 
+
+        #### Register Adapter
+        To register an adapter, a user must request for a consent from the provider, obtain a token from DX(Data exchange) Auth server and then access the API with the following values:
+          - `entities`: List of DX(Data exchange) resource id's .
+      deprecated: false
+
+  /iudx/v2/ingestion/{id}:
+    get:
+      security:
+        - authorization: [ ]
+      tags:
+        - Data Ingestion Adaptor
+      summary: Retrieve ingestion adapter details
+      operationId: getAdaptorDetailsById
+      parameters:
+        - name: id
+          in: path
+          description: 'id of the adapter obtained from Register adapter.'
+          required: true
+          style: simple
+          schema:
+            type: string
+            format: uuid
+            maxLength: 36
+            pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/retrieveadapter'
+          description: 'Successful retrieval of ingestion adapter'
+
+        401:
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/standardInvalidTokenErrorResponse"
+          description: |-
+            - Unauthorized - `token` invalid/expired
+            - Unauthorized - `clientId` & `clientSecret` invalid/not match
+
+        404:
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/generalResourceNotFoundErrorResponse"
+          description: 'Adapter not found'
+
+      x-codeSamples:
+        - lang: 'cURL'
+          label: 'ingestion by id'
+          source: |
+            curl --location --request GET 'https://example.com/iudx/v2/ingestion/UUID' \
+            --header 'token: <tokenValue>'
+
+      description: |
+        Retrieve Ingestion API allows a provider to fetch the list of `Subscribers` a.k.a [Streaming Consumers] for the data. Based on the input provided, the API validates the access control of the user with DX(Data exchange) Auth server to allow or deny access to the API. 
+
+        #### Retrieve Adapter Details
+        To retrieve subscriber list, the provider must present the `id` and `token`. Retrieve API validates the request with the Auth server to allow or deny access to the provider.
+      deprecated: false
+
+    delete:
+      security:
+        - authorization: [ ]
+      tags:
+        - Data Ingestion Adaptor
+      summary: Delete ingestion adaptor
+      operationId: deleteAdaptorById
+      parameters:
+        - name: id
+          in: path
+          description: 'id of the adapter obtained from Register ingestion adapter.'
+          required: true
+          style: simple
+          schema:
+            type: string
+            format: uuid
+            maxLength: 36
+            pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      responses:
+        200:
+          description: 'Successful deletion of ingestion adapter'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/deleteadapter'
+
+        401:
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/standardInvalidTokenErrorResponse"
+          description: |-
+            - Unauthorized - `token` invalid/expired
+            - Unauthorized - `clientId` & `clientSecret` invalid/not match
+
+        404:
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/generalResourceNotFoundErrorResponse"
+          description: 'Adapter not found'
+
+      x-codeSamples:
+        - lang: 'cURL'
+          label: 'ingestion by id'
+          source: |
+            curl --location --request DELETE 'https://example.com/ngsi-ld/v1/ingestion/UUID' \
+            --header 'token: <tokenValue>'
+
+      description: |
+        Delete ingestion Adapter API allows a provider to delete a publisher. Once this is done all the `Subscribers` a.k.a [Streaming Consumers] and `Consumers` of the data will stop receiving further updates. Based on the input provided, the API validates the access control of the user with DX(Data exchange) Auth server to allow or deny access to the API. 
+
+        #### Delete Adapter
+        To delete an adapter, the provider must present the `id` and `token`. Delete API validates the request with the Auth server to allow or deny access to the provider.
+
+      deprecated: false
+
+  /iudx/v2/ingestion/entities:
+    post:
+      security:
+        - authorization: [ ]
+      tags:
+        - Data Ingestion Adaptor
+      summary: Ingestion adapter
+      operationId: postIngestionAdaptorEntities
+
+      x-codeSamples:
+        - lang: 'cURL'
+          label: 'ingestion'
+          source: |
+            curl --location --request POST 'https://example.com/iudx/v2/ingestion/entities' \
+            --header 'Authorization: <tokenValue>'
+            --header 'Content-Type: application/json' \
+            --data-raw '<payload>'
+
+      requestBody:
+        description: entities is must in all the request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ingestionEntityRequest'
+        required: true
+      responses:
+        200:
+          description: 'Successful registration of ingestion adapter'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/adapterIngestionEntities'
+
+        401:
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/standardInvalidTokenErrorResponse"
+          description: |-
+            - Unauthorized
+
+        400:
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/asyncBadRequestErrorResponse"
+          description: 'Not Found'
+
+
+      description: |
+        Ingestion Entities API allows a publish data into DX(Data exchange) Resource Server. Based on the input provided, the API validates the access control of the user with DX(Data exchange) Auth server to allow or deny access to the API. Enitiy should be registered with DX through the adaptor /ingestion API.
+
+      deprecated: false
+
 tags:
   - name: Entity
     description: |
@@ -5763,6 +5995,13 @@ tags:
       List DX Entities of a certain type.
       These apis are intended to be used by User Interfaces.
     x-displayName: List
+
+  - name: Data Ingestion Adaptor
+    x-displayName: "Data Ingestion Adaptor"
+    description: |
+      Register Data Adaptor using HTTPs APIs. Once registered, the adaptors can publish data as per the DX(Data exchange) data descriptor using AMQP streaming protocol over TLS.
+      Stream data of an adaptor using AMQP streaming protocol.
+      These apis are intended to be used by DX(Data exchange) Data *Providers*.
 
 components:
   securitySchemes:
@@ -5883,6 +6122,225 @@ components:
       schema:
         type: string
   schemas:
+    standardResourceAlreadyExistErrorResponse:
+      title: standardResourceAlreadyExistErrorResponse
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+      example:
+        type: urn:dx:rs:resourceAlreadyExist
+        title: Conflict
+        detail: Conflict
+    standardInvalidTokenErrorResponse:
+      title: standardInvalidTokenErrorResponse
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+      example:
+        type: urn:dx:controlplane:invalidAuthorizationToken
+        title: Not Authorized
+        detail: Not Authorized
+    registeradapter:
+      title: registeradapter
+      required:
+        - username
+        - apiKey
+        - id
+        - URL
+        - port
+        - vHost
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        results:
+          description: An array of objects
+          type: array
+          items:
+            type: object
+      example:
+        type: urn:dx:controlplane:success,
+        title: success,
+        results: [
+          {
+            "username": "fd47486b-XXXX-4248-ac1e-082e4d37a66c",
+            "apiKey": "Use the apiKey returned on registration, if lost please use /resetPassword API",
+            "id": "UUID",
+            "URL": "databroker.iudx.io",
+            "port": 24567,
+            "vHost": "IUDX"
+          }
+        ]
+    registeradapterrequest:
+      title: registeradapterrequest
+      required:
+        - entities
+      type: object
+      properties:
+        entities:
+          type: array
+          items:
+            type: string
+            pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      example:
+        entities:
+          - UUID
+    retrieveadapter:
+      title: retrieveadapter
+      required:
+        - database
+        - adaptorLogs
+        - redis-latest
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        results:
+          description: An array of objects
+          type: array
+          items:
+            type: object
+      example:
+        type: urn:dx:controlplane:success,
+        title: success,
+        results: [
+          {
+            "database": [
+              "UUID/.*"
+            ],
+            "redis-latest": [
+              "UUID/.*"
+            ],
+            "subscriptions-monitoring": [
+              "UUID/.*"
+            ]
+          }
+        ]
+    deleteadapter:
+      title: deleteadapter
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        results:
+          type: string
+      example:
+        type: urn:dx:controlplane:success
+        title: Success
+        detail: Adapter deleted
+    generalResourceNotFoundErrorResponse:
+      title: generalResourceNotFoundErrorResponse
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+      example:
+        type: urn:dx:rs:general
+        title: Not Found
+        detail: Not Found
+    ingestionEntityRequest:
+      title: ingestion entity
+      required:
+        - entities
+      type: array
+      properties:
+        entities:
+          type: array
+          items:
+            type: string
+      example:
+        [ {
+          "currentLevel": 1.16,
+          "referenceLevel": 15.9,
+          "measuredDistance": 14.74,
+          "entities": [
+            "695e222b-3fae-4325-8db0-3e29d01c4fc0"
+          ],
+          "observationDateTime": "2020-09-22T18:30:00+05:30",
+          "deviceInfo": {
+            "deviceID": "FWR055"
+          }
+        } ]
+    adapterIngestionEntities:
+      title: ingestion
+      required:
+        - username
+        - apiKey
+        - id
+        - URL
+        - port
+        - vHost
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        results:
+          description: An array of objects
+          type: array
+          items:
+            type: object
+      example:
+        type: urn:dx:controlplane:success,
+        title: success,
+        detail: "Item Published"
+    standardInvalidTokenErrorResponseAllQueueAndExcahnge:
+      title: standardInvalidTokenErrorResponse
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+      example:
+        type: urn:dx:controlplane:invalidAuthorizationToken
+        title: Not Authorized
+        detail: Not Authorized
+    standardResourceNotFoundErrorResponse:
+      title: standardResourceNotFoundErrorResponse
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+      example:
+        type: urn:dx:controlplane:resourceNotFound
+        title: Not Found
+        detail: Not Found
+    asyncBadRequestErrorResponse:
+      title: asyncBadRequestErrorResponse
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+      example:
+        type: urn:dx:controlplane:badRequest
+        title: Bad Request
+        detail: Bad Request
     AssetRequest:
       type: object
       properties:

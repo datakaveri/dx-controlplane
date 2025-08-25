@@ -1,5 +1,7 @@
 package org.cdpg.dx.databroker;
 
+import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DATA_BROKER_SERVICE_ADDRESS;
+
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonObject;
@@ -11,11 +13,10 @@ import io.vertx.serviceproxy.ServiceBinder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.databroker.client.RabbitClient;
+import org.cdpg.dx.databroker.client.RabbitWebClient;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.databroker.service.DataBrokerServiceImpl;
 import org.cdpg.dx.databroker.util.Vhosts;
-
-import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DATA_BROKER_SERVICE_ADDRESS;
 
 public class DataBrokerVerticle extends AbstractVerticle {
 
@@ -36,6 +37,7 @@ public class DataBrokerVerticle extends AbstractVerticle {
   private ServiceBinder binder;
   private MessageConsumer<JsonObject> consumer;
   private RabbitClient rabbitClient;
+  private RabbitWebClient rabbitWebClient;
   private RabbitMQClient iudxRabbitMqClient;
   private RabbitMQClient iudxInternalRabbitMqClient;
   private int amqpPort;
@@ -95,14 +97,23 @@ public class DataBrokerVerticle extends AbstractVerticle {
     /* Create a Vertx Web Client with the configuration and vertx cluster instance. */
     WebClient.create(vertx, webConfig);
 
-    /* Call the databroker constructor with the RabbitMQ client. */
+    /* Create a Json Object for properties */
+    JsonObject propObj = new JsonObject();
 
+    propObj.put("username", dataBrokerUserName);
+    propObj.put("password", dataBrokerPassword);
+
+    /* Call the databroker constructor with the RabbitMQ client. */
+    rabbitWebClient = new RabbitWebClient(vertx, webConfig, propObj);
     iudxRabbitMqClient = RabbitMQClient.create(vertx, iudxConfig);
     iudxInternalRabbitMqClient = RabbitMQClient.create(vertx, iudxInternalConfig);
-    rabbitClient = new RabbitClient(iudxInternalRabbitMqClient, iudxRabbitMqClient);
+    rabbitClient =
+        new RabbitClient(rabbitWebClient, iudxInternalRabbitMqClient, iudxRabbitMqClient);
     binder = new ServiceBinder(vertx);
 
-    dataBrokerService = new DataBrokerServiceImpl(rabbitClient);
+    dataBrokerService =
+        new DataBrokerServiceImpl(
+            rabbitClient, amqpUrl, amqpPort, iudxInternalVhost, prodVhost, externalVhost);
 
     /* Publish the Data Broker service with the Event Bus against an address. */
 
