@@ -1136,6 +1136,7 @@ paths:
           source: "curl --location --request POST 'https://example.com/iudx/acl/apd/v2/access_request/has_access'\
           \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type:\
           \ application/json' \\\n  --data-raw '<payload>'\n"
+
   /iudx/v2/auth/organisations/requests:
     get:
       summary: 'AAA-001-PF Admin: Get Organisation Creation requests'
@@ -4367,7 +4368,6 @@ paths:
                 $ref: '#/components/schemas/Unauthorized'
       security:
         - authorization: [ ]
-
   /iudx/v2/auth/asset/request/{id}:
     put:
       summary: Update Asset Request Status
@@ -4436,7 +4436,6 @@ paths:
                 $ref: '#/components/schemas/createNotificationConflictResponse'
       security:
         - authorization: [ ]
-
   /iudx/v2/auth/client:
     post:
       tags:
@@ -4480,8 +4479,7 @@ paths:
           description: Unauthorized – missing or invalid token
         "409":
           description: Conflict – client already exists
-
-  /iudx/auth/v2/jwks:
+  /iudx/v2/auth/jwks:
     get:
       operationId: get-auth-v1-jwks
       summary: Get public key in JWKS format.
@@ -4564,8 +4562,7 @@ paths:
                         x: rVwOLOln7NhUdfZOQFfTOtJ62AgdKUeYZm8DgWCWJHY
                         y: ml0_eXYqa_eMyTPop0rqqIVRQk8Y2o3Ux_PzvSTuN6w
       description: Get the public key in JWKS format to authenticate/validate the generated JWT using `/auth/v1/token`
-
-  /iudx/auth/v2/token:
+  /iudx/v2/auth/token:
     parameters: [ ]
     post:
       summary: Create Token
@@ -4616,6 +4613,7 @@ paths:
                       expires_in_minutes:
                         type: integer
                         example: 60
+
   /iudx/v2/cat/item:
     post:
       tags:
