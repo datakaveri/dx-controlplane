@@ -55,14 +55,6 @@ public class IngestionServiceImpl implements IngestionService {
             })
         .compose(
             meta -> {
-              LOGGER.debug("Database queue bound. Binding to Redis queue...");
-              return dataBroker
-                  .queueBinding(
-                      entitiesId, REDIS_LATEST_QUEUE, entitiesId, Vhosts.IUDX_PROD)
-                  .map(v -> meta);
-            })
-        .compose(
-            meta -> {
               LOGGER.debug("Redis queue bound. Binding to Subscription queue...");
               return dataBroker
                   .queueBinding(entitiesId, QUEUE_SUBS, entitiesId, Vhosts.IUDX_PROD)
