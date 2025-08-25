@@ -9426,7 +9426,6 @@ components:
       required:
         - name
         - type
-        - label
         - shortDescription
         - description
         - tags
@@ -9435,7 +9434,6 @@ components:
         - organizationType
         - fileFormat
         - industry
-        - geoCoverage
         - yearRange
         - verifiedBy
         - uploadFrequency
