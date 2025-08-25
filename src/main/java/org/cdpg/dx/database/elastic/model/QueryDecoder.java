@@ -87,6 +87,15 @@ public class QueryDecoder {
 
     QueryModel q = new QueryModel();
     q.setQueries(getBoolQuery(queryMap));
+
+    //Setting source field
+    for (QueryModel qm : queryMap.get(FilterType.INCLUDES)) {
+      LOGGER.debug("Qm: " + qm.toJson());
+      if (qm.getIncludeFields() != null) {
+        q.setIncludeFields(qm.getIncludeFields());
+      }
+    }
+
     // Optional pagination support
     if (request.getSize() != null) {
       int size = request.getSize();
@@ -97,13 +106,6 @@ public class QueryDecoder {
       }
       return q;
     }
-
-    for (QueryModel qm : queryMap.get(FilterType.FILTER)) {
-      if (qm.getIncludeFields() != null) {
-        q.setIncludeFields(qm.getIncludeFields());
-      }
-    }
-
     return q;
   }
 
