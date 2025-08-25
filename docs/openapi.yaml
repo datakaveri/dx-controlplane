@@ -4569,7 +4569,7 @@ paths:
     parameters: [ ]
     post:
       summary: Create Token
-      operationId:  post-auth-v1-token
+      operationId: post-auth-v1-token
       tags:
         - token
 
@@ -5693,7 +5693,251 @@ paths:
                     title: "Invalid Search Type"
                     detail: "Only 'term' and range/temporal filters are supported for count aggregation."
 
+  /iudx/v2/auditing/consumer/activity:
+    get:
+      tags:
+        - Activity Logs
+      operationId: get-ActivityLogs-for-consumer
+      summary: Consumer Activity
+      description: >
+        Retrieve a list of activity logs for the authenticated DX user.
+        This endpoint allows users to view their own activity and filter logs based on <b>assetType</b>, <b>operation</b> and a specified time range (time, endtime).
+        Pagination is supported for large result sets.
+      parameters:
+        - $ref: '#/components/parameters/AssetTypeParam'
+        - $ref: '#/components/parameters/OperationParam'
+        - $ref: '#/components/parameters/TimeParam'
+        - $ref: '#/components/parameters/EndTimeParam'
+        - $ref: '#/components/parameters/TimeRelParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+      responses:
+        '200':
+          description: List of consumer activity logs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditActivitySuccessResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Fetch Admin Activity Logs
+          source: |
+            curl --location 'https://example-auditing.com/dx/auditing/consumer/activity?starttime=2025-04-24T16%3A07%3A54.00&endtime=2025-06-24T16%3A07%3A54.00&page=1&size=1' \
+            --header 'Authorization: Bearer <your-token>'
+
+
+  /iudx/v2/auditing/admin/activity:
+    get:
+      tags:
+        - Activity Logs
+      operationId: get-activityLogs-for-admin
+      summary: Admin Activity
+      description: >
+        Retrieve a list of activity logs for DX users.
+        This endpoint allows filtering activity logs based on <b>userId</b>,<b>assetType</b>, <b>operation</b> and a specified time range (time, endtime).
+        Use this API to get detailed audit records for administrative purposes, including pagination support for large result sets.</br>
+        Note: **Platform admins** (`cos_admin`) can access all activity logs, while **organization admins** (`cos_org`) can access logs only for their own organization.
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+        - $ref: '#/components/parameters/AssetTypeParam'
+        - $ref: '#/components/parameters/OperationParam'
+        - $ref: '#/components/parameters/OrganizationIdParam'
+        - $ref: '#/components/parameters/TimeParam'
+        - $ref: '#/components/parameters/EndTimeParam'
+        - $ref: '#/components/parameters/TimeRelParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+      responses:
+        '200':
+          description: List of admin activity logs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditActivitySuccessResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Fetch Admin Activity Logs
+          source: |
+            curl --location 'https://example-auditing.com/dx/auditing/admin/activity?starttime=2025-05-24T16%3A07%3A54.00&endtime=2025-06-24T16%3A07%3A54.00&page=1&size=1' \
+            --header 'Authorization: Bearer <your-token>'
+
+
+
+
+  /iudx/v2/auditing/reportactivity/admin:
+    get:
+      tags:
+        - Activity Report
+      operationId: get-admin-report
+      summary: Admin report
+      description: Csv file for a list of activity logs for admin.
+        **Platform admins** (`cos_admin`) can access all activity logs, while **organization admins** (`cos_org`) can access logs only for their own organization.
+
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+        - $ref: '#/components/parameters/AssetTypeParam'
+        - $ref: '#/components/parameters/OperationParam'
+        - $ref: '#/components/parameters/OrganizationIdParam'
+        - $ref: '#/components/parameters/TimeParam'
+        - $ref: '#/components/parameters/EndTimeParam'
+        - $ref: '#/components/parameters/TimeRelParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+
+      responses:
+        '200':
+          description: Csv file generation success
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Bad request. No data available for CSV generation
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Admin Csv Activity Logs
+          source: |
+            curl --location 'https://example-auditing.com/dx/auditing/reportactivity/admin' \
+            --header 'Authorization: Bearer <your-token>'
+
+
+
+  /iudx/v2/auditing/reportactivity/consumer:
+    get:
+      tags:
+        - Activity Report
+      operationId: get-consumer-report
+      summary: Consumer report
+      description: Csv file for a list of activity logs for consumer.
+      parameters:
+        - $ref: '#/components/parameters/AssetTypeParam'
+        - $ref: '#/components/parameters/OperationParam'
+        - $ref: '#/components/parameters/TimeParam'
+        - $ref: '#/components/parameters/EndTimeParam'
+        - $ref: '#/components/parameters/TimeRelParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+      responses:
+        '200':
+          description: Csv file generation success
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Bad request. No data available for CSV generation
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Admin Csv Activity Logs
+          source: |
+            curl --location 'https://example-auditing.com/dx/auditing/reportactivity/consumer' \
+            --header 'Authorization: Bearer <your-token>'
+
+
+
+
 tags:
+  - name: Activity Logs
+    x-displayName: "Activity Logs"
+    description: >
+      APIs for managing activity logs in the Telangana Data Exchange (TgDeX) platform.
+      These APIs allow users to retrieve their own activity logs as well as administrative logs for auditing purposes.
+      The endpoints support filtering by time range and pagination, and they also provide CSV export functionality for both consumer and admin activity logs.
+  - name: Activity Report
+    x-displayName: "Activity Report"
+    description: >
+      APIs for generating CSV reports of activity logs.
+      These endpoints allow administrators and consumers to download activity logs in CSV format for offline analysis and reporting.
   - name: Entity
     description: |
       Manage catalogue entities and perform Create/Update/Read/Delete operations on them.
@@ -5711,6 +5955,8 @@ tags:
       These apis are intended to be used by User Interfaces.
     x-displayName: List
 
+
+
 components:
   securitySchemes:
     authorization:
@@ -5724,6 +5970,73 @@ components:
       bearerFormat: JWT
 
   parameters:
+    UserIdParam:
+      name: userId
+      in: query
+      description: id of the user(UUID) for whom to fetch activity logs
+      schema:
+        type: string
+        format: uuid
+        pattern: '^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$'
+
+    AssetTypeParam:
+      name: assetType
+      in: query
+      description: >
+        The type of asset to filter the activity logs.
+        This parameter allows filtering by specific asset types.
+      required: false
+      schema:
+        type: string
+
+    AssetNameParam:
+      name: assetname
+      in: query
+      description: >
+        This asset name is used to filter the activity logs.
+        This parameter allows filtering by specific asset name.
+      required: false
+      schema:
+        type: string
+
+    ApiParam:
+      name: api
+      in: query
+      description: >
+        This parameter allows filtering by specific api endpoint name.
+      required: false
+      schema:
+        type: string
+
+    RoleParam:
+      name: role
+      in: query
+      description: >
+        This parameter allows filtering by specific role.
+      required: false
+      schema:
+        type: string
+
+    OperationParam:
+      name: operation
+      in: query
+      description: >
+        The type of operation to filter the activity logs.
+        This parameter allows filtering by specific operations, such as `View`, `created`, etc.
+      required: false
+      schema:
+        type: string
+
+    OrganizationIdParam:
+      name: organizationId
+      in: query
+      description: >
+        The unique identifier (UUID) of the organization for which to fetch activity logs.
+        Use this parameter to filter activity logs belonging to a specific organization.
+      schema:
+        type: string
+        format: uuid
+        pattern: '^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$'
     PageParam:
       name: page
       in: query
@@ -9426,7 +9739,6 @@ components:
       required:
         - name
         - type
-        - label
         - shortDescription
         - description
         - tags
@@ -9435,7 +9747,6 @@ components:
         - organizationType
         - fileFormat
         - industry
-        - geoCoverage
         - yearRange
         - verifiedBy
         - uploadFrequency
@@ -9630,3 +9941,133 @@ components:
         type: 'urn:dx:cat:InvalidParamValue'
         title: Invalid value for a query param
         detail: Invalid offset parameter.
+    AuditActivitySuccessResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          example: urn:dx:auditing:success
+        title:
+          type: string
+          example: Success
+        result:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditActivityLogItem'
+        paginationInfo:
+          $ref: '#/components/schemas/PageInfo'
+    AuditActivityLogItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 4c9d066a-e2f7-46fd-a580-718d35f649bc
+        assetName:
+          type: string
+          example: AiSandBoxAiModelPrivate
+        assetType:
+          type: string
+          example: adex:AiModel
+        operation:
+          type: string
+          example: VIEWED
+        createdAt:
+          type: string
+          format: date-time
+          example: 2025-05-30T15:37:20.237353
+        assetId:
+          type: string
+          format: uuid
+          example: 0e889bb0-38f8-496c-ba85-02845ff5cf67
+        api:
+          type: string
+          example: /iudx/cat/v1/item
+        method:
+          type: string
+          example: POST
+        size:
+          type: integer
+          example: 0
+        role:
+          type: string
+          example: consumer
+        userId:
+          type: string
+          format: uuid
+          example: e0782a4e-3bdb-43e3-be8c-7beafb89efd9
+        originServer:
+          type: string
+          example: Catalogue
+        myactivityEnabled:
+          type: boolean
+          example: true
+    PageInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        size:
+          type: integer
+          example: 1
+        totalCount:
+          type: integer
+          example: 346
+        totalPages:
+          type: integer
+          example: 346
+        hasNext:
+          type: boolean
+          example: true
+        hasPrevious:
+          type: boolean
+          example: false
+    UnauthorizedResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          example: urn:dx:auditing:notAuthorized
+        title:
+          type: string
+          example: Not Authorized
+        detail:
+          type: string
+          example: Missing Bearer token
+    ForbiddenResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          example: urn:dx:auditing:forbidden
+        title:
+          type: string
+          example: Forbidden
+        detail:
+          type: string
+          example: User don't sufficient role
+    BadRequestResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          example: urn:dx:auditing:badRequest
+        title:
+          type: string
+          example: Bad Request
+        detail:
+          type: string
+          example: Both starttime and endtime must be provided together
+    InternalServerErrorResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          example: urn:dx:auditing:internalServerError
+        title:
+          type: string
+          example: Internal Server Error
+        detail:
+          type: string
+          example: An unexpected error occurred
