@@ -4,5 +4,6 @@ public enum FilterType {
   FILTER,
   MUST,
   MUST_NOT,
-  SHOULD;
+  SHOULD,
+  INCLUDES;
 }

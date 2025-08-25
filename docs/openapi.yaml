@@ -7331,6 +7331,11 @@ components:
           items:
             $ref: '#/components/schemas/SearchCriteria'
           description: List of property-based search criteria.
+        filter:
+          type: array
+          items:
+            type: string
+          description: List of properties to include in the response (e.g., id, label, name, description, tags).
       required:
         - q
         - searchCriteria

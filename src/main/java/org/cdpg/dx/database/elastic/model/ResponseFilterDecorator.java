@@ -37,9 +37,9 @@ public class ResponseFilterDecorator implements ElasticsearchQueryDecorator {
     if (sourceFilter == null || sourceFilter.isEmpty()) {
       throw new DxEsException("Missing response filter: 'attribute' or 'filter' is required");
     }
-    QueryModel sourceConfigModel = new QueryModel(QueryType.BOOL);
+    QueryModel sourceConfigModel = new QueryModel();
     sourceConfigModel.setIncludeFields(sourceFilter);
-    queryMap.get(FilterType.FILTER).add(sourceConfigModel);
+    queryMap.get(FilterType.INCLUDES).add(sourceConfigModel);
     return queryMap;
   }
 }
