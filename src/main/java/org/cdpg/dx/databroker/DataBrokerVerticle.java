@@ -20,6 +20,7 @@ import org.cdpg.dx.aaa.activity.service.impl.ActivityServiceImpl;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.client.RabbitClient;
 import org.cdpg.dx.databroker.listeners.AuditMessageConsumer;
+import org.cdpg.dx.databroker.client.RabbitWebClient;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.databroker.service.DataBrokerServiceImpl;
 import org.cdpg.dx.databroker.util.Vhosts;
@@ -43,6 +44,7 @@ public class DataBrokerVerticle extends AbstractVerticle {
   private ServiceBinder binder;
   private MessageConsumer<JsonObject> consumer;
   private RabbitClient rabbitClient;
+  private RabbitWebClient rabbitWebClient;
   private RabbitMQClient iudxRabbitMqClient;
   private RabbitMQClient iudxInternalRabbitMqClient;
   private int amqpPort;
@@ -103,11 +105,18 @@ public class DataBrokerVerticle extends AbstractVerticle {
     /* Create a Vertx Web Client with the configuration and vertx cluster instance. */
     WebClient.create(vertx, webConfig);
 
-    /* Call the databroker constructor with the RabbitMQ client. */
+    /* Create a Json Object for properties */
+    JsonObject propObj = new JsonObject();
 
+    propObj.put("username", dataBrokerUserName);
+    propObj.put("password", dataBrokerPassword);
+
+    /* Call the databroker constructor with the RabbitMQ client. */
+    rabbitWebClient = new RabbitWebClient(vertx, webConfig, propObj);
     iudxRabbitMqClient = RabbitMQClient.create(vertx, iudxConfig);
     iudxInternalRabbitMqClient = RabbitMQClient.create(vertx, iudxInternalConfig);
-    rabbitClient = new RabbitClient(iudxInternalRabbitMqClient, iudxRabbitMqClient);
+    rabbitClient =
+        new RabbitClient(rabbitWebClient, iudxInternalRabbitMqClient, iudxRabbitMqClient);
     binder = new ServiceBinder(vertx);
 
     PostgresService postgresService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
@@ -123,7 +132,10 @@ public class DataBrokerVerticle extends AbstractVerticle {
     auditConsumer.start();
     /*immudbConsumer.start();*/
 
-    dataBrokerService = new DataBrokerServiceImpl(rabbitClient);
+    dataBrokerService =
+        new DataBrokerServiceImpl(
+            rabbitClient, amqpUrl, amqpPort, iudxInternalVhost, prodVhost, externalVhost);
+
 
     /* Publish the Data Broker service with the Event Bus against an address. */
 

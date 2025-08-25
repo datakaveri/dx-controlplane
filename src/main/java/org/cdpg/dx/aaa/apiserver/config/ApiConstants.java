@@ -322,4 +322,10 @@ public class ApiConstants {
   public static final String EVENTTYPE_DELETED = "SUBS_DELETED";
   public static final String EVENTTYPE_APPEND = "SUBS_APPEND";
   public static final String EVENTTYPE_UPDATE = "SUBS_UPDATED";
+
+    public static final String GET_ADAPTER_LIST = "getAdapterExchangeList";
+    public static final String POST_ADAPTER = "registerAdapter";
+    public static final String GET_ADAPTOR_BY_ID = "getAdaptorDetailsById";
+    public static final String DELETE_ADAPTER_BY_ID = "deleteAdaptorById";
+    public static final String POST_INGESTION_ADAPTER_ENTITIES = "postIngestionAdaptorEntities";
 }

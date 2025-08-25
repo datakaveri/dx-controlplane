@@ -9,10 +9,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.ActivityReport.controller.ActivityReportController;
 import org.cdpg.dx.aaa.ActivityReport.factory.ActivityReportControllerFactory;
-//import org.cdpg.dx.aaa.accessReport.controller.AccessReportController;
-//import org.cdpg.dx.aaa.accessReport.factory.AccessReportFactory;
-//import org.cdpg.dx.aaa.accessRequest.controller.AccessRequestController;
-//import org.cdpg.dx.aaa.accessRequest.factory.AccessRequestFactory;
+// import org.cdpg.dx.aaa.accessReport.controller.AccessReportController;
+// import org.cdpg.dx.aaa.accessReport.factory.AccessReportFactory;
+// import org.cdpg.dx.aaa.accessRequest.controller.AccessRequestController;
+// import org.cdpg.dx.aaa.accessRequest.factory.AccessRequestFactory;
 import org.cdpg.dx.aaa.activity.controller.ActivityController;
 import org.cdpg.dx.aaa.activity.factory.ActivityControllerFactory;
 import org.cdpg.dx.aaa.admin.controller.AdminController;
@@ -25,6 +25,9 @@ import org.cdpg.dx.aaa.clientSecret.factory.ClientControllerFactory;
 import org.cdpg.dx.aaa.credit.factory.CreditControllerFactory;
 import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
+import org.cdpg.dx.aaa.ingestion.controller.IngestionAdaptorController;
+import org.cdpg.dx.aaa.ingestion.service.IngestionService;
+import org.cdpg.dx.aaa.ingestion.service.IngestionServiceImpl;
 import org.cdpg.dx.aaa.item.controller.ItemController;
 import org.cdpg.dx.aaa.item.factory.ItemControllerFactory;
 import org.cdpg.dx.aaa.item.service.ItemService;
@@ -58,7 +61,8 @@ public class ControllerFactory {
 
   private ControllerFactory() {}
 
-  public static List<ApiController> createControllers(Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
+  public static List<ApiController> createControllers(
+      Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
 
     final String docIndex = config.getString("docIndex");
     final String vocContext = config.getString("vocContext");
@@ -94,55 +98,66 @@ public class ControllerFactory {
             userService,
             creditService);
 
-    AssetHandler assetHandler = AssetFactory.createHandler(pgService, config, emailComposer,urnGenerator);
+    AssetHandler assetHandler =
+        AssetFactory.createHandler(pgService, config, emailComposer, urnGenerator);
     ApiController assetController = new AssetController(assetHandler, auditingHandler);
 
     ApiController creditApiController =
-      CreditControllerFactory.create(creditService, emailComposer, userService, urnGenerator);
-    KYCHandler kycHandler = KYCFactory.createHandler(vertx, config, creditService, pgService,urnGenerator);
+        CreditControllerFactory.create(creditService, emailComposer, userService, urnGenerator);
+    KYCHandler kycHandler =
+        KYCFactory.createHandler(vertx, config, creditService, pgService, urnGenerator);
     ApiController kycController = new KYCController(kycHandler);
     ApiController organizationController =
-      OrganizationControllerFactory.create(
-        organizationService,
-        userService,
-        auditingHandler,
-        emailComposer,
-        vertx,
-        pgService,
-        creditService,
-        keycloakUserService,
-        urnGenerator);
+        OrganizationControllerFactory.create(
+            organizationService,
+            userService,
+            auditingHandler,
+            emailComposer,
+            vertx,
+            pgService,
+            creditService,
+            keycloakUserService,
+            urnGenerator);
 
     AdminHandler adminHandler =
-      new AdminHandler(userService, keycloakUserService, creditService, organizationService,urnGenerator);
+        new AdminHandler(
+            userService, keycloakUserService, creditService, organizationService, urnGenerator);
     ApiController adminController = new AdminController(adminHandler);
 
-//    AccessRequestController accessRequestController =
-//      AccessRequestFactory.createAccessRequestController(
-//        pgService, esService, emailService, keycloakUserService, auditingHandler, config);
-//
-//    AccessReportController accessReportController = AccessReportFactory.create(pgService, vertx);
+    //    AccessRequestController accessRequestController =
+    //      AccessRequestFactory.createAccessRequestController(
+    //        pgService, esService, emailService, keycloakUserService, auditingHandler, config);
+    //
+    //    AccessReportController accessReportController = AccessReportFactory.create(pgService,
+    // vertx);
 
     final ListController listController =
-      ListControllerFactory.createListController(esService, auditingHandler, docIndex,urnGenerator);
+        ListControllerFactory.createListController(
+            esService, auditingHandler, docIndex, urnGenerator);
     final SearchController searchController =
-      SearchControllerFactory.createSearchController(esService, auditingHandler, docIndex,urnGenerator);
+        SearchControllerFactory.createSearchController(
+            esService, auditingHandler, docIndex, urnGenerator);
     final ItemController itemController =
-      ItemControllerFactory.createCrudController(
-        auditingHandler, esService, docIndex, vocContext, urnGenerator);
+        ItemControllerFactory.createCrudController(
+            auditingHandler, esService, docIndex, vocContext, urnGenerator);
 
     // TODO create other controllers
 
-    ClientController clientController = ClientControllerFactory.create(pgService,urnGenerator);
+    ClientController clientController = ClientControllerFactory.create(pgService, urnGenerator);
 
-    TokenController tokenController = TokenControllerFactory.create(pgService, config, vertx,urnGenerator);
+    TokenController tokenController =
+        TokenControllerFactory.create(pgService, config, vertx, urnGenerator);
 
     PublicController publicController = PublicKeycontrllerFactory.create(config, vertx);
 
     // Activity Controller
-    ActivityController activityController = ActivityControllerFactory.create(pgService,urnGenerator);
+    ActivityController activityController =
+        ActivityControllerFactory.create(pgService, urnGenerator);
     ActivityReportController activityReportController =
         ActivityReportControllerFactory.create(pgService, vertx);
+    IngestionService ingestionService = new IngestionServiceImpl(dataBrokerService);
+    IngestionAdaptorController ingestionAdaptorController =
+        new IngestionAdaptorController(ingestionService);
 
     return List.of(
         organizationController,
@@ -156,7 +171,8 @@ public class ControllerFactory {
         clientController,
         tokenController,
         publicController,
-      activityController,
-      activityReportController);
+        activityController,
+        activityReportController,
+        ingestionAdaptorController);
   }
 }
