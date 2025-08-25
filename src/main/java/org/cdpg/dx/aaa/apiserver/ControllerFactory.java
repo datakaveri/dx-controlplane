@@ -7,10 +7,14 @@ import io.vertx.core.json.JsonObject;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.ActivityReport.controller.ActivityReportController;
+import org.cdpg.dx.aaa.ActivityReport.factory.ActivityReportControllerFactory;
 import org.cdpg.dx.aaa.accessReport.controller.AccessReportController;
 import org.cdpg.dx.aaa.accessReport.factory.AccessReportFactory;
 import org.cdpg.dx.aaa.accessRequest.controller.AccessRequestController;
 import org.cdpg.dx.aaa.accessRequest.factory.AccessRequestFactory;
+import org.cdpg.dx.aaa.activity.controller.ActivityController;
+import org.cdpg.dx.aaa.activity.factory.ActivityControllerFactory;
 import org.cdpg.dx.aaa.admin.controller.AdminController;
 import org.cdpg.dx.aaa.admin.handler.AdminHandler;
 import org.cdpg.dx.aaa.asset.controller.AssetController;
@@ -67,7 +71,12 @@ public class ControllerFactory {
 
     ItemService itemService = new ItemServiceImpl(esService, docIndex);
 
-    AuditingHandler auditingHandler = new AuditingHandler(dataBrokerService);
+    String auditingExchange = config.getString("auditingExchange");
+    String routingKey = config.getString("auditingRoutingKey");
+
+    AuditingHandler auditingHandler =
+        new AuditingHandler(dataBrokerService, auditingExchange, routingKey);
+
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
     CreditService creditService =
         CreditControllerFactory.createService(pgService, keycloakUserService, config);
@@ -121,12 +130,15 @@ public class ControllerFactory {
             auditingHandler, esService, docIndex, vocContext);
 
     // TODO create other controllers
-
-    ClientController controller = ClientControllerFactory.create(pgService);
-
+    // Client Secret and token related Controller
+    ClientController clientController = ClientControllerFactory.create(pgService);
     TokenController tokenController = TokenControllerFactory.create(pgService, config, vertx);
-
     PublicController publicController = PublicKeycontrllerFactory.create(config, vertx);
+
+    // Activity Controller
+    ActivityController activityController = ActivityControllerFactory.create(pgService);
+    ActivityReportController activityReportController =
+        ActivityReportControllerFactory.create(pgService, vertx);
 
     return List.of(
         organizationController,
@@ -139,8 +151,10 @@ public class ControllerFactory {
         listController,
         searchController,
         itemController,
-        controller,
+        clientController,
         tokenController,
-        publicController);
+        publicController,
+        activityController,
+        activityReportController);
   }
 }

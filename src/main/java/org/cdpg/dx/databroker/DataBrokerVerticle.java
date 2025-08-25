@@ -1,5 +1,8 @@
 package org.cdpg.dx.databroker;
 
+import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DATA_BROKER_SERVICE_ADDRESS;
+import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.POSTGRES_SERVICE_ADDRESS;
+
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonObject;
@@ -10,12 +13,16 @@ import io.vertx.rabbitmq.RabbitMQOptions;
 import io.vertx.serviceproxy.ServiceBinder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.activity.dao.ActivityLogDao;
+import org.cdpg.dx.aaa.activity.dao.impl.ActivityLogDaoImpl;
+import org.cdpg.dx.aaa.activity.service.ActivityService;
+import org.cdpg.dx.aaa.activity.service.impl.ActivityServiceImpl;
+import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.client.RabbitClient;
+import org.cdpg.dx.databroker.listeners.AuditMessageConsumer;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.databroker.service.DataBrokerServiceImpl;
 import org.cdpg.dx.databroker.util.Vhosts;
-
-import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DATA_BROKER_SERVICE_ADDRESS;
 
 public class DataBrokerVerticle extends AbstractVerticle {
 
@@ -40,6 +47,7 @@ public class DataBrokerVerticle extends AbstractVerticle {
   private RabbitMQClient iudxInternalRabbitMqClient;
   private int amqpPort;
   private String amqpUrl;
+  private AuditMessageConsumer auditConsumer;
 
   @Override
   public void start() throws Exception {
@@ -101,6 +109,19 @@ public class DataBrokerVerticle extends AbstractVerticle {
     iudxInternalRabbitMqClient = RabbitMQClient.create(vertx, iudxInternalConfig);
     rabbitClient = new RabbitClient(iudxInternalRabbitMqClient, iudxRabbitMqClient);
     binder = new ServiceBinder(vertx);
+
+    PostgresService postgresService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
+    ActivityLogDao activityLogDAO = new ActivityLogDaoImpl(postgresService);
+    ActivityService activityService = new ActivityServiceImpl(activityLogDAO);
+    /*ImmudbActivityService immudbActivityService = new ImmudbActivityServiceImpl(immudbService);*/
+
+    String auditQueue = config().getString("auditingQueue");
+
+    auditConsumer =
+        new AuditMessageConsumer(iudxInternalRabbitMqClient, auditQueue, activityService);
+    /*immudbConsumer = new ImmudbConsumer(iudxInternalRabbitMqClient, immudbActivityService);*/
+    auditConsumer.start();
+    /*immudbConsumer.start();*/
 
     dataBrokerService = new DataBrokerServiceImpl(rabbitClient);
 
