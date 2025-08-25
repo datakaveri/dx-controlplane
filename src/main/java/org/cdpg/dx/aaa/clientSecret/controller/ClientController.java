@@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.apiserver.ApiController;
 import org.cdpg.dx.aaa.clientSecret.service.ClientcredetialService;
+import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxUnauthorizedException;
 import org.cdpg.dx.common.response.ResponseBuilder;
@@ -16,9 +17,11 @@ public class ClientController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(ClientController.class);
 
   private final ClientcredetialService clientcredetialService;
+  private final URNGenerator urnGenerator;
 
-  public ClientController(ClientcredetialService clientcredetialService) {
+  public ClientController(ClientcredetialService clientcredetialService,URNGenerator urnGenerator) {
     this.clientcredetialService = clientcredetialService;
+    this.urnGenerator = urnGenerator;
   }
 
   @Override
@@ -44,12 +47,12 @@ public class ClientController implements ApiController {
     }
 
     clientcredetialService
-        .createClientIdAndClientSecret(userId)
-        .onSuccess(clientCredentials -> ResponseBuilder.sendSuccess(ctx, clientCredentials))
-        .onFailure(
-            err -> {
-              LOGGER.error("Failed to create client credentials: {}", err.getMessage(), err);
-              ctx.fail(err);
-            });
+      .createClientIdAndClientSecret(userId)
+      .onSuccess(clientCredentials -> ResponseBuilder.sendSuccess(ctx, clientCredentials,urnGenerator))
+      .onFailure(
+        err -> {
+          LOGGER.error("Failed to create client credentials: {}", err.getMessage(), err);
+          ctx.fail(err);
+        });
   }
 }

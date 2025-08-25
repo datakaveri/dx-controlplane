@@ -41,6 +41,7 @@ import org.cdpg.dx.aaa.token.factory.TokenControllerFactory;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.aaa.user.service.UserServiceImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
+import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.service.DataBrokerService;
@@ -53,7 +54,7 @@ public class ControllerFactory {
 
   private ControllerFactory() {}
 
-  public static List<ApiController> createControllers(Vertx vertx, JsonObject config) {
+  public static List<ApiController> createControllers(Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
 
     final String docIndex = config.getString("docIndex");
     final String vocContext = config.getString("vocContext");
@@ -84,26 +85,27 @@ public class ControllerFactory {
             userService,
             creditService);
 
-    AssetHandler assetHandler = AssetFactory.createHandler(pgService, config, emailComposer);
+    AssetHandler assetHandler = AssetFactory.createHandler(pgService, config, emailComposer,urnGenerator);
     ApiController assetController = new AssetController(assetHandler, auditingHandler);
 
     ApiController creditApiController =
-        CreditControllerFactory.create(creditService, emailComposer, userService);
-    KYCHandler kycHandler = KYCFactory.createHandler(vertx, config, creditService, pgService);
+      CreditControllerFactory.create(creditService, emailComposer, userService, urnGenerator);
+    KYCHandler kycHandler = KYCFactory.createHandler(vertx, config, creditService, pgService,urnGenerator);
     ApiController kycController = new KYCController(kycHandler);
     ApiController organizationController =
-        OrganizationControllerFactory.create(
-            organizationService,
-            userService,
-            auditingHandler,
-            emailComposer,
-            vertx,
-            pgService,
-            creditService,
-            keycloakUserService);
+      OrganizationControllerFactory.create(
+        organizationService,
+        userService,
+        auditingHandler,
+        emailComposer,
+        vertx,
+        pgService,
+        creditService,
+        keycloakUserService,
+        urnGenerator);
 
     AdminHandler adminHandler =
-        new AdminHandler(userService, keycloakUserService, creditService, organizationService);
+      new AdminHandler(userService, keycloakUserService, creditService, organizationService,urnGenerator);
     ApiController adminController = new AdminController(adminHandler);
 
 //    AccessRequestController accessRequestController =
@@ -113,34 +115,34 @@ public class ControllerFactory {
 //    AccessReportController accessReportController = AccessReportFactory.create(pgService, vertx);
 
     final ListController listController =
-        ListControllerFactory.createListController(esService, auditingHandler, docIndex);
+      ListControllerFactory.createListController(esService, auditingHandler, docIndex,urnGenerator);
     final SearchController searchController =
-        SearchControllerFactory.createSearchController(esService, auditingHandler, docIndex);
+      SearchControllerFactory.createSearchController(esService, auditingHandler, docIndex,urnGenerator);
     final ItemController itemController =
-        ItemControllerFactory.createCrudController(
-            auditingHandler, esService, docIndex, vocContext);
+      ItemControllerFactory.createCrudController(
+        auditingHandler, esService, docIndex, vocContext, urnGenerator);
 
     // TODO create other controllers
 
-    ClientController controller = ClientControllerFactory.create(pgService);
+    ClientController controller = ClientControllerFactory.create(pgService,urnGenerator);
 
-    TokenController tokenController = TokenControllerFactory.create(pgService, config, vertx);
+    TokenController tokenController = TokenControllerFactory.create(pgService, config, vertx,urnGenerator);
 
     PublicController publicController = PublicKeycontrllerFactory.create(config, vertx);
 
     return List.of(
-        organizationController,
-        creditApiController,
-        kycController,
-        adminController,
+      organizationController,
+      creditApiController,
+      kycController,
+      adminController,
 //        accessRequestController,
 //        accessReportController,
-        assetController,
-        listController,
-        searchController,
-        itemController,
-        controller,
-        tokenController,
-        publicController);
+      assetController,
+      listController,
+      searchController,
+      itemController,
+      controller,
+      tokenController,
+      publicController);
   }
 }

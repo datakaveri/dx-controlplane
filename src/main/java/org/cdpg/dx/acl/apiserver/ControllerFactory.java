@@ -11,6 +11,7 @@ import org.cdpg.dx.acl.accessReport.factory.AccessReportFactory;
 import org.cdpg.dx.acl.accessRequest.controller.AccessRequestController;
 import org.cdpg.dx.acl.accessRequest.factory.AccessRequestFactory;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
+import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.service.DataBrokerService;
@@ -28,14 +29,14 @@ public class ControllerFactory {
 
   private ControllerFactory() {}
 
-  public static List<ApdApiController> createControllers(Vertx vertx, JsonObject config) {
+  public static List<ApdApiController> createControllers(Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
 
     final String docIndex = config.getString("docIndex");
     final String vocContext = config.getString("vocContext");
 
     PostgresService pgService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
     DataBrokerService dataBrokerService =
-        DataBrokerService.createProxy(vertx, DATA_BROKER_SERVICE_ADDRESS);
+      DataBrokerService.createProxy(vertx, DATA_BROKER_SERVICE_ADDRESS);
     EmailService emailService = EmailService.createProxy(vertx, EMAIL_SERVICE_ADDRESS);
     ElasticsearchService esService =
       ElasticsearchService.createProxy(vertx, ELASTIC_SERVICE_ADDRESS);
@@ -44,14 +45,14 @@ public class ControllerFactory {
     AuditingHandler auditingHandler = new AuditingHandler(dataBrokerService);
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
     EmailComposer emailComposer = new EmailComposer(
-            emailService,
-            keycloakUserService,
-            config);
+      emailService,
+      keycloakUserService,
+      config);
 
 
     AccessRequestController accessRequestController =
-        AccessRequestFactory.createAccessRequestController(
-            pgService, esService, emailService, keycloakUserService, auditingHandler, config);
+      AccessRequestFactory.createAccessRequestController(
+        pgService, esService, emailService, keycloakUserService, auditingHandler, config, urnGenerator);
 
     AccessReportController accessReportController = AccessReportFactory.create(pgService, vertx);
 
@@ -75,7 +76,7 @@ public class ControllerFactory {
 ////        assetController,listController,searchController,itemController);
 
     return List.of(
-        accessRequestController,
-        accessReportController);
+      accessRequestController,
+      accessReportController);
   }
 }

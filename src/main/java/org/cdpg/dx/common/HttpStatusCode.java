@@ -1,87 +1,85 @@
 package org.cdpg.dx.common;
 
-import org.cdpg.dx.common.config.URNConstants;
-
 public enum HttpStatusCode {
 
   // 1xx: Informational
-  CONTINUE(100, "Continue", URNConstants.SERVER + "continue"),
-  SWITCHING_PROTOCOLS(101, "Switching Protocols", URNConstants.SERVER + "switchingProtocols"),
-  PROCESSING(102, "Processing", URNConstants.SERVER + "processing"),
-  EARLY_HINTS(103, "Early Hints", URNConstants.SERVER + "earlyHints"),
+  CONTINUE(100, "Continue", "continue"),
+  SWITCHING_PROTOCOLS(101, "Switching Protocols", "switchingProtocols"),
+  PROCESSING(102, "Processing", "processing"),
+  EARLY_HINTS(103, "Early Hints", "earlyHints"),
 
   // 2XX: codes
-  NO_CONTENT(204, "No Content", URNConstants.SERVER + "noContent"),
-  SUCCESS(200, "Success", URNConstants.SERVER + "success"),
-  CREATED(201, "Created", URNConstants.SERVER + "success"),
+  NO_CONTENT(204, "No Content", "noContent"),
+  SUCCESS(200, "Success", "success"),
+  CREATED(201, "Created", "success"),
 
   // 4xx: Client Error
-  BAD_REQUEST(400, "Bad Request", URNConstants.SERVER + "badRequest"),
+  BAD_REQUEST(400, "Bad Request", "badRequest"),
 
-  INVALID_PARAM(400, "Bad Request", URNConstants.SERVER + "badRequest"),
-  UNAUTHORIZED(401, "Not Authorized", URNConstants.SERVER + "notAuthorized"),
-  PAYMENT_REQUIRED(402, "Payment Required", URNConstants.SERVER + "paymentRequired"),
-  FORBIDDEN(403, "Forbidden", URNConstants.SERVER + "forbidden"),
-  FORBIDDEN_NO_ACCESS(403, "Forbidden", URNConstants.SERVER + "no-access"),
-  FORBIDDEN_ACCESS_PENDING(403, "Forbidden", URNConstants.SERVER + "access-pending"),
-  FORBIDDEN_ACCESS_REJECTED(403, "Forbidden", URNConstants.SERVER + "access-rejected"),
-  VERIFY_FORBIDDEN(403, "Policy does not exist", "urn:apd:Deny"),
-  NOT_FOUND(404, "Not Found", URNConstants.SERVER + "notFound"),
-  METHOD_NOT_ALLOWED(405, "Method Not Allowed", URNConstants.SERVER + "methodNotAllowed"),
-  NOT_ACCEPTABLE(406, "Not Acceptable", URNConstants.SERVER + "notAcceptable"),
+  INVALID_PARAM(400, "Bad Request", "badRequest"),
+  UNAUTHORIZED(401, "Not Authorized", "notAuthorized"),
+  PAYMENT_REQUIRED(402, "Payment Required", "paymentRequired"),
+  FORBIDDEN(403, "Forbidden", "forbidden"),
+  FORBIDDEN_NO_ACCESS(403, "Forbidden", "no-access"),
+  FORBIDDEN_ACCESS_PENDING(403, "Forbidden", "access-pending"),
+  FORBIDDEN_ACCESS_REJECTED(403, "Forbidden", "access-rejected"),
+  VERIFY_FORBIDDEN(403, "Policy does not exist", "apdDenied"),
+  NOT_FOUND(404, "Not Found", "notFound"),
+  METHOD_NOT_ALLOWED(405, "Method Not Allowed", "methodNotAllowed"),
+  NOT_ACCEPTABLE(406, "Not Acceptable", "notAcceptable"),
   PROXY_AUTHENTICATION_REQUIRED(
-      407, "Proxy Authentication Required", URNConstants.SERVER + "proxyAuthenticationRequired"),
-  REQUEST_TIMEOUT(408, "Request Timeout", URNConstants.SERVER + "requestTimeout"),
-  CONFLICT(409, "Conflict", URNConstants.SERVER + "conflict"),
-  GONE(410, "Gone", URNConstants.SERVER + "gone"),
-  LENGTH_REQUIRED(411, "Length Required", URNConstants.SERVER + "lengthRequired"),
-  PRECONDITION_FAILED(412, "Precondition Failed", URNConstants.SERVER + "preconditionFailed"),
-  REQUEST_TOO_LONG(413, "Payload Too Large", URNConstants.SERVER + "payloadTooLarge"),
-  REQUEST_URI_TOO_LONG(414, "URI Too Long", URNConstants.SERVER + "uriTooLong"),
+    407, "Proxy Authentication Required", "proxyAuthenticationRequired"),
+  REQUEST_TIMEOUT(408, "Request Timeout", "requestTimeout"),
+  CONFLICT(409, "Conflict", "conflict"),
+  GONE(410, "Gone", "gone"),
+  LENGTH_REQUIRED(411, "Length Required", "lengthRequired"),
+  PRECONDITION_FAILED(412, "Precondition Failed", "preconditionFailed"),
+  REQUEST_TOO_LONG(413, "Payload Too Large", "payloadTooLarge"),
+  REQUEST_URI_TOO_LONG(414, "URI Too Long", "uriTooLong"),
   UNSUPPORTED_MEDIA_TYPE(
-      415, "Unsupported Media Type", URNConstants.SERVER + "unsupportedMediaType"),
+    415, "Unsupported Media Type", "unsupportedMediaType"),
   REQUESTED_RANGE_NOT_SATISFIABLE(
-      416, "Range Not Satisfiable", URNConstants.SERVER + "rangeNotSatisfiable"),
-  EXPECTATION_FAILED(417, "Expectation Failed", URNConstants.SERVER + "expectation Failed"),
-  MISDIRECTED_REQUEST(421, "Misdirected Request", URNConstants.SERVER + "misdirected Request"),
-  UNPROCESSABLE_ENTITY(422, "Unprocessable Entity", URNConstants.SERVER + "unprocessableEntity"),
-  LOCKED(423, "Locked", URNConstants.SERVER + "locked"),
-  FAILED_DEPENDENCY(424, "Failed Dependency", URNConstants.SERVER + "failedDependency"),
-  TOO_EARLY(425, "Too Early", URNConstants.SERVER + "tooEarly"),
-  UPGRADE_REQUIRED(426, "Upgrade Required", URNConstants.SERVER + "upgradeRequired"),
-  PRECONDITION_REQUIRED(428, "Precondition Required", URNConstants.SERVER + "preconditionRequired"),
-  TOO_MANY_REQUESTS(429, "Too Many Requests", URNConstants.SERVER + "tooManyRequests"),
+    416, "Range Not Satisfiable", "rangeNotSatisfiable"),
+  EXPECTATION_FAILED(417, "Expectation Failed", "expectation Failed"),
+  MISDIRECTED_REQUEST(421, "Misdirected Request", "misdirected Request"),
+  UNPROCESSABLE_ENTITY(422, "Unprocessable Entity", "unprocessableEntity"),
+  LOCKED(423, "Locked", "locked"),
+  FAILED_DEPENDENCY(424, "Failed Dependency", "failedDependency"),
+  TOO_EARLY(425, "Too Early", "tooEarly"),
+  UPGRADE_REQUIRED(426, "Upgrade Required", "upgradeRequired"),
+  PRECONDITION_REQUIRED(428, "Precondition Required", "preconditionRequired"),
+  TOO_MANY_REQUESTS(429, "Too Many Requests", "tooManyRequests"),
   REQUEST_HEADER_FIELDS_TOO_LARGE(
-      431, "Request Header Fields Too Large", URNConstants.SERVER + "requestHeaderFieldsTooLarge"),
+    431, "Request Header Fields Too Large", "requestHeaderFieldsTooLarge"),
   UNAVAILABLE_FOR_LEGAL_REASONS(
-      451, "Unavailable For Legal Reasons", URNConstants.SERVER + "unavailableForLegalReasons"),
+    451, "Unavailable For Legal Reasons", "unavailableForLegalReasons"),
 
   // 5xx: Server Error
-  INTERNAL_SERVER_ERROR(500, "Internal Server Error", URNConstants.SERVER + "internalServerError"),
-  NOT_IMPLEMENTED(501, "Not Implemented", URNConstants.SERVER + "notImplemented"),
-  BAD_GATEWAY(502, "Bad Gateway", URNConstants.SERVER + "badGateway"),
-  SERVICE_UNAVAILABLE(503, "Service Unavailable", URNConstants.SERVER + "serviceUnavailable"),
-  GATEWAY_TIMEOUT(504, "Gateway Timeout", URNConstants.SERVER + "gatewayTimeout"),
+  INTERNAL_SERVER_ERROR(500, "Internal Server Error", "internalServerError"),
+  NOT_IMPLEMENTED(501, "Not Implemented", "notImplemented"),
+  BAD_GATEWAY(502, "Bad Gateway", "badGateway"),
+  SERVICE_UNAVAILABLE(503, "Service Unavailable", "serviceUnavailable"),
+  GATEWAY_TIMEOUT(504, "Gateway Timeout", "gatewayTimeout"),
   HTTP_VERSION_NOT_SUPPORTED(
-      505, "HTTP Version Not Supported", URNConstants.SERVER + "httpVersionNotSupported"),
+    505, "HTTP Version Not Supported", "httpVersionNotSupported"),
   VARIANT_ALSO_NEGOTIATES(
-      506, "Variant Also Negotiates", URNConstants.SERVER + "variantAlsoNegotiates"),
-  INSUFFICIENT_STORAGE(507, "Insufficient Storage", URNConstants.SERVER + "insufficientStorage"),
-  LOOP_DETECTED(508, "Loop Detected", URNConstants.SERVER + "loopDetected"),
-  NOT_EXTENDED(510, "Not Extended", URNConstants.SERVER + "notExtended"),
+    506, "Variant Also Negotiates", "variantAlsoNegotiates"),
+  INSUFFICIENT_STORAGE(507, "Insufficient Storage", "insufficientStorage"),
+  LOOP_DETECTED(508, "Loop Detected", "loopDetected"),
+  NOT_EXTENDED(510, "Not Extended", "notExtended"),
   NETWORK_AUTHENTICATION_REQUIRED(
-      511,
-      "Network Authentication Required",
-      URNConstants.SERVER + "networkAuthenticationRequired");
+    511,
+    "Network Authentication Required",
+    "networkAuthenticationRequired");
 
-  private final int value;
-  private final String description;
-  private final String urn;
+  private  int value;
+  private  String description;
+  private  String path;
 
-  HttpStatusCode(int value, String description, String urn) {
+  HttpStatusCode(int value, String description, String path) {
     this.value = value;
     this.description = description;
-    this.urn = urn;
+    this.path = path;
   }
 
   public static HttpStatusCode getByValue(int value) {
@@ -101,8 +99,8 @@ public enum HttpStatusCode {
     return description;
   }
 
-  public String getUrn() {
-    return urn;
+  public String getPath() {
+    return path;
   }
 
   @Override

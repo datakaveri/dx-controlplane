@@ -4,14 +4,17 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import org.cdpg.dx.aaa.apiserver.ApiController;
 import org.cdpg.dx.aaa.token.service.TokenService;
+import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.response.ResponseBuilder;
 
 public class TokenController implements ApiController {
 
   private final TokenService tokenService;
+  private final URNGenerator urnGenerator;
 
-  public TokenController(TokenService tokenService) {
+  public TokenController(TokenService tokenService,URNGenerator urnGenerator) {
     this.tokenService = tokenService;
+    this.urnGenerator = urnGenerator;
   }
 
   @Override
@@ -24,11 +27,11 @@ public class TokenController implements ApiController {
     String clientSecret = ctx.request().getHeader("clientSecret");
 
     tokenService
-        .createToken(clientId, clientSecret)
-        .onSuccess(
-            token -> {
-              ResponseBuilder.sendSuccess(ctx, token);
-            })
-        .onFailure(ctx::fail);
+      .createToken(clientId, clientSecret)
+      .onSuccess(
+        token -> {
+          ResponseBuilder.sendSuccess(ctx, token,urnGenerator);
+        })
+      .onFailure(ctx::fail);
   }
 }

@@ -15,6 +15,7 @@ import org.cdpg.dx.acl.aclEmailHelper.EmailComposer;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
+import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.email.service.EmailService;
@@ -28,24 +29,25 @@ public class AccessRequestFactory {
   }
 
   public static AccessRequestController createAccessRequestController(
-      PostgresService pgService,
-      ElasticsearchService elasticsearchService,
-      EmailService emailService,
-      KeycloakUserService keycloakUserService,
-      AuditingHandler auditingHandler,
-      JsonObject config) {
+    PostgresService pgService,
+    ElasticsearchService elasticsearchService,
+    EmailService emailService,
+    KeycloakUserService keycloakUserService,
+    AuditingHandler auditingHandler,
+    JsonObject config,
+    URNGenerator urnGenerator) {
 
     ItemService itemService =
-        new ItemServiceImpl(elasticsearchService, config.getString("docIndex"));
+      new ItemServiceImpl(elasticsearchService, config.getString("docIndex"));
 
     AccessRequestDao accessRequestDao =
-        new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
+      new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
 
     AccessRequestService accessRequestService =
-        new AccessRequestServiceImpl(itemService, accessRequestDao);
+      new AccessRequestServiceImpl(itemService, accessRequestDao);
 
     EmailComposer emailComposer = new EmailComposer(emailService, keycloakUserService, config);
 
-    return new AccessRequestController(accessRequestService, auditingHandler, emailComposer);
+    return new AccessRequestController(accessRequestService, auditingHandler, emailComposer,urnGenerator);
   }
 }

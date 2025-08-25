@@ -1,5 +1,7 @@
 package org.cdpg.dx.common;
 
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.*;
+
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.validation.BodyProcessorException;
@@ -13,38 +15,43 @@ import org.cdpg.dx.common.response.DxErrorResponse;
 import org.cdpg.dx.common.util.ExceptionHttpStatusMapper;
 import org.cdpg.dx.common.util.ThrowableUtils;
 
-import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.*;
+import java.time.LocalDateTime;
 
 public class FailureHandler implements Handler<RoutingContext> {
 
   private static final Logger LOGGER = LogManager.getLogger(FailureHandler.class);
+  private final URNGenerator urnGenerator;
+
+  public FailureHandler(URNGenerator urnGenerator) {
+    this.urnGenerator = urnGenerator;
+  }
 
   public void handle(RoutingContext context) {
     Throwable failure = context.failure();
-    LOGGER.info("FailureHandler: {}", failure.getClass());
 
     if (failure == null) {
       LOGGER.warn("FailureHandler triggered without an actual Throwable. Possibly context.fail(statusCode) was used.");
       failure = new RuntimeException("Unknown server error");
     }
+    LOGGER.info("FailureHandler: {}", failure.getClass());
     /* exceptions from OpenAPI specification*/
     if (failure instanceof ValidationException
-        || failure instanceof BodyProcessorException
-        || failure instanceof RequestPredicateException
-        || failure instanceof ParameterProcessorException) {
+      || failure instanceof BodyProcessorException
+      || failure instanceof RequestPredicateException
+      || failure instanceof ParameterProcessorException) {
       context
-          .response()
-          .putHeader(CONTENT_TYPE, APPLICATION_JSON)
-          .putHeader(HEADER_ALLOW_ORIGIN, "*")
-          .putHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-          .putHeader("Access-Control-Allow-Headers", "Authorization, Content-Type")
-          .setStatusCode(HttpStatus.SC_BAD_REQUEST)
-          .end(
-              ResponseUtil.generateResponse(
-                      HttpStatusCode.BAD_REQUEST,
-                      ResponseUrn.BAD_REQUEST_URN,
-                      "Missing or malformed request")
-                  .toString());
+        .response()
+        .putHeader(CONTENT_TYPE, APPLICATION_JSON)
+        .putHeader(HEADER_ALLOW_ORIGIN, "*")
+        .putHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        .putHeader("Access-Control-Allow-Headers", "Authorization, Content-Type")
+        .setStatusCode(HttpStatus.SC_BAD_REQUEST)
+        .end(
+          ResponseUtil.generateResponse(
+              HttpStatusCode.BAD_REQUEST,
+              urnGenerator.generateUrn(HttpStatusCode.BAD_REQUEST.getPath()),
+              "Missing or malformed request")
+            .toString());
       return;
     }
 
@@ -56,12 +63,14 @@ public class FailureHandler implements Handler<RoutingContext> {
 
     // Avoid leaking internal exception messages
     String safeDetail =
-        ThrowableUtils.isSafeToExpose(failure)
-            ? failure.getMessage()
-            : "An unexpected error occurred";
+      ThrowableUtils.isSafeToExpose(failure)
+        ? failure.getMessage()
+        : "An unexpected error occurred";
+
+    String urn = urnGenerator.generateUrn(statusCode.getPath());
 
     DxErrorResponse errorResponse =
-        new DxErrorResponse(statusCode.getUrn(), statusCode.getDescription(), safeDetail);
+      new DxErrorResponse(urn, statusCode.getDescription(), safeDetail);
 
     if (!context.response().ended()) {
       int status = statusCode.getValue();
@@ -71,13 +80,13 @@ public class FailureHandler implements Handler<RoutingContext> {
 
 
       context
-          .response()
-          .putHeader("Content-Type", "application/json")
-          .putHeader(HEADER_ALLOW_ORIGIN, "*")
-          .putHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-          .putHeader("Access-Control-Allow-Headers", "Authorization, Content-Type")
-          .setStatusCode(status)
-          .end(errorResponse.toJson().encode());
+        .response()
+        .putHeader("Content-Type", "application/json")
+        .putHeader(HEADER_ALLOW_ORIGIN, "*")
+        .putHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        .putHeader("Access-Control-Allow-Headers", "Authorization, Content-Type")
+        .setStatusCode(status)
+        .end(errorResponse.toJson().encode());
     }
   }
 }

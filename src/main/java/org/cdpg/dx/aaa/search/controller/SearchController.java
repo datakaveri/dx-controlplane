@@ -14,6 +14,7 @@ import org.cdpg.dx.aaa.search.service.SearchService;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.request.GetSearchRequestBuilder;
 import org.cdpg.dx.common.request.OrganisationAssetRequestBuilder;
 import org.cdpg.dx.common.request.PostSearchRequestBuilder;
@@ -27,48 +28,50 @@ public class SearchController implements ApiController {
 
   private final SearchService searchService;
   private final AuditingHandler auditingHandler;
+  private final URNGenerator urnGenerator;
 
-  public SearchController(SearchService searchService, AuditingHandler auditingHandler) {
+  public SearchController(SearchService searchService, AuditingHandler auditingHandler, URNGenerator urnGenerator) {
     this.searchService = searchService;
     this.auditingHandler = auditingHandler;
+    this.urnGenerator = urnGenerator;
   }
 
   @Override
   public void register(RouterBuilder builder) {
     builder
-            .operation(POST_SEARCH)
-            .handler(this::handleSearch)
-            .handler(auditingHandler::handleApiAudit);
+      .operation(POST_SEARCH)
+      .handler(this::handleSearch)
+      .handler(auditingHandler::handleApiAudit);
 
     builder
-            .operation(POST_COUNT_SEARCH)
-            .handler(this::handleCount)
-            .handler(auditingHandler::handleApiAudit);
+      .operation(POST_COUNT_SEARCH)
+      .handler(this::handleCount)
+      .handler(auditingHandler::handleApiAudit);
 
     builder
-            .operation(POST_ASSET_SEARCH)
-            .handler(TOKEN_CHECK)
-            .handler(this::handlePostAsset)
-            .handler(auditingHandler::handleApiAudit);
+      .operation(POST_ASSET_SEARCH)
+      .handler(TOKEN_CHECK)
+      .handler(this::handlePostAsset)
+      .handler(auditingHandler::handleApiAudit);
 
     builder
-        .operation(GET_ASSET_SEARCH)
-        .handler(TOKEN_CHECK)
-        .handler(this::handleGetAsset)
-        .handler(auditingHandler::handleApiAudit);
+      .operation(GET_ASSET_SEARCH)
+      .handler(TOKEN_CHECK)
+      .handler(this::handleGetAsset)
+      .handler(auditingHandler::handleApiAudit);
 
     builder.operation(GET_ITEMS)
-            .handler(TOKEN_CHECK)
-            .handler(orgAdminAccessHandler)
-            .handler(this::handleOrganisationGetItems)
-            .handler(auditingHandler::handleApiAudit);
+      .handler(TOKEN_CHECK)
+      .handler(orgAdminAccessHandler)
+      .handler(this::handleOrganisationGetItems)
+      .handler(auditingHandler::handleApiAudit);
 
     LOGGER.debug(
-            "Registered SearchController operations: {}, {}, {}",
-            POST_SEARCH,
-            POST_COUNT_SEARCH,
-            POST_ASSET_SEARCH,
-            GET_ASSET_SEARCH);
+      "Registered SearchController operations: {}, {}, {}",
+      POST_SEARCH,
+      POST_COUNT_SEARCH,
+      POST_ASSET_SEARCH,
+      GET_ASSET_SEARCH);
   }
 
   private void handleOrganisationGetItems(RoutingContext ctx) {
@@ -86,10 +89,10 @@ public class SearchController implements ApiController {
     LOGGER.debug("Received POST request on at search'{}'", POST_SEARCH);
     try {
       QueryDecoderRequestDTO queryDecoder =
-              PostSearchRequestBuilder.fromRoutingContext(ctx)
-                      .setAssetSearch(false)
-                      .setCountApi(false)
-                      .build();
+        PostSearchRequestBuilder.fromRoutingContext(ctx)
+          .setAssetSearch(false)
+          .setCountApi(false)
+          .build();
       processSearchRequest(ctx, queryDecoder);
     } catch (Exception e) {
       LOGGER.error("Error processing search request: {}", e.getMessage());
@@ -101,10 +104,10 @@ public class SearchController implements ApiController {
     LOGGER.debug("Received POST Asset request on '{}'", POST_ASSET_SEARCH);
     try {
       QueryDecoderRequestDTO queryDecoder =
-              PostSearchRequestBuilder.fromRoutingContext(ctx)
-                      .setAssetSearch(true)
-                      .setCountApi(false)
-                      .build();
+        PostSearchRequestBuilder.fromRoutingContext(ctx)
+          .setAssetSearch(true)
+          .setCountApi(false)
+          .build();
       processSearchRequest(ctx, queryDecoder);
     } catch (Exception e) {
       LOGGER.error("Error processing asset request: {}", e.getMessage());
@@ -116,9 +119,9 @@ public class SearchController implements ApiController {
     LOGGER.debug("Received GET Asset request on '{}'", GET_ASSET_SEARCH);
     try {
       QueryDecoderRequestDTO queryDecoder =
-          GetSearchRequestBuilder.fromRoutingContext(ctx)
-              .setAssetSearch(true)
-              .build();
+        GetSearchRequestBuilder.fromRoutingContext(ctx)
+          .setAssetSearch(true)
+          .build();
       processSearchRequest(ctx, queryDecoder);
     } catch (Exception e) {
       LOGGER.error("Error processing asset request: {}", e.getMessage());
@@ -130,19 +133,19 @@ public class SearchController implements ApiController {
     LOGGER.debug("Received POST Count request on '{}'", POST_COUNT_SEARCH);
     try {
       QueryDecoderRequestDTO queryDecoderRequestDTO =
-              PostSearchRequestBuilder.fromRoutingContext(ctx)
-                      .setAssetSearch(false)
-                      .setCountApi(true)
-                      .build();
+        PostSearchRequestBuilder.fromRoutingContext(ctx)
+          .setAssetSearch(false)
+          .setCountApi(true)
+          .build();
       searchService
-              .postCount(queryDecoderRequestDTO)
-              .onSuccess(
-                      response -> ResponseBuilder.sendSuccess(ctx, response.getResponse().getJsonArray(RESULTS)))
-              .onFailure(
-                      err -> {
-                        LOGGER.error("Count request failed: {}", err.getMessage());
-                        ctx.fail(err);
-                      });
+        .postCount(queryDecoderRequestDTO)
+        .onSuccess(
+          response -> ResponseBuilder.sendSuccess(ctx, response.getResponse().getJsonArray(RESULTS),urnGenerator))
+        .onFailure(
+          err -> {
+            LOGGER.error("Count request failed: {}", err.getMessage());
+            ctx.fail(err);
+          });
     } catch (Exception e) {
       LOGGER.error("Error processing count request: {}", e.getMessage());
       ctx.fail(e);
@@ -151,16 +154,16 @@ public class SearchController implements ApiController {
 
   private void processSearchRequest(RoutingContext ctx, QueryDecoderRequestDTO queryDecoder) {
     searchService
-            .postSearch(queryDecoder)
-            .onSuccess(
-                    result -> ResponseBuilder.sendSuccess(
-                            ctx,
-                            result.getElasticsearchResponses(),
-                             result.getPaginationInfo()))
-            .onFailure(
-                    err -> {
-                      LOGGER.error("Search request failed: {}", err.getMessage());
-                      ctx.fail(err);
-                    });
+      .postSearch(queryDecoder)
+      .onSuccess(
+        result -> ResponseBuilder.sendSuccess(
+          ctx,
+          result.getElasticsearchResponses(),
+          result.getPaginationInfo(),urnGenerator))
+      .onFailure(
+        err -> {
+          LOGGER.error("Search request failed: {}", err.getMessage());
+          ctx.fail(err);
+        });
   }
 }
