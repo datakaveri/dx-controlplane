@@ -4985,7 +4985,7 @@ paths:
       tags:
         - Organisation
       description: Get all the asset belonging to a particular organisation.
-      operationId: get items
+      operationId: get organisation assets
       security:
         - authorization: [ ]
       parameters:
@@ -5057,10 +5057,65 @@ paths:
 
       x-codeSamples:
         - lang: cURL
-          label: get items
+          label: get organisation assets
           source: |
-            curl --location --request GET 'https://example.com/iudx/v2/cat?sort=dataReadiness:asc&page=1' \
-            --header 'token: <token>'
+            curl --location --request GET 'https://example.com/iudx/v2/cat?sort=name:asc&page=1' \
+            --header 'Authorization: Bearer <token>'
+  /iudx/v2/cat/getAllAssets:
+    get:
+      tags:
+        - Platform Assets Management
+      description: Get all the assets belonging to the platform.
+      operationId: get platform assets
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: size
+          in: query
+          description: Page size for pagination
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 100
+        - name: sort
+          in: query
+          description: >
+            This parameter allows sorting the results by up to 3 fields, separated by a semicolon (;).
+            The format for each field is `fieldName:asc` or `fieldName:desc`.
+            For example: `itemCreatedAt:desc;dataReadiness:asc;name:desc` will sort by creation date (descending),
+            then dataReadiness (ascending), then name (descending).
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A successful search response with assets in the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '403':
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/forbiddenAccess'
+
+      x-codeSamples:
+        - lang: cURL
+          label: get organisation assets
+          source: |
+            curl --location --request GET 'https://example.com/iudx/v2/cat?sort=name:asc&page=1' \
+            --header 'Authorization: Bearer <token>'
   /iudx/v2/cat/list:
     post:
       tags:
@@ -9593,6 +9648,26 @@ components:
         type: 'urn:dx:cat:InvalidAuthorizationToken'
         title: Token is invalid
         detail: "failed to decode/validate jwt token : Invalid format for JWT"
+    forbiddenAccess:
+      type: object
+      title: Common to forbidden access response to cat apis
+      description: Response for 403 forbidden access
+      properties:
+        type:
+          type: string
+          description: |
+            Indicates that the token sent in request header is invalid
+        title:
+          description: A human readable title to the message response
+        detail:
+          type: string
+          description: Detailed description of the type or response
+      required:
+        - type
+      example:
+        type: "urn:dx:controlPanel:forbidden"
+        title: "Forbidden"
+        detail: "User does not have the required role."
 
     invalidResponseForWrongLimitValues:
       type: object

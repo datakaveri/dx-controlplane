@@ -113,7 +113,7 @@ public class ItemExistenceValidator {
                   request.put(
                       DATA_UPLOAD_STATUS,
                       request.containsKey(MEDIA_URL) && !request.getString(MEDIA_URL).isBlank());
-                  request.put(PUBLISH_STATUS, request.getJsonArray("roles").contains(ORG_ADMIN)?ACTIVE:PENDING);
+                  setPublishStatus(request);
                   promise.complete(request);
                 } else {
                   promise.complete(request);
@@ -137,7 +137,7 @@ public class ItemExistenceValidator {
 
               if (REQUEST_POST.equalsIgnoreCase(method)) {
                 request.put(DATA_UPLOAD_STATUS, mediaUrlPresent);
-                request.put(PUBLISH_STATUS, request.getJsonArray("roles").contains(ORG_ADMIN)?ACTIVE:PENDING);
+                setPublishStatus(request);
               } else {
                 boolean wasPreviouslyUploaded = extractDataUploadStatusFromES(res.toJson());
                 boolean previousMediaUrlPresent = extractMediaUrlFromES(res.toJson());
@@ -170,7 +170,7 @@ public class ItemExistenceValidator {
                   request.put(
                       DATA_UPLOAD_STATUS,
                       request.containsKey(MEDIA_URL) && !request.getString(MEDIA_URL).isBlank());
-                  request.put(PUBLISH_STATUS, request.getJsonArray("roles").contains(ORG_ADMIN)?ACTIVE:PENDING);
+                  setPublishStatus(request);
                   promise.complete(request);
                 } else {
                   promise.complete(request);
@@ -194,7 +194,7 @@ public class ItemExistenceValidator {
 
               if (REQUEST_POST.equalsIgnoreCase(method)) {
                 request.put(DATA_UPLOAD_STATUS, mediaUrlPresent);
-                request.put(PUBLISH_STATUS, request.getJsonArray("roles").contains(ORG_ADMIN)?ACTIVE:PENDING);
+                setPublishStatus(request);
               } else {
                 boolean wasPreviouslyUploaded = extractDataUploadStatusFromES(res.toJson());
                 boolean previousMediaUrlPresent = extractMediaUrlFromES(res.toJson());

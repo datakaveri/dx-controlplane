@@ -11,6 +11,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,7 +45,8 @@ public class ItemController implements ApiController {
   private final ItemExistenceValidator itemExistenceValidator;
   private final CheckIfTokenPresent checkIfTokenPresent = new CheckIfTokenPresent();
   private final VerifyItemTypeAndRole verifyItemTypeAndRole = new VerifyItemTypeAndRole();
-  Handler<RoutingContext> orgAdminAccessHandler = AuthorizationHandler.forRoles(DxRole.ORG_ADMIN);
+  Handler<RoutingContext> adminAccessHandler = AuthorizationHandler.forRoles(DxRole.COS_ADMIN,
+      DxRole.ORG_ADMIN);
 
   public ItemController(
       AuditingHandler auditingHandler, ItemService itemService, String vocContext) {
@@ -81,7 +83,7 @@ public class ItemController implements ApiController {
     builder
         .operation(PATCH_ITEM)
         .handler(auditingHandler::handleApiAudit)
-        .handler(orgAdminAccessHandler)
+        .handler(adminAccessHandler)
         .handler(this::handlePatchItem);
 
     LOGGER.debug("Item Controller registered");
@@ -128,9 +130,11 @@ public class ItemController implements ApiController {
     String orgId = "";
     orgId = ctx.user().principal().getString(ORGANISATION_ID);
     LOGGER.debug("Keycloak ID: {},12aa: {}", orgId, id);
+    List<String> allowedRoles;
+    allowedRoles = ctx.get("allowedRoles");
     JsonObject body = ctx.body().asJsonObject();
     LOGGER.debug("Patch item request body: {}", body);
-    PatchItemRequest patchItemRequest = new PatchItemRequest(id, orgId, body);
+    PatchItemRequest patchItemRequest = new PatchItemRequest(id, orgId, body, allowedRoles);
 
     itemService
         .patchItem(patchItemRequest)
