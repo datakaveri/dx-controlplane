@@ -58,6 +58,20 @@ public class QueryDecoderRequestDTO {
     this.publishStatus = publishStatus;
     this.requestType=requestType;
   }
+
+  public QueryDecoderRequestDTO(
+      Integer size,
+      Integer page,
+      List<OrderBy> sort,
+      String publishStatus,
+      String requestType
+  ) {
+    this.size = size;
+    this.page = page;
+    this.sort = sort;
+    this.publishStatus = publishStatus;
+    this.requestType=requestType;
+  }
   public List<OrderBy> getSort() {
     return sort;
   }

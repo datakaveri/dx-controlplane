@@ -149,6 +149,49 @@ public class QueryDecoder {
     return q;
   }
 
+  public QueryModel getPlatformAssetsQuery(QueryDecoderRequestDTO request) {
+    LOGGER.debug("getPlatformAssetsQuery - {}", request);
+
+    Map<String, Object> termsParams = new HashMap<>();
+    termsParams.put(FIELD, TYPE_KEYWORD);
+    termsParams.put(VALUE, List.of(ITEM_TYPE_DATA_BANK, ITEM_TYPE_AI_MODEL, ITEM_TYPE_APPS));
+
+    QueryModel termsQuery = new QueryModel(QueryType.TERMS, termsParams);
+
+    // Create the bool query with the match query in the must clause
+    QueryModel boolQuery = new QueryModel();
+    boolQuery.setQueryType(QueryType.BOOL);
+    List<QueryModel> mustQueries = new ArrayList<>();
+    mustQueries.add(termsQuery);
+
+    // Add publishStatus filter if present in request
+    if (request.getPublishStatus() != null && !request.getPublishStatus().isEmpty()) {
+      Map<String, Object> statusParams = new HashMap<>();
+      statusParams.put(FIELD, "publishStatus.keyword");
+      statusParams.put(VALUE, request.getPublishStatus());
+
+      QueryModel statusQuery = new QueryModel(QueryType.MATCH, statusParams);
+      mustQueries.add(statusQuery);
+    }
+
+    boolQuery.setMustQueries(mustQueries);
+
+    QueryModel q = new QueryModel();
+    q.setQueries(boolQuery);
+
+    // Pagination support
+    if (request.getSize() != null) {
+      int size = request.getSize();
+      q.setLimit(String.valueOf(size));
+      if (request.getPage() != null) {
+        int offset = (request.getPage() - 1) * size;
+        q.setOffset(String.valueOf(offset));
+      }
+    }
+
+    return q;
+  }
+
   public QueryModel listMultipleItemTypesQuery(QueryDecoderRequestDTO request) {
     LOGGER.debug("listMultipleItemTypesQuery - {}", request);
     Map<FilterType, List<QueryModel>> queryMap = new HashMap<>();

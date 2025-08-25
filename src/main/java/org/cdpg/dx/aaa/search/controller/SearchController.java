@@ -16,6 +16,7 @@ import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.request.GetSearchRequestBuilder;
 import org.cdpg.dx.common.request.OrganisationAssetRequestBuilder;
+import org.cdpg.dx.common.request.PlatformAssetRequestBuilder;
 import org.cdpg.dx.common.request.PostSearchRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
@@ -24,6 +25,7 @@ public class SearchController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(SearchController.class);
   private static final CheckIfTokenPresent TOKEN_CHECK = new CheckIfTokenPresent();
   Handler<RoutingContext> orgAdminAccessHandler = AuthorizationHandler.forRoles(DxRole.ORG_ADMIN);
+  Handler<RoutingContext> pfAdminAccessHandler = AuthorizationHandler.forRoles(DxRole.COS_ADMIN);
 
   private final SearchService searchService;
   private final AuditingHandler auditingHandler;
@@ -57,22 +59,41 @@ public class SearchController implements ApiController {
         .handler(this::handleGetAsset)
         .handler(auditingHandler::handleApiAudit);
 
-    builder.operation(GET_ITEMS)
+    builder.operation(GET_ORG_ASSETS)
             .handler(TOKEN_CHECK)
             .handler(orgAdminAccessHandler)
             .handler(this::handleOrganisationGetItems)
             .handler(auditingHandler::handleApiAudit);
 
+    builder.operation(GET_PLATFORM_ASSETS)
+        .handler(TOKEN_CHECK)
+        .handler(pfAdminAccessHandler)
+        .handler(this::handleGetPlatformItems)
+        .handler(auditingHandler::handleApiAudit);
+
     LOGGER.debug(
-            "Registered SearchController operations: {}, {}, {}",
+            "Registered SearchController operations: {}, {}, {}, {}, {}",
             POST_SEARCH,
             POST_COUNT_SEARCH,
             POST_ASSET_SEARCH,
-            GET_ASSET_SEARCH);
+            GET_ASSET_SEARCH,
+            GET_PLATFORM_ASSETS);
+  }
+
+  private void handleGetPlatformItems(RoutingContext ctx) {
+    LOGGER.debug("Received GET Platform assets request on '{}'", GET_PLATFORM_ASSETS);
+    try {
+      QueryDecoderRequestDTO queryDecoder =
+          PlatformAssetRequestBuilder.fromRoutingContext(ctx).build();
+      processSearchRequest(ctx, queryDecoder);
+    } catch (Exception e) {
+      LOGGER.error("Error processing pf_admin asset request: {}", e.getMessage());
+      ctx.fail(e);
+    }
   }
 
   private void handleOrganisationGetItems(RoutingContext ctx) {
-    LOGGER.debug("Received GET Asset request on '{}'", GET_ITEMS);
+    LOGGER.debug("Received GET Asset request on '{}'", GET_ORG_ASSETS);
     try {
       QueryDecoderRequestDTO queryDecoder = OrganisationAssetRequestBuilder.fromRoutingContext(ctx).build();
       processSearchRequest(ctx, queryDecoder);
