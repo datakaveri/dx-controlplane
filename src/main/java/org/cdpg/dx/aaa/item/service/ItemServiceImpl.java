@@ -125,11 +125,17 @@ public class ItemServiceImpl implements ItemService {
             return Future.failedFuture("ID not present in request");
         }
 
-        QueryModel queryModel = queryDecoder.getItemIdOrgIdQueryModel(patchItemRequest.getItemId(), patchItemRequest.getOrgId());
+        QueryModel queryModel;
+        if (patchItemRequest.getAllowedRoles().contains(COS_ADMIN)) {
+            queryModel = queryDecoder.getItemIdQueryModel(patchItemRequest.getItemId());
+        } else {
+           queryModel = queryDecoder.getItemIdOrgIdQueryModel(patchItemRequest.getItemId(),
+                patchItemRequest.getOrgId());
+        }
+        LOGGER.debug("query: " + queryModel.getQueries().toElasticsearchQuery());
         String id = patchItemRequest.getItemId();
         elasticsearchService
                 .getSingleDocument(docIndex, queryModel.getQueries())
-
                 .onSuccess(
                         result -> {
                             LOGGER.debug("Item with ID {} found for update", id);

@@ -52,6 +52,8 @@ public class SearchServiceImpl implements SearchService {
 
     if ("organisationAssetSearch".equalsIgnoreCase(requestType)) {
       return queryDecoder.getOrganisationAssetsQuery(requestDTO);
+    } else if ("platformAssetSearch".equalsIgnoreCase(requestType)) {
+      return queryDecoder.getPlatformAssetsQuery(requestDTO);
     } else if ("search".equalsIgnoreCase(requestType)) {
       return queryDecoder.getQueryModel(requestDTO);
     } else {
