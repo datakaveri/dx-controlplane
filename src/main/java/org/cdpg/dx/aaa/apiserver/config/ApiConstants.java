@@ -47,7 +47,8 @@ public class ApiConstants {
   public static final String GET_ITEM = "get item";
   public static final String UPDATE_ITEM = "update item";
   public static final String PATCH_ITEM = "patch item";
-  public static final String GET_ITEMS = "get items";
+  public static final String GET_ORG_ASSETS = "get organisation assets";
+  public static final String GET_PLATFORM_ASSETS = "get platform assets";
 
   public static final String DELETE_ITEM = "delete item";
   public static final String LIST_AVAILABLE_FILTER = "listAvailableFilters";

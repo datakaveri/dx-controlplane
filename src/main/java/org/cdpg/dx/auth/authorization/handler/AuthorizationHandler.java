@@ -5,6 +5,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
+import java.util.List;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxUnauthorizedException;
@@ -44,6 +45,16 @@ public class AuthorizationHandler {
                     .map(Object::toString)
                     .map(String::toLowerCase)
                     .anyMatch(allowed::contains);
+
+            List<String> matchedRoles = userRoles.stream()
+                .map(Object::toString)
+                .map(String::toLowerCase)
+                .filter(allowed::contains)
+                .collect(Collectors.toList());
+
+            if (!matchedRoles.isEmpty()) {
+                ctx.put("allowedRoles", matchedRoles);
+            }
 
             if (allowedRole) {
                 ctx.next();

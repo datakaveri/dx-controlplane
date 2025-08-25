@@ -77,6 +77,8 @@ public class VerifyItemTypeAndRole implements Handler<RoutingContext> {
     providerItemTypes.add(APPS);
     cosAdminItemTypes.add(APPS);
     orgAdminItemTypes.add(APPS);
+    cosAdminItemTypes.add(AI_MODEL);
+    cosAdminItemTypes.add(DATA_BANK);
     this.roleItemTypeMap.put(DxRole.PROVIDER, providerItemTypes);
     this.roleItemTypeMap.put(DxRole.COS_ADMIN, cosAdminItemTypes);
     this.roleItemTypeMap.put(DxRole.ORG_ADMIN, orgAdminItemTypes);

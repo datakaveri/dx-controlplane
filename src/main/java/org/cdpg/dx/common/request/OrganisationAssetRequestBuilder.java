@@ -1,7 +1,6 @@
 package org.cdpg.dx.common.request;
 
 import io.vertx.core.MultiMap;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,7 +16,7 @@ import static org.cdpg.dx.database.elastic.util.Constants.KEYWORD_KEY;
 
 public class OrganisationAssetRequestBuilder {
     private RoutingContext routingContext;
-    private static final Logger LOGGER = LogManager.getLogger(PostSearchRequestBuilder.class);
+    private static final Logger LOGGER = LogManager.getLogger(OrganisationAssetRequestBuilder.class);
     private String defaultOrder = "desc";
     private String defaultSortBy = "itemCreatedAt";
     private String requestType = "organisationAssetSearch";
