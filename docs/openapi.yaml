@@ -728,7 +728,7 @@ paths:
                   job_title: Employee
                   emp_id: EMP8790
       responses:
-        '201':
+        '200':
           description: Created
           content:
             application/json:
@@ -1065,20 +1065,48 @@ paths:
         required: true
         description: UUID of organization
     delete:
-      summary: Delete organisation by ID
+      summary: 'AAA-008-PFAdmin: Delete organisation by ID'
+      description: >
+        This API allows an PFAdmin to delete an organization by its unique identifier (ID).
+        The ID of the organization to be deleted is provided as a path parameter.
+        A successful response indicates that the organization has been deleted.
       tags:
         - Organisation APIs
       responses:
         '200':
-          description: OK
+          description: OK - Successfully deleted organization.
       operationId: delete-auth-v1-organisations-id
-
       security:
         - authorization: [ ]
     put:
-      summary: Update Organisation by ID
+      summary: 'AAA-009-OrgAdmin:Update Organisation by ID'
+      description: >
+        This API allows updating the details of an existing organization identified by its unique ID.
+        The ID of the organization to be updated is provided as a path parameter.
+        The request body should contain the updated organization details.
+        A successful response indicates that the organization has been updated.
       tags:
         - Organisation APIs
+      security:
+        - authorization: [ ]
+      requestBody:
+        description: >
+          The request body specifies the entries which need to be updated by the user.They are optional.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Name of the organization.
+              x-examples:
+                Example 1:
+                  name: Etimes4
+            examples:
+              Example 1:
+                value:
+                  name: Etimes4
       responses:
         '200':
           description: OK
@@ -1128,7 +1156,7 @@ paths:
                     title: Success
                     result:
                       id: e87246e2-5da5-40b0-973c-690d2f48f879
-                      orgName: Quantum Truely
+                      orgName: Etimes4
                       orgLogo: /logos/ai.png
                       entityType: Private
                       orgSector: Technology
@@ -1148,7 +1176,7 @@ paths:
                     title: Success
                     result:
                       id: e87246e2-5da5-40b0-973c-690d2f48f879
-                      orgName: Quantum Truely
+                      orgName: Etimes4
                       orgLogo: /logos/ai.png
                       entityType: Private
                       orgSector: Technology
@@ -1162,28 +1190,20 @@ paths:
                       updatedAt: '2025-06-03T16:28:24.205541'
                       tableName: organizations
       operationId: put-auth-v1-organisations-id
-
-      security:
-        - authorization: [ ]
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-              x-examples:
-                Example 1:
-                  name: Quantum Truely
-            examples:
-              Example 1:
-                value:
-                  name: Quantum Truely
     get:
-      summary: Get Organisation By ID
+      summary: 'AAA-010-PFAdmin: Get Organisation By ID'
+      description: >
+        This API allows retrieving the details of a specific organization by its unique identifier (ID).
+        The ID of the organization to be retrieved is provided as a path parameter.
+        A successful response includes the organization's details such as name, logo, entity type, sector, and website.
       tags:
         - Organisation APIs
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: id
+          description: UUID of organization
       responses:
         '200':
           description: OK
@@ -1217,55 +1237,58 @@ paths:
                     properties:
                       id:
                         type: string
+                        description: Unique ID of the organization.
                       name:
                         type: string
+                        description: Name of the organization.
                       logo_path:
                         type: string
+                        description: Path to the organization's logo.
                       entity_type:
                         type: string
+                        description: Type of the organization (e.g., 'Private', 'Public').
                       org_sector:
                         type: string
+                        description: Sector the organization belongs to.
                       website_link:
                         type: string
+                        description: Website link of the organization.
                       address:
                         type: string
+                        description: Address of the organization.
                       certificate_path:
                         type: string
+                        description: Path to the organization's certificate.
                       pancard_path:
                         type: string
+                        description: Path to the organization's PAN card document.
                       created_at:
                         type: string
+                        description: Timestamp when the organization was created.
                       updated_at:
                         type: string
+                        description: Timestamp when the organization was last updated.
                   paginationInfo:
                     type: object
-                    x-stoplight:
-                      id: i2j6hw45mr0m1
                     properties:
                       page:
                         type: integer
-                        x-stoplight:
-                          id: atus73ss5j3hx
+                        description: Current page number.
                       size:
                         type: integer
-                        x-stoplight:
-                          id: ldplp5tqmab1s
-                      totalPages:
-                        type: integer
-                        x-stoplight:
-                          id: 5b8htl3mzyatn
+                        description: Number of items per page.
                       totalCount:
                         type: integer
-                        x-stoplight:
-                          id: 8rxpevtk2xz4z
+                        description: Total number of documents which matched the query.
+                      totalPages:
+                        type: integer
+                        description: Total number of pages available.
                       hasNext:
                         type: boolean
-                        x-stoplight:
-                          id: dbvf8j5jsd3qq
+                        description: Indicates if more pages are available.
                       hasPrevious:
                         type: boolean
-                        x-stoplight:
-                          id: bq5pj0ajkf4wq
+                        description: Indicates if previous pages exist.
               examples:
                 Example 1:
                   value:
@@ -1291,13 +1314,6 @@ paths:
                       hasNext: true
                       hasPrevious: false
       operationId: get-auth-v1-organisations-id
-      parameters:
-        - schema:
-            type: string
-          in: query
-          name: id
-          description: UUID of organization
-
       security:
         - authorization: [ ]
   /iudx/v2/auth/organisations/{id}/users:
@@ -1310,7 +1326,12 @@ paths:
           type: string
           format: uuid
     get:
-      summary: List organisation Users
+      summary: 'AAA-011-OrgAdmin: List organisation Users'
+      description: >
+        This API allows an organization administrator to retrieve a list of all users associated with a specific organization,
+        identified by its `id` in the path parameter. The response includes details about each user,
+        such as their role within the organization, job title, employee ID, official email, and account status.
+        Pagination information is also included in the response.
       tags:
         - Organisation APIs
       responses:
@@ -1342,70 +1363,79 @@ paths:
                 properties:
                   type:
                     type: string
+                    description: URN type of the response.
                   title:
                     type: string
+                    description: A human-readable title for the message response.
                   result:
                     type: array
+                    description: List of users associated with the organization.
                     items:
                       type: object
                       properties:
                         id:
                           type: string
+                          description: Unique ID of the organization user record.
                         organizationId:
                           type: string
+                          description: UUID of the organization the user belongs to.
                         userId:
                           type: string
+                          description: UUID of the user.
                         userName:
                           type: string
+                          description: Name of the user.
                         role:
                           type: string
+                          description: Role of the user within the organization (e.g., 'ADMIN', 'MEMBER').
                         jobTitle:
                           type: string
+                          description: Job title of the user within the organization.
                         empId:
                           type: string
+                          description: Employee ID of the user within the organization.
                         orgManagerPhoneNo:
                           type: string
+                          description: Phone number of the organization manager.
                         officialEmail:
                           type: string
+                          description: Official email of the user within the organization.
                         createdAt:
                           type: string
+                          description: Timestamp when the user record was created.
                         updatedAt:
                           type: string
+                          description: Timestamp when the user record was last updated.
                         roles:
                           type: object
+                          description: Roles associated with the user within the organization.
                         accountEnabled:
                           type: boolean
+                          description: Indicates if the user's account is enabled.
                         tableName:
                           type: string
+                          description: Internal table name for the request.
                   paginationInfo:
                     type: object
-                    x-stoplight:
-                      id: habzk85vhyv4i
                     properties:
                       page:
                         type: integer
-                        x-stoplight:
-                          id: qquspu2iw2wyf
+                        description: Current page number.
                       size:
                         type: integer
-                        x-stoplight:
-                          id: 5rqm7fj3rgcqi
-                      totalPages:
-                        type: integer
-                        x-stoplight:
-                          id: iwkoo03wfc2d2
+                        description: Number of items per page.
                       totalCount:
                         type: integer
-                        x-stoplight:
-                          id: euhafbyvvrncv
+                        description: Total number of documents which matched the query.
+                      totalPages:
+                        type: integer
+                        description: Total number of pages available.
                       hasNext:
                         type: boolean
-                        x-stoplight:
-                          id: ndure5aywto2y
+                        description: Indicates if more pages are available.
                       hasPrevious:
                         type: boolean
-                        x-stoplight:
-                          id: cbqgznf2sy6d3
+                        description: Indicates if previous pages exist.
               examples:
                 Example 1:
                   value:
@@ -1433,6 +1463,25 @@ paths:
                       totalPages: 346
                       hasNext: true
                       hasPrevious: false
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  '':
+                    type: string
+              examples:
+                Example 1:
+                  value:
+                    type: urn:dx:as:InvalidInput
+                    title: Invalid Organisation
+                    detail: The Organisation is invalid
         '401':
           description: Unauthorized
           content:
@@ -1442,43 +1491,35 @@ paths:
                 properties:
                   type:
                     type: string
-                    x-stoplight:
-                      id: ki8ptrubbpfo4
                   title:
                     type: string
-                    x-stoplight:
-                      id: cy2up8v8a5pd0
                   detail:
                     type: string
-                    x-stoplight:
-                      id: 67gt97omjofae
               examples:
                 Example 1:
                   value:
                     type: urn:dx:as:InvalidAuthenticationToken
                     title: Token authentication failed
                     detail: Inactive Token
-        '404':
-          description: Not Found
+                Example 2:
+                  value:
+                    type: urn:dx:aaa:notAuthorized
+                    title: Not Authorized
+                    detail: Unauthorized
+        '409':
+          description: Conflict
           content:
             application/json:
               schema:
                 type: object
-                properties: { }
-              examples:
-                Example 1:
-                  value:
-                    type: urn:dx:as:MissingInformation
-                    title: Admins not found
-                    detail: No Organisation Admins Found
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
       operationId: get-auth-v1-org-users
-      parameters:
-        - schema:
-            type: string
-          in: query
-          name: id
-          description: UUID of organizations
-
       security:
         - authorization: [ ]
   /iudx/v2/auth/organisations/{id}/users/{user_id}:
@@ -1498,7 +1539,11 @@ paths:
           type: string
           format: uuid
     delete:
-      summary: Delete User by ID
+      summary: 'AAA-012-OrgAdmin: Delete User by ID'
+      description: >
+        This API allows an organization administrator to delete a specific user from their organization,
+        identified by the user's `user_id` and the organization's `id` in the path parameters.
+        A successful response indicates that the user has been deleted from the organization.
       tags:
         - Organisation APIs
       responses:
@@ -1511,10 +1556,13 @@ paths:
                 properties:
                   type:
                     type: string
+                    description: URN type of the response.
                   title:
                     type: string
+                    description: A human-readable title for the message response.
                   detail:
                     type: string
+                    description: Details about the deletion operation.
                 x-examples:
                   Example 1:
                     type: urn:dx:aaa:success
@@ -1542,7 +1590,12 @@ paths:
       security:
         - authorization: [ ]
     put:
-      summary: Update Organization User Role
+      summary: 'AAA-013-OrgAdmin: Update Organization User Role'
+      description: >
+        This API allows an organization administrator to update the role of a specific user within their organization.
+        The user is identified by their `user_id` and the organization by its `id` in the path parameters.
+        The request body should contain the new role for the user.
+        A successful response indicates that the user's role has been updated.
       tags:
         - Organisation APIs
       responses:
@@ -1555,10 +1608,13 @@ paths:
                 properties:
                   type:
                     type: string
+                    description: URN type of the response.
                   title:
                     type: string
+                    description: A human-readable title for the message response.
                   detail:
                     type: string
+                    description: Details about the update operation.
                 x-examples:
                   Example 1:
                     type: urn:dx:aaa:success
@@ -1579,25 +1635,22 @@ paths:
               properties:
                 role:
                   type: string
-                  x-stoplight:
-                    id: 35dhxezcb35eq
+                  description: New role for the user within the organization. Valid value is admin.
             examples:
               Example 1:
                 value:
-                  role: MEMBER
-        description: ''
+                  role: admin
       parameters:
         - schema:
             type: string
           in: query
           name: id
-          description: 'organization UUID '
+          description: organization's UUID
         - schema:
             type: string
           in: query
           name: user_id
           description: user's UUID
-
       security:
         - authorization: [ ]
     get:
@@ -2357,23 +2410,16 @@ paths:
           name: id
           in: path
           required: true
-
       security:
         - authorization: [ ]
   /iudx/v2/auth/organization/user/provider_role/requests:
     get:
-      summary: Get All pending provider role requests
-      tags:
-        - Organisation APIs
-      responses:
-        '200':
-          description: OK
-      operationId: get-auth-v1-user-roles
-
-      security:
-        - authorization: [ ]
-    post:
-      summary: Create a Provider Role Request
+      summary: 'AAA-014-PFAdmin: Get All pending provider role requests'
+      description: >
+        This API allows a platform administrator to retrieve all pending provider role requests
+        from users across various organizations. A successful response returns a list of pending
+        requests with details such as user ID, user name, organization ID, organization name,
+        status, and timestamps.
       tags:
         - Organisation APIs
       responses:
@@ -2383,23 +2429,65 @@ paths:
             application/json:
               schema:
                 type: object
-                properties: { }
               examples:
-                Example 1: { }
-      operationId: post-auth-v1-user-roles
-
+                Example 1:
+                  value:
+                    type: urn:dx:controlPanel:success
+                    title: Success
+                    result:
+                      - id: e970320f-ffed-4946-ae68-cb13a9f7d7d2
+                        user_id: 719b5e7c-3a20-4f77-91f9-1f43ac4ef6a7
+                        organization_id: 0706147d-2c77-4165-8550-812804d114be
+                        status: granted
+                        created_at: 2025-08-25T05:28:20.356043
+                        updated_at: 2025-08-25T05:30:14.607398
+                        roles: [ consumer, compute, default-roles-tgdex-pilot, provider ]
+                        account_enabled: true
+                    paginationInfo:
+                      page: 1
+                      size: 10
+                      totalCount: 2
+                      totalPages: 1
+                      hasNext: false
+                      hasPrevious: false
+      operationId: get-auth-v1-user-roles
       security:
         - authorization: [ ]
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                org_id:
-                  type: string
-                  x-stoplight:
-                    id: l9svqkwc3ik2j
+    post:
+      summary: 'AAA-015-Any User:Create a Provider Role Request'
+      description: >
+        This API allows a user to create a provider role request within their organization.
+        A successful response indicates that the provider role request has been created.
+      tags:
+        - Organisation APIs
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+                x-examples:
+                  Example 1:
+                    type: 'urn:dx:controlPanel:success'
+                    title: Success
+                    detail: Created request
+              examples:
+                Example 1:
+                  value:
+                    type: 'urn:dx:controlPanel:success'
+                    title: Success
+                    detail: Created request
+      operationId: post-auth-v1-user-roles
+      security:
+        - authorization: [ ]
   /iudx/v2/auth/organization/user/provider_role/requests/{id}:
     parameters:
       - name: id
@@ -2410,14 +2498,73 @@ paths:
           type: string
           format: uuid
     put:
-      summary: Update a Provider Role Request
+      summary: 'AAA-016-OrgAdmin: Update a Provider Role Request'
+      description: >
+        This API allows a organization administrator to update the status of a specific provider role request.
+        The request is identified by its `id` in the path parameter. The request body should contain the new
+        status for the provider role request. A successful response indicates that the provider role request
+        has been updated.
       tags:
         - Organisation APIs
       responses:
         '200':
           description: OK
-      operationId: put-auth-v1-user-roles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+                x-examples:
+                  Example 1:
+                    type: 'urn:dx:controlPanel:success'
+                    title: Success
+                    detail: Provider role updated
+              examples:
+                Example 1:
+                  value:
+                    type: 'urn:dx:controlPanel:success'
+                    title: Success
+                    detail: Provider role updated
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              examples:
+                Example 1:
+                  value:
+                    type: urn:dx:as:InvalidAuthenticationToken
+                    title: Token authentication failed
+                    detail: Inactive Token
 
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+      operationId: put-auth-v1-user-roles
       security:
         - authorization: [ ]
       requestBody:
@@ -2428,8 +2575,9 @@ paths:
               properties:
                 status:
                   type: string
-                  x-stoplight:
-                    id: idttjmml4yni9
+                  description: New status for the provider role request. Valid values are 'granted' or 'rejected'.
+              required:
+                - status
   /iudx/v2/auth/user:
     get:
       summary: (User) Get User Information
@@ -2979,7 +3127,9 @@ paths:
   /iudx/v2/auth/organization/user/provider:
     post:
       operationId: post-auth-v1-organization-user-provider
-      summary: Grant provider role to user
+      summary: 'AAA-017-OrgAdmin: Grant provider role to user'
+      description: This endpoint allows organization admin grants provider role
+        to user in its organization.
       tags:
         - Organisation APIs
       requestBody:
