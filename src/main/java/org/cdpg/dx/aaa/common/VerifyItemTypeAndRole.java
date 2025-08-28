@@ -72,20 +72,13 @@ public class VerifyItemTypeAndRole implements Handler<RoutingContext> {
     List<ItemType> providerItemTypes = new ArrayList<>();
     List<ItemType> cosAdminItemTypes = new ArrayList<>();
     List<ItemType> orgAdminItemTypes = new ArrayList<>();
-
-    // Provider can create AiModel, DataBank, Apps
     providerItemTypes.add(AI_MODEL);
     providerItemTypes.add(DATA_BANK);
     providerItemTypes.add(APPS);
-
-    // Cos Admin can only create Apps
     cosAdminItemTypes.add(APPS);
-
-    // Org Admin can create AiModel, DataBank, Apps
-    orgAdminItemTypes.add(AI_MODEL);
-    orgAdminItemTypes.add(DATA_BANK);
     orgAdminItemTypes.add(APPS);
-
+    cosAdminItemTypes.add(AI_MODEL);
+    cosAdminItemTypes.add(DATA_BANK);
     this.roleItemTypeMap.put(DxRole.PROVIDER, providerItemTypes);
     this.roleItemTypeMap.put(DxRole.COS_ADMIN, cosAdminItemTypes);
     this.roleItemTypeMap.put(DxRole.ORG_ADMIN, orgAdminItemTypes);
