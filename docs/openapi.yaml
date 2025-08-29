@@ -51,1092 +51,6 @@ servers:
     description: example server
 
 paths:
-  /iudx/acl/apd/v2/access_request:
-    post:
-      tags:
-        - Access Request
-      summary: Create Access Request
-      description: 'Access requests are made by consumer to request a provider to
-        grant access to the provider''s resources.
-
-        A provider will be notified whenever the consumer creates an access request.
-
-
-        Users with the consumer role can request access for a resource/resource group
-        <br>
-
-        `Note`: The request cannot be made for the asset if the user is a provider
-        of the resource'
-      operationId: post-auth-v1-access-requests
-
-      requestBody:
-        description: '- `itemId` : The catalogue ID of the asset for which the request
-          is to be created
-
-          - `requestType` : The type of usage of asset
-
-          '
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: false
-              properties:
-                itemId:
-                  type: string
-                  format: uuid
-                  pattern: ^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$
-                requestType:
-                  enum:
-                    - DOWNLOAD
-                  minLength: 1
-                additionalInfo:
-                  description: Used to define additional information to access data
-                    for educational, research or testing, non-commercial, academia
-                    purposes
-                  type: object
-                  minProperties: 1
-                  maxProperties: 10
-              required:
-                - itemId
-                - requestType
-              x-examples:
-                example-1:
-                  itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
-                  requestType: DOWNLOAD
-            examples:
-              Create Access Request:
-                value:
-                  itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
-                  requestType: DOWNLOAD
-              Create Access Request with additionalInfo:
-                value:
-                  itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
-                  requestType: DOWNLOAD
-                  additionalInfo:
-                    name: Miles Davis
-                    email: miles@davis.org
-                    phone: 987654321
-                    purpose: testing
-                    description: The resource would be used for testing the abcd application
-                      in which services are offered free of cost for public welfare
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/createNotificationSuccessResponse'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '400':
-          description: 'Bad Request
-
-            - Schema validation, missing or incorrect fields & values'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/generalBadRequest'
-              examples:
-                Example:
-                  value:
-                    type: urn:dx:acl:badRequest
-                    title: Bad Request
-                    detail: Request could not be created, as the item type is invalid
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '401':
-          description: 'Unauthorized
-
-            - `token` invalid/expired
-
-            - A user with non-consumer role trying to create a request'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Unauthorized'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '403':
-          description: 'Forbidden
-
-            - User cannot create access request for the resource, as the user is a
-            provider of the resource'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/createNotificationForbidden'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '404':
-          description: 'Not Found
-
-            - Resource not found in Data Exchange Catalogue Server'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/createNotificationResourceNotFoundResponse'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '409':
-          description: 'Conflict
-
-            - The policy or request for the given resource was previously created'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/createNotificationConflictResponse'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-      security:
-        - authorization: [ ]
-      x-codeSamples:
-        - lang: cURL
-          label: Create access request
-          source: "curl --location --request POST 'https://example.com/iudx/acl/apd/v2/policies/requests'\
-          \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type:\
-          \ application/json' \\\n  --data-raw '<payload>'\n"
-        - lang: cURL
-          label: Create access request with additional info
-          source: "curl --location --request POST 'https://example.com/iudx/acl/apd/v2/policies/requests'\
-          \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type:\
-          \ application/json' \\\n  --data-raw '<payload>'\n"
-    put:
-      tags:
-        - Access Request
-      summary: Update Access Request
-      description: 'Providers or organization admin can choose to approve or reject
-        **pending** access requests associated with their asset or their organisation
-        respectively.
-
-
-        If the request is approved
-
-        - The request is modified to the `approved` state
-
-        - A policy is created corresponding to the requested resource with the applicable
-        expiry time and constraints.
-
-
-        If the request is rejected
-
-        - The request is modified to the `rejected` state
-
-        '
-      operationId: put-auth-v1-access-requests
-      requestBody:
-        description: '- `requestId` :  ID of the request. Can get this `id` by using
-          the GET Access request API.
-
-          - `status` : The `provider` or `provider delegate` can update the status
-          to `granted` or `rejected`.
-
-          - `expiryAt` : expiration time stamp with ISO 8601 format to provide access
-          to the given asset (Only present for the granted requests).'
-        required: true
-        content:
-          application/json:
-            schema:
-              oneOf:
-                - title: approve access request
-                  additionalProperties: false
-                  type: object
-                  properties:
-                    requestId:
-                      type: string
-                      format: uuid
-                      pattern: ^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$
-                    status:
-                      type: string
-                      enum:
-                        - granted
-                    expiryAt:
-                      type: string
-                      description: ISO 8601 format timestamp to provide access to the
-                        given asset
-                  required:
-                    - requestId
-                    - status
-                - title: reject access request
-                  additionalProperties: false
-                  type: object
-                  properties:
-                    requestId:
-                      type: string
-                      format: uuid
-                      pattern: ^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$
-                    status:
-                      type: string
-                      enum:
-                        - rejected
-                  required:
-                    - requestId
-                    - status
-              x-examples:
-                example-1:
-                  requestId: bca11712-f381-46a5-afa3-a29b00568ace
-                  status: granted
-                  expiryAt: '2026-03-05T20:00:19'
-            examples:
-              Update Approved access request:
-                value:
-                  requestId: bca11712-f381-46a5-afa3-a29b00568ace
-                  status: granted
-                  expiryAt: '2026-03-05T20:00:19'
-              Update Rejected access request:
-                value:
-                  requestId: bca11712-f381-46a5-afa3-a29b00568ace
-                  status: rejected
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UpdateAccessRequest'
-              examples:
-                Update:
-                  value:
-                    type: urn:dx:acl:success
-                    title: Success
-                    detail: Request updated successfully
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '400':
-          description: Bad Request- Schema validation, missing or incorrect fields
-            & values
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/updateNotificationBadRequest'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '404':
-          description: '- Not Found'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/updateNotificationNotFound'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '401':
-          description: '- Unauthorized - `token` invalid/expired'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Unauthorized'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '403':
-          description: 'Forbidden
-
-            - User does not own the asset or item for which access request is being
-            granted or rejected'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/updateNotificationForbiddenResponse'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-      security:
-        - authorization: [ ]
-      x-codeSamples:
-        - lang: cURL
-          label: Reject access request
-          source: "curl --location --request PUT 'https://example.com/iudx/acl/apd/v2/policies/requests'\
-          \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type:\
-          \ application/json' \\\n  --data-raw '<payload>'\n"
-        - lang: cURL
-          label: Approve access request
-          source: "curl --location --request PUT 'https://example.com/iudx/acl/apd/v2/policies/requests'\
-          \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type:\
-          \ application/json' \\\n  --data-raw '<payload>'\n"
-  /iudx/acl/apd/v2/access_request/provider:
-    get:
-      tags:
-        - Access Request
-      summary: List Access Requests for Provider
-      description: 'Lists all the latest access requests for assets owned by the provider/provider
-        delegate calling the API, regardless of the state of the access requests.
-
-
-        <br>
-
-        <br>
-
-
-        `Note:` The response displays the requests for a provider with respect to
-        a particular server.'
-      operationId: get-auth-v1-access-requests-provider
-      parameters:
-
-        - name: requestStatus
-          in: query
-          description: Status of the access request. Displays all the access requests
-            if status is not specified
-          required: false
-          schema:
-            type: string
-            enum:
-              - PENDING
-              - GRANTED
-              - REJECTED
-        - name: assetType
-          in: query
-          description: Type of the asset for which the access request is made. Displays
-            all the access requests if assetType is not specified
-          required: false
-          schema:
-            type: string
-            enum:
-              - adex:DataBank
-              - adex:AiModel
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParam'
-        - $ref: '#/components/parameters/SortingParam'
-        - $ref: '#/components/parameters/TimeParam'
-        - $ref: '#/components/parameters/EndTimeParam'
-        - $ref: '#/components/parameters/TimeRelParam'
-      responses:
-        '200':
-          description: 'OK
-
-            - Successfully fetched all the requests of a consumer or of a provider'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccessRequest'
-              examples:
-                ListResults:
-                  value:
-                    type: urn:dx:acl:success
-                    title: Success
-                    results:
-                      - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
-                        requestStatus: GRANTED
-                        requestType: DOWNLOAD
-                        additionalInfo:
-                          name: Miles Morales,
-                          email: miles.morales@acmecorp.org,
-                          phoneNo: 9876543210,
-                          purpose: academia,
-                          description: AI model would be used for non-commercial, academia
-                            purposes to test the application abcd
-                        user:
-                          consumerId: a13eb955-c691-4fd3-b200-f18bc78810b5
-                          consumerFirstName: Plutonian
-                          consumerLastName: Resident
-                          consumerEmail: scroopy@noopers.com
-                          consumerOrganization: Scroopy Noopers Corp
-                        asset:
-                          itemId: 316cd4eb-71b3-42c2-beb2-785a77999321
-                          assetName: Ice Estimation Model
-                          assetType: adex:AiModel
-                          shortDescription: This is a test AI model for estimating percentage
-                            of ice on Pluto
-                        expiryAt: '3000-03-05T20:00:19'
-                        updatedAt: '2025-06-04T07:25:08.663637'
-                        createdAt: '2025-06-04T09:10:57.267564'
-                    paginationInfo:
-                      page: 1
-                      size: 1
-                      totalCount: 3
-                      totalPages: 3
-                      hasNext: true
-                      hasPrevious: false
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '400':
-          description: Bad Request- Schema validation, missing or incorrect fields
-            & values
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/updateNotificationBadRequest'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '401':
-          description: '- Unauthorized - `token` invalid/expired'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Unauthorized'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-      security:
-        - authorization: [ ]
-      x-codeSamples:
-        - lang: cURL
-          label: Get access requests
-          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider''
-          \
-
-          '
-          --header 'Authorization: <tokenValue>'
-        - lang: cURL
-          label: Get access request with status
-          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider?requestStatus=GRANTED''
-          \
-
-          '
-          --header 'Authorization: <tokenValue>'
-        - lang: cURL
-          label: With pagination query params
-          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
-          \
-
-          '
-          --header 'Authorization: <tokenValue>'
-  /iudx/acl/apd/v2/access_request/provider/report:
-    get:
-      tags:
-        - Access Request
-      summary: Get Access Request Report for Provider
-      description: "Lists all the latest access requests for assets owned by the provider/provider\
-        \ delegate calling the API, regardless of the state of the access requests.\
-        \ \nIt adds the response in a CSV file and lets the user download it."
-      operationId: get-auth-v1-access-requests-provider-report
-      parameters:
-
-        - name: requestStatus
-          in: query
-          description: Status of the access request. Displays all the access requests
-            if status is not specified
-          required: false
-          schema:
-            type: string
-            enum:
-              - PENDING
-              - GRANTED
-              - REJECTED
-        - name: assetType
-          in: query
-          description: Type of the asset for which the access request is made. Displays
-            all the access requests if assetType is not specified
-          required: false
-          schema:
-            type: string
-            enum:
-              - adex:AiModel
-              - adex:DataBank
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParam'
-        - $ref: '#/components/parameters/SortingParam'
-        - $ref: '#/components/parameters/TimeParam'
-        - $ref: '#/components/parameters/EndTimeParam'
-        - $ref: '#/components/parameters/TimeRelParam'
-      responses:
-        '200':
-          description: 'OK
-
-            - Successfully fetched all the requests of a consumer or of a provider'
-          content:
-            application/csv:
-              schema:
-                type: string
-                format: binary
-                description: CSV file containing the access requests similar to the
-                  JSON response in GET /access_request/provider
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '400':
-          description: Bad Request- Schema validation, missing or incorrect fields
-            & values. If there is no data for csv generation, it returns a 400 error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/reportGenerationBadRequest'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '401':
-          description: '- Unauthorized - `token` invalid/expired'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Unauthorized'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '403':
-          description: When consumer is trying to access the report generation API
-            or when the user is not a provider user
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/reportGenerationForbiddenResponse'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-      security:
-        - authorization: [ ]
-      x-codeSamples:
-        - lang: cURL
-          label: Get access requests
-          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider/report''
-          \
-
-          '
-          --header 'Authorization: <tokenValue>'
-        - lang: cURL
-          label: Get access request with status
-          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider/report?requestStatus=GRANTED''
-          \
-
-          '
-          --header 'Authorization: <tokenValue>'
-        - lang: cURL
-          label: With pagination query params
-          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider/report?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
-          \
-
-          '
-          --header 'Authorization: <tokenValue>'
-  /iudx/acl/apd/v2/access_request/organisation/report:
-    get:
-      tags:
-        - Access Request
-      summary: Get Access Request Report for Organization Admin
-      description: "Lists all the latest access requests for assets present in a certain\
-        \ organization when called by Organization Admin, regardless of the state\
-        \ of the access requests. \nIt adds the response in a CSV file and lets the\
-        \ user download it. The organization admin can view the access requests of\
-        \ all the users in the organization."
-      operationId: get-auth-v1-access-requests-org-admin-report
-      parameters:
-
-        - name: requestStatus
-          in: query
-          description: Status of the access request. Displays all the access requests
-            if status is not specified
-          required: false
-          schema:
-            type: string
-            enum:
-              - PENDING
-              - GRANTED
-              - REJECTED
-        - name: assetType
-          in: query
-          description: Type of the asset for which the access request is made. Displays
-            all the access requests if assetType is not specified
-          required: false
-          schema:
-            type: string
-            enum:
-              - adex:AiModel
-              - adex:DataBank
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParam'
-        - $ref: '#/components/parameters/SortingParam'
-        - $ref: '#/components/parameters/TimeParam'
-        - $ref: '#/components/parameters/EndTimeParam'
-        - $ref: '#/components/parameters/TimeRelParam'
-      responses:
-        '200':
-          description: 'OK
-
-            - Successfully fetched all the requests of a consumer or of a provider
-            belonging to the certain organization'
-          content:
-            application/csv:
-              schema:
-                type: string
-                format: binary
-                description: CSV file containing the access requests similar to the
-                  JSON response
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '400':
-          description: Bad Request- Schema validation, missing or incorrect fields
-            & values. If there is no data for csv generation, it returns a 400 error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/reportGenerationBadRequest'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '401':
-          description: '- Unauthorized - `token` invalid/expired'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Unauthorized'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '403':
-          description: When consumer, provider or user other than org admin is trying
-            to access the report generation API
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/reportGenerationForbiddenResponse'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-      security:
-        - authorization: [ ]
-      x-codeSamples:
-        - lang: cURL
-          label: Get access requests
-          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/organisation/report''
-          \
-
-          '
-          --header 'Authorization: <tokenValue>'
-        - lang: cURL
-          label: Get access request with status
-          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/organisation/report?requestStatus=GRANTED''
-          \
-
-          '
-          --header 'Authorization: <tokenValue>'
-        - lang: cURL
-          label: With pagination query params
-          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/organisation/report?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
-          \
-
-          '
-          --header 'Authorization: <tokenValue>'
-  /iudx/acl/apd/v2/access_request/organisation:
-    get:
-      tags:
-        - Access Request
-      summary: List Organization Access Requests
-      description: 'Lists all the latest access requests for all the assets in the
-        organization owned by the organization admin (Org Admin), regardless of the
-        state of the access requests.
-
-        After viewing the access request, the organization admin can reject or approve
-        the access request using the [Update Access Request](#operation/put-auth-v1-access-requests)
-        API.
-
-
-        <br>
-
-        <br>
-
-
-        `Note:` The response displays the requests for a provider with respect to
-        a particular organization that the org admin owns.'
-      operationId: get-auth-v1-access-requests-organisation
-      parameters:
-        - name: requestStatus
-          in: query
-          description: Status of the access request. Displays all the access requests
-            if status is not specified
-          required: false
-          schema:
-            type: string
-            enum:
-              - PENDING
-              - GRANTED
-              - REJECTED
-        - name: assetType
-          in: query
-          description: Type of the asset for which the access request is made. Displays
-            all the access requests if assetType is not specified
-          required: false
-          schema:
-            type: string
-            enum:
-              - adex:DataBank
-              - adex:AiModel
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParam'
-        - $ref: '#/components/parameters/SortingParam'
-        - $ref: '#/components/parameters/TimeParam'
-        - $ref: '#/components/parameters/EndTimeParam'
-        - $ref: '#/components/parameters/TimeRelParam'
-      responses:
-        '200':
-          description: 'OK
-
-            - Successfully fetched all the requests of a consumer or of a provider
-            in the organization'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccessRequest'
-              examples:
-                ListResults:
-                  value:
-                    type: urn:dx:acl:success
-                    title: Success
-                    results:
-                      - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
-                        requestStatus: GRANTED
-                        requestType: DOWNLOAD
-                        additionalInfo:
-                          name: Miles Morales,
-                          email: miles.morales@acmecorp.org,
-                          phoneNo: 9876543210,
-                          purpose: academia,
-                          description: AI model would be used for non-commercial, academia
-                            purposes to test the application abcd
-                        user:
-                          consumerId: a13eb955-c691-4fd3-b200-f18bc78810b5
-                          consumerFirstName: Plutonian
-                          consumerLastName: Resident
-                          consumerEmail: scroopy@noopers.com
-                          consumerOrganization: Scroopy Noopers Corp
-                        asset:
-                          itemId: 316cd4eb-71b3-42c2-beb2-785a77999321
-                          assetName: Ice Estimation Model
-                          assetType: adex:AiModel
-                          shortDescription: This is a test AI model for estimating percentage
-                            of ice on Pluto
-                        expiryAt: '3000-03-05T20:00:19'
-                        updatedAt: '2025-06-04T07:25:08.663637'
-                        createdAt: '2025-06-04T09:10:57.267564'
-                    paginationInfo:
-                      page: 1
-                      size: 1
-                      totalCount: 3
-                      totalPages: 3
-                      hasNext: true
-                      hasPrevious: false
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '400':
-          description: Bad Request- Schema validation, missing or incorrect fields
-            & values
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/updateNotificationBadRequest'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '401':
-          description: '- Unauthorized - `token` invalid/expired'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Unauthorized'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-      security:
-        - authorization: [ ]
-      x-codeSamples:
-        - lang: cURL
-          label: Get access requests
-          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider''
-          \
-
-          '
-          --header 'Authorization: <tokenValue>'
-        - lang: cURL
-          label: Get access request with status
-          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider?requestStatus=GRANTED''
-          \
-
-          '
-          --header 'Authorization: <tokenValue>'
-        - lang: cURL
-          label: With pagination query params
-          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
-          \
-
-          '
-          --header 'Authorization: <tokenValue>'
-  /iudx/acl/apd/v2/access_request/consumer:
-    get:
-      tags:
-        - Access Request
-      summary: List Consumer Access Requests
-      description: Lists all the latest access requests of the consumer calling the
-        API regardless of the state of the access requests.
-      operationId: get-auth-v1-access-requests-consumer
-      parameters:
-
-        - name: requestStatus
-          in: query
-          description: Status of the access request. Displays all the access requests
-            if status is not specified
-          required: false
-          schema:
-            type: string
-            enum:
-              - PENDING
-              - GRANTED
-              - REJECTED
-        - name: assetType
-          in: query
-          description: Type of the asset for which the access request is made. Displays
-            all the access requests if assetType is not specified
-          required: false
-          schema:
-            type: string
-            enum:
-              - adex:DataBank
-              - adex:AiModel
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParam'
-        - $ref: '#/components/parameters/SortingParam'
-        - $ref: '#/components/parameters/TimeParam'
-        - $ref: '#/components/parameters/EndTimeParam'
-        - $ref: '#/components/parameters/TimeRelParam'
-      responses:
-        '200':
-          description: Successfully fetched all the requests of a consumer
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccessRequest'
-              examples:
-                ListResults:
-                  value:
-                    type: urn:dx:acl:success
-                    title: Success
-                    results:
-                      - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
-                        requestStatus: GRANTED
-                        requestType: DOWNLOAD
-                        additionalInfo:
-                          name: Miles Morales,
-                          email: miles.morales@acmecorp.org,
-                          phoneNo: 9876543210,
-                          purpose: academia,
-                          description: AI model would be used for non-commercial, academia
-                            purposes to test the application abcd
-                        user:
-                          consumerId: a13eb955-c691-4fd3-b200-f18bc78810b5
-                          consumerFirstName: Plutonian
-                          consumerLastName: Resident
-                          consumerEmail: scroopy@noopers.com
-                          consumerOrganization: Scroopy Noopers Corp
-                        asset:
-                          itemId: 316cd4eb-71b3-42c2-beb2-785a77999321
-                          assetName: Ice Estimation Model
-                          assetType: adex:AiModel
-                          shortDescription: This is a test AI model for estimating percentage
-                            of ice on Pluto
-                        expiryAt: '3000-03-05T20:00:19'
-                        updatedAt: '2025-06-04T07:25:08.663637'
-                        createdAt: '2025-06-04T09:10:57.267564'
-                    paginationInfo:
-                      page: 1
-                      size: 1
-                      totalCount: 3
-                      totalPages: 3
-                      hasNext: true
-                      hasPrevious: false
-        '400':
-          description: Bad Request- Schema validation, missing or incorrect fields
-            & values
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/updateNotificationBadRequest'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '401':
-          description: Unauthorized - token invalid/expired or non-consumer role
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Unauthorized'
-      security:
-        - authorization: [ ]
-      x-codeSamples:
-        - lang: cURL
-          label: Get consumer access requests
-          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/consumer''
-          \
-
-          '
-          --header 'Authorization: <tokenValue>'
-        - lang: cURL
-          label: Get consumer access request with status
-          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/consumer?requestStatus=GRANTED''
-          \
-
-          '
-          --header 'Authorization: <tokenValue>'
-        - lang: cURL
-          label: With pagination query params
-          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/consumer?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
-          \
-
-          '
-          --header 'Authorization: <tokenValue>'
-  /iudx/acl/apd/v2/access_request/has_access:
-    post:
-      tags:
-        - Access Request
-      summary: Check Access Request
-      description: Checks if the access requests that were previously created by consumer
-        or consumer delegate, has been approved by the provider or provider delegate
-      operationId: post-auth-v1-access-requests-has-access
-      requestBody:
-        description: '- `itemId` : The catalogue ID of the asset for which the request
-          has been created
-
-          '
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: false
-              properties:
-                itemId:
-                  type: string
-                  format: uuid
-                  pattern: ^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$
-              required:
-                - itemId
-              x-examples:
-                example-1:
-                  itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
-            examples:
-              Create Access Request:
-                value:
-                  itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/checkAccessRequestSuccessResponse'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '400':
-          description: 'Bad Request
-
-            - Schema validation, missing or incorrect fields & values'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/generalBadRequest'
-              examples:
-                Example:
-                  value:
-                    type: urn:dx:acl:badRequest
-                    title: Bad Request
-                    detail: Missing or malformed request
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '401':
-          description: 'Unauthorized
-
-            - `token` invalid/expired
-
-            - A user with non-consumer role trying to use the API'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Unauthorized'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '403':
-          description: 'Forbidden
-
-            - User''s access request is still in pending status or has been rejected
-            by the provider of the resource'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/checkAccessRequestNotFoundResponse'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-      security:
-        - authorization: [ ]
-      x-codeSamples:
-        - lang: cURL
-          label: Check access request
-          source: "curl --location --request POST 'https://example.com/iudx/acl/apd/v2/access_request/has_access'\
-          \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type:\
-          \ application/json' \\\n  --data-raw '<payload>'\n"
-
   /iudx/v2/auth/organisations/requests:
     get:
       summary: 'AAA-001-PF Admin: Get Organisation Creation requests'
@@ -1511,12 +425,20 @@ paths:
   /iudx/v2/auth/organisations/requests/approve:
     post:
       summary: 'AAA-003-PF Admin: Approve creation of new organisation'
+      description: >
+        This API allows an AAA-003-PF Admin to approve or reject a pending organization creation request.
+        The request body must include the `req_id` of the organization request and the `status` (granted or rejected).
+        A successful response indicates that the organization request has been updated.
       tags:
         - Organisation APIs
       operationId: post-auth-v1-approve-create_org
       security:
         - authorization: [ ]
       requestBody:
+        description: >
+          The request body specifies the details for approving or rejecting an organization creation request.
+          - `req_id`: (Required) The unique ID of the organization creation request to be processed.
+          - `status`: (Required) The new status for the request. Valid values are `granted` or `rejected`.
         content:
           application/json:
             schema:
@@ -1617,12 +539,29 @@ paths:
       - name: id
         in: path
         required: true
-        description: UUID of the organisation
+        description: UUID of the organisation for which to retrieve/put join requests.
         schema:
           type: string
           format: uuid
     get:
-      summary: Get all requests for an organisation
+      summary: 'AAA-004-Org Admin: Get all Join requests for an organisation'
+      description: >
+        This API allows an organization administrator to retrieve all join requests for a specific organization,
+        identified by its `id` in the path parameter. Requests can optionally be filtered by their `status`
+        (e.g., pending, granted, rejected). It provides details about each join request,
+        including the user who requested to join, their current status, job title, employee ID,
+        official email, and any assigned roles. Pagination information is also included in the response.
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Filter join requests by their status.
+          schema:
+            type: string
+            enum:
+              - pending
+              - granted
+              - rejected
       tags:
         - Organisation APIs
       responses:
@@ -1661,43 +600,63 @@ paths:
                       properties:
                         id:
                           type: string
+                          description: Unique ID of the join request.
                         organizationId:
                           type: string
+                          description: UUID of the organization associated with the request.
                         userId:
                           type: string
+                          description: UUID of the user who made the join request.
                         userName:
                           type: string
+                          description: Name of the user who made the join request.
                         status:
                           type: string
+                          description: Current status of the join request (e.g., 'pending', 'granted', 'rejected').
                         jobTitle:
                           type: string
+                          description: Job title of the user.
                         empId:
                           type: string
+                          description: Employee ID of the user.
                         officialEmail:
                           type: string
+                          description: Official email of the user.
                         requestedAt:
                           type: string
+                          description: Timestamp when the join request was made.
                         processedAt:
                           type: string
+                          description: Timestamp when the join request was processed.
                         roles:
-                          type: object
+                          type: array
+                          items:
+                            type: string
+                          description: Roles associated with the user within the organization.
                         tableName:
                           type: string
+                          description: Internal table name for the request.
                   paginationInfo:
                     type: object
                     properties:
                       page:
                         type: integer
+                        description: Current page number.
                       size:
                         type: integer
+                        description: Number of items per page.
                       totalCount:
                         type: integer
+                        description: Total number of documents which matched the query.
                       totalPages:
                         type: integer
+                        description: Total number of pages available.
                       hasNext:
                         type: boolean
+                        description: Indicates if more pages are available.
                       hasPrevious:
                         type: boolean
+                        description: Indicates if previous pages exist.
               examples:
                 Example 1:
                   value:
@@ -1731,11 +690,45 @@ paths:
       security:
         - authorization: [ ]
     post:
-      summary: Create Request to Join an Organisation
+      summary: 'AAA-005-Consumer: Create Request to Join an Organisation'
+      description: >
+        This API allows an authenticated user to submit a request to join a specific organization,
+        identified by its `id` in the path parameter. The request includes the user's job title and employee ID.
+        The organization administrator will then review and process this join request.
       tags:
         - Organisation APIs
+      requestBody:
+        description: >
+          The request body contains details about the user's role within the organization they wish to join.
+          - `job_title`: (Required) The job title of the user within the organization.
+          - `emp_id`: (Required) The employee ID of the user within the organization.
+          - `official_email`: (Required) The official email of the user within the organization.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                job_title:
+                  type: string
+                  description: The job title of the user in the organization.
+                emp_id:
+                  type: string
+                  description: The employee ID of the user in the organization.
+                official_email:
+                  type: string
+                  description: The official email of the user in the organization.
+              required:
+                - job_title
+                - emp_id
+                - official_email
+            examples:
+              Example 1:
+                value:
+                  job_title: Employee
+                  emp_id: EMP8790
       responses:
-        '201':
+        '200':
           description: Created
           content:
             application/json:
@@ -1829,30 +822,15 @@ paths:
                     detail: 'ERROR: duplicate key value violates unique constraint
                       "organization_join_requests_user_id_key" (23505)'
       operationId: post-auth-v1-organisations-join-requests
-
       security:
         - authorization: [ ]
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                job_title:
-                  type: string
-                emp_id:
-                  type: string
-            examples:
-              Example 1:
-                value:
-                  job_title: Employee
-                  emp_id: EMP8790
+
   /iudx/v2/auth/organisations/{id}/join_requests/{req_id}:
     parameters:
       - name: id
         in: path
         required: true
-        description: UUID of the organisation
+        description: UUID of the organization to which the join request belongs.
         schema:
           type: string
           format: uuid
@@ -1862,17 +840,22 @@ paths:
         schema:
           type: string
           format: uuid
-        description: Request ID of the join request to update
+        description: Request ID of the join request to update.
     put:
-      summary: Approve or update status of a join request
+      summary: 'AAA-006-OrgAdmin: Approve or update status of a join request'
+      description: >
+        This API allows an organization administrator to approve or reject a specific join request for their organization.
+        The organization is identified by `id` and the join request by `req_id` in the path parameters.
+        This operation updates the status of an existing join request.
       tags:
         - Organisation APIs
       operationId: put-auth-v1-organisations-join-requests
-
       security:
         - authorization: [ ]
       requestBody:
-        required: true
+        description: >
+          The request body contains the new status for the join request.
+          - `status`: (Required) The new status of the join request. Valid values are `granted` or `rejected`.
         content:
           application/json:
             schema:
@@ -1880,9 +863,9 @@ paths:
               properties:
                 status:
                   type: string
-              x-examples:
-                Example 1:
-                  status: granted
+                  description: The new status of the join request.
+              required:
+                - status
             examples:
               Example 1:
                 value:
@@ -1953,40 +936,27 @@ paths:
           description: Join request not found
   /iudx/v2/auth/organisations:
     get:
-      summary: List All Organisations
+      summary: 'AAA-007-Consumer: List All Organisations'
+      description: >
+        This API allows authenticated users to retrieve a list of all registered organizations.
+        It provides details such as the organization's name, logo, entity type, sector, and website.
+        Pagination information is also included in the response. This endpoint does not require a request body.
       tags:
         - Organisation APIs
       responses:
         '200':
-          description: OK
+          description: OK - Successfully fetched all organizations.
           content:
             application/json:
               schema:
                 type: object
-                x-examples:
-                  Example 1:
-                    type: urn:dx:aaa:success
-                    title: Success
-                    result:
-                      - id: e87246e2-5da5-40b0-973c-690d2f48f879
-                        orgName: Quant Sandbox
-                        orgLogo: /logos/ai.png
-                        entityType: Private
-                        orgSector: Technology
-                        websiteLink: https://ai.example.com
-                        address: 123 Quant Labs, Bangalore, India
-                        certificatePath: /documents/certificate.pdf
-                        pancardPath: /documents/pancard.pdf
-                        relevantDocPath: null
-                        orgDocuments: null
-                        createdAt: '2025-06-03T16:28:24.205541'
-                        updatedAt: '2025-06-03T16:28:24.205541'
-                        tableName: organizations
                 properties:
                   type:
                     type: string
+                    description: URN type of the response.
                   title:
                     type: string
+                    description: A human-readable title for the message response.
                   result:
                     type: array
                     items:
@@ -1994,50 +964,71 @@ paths:
                       properties:
                         id:
                           type: string
+                          description: Unique ID of the organization.
                         orgName:
                           type: string
+                          description: Name of the organization.
                         orgLogo:
                           type: string
+                          description: Path to the organization's logo.
                         entityType:
                           type: string
+                          description: Type of the organization (e.g., 'Private', 'Public').
                         orgSector:
                           type: string
+                          description: Sector the organization belongs to.
                         websiteLink:
                           type: string
+                          description: Website link of the organization.
                         address:
                           type: string
+                          description: Address of the organization.
                         certificatePath:
                           type: string
+                          description: Path to the organization's certificate.
                         pancardPath:
                           type: string
+                          description: Path to the organization's PAN card document.
                         relevantDocPath:
                           type: string
+                          description: Path to any other relevant documents.
+                          nullable: true
                         orgDocuments:
                           type: string
+                          description: Any additional organization documents.
+                          nullable: true
                         createdAt:
                           type: string
+                          description: Timestamp when the organization was created.
                         updatedAt:
                           type: string
+                          description: Timestamp when the organization was last updated.
                         tableName:
                           type: string
+                          description: Internal table name for the organization.
                   paginationInfo:
                     type: object
                     properties:
                       page:
                         type: integer
+                        description: Current page number.
                       size:
                         type: integer
+                        description: Number of items per page.
                       totalCount:
                         type: integer
+                        description: Total number of documents which matched the query.
                       totalPages:
                         type: integer
+                        description: Total number of pages available.
                       hasNext:
                         type: boolean
+                        description: Indicates if more pages are available.
                       hasPrevious:
                         type: boolean
-              examples:
-                Example 1:
-                  value:
+                        description: Indicates if previous pages exist.
+                x-examples:
+                  Example 1:
                     type: urn:dx:aaa:success
                     title: Success
                     result:
@@ -2062,58 +1053,7 @@ paths:
                       totalPages: 346
                       hasNext: true
                       hasPrevious: false
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                    x-stoplight:
-                      id: 9wrbsxlphpksr
-                  title:
-                    type: string
-                    x-stoplight:
-                      id: r7kv2o5mhdmrk
-                  detail:
-                    type: string
-                    x-stoplight:
-                      id: eavbt2unc332t
-              examples:
-                Example 1:
-                  value:
-                    type: urn:dx:as:InvalidAuthenticationToken
-                    title: Token authentication failed
-                    detail: Inactive Token
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                    x-stoplight:
-                      id: 0d521fniq5ryq
-                  title:
-                    type: string
-                    x-stoplight:
-                      id: coae2yhcsmxkx
-                  detail:
-                    type: string
-                    x-stoplight:
-                      id: pwpn3m1hrm4f7
-              examples:
-                Example 1:
-                  value:
-                    type: urn:dx:as:MissingInformation
-                    title: No Organisations Found
-                    detail: No Organisations Found
       operationId: get-auth-v1-org
-
       security:
         - authorization: [ ]
   /iudx/v2/auth/organisations/{id}:
@@ -2125,20 +1065,48 @@ paths:
         required: true
         description: UUID of organization
     delete:
-      summary: Delete organisation by ID
+      summary: 'AAA-008-PFAdmin: Delete organisation by ID'
+      description: >
+        This API allows an PFAdmin to delete an organization by its unique identifier (ID).
+        The ID of the organization to be deleted is provided as a path parameter.
+        A successful response indicates that the organization has been deleted.
       tags:
         - Organisation APIs
       responses:
         '200':
-          description: OK
+          description: OK - Successfully deleted organization.
       operationId: delete-auth-v1-organisations-id
-
       security:
         - authorization: [ ]
     put:
-      summary: Update Organisation by ID
+      summary: 'AAA-009-OrgAdmin:Update Organisation by ID'
+      description: >
+        This API allows updating the details of an existing organization identified by its unique ID.
+        The ID of the organization to be updated is provided as a path parameter.
+        The request body should contain the updated organization details.
+        A successful response indicates that the organization has been updated.
       tags:
         - Organisation APIs
+      security:
+        - authorization: [ ]
+      requestBody:
+        description: >
+          The request body specifies the entries which need to be updated by the user.They are optional.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Name of the organization.
+              x-examples:
+                Example 1:
+                  name: Etimes4
+            examples:
+              Example 1:
+                value:
+                  name: Etimes4
       responses:
         '200':
           description: OK
@@ -2188,7 +1156,7 @@ paths:
                     title: Success
                     result:
                       id: e87246e2-5da5-40b0-973c-690d2f48f879
-                      orgName: Quantum Truely
+                      orgName: Etimes4
                       orgLogo: /logos/ai.png
                       entityType: Private
                       orgSector: Technology
@@ -2208,7 +1176,7 @@ paths:
                     title: Success
                     result:
                       id: e87246e2-5da5-40b0-973c-690d2f48f879
-                      orgName: Quantum Truely
+                      orgName: Etimes4
                       orgLogo: /logos/ai.png
                       entityType: Private
                       orgSector: Technology
@@ -2222,28 +1190,20 @@ paths:
                       updatedAt: '2025-06-03T16:28:24.205541'
                       tableName: organizations
       operationId: put-auth-v1-organisations-id
-
-      security:
-        - authorization: [ ]
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-              x-examples:
-                Example 1:
-                  name: Quantum Truely
-            examples:
-              Example 1:
-                value:
-                  name: Quantum Truely
     get:
-      summary: Get Organisation By ID
+      summary: 'AAA-010-PFAdmin: Get Organisation By ID'
+      description: >
+        This API allows retrieving the details of a specific organization by its unique identifier (ID).
+        The ID of the organization to be retrieved is provided as a path parameter.
+        A successful response includes the organization's details such as name, logo, entity type, sector, and website.
       tags:
         - Organisation APIs
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: id
+          description: UUID of organization
       responses:
         '200':
           description: OK
@@ -2277,55 +1237,58 @@ paths:
                     properties:
                       id:
                         type: string
+                        description: Unique ID of the organization.
                       name:
                         type: string
+                        description: Name of the organization.
                       logo_path:
                         type: string
+                        description: Path to the organization's logo.
                       entity_type:
                         type: string
+                        description: Type of the organization (e.g., 'Private', 'Public').
                       org_sector:
                         type: string
+                        description: Sector the organization belongs to.
                       website_link:
                         type: string
+                        description: Website link of the organization.
                       address:
                         type: string
+                        description: Address of the organization.
                       certificate_path:
                         type: string
+                        description: Path to the organization's certificate.
                       pancard_path:
                         type: string
+                        description: Path to the organization's PAN card document.
                       created_at:
                         type: string
+                        description: Timestamp when the organization was created.
                       updated_at:
                         type: string
+                        description: Timestamp when the organization was last updated.
                   paginationInfo:
                     type: object
-                    x-stoplight:
-                      id: i2j6hw45mr0m1
                     properties:
                       page:
                         type: integer
-                        x-stoplight:
-                          id: atus73ss5j3hx
+                        description: Current page number.
                       size:
                         type: integer
-                        x-stoplight:
-                          id: ldplp5tqmab1s
-                      totalPages:
-                        type: integer
-                        x-stoplight:
-                          id: 5b8htl3mzyatn
+                        description: Number of items per page.
                       totalCount:
                         type: integer
-                        x-stoplight:
-                          id: 8rxpevtk2xz4z
+                        description: Total number of documents which matched the query.
+                      totalPages:
+                        type: integer
+                        description: Total number of pages available.
                       hasNext:
                         type: boolean
-                        x-stoplight:
-                          id: dbvf8j5jsd3qq
+                        description: Indicates if more pages are available.
                       hasPrevious:
                         type: boolean
-                        x-stoplight:
-                          id: bq5pj0ajkf4wq
+                        description: Indicates if previous pages exist.
               examples:
                 Example 1:
                   value:
@@ -2351,13 +1314,6 @@ paths:
                       hasNext: true
                       hasPrevious: false
       operationId: get-auth-v1-organisations-id
-      parameters:
-        - schema:
-            type: string
-          in: query
-          name: id
-          description: UUID of organization
-
       security:
         - authorization: [ ]
   /iudx/v2/auth/organisations/{id}/users:
@@ -2370,7 +1326,12 @@ paths:
           type: string
           format: uuid
     get:
-      summary: List organisation Users
+      summary: 'AAA-011-OrgAdmin: List organisation Users'
+      description: >
+        This API allows an organization administrator to retrieve a list of all users associated with a specific organization,
+        identified by its `id` in the path parameter. The response includes details about each user,
+        such as their role within the organization, job title, employee ID, official email, and account status.
+        Pagination information is also included in the response.
       tags:
         - Organisation APIs
       responses:
@@ -2402,70 +1363,79 @@ paths:
                 properties:
                   type:
                     type: string
+                    description: URN type of the response.
                   title:
                     type: string
+                    description: A human-readable title for the message response.
                   result:
                     type: array
+                    description: List of users associated with the organization.
                     items:
                       type: object
                       properties:
                         id:
                           type: string
+                          description: Unique ID of the organization user record.
                         organizationId:
                           type: string
+                          description: UUID of the organization the user belongs to.
                         userId:
                           type: string
+                          description: UUID of the user.
                         userName:
                           type: string
+                          description: Name of the user.
                         role:
                           type: string
+                          description: Role of the user within the organization (e.g., 'ADMIN', 'MEMBER').
                         jobTitle:
                           type: string
+                          description: Job title of the user within the organization.
                         empId:
                           type: string
+                          description: Employee ID of the user within the organization.
                         orgManagerPhoneNo:
                           type: string
+                          description: Phone number of the organization manager.
                         officialEmail:
                           type: string
+                          description: Official email of the user within the organization.
                         createdAt:
                           type: string
+                          description: Timestamp when the user record was created.
                         updatedAt:
                           type: string
+                          description: Timestamp when the user record was last updated.
                         roles:
                           type: object
+                          description: Roles associated with the user within the organization.
                         accountEnabled:
                           type: boolean
+                          description: Indicates if the user's account is enabled.
                         tableName:
                           type: string
+                          description: Internal table name for the request.
                   paginationInfo:
                     type: object
-                    x-stoplight:
-                      id: habzk85vhyv4i
                     properties:
                       page:
                         type: integer
-                        x-stoplight:
-                          id: qquspu2iw2wyf
+                        description: Current page number.
                       size:
                         type: integer
-                        x-stoplight:
-                          id: 5rqm7fj3rgcqi
-                      totalPages:
-                        type: integer
-                        x-stoplight:
-                          id: iwkoo03wfc2d2
+                        description: Number of items per page.
                       totalCount:
                         type: integer
-                        x-stoplight:
-                          id: euhafbyvvrncv
+                        description: Total number of documents which matched the query.
+                      totalPages:
+                        type: integer
+                        description: Total number of pages available.
                       hasNext:
                         type: boolean
-                        x-stoplight:
-                          id: ndure5aywto2y
+                        description: Indicates if more pages are available.
                       hasPrevious:
                         type: boolean
-                        x-stoplight:
-                          id: cbqgznf2sy6d3
+                        description: Indicates if previous pages exist.
               examples:
                 Example 1:
                   value:
@@ -2493,6 +1463,25 @@ paths:
                       totalPages: 346
                       hasNext: true
                       hasPrevious: false
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  '':
+                    type: string
+              examples:
+                Example 1:
+                  value:
+                    type: urn:dx:as:InvalidInput
+                    title: Invalid Organisation
+                    detail: The Organisation is invalid
         '401':
           description: Unauthorized
           content:
@@ -2502,43 +1491,35 @@ paths:
                 properties:
                   type:
                     type: string
-                    x-stoplight:
-                      id: ki8ptrubbpfo4
                   title:
                     type: string
-                    x-stoplight:
-                      id: cy2up8v8a5pd0
                   detail:
                     type: string
-                    x-stoplight:
-                      id: 67gt97omjofae
               examples:
                 Example 1:
                   value:
                     type: urn:dx:as:InvalidAuthenticationToken
                     title: Token authentication failed
                     detail: Inactive Token
-        '404':
-          description: Not Found
+                Example 2:
+                  value:
+                    type: urn:dx:aaa:notAuthorized
+                    title: Not Authorized
+                    detail: Unauthorized
+        '409':
+          description: Conflict
           content:
             application/json:
               schema:
                 type: object
-                properties: { }
-              examples:
-                Example 1:
-                  value:
-                    type: urn:dx:as:MissingInformation
-                    title: Admins not found
-                    detail: No Organisation Admins Found
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
       operationId: get-auth-v1-org-users
-      parameters:
-        - schema:
-            type: string
-          in: query
-          name: id
-          description: UUID of organizations
-
       security:
         - authorization: [ ]
   /iudx/v2/auth/organisations/{id}/users/{user_id}:
@@ -2558,7 +1539,11 @@ paths:
           type: string
           format: uuid
     delete:
-      summary: Delete User by ID
+      summary: 'AAA-012-OrgAdmin: Delete User by ID'
+      description: >
+        This API allows an organization administrator to delete a specific user from their organization,
+        identified by the user's `user_id` and the organization's `id` in the path parameters.
+        A successful response indicates that the user has been deleted from the organization.
       tags:
         - Organisation APIs
       responses:
@@ -2571,10 +1556,13 @@ paths:
                 properties:
                   type:
                     type: string
+                    description: URN type of the response.
                   title:
                     type: string
+                    description: A human-readable title for the message response.
                   detail:
                     type: string
+                    description: Details about the deletion operation.
                 x-examples:
                   Example 1:
                     type: urn:dx:aaa:success
@@ -2602,7 +1590,12 @@ paths:
       security:
         - authorization: [ ]
     put:
-      summary: Update Organization User Role
+      summary: 'AAA-013-OrgAdmin: Update Organization User Role'
+      description: >
+        This API allows an organization administrator to update the role of a specific user within their organization.
+        The user is identified by their `user_id` and the organization by its `id` in the path parameters.
+        The request body should contain the new role for the user.
+        A successful response indicates that the user's role has been updated.
       tags:
         - Organisation APIs
       responses:
@@ -2615,10 +1608,13 @@ paths:
                 properties:
                   type:
                     type: string
+                    description: URN type of the response.
                   title:
                     type: string
+                    description: A human-readable title for the message response.
                   detail:
                     type: string
+                    description: Details about the update operation.
                 x-examples:
                   Example 1:
                     type: urn:dx:aaa:success
@@ -2639,25 +1635,22 @@ paths:
               properties:
                 role:
                   type: string
-                  x-stoplight:
-                    id: 35dhxezcb35eq
+                  description: New role for the user within the organization. Valid value is admin.
             examples:
               Example 1:
                 value:
-                  role: MEMBER
-        description: ''
+                  role: admin
       parameters:
         - schema:
             type: string
           in: query
           name: id
-          description: 'organization UUID '
+          description: organization's UUID
         - schema:
             type: string
           in: query
           name: user_id
           description: user's UUID
-
       security:
         - authorization: [ ]
     get:
@@ -3422,18 +2415,12 @@ paths:
         - authorization: [ ]
   /iudx/v2/auth/organization/user/provider_role/requests:
     get:
-      summary: Get All pending provider role requests
-      tags:
-        - Organisation APIs
-      responses:
-        '200':
-          description: OK
-      operationId: get-auth-v1-user-roles
-
-      security:
-        - authorization: [ ]
-    post:
-      summary: Create a Provider Role Request
+      summary: 'AAA-014-PFAdmin: Get All pending provider role requests'
+      description: >
+        This API allows a platform administrator to retrieve all pending provider role requests
+        from users across various organizations. A successful response returns a list of pending
+        requests with details such as user ID, user name, organization ID, organization name,
+        status, and timestamps.
       tags:
         - Organisation APIs
       responses:
@@ -3443,23 +2430,65 @@ paths:
             application/json:
               schema:
                 type: object
-                properties: { }
               examples:
-                Example 1: { }
-      operationId: post-auth-v1-user-roles
-
+                Example 1:
+                  value:
+                    type: urn:dx:controlPanel:success
+                    title: Success
+                    result:
+                      - id: e970320f-ffed-4946-ae68-cb13a9f7d7d2
+                        user_id: 719b5e7c-3a20-4f77-91f9-1f43ac4ef6a7
+                        organization_id: 0706147d-2c77-4165-8550-812804d114be
+                        status: granted
+                        created_at: 2025-08-25T05:28:20.356043
+                        updated_at: 2025-08-25T05:30:14.607398
+                        roles: [ consumer, compute, default-roles-tgdex-pilot, provider ]
+                        account_enabled: true
+                    paginationInfo:
+                      page: 1
+                      size: 10
+                      totalCount: 2
+                      totalPages: 1
+                      hasNext: false
+                      hasPrevious: false
+      operationId: get-auth-v1-user-roles
       security:
         - authorization: [ ]
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                org_id:
-                  type: string
-                  x-stoplight:
-                    id: l9svqkwc3ik2j
+    post:
+      summary: 'AAA-015-Any User:Create a Provider Role Request'
+      description: >
+        This API allows a user to create a provider role request within their organization.
+        A successful response indicates that the provider role request has been created.
+      tags:
+        - Organisation APIs
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+                x-examples:
+                  Example 1:
+                    type: 'urn:dx:controlPanel:success'
+                    title: Success
+                    detail: Created request
+              examples:
+                Example 1:
+                  value:
+                    type: 'urn:dx:controlPanel:success'
+                    title: Success
+                    detail: Created request
+      operationId: post-auth-v1-user-roles
+      security:
+        - authorization: [ ]
   /iudx/v2/auth/organization/user/provider_role/requests/{id}:
     parameters:
       - name: id
@@ -3470,14 +2499,73 @@ paths:
           type: string
           format: uuid
     put:
-      summary: Update a Provider Role Request
+      summary: 'AAA-016-OrgAdmin: Update a Provider Role Request'
+      description: >
+        This API allows a organization administrator to update the status of a specific provider role request.
+        The request is identified by its `id` in the path parameter. The request body should contain the new
+        status for the provider role request. A successful response indicates that the provider role request
+        has been updated.
       tags:
         - Organisation APIs
       responses:
         '200':
           description: OK
-      operationId: put-auth-v1-user-roles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+                x-examples:
+                  Example 1:
+                    type: 'urn:dx:controlPanel:success'
+                    title: Success
+                    detail: Provider role updated
+              examples:
+                Example 1:
+                  value:
+                    type: 'urn:dx:controlPanel:success'
+                    title: Success
+                    detail: Provider role updated
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              examples:
+                Example 1:
+                  value:
+                    type: urn:dx:as:InvalidAuthenticationToken
+                    title: Token authentication failed
+                    detail: Inactive Token
 
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+      operationId: put-auth-v1-user-roles
       security:
         - authorization: [ ]
       requestBody:
@@ -3488,8 +2576,9 @@ paths:
               properties:
                 status:
                   type: string
-                  x-stoplight:
-                    id: idttjmml4yni9
+                  description: New status for the provider role request. Valid values are 'granted' or 'rejected'.
+              required:
+                - status
   /iudx/v2/auth/user:
     get:
       summary: (User) Get User Information
@@ -4039,7 +3128,9 @@ paths:
   /iudx/v2/auth/organization/user/provider:
     post:
       operationId: post-auth-v1-organization-user-provider
-      summary: Grant provider role to user
+      summary: 'AAA-017-OrgAdmin: Grant provider role to user'
+      description: This endpoint allows organization admin grants provider role
+        to user in its organization.
       tags:
         - Organisation APIs
       requestBody:
