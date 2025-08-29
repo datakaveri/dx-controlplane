@@ -61,7 +61,6 @@ public class TokenServiceImpl implements TokenService {
     JWTOptions options =
         new JWTOptions()
             .setAlgorithm(JWT_ALGORITHM)
-            .setExpiresInSeconds(expirationSeconds) // ✅ expects seconds
             .setIssuer(issuer);
 
     return clientcredetialService

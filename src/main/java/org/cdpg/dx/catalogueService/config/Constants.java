@@ -12,7 +12,7 @@ public class Constants {
   public static final String KEY_RESOURCE_SERVER_URL = "resourceServerURL";
   public static final String RS_URL = "resourceServerRegURL";
   public static final String RESOURCE_SERVER_TAG = "iudx:ResourceServer";
-  public static final String ASSET_NAME_KEY = "label";
+  public static final String ASSET_NAME_KEY = "name";
   public static final String RESOURCE_ITEM_TAG = "iudx:Resource";
 
   public static final String RESOURCE_GROUP_TAG = "iudx:ResourceGroup";
