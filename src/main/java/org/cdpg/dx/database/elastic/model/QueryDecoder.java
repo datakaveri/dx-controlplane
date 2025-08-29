@@ -58,10 +58,13 @@ public class QueryDecoder {
       isValidQuery = true;
     }
 
-    new AccessPolicyQueryDecorator(queryMap, request.getAccessPolicyRequest()).add();
+    if (!searchType.matches(PF_ASSETS_SEARCH_REGEX)) {
+      new AccessPolicyQueryDecorator(queryMap,
+          request.getAccessPolicyRequest()).add();
+    }
 
     // Exclude blocks only if NOT myAssetsAll search
-    if (!searchType.matches(MY_ASSETS_SEARCH_REGEX)) {
+    if (!searchType.matches(MY_ASSETS_SEARCH_REGEX) && !searchType.matches(PF_ASSETS_SEARCH_REGEX)) {
       QueryModel excludeDatabankFalse = buildUploadStatusExclusion(ITEM_TYPE_DATA_BANK);
       QueryModel excludeAiModelFalse = buildUploadStatusExclusion(ITEM_TYPE_AI_MODEL);
       QueryModel excludePendingApps =
@@ -73,6 +76,10 @@ public class QueryDecoder {
     }
 
     if (searchType.matches(MY_ASSETS_SEARCH_REGEX)) {
+      isValidQuery = true;
+    }
+
+    if (searchType.matches(PF_ASSETS_SEARCH_REGEX)) {
       isValidQuery = true;
     }
 
