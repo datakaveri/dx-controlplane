@@ -12,18 +12,19 @@ import org.cdpg.dx.aaa.clientSecret.service.ClientcredetialServiceImpl;
 import org.cdpg.dx.aaa.token.controller.TokenController;
 import org.cdpg.dx.aaa.token.service.TokenService;
 import org.cdpg.dx.aaa.token.service.impl.TokenServiceImpl;
+import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
 
 public class TokenControllerFactory {
 
-  public static TokenController create(PostgresService pgService, JsonObject config, Vertx vertx) {
+  public static TokenController create(PostgresService pgService, JsonObject config, Vertx vertx,URNGenerator urnGenerator) {
 
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
     ClientcredetialDao clientcredetialDao = new ClientcredetialDaoImpl(pgService);
     ClientcredetialService clientcredetialService =
-        new ClientcredetialServiceImpl(clientcredetialDao);
+      new ClientcredetialServiceImpl(clientcredetialDao);
 
     String keystorePath = config.getString("keystorePath");
     String keystorePassword = config.getString("keystorePassword");
@@ -33,17 +34,17 @@ public class TokenControllerFactory {
     JWTAuth provider = jwtInitConfig(keystorePath, keystorePassword, vertx);
 
     TokenService tokenService =
-        new TokenServiceImpl(
-            provider,
-            keycloakUserService,
-            clientcredetialService,
-            keystorePath,
-            keystorePassword,
-            tokenExpirationMinutes,
-            isssuer,
-            vertx);
+      new TokenServiceImpl(
+        provider,
+        keycloakUserService,
+        clientcredetialService,
+        keystorePath,
+        keystorePassword,
+        tokenExpirationMinutes,
+        isssuer,
+        vertx);
 
-    return new TokenController(tokenService);
+    return new TokenController(tokenService,urnGenerator);
   }
 
   public static JWTAuth jwtInitConfig(String keystorePath, String keystorePassword, Vertx vertx) {

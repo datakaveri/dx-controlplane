@@ -17,29 +17,30 @@ import org.cdpg.dx.aaa.orgReport.service.OrganizationCreateReportService;
 import org.cdpg.dx.aaa.orgReport.service.impl.OrganizationCreateRequestReportServiceImpl;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
+import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 
 public class OrganizationControllerFactory {
 
-    private static final Logger LOGGER = LogManager.getLogger(OrganizationControllerFactory.class);
+  private static final Logger LOGGER = LogManager.getLogger(OrganizationControllerFactory.class);
 
-    private OrganizationControllerFactory() {}
+  private OrganizationControllerFactory() {}
 
-    public static OrganizationController create(OrganizationService organizationService, UserService userService, AuditingHandler auditingHandler, EmailComposer emailComposer, Vertx vertx, PostgresService pgService, CreditService creditService, KeycloakUserService keycloakUserService) {
+  public static OrganizationController create(OrganizationService organizationService, UserService userService, AuditingHandler auditingHandler, EmailComposer emailComposer, Vertx vertx, PostgresService pgService, CreditService creditService, KeycloakUserService keycloakUserService, URNGenerator urnGenerator) {
 
-        OrganizationDAOFactory organizationDAOFactory = new OrganizationDAOFactory(pgService);
-        CreditDAOFactory creditDAOFactory = new CreditDAOFactory(pgService);
-        OrganizationCreateReportService organizationCreateReportService = new OrganizationCreateRequestReportServiceImpl(organizationDAOFactory, creditDAOFactory, vertx);
-        OrganizationHandler  organizationHandler = new OrganizationHandler(organizationService, userService,emailComposer, organizationCreateReportService,creditService,keycloakUserService);
-        return new OrganizationController(organizationHandler, auditingHandler);
-    }
+    OrganizationDAOFactory organizationDAOFactory = new OrganizationDAOFactory(pgService);
+    CreditDAOFactory creditDAOFactory = new CreditDAOFactory(pgService);
+    OrganizationCreateReportService organizationCreateReportService = new OrganizationCreateRequestReportServiceImpl(organizationDAOFactory, creditDAOFactory, vertx);
+    OrganizationHandler  organizationHandler = new OrganizationHandler(organizationService, userService,emailComposer, organizationCreateReportService,creditService,keycloakUserService,urnGenerator);
+    return new OrganizationController(organizationHandler, auditingHandler);
+  }
 
-    public static OrganizationService createService(PostgresService pgService, KeycloakUserService keycloakUserService, ItemService itemService) {
+  public static OrganizationService createService(PostgresService pgService, KeycloakUserService keycloakUserService, ItemService itemService) {
 
-        OrganizationDAOFactory organizationDAOFactory = new OrganizationDAOFactory(pgService);
-        return new  OrganizationServiceImpl(organizationDAOFactory, keycloakUserService,itemService);
+    OrganizationDAOFactory organizationDAOFactory = new OrganizationDAOFactory(pgService);
+    return new  OrganizationServiceImpl(organizationDAOFactory, keycloakUserService,itemService);
 
-    }
+  }
 }

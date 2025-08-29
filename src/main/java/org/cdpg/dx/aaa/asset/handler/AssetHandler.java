@@ -14,6 +14,7 @@ import org.cdpg.dx.aaa.credit.handler.CreditHandler;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.models.ProviderRoleRequest;
 import org.cdpg.dx.auditing.model.AuditLog;
+import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
@@ -38,12 +39,14 @@ public class AssetHandler {
   private final AssetService assetService;
   private final EmailComposer emailComposer;
   private final KeycloakUserService keycloakUserService;
+  private final URNGenerator urnGenerator;
 
 
-  public AssetHandler(AssetService assetService, EmailComposer emailComposer, KeycloakUserService keycloakUserService) {
+  public AssetHandler(AssetService assetService, EmailComposer emailComposer, KeycloakUserService keycloakUserService, URNGenerator urnGenerator) {
     this.emailComposer = emailComposer;
     this.assetService = assetService;
     this.keycloakUserService = keycloakUserService;
+    this.urnGenerator = urnGenerator;
   }
 
 
@@ -67,7 +70,7 @@ public class AssetHandler {
       return;
     }
 
-     UUID userId = UUID.fromString(userIdStr);
+    UUID userId = UUID.fromString(userIdStr);
     assetRequestJson.put("user_id", user.subject());
     AssetRequest assetRequest;
     try {
@@ -100,7 +103,7 @@ public class AssetHandler {
           AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
             RoutingContextHelper.getRequestPath(ctx), "POST", "Created Asset Request");
           RoutingContextHelper.setAuditingLog(ctx, auditLog);
-          ResponseBuilder.sendSuccess(ctx, "Created Asset Request");
+          ResponseBuilder.sendSuccess(ctx, "Created Asset Request", urnGenerator);
         }).onFailure(ctx::fail);
 
       }
@@ -127,7 +130,7 @@ public class AssetHandler {
     assetService.getAllAssetRequest(request)
       .onSuccess(result -> {
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx,  result.data(), result.paginationInfo());
+        ResponseBuilder.sendSuccess(ctx,  result.data(), result.paginationInfo(), urnGenerator);
       })
       .onFailure(ctx::fail);
 
@@ -167,7 +170,7 @@ public class AssetHandler {
       AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
         RoutingContextHelper.getRequestPath(ctx), "PUT", "Update Asset Request Status");
       RoutingContextHelper.setAuditingLog(ctx, auditLog);
-      ResponseBuilder.sendSuccess(ctx, "Asset Request updated");
+      ResponseBuilder.sendSuccess(ctx, "Asset Request updated", urnGenerator);
 
     }).onFailure(err -> {
       LOGGER.error("Failed to update asset request status: {}", err.getMessage(), err);

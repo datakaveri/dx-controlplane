@@ -14,6 +14,7 @@ import org.cdpg.dx.aaa.kyc.dao.impl.KYCTransactionDAOImpl;
 import org.cdpg.dx.aaa.kyc.handler.KYCHandler;
 import org.cdpg.dx.aaa.kyc.service.KYCService;
 import org.cdpg.dx.aaa.kyc.service.KYCServiceImpl;
+import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
@@ -23,13 +24,13 @@ public class KYCFactory {
 
   private KYCFactory() {}
 
-  public static KYCHandler createHandler(Vertx vertx, JsonObject config, CreditService creditService, PostgresService postgresService) {
+  public static KYCHandler createHandler(Vertx vertx, JsonObject config, CreditService creditService, PostgresService postgresService, URNGenerator urnGenerator) {
 
     WebClient webClient = WebClient.create(vertx);
     KYCTransactionDAO kycTransactionDAO = new KYCTransactionDAOImpl(postgresService);
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
 
     KYCService kycService = new KYCServiceImpl(webClient, kycTransactionDAO, keycloakUserService, config);
-    return new KYCHandler(kycService, keycloakUserService, creditService);
+    return new KYCHandler(kycService, keycloakUserService, creditService,urnGenerator);
   }
 }

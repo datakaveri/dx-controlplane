@@ -4,16 +4,18 @@ import org.cdpg.dx.aaa.item.controller.ItemController;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
+import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 
 public class ItemControllerFactory {
 
   public static ItemController createCrudController(
-      AuditingHandler auditingHandler,
-      ElasticsearchService elasticsearchService,
-      String docIndex,
-      String vocContext) {
+    AuditingHandler auditingHandler,
+    ElasticsearchService elasticsearchService,
+    String docIndex,
+    String vocContext,
+    URNGenerator urnGenerator) {
     ItemService crudService = new ItemServiceImpl(elasticsearchService, docIndex);
-    return new ItemController(auditingHandler, crudService, vocContext);
+    return new ItemController(auditingHandler, crudService, vocContext, urnGenerator);
   }
 }

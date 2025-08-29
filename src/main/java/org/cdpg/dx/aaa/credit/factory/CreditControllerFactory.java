@@ -11,6 +11,7 @@ import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.credit.service.CreditServiceImpl;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.user.service.UserService;
+import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
@@ -19,10 +20,10 @@ public class CreditControllerFactory {
 
   private CreditControllerFactory() {}
 
-  public static CreditController create(CreditService creditService, EmailComposer emailCompose, UserService userService) {
+  public static CreditController create(CreditService creditService, EmailComposer emailCompose, UserService userService, URNGenerator urnGenerator) {
 
 
-    CreditHandler creditHandler = new CreditHandler(creditService,emailCompose,userService);
+    CreditHandler creditHandler = new CreditHandler(creditService,emailCompose,userService, urnGenerator);
 
     return new CreditController(creditHandler);
   }
