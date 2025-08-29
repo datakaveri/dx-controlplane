@@ -120,9 +120,21 @@
       "verticleInstances": 1,
       "isWorkerVerticle": false,
       "httpPort":8443,
-      "required":["postgresOptions", "commonOptions", "keycloakOptions", "KYCOptions","emailOptions", "emailConfig"],
+      "required":["postgresOptions", "commonOptions", "keycloakOptions", "KYCOptions","emailOptions", "emailConfig","jwtKeystoreOptions"],
       "serverTimeoutMs": 30000,
-      "corsRegexString":"^https://.+\\.iudx\\.org\\.in$"
+      "corsRegexString":"^https://.+\\.iudx\\.org\\.in$",
+      "urnPrefix":"dx:controlPlane:"
+    },
+    {
+      "id": "org.cdpg.dx.acl.apiserver.ApdApiServerVerticle",
+      "verticleInstances": 1,
+      "isWorkerVerticle": false,
+      "httpPort":8444,
+      "required":["postgresOptions", "commonOptions", "keycloakOptions", "KYCOptions","emailOptions", "emailConfig","jwtKeystoreOptions"],
+      "serverTimeoutMs": 30000,
+      "corsRegexString":"^https://.+\\.iudx\\.org\\.in$",
+      "urnPrefix2":"dx:aclApdServer:"
     }
   ]
 }
+

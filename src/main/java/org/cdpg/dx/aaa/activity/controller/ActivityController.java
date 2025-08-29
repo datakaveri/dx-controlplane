@@ -17,6 +17,7 @@ import org.cdpg.dx.aaa.activity.util.Util;
 import org.cdpg.dx.aaa.apiserver.ApiController;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
@@ -26,9 +27,11 @@ import org.cdpg.dx.common.util.RoutingContextHelper;
 public class ActivityController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(ActivityController.class);
   private final ActivityService activityService;
+  private final URNGenerator urnGenerator;
 
-  public ActivityController(ActivityService activityService) {
+  public ActivityController(ActivityService activityService,URNGenerator urnGenerator) {
     this.activityService = activityService;
+    this.urnGenerator = urnGenerator;
   }
 
   @Override
@@ -74,7 +77,7 @@ public class ActivityController implements ApiController {
             pagedResult -> {
               LOGGER.info("Successfully fetched activity logs for user: {}", user.subject());
               ResponseBuilder.sendSuccess(
-                  context, pagedResult.data(), pagedResult.paginationInfo());
+                  context, pagedResult.data(), pagedResult.paginationInfo(),urnGenerator);
             })
         .onFailure(
             failure -> {
@@ -109,7 +112,7 @@ public class ActivityController implements ApiController {
             pagedResult -> {
               LOGGER.info("Successfully fetched all activity logs for admin");
               ResponseBuilder.sendSuccess(
-                  context, pagedResult.data(), pagedResult.paginationInfo());
+                  context, pagedResult.data(), pagedResult.paginationInfo(),urnGenerator);
             })
         .onFailure(
             failure -> {

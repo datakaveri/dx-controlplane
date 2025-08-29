@@ -4441,8 +4441,8 @@ paths:
       tags:
         - Client APIs
       description: |
-        Create a new client in the system.  
-        Requires a valid authorization token.  
+        Create a new client in the system.
+        Requires a valid authorization token.
         The client will be created with a unique ID and secret.
       operationId: post-create-client-secret
       security:
@@ -5628,10 +5628,10 @@ paths:
     get:
       summary: Search assets created by the current authenticated user
       description: >
-        Returns assets owned by the current authenticated user.  
+        Returns assets owned by the current authenticated user.
         This endpoint automatically filters results to only include items where
-        `ownerUserId` matches the authenticated user's `sub` value from the token,  
-        irrespective of publish status or data upload status.  
+        `ownerUserId` matches the authenticated user's `sub` value from the token,
+        irrespective of publish status or data upload status.
         No other filters are applied.
       operationId: get myAssetsSearch
       tags:

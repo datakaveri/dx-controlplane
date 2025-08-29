@@ -14,6 +14,7 @@ import org.cdpg.dx.aaa.organization.models.ProviderRoleRequest;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.AuditLog;
+import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
@@ -34,13 +35,15 @@ public class AdminHandler {
   private final KeycloakUserService keycloakUserService;
   private final CreditService creditService;
   private final OrganizationService organizationService;
+  private final URNGenerator urnGenerator;
 
   public AdminHandler(UserService userService, KeycloakUserService keycloakUserService,
-                      CreditService creditService, OrganizationService organizationService) {
+                      CreditService creditService, OrganizationService organizationService,URNGenerator urnGenerator) {
     this.userService = userService;
     this.keycloakUserService = keycloakUserService;
     this.creditService = creditService;
     this.organizationService = organizationService;
+    this.urnGenerator = urnGenerator;
   }
 
   public void getDxUserInfo(RoutingContext ctx) {
@@ -53,7 +56,7 @@ public class AdminHandler {
         AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
           RoutingContextHelper.getRequestPath(ctx), "GET", "Get DxUser Info");
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, response);
+        ResponseBuilder.sendSuccess(ctx, response,urnGenerator);
       })
       .onFailure(err -> {
         LOGGER.error("Failed to get DxUser info: {}", err.getMessage(), err);
@@ -70,7 +73,7 @@ public class AdminHandler {
         AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
           RoutingContextHelper.getRequestPath(ctx), "GET", "Get User Info by ID");
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, response);
+        ResponseBuilder.sendSuccess(ctx, response,urnGenerator);
       })
       .onFailure(err -> {
         LOGGER.error("Failed to get DxUser info: {}", err.getMessage(), err.getCause());
@@ -112,7 +115,7 @@ public class AdminHandler {
       AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
         RoutingContextHelper.getRequestPath(ctx), "GET", "Get DxUser Info");
       RoutingContextHelper.setAuditingLog(ctx, auditLog);
-      ResponseBuilder.sendSuccess(ctx, response.get("result"), (PaginationInfo) response.get("paginationInfo"));
+      ResponseBuilder.sendSuccess(ctx, response.get("result"), (PaginationInfo) response.get("paginationInfo"),urnGenerator);
     }).onFailure(ctx::fail);
   }
 
@@ -142,7 +145,7 @@ public class AdminHandler {
         AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
           RoutingContextHelper.getRequestPath(ctx), "POST", "Update User Info");
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, "User info updated successfully");
+        ResponseBuilder.sendSuccess(ctx, "User info updated successfully",urnGenerator);
       })
       .onFailure(err -> {
         LOGGER.error("Failed to update DxUser info: {}", err.getMessage(), err);
@@ -161,7 +164,7 @@ public class AdminHandler {
         AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
           RoutingContextHelper.getRequestPath(ctx), "POST", "Update User Password");
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, "User password updated successfully");
+        ResponseBuilder.sendSuccess(ctx, "User password updated successfully",urnGenerator);
       })
       .onFailure(err -> {
         LOGGER.error("Failed to update Password info: {}", err.getMessage(), err);
@@ -188,7 +191,7 @@ public class AdminHandler {
           AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
             RoutingContextHelper.getRequestPath(ctx), "POST", "Deactivate User");
           RoutingContextHelper.setAuditingLog(ctx, auditLog);
-          ResponseBuilder.sendSuccess(ctx, "User deactivated successfully");
+          ResponseBuilder.sendSuccess(ctx, "User deactivated successfully",urnGenerator);
         })
         .onFailure(err -> {
           LOGGER.error("Failed to deactivate DxUser: {}", err.getMessage(), err.getCause());
@@ -201,7 +204,7 @@ public class AdminHandler {
           AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
             RoutingContextHelper.getRequestPath(ctx), "POST", "Activate User");
           RoutingContextHelper.setAuditingLog(ctx, auditLog);
-          ResponseBuilder.sendSuccess(ctx, "User activated successfully");
+          ResponseBuilder.sendSuccess(ctx, "User activated successfully",urnGenerator);
         })
         .onFailure(err -> {
           LOGGER.error("Failed to activate DxUser: {}", err.getMessage(), err.getCause());
@@ -287,7 +290,7 @@ public class AdminHandler {
         AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
           RoutingContextHelper.getRequestPath(ctx), "DELETE", "Delete User");
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, "User deleted successfully from Keycloak and DB");
+        ResponseBuilder.sendSuccess(ctx, "User deleted successfully from Keycloak and DB",urnGenerator);
       })
       .onFailure(err -> {
         LOGGER.error("Failed to delete user: {}", err.getMessage(), err);
@@ -317,7 +320,7 @@ public class AdminHandler {
           AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
             RoutingContextHelper.getRequestPath(ctx), "POST", "Activate User");
           RoutingContextHelper.setAuditingLog(ctx, auditLog);
-          ResponseBuilder.sendSuccess(ctx, "User activated successfully");
+          ResponseBuilder.sendSuccess(ctx, "User activated successfully",urnGenerator);
         })
         .onFailure(err -> {
           LOGGER.error("Failed to activate DxUser: {}", err.getMessage(), err.getCause());
@@ -330,7 +333,7 @@ public class AdminHandler {
           AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
             RoutingContextHelper.getRequestPath(ctx), "POST", "Deactivate User");
           RoutingContextHelper.setAuditingLog(ctx, auditLog);
-          ResponseBuilder.sendSuccess(ctx, "User deactivated successfully");
+          ResponseBuilder.sendSuccess(ctx, "User deactivated successfully",urnGenerator);
         })
         .onFailure(err -> {
           LOGGER.error("Failed to deactivate DxUser: {}", err.getMessage(), err.getCause());

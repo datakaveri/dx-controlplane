@@ -33,6 +33,8 @@ import org.cdpg.dx.auth.authentication.util.ChainedJwtAuthHandler;
 import org.cdpg.dx.auth.authentication.util.TokenIssuer;
 import org.cdpg.dx.common.FailureHandler;
 import org.cdpg.dx.common.HttpStatusCode;
+import org.cdpg.dx.common.URNGenerator;
+import org.cdpg.dx.common.config.URNConstants;
 import org.cdpg.dx.common.util.BlockingExecutionUtil;
 
 public class ApiServerVerticle extends AbstractVerticle {
@@ -40,19 +42,26 @@ public class ApiServerVerticle extends AbstractVerticle {
   private int port;
   private HttpServer server;
   private Router router;
+  private URNGenerator urnGenerator;
 
-  public static String errorResponse(HttpStatusCode code) {
+
+  public static String errorResponse(HttpStatusCode code, URNGenerator urnGenerator) {
+    String urn = urnGenerator.generateUrn(code.getPath());
     return new JsonObject()
-        .put("type", code.getUrn())
-        .put("title", code.getDescription())
-        .put("detail", code.getDescription())
-        .toString();
+      .put("type", urn)
+      .put("title", code.getDescription())
+      .put("detail", code.getDescription())
+      .toString();
   }
 
   @Override
   public void start() {
+
     port = config().getInteger("httpPort", 8443);
     allowedOrigins = config().getJsonArray("corsAllowedOrigin").getList();
+    String urnPrefix = config().getString("urnPrefix", "urn:dx:controlPanel:");
+    this.urnGenerator = new URNGenerator(urnPrefix);
+
 
     ObjectMapper mapper = DatabindCodec.mapper();
     mapper.registerModule(new JavaTimeModule());
@@ -70,7 +79,7 @@ public class ApiServerVerticle extends AbstractVerticle {
       Future<JWTAuth> aaaAuthFuture = JwtAuthProvider.init(vertx, config(), TokenIssuer.AAA);    // init SharedWorkerExecutor for this vertical
     BlockingExecutionUtil.initialize(vertx);
 
-    List<ApiController> controllers = ControllerFactory.createControllers(vertx, config());
+    List<ApiController> controllers = ControllerFactory.createControllers(vertx, config(),this.urnGenerator);
 
       Future.all(routerFuture, aaaAuthFuture,keyCloakFuture)
         .onSuccess(
@@ -252,7 +261,7 @@ public class ApiServerVerticle extends AbstractVerticle {
   }
 
   private void configureFailureHandler(Router router) {
-    router.route().failureHandler(new FailureHandler());
+    router.route().failureHandler(new FailureHandler(this.urnGenerator));
   }
 
   private void printDeployedEndpoints(Router router) {
