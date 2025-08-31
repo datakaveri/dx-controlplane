@@ -1,18 +1,9 @@
 package org.cdpg.dx.auth.authentication.provider;
 
 import io.vertx.core.*;
-import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.JWTOptions;
 import io.vertx.ext.auth.jwt.JWTAuth;
-import io.vertx.ext.auth.jwt.JWTAuthOptions;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.publicKey.service.PublicService;
-import org.cdpg.dx.aaa.publicKey.service.impl.PublicServiceImpl;
-import org.cdpg.dx.auth.authentication.client.JwksClient;
-import org.cdpg.dx.auth.authentication.util.TokenIssuer;
 
 /** Centralized JWTAuth provider that supports AAA (internal JWKS) and Keycloak (HTTP JWKS). */
 public class JwtAuthProvider {
@@ -21,7 +12,7 @@ public class JwtAuthProvider {
   private static JWTAuth jwtAuth;
   private static long refreshTimerId;
 
-  public static Future<JWTAuth> init(Vertx vertx, JsonObject config, TokenIssuer tokenIssuer) {
+  /* public static Future<JWTAuth> init(Vertx vertx, JsonObject config, TokenIssuer tokenIssuer) {
     String certUrl = config.getString("keycloakCertUrl");
 
     long refreshMs = config.getLong("jwksRefreshIntervalMs", 6 * 60 * 60 * 1000L); // default: 6h
@@ -46,43 +37,46 @@ public class JwtAuthProvider {
 
   private static Future<JWTAuth> refresh(
       Vertx vertx, JsonObject config, JwksClient jwksClient, TokenIssuer tokenIssuer) {
-    return jwksClient
-        .fetchJwkKeys()
-        .compose(
-            jwk -> {
-              List<JsonObject> keys =
-                  jwk.getJsonArray("keys").stream()
-                      .map(obj -> (JsonObject) obj)
-                      .collect(Collectors.toList());
+   */
+  /* return jwksClient
+  .fetchJwkKeys()
+  .compose(
+      jwk -> {
+        List<JsonObject> keys =
+            jwk.getJsonArray("keys").stream()
+                .map(obj -> (JsonObject) obj)
+                .collect(Collectors.toList());
 
-              String iss =
-                  tokenIssuer.equals(TokenIssuer.AAA)
-                      ? config.getString("aaaIss")
-                      : config.getString("kcIss");
+        String iss =
+            tokenIssuer.equals(TokenIssuer.AAA)
+                ? config.getString("aaaIss")
+                : config.getString("kcIss");
 
-              LOGGER.debug("Using issuer: {}, {}", tokenIssuer, iss);
+        LOGGER.debug("Using issuer: {}, {}", tokenIssuer, iss);
 
-              JWTAuthOptions options =
-                  new JWTAuthOptions()
-                      .setJwks(keys)
-                      .setJWTOptions(
-                          new JWTOptions()
-                              .setLeeway(30)
-                              .setIgnoreExpiration(config.getBoolean("jwtIgnoreExpiry", false))
-                              .setIssuer(iss));
+        JWTAuthOptions options =
+            new JWTAuthOptions()
+                .setJwks(keys)
+                .setJWTOptions(
+                    new JWTOptions()
+                        .setLeeway(30)
+                        .setIgnoreExpiration(config.getBoolean("jwtIgnoreExpiry", false))
+                        .setIssuer(iss));
 
-              // TODO: Add audience if needed
-              // .setAudience(List.of(config.getString("aud")))
+        // TODO: Add audience if needed
+        // .setAudience(List.of(config.getString("aud")))
 
-              jwtAuth = JWTAuth.create(vertx, options);
-              LOGGER.info("JWTAuth initialized/refreshed successfully.");
-              return Future.succeededFuture(jwtAuth);
-            });
+        jwtAuth = JWTAuth.create(vertx, options);
+        LOGGER.info("JWTAuth initialized/refreshed successfully.");
+        return Future.succeededFuture(jwtAuth);
+      });*/
+  /*
+      return null;
   }
 
   public static JWTAuth get() {
     if (jwtAuth == null)
       throw new IllegalStateException("JWTAuth not initialized. Call init() first.");
     return jwtAuth;
-  }
+  }*/
 }
