@@ -46,7 +46,7 @@ public class AssetServiceImpl implements AssetService {
   @Override
   public Future<PaginatedResult<AssetRequest>> getAllAssetRequest(PaginatedRequest paginatedRequest) {
     // Implementation for retrieving all asset requests
-    return assetRequestDAO.getAll(paginatedRequest);
+    return assetRequestDAO.getAllWithFilters(paginatedRequest);
   }
 
   @Override
