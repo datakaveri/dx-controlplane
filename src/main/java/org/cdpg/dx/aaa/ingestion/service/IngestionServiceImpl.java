@@ -28,21 +28,21 @@ public class IngestionServiceImpl implements IngestionService {
   }
 
   @Override
-  public Future<RegisterExchangeModel> registerAdapter(String entitiesId, String userId) {
+  public Future<RegisterExchangeModel> registerAdapter(String assetId, String userId) {
     Promise<RegisterExchangeModel> promise = Promise.promise();
-    if (entitiesId == null || entitiesId.isEmpty() || userId == null || userId.isEmpty()) {
+    if (assetId == null || assetId.isEmpty() || userId == null || userId.isEmpty()) {
       promise.fail(new DxBadRequestException("Invalid input or blank value"));
       return promise.future();
     }
 
     dataBroker
-        .registerExchange(userId, entitiesId, Vhosts.IUDX_PROD)
+        .registerExchange(userId, assetId, Vhosts.IUDX_PROD)
         .compose(
             meta -> {
               LOGGER.debug("Exchange created in DataBroker");
               return dataBroker
                   .updatePermission(
-                      userId, entitiesId, PermissionOpType.ADD_WRITE, Vhosts.IUDX_PROD)
+                      userId, assetId, PermissionOpType.ADD_WRITE, Vhosts.IUDX_PROD)
                   .map(v -> meta);
             })
         .compose(
@@ -50,14 +50,14 @@ public class IngestionServiceImpl implements IngestionService {
               LOGGER.debug("Permission granted. Binding to Database queue...");
               return dataBroker
                   .queueBinding(
-                      entitiesId, DATABASE_QUEUE, entitiesId, Vhosts.IUDX_PROD)
+                      assetId, DATABASE_QUEUE, assetId, Vhosts.IUDX_PROD)
                   .map(v -> meta);
             })
         .compose(
             meta -> {
               LOGGER.debug("Redis queue bound. Binding to Subscription queue...");
               return dataBroker
-                  .queueBinding(entitiesId, QUEUE_SUBS, entitiesId, Vhosts.IUDX_PROD)
+                  .queueBinding(assetId, QUEUE_SUBS, assetId, Vhosts.IUDX_PROD)
                   .map(v -> meta);
             })
         .onSuccess(
