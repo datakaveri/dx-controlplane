@@ -3748,7 +3748,7 @@ paths:
 
       description: |
         Insert an item into the catalogue where the item's body specifies the type of item and
-        instance name. id, itemCreatedAt and itemStatus are added by server. Items maybe subClasses of type
+        instance name. id, itemCreatedAt and itemStatus are added by server. It will create an exchange, using assetId and userId and update the required permissions. Items maybe subClasses of type
         [IUDXEntity](https://voc.iudx.org.in/IUDXEntity). Depending on this, some properties maybe mandatory. The json schema for the different types can be found [here](https://github.com/datakaveri/iudx-catalogue-server/tree/master/src/main/resources/iudx/catalogue/server/validator). In the future, we will serve schemas from our own servers.
       operationId: create item
       security:
@@ -5107,184 +5107,6 @@ paths:
 
 
 
-  /iudx/v2/ingestion:
-    post:
-      security:
-        - authorization: [ ]
-      tags:
-        - Data Ingestion Adaptor
-      summary: Register ingestion adapter
-      operationId: registerAdapter
-
-      x-codeSamples:
-        - lang: 'cURL'
-          label: 'ingestion'
-          source: |
-            curl --location --request POST 'https://example.com/iudx/v2/ingestion' \
-            --header 'Authorization: <tokenValue>'
-            --header 'Content-Type: application/json' \
-            --data-raw '<payload>'
-
-      requestBody:
-        description: ''
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/registeradapterrequest'
-        required: true
-      responses:
-        201:
-          description: 'Successful registration of ingestion adapter'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/registeradapter'
-
-        401:
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/standardInvalidTokenErrorResponse"
-          description: |-
-            - Unauthorized - `token` invalid/expired
-            - Unauthorized - `clientId` & `clientSecret` invalid/not match
-
-        404:
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/standardResourceNotFoundErrorResponse"
-          description: 'Adapter Not Found'
-
-        409:
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/standardResourceAlreadyExistErrorResponse"
-          description: 'Adapter Already Exists'
-
-      description: |
-        Ingestion API allows a provider to register an ingestion adapter with DX(Data exchange) Resource Server. Based on the input provided, the API validates the access control of the user with DX(Data exchange) Auth server to allow or deny access to the API. 
-
-        #### Register Adapter
-        To register an adapter, a user must request for a consent from the provider, obtain a token from DX(Data exchange) Auth server and then access the API with the following values:
-          - `entities`: List of DX(Data exchange) resource id's .
-      deprecated: false
-
-  /iudx/v2/ingestion/{id}:
-    get:
-      security:
-        - authorization: [ ]
-      tags:
-        - Data Ingestion Adaptor
-      summary: Retrieve ingestion adapter details
-      operationId: getAdaptorDetailsById
-      parameters:
-        - name: id
-          in: path
-          description: 'id of the adapter obtained from Register adapter.'
-          required: true
-          style: simple
-          schema:
-            type: string
-            format: uuid
-            maxLength: 36
-            pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
-      responses:
-        200:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/retrieveadapter'
-          description: 'Successful retrieval of ingestion adapter'
-
-        401:
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/standardInvalidTokenErrorResponse"
-          description: |-
-            - Unauthorized - `token` invalid/expired
-            - Unauthorized - `clientId` & `clientSecret` invalid/not match
-
-        404:
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/generalResourceNotFoundErrorResponse"
-          description: 'Adapter not found'
-
-      x-codeSamples:
-        - lang: 'cURL'
-          label: 'ingestion by id'
-          source: |
-            curl --location --request GET 'https://example.com/iudx/v2/ingestion/UUID' \
-            --header 'token: <tokenValue>'
-
-      description: |
-        Retrieve Ingestion API allows a provider to fetch the list of `Subscribers` a.k.a [Streaming Consumers] for the data. Based on the input provided, the API validates the access control of the user with DX(Data exchange) Auth server to allow or deny access to the API. 
-
-        #### Retrieve Adapter Details
-        To retrieve subscriber list, the provider must present the `id` and `token`. Retrieve API validates the request with the Auth server to allow or deny access to the provider.
-      deprecated: false
-
-    delete:
-      security:
-        - authorization: [ ]
-      tags:
-        - Data Ingestion Adaptor
-      summary: Delete ingestion adaptor
-      operationId: deleteAdaptorById
-      parameters:
-        - name: id
-          in: path
-          description: 'id of the adapter obtained from Register ingestion adapter.'
-          required: true
-          style: simple
-          schema:
-            type: string
-            format: uuid
-            maxLength: 36
-            pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
-      responses:
-        200:
-          description: 'Successful deletion of ingestion adapter'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/deleteadapter'
-
-        401:
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/standardInvalidTokenErrorResponse"
-          description: |-
-            - Unauthorized - `token` invalid/expired
-            - Unauthorized - `clientId` & `clientSecret` invalid/not match
-
-        404:
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/generalResourceNotFoundErrorResponse"
-          description: 'Adapter not found'
-
-      x-codeSamples:
-        - lang: 'cURL'
-          label: 'ingestion by id'
-          source: |
-            curl --location --request DELETE 'https://example.com/ngsi-ld/v1/ingestion/UUID' \
-            --header 'token: <tokenValue>'
-
-      description: |
-        Delete ingestion Adapter API allows a provider to delete a publisher. Once this is done all the `Subscribers` a.k.a [Streaming Consumers] and `Consumers` of the data will stop receiving further updates. Based on the input provided, the API validates the access control of the user with DX(Data exchange) Auth server to allow or deny access to the API. 
-
-        #### Delete Adapter
-        To delete an adapter, the provider must present the `id` and `token`. Delete API validates the request with the Auth server to allow or deny access to the provider.
-
-      deprecated: false
-
 tags:
   - name: Activity Logs
     x-displayName: "Activity Logs"
@@ -5313,13 +5135,6 @@ tags:
       List DX Entities of a certain type.
       These apis are intended to be used by User Interfaces.
     x-displayName: List
-
-  - name: Data Ingestion Adaptor
-    x-displayName: "Data Ingestion Adaptor"
-    description: |
-      Register Data Adaptor using HTTPs APIs. Once registered, the adaptors can publish data as per the DX(Data exchange) data descriptor using AMQP streaming protocol over TLS.
-      Stream data of an adaptor using AMQP streaming protocol.
-      These apis are intended to be used by DX(Data exchange) Data *Providers*.
 
 components:
   securitySchemes:
