@@ -14,7 +14,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.core.net.KeyStoreOptions;
-import io.vertx.ext.auth.jwt.JWTAuth;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.*;
@@ -24,17 +23,14 @@ import io.vertx.serviceproxy.HelperUtils;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.auth.authentication.handler.AAAJwtAuthHandler;
-import org.cdpg.dx.auth.authentication.handler.KeycloakJwtAuthHandler;
-import org.cdpg.dx.auth.authentication.handler.OptionalAAAJwtAuthHandler;
-import org.cdpg.dx.auth.authentication.handler.OptionalKeyCloakJwtAuthHandler;
-import org.cdpg.dx.auth.authentication.provider.JwtAuthProvider;
-import org.cdpg.dx.auth.authentication.util.ChainedJwtAuthHandler;
-import org.cdpg.dx.auth.authentication.util.TokenIssuer;
+import org.cdpg.dx.aaa.publicKey.service.PublicService;
+import org.cdpg.dx.aaa.publicKey.service.impl.PublicServiceImpl;
+import org.cdpg.dx.auth.authentication.client.JwksResolver;
+import org.cdpg.dx.auth.authentication.handler.MultiIssuerJwtAuthHandler;
+import org.cdpg.dx.auth.authentication.handler.OptionalMultiIssuerJwtAuthHandler;
 import org.cdpg.dx.common.FailureHandler;
 import org.cdpg.dx.common.HttpStatusCode;
 import org.cdpg.dx.common.URNGenerator;
-import org.cdpg.dx.common.config.URNConstants;
 import org.cdpg.dx.common.util.BlockingExecutionUtil;
 
 public class ApiServerVerticle extends AbstractVerticle {
@@ -44,14 +40,13 @@ public class ApiServerVerticle extends AbstractVerticle {
   private Router router;
   private URNGenerator urnGenerator;
 
-
   public static String errorResponse(HttpStatusCode code, URNGenerator urnGenerator) {
     String urn = urnGenerator.generateUrn(code.getPath());
     return new JsonObject()
-      .put("type", urn)
-      .put("title", code.getDescription())
-      .put("detail", code.getDescription())
-      .toString();
+        .put("type", urn)
+        .put("title", code.getDescription())
+        .put("detail", code.getDescription())
+        .toString();
   }
 
   @Override
@@ -62,7 +57,7 @@ public class ApiServerVerticle extends AbstractVerticle {
     String urnPrefix = config().getString("urnPrefix", "urn:dx:controlPanel:");
     this.urnGenerator = new URNGenerator(urnPrefix);
 
-
+    // Configure Jackson mappers
     ObjectMapper mapper = DatabindCodec.mapper();
     mapper.registerModule(new JavaTimeModule());
     mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
@@ -75,31 +70,35 @@ public class ApiServerVerticle extends AbstractVerticle {
         .setPropertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE);
 
     Future<RouterBuilder> routerFuture = RouterBuilder.create(vertx, "docs/openapi.yaml");
-      Future<JWTAuth> keyCloakFuture = JwtAuthProvider.init(vertx, config(), TokenIssuer.KEYCLOAK);
-      Future<JWTAuth> aaaAuthFuture = JwtAuthProvider.init(vertx, config(), TokenIssuer.AAA);    // init SharedWorkerExecutor for this vertical
+
+    // Init shared worker executor for this verticle
     BlockingExecutionUtil.initialize(vertx);
 
-    List<ApiController> controllers = ControllerFactory.createControllers(vertx, config(),this.urnGenerator);
+    List<ApiController> controllers =
+        ControllerFactory.createControllers(vertx, config(), this.urnGenerator);
 
-      Future.all(routerFuture, aaaAuthFuture,keyCloakFuture)
+    routerFuture
         .onSuccess(
-            cf -> {
-                RouterBuilder routerBuilder = cf.resultAt(0);
-                JWTAuth aaaJwtAuth = cf.resultAt(1);
-                JWTAuth keyCloakJwtAuth = cf.resultAt(2);
+            routerBuilder -> {
+              try {
 
-                AuthenticationHandler keycloakJwtAuthHandler = new KeycloakJwtAuthHandler(keyCloakJwtAuth);
-                AuthenticationHandler optionalKeyCloakAuth = new OptionalKeyCloakJwtAuthHandler(keyCloakJwtAuth);
-                AuthenticationHandler optionalAAAAuth = new OptionalAAAJwtAuthHandler(aaaJwtAuth);
-                AuthenticationHandler aaaAuthHandler = new AAAJwtAuthHandler(aaaJwtAuth);
+                String keyStorePath = config().getString("keystorePath");
+                String keyStorePassword = config().getString("keystorePassword");
 
-                AuthenticationHandler chainedAuth = new ChainedJwtAuthHandler(List.of(keycloakJwtAuthHandler, aaaAuthHandler));
-                AuthenticationHandler optionalChainedAuth = new ChainedJwtAuthHandler(List.of(optionalKeyCloakAuth, optionalAAAAuth));
+                PublicService publicService =
+                    new PublicServiceImpl(keyStorePath, keyStorePassword, vertx);
 
-                try {
+                // Create JWKS resolver (reads config -> jwks URLs / internal)
+                JwksResolver jwksResolver =
+                    new JwksResolver(vertx, config().getJsonObject("issuers"), publicService);
+
+                // Our single unified handlers
+                MultiIssuerJwtAuthHandler authHandler = new MultiIssuerJwtAuthHandler(jwksResolver);
+                OptionalMultiIssuerJwtAuthHandler optionalAuthHandler =
+                    new OptionalMultiIssuerJwtAuthHandler(jwksResolver);
 
                 LOGGER.debug("Adding platform handlers...");
-                int timeout = config().getInteger("timeout", 100000); // Configurable timeout
+                int timeout = config().getInteger("timeout", 100000);
                 routerBuilder.rootHandler(TimeoutHandler.create(timeout, 408));
                 routerBuilder.rootHandler(BodyHandler.create().setHandleFileUploads(false));
 
@@ -107,8 +106,10 @@ public class ApiServerVerticle extends AbstractVerticle {
                 RouterBuilderOptions factoryOptions =
                     new RouterBuilderOptions().setMountResponseContentTypeHandler(true);
                 routerBuilder.setOptions(factoryOptions);
-                routerBuilder.securityHandler("authorization", chainedAuth);
-                routerBuilder.securityHandler("optionalAuth", optionalChainedAuth);
+
+                // Use unified handlers in OpenAPI security schemes
+                routerBuilder.securityHandler("authorization", authHandler);
+                routerBuilder.securityHandler("optionalAuth", optionalAuthHandler);
 
                 controllers.forEach(controller -> controller.register(routerBuilder));
 
@@ -128,28 +129,21 @@ public class ApiServerVerticle extends AbstractVerticle {
                 router
                     .get(ROUTE_STATIC_SPEC)
                     .produces(APPLICATION_JSON)
-                    .handler(
-                        routingContext -> {
-                          HttpServerResponse response = routingContext.response();
-                          response.sendFile("docs/openapi.yaml");
-                        });
+                    .handler(ctx -> ctx.response().sendFile("docs/openapi.yaml"));
+
                 router
                     .get(ROUTE_DOC)
                     .produces("text/html")
-                    .handler(
-                        routingContext -> {
-                          HttpServerResponse response = routingContext.response();
-                          response.sendFile("docs/apidoc.html");
-                        });
+                    .handler(ctx -> ctx.response().sendFile("docs/apidoc.html"));
+
                 router
                     .get("/health/live")
                     .handler(
-                        ctx -> {
-                          ctx.response()
-                              .setStatusCode(200)
-                              .putHeader(HttpHeaders.CONTENT_TYPE, "text/plain")
-                              .end("Alive");
-                        });
+                        ctx ->
+                            ctx.response()
+                                .setStatusCode(200)
+                                .putHeader(HttpHeaders.CONTENT_TYPE, "text/plain")
+                                .end("Alive"));
 
                 setServerOptions(serverOptions);
                 server = vertx.createHttpServer(serverOptions);
@@ -160,7 +154,7 @@ public class ApiServerVerticle extends AbstractVerticle {
                         http -> {
                           if (http.succeeded()) {
                             printDeployedEndpoints(router);
-                            LOGGER.info("ApiServerVerticle  deployed on port: {}", port);
+                            LOGGER.info("ApiServerVerticle deployed on port: {}", port);
                           } else {
                             LOGGER.error(
                                 "HTTP server failed to start: {}",
@@ -183,8 +177,7 @@ public class ApiServerVerticle extends AbstractVerticle {
   }
 
   private void configureCorsHandler(Router router) {
-    CorsHandler corsHandler = CorsHandler.create();
-
+    CorsHandler corsHandler;
     if (allowedOrigins.contains("*")) {
       corsHandler = CorsHandler.create("*").allowCredentials(false);
     } else {
@@ -224,7 +217,6 @@ public class ApiServerVerticle extends AbstractVerticle {
   }
 
   private void configureErrorHandlers(Router router) {
-
     router.errorHandler(
         401,
         ctx -> {
