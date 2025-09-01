@@ -177,4 +177,33 @@ public class AssetHandler {
       ctx.fail(err);
     });
   }
+
+  public void deleteAssetRequest(RoutingContext ctx) {
+    UUID assetRequestId = UUID.fromString(ctx.pathParam("id"));
+    User user = ctx.user();
+    UUID userId = UUID.fromString(user.subject());
+
+    assetService.getAssetRequestDetailsById(assetRequestId).compose(v-> {
+      if(v.status().equals(Status.PENDING.getStatus())) {
+        if (v.userId().equals(userId)) {
+          return assetService.deleteAssetRequestById(assetRequestId)
+            .onSuccess(t -> {
+              AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+                RoutingContextHelper.getRequestPath(ctx), "DELETE", "Deleted Asset Request");
+              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              ResponseBuilder.sendSuccess(ctx, "Asset Request deleted successfully", urnGenerator);
+            })
+            .onFailure(ctx::fail);
+        } else {
+          ctx.fail(new DxForbiddenException("User is not authorized to delete this asset request"));
+          return Future.failedFuture(new DxForbiddenException("User is not authorized to delete this asset request"));
+        }
+      }
+      else
+      {
+        ctx.fail(new DxBadRequestException("Only pending asset requests can be deleted"));
+        return Future.failedFuture(new DxBadRequestException("Only pending asset requests can be deleted"));
+      }
+    });
+  }
 }

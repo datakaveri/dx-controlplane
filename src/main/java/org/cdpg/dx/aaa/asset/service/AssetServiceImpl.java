@@ -1,6 +1,7 @@
 package org.cdpg.dx.aaa.asset.service;
 
 import io.vertx.core.Future;
+import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.aaa.asset.dao.AssetRequestDAO;
 import org.cdpg.dx.aaa.asset.models.AssetRequest;
@@ -95,5 +96,34 @@ public class AssetServiceImpl implements AssetService {
         }
       });
 
+  }
+
+  @Override
+  public Future<AssetRequest> getAssetRequestDetailsById(UUID requestId) {
+
+    return assetRequestDAO.get(requestId)
+      .compose(assetRequest -> {
+        if (assetRequest != null) { // assetRequest exists
+          return Future.succeededFuture(assetRequest); //return true
+          }
+        else
+        {
+          return Future.failedFuture(new DxNotFoundException("Asset Request not found!"));
+        }
+    });
+
+  }
+
+  @Override
+  public Future<Boolean> deleteAssetRequestById(UUID requestId) {
+
+    return assetRequestDAO.delete(requestId)
+      .map(deletedRows -> {
+        if (deletedRows) {
+          return true; // Deletion successful
+        } else {
+          throw new DxNotFoundException("Asset request not found with ID: " + requestId);
+        }
+      });
   }
 }
