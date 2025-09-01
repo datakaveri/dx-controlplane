@@ -686,7 +686,6 @@ paths:
                       hasNext: true
                       hasPrevious: false
       operationId: get-auth-v1-organisations-join-requests
-
       security:
         - authorization: [ ]
     post:
@@ -727,6 +726,7 @@ paths:
                 value:
                   job_title: Employee
                   emp_id: EMP8790
+                  official_email: XYZ@gmail.com
       responses:
         '200':
           description: Created
@@ -1199,11 +1199,13 @@ paths:
       tags:
         - Organisation APIs
       parameters:
-        - schema:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the organization to which the join request belongs.
+          schema:
             type: string
-          in: query
-          name: id
-          description: UUID of organization
+            format: uuid
       responses:
         '200':
           description: OK
@@ -1575,18 +1577,6 @@ paths:
                     title: Success
                     detail: Deleted Organisation User
       operationId: delete-auth-v1-organisations-users-id
-      parameters:
-        - schema:
-            type: string
-          in: query
-          name: user_id
-          description: UUID of user
-        - schema:
-            type: string
-          in: query
-          description: UUID of organization
-          name: id
-
       security:
         - authorization: [ ]
     put:
@@ -1641,16 +1631,20 @@ paths:
                 value:
                   role: admin
       parameters:
-        - schema:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the organisation
+          schema:
             type: string
-          in: query
-          name: id
-          description: organization's UUID
-        - schema:
+            format: uuid
+        - name: user_id
+          in: path
+          required: true
+          description: UUID of the User
+          schema:
             type: string
-          in: query
-          name: user_id
-          description: user's UUID
+            format: uuid
       security:
         - authorization: [ ]
     get:
@@ -2066,14 +2060,19 @@ paths:
                 amount:
                   type: number
                   format: double
-                  x-stoplight:
-                    id: 62wmfshusogai
+                  description: Amount to be deducted from the user's credit balance.
                 user_id:
                   type: string
-                  x-stoplight:
-                    id: 1k9c4h2fbv6g4
+                  format: uuid
+                  description: User id of the user whose credit is to be deducted.
                 requested_at:
                   type: string
+                  format: date-time
+                  description: Timestamp when the credit deduction was requested.
+              required:
+                - amount
+                - user_id
+                - requested_at
             examples:
               Example 1:
                 value:
@@ -2087,11 +2086,30 @@ paths:
       operationId: put-auth-v1-user-credit-add
       summary: Add credits to user's balance amount
       description: Adds credits to the specified user's balance.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  format: double
+                  description: Amount to be added to the user's credit balance.
+                requested_at:
+                  type: string
+                  format: date-time
+                  description: Timestamp when the credit addition was requested.
+                user_id:
+                  type: string
+                  format: uuid
+                  description: UUID of the user whose credit balance is to be updated.
+              required:
+                - amount
+                - user_id
+                - requested_at
       tags:
         - Credit APIs
-
-      security:
-        - authorization: [ ]
       responses:
         '200':
           description: OK
@@ -2142,6 +2160,33 @@ paths:
                     requestedAt: '2025-05-29T19:07:00'
                     updatedBalance: 19950
                     tableName: credit_transactions
+
+        '400':
+          description: Bad Request – Schema validation or missing/invalid fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalBadRequest'
+              examples:
+                Example:
+                  value:
+                    type: urn:dx:asset:badRequest
+                    title: Bad Request
+                    detail: Request could not be created, as the assetId or type is invalid
+        '401':
+          description: Unauthorized – Token invalid/expired or user not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden – User cannot do the transaction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/createNotificationForbidden'
+      security:
+          - authorization: [ ]
   /iudx/v2/auth/compute/requests:
     get:
       summary: Get All Pending ComputeRole Requests
@@ -3150,6 +3195,9 @@ paths:
                   type: string
                   description: Status of the provider role request
                   example: granted
+              required:
+                - status
+                - user_id
       responses:
         '200':
           description: OK
