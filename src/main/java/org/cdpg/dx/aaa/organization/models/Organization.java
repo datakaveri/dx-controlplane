@@ -87,6 +87,7 @@ public record Organization(
     json.put("orgSector", orgSector);
     json.put("websiteLink", websiteLink);
     json.put("address", address);
+    if (relevantDocPath != null && !relevantDocPath.isEmpty())json.put("relevantDocPath", relevantDocPath);
     if (createdAt != null) json.put("createdAt", createdAt.format(FORMATTER));
     if (updatedAt != null) json.put("updatedAt", updatedAt.format(FORMATTER));
     return json;
