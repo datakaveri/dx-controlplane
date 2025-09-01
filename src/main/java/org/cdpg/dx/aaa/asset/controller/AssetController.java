@@ -41,6 +41,12 @@ public class AssetController implements ApiController {
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
       .handler(assetHandler::updateAssetRequestStatus);
 
+     routerBuilder
+       .operation("delete-auth-v1-asset-request")
+       .handler(auditingHandler::handleApiAudit)
+       .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+       .handler(assetHandler::deleteAssetRequest);
+
    }
 
 }
