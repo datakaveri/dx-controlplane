@@ -55,14 +55,6 @@ public class IngestionServiceImpl implements IngestionService {
             })
         .compose(
             meta -> {
-              LOGGER.debug("Database queue bound. Binding to Redis queue...");
-              return dataBroker
-                  .queueBinding(
-                      entitiesId, REDIS_LATEST_QUEUE, entitiesId, Vhosts.IUDX_PROD)
-                  .map(v -> meta);
-            })
-        .compose(
-            meta -> {
               LOGGER.debug("Redis queue bound. Binding to Subscription queue...");
               return dataBroker
                   .queueBinding(entitiesId, QUEUE_SUBS, entitiesId, Vhosts.IUDX_PROD)
@@ -122,44 +114,6 @@ public class IngestionServiceImpl implements IngestionService {
               }
             })
         .onFailure(promise::fail);
-    return promise.future();
-  }
-
-  @Override
-  public Future<Void> publishDataFromAdapter(JsonArray request) {
-    Promise<Void> promise = Promise.promise();
-    String entities = request.getJsonObject(0).getJsonArray("entities").getValue(0).toString();
-
-    String routingKey = /*resourceGroupId + "/." +*/ entities;
-    // Update each JSON object in the request array
-    for (int i = 0; i < request.size(); i++) {
-      JsonObject jsonObject = request.getJsonObject(i);
-      jsonObject.remove("entities");
-      jsonObject.put(ID, entities);
-    }
-    LOGGER.trace("Final request payload: {}", request.encodePrettily());
-    LOGGER.debug("Routing Key: {}", routingKey);
-
-    dataBroker
-        .publishMessageExternal(entities, routingKey, request)
-        .onSuccess(
-            result -> {
-              LOGGER.info("Publish result: {}", result);
-              if ("success".equalsIgnoreCase(result)) {
-                promise.complete();
-              } else {
-                LOGGER.warn("Unexpected publish result: {}", result);
-                promise.fail(
-                    new DxInternalServerErrorException("Unexpected response from message broker"));
-              }
-            })
-        .onFailure(
-            error -> {
-              LOGGER.error(
-                  "Error while publishing data from adapter: {}", error.getMessage(), error);
-              promise.fail(new DxInternalServerErrorException(INTERNAL_SERVER_ERROR));
-            });
-
     return promise.future();
   }
 

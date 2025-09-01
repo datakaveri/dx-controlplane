@@ -25,7 +25,6 @@ import org.cdpg.dx.aaa.clientSecret.factory.ClientControllerFactory;
 import org.cdpg.dx.aaa.credit.factory.CreditControllerFactory;
 import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
-import org.cdpg.dx.aaa.ingestion.controller.IngestionAdaptorController;
 import org.cdpg.dx.aaa.ingestion.service.IngestionService;
 import org.cdpg.dx.aaa.ingestion.service.IngestionServiceImpl;
 import org.cdpg.dx.aaa.item.controller.ItemController;
@@ -156,8 +155,6 @@ public class ControllerFactory {
     ActivityReportController activityReportController =
         ActivityReportControllerFactory.create(pgService, vertx);
     IngestionService ingestionService = new IngestionServiceImpl(dataBrokerService);
-    IngestionAdaptorController ingestionAdaptorController =
-        new IngestionAdaptorController(ingestionService);
 
     return List.of(
         organizationController,
@@ -172,7 +169,6 @@ public class ControllerFactory {
         tokenController,
         publicController,
         activityController,
-        activityReportController,
-        ingestionAdaptorController);
+        activityReportController);
   }
 }

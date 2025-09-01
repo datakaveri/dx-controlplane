@@ -14,7 +14,5 @@ public interface IngestionService {
 
   Future<ExchangeSubscribersResponse> getAdapterDetails(String exchangeName);
 
-  Future<Void> publishDataFromAdapter(JsonArray json);
-
   Future<List<JsonObject>> getAllAdapterDetailsForUser(String iid);
 }
