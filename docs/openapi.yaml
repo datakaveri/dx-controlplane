@@ -1696,7 +1696,7 @@ paths:
           format: uuid
     get:
       operationId: get-auth-v1-admin-user-credit-balance
-      summary: Get the specified user's credit balance
+      summary: Get the specified user's credit balance (COS ADMIN)
       description: Returns the credit balance for the specified user (KYC-verified).
       tags:
         - Credit APIs
@@ -1722,7 +1722,7 @@ paths:
           description: Internal server error
   /iudx/v2/auth/credit/request:
     get:
-      summary: Get all credit requests by status
+      summary: Get all credit requests by status (COS ADMIN)
       tags:
         - Credit APIs
       responses:
@@ -1903,7 +1903,7 @@ paths:
       security:
         - authorization: [ ]
     put:
-      summary: Update Credit Request Status
+      summary: Update Credit Request Status (COS ADMIN)
       tags:
         - Credit APIs
       responses:
@@ -1982,19 +1982,31 @@ paths:
             schema:
               type: object
               properties:
-                id:
-                  type: string
                 status:
                   type: string
-              x-examples:
-                Example 1:
-                  id: 3225340e-78f6-4a75-ac85-91fb39022b3b
-                  status: pending
+                  description: Status of the credit request. Valid values are 'granted' or 'rejected'.
+                amount:
+                  type: number
+                  format: double
+                  description : Amount to be credited to the user's account.Amount is required only when cos admin approves the request.For 'rejected' , amount is not required.
+                expiration_date:
+                  type: string
+                  format: date-time
+                  description: Expiration date of the credit in ISO 8601 format (e.g., '2025-12-31T23:59:59'). It is only required when cos admin approves the request.
+                id:
+                  type: string
+                  format: uuid
+                  description: ID of the credit request to be updated.
+              required:
+                - id
+                - status
             examples:
               Example 1:
                 value:
                   id: 3225340e-78f6-4a75-ac85-91fb39022b3b
-                  status: pending
+                  status: granted
+                  amount: 10000
+                  expiration_date: '2025-12-31T23:59:59'
   /iudx/v2/auth/admin/user/credit/deduct:
     put:
       summary: Deduct User Credit (COS ADMIN)
@@ -2189,7 +2201,7 @@ paths:
           - authorization: [ ]
   /iudx/v2/auth/compute/requests:
     get:
-      summary: Get All Pending ComputeRole Requests
+      summary: Get All Pending ComputeRole Requests (COS ADMIN)
       tags:
         - Compute APIs
       responses:
@@ -2293,7 +2305,7 @@ paths:
       security:
         - authorization: [ ]
     post:
-      summary: Create Compute Role Request
+      summary: Create Compute Role Request (USER)
       tags:
         - Compute APIs
       responses:
@@ -2368,7 +2380,7 @@ paths:
           type: string
           format: uuid
     put:
-      summary: Update Compute Roles
+      summary: Update Compute Roles (COS ADMIN)
       tags:
         - Compute APIs
       responses:
@@ -2397,13 +2409,6 @@ paths:
                     title: Success
                     detail: 'Updated Resquest '
       operationId: put-auth-v1-compute-role-request
-      parameters:
-        - schema:
-            type: string
-          in: query
-          name: id
-          description: request id
-
       security:
         - authorization: [ ]
       requestBody:
@@ -2414,6 +2419,8 @@ paths:
               properties:
                 status:
                   type: string
+              required:
+                - status
             examples:
               Example 1:
                 value:
