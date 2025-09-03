@@ -23,6 +23,7 @@ public class PostSearchRequestBuilder {
   private static final Logger LOGGER = LogManager.getLogger(PostSearchRequestBuilder.class);
   boolean isCountApi = false;
   boolean isAssetSearch = false;
+  boolean isPFAssetsSearch = false;
   private RoutingContext routingContext;
   private String defaultSortBy = "itemCreatedAt";
   private String defaultOrder = "desc";
@@ -43,6 +44,11 @@ public class PostSearchRequestBuilder {
 
   public PostSearchRequestBuilder setAssetSearch(boolean assetSearch) {
     isAssetSearch = assetSearch;
+    return this;
+  }
+
+  public PostSearchRequestBuilder setPlatformAssetSearch(boolean pfAssetSearch) {
+    isPFAssetsSearch = pfAssetSearch;
     return this;
   }
 
@@ -103,6 +109,10 @@ public class PostSearchRequestBuilder {
 
     if (isAssetSearch) {
       typeBuilder.append(SEARCH_TYPE_MY_ASSETS_ALL);
+      hasFilter = true;
+    }
+    if (isPFAssetsSearch) {
+      typeBuilder.append(SEARCH_TYPE_PF_ASSETS_ALL);
       hasFilter = true;
     }
     if (body.getJsonArray(SEARCH_CRITERIA_KEY) != null

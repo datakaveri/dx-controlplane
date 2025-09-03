@@ -4289,6 +4289,39 @@ paths:
           source: |
             curl --location --request GET 'https://example.com/iudx/v2/cat?sort=name:asc&page=1' \
             --header 'Authorization: Bearer <token>'
+    post:
+      summary: Retrieve all platform assets with filters
+      description: >
+          Fetch all assets belonging to the platform using filters.  
+          Supports property-based, temporal, numeric range, and full-text search filters.  
+          **Note:** This endpoint can only be accessed by users with the `cos_admin` role.
+      operationId: get platform assets with filters
+      tags:
+        - Platform Assets Management
+      security:
+        - authorization: [ ]
+      requestBody:
+        description: Request body containing unified search filters
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchCriteriaRequest'
+      responses:
+        '200':
+          description: A successful search response with assets owned by the user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          description: Invalid request query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid authentication token
   /iudx/v2/cat/list:
     post:
       tags:
