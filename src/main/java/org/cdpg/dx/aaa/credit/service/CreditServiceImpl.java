@@ -275,6 +275,8 @@ public class CreditServiceImpl implements CreditService {
       return computeRoleDAO.get(requestId).compose(req -> {
         UUID userId = req.userId();
 
+        LOGGER.info("InitialCreditBalance in config: "+ config.getInteger("initialCreditBalance"));
+
         if (GRANTED.equals(status)) {
           return userCreditDAO.create(new UserCredit(null, userId, config.getInteger("initialCreditBalance"),LocalDateTime.now().plusDays(30), LocalDateTime.now()))
             .recover(dxEx -> {
