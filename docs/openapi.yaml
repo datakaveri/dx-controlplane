@@ -4452,25 +4452,29 @@ paths:
       tags:
         - Discovery
       description: |
-        Unified catalogue search query for discovering entities that meet complex criteria. The `/search` endpoint supports a rich combination of property-based (`term`), range-based, and temporal-based searches using a common `searchCriteria` array format.
+        Unified catalogue search query for discovering entities that meet complex criteria. The 
+        `/search` endpoint supports a rich combination of property-based (`term`, `flattenedTerm`), 
+        range-based, and temporal-based searches using a common `searchCriteria` array format.
 
         #### 📌 `searchCriteria` Format (Unified)
         Each entry in `searchCriteria` must define:
-        - `searchType`: Determines the type of search (e.g., `term`, `betweenRange`, `beforeTemporal`, etc.)
+        - `searchType`: Determines the type of search (e.g., `term`, `flattenedTerm`, 
+        `betweenRange`, `beforeTemporal`, etc.)
         - `field`: Field to search on (e.g., `type`, `dataReadiness`, `itemCreatedAt`)
         - `values`: Array of values (length depends on `searchType`)
 
         #### ✅ Supported `searchType` Values and Value Expectations:
-        | `searchType`         | Description                                 | Expected `values` Length |
-        |----------------------|---------------------------------------------|---------------------------|
-        | `term`               | Property-based (exact/approx match)         | ≥ 1 values (OR logic)     |
-        | `betweenRange`       | Numeric field in a value range              | 2 values (start, end)     |
-        | `beforeRange`        | Numeric field before a value                | 1 value                   |
-        | `afterRange`         | Numeric field after a value                 | 1 value                   |
-        | `betweenTemporal`    | Timestamp field between two dates           | 2 ISO datetime strings    |
-        | `beforeTemporal`     | Timestamp before a given date               | 1 ISO datetime string     |
-        | `afterTemporal`      | Timestamp after a given date                | 1 ISO datetime string     |
-
+        | `searchType`         | Description                                         | Expected `values` Length |
+        |----------------------|-----------------------------------------------------|---------------------------|
+        | `term`               | Property-based (exact/approx match)                 | ≥ 1 values (OR logic)     |
+        | `flattenedTerm`      | Exact match inside JSON-like flattened fields       | ≥ 1 values (OR logic)     |
+        | `betweenRange`       | Numeric field in a value range                      | 2 values (start, end)     |
+        | `beforeRange`        | Numeric field before a value                        | 1 value                   |
+        | `afterRange`         | Numeric field after a value                         | 1 value                   |
+        | `betweenTemporal`    | Timestamp field between two dates                   | 2 ISO datetime strings    |
+        | `beforeTemporal`     | Timestamp before a given date                       | 1 ISO datetime string     |
+        | `afterTemporal`      | Timestamp after a given date                        | 1 ISO datetime string     |
+  
         #### 🧠 Term Search (Property-based)
         Property search is allowed only on a predefined set of properties from the DX Schema Vocabulary, applicable to all subClasses of [IUDXEntity](https://voc.iudx.org.in/IUDXEntity).
 
@@ -4493,6 +4497,30 @@ paths:
           ]
         }
         ```
+
+        #### 🗂️ Flattened Search
+        Filters based on fields stored as `flattened` type in Elasticsearch.
+        Use this when filtering within structured JSON-like attributes (e.g., `resourceServer`).
+
+        - Supported `searchType`: `flattenedTerm`
+        - Expected values: One or more strings (OR logic between them).
+        - Works for fields such as:
+          - `resourceServer.url`
+          - `resourceServer.name`
+          - `resourceServer.datasetType`
+          - `resourceServer.accessTypes`
+
+        Example:
+        ```json
+        {
+          "searchCriteria": [
+            {
+              "searchType": "flattenedTerm",
+              "field": "resourceServer.url",
+              "values": ["rs.forestdx.iudx.io"]
+            }
+          ]
+        }
 
         #### 📈 Range Search (Numeric)
         Filters based on numeric values and supports various relational conditions.
@@ -4715,6 +4743,21 @@ paths:
                 "filter": ["id"]
               }'
         - lang: cURL
+          label: flattened field search
+          source: |
+            curl --location --request POST 'https://example.com/iudx/v2/cat/search?size=25&page=1' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "searchCriteria": [
+                {
+                  "searchType": "flattenedTerm",
+                  "field": "resourceServer.url",
+                  "values": ["rs.forestdx.iudx.io"]
+                }
+              ],
+              "filter": ["id", "type", "resourceServer"]
+            }'
+        - lang: cURL
           label: search by text
           source: |
             curl --location --request POST 'https://example.com/iudx/v2/cat/search?size=100&page=1' \
@@ -4891,7 +4934,8 @@ paths:
 
         #### 🚩 Behavior
         - All objects in the `searchCriteria` array are combined using logical **AND**.
-        - Filters with `searchType` of `"term"` and `"range"` (numeric or temporal) are supported.
+        - Filters with `searchType` of `"term"`, `"flattenedTerm"` and `"range"` (numeric or temporal) 
+        are supported.
         - The response always includes a count **aggregated by `type.keyword`**.
 
         #### 🎯 UI Use Case:
@@ -7093,6 +7137,7 @@ components:
           type: string
           enum:
             - term
+            - flattenedTerm
             - betweenTemporal
             - beforeTemporal
             - afterTemporal
@@ -7101,7 +7146,11 @@ components:
             - afterRange
           description: |
             Type of search to apply. Valid types:
-            - term: Property match
+            - `term`: Exact match on keyword/text fields. Typically used for top-level fields like `tags`, `fileFormat`, or other catalog properties.
+            - `flattenedTerm`: Exact match on fields stored as `flattened` type in
+                           Elasticsearch mappings. Use this for matching inside JSON-like fields
+                           such as `resourceServer.url` or `resourceServer.name`, where the
+                           property is indexed as a keyword without `.keyword` suffix.
             - betweenTemporal: ISO datetime range
             - beforeTemporal: Before datetime
             - afterTemporal: After datetime
@@ -7117,6 +7166,7 @@ components:
           description: |
             Values for the selected `searchType`. Required value format:
             - `term`: One or more strings
+            - `flattenedTerm`: One or more strings (matching exact values in flattened fields)
             - `betweenTemporal`: Two ISO date-time strings
             - `beforeTemporal` / `afterTemporal`: One ISO date-time string
             - `betweenRange`: Two numbers

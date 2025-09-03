@@ -453,6 +453,7 @@ public class Constants {
   public static final String FIELD = "field";
   public static final String VALUES = "values";
   public static final String DATA_UPLOAD_STATUS = "dataUploadStatus";
+  public static final String RESOURCE_SVR_URL = "resourceServer.url";
   public static final String PUBLISH_STATUS = "publishStatus";
   public static final String MEDIA_URL = "mediaURL";
   public static final String PENDING = "PENDING";
@@ -460,6 +461,7 @@ public class Constants {
   public static final String HITS = "hits";
   public static final String TOTAL = "total";
   public static final String TERM = "term";
+  public static final String FLATTENED_TERM = "flattenedTerm";
   public static final String NAME = "name";
   public static final String FILTER = "filter";
   public static final String TAGS = "tags";
