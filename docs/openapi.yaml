@@ -4190,7 +4190,7 @@ paths:
             type: string
       responses:
         '200':
-          description: A successful search response with assets owned by the user
+          description: A successful search response
           content:
             application/json:
               schema:
@@ -4272,7 +4272,7 @@ paths:
           description: Missing or invalid authentication token
       x-codeSamples:
         - lang: cURL
-          label: search by item type
+          label: get organisation assets
           source: |
             curl --location --request POST 'https://example
             .com/iudx/v2/cat/organisation/asset?size=100&page=1' \
