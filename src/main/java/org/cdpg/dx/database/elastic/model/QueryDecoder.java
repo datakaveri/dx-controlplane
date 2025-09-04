@@ -203,6 +203,7 @@ public class QueryDecoder {
 
   public QueryModel listMultipleItemTypesQuery(QueryDecoderRequestDTO request) {
     LOGGER.debug("listMultipleItemTypesQuery - {}", request);
+
     Map<FilterType, List<QueryModel>> queryMap = new HashMap<>();
     for (FilterType filterType : FilterType.values()) {
       queryMap.put(filterType, new ArrayList<>());
@@ -233,7 +234,9 @@ public class QueryDecoder {
 
     if (filters != null) {
       for (String filter : filters) {
-        Map<String, Object> aggParams = Map.of(FIELD, filter + KEYWORD_KEY, SIZE_KEY, size);
+        String aggField = filter.equals(RESOURCE_SVR_URL) ? filter : filter + KEYWORD_KEY;
+        Map<String, Object> aggParams = Map.of(FIELD, aggField, SIZE_KEY, size);
+
         QueryModel agg = new QueryModel();
         agg.setAggregationType(AggregationType.TERMS);
         agg.setAggregationName(filter);

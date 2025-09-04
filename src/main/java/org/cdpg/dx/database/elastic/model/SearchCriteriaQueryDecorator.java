@@ -45,6 +45,9 @@ public class SearchCriteriaQueryDecorator implements ElasticsearchQueryDecorator
         case TERM:
           mustList.add(buildTermQuery(field, values));
           break;
+        case FLATTENED_TERM:
+          mustList.add(buildFlattenedTermQuery(field, values));
+          break;
         case BETWEEN_RANGE:
         case BETWEEN_TEMPORAL:
           if (values.size() != 2) {
@@ -118,6 +121,18 @@ public class SearchCriteriaQueryDecorator implements ElasticsearchQueryDecorator
             new QueryModel(QueryType.TERM)
                 .setQueryParameters(Map.of(FIELD, searchField, VALUE, value)));
       }
+    }
+    QueryModel queryModel = new QueryModel(QueryType.BOOL);
+    queryModel.setShouldQueries(shouldQueries);
+    return queryModel;
+  }
+
+  private QueryModel buildFlattenedTermQuery(String field, List<Object> values) {
+    List<QueryModel> shouldQueries = new ArrayList<>();
+    for (Object v : values) {
+      shouldQueries.add(
+          new QueryModel(QueryType.TERM)
+              .setQueryParameters(Map.of(FIELD, field, VALUE, v.toString())));
     }
     QueryModel queryModel = new QueryModel(QueryType.BOOL);
     queryModel.setShouldQueries(shouldQueries);
