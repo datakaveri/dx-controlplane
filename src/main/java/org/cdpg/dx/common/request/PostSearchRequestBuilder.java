@@ -1,12 +1,19 @@
 package org.cdpg.dx.common.request;
 
-import static org.cdpg.dx.database.elastic.util.Constants.*;
+import static org.cdpg.dx.database.elastic.util.Constants.ATTRIBUTE;
 import static org.cdpg.dx.database.elastic.util.Constants.FILTER;
+import static org.cdpg.dx.database.elastic.util.Constants.INSTANCE;
+import static org.cdpg.dx.database.elastic.util.Constants.KEYWORD_KEY;
+import static org.cdpg.dx.database.elastic.util.Constants.PAGE_KEY;
 import static org.cdpg.dx.database.elastic.util.Constants.Q_VALUE;
 import static org.cdpg.dx.database.elastic.util.Constants.RESPONSE_FILTER;
 import static org.cdpg.dx.database.elastic.util.Constants.SEARCH_CRITERIA_KEY;
 import static org.cdpg.dx.database.elastic.util.Constants.SEARCH_TYPE_CRITERIA;
+import static org.cdpg.dx.database.elastic.util.Constants.SEARCH_TYPE_MY_ASSETS_ALL;
+import static org.cdpg.dx.database.elastic.util.Constants.SEARCH_TYPE_ORG_ASSETS_ALL;
+import static org.cdpg.dx.database.elastic.util.Constants.SEARCH_TYPE_PF_ASSETS_ALL;
 import static org.cdpg.dx.database.elastic.util.Constants.SEARCH_TYPE_TEXT;
+import static org.cdpg.dx.database.elastic.util.Constants.SIZE_KEY;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonArray;
@@ -17,17 +24,25 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.common.exception.DxBadRequestException;
-import org.cdpg.dx.database.elastic.model.*;
+import org.cdpg.dx.database.elastic.model.AccessPolicyRequestDTO;
+import org.cdpg.dx.database.elastic.model.InstanceFilterRequestDTO;
+import org.cdpg.dx.database.elastic.model.OrderBy;
+import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
+import org.cdpg.dx.database.elastic.model.ResponseFilterRequestDTO;
+import org.cdpg.dx.database.elastic.model.SearchCriteriaDTO;
+import org.cdpg.dx.database.elastic.model.SearchCriteriaRequestDTO;
+import org.cdpg.dx.database.elastic.model.TextSearchRequestDTO;
 
 public class PostSearchRequestBuilder {
   private static final Logger LOGGER = LogManager.getLogger(PostSearchRequestBuilder.class);
   boolean isCountApi = false;
   boolean isAssetSearch = false;
   boolean isPFAssetsSearch = false;
-  private RoutingContext routingContext;
-  private String defaultSortBy = "itemCreatedAt";
-  private String defaultOrder = "desc";
-  private String requestType = "search";
+  boolean isOrgAssetsSearch = false;
+  private final RoutingContext routingContext;
+  private final String defaultSortBy = "itemCreatedAt";
+  private final String defaultOrder = "desc";
+  private final String requestType = "search";
 
   public PostSearchRequestBuilder(RoutingContext routingContext) {
     this.routingContext = routingContext;
@@ -52,10 +67,16 @@ public class PostSearchRequestBuilder {
     return this;
   }
 
+  public PostSearchRequestBuilder setOrgAssetsSearch(boolean orgAssetsSearch) {
+    isOrgAssetsSearch = orgAssetsSearch;
+    return this;
+  }
+
   public QueryDecoderRequestDTO build() {
     JsonObject requestBody = routingContext.getBodyAsJson();
     MultiMap params = routingContext.queryParams();
-    return new QueryDecoderRequestDTO(
+
+    QueryDecoderRequestDTO dto = new QueryDecoderRequestDTO(
         buildSearchType(requestBody),
         getSize(params),
         getPage(params),
@@ -66,7 +87,15 @@ public class PostSearchRequestBuilder {
         getAccessPolicyRequest(isAssetSearch, getSub(routingContext)),
         getInstanceFilterRequest(requestBody),
         getResponseFilterRequest(requestBody),
-        extractSortOrders(),requestType);
+        extractSortOrders(),
+        requestType
+    );
+
+    if (isOrgAssetsSearch) {
+      dto.setOrganisationId(getOrgId(routingContext));
+    }
+
+    return dto;
   }
 
   public int getSize(MultiMap params) {
@@ -113,6 +142,10 @@ public class PostSearchRequestBuilder {
     }
     if (isPFAssetsSearch) {
       typeBuilder.append(SEARCH_TYPE_PF_ASSETS_ALL);
+      hasFilter = true;
+    }
+    if (isOrgAssetsSearch) {
+      typeBuilder.append(SEARCH_TYPE_ORG_ASSETS_ALL);
       hasFilter = true;
     }
     if (body.getJsonArray(SEARCH_CRITERIA_KEY) != null
@@ -221,5 +254,16 @@ public class PostSearchRequestBuilder {
     }
 
     return orderByList;
+  }
+
+  private String getOrgId(RoutingContext ctx) {
+    try {
+      if (ctx.user() != null) {
+        return ctx.user().principal().getString("organisation_id");
+      }
+    } catch (Exception e) {
+      throw new DxBadRequestException("User not found in context", e);
+    }
+    return null;
   }
 }

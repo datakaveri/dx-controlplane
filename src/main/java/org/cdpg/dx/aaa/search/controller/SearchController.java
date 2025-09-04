@@ -68,6 +68,12 @@ public class SearchController implements ApiController {
         .handler(this::handleOrganisationGetItems)
         .handler(auditingHandler::handleApiAudit);
 
+    builder.operation(GET_ORG_ASSETS_VTH_FILTERS)
+        .handler(TOKEN_CHECK)
+        .handler(orgAdminAccessHandler)
+        .handler(this::handleOrganisationAssetsVthFilters)
+        .handler(auditingHandler::handleApiAudit);
+
     builder.operation(GET_PLATFORM_ASSETS)
         .handler(TOKEN_CHECK)
         .handler(pfAdminAccessHandler)
@@ -81,14 +87,15 @@ public class SearchController implements ApiController {
         .handler(auditingHandler::handleApiAudit);
 
     LOGGER.debug(
-        "Registered SearchController operations: {}, {}, {}, {}, {}, {}, {}",
+        "Registered SearchController operations: {}, {}, {}, {}, {}, {}, {}, {}, {}",
         POST_SEARCH,
         POST_COUNT_SEARCH,
         POST_ASSET_SEARCH,
         GET_ASSET_SEARCH,
-        GET_ORG_ASSETS,
         GET_PLATFORM_ASSETS,
-        GET_PLATFORM_ASSETS_VTH_FILTERS);
+        GET_ORG_ASSETS, GET_ORG_ASSETS_VTH_FILTERS, GET_PLATFORM_ASSETS,
+        GET_PLATFORM_ASSETS_VTH_FILTERS
+    );
   }
 
   private void handleGetPlatformItems(RoutingContext ctx) {
@@ -109,6 +116,7 @@ public class SearchController implements ApiController {
       QueryDecoderRequestDTO queryDecoder =
           PostSearchRequestBuilder.fromRoutingContext(ctx)
               .setPlatformAssetSearch(true)
+              .setOrgAssetsSearch(false)
               .setAssetSearch(false)
               .setCountApi(false)
               .build();
@@ -131,12 +139,30 @@ public class SearchController implements ApiController {
     }
   }
 
+  private void handleOrganisationAssetsVthFilters(RoutingContext ctx) {
+    LOGGER.debug("Received POST request on at search'{}'", GET_ORG_ASSETS_VTH_FILTERS);
+    try {
+      QueryDecoderRequestDTO queryDecoder =
+          PostSearchRequestBuilder.fromRoutingContext(ctx)
+              .setPlatformAssetSearch(false)
+              .setOrgAssetsSearch(true)
+              .setAssetSearch(false)
+              .setCountApi(false)
+              .build();
+      processSearchRequest(ctx, queryDecoder);
+    } catch (Exception e) {
+      LOGGER.error("Error processing search request: {}", e.getMessage());
+      ctx.fail(e);
+    }
+  }
+
   private void handleSearch(RoutingContext ctx) {
     LOGGER.debug("Received POST request on at search'{}'", POST_SEARCH);
     try {
       QueryDecoderRequestDTO queryDecoder =
           PostSearchRequestBuilder.fromRoutingContext(ctx)
               .setPlatformAssetSearch(false)
+              .setOrgAssetsSearch(false)
               .setAssetSearch(false)
               .setCountApi(false)
               .build();
@@ -153,6 +179,7 @@ public class SearchController implements ApiController {
       QueryDecoderRequestDTO queryDecoder =
           PostSearchRequestBuilder.fromRoutingContext(ctx)
               .setPlatformAssetSearch(false)
+              .setOrgAssetsSearch(false)
               .setAssetSearch(true)
               .setCountApi(false)
               .build();
@@ -183,6 +210,7 @@ public class SearchController implements ApiController {
       QueryDecoderRequestDTO queryDecoderRequestDTO =
           PostSearchRequestBuilder.fromRoutingContext(ctx)
               .setPlatformAssetSearch(false)
+              .setOrgAssetsSearch(false)
               .setAssetSearch(false)
               .setCountApi(true)
               .build();
