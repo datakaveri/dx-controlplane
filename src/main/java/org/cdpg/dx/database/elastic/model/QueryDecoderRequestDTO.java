@@ -104,6 +104,10 @@ public class QueryDecoderRequestDTO {
     this.publishStatus = publishStatus;
   }
 
+  public void setOrganisationId(String organisationId) {
+    this.organisationId = organisationId;
+  }
+
   public String getSearchType() {
     return searchType;
   }

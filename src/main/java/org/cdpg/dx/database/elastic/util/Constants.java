@@ -68,6 +68,7 @@ public class Constants {
 
   public static final String MY_ASSETS_SEARCH_REGEX = "(.*)myAssetsAll(.*)";
   public static final String PF_ASSETS_SEARCH_REGEX = "(.*)pfAssetsAll(.*)";
+  public static final String ORG_ASSETS_SEARCH_REGEX = "(.*)orgAssetsAll(.*)";
 
   public static final String GEOSEARCH_REGEX = "(.*)geoSearch(.*)";
   public static final String RESPONSE_FILTER_GEO = "responseFilter_geoSearch_";
@@ -436,6 +437,7 @@ public class Constants {
   public static final String SEARCH_CRITERIA_KEY = "searchCriteria";
   public static final String SEARCH_TYPE_MY_ASSETS_ALL = "myAssetsAll_";
   public static final String SEARCH_TYPE_PF_ASSETS_ALL = "pfAssetsAll_";
+  public static final String SEARCH_TYPE_ORG_ASSETS_ALL = "orgAssetsAll_";
   public static final String MESSAGE = "detail";
   public static final String RESULTS = "results";
   public static final String METHOD = "method";

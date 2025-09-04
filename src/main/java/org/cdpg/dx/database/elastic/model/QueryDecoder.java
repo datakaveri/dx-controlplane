@@ -58,13 +58,15 @@ public class QueryDecoder {
       isValidQuery = true;
     }
 
-    if (!searchType.matches(PF_ASSETS_SEARCH_REGEX)) {
+    if (!searchType.matches(PF_ASSETS_SEARCH_REGEX) && !searchType.matches(ORG_ASSETS_SEARCH_REGEX)) {
       new AccessPolicyQueryDecorator(queryMap,
           request.getAccessPolicyRequest()).add();
     }
 
     // Exclude blocks only if NOT myAssetsAll search
-    if (!searchType.matches(MY_ASSETS_SEARCH_REGEX) && !searchType.matches(PF_ASSETS_SEARCH_REGEX)) {
+    if (!searchType.matches(MY_ASSETS_SEARCH_REGEX)
+        && !searchType.matches(PF_ASSETS_SEARCH_REGEX)
+        && !searchType.matches(ORG_ASSETS_SEARCH_REGEX)) {
       QueryModel excludeDatabankFalse = buildUploadStatusExclusion(ITEM_TYPE_DATA_BANK);
       QueryModel excludeAiModelFalse = buildUploadStatusExclusion(ITEM_TYPE_AI_MODEL);
       QueryModel excludePendingApps =
@@ -83,7 +85,16 @@ public class QueryDecoder {
       isValidQuery = true;
     }
 
-    if (searchType != null && searchType.matches(RESPONSE_FILTER_REGEX)) {
+    if (searchType.matches(ORG_ASSETS_SEARCH_REGEX)) {
+      LOGGER.debug("Info: Organisation assets search block;");
+      isValidQuery = true;
+
+      // Add organisationId filter by default
+      QueryModel boolQuery = buildOrganisationFilter(request);
+      queryMap.get(FilterType.MUST).add(boolQuery);
+    }
+
+    if (searchType.matches(RESPONSE_FILTER_REGEX)) {
       new ResponseFilterDecorator(queryMap, request.getResponseFilterRequest()).add();
       isValidQuery = true;
     }
@@ -116,19 +127,26 @@ public class QueryDecoder {
     return q;
   }
 
-  public QueryModel getOrganisationAssetsQuery(QueryDecoderRequestDTO request) {
-    LOGGER.debug("getOrganisationAssetsQuery - {}", request);
+  private static QueryModel buildOrganisationFilter(QueryDecoderRequestDTO request) {
     Map<String, Object> matchParams = new HashMap<>();
     matchParams.put(FIELD, ORGANIZATION_ID_KEYWORD);
     matchParams.put(VALUE, request.getOrganisationId());
 
     QueryModel matchQuery = new QueryModel(QueryType.MATCH, matchParams);
 
-    // Create the bool query with the match query in the must clause
-    QueryModel boolQuery = new QueryModel();
-    boolQuery.setQueryType(QueryType.BOOL);
+    // Wrap inside a bool must
+    QueryModel boolQuery = new QueryModel(QueryType.BOOL);
     List<QueryModel> mustQueries = new ArrayList<>();
     mustQueries.add(matchQuery);
+    boolQuery.setMustQueries(mustQueries);
+    return boolQuery;
+  }
+
+  public QueryModel getOrganisationAssetsQuery(QueryDecoderRequestDTO request) {
+    LOGGER.debug("getOrganisationAssetsQuery - {}", request);
+
+    // Add organisationId filter by default
+    QueryModel boolQuery = buildOrganisationFilter(request);
 
     // Add publishStatus filter if present in request
     if (request.getPublishStatus() != null && !request.getPublishStatus().isEmpty()) {
@@ -137,10 +155,8 @@ public class QueryDecoder {
       statusParams.put(VALUE, request.getPublishStatus());
 
       QueryModel statusQuery = new QueryModel(QueryType.MATCH, statusParams);
-      mustQueries.add(statusQuery);
+      boolQuery.addMustQuery(statusQuery);
     }
-
-    boolQuery.setMustQueries(mustQueries);
 
     QueryModel q = new QueryModel();
     q.setQueries(boolQuery);
