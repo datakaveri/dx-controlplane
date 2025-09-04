@@ -111,13 +111,13 @@ public record OrganizationCreateRequest(
     json.put("address", address);
     json.put("certificatePath", certificatePath);
     json.put("pancardPath", pancardPath);
-    if (relevantDocPath != null && !relevantDocPath.isEmpty()) json.put("relevantDocPath", relevantDocPath);
+    if (relevantDocPath != null && !relevantDocPath.isEmpty()) json.put("LetterOfAuthorization", relevantDocPath);
     json.put("status", status);
     json.put("userName", userName);
     json.put("empId", empId);
     json.put("jobTitle", jobTitle);
     json.put("orgManagerphoneNo", orgManagerphoneNo);
-    json.put("orgDocuments", orgDocuments);
+    json.put("relevantDocPath", orgDocuments);
     json.put("managerEmail",managerEmail);
     if (createdAt != null) json.put("createdAt", createdAt.format(FORMATTER));
     if (updatedAt != null) json.put("updatedAt", updatedAt.format(FORMATTER));
