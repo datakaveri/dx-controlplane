@@ -132,7 +132,7 @@ public class OrganizationServiceImpl implements OrganizationService {
           request.certificatePath(),
           request.pancardPath(),
           request.relevantDocPath(),
-          request.orgDocuments(),
+          request.letterOfAuthorization(),
           null,
           null
         );
