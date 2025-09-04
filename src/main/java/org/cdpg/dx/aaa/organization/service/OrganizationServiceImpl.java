@@ -364,7 +364,6 @@ public class OrganizationServiceImpl implements OrganizationService {
               "organisation_id", "",
               "organisation_name", ""
             ))
-            .compose(v->keycloakUserService.removeRoleFromUser(userId, DxRole.PROVIDER))
             .compose(ar-> itemService.ownerShipTransfer(userId.toString(), orgAdminId.toString(), orgId.toString()))
             .onFailure(err -> LOGGER.error("Failed to update user attributes in Keycloak after deleting organization user", err))
             .map(v -> true);

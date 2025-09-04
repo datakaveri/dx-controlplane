@@ -258,12 +258,7 @@ public class AdminHandler {
                   LOGGER.warn("Failed to delete join request for user {}: {}", userId, err.getMessage());
                   return Future.succeededFuture();
                 })
-              )
-              .compose(v -> organizationService.deleteProviderRoleRequest(orgId, userId)
-                .recover(err -> {
-                  LOGGER.warn("Failed to delete provider role request for user {}: {}", userId, err.getMessage());
-                  return Future.succeededFuture();
-                }));
+              );
             return chain;
           });
         }
