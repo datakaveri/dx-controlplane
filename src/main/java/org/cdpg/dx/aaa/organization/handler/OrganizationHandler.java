@@ -272,7 +272,13 @@ public class OrganizationHandler {
       OrgRequestJson.put("user_name", user.principal().getString("name"));
       String orgName = OrgRequestJson.getString("name");
 
+      String letter_of_authorization = OrgRequestJson.getString("letter_of_authorization");
+      OrgRequestJson.remove("letter_of_authorization");
+      OrgRequestJson.put("organisation_documents",letter_of_authorization);
+
       OrganizationCreateRequest organizationCreateRequest = OrganizationCreateRequest.fromJson(OrgRequestJson);
+
+
 
       organizationService.getOrganizationCreateRequestsByUserId(UUID.fromString(user.subject()))
               .compose(createRequests -> {

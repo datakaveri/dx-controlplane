@@ -32,7 +32,8 @@ public record OrganizationCreateRequest(
         String jobTitle,
         String orgManagerphoneNo,
         String managerEmail,
-        String orgDocuments,
+   //     String orgDocuments,
+        String letterOfAuthorization,  // not null
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) implements BaseEntity<OrganizationCreateRequest> {
@@ -91,7 +92,7 @@ public record OrganizationCreateRequest(
     json.put(Constants.JOB_TITLE, jobTitle);
     json.put(Constants.PHONE_NO, orgManagerphoneNo);
     json.put(Constants.MANAGER_EMAIL,managerEmail);
-    if (orgDocuments != null && !orgDocuments.isEmpty()) json.put(Constants.ORG_DOCUMENTS, orgDocuments);
+    json.put(Constants.ORG_DOCUMENTS, letterOfAuthorization);
     if (createdAt != null) json.put(Constants.CREATED_AT, createdAt.format(FORMATTER));
     if (updatedAt != null) json.put(Constants.UPDATED_AT, updatedAt.format(FORMATTER));
 
@@ -111,13 +112,13 @@ public record OrganizationCreateRequest(
     json.put("address", address);
     json.put("certificatePath", certificatePath);
     json.put("pancardPath", pancardPath);
-    if (relevantDocPath != null && !relevantDocPath.isEmpty()) json.put("LetterOfAuthorization", relevantDocPath);
+    if (letterOfAuthorization != null && !letterOfAuthorization.isEmpty()) json.put("letterOfAuthorization", letterOfAuthorization);
     json.put("status", status);
     json.put("userName", userName);
     json.put("empId", empId);
     json.put("jobTitle", jobTitle);
     json.put("orgManagerphoneNo", orgManagerphoneNo);
-    json.put("relevantDocPath", orgDocuments);
+    json.put("relevantDocPath", relevantDocPath);
     json.put("managerEmail",managerEmail);
     if (createdAt != null) json.put("createdAt", createdAt.format(FORMATTER));
     if (updatedAt != null) json.put("updatedAt", updatedAt.format(FORMATTER));
@@ -145,7 +146,8 @@ public record OrganizationCreateRequest(
     if (!jobTitle.isEmpty()) map.put(Constants.JOB_TITLE, jobTitle);
     if (!orgManagerphoneNo.isEmpty()) map.put(Constants.PHONE_NO, orgManagerphoneNo);
     if (!managerEmail.isEmpty()) map.put(Constants.MANAGER_EMAIL, managerEmail);
-    if (!orgDocuments.isEmpty()) map.put(Constants.ORG_DOCUMENTS, orgDocuments);
+//    if (!orgDocuments.isEmpty()) map.put(Constants.ORG_DOCUMENTS, orgDocuments);
+    if (!letterOfAuthorization.isEmpty()) map.put(Constants.ORG_DOCUMENTS, letterOfAuthorization);
     if (createdAt != null) map.put(Constants.CREATED_AT, createdAt.format(FORMATTER));
     if (updatedAt != null) map.put(Constants.UPDATED_AT, updatedAt.format(FORMATTER));
 
