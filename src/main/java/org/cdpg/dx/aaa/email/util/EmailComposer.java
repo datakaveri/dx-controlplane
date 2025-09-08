@@ -292,6 +292,7 @@ public class EmailComposer {
   public Future<Void> sendEmailForCreditRequest(User user)
   {
     String userName = user.principal().getString("name");
+    String cosAdminEmailId = config.getString("cosAdminEmailId");
     String emailId = user.principal().getString("email");
 
     String senderEmail = config.getString("emailSender"); // no-org-reply
@@ -311,7 +312,7 @@ public class EmailComposer {
 
     MailMessage mailMessage = createMailMessage(
       senderEmail,
-      emailId,
+      cosAdminEmailId,
       htmlBody,
       "Credit Request"
     );
