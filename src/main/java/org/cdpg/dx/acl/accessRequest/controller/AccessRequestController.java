@@ -31,6 +31,8 @@ import org.cdpg.dx.auditing.model.AuditLog;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.URNGenerator;
+import org.cdpg.dx.common.exception.DxBadRequestException;
+import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxForbiddenNoAccessException;
 import org.cdpg.dx.common.exception.DxValidationException;
 import org.cdpg.dx.common.model.DxUser;
@@ -96,6 +98,14 @@ public class AccessRequestController implements ApdApiController {
       .handler(this::getConsumerAccessRequestHandler);
 
     builder
+      .operation(DELETE_ACCESS_REQUEST_API_FOR_CONSUMER)
+      .handler(auditingHandler::handleApiAudit)
+      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+      .handler(this::deleteAccessRequestHandler);
+
+
+
+    builder
       .operation(GET_ACCESS_REQUEST_FOR_ORG_ADMIN_API)
       .handler(auditingHandler::handleApiAudit)
       .handler(orgAdminAccessHandler)
@@ -117,6 +127,29 @@ public class AccessRequestController implements ApdApiController {
       .operation(CHECK_ACCESS_REQUEST_API)
       .handler(auditingHandler::handleApiAudit)
       .handler(this::checkAccessRequestHandler);
+  }
+
+  private void deleteAccessRequestHandler(RoutingContext routingContext) {
+    LOGGER.info("Handling deleteAccessRequest request...");
+    JsonObject body = routingContext.body().asJsonObject();
+    if (body == null || body.getString("requestId") == null) {
+      routingContext.fail(new DxBadRequestException("requestId is required"));
+      return;
+    }
+    UUID requestId = UUID.fromString(body.getString("requestId"));
+    UUID consumerId = UUID.fromString(routingContext.user().subject());
+
+    accessRequestService
+      .deleteAccessRequestForConsumer(consumerId, requestId)
+      .onSuccess(
+        deleted -> {
+          ResponseBuilder.sendSuccess(routingContext, "Request deleted successfully",urnGenerator);
+        })
+      .onFailure(
+        err -> {
+          LOGGER.error("Error deleting access request: {}", err.getMessage(), err);
+          routingContext.fail(err);
+        });
   }
 
   private void getAccessRequestHandler(RoutingContext ctx) {

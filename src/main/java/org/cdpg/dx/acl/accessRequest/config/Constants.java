@@ -93,6 +93,7 @@ public class Constants {
   public static final String GET_ACCESS_REQUEST_REPORT_API = "get-auth-v1-access-requests-provider-report";
   public static final String GET_ACCESS_REQUEST_REPORT_FOR_ORG_ADMIN_API = "get-auth-v1-access-requests-org-admin-report";
   public static final String GET_ACCESS_REQUEST_FOR_ORG_ADMIN_API = "get-auth-v1-access-requests-organisation";
+  public static final String DELETE_ACCESS_REQUEST_API_FOR_CONSUMER = "delete-auth-v1-access-requests";
 
 
   public static final String FIRST_NAME = "firstName";

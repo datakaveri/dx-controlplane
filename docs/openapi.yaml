@@ -74,7 +74,7 @@ paths:
                 type: object
                 x-examples:
                   Example 1:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       - id: 41290efb-057b-4296-872c-a764f6ff5615
@@ -168,7 +168,7 @@ paths:
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       - id: 41290efb-057b-4296-872c-a764f6ff5615
@@ -355,7 +355,7 @@ paths:
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       id: 4202493c-7c64-49b0-8f61-2000ca3d147c
@@ -416,7 +416,7 @@ paths:
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:conflict
+                    type: urn:dx:ControlPlane:conflict
                     title: Conflict
                     detail: 'ERROR: duplicate key value violates unique constraint "organization_create_requests_name_key" (23505)'
 
@@ -467,13 +467,13 @@ paths:
                     type: string
                 x-examples:
                   Example 1:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     detail: Updated Sucessfully
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     detail: Updated Sucessfully
         '400':
@@ -492,7 +492,7 @@ paths:
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:badRequest
+                    type: urn:dx:ControlPlane:badRequest
                     title: Bad Request
                     detail: No request found with given ID
         '401':
@@ -530,7 +530,7 @@ paths:
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:conflict
+                    type: urn:dx:ControlPlane:conflict
                     title: Conflict
                     detail: 'ERROR: duplicate key value violates unique constraint
                       "organizations_name_key" (23505)'
@@ -573,7 +573,7 @@ paths:
                 type: object
                 x-examples:
                   Example 1:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       - id: 5fc228bb-9a20-4052-968e-427c733d2264
@@ -660,7 +660,7 @@ paths:
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       - id: 5fc228bb-9a20-4052-968e-427c733d2264
@@ -743,13 +743,13 @@ paths:
                     type: string
                 x-examples:
                   Example 1:
-                    type: 'urn:dx:aaa:success'
+                    type: 'urn:dx:ControlPlane:success'
                     title: Success
                     detail: Created Join request
               examples:
                 Example 1:
                   value:
-                    type: 'urn:dx:aaa:success'
+                    type: 'urn:dx:ControlPlane:success'
                     title: Success
                     detail: Created Join request
         '400':
@@ -792,7 +792,7 @@ paths:
                     detail: Inactive Token
                 Example 2:
                   value:
-                    type: urn:dx:aaa:notAuthorized
+                    type: urn:dx:ControlPlane:notAuthorized
                     title: Not Authorized
                     detail: Unauthorized
         '409':
@@ -810,14 +810,14 @@ paths:
                     type: string
                 x-examples:
                   Example 1:
-                    type: urn:dx:aaa:conflict
+                    type: urn:dx:ControlPlane:conflict
                     title: Conflict
                     detail: 'ERROR: duplicate key value violates unique constraint
                       "organization_join_requests_user_id_key" (23505)'
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:conflict
+                    type: urn:dx:ControlPlane:conflict
                     title: Conflict
                     detail: 'ERROR: duplicate key value violates unique constraint
                       "organization_join_requests_user_id_key" (23505)'
@@ -886,13 +886,13 @@ paths:
                     type: string
                 x-examples:
                   Example 1:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     detail: Approved Organisation Join Request
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     detail: Approved Organisation Join Request
         '400':
@@ -905,7 +905,7 @@ paths:
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:badRequest
+                    type: urn:dx:ControlPlane:badRequest
                     title: Bad Request
                     detail: No request found with given ID
         '401':
@@ -923,13 +923,13 @@ paths:
                     type: string
                 x-examples:
                   Example 1:
-                    type: urn:dx:aaa:notAuthorized
+                    type: urn:dx:ControlPlane:notAuthorized
                     title: Not Authorized
                     detail: Unauthorized
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:notAuthorized
+                    type: urn:dx:ControlPlane:notAuthorized
                     title: Not Authorized
                     detail: Unauthorized
         '404':
@@ -1029,7 +1029,7 @@ paths:
                         description: Indicates if previous pages exist.
                 x-examples:
                   Example 1:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       - id: e87246e2-5da5-40b0-973c-690d2f48f879
@@ -1152,7 +1152,7 @@ paths:
                         type: string
                 x-examples:
                   Example 1:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       id: e87246e2-5da5-40b0-973c-690d2f48f879
@@ -1172,7 +1172,7 @@ paths:
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       id: e87246e2-5da5-40b0-973c-690d2f48f879
@@ -1215,7 +1215,7 @@ paths:
                 type: object
                 x-examples:
                   Example 1:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       id: e87246e2-5da5-40b0-973c-690d2f48f879
@@ -1294,7 +1294,7 @@ paths:
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       id: e87246e2-5da5-40b0-973c-690d2f48f879
@@ -1345,7 +1345,7 @@ paths:
                 type: object
                 x-examples:
                   Example 1:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       - id: 81980801-85b6-4b7d-ae54-5df38a3535bd
@@ -1441,7 +1441,7 @@ paths:
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       - id: 81980801-85b6-4b7d-ae54-5df38a3535bd
@@ -1505,7 +1505,7 @@ paths:
                     detail: Inactive Token
                 Example 2:
                   value:
-                    type: urn:dx:aaa:notAuthorized
+                    type: urn:dx:ControlPlane:notAuthorized
                     title: Not Authorized
                     detail: Unauthorized
         '409':
@@ -1567,13 +1567,13 @@ paths:
                     description: Details about the deletion operation.
                 x-examples:
                   Example 1:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     detail: Deleted Organisation User
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     detail: Deleted Organisation User
       operationId: delete-auth-v1-organisations-users-id
@@ -1607,13 +1607,13 @@ paths:
                     description: Details about the update operation.
                 x-examples:
                   Example 1:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     detail: Updated Organisation User Role
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     detail: Updated Organisation User Role
       operationId: put-auth-v1-organization-users-role
@@ -1734,7 +1734,7 @@ paths:
                 type: object
                 x-examples:
                   Example 1:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       - id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
@@ -1803,7 +1803,7 @@ paths:
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       - id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
@@ -1875,7 +1875,7 @@ paths:
                         type: string
                 x-examples:
                   Example 1:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
@@ -1888,7 +1888,7 @@ paths:
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
@@ -1943,7 +1943,7 @@ paths:
                         type: string
                 x-examples:
                   Example 1:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       id: 8e6d2003-88ae-47ee-9779-c21d9c3a4091
@@ -1959,7 +1959,7 @@ paths:
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       id: 8e6d2003-88ae-47ee-9779-c21d9c3a4091
@@ -2049,7 +2049,7 @@ paths:
                         type: string
                 x-examples:
                   Example 1:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       id: bbc203ba-b7e2-43aa-9533-da2dee243bc7
@@ -2159,7 +2159,7 @@ paths:
                         type: string
               x-examples:
                 Example 1:
-                  type: urn:dx:aaa:success
+                  type: urn:dx:ControlPlane:success
                   title: Success
                   result:
                     id: bbc203ba-b7e2-43aa-9533-da2dee243bc7
@@ -2213,7 +2213,7 @@ paths:
                 type: object
                 x-examples:
                   Example 1:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       - id: 25fcafb9-d65e-454f-9196-8648dcf08854
@@ -2282,7 +2282,7 @@ paths:
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       - id: 25fcafb9-d65e-454f-9196-8648dcf08854
@@ -2341,7 +2341,7 @@ paths:
                         type: string
                 x-examples:
                   Example 1:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       id: 25fcafb9-d65e-454f-9196-8648dcf08854
@@ -2355,7 +2355,7 @@ paths:
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       id: 25fcafb9-d65e-454f-9196-8648dcf08854
@@ -2399,13 +2399,13 @@ paths:
                     type: string
                 x-examples:
                   Example 1:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     detail: 'Updated Resquest '
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     detail: 'Updated Resquest '
       operationId: put-auth-v1-compute-role-request
@@ -2645,7 +2645,7 @@ paths:
                 type: object
                 x-examples:
                   Example 1:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       roles:
@@ -2744,7 +2744,7 @@ paths:
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       roles:
@@ -2852,7 +2852,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: urn:dx:aaa:success
+                    example: urn:dx:ControlPlane:success
                   title:
                     type: string
                     example: Password Change Successful
@@ -2868,7 +2868,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: urn:dx:aaa:error
+                    example: urn:dx:ControlPlane:error
                   title:
                     type: string
                     example: Password Change Failed
@@ -2944,7 +2944,7 @@ paths:
                         properties: { }
                 x-examples:
                   Example 1:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       roles:
@@ -2990,7 +2990,7 @@ paths:
                 type: object
                 x-examples:
                   Example 1:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       - organisationId: org-123
@@ -3134,7 +3134,7 @@ paths:
               examples:
                 Example 1:
                   value:
-                    type: urn:dx:aaa:success
+                    type: urn:dx:ControlPlane:success
                     title: Success
                     result:
                       - organisationId: org-123

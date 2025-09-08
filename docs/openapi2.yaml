@@ -144,7 +144,7 @@ paths:
               examples:
                 Example:
                   value:
-                    type: urn:dx:acl:badRequest
+                    type: urn:dx:AclApdApd:badRequest
                     title: Bad Request
                     detail: Request could not be created, as the item type is invalid
           headers:
@@ -316,7 +316,7 @@ paths:
               examples:
                 Update:
                   value:
-                    type: urn:dx:acl:success
+                    type: urn:dx:AclApdApd:success
                     title: Success
                     detail: Request updated successfully
           headers:
@@ -385,6 +385,86 @@ paths:
           source: "curl --location --request PUT 'https://example.com/iudx/acl/apd/v2/policies/requests'\
           \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type:\
           \ application/json' \\\n  --data-raw '<payload>'\n"
+    delete:
+      tags:
+        - Access Request
+      summary: Delete Access Request
+      description: 'Consumers can delete their own access requests if their requests is in
+        **pending** state.
+
+        If the request is deleted
+
+        - The request is modified to the `deleted` state
+
+        '
+      operationId: delete-auth-v1-access-requests
+      requestBody:
+        description: '- `requestId` :  ID of the request. Can get this `id` by using
+          the GET Access request API.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                requestId:
+                  type: string
+                  format: uuid
+                  pattern: ^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$
+              required:
+              - requestId
+      responses:
+        '400':
+          description: Bad Request- Schema validation, missing or incorrect fields
+            & values
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/updateNotificationBadRequest'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+        '404':
+          description: '- Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/updateNotificationNotFound'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+        '401':
+          description: '- Unauthorized - `token` invalid/expired'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+        '403':
+          description: 'Forbidden
+
+            - User does not own the asset or item for which access request is being
+            granted or rejected'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/updateNotificationForbiddenResponse'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+      security:
+        - authorization: [ ]
   /iudx/acl/apd/v2/access_request/provider:
     get:
       tags:
@@ -443,7 +523,7 @@ paths:
               examples:
                 ListResults:
                   value:
-                    type: urn:dx:acl:success
+                    type: urn:dx:AclApd:success
                     title: Success
                     results:
                       - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
@@ -824,7 +904,7 @@ paths:
               examples:
                 ListResults:
                   value:
-                    type: urn:dx:acl:success
+                    type: urn:dx:AclApd:success
                     title: Success
                     results:
                       - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
@@ -958,7 +1038,7 @@ paths:
               examples:
                 ListResults:
                   value:
-                    type: urn:dx:acl:success
+                    type: urn:dx:AclApd:success
                     title: Success
                     results:
                       - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
@@ -1091,7 +1171,7 @@ paths:
               examples:
                 Example:
                   value:
-                    type: urn:dx:acl:badRequest
+                    type: urn:dx:AclApd:badRequest
                     title: Bad Request
                     detail: Missing or malformed request
           headers:
@@ -1320,7 +1400,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:resourceNotFound
+        type: urn:dx:AclApd:resourceNotFound
         title: Not Found
         detail: 'Access request not found, for the server : dummy.server.io'
     createNotificationForbiddenResponse:
@@ -1342,7 +1422,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:no-access
+        type: urn:dx:AclApd:no-access
         title: Forbidden
         detail: User does not have access to the given item
     updateNotificationForbiddenResponse:
@@ -1364,7 +1444,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:forbidden
+        type: urn:dx:AclApd:forbidden
         title: Forbidden
         detail: The access request does not belong to the given provider
     reportGenerationForbiddenResponse:
@@ -1386,7 +1466,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:forbidden
+        type: urn:dx:AclApd:forbidden
         title: Forbidden
         detail: User doesn't have required role
     updateNotificationNotFound:
@@ -1408,7 +1488,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:resourceNotFound
+        type: urn:dx:AclApd:resourceNotFound
         title: Not Found
         detail: Access request not found
     updateNotificationBadRequest:
@@ -1430,7 +1510,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:badRequest
+        type: urn:dx:AclApd:badRequest
         title: Bad Request
         detail: Missing or malformed request
     reportGenerationBadRequest:
@@ -1452,7 +1532,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:badRequest
+        type: urn:dx:AclApd:badRequest
         title: Bad Request
         detail: 'Error in CSV generation: No data available for CSV generation'
     updateNotificationConflict:
@@ -1474,7 +1554,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:conflict
+        type: urn:dx:AclApd:conflict
         title: Conflict
         detail: Request could not be approved as, policy is already created
     UpdateAccessRequest:
@@ -1496,7 +1576,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:success
+        type: urn:dx:AclApd:success
         title: Success
         detail: Request updated successfully
     getNotificationForbiddenResponse:
@@ -1518,7 +1598,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:forbidden
+        type: urn:dx:AclApd:forbidden
         title: Access Denied
         detail: 'Access Denied: You do not have ownership rights for this resource.'
     createNotificationSuccessResponse:
@@ -1540,7 +1620,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:success
+        type: urn:dx:AclApd:success
         title: Success
         detail: Request inserted successfully!
     checkAccessRequestSuccessResponse:
@@ -1561,7 +1641,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:success
+        type: urn:dx:AclApd:success
         title: Success
         detail: User has access to the given asset!
     createNotificationResourceNotFoundResponse:
@@ -1583,7 +1663,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:notFound
+        type: urn:dx:AclApd:notFound
         title: Not Found
         detail: Catalogue item not found
     checkAccessRequestNotFoundResponse:
@@ -1604,7 +1684,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:no-access
+        type: urn:dx:AclApd:no-access
         title: Forbidden
         detail: User does not have access to the given item
     createNotificationForbidden:
@@ -1626,7 +1706,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:forbidden
+        type: urn:dx:AclApd:forbidden
         title: Forbidden
         detail: User cannot create access request for the resource, as the user is
           a provider of the resource
@@ -1649,7 +1729,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:conflict
+        type: urn:dx:AclApd:conflict
         title: Conflict
         detail: Access request already exists
     getPolicySuccessResponseWithResourceType:
@@ -1742,7 +1822,7 @@ components:
                 type: string
                 minLength: 1
       example:
-        type: urn:dx:acl:success
+        type: urn:dx:AclApd:success
         title: Success
         results:
           - policyId: aaaaaaaa-1234-1234-1234-1234aaaa1234
@@ -1857,7 +1937,7 @@ components:
                 type: string
                 minLength: 1
       example:
-        type: urn:dx:acl:success
+        type: urn:dx:AclApd:success
         title: Success
         results:
           - policyId: aaaaaaaa-6473-3546-5436-8758aaaa5897
@@ -1923,7 +2003,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:forbidden
+        type: urn:dx:AclApd:forbidden
         title: Forbidden
         detail: 'Access Denied: You do not have ownership rights for this resource.'
     deleteNotificationNotFound:
@@ -1945,7 +2025,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:notFound
+        type: urn:dx:AclApd:notFound
         title: Not Found
         detail: Request could not be withdrawn, as it is not found
     deleteNotificationBadRequest:
@@ -1967,7 +2047,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:badRequest
+        type: urn:dx:AclApd:badRequest
         title: Bad Request
         detail: Request could not be withdrawn, as it is not in pending status
     deleteNotification:
@@ -1989,7 +2069,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:success
+        type: urn:dx:AclApd:success
         title: Success
         detail: Request deleted successfully
     deletePolicy:
@@ -2011,7 +2091,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:success
+        type: urn:dx:AclApd:success
         title: Success
         detail: Policy deleted successfully
     deletePolicyInvalidUserResponse:
@@ -2033,7 +2113,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:forbidden
+        type: urn:dx:AclApd:forbidden
         title: Forbidden
         detail: 'Access Denied: You do not have ownership rights for this policy.'
     getPolicyInvalidUserResponse:
@@ -2055,7 +2135,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:forbidden
+        type: urn:dx:AclApd:forbidden
         title: Access Denied
         detail: Policy could not be fetched, user doesn't own the policy
     updateNotificationInvalidUserResponse:
@@ -2074,7 +2154,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:forbidden
+        type: urn:dx:AclApd:forbidden
         title: Access Denied
         detail: Notification could not be updated, notification doesn't belong to
           the user
@@ -2097,7 +2177,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:notFound
+        type: urn:dx:AclApd:notFound
         title: Not Found
         detail: Policy Not Found
     deletePolicyErrorResponse:
@@ -2119,7 +2199,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:badRequest
+        type: urn:dx:AclApd:badRequest
         title: Bad Request
         detail: Policy could not be deleted, as policy is not ACTIVE
     deletePolicyNotFoundErrorResponse:
@@ -2141,7 +2221,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:notFound
+        type: urn:dx:AclApd:notFound
         title: Not Found
         detail: Policy could not be deleted, as it doesn't exist
     Unauthorized:
@@ -2162,7 +2242,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:invalidAuthorizationToken
+        type: urn:dx:AclApd:invalidAuthorizationToken
         title: Not Authorized
         detail: Not Authorized
     createPolicyBadRequest:
@@ -2184,7 +2264,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:badRequest
+        type: urn:dx:AclApd:badRequest
         title: Bad Request
         detail: Item id given is not present
     createPolicyForbidden:
@@ -2205,7 +2285,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:forbidden
+        type: urn:dx:AclApd:forbidden
         title: Forbidden
         detail: 'Access Denied: You do not have ownership rights for this resource.'
     createPolicySuccessResponse:
@@ -2224,7 +2304,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:success
+        type: urn:dx:AclApd:success
         title: Success
         detail: Policy created successfully
     conflictResponse:
@@ -2242,7 +2322,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:conflict
+        type: urn:dx:AclApd:conflict
         title: Conflict
         detail: Policy already exist for the request object [bf9d8f85-b7b0-40bb-8197-0046725f1ca8]
     generalBadRequest:
@@ -2262,7 +2342,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:badRequest
+        type: urn:dx:AclApd:badRequest
         title: Bad Request
         detail: Bad Request
     AccessRequest:
@@ -2378,7 +2458,7 @@ components:
         - paginationInfo
       x-examples:
         Example:
-          type: urn:dx:acl:success
+          type: urn:dx:AclApd:success
           title: User permission requests
           results:
             - requestId: e4619679-f5d9-4eff-9f79-bbded6130bb1
