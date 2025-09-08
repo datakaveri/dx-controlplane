@@ -21,10 +21,7 @@ import org.cdpg.dx.acl.accessRequest.service.AccessRequestService;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.catalogueService.models.Asset;
-import org.cdpg.dx.common.exception.DxConflictException;
-import org.cdpg.dx.common.exception.DxCreateAccessRequestForbiddenException;
-import org.cdpg.dx.common.exception.DxForbiddenException;
-import org.cdpg.dx.common.exception.DxInternalServerErrorException;
+import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.model.RequestType;
 import org.cdpg.dx.common.request.PaginatedRequest;
@@ -176,6 +173,28 @@ public class AccessRequestServiceImpl implements AccessRequestService {
   public Future<PaginatedResult<AccessRequestDto>> listAccessRequestForProvider(
       PaginatedRequest paginatedRequest) {
     return accessRequestDao.getAllWithFilters(paginatedRequest);
+  }
+
+  @Override
+  public Future<Boolean> deleteAccessRequestForConsumer(UUID consumerId, UUID requestId) {
+    return accessRequestDao
+        .get(requestId)
+        .compose(
+            request -> {
+              if (request == null) {
+                return Future.failedFuture(new DxNotFoundException("Access request not found"));
+              }
+              boolean isOwner = request.getConsumerId() != null && request.getConsumerId().equals(consumerId.toString());
+              if (!isOwner) {
+                return Future.failedFuture(new DxForbiddenException("User cannot delete this request"));
+              }
+              if (!Status.PENDING.equals(request.getStatus())) {
+                return Future.failedFuture(new DxValidationException("Only pending requests can be deleted"));
+              }
+              return accessRequestDao.delete(requestId);
+            })
+        .onSuccess(v -> LOGGER.info("Deleted access request {} by consumer {}", requestId, consumerId))
+        .onFailure(err -> LOGGER.error("Failed to delete access request {}: {}", requestId, err.getMessage()));
   }
 
   private Asset parseAndGetAsset(JsonObject result, String id) {
