@@ -319,7 +319,7 @@ public class EmailComposer {
 
     return emailService.sendEmail(mailMessage).onComplete(res -> {
           if (res.succeeded()) {
-            LOGGER.info("Credit request email sent to {}", emailId);
+            LOGGER.info("Credit request email sent to {}", cosAdminEmailId);
           } else {
             LOGGER.error("Failed to send credit request email: {}", res.cause().getMessage());
           }
