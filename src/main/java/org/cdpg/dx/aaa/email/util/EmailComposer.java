@@ -293,6 +293,7 @@ public class EmailComposer {
   {
     String userName = user.principal().getString("name");
     String emailId = user.principal().getString("email");
+    String cosAdminEmailId = config.getString("cosAdminEmailId");
 
     String senderEmail = config.getString("emailSender"); // no-org-reply
     String emailTemplate = loadTemplate("templates/request-credit.html");
@@ -311,7 +312,7 @@ public class EmailComposer {
 
     MailMessage mailMessage = createMailMessage(
       senderEmail,
-      emailId,
+      cosAdminEmailId,
       htmlBody,
       "Credit Request"
     );
