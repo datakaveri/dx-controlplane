@@ -10,9 +10,11 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.apiserver.ApiController;
@@ -30,6 +32,7 @@ import org.cdpg.dx.auditing.model.AuditLog;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.exception.DxBadRequestException;
+import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxInternalServerErrorException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.response.ResponseBuilder;
@@ -96,7 +99,9 @@ public class ItemController implements ApiController {
     JsonObject body = ctx.body().asJsonObject();
 
     String itemType = extractAndValidateItemType(ctx, body);
-    if (itemType == null) return;
+    if (itemType == null) {
+      return;
+    }
 
     JsonObject doc = injectKeycloakInfoIfApplicable(ctx, body, itemType);
 
@@ -308,11 +313,21 @@ public class ItemController implements ApiController {
     }
 
     String subId = "";
+    List<String> roles = new ArrayList<>();
     if (routingContext.user() != null) {
       subId = routingContext.user().principal().getString("sub");
+
+      JsonObject realmAccess = routingContext.user().principal().getJsonObject("realm_access");
+      if (realmAccess != null && realmAccess.containsKey("roles")) {
+        JsonArray rolesJson = realmAccess.getJsonArray("roles");
+        roles = rolesJson.stream()
+            .map(Object::toString)
+            .collect(Collectors.toList());
+      }
     }
 
     GetItemRequest request = new GetItemRequest(itemId, subId);
+    request.setRoles(roles);
     itemService
         .getItem(request)
         .onSuccess(
@@ -342,8 +357,12 @@ public class ItemController implements ApiController {
             })
         .onFailure(
             err -> {
-              LOGGER.error("Error retrieving item with ID '{}': {}", itemId, err.getMessage());
-              routingContext.fail(new DxInternalServerErrorException(err.getMessage()));
+              if (err instanceof DxForbiddenException) {
+                routingContext.fail(err);  //failure handler should map to 403
+              } else {
+                LOGGER.error("Error retrieving item with ID '{}': {}", itemId, err.getMessage());
+                routingContext.fail(new DxInternalServerErrorException(err.getMessage()));
+              }
             });
   }
 }
