@@ -12,6 +12,7 @@ import org.cdpg.dx.aaa.item.util.ItemFactory;
 import org.cdpg.dx.aaa.item.util.PatchItemRequest;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
+import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.database.elastic.model.QueryDecoder;
 import org.cdpg.dx.database.elastic.model.QueryModel;
@@ -96,14 +97,14 @@ public class ItemServiceImpl implements ItemService {
                                 return;
                             }
 
-                            if (ownershipCheck(response, request.getSubId())) {
+                            if (ownershipCheck(response, request.getSubId(), request.getRoles())) {
                                 LOGGER.debug("Ownership check passed for item with ID: {}", request.getItemId());
                                 ResponseModel responseModel = new ResponseModel(List.of(response), 1, 1);
                                 responseModel.setTotalHits(totalHits);
                                 promise.complete(responseModel);
                             } else {
                                 LOGGER.warn("Ownership check failed for item with ID: {}", request.getItemId());
-                                promise.fail("Ownership check failed");
+                                promise.fail(new DxForbiddenException("User doesn't have access to this item"));
                             }
                         })
                 .onFailure(
@@ -357,10 +358,18 @@ public class ItemServiceImpl implements ItemService {
         return str == null || str.trim().isEmpty();
     }
 
-    private boolean ownershipCheck(ElasticsearchResponse response, String subId) {
+    private boolean ownershipCheck(ElasticsearchResponse response, String subId, List<String> roles) {
         JsonObject source = response.getSource();
         String accessPolicy = source.getString("accessPolicy");
         String ownerUserId = source.getString("ownerUserId");
+
+        // Allow admin roles to bypass ownership restrictions
+        if (roles != null && roles.stream().anyMatch(
+            role -> role.equalsIgnoreCase("cos_admin") ||
+                role.equalsIgnoreCase("org_admin"))) {
+            LOGGER.info("Ownership check bypassed for admin role(s):");
+            return true;
+        }
 
         if ("private".equalsIgnoreCase(accessPolicy)) {
             if (subId.isEmpty()) {
