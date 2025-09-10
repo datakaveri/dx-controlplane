@@ -1,5 +1,6 @@
 package org.cdpg.dx.acl.accessRequest.factory;
 
+import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.REQUEST_TABLE;
 
@@ -36,12 +37,11 @@ public class AccessRequestFactory {
     AuditingHandler auditingHandler,
     JsonObject config,
     URNGenerator urnGenerator) {
+    AccessRequestDao accessRequestDao =
+        new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
 
     ItemService itemService =
-      new ItemServiceImpl(elasticsearchService, config.getString("docIndex"));
-
-    AccessRequestDao accessRequestDao =
-      new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
+      new ItemServiceImpl(elasticsearchService, config.getString(DOC_INDEX), accessRequestDao);
 
     AccessRequestService accessRequestService =
       new AccessRequestServiceImpl(itemService, accessRequestDao);

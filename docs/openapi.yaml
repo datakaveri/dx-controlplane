@@ -4074,6 +4074,95 @@ paths:
           source: |
             curl --location --request DELETE 'https://example.com/iudx/v2/cat/item?id=uuid' \
             --header 'token: <token>'
+  /iudx/v2/cat/item/access:
+    get:
+      tags:
+        - Entity
+      description: >
+        Get an item with **access policy enforcement**.  
+        - If `accessPolicy=open`, the item is accessible to anyone.  
+        - If `accessPolicy=restricted`, user access will be validated.  
+        - If `accessPolicy=private`, only the owner can access it.  
+
+        If a Bearer token is provided in the Authorization header, the request will be authenticated, and access checks will be performed accordingly.  
+
+        ❗ For items with `accessPolicy=restricted` or `accessPolicy=private`, a valid token **must** be provided.  
+        Otherwise, the request will be rejected with a **401 Unauthorized** error.
+      operationId: get item with accessPolicy
+      security:
+        - optionalAuth: [ ]
+      parameters:
+        - name: id
+          in: query
+          description: ID of the DX Entity
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Found the item (access granted).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/successResponseForGetAIModelEntity'
+                  - $ref: '#/components/schemas/successResponseForGetDataBankEntity'
+                  - $ref: '#/components/schemas/successResponseForGetAdexAppsEntity'
+        '400':
+          description: Invalid ID.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/invalidIdErrorResponse'
+        '401':
+          description: Unauthorized – missing or invalid token for `restricted` or `private` items.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponseWithObjects'
+              examples:
+                MissingToken:
+                  value:
+                    type: 'urn:dx:cat:MissingAuthorizationToken'
+                    title: 'Unauthorized'
+                    detail: 'Authorization token is required for restricted/private item but not provided'
+                InvalidToken:
+                  value:
+                    type: 'urn:dx:cat:InvalidAuthorizationToken'
+                    title: 'Unauthorized'
+                    detail: 'Token is invalid for restricted/private item'
+        '403':
+          description: Forbidden – user does not have access based on `accessPolicy`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponseWithObjects'
+              examples:
+                Forbidden:
+                  value:
+                    type: 'urn:dx:cat:AccessDenied'
+                    title: 'Forbidden'
+                    detail: 'User does not have access to this item'
+        '404':
+          description: Didn't find the item.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponseForGetEntity'
+              example:
+                type: "urn:dx:cat:ItemNotFound"
+                title: 'error'
+                totalHits: 0
+                results: [ ]
+                details: "doc doesn't exist"
+
+      x-codeSamples:
+        - lang: cURL
+          label: get item with accessPolicy
+          source: |
+            curl --location --request GET 'https://example.com/iudx/v2/cat/item/access?id=uuid' \
+            --header 'Authorization: Bearer <token>'
   /iudx/v2/cat/organisation/asset:
     patch:
       tags:
