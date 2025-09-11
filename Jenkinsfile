@@ -48,7 +48,7 @@ pipeline {
         stage('Docker Swarm deployment') {
           steps {
             script {
-              sh "ssh azureuser@docker-swarm 'docker service update controlplane-tgdex_controlplane-tgdex --image ghcr.io/datakaveri/controlplane-dev:1.0.0-${env.GIT_HASH}'"
+              sh "ssh azureuser@docker-swarm 'docker service update iudx-v2-controlplane_controlplane-iudx-v2 --image ghcr.io/datakaveri/controlplane-dev:1.0.0-${env.GIT_HASH}'"
               sh 'sleep 15'
               sh '''#!/bin/bash 
               response_code=$(curl -s -o /dev/null -w \'%{http_code}\\n\' --connect-timeout 5 --retry 5 --retry-connrefused -XGET https://authvertx.iudx.io/apis)
