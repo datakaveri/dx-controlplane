@@ -94,7 +94,8 @@ public class ItemServiceImpl implements ItemService {
 
     Future<ElasticsearchResponse> elResponse = elasticsearchService
         .getSingleDocument(docIndex, queryModel.getQueries());
-    Future<ResponseModel> endResponse = elResponse.compose(elasticResponse -> {
+
+    return elResponse.compose(elasticResponse -> {
       int totalHits = ElasticsearchResponse.getTotalHits();
       if (totalHits == 0) {
         LOGGER.warn("Item with ID {} does not exist", request.getItemId());
@@ -105,13 +106,12 @@ public class ItemServiceImpl implements ItemService {
 
       JsonObject source = elasticResponse.getSource();
       String accessPolicy = source.getString(ACCESS_POLICY);
+      String ownerUserId = source.getString(PROVIDER_USER_ID);
       if (accessPolicy.equalsIgnoreCase(PRIVATE)) {
-        return getResponseWhenResourceIsPrivate(source, request, elasticResponse, totalHits);
+        return getResponseWhenResourceIsPrivate(ownerUserId, request, elasticResponse, totalHits);
       }
       return getResponseWhenResourceIsPublic(accessPolicy, totalHits, elasticResponse);
     });
-
-    return endResponse;
   }
 
   @Override
@@ -123,7 +123,8 @@ public class ItemServiceImpl implements ItemService {
 
     Future<ElasticsearchResponse> elResponse = elasticsearchService
         .getSingleDocument(docIndex, queryModel.getQueries());
-    Future<ResponseModel> endResponse = elResponse.compose(elasticResponse -> {
+
+    return elResponse.compose(elasticResponse -> {
       int totalHits = ElasticsearchResponse.getTotalHits();
       if (totalHits == 0) {
         LOGGER.warn("Item with ID {} does not exist", request.getItemId());
@@ -134,18 +135,17 @@ public class ItemServiceImpl implements ItemService {
 
       JsonObject source = elasticResponse.getSource();
       String accessPolicy = source.getString(ACCESS_POLICY);
+      String ownerUserId = source.getString(PROVIDER_USER_ID);
       if (accessPolicy.equalsIgnoreCase(PRIVATE)) {
-        return getResponseWhenResourceIsPrivate(source, request, elasticResponse, totalHits);
+        return getResponseWhenResourceIsPrivate(ownerUserId, request, elasticResponse, totalHits);
       } else if (accessPolicy.equalsIgnoreCase(RESTRICTED)) {
-        return getResponseWhenResourceIsRestricted(request, totalHits, elasticResponse);
+        return getResponseWhenResourceIsRestricted(ownerUserId, request, totalHits, elasticResponse);
       }
       return getResponseWhenResourceIsPublic(accessPolicy, totalHits, elasticResponse);
     });
-
-    return endResponse;
   }
 
-  public Future<ResponseModel> getResponseWhenResourceIsPrivate(JsonObject source,
+  public Future<ResponseModel> getResponseWhenResourceIsPrivate(String ownerUserId,
                                                                 GetItemRequest request,
                                                                 ElasticsearchResponse response,
                                                                 int totalHits) {
@@ -154,7 +154,7 @@ public class ItemServiceImpl implements ItemService {
       return Future.failedFuture(
           new DxUnauthorizedException("Authorization token is required for private item"));
     }
-    if (ownershipCheck(source, request.getSubId(), request.getRoles())) {
+    if (ownershipCheck(ownerUserId, request.getSubId(), request.getRoles())) {
       LOGGER.debug("Ownership check passed for item with ID: {}", request.getItemId());
       ResponseModel responseModel = new ResponseModel(List.of(response), 1, 1);
       responseModel.setTotalHits(totalHits);
@@ -165,9 +165,7 @@ public class ItemServiceImpl implements ItemService {
     }
   }
 
-  private boolean ownershipCheck(JsonObject source, String subId, List<String> roles) {
-    String ownerUserId = source.getString(PROVIDER_USER_ID);
-
+  private boolean ownershipCheck(String ownerUserId, String subId, List<String> roles) {
     // Allow admin roles to bypass ownership restrictions
     if (roles != null && roles.stream().anyMatch(
         role -> role.equalsIgnoreCase(COS_ADMIN) ||
@@ -196,7 +194,8 @@ public class ItemServiceImpl implements ItemService {
     return Future.succeededFuture(responseModel);
   }
 
-  public Future<ResponseModel> getResponseWhenResourceIsRestricted(GetItemRequest request,
+  public Future<ResponseModel> getResponseWhenResourceIsRestricted(String ownerUserId,
+                                                                   GetItemRequest request,
                                                                    int totalHits,
                                                                    ElasticsearchResponse response) {
     if (request.getSubId() == null || request.getSubId().isEmpty()) {
@@ -205,6 +204,16 @@ public class ItemServiceImpl implements ItemService {
           new DxUnauthorizedException("Authorization token is required for restricted item"));
     }
 
+    // Allow the owner direct access
+    if (request.getSubId().equalsIgnoreCase(ownerUserId)) {
+      LOGGER.debug("Restricted item access granted: User {} is the owner of item {}",
+          request.getSubId(), request.getItemId());
+      ResponseModel responseModel = new ResponseModel(List.of(response), 1, 1);
+      responseModel.setTotalHits(totalHits);
+      return Future.succeededFuture(responseModel);
+    }
+
+    // Otherwise, validate access request
     Future<Boolean> isAccessRequestPresent =
         accessRequestService.checkAccessRequest(UUID.fromString(request.getSubId()),
             request.getItemId());
