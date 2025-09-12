@@ -25,131 +25,131 @@ public class OrganizationController implements ApiController {
     public void register(RouterBuilder routerBuilder) {
 
         routerBuilder
-                .operation("get-auth-v1-organisations-request")
+                .operation("get-auth-v2-organisations-request")
                 .handler(auditingHandler::handleApiAudit)
                 .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
                 .handler(organizationHandler::getOrganisationRequest);
 
         routerBuilder
-                .operation("post-auth-v1-organisations-request")
+                .operation("post-auth-v2-organisations-request")
                 .handler(auditingHandler::handleApiAudit)
                 .handler(AuthorizationHandler.requireKycVerified())
                 .handler(organizationHandler::createOrganisationRequest);
 
         routerBuilder
-                .operation("post-auth-v1-approve-create_org")
+                .operation("post-auth-v2-approve-create_org")
                 .handler(auditingHandler::handleApiAudit)
                 .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
                 .handler(organizationHandler::approveOrganisationRequest);
 
         routerBuilder
-                .operation("post-auth-v1-organisations-join-requests")
+                .operation("post-auth-v2-organisations-join-requests")
                 .handler(auditingHandler::handleApiAudit)
                 .handler(AuthorizationHandler.requireKycVerified())
                 .handler(organizationHandler::joinOrganisationRequest);
 
         routerBuilder
-                .operation("get-auth-v1-organisations-join-requests")
+                .operation("get-auth-v2-organisations-join-requests")
                 .handler(auditingHandler::handleApiAudit)
                 .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
                 .handler(organizationHandler::getJoinOrganisationRequests);
 
         routerBuilder
-                .operation("put-auth-v1-organisations-join-requests")
+                .operation("put-auth-v2-organisations-join-requests")
                 .handler(auditingHandler::handleApiAudit)
                 .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
                 .handler(organizationHandler::approveJoinOrganisationRequests);
 
         routerBuilder
-                .operation("get-auth-v1-org")
+                .operation("get-auth-v2-org")
                 .handler(auditingHandler::handleApiAudit)
                 .handler(organizationHandler::listAllOrganisations);
 
         routerBuilder
-                .operation("delete-auth-v1-organisations-id")
+                .operation("delete-auth-v2-organisations-id")
                 .handler(auditingHandler::handleApiAudit)
                 .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN, DxRole.ORG_ADMIN))
                 .handler(organizationHandler::deleteOrganisationById);
 
         routerBuilder
-                .operation("put-auth-v1-organisations-id")
+                .operation("put-auth-v2-organisations-id")
                 .handler(auditingHandler::handleApiAudit)
                 .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
                 .handler(organizationHandler::updateOrganisationById);
 
         //Organization User
         routerBuilder
-                .operation("get-auth-v1-org-users")
+                .operation("get-auth-v2-org-users")
                 .handler(auditingHandler::handleApiAudit)
                 .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
                 .handler(organizationHandler::getOrganisationUsers);
         routerBuilder
-                .operation("get-auth-v1-organisations-id-users-user_id")
+                .operation("get-auth-v2-organisations-id-users-user_id")
                 .handler(auditingHandler::handleApiAudit)
                 .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
                 .handler(organizationHandler::getOrganisationUserInfo);
 
         routerBuilder
-                .operation("delete-auth-v1-organisations-users-id")
+                .operation("delete-auth-v2-organisations-users-id")
                 .handler(auditingHandler::handleApiAudit)
                 .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
                 .handler(organizationHandler::deleteOrganisationUserById);
 
         routerBuilder
-                .operation("put-auth-v1-organization-users-role")
+                .operation("put-auth-v2-organization-users-role")
                 .handler(auditingHandler::handleApiAudit)
                 .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
                 .handler(organizationHandler::updateOrganisationUserRole);
 
         routerBuilder
-                .operation("post-auth-v1-user-roles")
+                .operation("post-auth-v2-user-roles")
                 .handler(auditingHandler::handleApiAudit)
                 .handler(organizationHandler::createProviderRequest);
 
         routerBuilder
-                .operation("get-auth-v1-user-roles")
+                .operation("get-auth-v2-user-roles")
                 .handler(auditingHandler::handleApiAudit)
                 .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
                 .handler(organizationHandler::getProviderRequest);
 
         routerBuilder
-                .operation("put-auth-v1-user-roles")
+                .operation("put-auth-v2-user-roles")
                 .handler(auditingHandler::handleApiAudit)
                 .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
                 .handler(organizationHandler::updateProviderRequest);
 
       routerBuilder
-        .operation("post-auth-v1-organization-user-provider")
+        .operation("post-auth-v2-organization-user-provider")
         .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
         .handler(organizationHandler::createProviderRole);
 
         routerBuilder
-                .operation("get-auth-v1-organisations-id")
+                .operation("get-auth-v2-organisations-id")
                 .handler(auditingHandler::handleApiAudit)
                 .handler(organizationHandler::getOrganizationById);
 
         routerBuilder
-                .operation("get-auth-v1-organisations-requests-report")
+                .operation("get-auth-v2-organisations-requests-report")
                 .handler(organizationHandler::getOrganizationCreateReport);
 
         routerBuilder
-                .operation("get-auth-v1-organisations-report")
+                .operation("get-auth-v2-organisations-report")
                 .handler(organizationHandler::getOrganizationReport);
 
         routerBuilder
-                .operation("get-auth-v1-organisations-join_requests-report")
+                .operation("get-auth-v2-organisations-join_requests-report")
                 .handler(organizationHandler::getOrganizationJoinReport);
 
         routerBuilder
-                .operation("get-auth-v1-compute-requests-report")
+                .operation("get-auth-v2-compute-requests-report")
                 .handler(organizationHandler::getComputeRoleReport);
 
         routerBuilder
-                .operation("get-auth-v1-organization-user-provider_role-requests-report")
+                .operation("get-auth-v2-organization-user-provider_role-requests-report")
                 .handler(organizationHandler::getProviderRequestReport);
 
         routerBuilder
-                .operation("get-auth-v1-credit-request-report")
+                .operation("get-auth-v2-credit-request-report")
                 .handler(organizationHandler::getCreditRequestReport);
 
 

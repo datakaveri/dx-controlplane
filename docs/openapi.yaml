@@ -1,14 +1,27 @@
 openapi: 3.0.2
 info:
-  title: Telangana-Data-Exchange-ACL-Server + DX Authentication, Authorization, and
-    Accounting (AAA) Server
+  title: Dx- Control Plane - Catalogue - Authentication , Authorization and Accounting (AAA) Server
   version: 1.1.0
-  description: "\n# Introduction\n\n**Telangana Data Exchange (TgDeX) Access Control\
-    \ List (ACL) Server** are designed for creating and managing policies for consumers\
-    \ and consumer delegates.\nThis allows providers and provider delegates to control\
-    \ access to their resources by consumers and consumer delegates.\nThis API specification\
-    \ for ACL APD requires a bearer token from the **Data Exchange (DX) Keycloak**\
-    \ for authentication purposes.\n\n# Configurations\n- **Server**: \n  - In the\
+  description: "\n# About DX AAA\n\n
+     Dx Control Plane **Auth Server (AAA)**  is a core component of the Dx Control Plane responsible for validating \
+    JWT tokens and enforcing **Role-Based Access Control (RBAC)** on incoming API requests. The **Keycloak Server** acts \
+    as the **Identity Provider (IdP)** and issues signed JWT tokens upon successful user login or registration. The AAA \
+    validates the token by verifying its signature, expiration, and integrity, and extracts user roles from the token claims.\
+    \n\
+    This enables secure access to platform services such as organization management, credit management, compute APIs, \
+    and KYC check APIs. Users can be assigned roles such as `compute`, `publisher`, `org_admin`, and `cos_admin`, \
+    which determine the API operations they are authorized to perform.\
+    \n\
+    The Auth Server ensures that only authorized users can perform actions according to their role, by matching \
+    the required role for each API with the roles present in the user's JWT. Additionally, audit logging tracks \
+    authentication and authorization events for security and troubleshooting purposes.
+    \n\n# About DX Catalogue\n The DX Catalogue is a core component of the Dx Control Plane responsible for \
+    \ dataset discovery portal and metadata store.It enables *Providers* of datasources to describe them with DX
+    \ based annotations to make discovery and consumption of data both automatable and semantically describable.\
+    \ For search and discovery, it allows users to search through text and geo-based queries. \
+    \ The catalogue is a [JSON-LD](https://json-ld.org/) document stored and based on the \
+    \ [RDF](https://www.w3.org/RDF/) information exchange model. \
+    \n#  Configurations\n- **Server**: \n  - In the\
     \ doc, we display the server url to be https://example.com with the hostname\
     \ as example.com\n  - This could be configured according to the deployment\n\
     - **Base path**:\n     - Base path is the path on which API is served, relative\
@@ -16,29 +29,14 @@ info:
     \ values could be configured according to the deployment\n     - The base path\
     \ for [DX AAA Server](https://github.com/datakaveri/iudx-aaa-server) is set to\
     \ `/iudx/v2/auth`\n     - The base path for [DX Catalogue Server](https://github.com/datakaveri/iudx-catalogue-server)\
-    \ is set to `/iudx/v2/cat`\n     - All the APIs except `/verify` endpoint contain\
-    \ `/iudx/acl/apd/v2` as it's base path\n- **Request Samples**:\n  - The `<tokenValue>`\
+    \ is set to `/iudx/v2/cat`\n - **Request Samples**:\n  - The `<tokenValue>`\
     \ in the header of request sample could be replaced with respective token value\
     \ [Also refer Tokens section [here](#section/Tokens)]\n  - The `<payload>` in\
     \ the request sample could be replaced with the payload given adjacent to the\
-    \ request sample    \n\n# Tokens\n - All the endpoints should contain valid DX\
-    \ Identity token in the request header\n\n| Endpoint | Token Type | Users |\n\
-    |----------|------------|--------|\n| [(GET) /access_request/provider](#operation/get-auth-v1-access-requests-provider)\
-    \  | DX Keycloak Token | Provider, Org Admin |\n| [(GET) /access_request/consumer](#operation/get-auth-v1-access-requests-consumer)\
-    \  | DX Keycloak Token | Consumer, Provider,Cos Admin,Org Admin,user with compute|\n\
-    | [(POST) /access_request](#operation/post-auth-v1-access-requests)  | DX Keycloak\
-    \ Token | Consumer, Provider,Cos Admin,Org Admin,user with compute |\n| [(PUT)\
-    \ /access_request](#operation/put-auth-v1-access-requests)  | DX Keycloak Token\
-    \ | Provider,Org Admin |\n| [(POST) /access_request/has_access](#operation/post-auth-v1-access-requests-has-access)\
-    \  | DX Keycloak Token | Consumer, Provider,Cos Admin,Org Admin,user with compute\
-    \ |\n| [(GET) /access_request/provider/report](#operation/get-auth-v1-access-requests-provider-report)\
-    \  | DX Keycloak Token | Provider |\n| [(GET) /access_request/organisation/report](#operation/get-auth-v1-access-requests-org-admin-report)\
-    \ | DX Keycloak Token | Org  Admin |\n| [(GET) /access_request/organisation](#operation/get-auth-v1-access-requests-organisation)\
-    \ | DX Keycloak Token | Org Admin | \n\n# API HTTP Responses\n Apart from the\
+    \ request sample    \n\n# API HTTP Responses\n Apart from the\
     \ response codes specified in each API, the API server may respond with certain\
     \ 4xx and 5xx error codes which are related to common API Gateway behaviours.\n\
-    \ The application should address them accordingly.\n\n\n---\n\nAPI specification\
-    \ for DX AAA Server. These APIs are used by users manage organisations, creadits\
+    \ The application should address them accordingly.\n\n
     \  "
   contact:
     name: For support contact CDPG Team at
@@ -56,7 +54,7 @@ paths:
       summary: 'AAA-001-PF Admin: Get Organisation Creation requests'
       tags:
         - Organisation APIs
-      operationId: get-auth-v1-organisations-request
+      operationId: get-auth-v2-organisations-request
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
@@ -211,7 +209,7 @@ paths:
       summary: 'AAA-002-New User: New organisation creation request'
       tags:
         - Organisation APIs
-      operationId: post-auth-v1-organisations-request
+      operationId: post-auth-v2-organisations-request
       requestBody:
         description: |
           - `name` : Name of the organization
@@ -431,7 +429,7 @@ paths:
         A successful response indicates that the organization request has been updated.
       tags:
         - Organisation APIs
-      operationId: post-auth-v1-approve-create_org
+      operationId: post-auth-v2-approve-create_org
       security:
         - authorization: [ ]
       requestBody:
@@ -676,7 +674,6 @@ paths:
                         tableName: organization_join_requests
                         roles:
                           - consumer
-                          - default-roles-tgdex-pilot
                           - provider
                     paginationInfo:
                       page: 1
@@ -685,7 +682,7 @@ paths:
                       totalPages: 346
                       hasNext: true
                       hasPrevious: false
-      operationId: get-auth-v1-organisations-join-requests
+      operationId: get-auth-v2-organisations-join-requests
       security:
         - authorization: [ ]
     post:
@@ -821,7 +818,7 @@ paths:
                     title: Conflict
                     detail: 'ERROR: duplicate key value violates unique constraint
                       "organization_join_requests_user_id_key" (23505)'
-      operationId: post-auth-v1-organisations-join-requests
+      operationId: post-auth-v2-organisations-join-requests
       security:
         - authorization: [ ]
 
@@ -849,7 +846,7 @@ paths:
         This operation updates the status of an existing join request.
       tags:
         - Organisation APIs
-      operationId: put-auth-v1-organisations-join-requests
+      operationId: put-auth-v2-organisations-join-requests
       security:
         - authorization: [ ]
       requestBody:
@@ -1053,7 +1050,7 @@ paths:
                       totalPages: 346
                       hasNext: true
                       hasPrevious: false
-      operationId: get-auth-v1-org
+      operationId: get-auth-v2-org
       security:
         - authorization: [ ]
   /iudx/v2/auth/organisations/{id}:
@@ -1075,7 +1072,7 @@ paths:
       responses:
         '200':
           description: OK - Successfully deleted organization.
-      operationId: delete-auth-v1-organisations-id
+      operationId: delete-auth-v2-organisations-id
       security:
         - authorization: [ ]
     put:
@@ -1189,7 +1186,7 @@ paths:
                       createdAt: '2025-06-03T16:28:24.205541'
                       updatedAt: '2025-06-03T16:28:24.205541'
                       tableName: organizations
-      operationId: put-auth-v1-organisations-id
+      operationId: put-auth-v2-organisations-id
     get:
       summary: 'AAA-010-PFAdmin: Get Organisation By ID'
       description: >
@@ -1315,7 +1312,7 @@ paths:
                       totalPages: 346
                       hasNext: true
                       hasPrevious: false
-      operationId: get-auth-v1-organisations-id
+      operationId: get-auth-v2-organisations-id
       security:
         - authorization: [ ]
   /iudx/v2/auth/organisations/{id}/users:
@@ -1521,7 +1518,7 @@ paths:
                     type: string
                   detail:
                     type: string
-      operationId: get-auth-v1-org-users
+      operationId: get-auth-v2-org-users
       security:
         - authorization: [ ]
   /iudx/v2/auth/organisations/{id}/users/{user_id}:
@@ -1576,7 +1573,7 @@ paths:
                     type: urn:dx:ControlPlane:success
                     title: Success
                     detail: Deleted Organisation User
-      operationId: delete-auth-v1-organisations-users-id
+      operationId: delete-auth-v2-organisations-users-id
       security:
         - authorization: [ ]
     put:
@@ -1616,7 +1613,7 @@ paths:
                     type: urn:dx:ControlPlane:success
                     title: Success
                     detail: Updated Organisation User Role
-      operationId: put-auth-v1-organization-users-role
+      operationId: put-auth-v2-organization-users-role
       requestBody:
         content:
           application/json:
@@ -1654,13 +1651,13 @@ paths:
       responses:
         '200':
           description: OK
-      operationId: get-auth-v1-organisations-id-users-user_id
+      operationId: get-auth-v2-organisations-id-users-user_id
 
       security:
         - authorization: [ ]
   /iudx/v2/auth/user/credit/balance:
     get:
-      operationId: get-auth-v1-user-credit-balance
+      operationId: get-auth-v2-user-credit-balance
       summary: Get the specified user's credit balance
       description: Returns the credit balance for the specified user (KYC-verified).
       tags:
@@ -1695,7 +1692,7 @@ paths:
           type: string
           format: uuid
     get:
-      operationId: get-auth-v1-admin-user-credit-balance
+      operationId: get-auth-v2-admin-user-credit-balance
       summary: Get the specified user's credit balance (COS ADMIN)
       description: Returns the credit balance for the specified user (KYC-verified).
       tags:
@@ -1822,7 +1819,7 @@ paths:
                       totalPages: 346
                       hasNext: true
                       hasPrevious: false
-      operationId: get-auth-v1-credit
+      operationId: get-auth-v2-credit
 
       security:
         - authorization: [ ]
@@ -1898,7 +1895,7 @@ paths:
                       requestedAt: '2025-06-04T09:47:27.323861'
                       processedAt: '2025-06-04T09:47:27.323861'
                       tableName: credit_requests
-      operationId: post-auth-v1-credit-request
+      operationId: post-auth-v2-credit-request
 
       security:
         - authorization: [ ]
@@ -1972,7 +1969,7 @@ paths:
                       requestedAt: '2025-06-04T09:47:27.323861'
                       updatedBalance: 20000
                       tableName: credit_transactions
-      operationId: put-auth-v1-credit-request
+      operationId: put-auth-v2-credit-request
 
       security:
         - authorization: [ ]
@@ -2062,7 +2059,7 @@ paths:
                       requestedAt: '2025-05-29T19:07:00'
                       updatedBalance: 19950
                       tableName: credit_transactions
-      operationId: put-auth-v1-user-credit
+      operationId: put-auth-v2-user-credit
       requestBody:
         content:
           application/json:
@@ -2095,7 +2092,7 @@ paths:
         - authorization: [ ]
   /iudx/v2/auth/admin/user/credit/add:
     put:
-      operationId: put-auth-v1-user-credit-add
+      operationId: put-auth-v2-user-credit-add
       summary: Add credits to user's balance amount
       description: Adds credits to the specified user's balance.
       requestBody:
@@ -2300,7 +2297,7 @@ paths:
                       totalPages: 346
                       hasNext: true
                       hasPrevious: false
-      operationId: get-auth-v1-compute-role-request
+      operationId: get-auth-v2-compute-role-request
 
       security:
         - authorization: [ ]
@@ -2366,7 +2363,7 @@ paths:
                       createdAt: '2025-06-04T10:54:53.301846'
                       updatedAt: '2025-06-04T10:54:53.301846'
                       tableName: compute_role
-      operationId: post-auth-v1-compute-role-request
+      operationId: post-auth-v2-compute-role-request
 
       security:
         - authorization: [ ]
@@ -2408,7 +2405,7 @@ paths:
                     type: urn:dx:ControlPlane:success
                     title: Success
                     detail: 'Updated Resquest '
-      operationId: put-auth-v1-compute-role-request
+      operationId: put-auth-v2-compute-role-request
       security:
         - authorization: [ ]
       requestBody:
@@ -2433,7 +2430,7 @@ paths:
       responses:
         '200':
           description: OK
-      operationId: post-auth-v1-kyc-verify
+      operationId: post-auth-v2-kyc-verify
 
       security:
         - authorization: [ ]
@@ -2455,7 +2452,7 @@ paths:
       responses:
         '200':
           description: OK
-      operationId: get-auth-v1-kyc-confirm
+      operationId: get-auth-v2-kyc-confirm
       parameters:
         - schema:
             type: string
@@ -2494,7 +2491,7 @@ paths:
                         status: granted
                         created_at: 2025-08-25T05:28:20.356043
                         updated_at: 2025-08-25T05:30:14.607398
-                        roles: [ consumer, compute, default-roles-tgdex-pilot, provider ]
+                        roles: [ consumer, compute, provider ]
                         account_enabled: true
                     paginationInfo:
                       page: 1
@@ -2503,7 +2500,7 @@ paths:
                       totalPages: 1
                       hasNext: false
                       hasPrevious: false
-      operationId: get-auth-v1-user-roles
+      operationId: get-auth-v2-user-roles
       security:
         - authorization: [ ]
     post:
@@ -2538,7 +2535,7 @@ paths:
                     type: 'urn:dx:controlPanel:success'
                     title: Success
                     detail: Created request
-      operationId: post-auth-v1-user-roles
+      operationId: post-auth-v2-user-roles
       security:
         - authorization: [ ]
   /iudx/v2/auth/organization/user/provider_role/requests/{id}:
@@ -2617,7 +2614,7 @@ paths:
                     type: string
                   detail:
                     type: string
-      operationId: put-auth-v1-user-roles
+      operationId: put-auth-v2-user-roles
       security:
         - authorization: [ ]
       requestBody:
@@ -2777,7 +2774,7 @@ paths:
                         request_type: organisation_join
                       createdAt: '2025-06-04T06:12:48.991'
                       kycData: { }
-      operationId: get-auth-v1-user
+      operationId: get-auth-v2-user
 
       security:
         - authorization: [ ]
@@ -2788,7 +2785,7 @@ paths:
       responses:
         '200':
           description: OK
-      operationId: put-auth-v1-user
+      operationId: put-auth-v2-user
       security:
         - authorization: [ ]
       requestBody:
@@ -2827,7 +2824,7 @@ paths:
         '
       tags:
         - Role APIs
-      operationId: put-auth-v1-user-password
+      operationId: put-auth-v2-user-password
       security:
         - authorization: [ ]
       requestBody:
@@ -2966,7 +2963,7 @@ paths:
                       organisation: { }
                       createdAt: '2025-05-21T09:33:12.073'
                       kycData: { }
-      operationId: get-auth-v1-user-id-admin
+      operationId: get-auth-v2-user-id-admin
       parameters:
         - schema:
             type: string
@@ -3173,13 +3170,13 @@ paths:
               schema:
                 type: object
                 properties: { }
-      operationId: get-auth-v1-admin-user
+      operationId: get-auth-v2-admin-user
 
       security:
         - authorization: [ ]
   /iudx/v2/auth/organization/user/provider:
     post:
-      operationId: post-auth-v1-organization-user-provider
+      operationId: post-auth-v2-organization-user-provider
       summary: 'AAA-017-OrgAdmin: Grant provider role to user'
       description: This endpoint allows organization admin grants provider role
         to user in its organization.
@@ -3237,7 +3234,7 @@ paths:
       responses:
         '200':
           description: OK
-      operationId: post-auth-v1-user-update
+      operationId: post-auth-v2-user-update
       security:
         - authorization: [ ]
   /iudx/v2/auth/admin/{id}/update:
@@ -3269,7 +3266,7 @@ paths:
       responses:
         '200':
           description: OK
-      operationId: post-auth-v1-admin-id-update
+      operationId: post-auth-v2-admin-id-update
       security:
         - authorization: [ ]
   /iudx/v2/auth/user/delete:
@@ -3280,7 +3277,7 @@ paths:
       responses:
         '200':
           description: OK
-      operationId: delete-auth-v1-user
+      operationId: delete-auth-v2-user
       security:
         - authorization: [ ]
   /iudx/v2/auth/kyc/revoke:
@@ -3291,7 +3288,7 @@ paths:
       responses:
         '200':
           description: OK
-      operationId: post-auth-v1-kyc-revoke
+      operationId: post-auth-v2-kyc-revoke
       security:
         - authorization: [ ]
   /iudx/v2/auth/organisations/requests/report:
@@ -3302,7 +3299,7 @@ paths:
       responses:
         '200':
           description: OK
-      operationId: get-auth-v1-organisations-requests-report
+      operationId: get-auth-v2-organisations-requests-report
       security:
         - authorization: [ ]
   /iudx/v2/auth/organisations/report:
@@ -3313,7 +3310,7 @@ paths:
       responses:
         '200':
           description: OK
-      operationId: get-auth-v1-organisations-report
+      operationId: get-auth-v2-organisations-report
       security:
         - authorization: [ ]
   /iudx/v2/auth/organisations/{id}/join_requests/report:
@@ -3324,7 +3321,7 @@ paths:
       responses:
         '200':
           description: OK
-      operationId: get-auth-v1-organisations-join_requests-report
+      operationId: get-auth-v2-organisations-join_requests-report
       security:
         - authorization: [ ]
     parameters:
@@ -3342,7 +3339,7 @@ paths:
       responses:
         '200':
           description: OK
-      operationId: get-auth-v1-compute-requests-report
+      operationId: get-auth-v2-compute-requests-report
       security:
         - authorization: [ ]
   /iudx/v2/auth/organization/user/provider_role/requests/report:
@@ -3353,7 +3350,7 @@ paths:
       responses:
         '200':
           description: OK
-      operationId: get-auth-v1-organization-user-provider_role-requests-report
+      operationId: get-auth-v2-organization-user-provider_role-requests-report
       security:
         - authorization: [ ]
   /iudx/v2/auth/credit/request/report:
@@ -3364,7 +3361,7 @@ paths:
       responses:
         '200':
           description: OK
-      operationId: get-auth-v1-credit-request-report
+      operationId: get-auth-v2-credit-request-report
       security:
         - authorization: [ ]
   /iudx/v2/auth/asset/request:
@@ -3372,7 +3369,7 @@ paths:
       summary: Create Asset Request
       tags:
         - Asset APIs
-      operationId: post-auth-v1-asset-request
+      operationId: post-auth-v2-asset-request
       requestBody:
         description: >
           - `asset_id` : The catalogue ID of the asset for which the request is to be created
@@ -3455,7 +3452,7 @@ paths:
       description: >
         Lists all the latest asset requests made by the org admin user calling the API,
         regardless of the request status.
-      operationId: get-auth-v1-asset-request
+      operationId: get-auth-v2-asset-request
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
@@ -3520,7 +3517,7 @@ paths:
       summary: Update Asset Request Status
       tags:
         - Asset APIs
-      operationId: put-auth-v1-asset-request
+      operationId: put-auth-v2-asset-request
       parameters:
         - name: id
           in: path
@@ -3590,7 +3587,7 @@ paths:
       summary: Delete User Asset Request
       description: >
         delete the pending asset requests made by the user calling the API.
-      operationId: delete-auth-v1-asset-request
+      operationId: delete-auth-v2-asset-request
       parameters:
         - name: id
           in: path
@@ -3662,7 +3659,7 @@ paths:
           description: Conflict – client already exists
   /iudx/v2/auth/jwks:
     get:
-      operationId: get-auth-v1-jwks
+      operationId: get-auth-v2-jwks
       summary: Get public key in JWKS format.
       tags:
         - Certificate API
@@ -3742,12 +3739,12 @@ paths:
                           - MIIBnDCCAT+gAwIBAgIEEC1BXTAMBggqhkjOPQQDAgUAMEIxCTAHBgNVBAYTADEJMAcGA1UECBMAMQkwBwYDVQQHEwAxCTAHBgNVBAoTADEJMAcGA1UECxMAMQkwBwYDVQQDEwAwHhcNMjMwNjA1MDUwODQ4WhcNMjQwNjA0MDUwODQ4WjBCMQkwBwYDVQQGEwAxCTAHBgNVBAgTADEJMAcGA1UEBxMAMQkwBwYDVQQKEwAxCTAHBgNVBAsTADEJMAcGA1UEAxMAMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAErVwOLOln7NhUdfZOQFfTOtJ62AgdKUeYZm8DgWCWJHaaXT95dipr94zJM+inSuqohVFCTxjajdTH8/O9JO43rKMhMB8wHQYDVR0OBBYEFNH2u8eeqj3509HAFJQS4F5NF4TQMAwGCCqGSM49BAMCBQADSQAwRgIhAL7zHYdN6PFTccFm1y07X0t2mJxNfgOaxihTi2tA9D8AAiEAomGmBvXA72X1gfhK3dhaDSd52BN1fUP/ALYNiyuXHg0=
                         x: rVwOLOln7NhUdfZOQFfTOtJ62AgdKUeYZm8DgWCWJHY
                         y: ml0_eXYqa_eMyTPop0rqqIVRQk8Y2o3Ux_PzvSTuN6w
-      description: Get the public key in JWKS format to authenticate/validate the generated JWT using `/auth/v1/token`
+      description: Get the public key in JWKS format to authenticate/validate the generated JWT using `/auth/v2/token`
   /iudx/v2/auth/token:
     parameters: [ ]
     post:
       summary: Create Token
-      operationId: post-auth-v1-token
+      operationId: post-auth-v2-token
       tags:
         - token
 
@@ -3787,7 +3784,7 @@ paths:
                       access_token:
                         type: string
                         description: The issued JWT access token
-                        example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9..."
+                        example: "eyJ0eXAiOiJKv2QiLCJhbGciOiJFUzI1NiJ9..."
                       token_type:
                         type: string
                         example: "jwt"
@@ -4219,8 +4216,8 @@ paths:
     post:
       summary: Retrieve organisation assets with filters
       description: >
-          Fetch all assets belonging to the organisation using advanced filters.  
-          Supports property-based, temporal, numeric range, and full-text search filters.  
+          Fetch all assets belonging to the organisation using advanced filters.
+          Supports property-based, temporal, numeric range, and full-text search filters.
 
           **Note:** This endpoint is restricted to users with the `org_admin` role.
       operationId: get org assets with filters
@@ -4352,8 +4349,8 @@ paths:
     post:
       summary: Retrieve all platform assets with filters
       description: >
-          Fetch all assets belonging to the platform using filters.  
-          Supports property-based, temporal, numeric range, and full-text search filters.  
+          Fetch all assets belonging to the platform using filters.
+          Supports property-based, temporal, numeric range, and full-text search filters.
           **Note:** This endpoint can only be accessed by users with the `cos_admin` role.
       operationId: get platform assets with filters
       tags:
@@ -4556,13 +4553,13 @@ paths:
       tags:
         - Discovery
       description: |
-        Unified catalogue search query for discovering entities that meet complex criteria. The 
-        `/search` endpoint supports a rich combination of property-based (`term`, `flattenedTerm`), 
+        Unified catalogue search query for discovering entities that meet complex criteria. The
+        `/search` endpoint supports a rich combination of property-based (`term`, `flattenedTerm`),
         range-based, and temporal-based searches using a common `searchCriteria` array format.
 
         #### 📌 `searchCriteria` Format (Unified)
         Each entry in `searchCriteria` must define:
-        - `searchType`: Determines the type of search (e.g., `term`, `flattenedTerm`, 
+        - `searchType`: Determines the type of search (e.g., `term`, `flattenedTerm`,
         `betweenRange`, `beforeTemporal`, etc.)
         - `field`: Field to search on (e.g., `type`, `dataReadiness`, `itemCreatedAt`)
         - `values`: Array of values (length depends on `searchType`)
@@ -4578,7 +4575,7 @@ paths:
         | `betweenTemporal`    | Timestamp field between two dates                   | 2 ISO datetime strings    |
         | `beforeTemporal`     | Timestamp before a given date                       | 1 ISO datetime string     |
         | `afterTemporal`      | Timestamp after a given date                        | 1 ISO datetime string     |
-  
+
         #### 🧠 Term Search (Property-based)
         Property search is allowed only on a predefined set of properties from the DX Schema Vocabulary, applicable to all subClasses of [IUDXEntity](https://voc.iudx.org.in/IUDXEntity).
 
@@ -5038,7 +5035,7 @@ paths:
 
         #### 🚩 Behavior
         - All objects in the `searchCriteria` array are combined using logical **AND**.
-        - Filters with `searchType` of `"term"`, `"flattenedTerm"` and `"range"` (numeric or temporal) 
+        - Filters with `searchType` of `"term"`, `"flattenedTerm"` and `"range"` (numeric or temporal)
         are supported.
         - The response always includes a count **aggregated by `type.keyword`**.
 
@@ -5340,7 +5337,7 @@ tags:
   - name: Activity Logs
     x-displayName: "Activity Logs"
     description: >
-      APIs for managing activity logs in the Telangana Data Exchange (TgDeX) platform.
+      APIs for managing activity logs in the platform.
       These APIs allow users to retrieve their own activity logs as well as administrative logs for auditing purposes.
       The endpoints support filtering by time range and pagination, and they also provide CSV export functionality for both consumer and admin activity logs.
   - name: Activity Report
@@ -9640,7 +9637,7 @@ components:
           example: 0e889bb0-38f8-496c-ba85-02845ff5cf67
         api:
           type: string
-          example: /iudx/cat/v1/item
+          example: /iudx/cat/v2/item
         method:
           type: string
           example: POST

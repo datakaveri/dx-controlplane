@@ -23,16 +23,16 @@ public class KYCController implements ApiController {
   public void register(RouterBuilder routerBuilder) {
 
     routerBuilder
-      .operation("get-auth-v1-kyc-confirm")
+      .operation("get-auth-v2-kyc-confirm")
       .handler(kycHandler::confirmKYC);
 
 
     routerBuilder
-      .operation("post-auth-v1-kyc-verify")
+      .operation("post-auth-v2-kyc-verify")
       .handler(kycHandler::verifyKYC);
 
     routerBuilder
-      .operation("post-auth-v1-kyc-revoke")
+      .operation("post-auth-v2-kyc-revoke")
       .handler(kycHandler::revokeKYC);
 
   }

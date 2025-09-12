@@ -19,7 +19,7 @@ public class TokenController implements ApiController {
 
   @Override
   public void register(RouterBuilder builder) {
-    builder.operation("post-auth-v1-token").handler(this::handleCreateToken);
+    builder.operation("post-auth-v2-token").handler(this::handleCreateToken);
   }
 
   private void handleCreateToken(RoutingContext ctx) {
