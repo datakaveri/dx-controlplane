@@ -1,0 +1,2947 @@
+{
+	"info": {
+		"_postman_id": "1d173034-e4a6-4cfc-9e12-79b21bb1e52d",
+		"name": "TGDEX-WORK flow in order",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "37566804",
+		"_collection_link": "https://backend-team-8806.postman.co/workspace/12-SEPT~0ae44a18-dfea-46a3-bd46-0edda8eaadc2/collection/37566804-1d173034-e4a6-4cfc-9e12-79b21bb1e52d?action=share&source=collection_link&creator=37566804"
+	},
+	"item": [
+		{
+			"name": "TGDeX WORK FLOW",
+			"item": [
+				{
+					"name": "Get Token - Platform  Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let json = pm.response.json();",
+									"pm.environment.set(\"cos_token\", json.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password"
+								},
+								{
+									"key": "client_id",
+									"value": "frontend-client"
+								},
+								{
+									"key": "username",
+									"value": "admin.cos.tgdex@datakaveri.org"
+								},
+								{
+									"key": "password",
+									"value": "&5Chd&dm<gDQ6bN*"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{kc_host}}/realms/{{realm}}/protocol/openid-connect/token",
+							"host": [
+								"{{kc_host}}"
+							],
+							"path": [
+								"realms",
+								"{{realm}}",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Token - orgadmin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let json = pm.response.json();",
+									"pm.environment.set(\"org_admin_token\", json.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password"
+								},
+								{
+									"key": "client_id",
+									"value": "{{client_id}}"
+								},
+								{
+									"key": "username",
+									"value": "{{org_admin}}"
+								},
+								{
+									"key": "password",
+									"value": "{{org_admin_pass}}"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{kc_host}}/realms/{{realm}}/protocol/openid-connect/token",
+							"host": [
+								"{{kc_host}}"
+							],
+							"path": [
+								"realms",
+								"{{realm}}",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Token - User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let json = pm.response.json();",
+									"pm.environment.set(\"user_token\", json.access_token);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password"
+								},
+								{
+									"key": "client_id",
+									"value": "{{client_id}}"
+								},
+								{
+									"key": "username",
+									"value": "{{user}}"
+								},
+								{
+									"key": "password",
+									"value": "{{user_pass}}"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{kc_host}}/realms/{{realm}}/protocol/openid-connect/token",
+							"host": [
+								"{{kc_host}}"
+							],
+							"path": [
+								"realms",
+								"{{realm}}",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Any User: New organisation creation request",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{org_admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJMc2N4aHJGemZUYWJiRWhKWTlab0ZHZXVyNVFxaUFCai05ZE5hSERRMVFnIn0.eyJleHAiOjE3NDQxNzQ2MTEsImlhdCI6MTc0NDE3NDMxMSwiYXV0aF90aW1lIjoxNzQ0MTc0MzEwLCJqdGkiOiJiYmRmOTI5Ny1jZWYwLTQ3OTctYmU1ZS01ZjQ3ZjI1NWY0YzQiLCJpc3MiOiJodHRwczovL2tleWNsb2FrLXVwZGF0ZS5pdWR4LmlvL2F1dGgvcmVhbG1zL3RnYWkiLCJzdWIiOiIwYzI3NDViZC1jZDc1LTRhNTItOWI3MS1kNjczY2I0MGYwOTgiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJhY2NvdW50Iiwic2Vzc2lvbl9zdGF0ZSI6ImVjZThjYTE2LWMyZTItNDlmNi04ZGIxLTExNjRmMWM0ZDQyNSIsImFjciI6IjEiLCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsInNpZCI6ImVjZThjYTE2LWMyZTItNDlmNi04ZGIxLTExNjRmMWM0ZDQyNSIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwibmFtZSI6IlRpbSBKb25lcyIsInByZWZlcnJlZF91c2VybmFtZSI6InRpbWpvbmVzQGdtYWlsLmNvbSIsImdpdmVuX25hbWUiOiJUaW0iLCJmYW1pbHlfbmFtZSI6IkpvbmVzIiwiZW1haWwiOiJ0aW1qb25lc0BnbWFpbC5jb20ifQ.V_33tbwKdGIHTEwqCQu7TxFRtYtnOoTTAytuPK0Q45cUDZd4jvQruBu7QAt1IcKnT5RPmDO3Zc_I0n4G5Cu86X9dVzqYY077Etcq9rjaX3s1HU2kg0W7X-JhDRFx36COJOjaIYF53r3s3S_9DYvHF477bgmpqTKEnchFTRHG6-Y_vlUFX-dsMJOHI7O9QPerjO9Xe8ejVpYE0YVaCr9afG_BAD7pe9H_t_uIbfszuPD5IV7thhBsF35kzbCduolLMeendvR8XvU1f7VL47G6uYITQ03w7iFGECUiwGwggOflgmLAlpfKik3-6AkLtV3bQhYPlHJsO9-cqpY89k8RMg",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"{{org_name}}\",\n  \"logo_path\": \"/logos/ai.png\",\n  \"entity_type\": \"Public\",\n  \"org_sector\": \"Open Source\",\n  \"website_link\": \"https://ai.example.com\",\n  \"address\": \"123 Innovation Avenue, Bangalore, India\",\n  \"pancard_path\": \"/documents/pancard.pdf\",\n  \"certificate_path\": \"cert_path.pdf\",\n   \"organisation_documents\" : \"/documents/org.pdf\",\n  \"emp_id\": \"EMP12345\",\n  \"job_title\": \"Admin\",\n  \"phone_no\": \"+91-9999999999\"\n  }\n\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{core_host}}{{auth_base}}/organisations/requests",
+							"host": [
+								"{{core_host}}{{auth_base}}"
+							],
+							"path": [
+								"organisations",
+								"requests"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PF Admin: Get Organisation Creation requests",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test the response code",
+									"pm.test(\"response is 200 (OK)\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test the response header",
+									"pm.test(\"Check response header\", function () {",
+									"    pm.response.to.have.header(\"Content-Type\", \"application/json\");",
+									"});",
+									"",
+									"// Test the response body and extract org_create_req_id",
+									"pm.test(\"Check response body and extract org_create_req_id\", function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:aaa:success\");",
+									"    pm.expect(body).to.have.property(\"title\", \"Success\");",
+									"",
+									"    const orgName = pm.environment.get(\"org_name\");",
+									"    const match = body.result.find(org => org.name === orgName);",
+									"",
+									"    pm.expect(match).to.not.be.undefined;",
+									"    pm.environment.set(\"org_create_req_id\", match.id);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{cos_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{consumerToken}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "Authorization",
+								"value": "{{consumerDelegateToken}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{core_host}}{{auth_base}}/organisations/requests",
+							"host": [
+								"{{core_host}}{{auth_base}}"
+							],
+							"path": [
+								"organisations",
+								"requests"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PF Admin: Approve creation of new organisation",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{cos_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"req_id\": \"{{org_create_req_id}}\",\n    \"status\": \"granted\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{core_host}}{{auth_base}}/organisations/requests/approve",
+							"host": [
+								"{{core_host}}{{auth_base}}"
+							],
+							"path": [
+								"organisations",
+								"requests",
+								"approve"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Token - Update Org Admin token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let json = pm.response.json();",
+									"pm.environment.set(\"org_admin_token\", json.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password"
+								},
+								{
+									"key": "client_id",
+									"value": "{{client_id}}"
+								},
+								{
+									"key": "username",
+									"value": "{{org_admin}}"
+								},
+								{
+									"key": "password",
+									"value": "{{org_admin_pass}}"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{kc_host}}/realms/{{realm}}/protocol/openid-connect/token",
+							"host": [
+								"{{kc_host}}"
+							],
+							"path": [
+								"realms",
+								"{{realm}}",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Any User: List all organizations",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test the response code",
+									"pm.test(\"response is 200 (OK)\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test the response header",
+									"pm.test(\"Check response header\", function () {",
+									"    pm.response.to.have.header(\"Content-Type\", \"application/json\");",
+									"});",
+									"",
+									"// Test the response body and extract organizationId",
+									"pm.test(\"Check response body and extract organizationId\", function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:aaa:success\");",
+									"    pm.expect(body).to.have.property(\"title\", \"Success\");",
+									"",
+									"    const orgName = pm.environment.get(\"org_name\");",
+									"    const match = body.result.find(org => org.orgName === orgName);",
+									"",
+									"    pm.expect(match).to.not.be.undefined;",
+									"    pm.environment.set(\"organizationId\", match.id);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{org_admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{core_host}}{{auth_base}}/organisations",
+							"host": [
+								"{{core_host}}{{auth_base}}"
+							],
+							"path": [
+								"organisations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Token - ORG Mem provider",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let json = pm.response.json();",
+									"pm.environment.set(\"orgmem_token\", json.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password"
+								},
+								{
+									"key": "client_id",
+									"value": "frontend-client"
+								},
+								{
+									"key": "username",
+									"value": "{{org_mem}}"
+								},
+								{
+									"key": "password",
+									"value": "{{org_mem_pass}}"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{kc_host}}/realms/{{realm}}/protocol/openid-connect/token",
+							"host": [
+								"{{kc_host}}"
+							],
+							"path": [
+								"realms",
+								"{{realm}}",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Any User: Create Request to Join an Organisation",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{orgmem_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"job_title\": \"Provider\",\n    \"emp_id\": \"EMP8790\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{core_host}}{{auth_base}}/organisations/{{organizationId}}/join_requests",
+							"host": [
+								"{{core_host}}{{auth_base}}"
+							],
+							"path": [
+								"organisations",
+								"{{organizationId}}",
+								"join_requests"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "OrgAdmin: Get all organisation joining requests",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test the response code",
+									"pm.test(\"response is 200 (OK)\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test the response header",
+									"pm.test(\"Check response header\", function () {",
+									"    pm.response.to.have.header(\"Content-Type\", \"application/json\");",
+									"});",
+									"",
+									"// Extract org_join_reqId where organizationId matches and status is pending",
+									"pm.test(\"Extract org_join_reqId with status pending\", function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:controlPanel:success\");",
+									"    pm.expect(body).to.have.property(\"title\", \"Success\");",
+									"",
+									"    const organizationId = pm.environment.get(\"organizationId\");",
+									"    const match = body.result.find(item => ",
+									"        item.organization_id === organizationId && item.status === \"pending\"",
+									"    );",
+									"",
+									"    pm.expect(match).to.not.be.undefined;",
+									"    pm.environment.set(\"org_join_reqId\", match.id);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{org_admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "id",
+								"value": "cdb8a386-6552-4108-a8b8-5734f896a456",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{core_host}}{{auth_base}}organisations/{{organizationId}}/join_requests",
+							"host": [
+								"{{core_host}}{{auth_base}}organisations"
+							],
+							"path": [
+								"{{organizationId}}",
+								"join_requests"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "OrgAdmin: Approve joining of organisation",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{org_admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"granted\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{core_host}}{{auth_base}}/organisations/{{organizationId}}/join_requests/{{org_join_reqId}}",
+							"host": [
+								"{{core_host}}{{auth_base}}"
+							],
+							"path": [
+								"organisations",
+								"{{organizationId}}",
+								"join_requests",
+								"{{org_join_reqId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "OrgAdmin: Get User of an Organisation",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{org_admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{core_host}}{{auth_base}}/organisations/{{organizationId}}/users",
+							"host": [
+								"{{core_host}}{{auth_base}}"
+							],
+							"path": [
+								"organisations",
+								"{{organizationId}}",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Token - Update OrgMem Token",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let json = pm.response.json();",
+									"pm.environment.set(\"orgmem_token\", json.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password"
+								},
+								{
+									"key": "client_id",
+									"value": "frontend-client"
+								},
+								{
+									"key": "username",
+									"value": "{{org_mem}}"
+								},
+								{
+									"key": "password",
+									"value": "{{org_mem_pass}}"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{kc_host}}/realms/{{realm}}/protocol/openid-connect/token",
+							"host": [
+								"{{kc_host}}"
+							],
+							"path": [
+								"realms",
+								"{{realm}}",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Org Member: Resuest Provider Role",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{orgmem_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{core_host}}{{auth_base}}/organization/user/provider_role/requests",
+							"host": [
+								"{{core_host}}{{auth_base}}"
+							],
+							"path": [
+								"organization",
+								"user",
+								"provider_role",
+								"requests"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "OrgAdmin: Get Provider Role requests",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test the response code",
+									"pm.test(\"response is 200 (OK)\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test the response header",
+									"pm.test(\"Check response header\", function () {",
+									"    pm.response.to.have.header(\"Content-Type\", \"application/json\");",
+									"});",
+									"",
+									"// Extract provider_role_reqId where organization_id matches and status is pending",
+									"pm.test(\"Extract provider_role_reqId with status pending\", function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:controlPanel:success\");",
+									"    pm.expect(body).to.have.property(\"title\", \"Success\");",
+									"",
+									"    const organizationId = pm.environment.get(\"organizationId\");",
+									"    const match = body.result.find(item => ",
+									"        item.organization_id === organizationId && item.status === \"pending\"",
+									"    );",
+									"",
+									"    pm.expect(match).to.not.be.undefined;",
+									"    pm.environment.set(\"provider_role_reqId\", match.id);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{org_admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{core_host}}{{auth_base}}/organization/user/provider_role/requests",
+							"host": [
+								"{{core_host}}{{auth_base}}"
+							],
+							"path": [
+								"organization",
+								"user",
+								"provider_role",
+								"requests"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "OrgAdmin: Update provider role request",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{org_admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"granted\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{core_host}}{{auth_base}}/organization/user/provider_role/requests/{{provider_role_reqId}}",
+							"host": [
+								"{{core_host}}{{auth_base}}"
+							],
+							"path": [
+								"organization",
+								"user",
+								"provider_role",
+								"requests",
+								"{{provider_role_reqId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Uodate  Token for  ORG Mem/Provider",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let json = pm.response.json();",
+									"pm.environment.set(\"orgmem_token\", json.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{orgmem_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password"
+								},
+								{
+									"key": "client_id",
+									"value": "frontend-client"
+								},
+								{
+									"key": "username",
+									"value": "{{org_mem}}"
+								},
+								{
+									"key": "password",
+									"value": "{{org_mem_pass}}"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{kc_host}}/realms/{{realm}}/protocol/openid-connect/token",
+							"host": [
+								"{{kc_host}}"
+							],
+							"path": [
+								"realms",
+								"{{realm}}",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Sample Databank",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"// Test the response header",
+									"pm.test(\"Check response header\", function () {",
+									"    pm.response.to.have.header(\"Content-Type\", \"application/json\");",
+									"});",
+									"",
+									"// Test the response body and extract databankId",
+									"pm.test(\"Check response body and extract databakId\", function () {",
+									"    const body = pm.response.json();",
+									"        // pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
+									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:controlPanel:success\");",
+									"",
+									"",
+									"    pm.environment.set(\"databankId\", body.result.id);",
+									"    pm.environment.set(\"ownerUserId\", body.result.ownerUserId);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{orgmem_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{org_admin_token}}",
+								"disabled": true
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Origin",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{          \"type\": [\n                \"adex:DataBank\"\n            ],\n            \"name\": \"For org testing8\",\n            \"tags\": [\n                \"Fiber optic network\",\n                \" Telecom\",\n                \" Infrastructure\",\n                \" GeoSpatial\"\n            ],\n            \"label\": \"For org testing8\",\n            \"description\": \"This dataset catalogs detailed attributes for each fiber-optic cable span managed by T-Fiber, the state-owned internet and fiber-optic service provider in Telangana, India. Each record represents a continuous cable segment, identified by a unique span identifier and a descriptive route name. For every segment, the dataset records both the map-based length and the actual installed length in meters, the construction method used, the number of ducts occupied, and the type of crossing encountered. It also specifies which side of the corridor or roadway the cable runs along, and classifies the type of structure at the starting attachment point.\\n \\n In addition to textual and numeric attributes, the dataset includes geographic details such as the start and end location names, their respective X and Y coordinates in the spatial reference system, and a geometry field that encodes the precise route shape. Field engineers’ notes appear in both general remarks and observation summaries, while mobile data collection entries provide supplementary comments and links to mobile-captured images. A source feature identifier links each segment back to its origin in external systems. The dataset collectively represents the full inventory of cable segments laid out across the region, covering all technical, geographic, and field-collected metadata necessary for comprehensive network management. The dataset covers records entered between 2023 and 2025.\",\n            \"shortDescription\": \"Comprehensive record of each fiber-optic cable segment in Telangana covering technical specifications, geographic coordinates, construction details, and field observations.\",\n            \"organizationType\": \"Public\",\n            \"uploadedBy\": \"{{org_name}}\",\n            \"fileFormat\": \"CSV\",\n            \"accessPolicy\": \"OPEN\",\n            \"organizationId\": \"{{organizationId}}\",\n            \"industry\": \"Telecom\",\n            \"geoCoverage\": \"Telangana\",\n            \"yearRange\": \"2023-2025\",\n            \"uploadFrequency\": \"One-time\",\n            \"verifiedBy\": \"Dept. of ITE&C\",\n            \"license\": \"CC BY 4.0\",\n            \"department\": \"{{organizationId}}\",\n            \"@context\": \"https://agrijson.org\"\n            \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{core_host}}{{cat_base}}/item",
+							"host": [
+								"{{core_host}}{{cat_base}}"
+							],
+							"path": [
+								"item"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Databank",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"// Test the response header",
+									"pm.test(\"Check response header\", function () {",
+									"    pm.response.to.have.header(\"Content-Type\", \"application/json\");",
+									"});",
+									"",
+									"// Test the response body and extract databankId",
+									"pm.test(\"Check response body and extract databakId\", function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:controlPanel:success\");",
+									"",
+									"",
+									"    pm.environment.set(\"databankId\", body.result.id);",
+									"    pm.environment.set(\"ownerUserId\", body.result.ownerUserId);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{orgmem_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{org_admin_token}}",
+								"disabled": true
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Origin",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{          \"type\": [\n                \"adex:DataBank\"\n            ],\n            \"name\": \"For org testing8\",\n            \"tags\": [\n                \"Fiber optic network\",\n                \" Telecom\",\n                \" Infrastructure\",\n                \" GeoSpatial\"\n            ],\n            \"label\": \"For org testing8\",\n            \"description\": \"This dataset catalogs detailed attributes for each fiber-optic cable span managed by T-Fiber, the state-owned internet and fiber-optic service provider in Telangana, India. Each record represents a continuous cable segment, identified by a unique span identifier and a descriptive route name. For every segment, the dataset records both the map-based length and the actual installed length in meters, the construction method used, the number of ducts occupied, and the type of crossing encountered. It also specifies which side of the corridor or roadway the cable runs along, and classifies the type of structure at the starting attachment point.\\n \\n In addition to textual and numeric attributes, the dataset includes geographic details such as the start and end location names, their respective X and Y coordinates in the spatial reference system, and a geometry field that encodes the precise route shape. Field engineers’ notes appear in both general remarks and observation summaries, while mobile data collection entries provide supplementary comments and links to mobile-captured images. A source feature identifier links each segment back to its origin in external systems. The dataset collectively represents the full inventory of cable segments laid out across the region, covering all technical, geographic, and field-collected metadata necessary for comprehensive network management. The dataset covers records entered between 2023 and 2025.\",\n            \"shortDescription\": \"Comprehensive record of each fiber-optic cable segment in Telangana covering technical specifications, geographic coordinates, construction details, and field observations.\",\n            \"organizationType\": \"Public\",\n            \"uploadedBy\": \"{{org_name}}\",\n            \"fileFormat\": \"CSV\",\n            \"accessPolicy\": \"OPEN\",\n            \"organizationId\": \"{{organizationId}}\",\n            \"industry\": \"Telecom\",\n            \"geoCoverage\": \"Telangana\",\n            \"yearRange\": \"2023-2025\",\n            \"uploadFrequency\": \"One-time\",\n            \"verifiedBy\": \"Dept. of ITE&C\",\n            \"license\": \"CC BY 4.0\",\n            \"department\": \"{{organizationId}}\",\n            \"@context\": \"https://agrijson.org\",\n            \"id\": \"{{databankId}}\"\n            \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{core_host}}{{cat_base}}/item",
+							"host": [
+								"{{core_host}}{{cat_base}}"
+							],
+							"path": [
+								"item"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET All Databanks For Provider",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Check response header\", function () {\r",
+									"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Check response body\", function () {    \r",
+									"    const body = pm.response.json();\r",
+									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:auditing:success\");\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{orgmem_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"term\",\n            \"field\": \"ownerUserId\",\n            \"values\": [\"{{ownerUserId}}\"]\n        }\n    ]\n    \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{auditing_host}}{{audit_base}}/consumer/activity?page=1&size=10",
+							"host": [
+								"{{auditing_host}}{{audit_base}}"
+							],
+							"path": [
+								"consumer",
+								"activity"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Token - consumeruser",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let json = pm.response.json();",
+									"pm.environment.set(\"user_token\", json.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password"
+								},
+								{
+									"key": "client_id",
+									"value": "frontend-client"
+								},
+								{
+									"key": "username",
+									"value": "{{user}}"
+								},
+								{
+									"key": "password",
+									"value": "{{user_pass}}"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{kc_host}}/realms/{{realm}}/protocol/openid-connect/token",
+							"host": [
+								"{{kc_host}}"
+							],
+							"path": [
+								"realms",
+								"{{realm}}",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Veiw  Databank by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status\", function () {\r",
+									"    pm.response.to.be.ok;\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Check response header\", function () {\r",
+									"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Check response body\", function () {    \r",
+									"    const body = pm.response.json();\r",
+									"    pm.expect(body).to.have.property(\"type\",\"urn:dx:cat:Success\");\r",
+									"});\r",
+									"\r",
+									"\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{orgmem_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{org_admin_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{core_host}}{{cat_base}}/item?id={{databankId}}",
+							"host": [
+								"{{core_host}}{{cat_base}}"
+							],
+							"path": [
+								"item"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "{{databankId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check Access Request",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test the response code",
+									"pm.test(\"response is 200 (OK)\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test the response header",
+									"pm.test(\"Check response header\", function () {",
+									"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+									"});",
+									"",
+									"// Test the response",
+									"pm.test(\"Check response body\", function () {    ",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:success\");",
+									"    pm.expect(body).to.have.property(\"title\", \"Success\");",
+									"    }",
+									");"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{consumerToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"itemId\": \"{{databankId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{acl_host}}{{acl_base}}/access_request/has_access",
+							"host": [
+								"{{acl_host}}{{acl_base}}"
+							],
+							"path": [
+								"access_request",
+								"has_access"
+							]
+						},
+						"description": "This API allows users to create a new policy request. Users can submit their requests for specific policies using this endpoint."
+					},
+					"response": []
+				},
+				{
+					"name": "Request  Access Request to Datbank",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test the response code",
+									"pm.test(\"response is 200 (OK)\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test the response header",
+									"pm.test(\"Check response header\", function () {",
+									"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+									"});",
+									"",
+									"// Test the response",
+									"pm.test(\"Check response body\", function () {    ",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:success\");",
+									"    pm.expect(body).to.have.property(\"title\", \"Success\");",
+									"    }",
+									");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{consumerToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\"itemId\": \"{{databankId}}\",\n\"requestType\": \"DOWNLOAD\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{acl_host}}{{acl_base}}/access_request",
+							"host": [
+								"{{acl_host}}{{acl_base}}"
+							],
+							"path": [
+								"access_request"
+							]
+						},
+						"description": "This API allows users to create a new policy request. Users can submit their requests for specific policies using this endpoint."
+					},
+					"response": []
+				},
+				{
+					"name": "Check Access Request",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test the response code",
+									"pm.test(\"response is 200 (OK)\", function () {",
+									"    pm.response.to.have.status(403);",
+									"});",
+									"",
+									"// Test the response header",
+									"pm.test(\"Check response header\", function () {",
+									"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+									"});",
+									"",
+									"// Test the response",
+									"pm.test(\"Check response body\", function () {    ",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:controlPanel:access-pending\");",
+									"    pm.expect(body).to.have.property(\"title\", \"Forbidden\");",
+									"    }",
+									");"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{consumerToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"itemId\": \"{{databankId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{acl_host}}{{acl_base}}/access_request/has_access",
+							"host": [
+								"{{acl_host}}{{acl_base}}"
+							],
+							"path": [
+								"access_request",
+								"has_access"
+							]
+						},
+						"description": "This API allows users to create a new policy request. Users can submit their requests for specific policies using this endpoint."
+					},
+					"response": []
+				},
+				{
+					"name": "200 Get Access Request: Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test the response code",
+									"pm.test(\"Response is 200 (OK)\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test the response header",
+									"pm.test(\"Check response header\", function () {",
+									"    pm.response.to.have.header(\"Content-Type\", \"application/json\");",
+									"});",
+									"",
+									"// Test the response body",
+									"pm.test(\"Check response body\", function () {    ",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:controlPanel:success\");",
+									"    pm.expect(body).to.have.property(\"title\", \"Success\");",
+									"});",
+									"",
+									"// Extract and set access_requestId based on conditions",
+									"const jsonResult = pm.response.json().result;",
+									"const databankId = pm.environment.get(\"databankId\");",
+									"let matchedRequestId = null;",
+									"",
+									"for (const props of jsonResult) {",
+									"    if (props.requestStatus === \"PENDING\" && props.asset?.itemId === databankId) {",
+									"        matchedRequestId = props.requestId;",
+									"        console.log(\"Matching access_requestId:\", matchedRequestId);",
+									"        postman.setEnvironmentVariable(\"access_requestId\", matchedRequestId);",
+									"        break;",
+									"    }",
+									"}",
+									"",
+									"// Add test to confirm that requestId was found and set",
+									"pm.test(\"access_requestId was found and set\", function () {",
+									"    pm.expect(matchedRequestId).to.not.be.null;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{orgmem_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{providerToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{acl_host}}{{acl_base}}/access_request/provider",
+							"host": [
+								"{{acl_host}}{{acl_base}}"
+							],
+							"path": [
+								"access_request",
+								"provider"
+							]
+						},
+						"description": "Users can utilize this API to retrieve a list of all the policy requests they have generated or retrieve a list of all the policy requests which are generated for them. It provides an overview of the existing requests."
+					},
+					"response": []
+				},
+				{
+					"name": "Reject Access Request",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test the response code",
+									"pm.test(\"response is 200 (OK)\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test the response header",
+									"pm.test(\"Check response header\", function () {",
+									"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+									"});",
+									"",
+									"// Test the response",
+									"pm.test(\"Check response body\", function () {    ",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:controlPanel:success\");",
+									"    pm.expect(body).to.have.property(\"title\", \"Success\");",
+									"    }",
+									");"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{orgmem_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"requestId\": \"{{access_requestId}}\",\n    \"status\": \"rejected\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{acl_host}}{{acl_base}}/access_request",
+							"host": [
+								"{{acl_host}}{{acl_base}}"
+							],
+							"path": [
+								"access_request"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check Access Request has Rejected",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test the response code",
+									"pm.test(\"response is 200 (OK)\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test the response header",
+									"pm.test(\"Check response header\", function () {",
+									"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+									"});",
+									"",
+									"// Test the response",
+									"pm.test(\"Check response body\", function () {    ",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:success\");",
+									"    pm.expect(body).to.have.property(\"title\", \"Success\");",
+									"    }",
+									");"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{consumerToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"itemId\": \"{{databankId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{acl_host}}{{acl_base}}/access_request/has_access",
+							"host": [
+								"{{acl_host}}{{acl_base}}"
+							],
+							"path": [
+								"access_request",
+								"has_access"
+							]
+						},
+						"description": "This API allows users to create a new policy request. Users can submit their requests for specific policies using this endpoint."
+					},
+					"response": []
+				},
+				{
+					"name": "Grant Access Request",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test the response code",
+									"pm.test(\"response is 200 (OK)\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test the response header",
+									"pm.test(\"Check response header\", function () {",
+									"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+									"});",
+									"",
+									"// Test the response",
+									"pm.test(\"Check response body\", function () {    ",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:success\");",
+									"    pm.expect(body).to.have.property(\"title\", \"Success\");",
+									"    }",
+									");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{orgmem_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"requestId\": \"{{access_requestId}}\",\n    \"status\": \"granted\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{acl_host}}{{acl_base}}/access_request",
+							"host": [
+								"{{acl_host}}{{acl_base}}"
+							],
+							"path": [
+								"access_request"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check Access Request has Granted",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test the response code",
+									"pm.test(\"response is 200 (OK)\", function () {",
+									"    pm.response.to.have.status(403);",
+									"});",
+									"",
+									"// Test the response header",
+									"pm.test(\"Check response header\", function () {",
+									"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+									"});",
+									"",
+									"// Test the response",
+									"pm.test(\"Check response body\", function () {    ",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:acl:access-rejected\");",
+									"    pm.expect(body).to.have.property(\"title\", \"Forbidden\");",
+									"    }",
+									");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{consumerToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"itemId\": \"{{databankId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{acl_host}}{{acl_base}}/access_request/has_access",
+							"host": [
+								"{{acl_host}}{{acl_base}}"
+							],
+							"path": [
+								"access_request",
+								"has_access"
+							]
+						},
+						"description": "This API allows users to create a new policy request. Users can submit their requests for specific policies using this endpoint."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Databank by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status\", function () {\r",
+									"    pm.response.to.be.ok;\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Check response header\", function () {\r",
+									"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Check response body\", function () {    \r",
+									"    const body = pm.response.json();\r",
+									"    pm.expect(body).to.have.property(\"type\",\"urn:dx:cat:Success\");\r",
+									"});\r",
+									"\r",
+									"\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{orgmem_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{org_admin_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{core_host}}{{cat_base}}/item?id={{databankId}}",
+							"host": [
+								"{{core_host}}{{cat_base}}"
+							],
+							"path": [
+								"item"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "{{databankId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET All Activity For Consumer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Check response header\", function () {\r",
+									"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Check response body\", function () {    \r",
+									"    const body = pm.response.json();\r",
+									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:auditing:success\");\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"term\",\n            \"field\": \"ownerUserId\",\n            \"values\": [\"{{ownerUserId}}\"]\n        }\n    ]\n    \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{auditing_host}}{{audit_base}}/consumer/activity?page=1&size=10",
+							"host": [
+								"{{auditing_host}}{{audit_base}}"
+							],
+							"path": [
+								"consumer",
+								"activity"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET All Activity For Provider",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Check response header\", function () {\r",
+									"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Check response body\", function () {    \r",
+									"    const body = pm.response.json();\r",
+									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:auditing:success\");\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{orgmem_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"term\",\n            \"field\": \"ownerUserId\",\n            \"values\": [\"{{ownerUserId}}\"]\n        }\n    ]\n    \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{auditing_host}}{{audit_base}}/consumer/activity?page=1&size=10",
+							"host": [
+								"{{auditing_host}}{{audit_base}}"
+							],
+							"path": [
+								"consumer",
+								"activity"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List all files in a databank",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{orgmem_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"prefix\": \"\",\n  \"delimiter\": \"/\",\n  \"maxKeys\": 100\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{files_server_host}}/databanks/{{databankId}}/files",
+							"host": [
+								"{{files_server_host}}"
+							],
+							"path": [
+								"databanks",
+								"{{databankId}}",
+								"files"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Download specific file in a databank",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{orgmem_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"key\": \"binlookup.csv\",\n  \"presigned\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{files_server_host}}/databanks/{{databankId}}/files/download",
+							"host": [
+								"{{files_server_host}}"
+							],
+							"path": [
+								"databanks",
+								"{{databankId}}",
+								"files",
+								"download"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Preview a specific file in a databank",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{orgmem_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"lines\": 100,\n  \"format\": \"json\",\n  \"key\": \"binlookup.csv\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{files_server_host}}/databanks/{{databankId}}/files/preview",
+							"host": [
+								"{{files_server_host}}"
+							],
+							"path": [
+								"databanks",
+								"{{databankId}}",
+								"files",
+								"preview"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check if the sandbox exists with same name",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"connection": true,
+							"accept-encoding": true,
+							"accept": true,
+							"content-length": true,
+							"content-type": true
+						}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{cos_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{sandbox_server_host}}/notebook/check-exists/{{notebook_name}}",
+							"host": [
+								"{{sandbox_server_host}}"
+							],
+							"path": [
+								"notebook",
+								"check-exists",
+								"{{notebook_name}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create sandbox",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"content-type": true,
+							"connection": true,
+							"accept-encoding": true,
+							"user-agent": true,
+							"accept": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{cos_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{cos_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"{{notebook_name}}\",\n    \"type\": \"cpu\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{sandbox_server_host}}/notebook/create",
+							"host": [
+								"{{sandbox_server_host}}"
+							],
+							"path": [
+								"notebook",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Stop sandbox",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"content-type": true,
+							"accept-encoding": true,
+							"accept": true,
+							"connection": true
+						}
+					},
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{cos_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\":\"{{notebook_name}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{sandbox_server_host}}/notebook/stop",
+							"host": [
+								"{{sandbox_server_host}}"
+							],
+							"path": [
+								"notebook",
+								"stop"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete sandbox",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"content-type": true
+						}
+					},
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{cos_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\":\"{{notebook_name}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{sandbox_server_host}}/notebook/delete",
+							"host": [
+								"{{sandbox_server_host}}"
+							],
+							"path": [
+								"notebook",
+								"delete"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Start sandbox",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"connection": true,
+							"content-length": true,
+							"content-type": true
+						}
+					},
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{cos_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\":\"{{notebook_name}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{sandbox_server_host}}/notebook/start",
+							"host": [
+								"{{sandbox_server_host}}"
+							],
+							"path": [
+								"notebook",
+								"start"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get status of the sandbox",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true,
+						"disabledSystemHeaders": {
+							"content-type": true,
+							"content-length": true,
+							"accept": true,
+							"accept-encoding": true,
+							"connection": true
+						}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{cos_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{sandbox_server_host}}/notebook/status/{{notebook_name}}",
+							"host": [
+								"{{sandbox_server_host}}"
+							],
+							"path": [
+								"notebook",
+								"status",
+								"{{notebook_name}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List all sandboxes for the user",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"content-type": true,
+							"content-length": true,
+							"accept-encoding": true,
+							"connection": true,
+							"accept": true
+						}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{cos_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{sandbox_server_host}}/notebook/list?limit=10&order=asc&offset=0",
+							"host": [
+								"{{sandbox_server_host}}"
+							],
+							"path": [
+								"notebook",
+								"list"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "order",
+									"value": "asc"
+								},
+								{
+									"key": "offset",
+									"value": "0"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "KC TOken",
+			"item": [
+				{
+					"name": "Get Token - Cos admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let json = pm.response.json();",
+									"pm.environment.set(\"cos_token\", json.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password"
+								},
+								{
+									"key": "client_id",
+									"value": "frontend-client"
+								},
+								{
+									"key": "username",
+									"value": "admin.cos.tgdex@datakaveri.org"
+								},
+								{
+									"key": "password",
+									"value": "&5Chd&dm<gDQ6bN*"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{kc_host}}/realms/{{realm}}/protocol/openid-connect/token",
+							"host": [
+								"{{kc_host}}"
+							],
+							"path": [
+								"realms",
+								"{{realm}}",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Token - orgadmin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let json = pm.response.json();",
+									"pm.environment.set(\"org_admin_token_token\", json.access_token);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password"
+								},
+								{
+									"key": "client_id",
+									"value": "frontend-client"
+								},
+								{
+									"key": "username",
+									"value": "orgadmin@gmail.com"
+								},
+								{
+									"key": "password",
+									"value": "OrgAdmin123"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{kc_host}}/realms/{{realm}}/protocol/openid-connect/token",
+							"host": [
+								"{{kc_host}}"
+							],
+							"path": [
+								"realms",
+								"{{realm}}",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Token - provideruser",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let json = pm.response.json();",
+									"pm.environment.set(\"orgmem_token\", json.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password"
+								},
+								{
+									"key": "client_id",
+									"value": "frontend-client"
+								},
+								{
+									"key": "username",
+									"value": "orgmem@gmail.com"
+								},
+								{
+									"key": "password",
+									"value": "OrgMem123"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{kc_host}}/realms/{{realm}}/protocol/openid-connect/token",
+							"host": [
+								"{{kc_host}}"
+							],
+							"path": [
+								"realms",
+								"{{realm}}",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Token - computeuser",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password"
+								},
+								{
+									"key": "client_id",
+									"value": "frontend-client"
+								},
+								{
+									"key": "username",
+									"value": "computeuser"
+								},
+								{
+									"key": "password",
+									"value": "ComputePass123!"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{kc_host}}/realms/{{realm}}/protocol/openid-connect/token",
+							"host": [
+								"{{kc_host}}"
+							],
+							"path": [
+								"realms",
+								"{{realm}}",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Token - consumeruser",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let json = pm.response.json();",
+									"pm.environment.set(\"user_token\", json.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password"
+								},
+								{
+									"key": "client_id",
+									"value": "frontend-client"
+								},
+								{
+									"key": "username",
+									"value": "consumeruser"
+								},
+								{
+									"key": "password",
+									"value": "ConsumerPass123!"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{kc_host}}/realms/{{realm}}/protocol/openid-connect/token",
+							"host": [
+								"{{kc_host}}"
+							],
+							"path": [
+								"realms",
+								"{{realm}}",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

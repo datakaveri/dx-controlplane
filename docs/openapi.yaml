@@ -3294,6 +3294,7 @@ paths:
   /iudx/v2/auth/organisations/requests/report:
     get:
       summary: Get Report for Organsation Create Request
+      description: Csv file for a list of activity logs for Organsation Create Request.
       tags:
         - Organisation APIs
       responses:
@@ -3304,7 +3305,8 @@ paths:
         - authorization: [ ]
   /iudx/v2/auth/organisations/report:
     get:
-      summary: Your GET endpoint
+      summary: Get Report for Organsations
+      description: Csv file for a list of activity logs for organization.
       tags:
         - Organisation APIs
       responses:
@@ -3315,7 +3317,8 @@ paths:
         - authorization: [ ]
   /iudx/v2/auth/organisations/{id}/join_requests/report:
     get:
-      summary: Your GET endpoint
+      summary: Get Report for Organsation Join Requests
+      description: Csv file for a list of activity logs for Organsation Join Request.
       tags:
         - Organisation APIs
       responses:
@@ -3333,7 +3336,8 @@ paths:
         description: UUID of the organisation
   /iudx/v2/auth/compute/requests/report:
     get:
-      summary: Your GET endpoint
+      summary: Get Report for Compute Requests
+      description: Csv file for a list of activity logs for Compute Request.
       tags:
         - Compute APIs
       responses:
@@ -3344,7 +3348,8 @@ paths:
         - authorization: [ ]
   /iudx/v2/auth/organization/user/provider_role/requests/report:
     get:
-      summary: Your GET endpoint
+      summary: Get Report for Provider Requests
+      description: Csv file for a list of activity logs for Provider Request.
       tags:
         - Organisation APIs
       responses:
@@ -3355,7 +3360,8 @@ paths:
         - authorization: [ ]
   /iudx/v2/auth/credit/request/report:
     get:
-      summary: Your GET endpoint
+      summary: Get Report for Credit Requests
+      description: Csv file for a list of activity logs for Credit Request.
       tags:
         - Credit APIs
       responses:
