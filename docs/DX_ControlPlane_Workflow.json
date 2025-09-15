@@ -440,7 +440,7 @@
 									"// Test the response body and extract organizationId",
 									"pm.test(\"Check response body and extract organizationId\", function () {",
 									"    const body = pm.response.json();",
-									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:aaa:success\");",
+									"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));",
 									"    pm.expect(body).to.have.property(\"title\", \"Success\");",
 									"",
 									"    const orgName = pm.environment.get(\"org_name\");",
@@ -619,7 +619,7 @@
 									"// Extract org_join_reqId where organizationId matches and status is pending",
 									"pm.test(\"Extract org_join_reqId with status pending\", function () {",
 									"    const body = pm.response.json();",
-									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:controlPanel:success\");",
+									"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));",
 									"    pm.expect(body).to.have.property(\"title\", \"Success\");",
 									"",
 									"    const organizationId = pm.environment.get(\"organizationId\");",
@@ -627,9 +627,14 @@
 									"        item.organization_id === organizationId && item.status === \"pending\"",
 									"    );",
 									"",
-									"    pm.expect(match).to.not.be.undefined;",
-									"    pm.environment.set(\"org_join_reqId\", match.id);",
-									"});"
+									"    pm.expect(match).to.not.be.undefined; // Check if match is found",
+									"    if (match) {",
+									"        pm.environment.set(\"userId\", match.user_id);",
+									"        console.log(\"userid: \",pm.environment.get(\"userId\"));",
+									"        pm.environment.set(\"org_join_reqId\", match.id);",
+									"    }",
+									"});",
+									""
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -720,35 +725,6 @@
 					"response": []
 				},
 				{
-					"name": "OrgAdmin: Get User of an Organisation",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{org_admin_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{core_host}}{{auth_base}}/organisations/{{organizationId}}/users",
-							"host": [
-								"{{core_host}}{{auth_base}}"
-							],
-							"path": [
-								"organisations",
-								"{{organizationId}}",
-								"users"
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "Get Token - Update OrgMem Token",
 					"event": [
 						{
@@ -817,6 +793,35 @@
 					"response": []
 				},
 				{
+					"name": "OrgAdmin: Get User of an Organisation",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{org_admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{core_host}}{{auth_base}}/organisations/{{organizationId}}/users",
+							"host": [
+								"{{core_host}}{{auth_base}}"
+							],
+							"path": [
+								"organisations",
+								"{{organizationId}}",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Org Member: Resuest Provider Role",
 					"request": {
 						"auth": {
@@ -875,7 +880,7 @@
 									"// Extract provider_role_reqId where organization_id matches and status is pending",
 									"pm.test(\"Extract provider_role_reqId with status pending\", function () {",
 									"    const body = pm.response.json();",
-									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:controlPanel:success\");",
+									"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));",
 									"    pm.expect(body).to.have.property(\"title\", \"Success\");",
 									"",
 									"    const organizationId = pm.environment.get(\"organizationId\");",
@@ -1047,7 +1052,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{user_token}}",
+									"value": "{{orgmem_token}}",
 									"type": "string"
 								}
 							]
@@ -1056,7 +1061,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"type\": \"SFTP\",\n  \"additional_info\": {\n    \"reason\": \"\"\n  },\n  \"asset_id\": \"b15e7a64-20de-3b74-bd92-355c52fbd438\"\n}\n",
+							"raw": "{\n  \"type\": \"SFTP\",\n  \"additional_info\": {\n    \"reason\": \"\"\n  },\n  \"asset_id\": \"{{asset_id}}\"\n}\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1064,14 +1069,11 @@
 							}
 						},
 						"url": {
-							"raw": "{{AUTH_ENDPOINT}}/auth/v1/asset/request",
+							"raw": "{{core_host}}{{auth_base}}asset/request",
 							"host": [
-								"{{AUTH_ENDPOINT}}"
+								"{{core_host}}{{auth_base}}asset"
 							],
 							"path": [
-								"auth",
-								"v1",
-								"asset",
 								"request"
 							]
 						}
@@ -1080,11 +1082,62 @@
 				},
 				{
 					"name": "PF Admin: Get Asset Request",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test the response code",
+									"pm.test(\"response is 200 (OK)\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test the response header",
+									"pm.test(\"Check response header\", function () {",
+									"    pm.response.to.have.header(\"Content-Type\", \"application/json\");",
+									"});",
+									"",
+									"// Test the response body and extract org_create_req_id",
+									"pm.test(\"Check response body and extract asset_request_id\", function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));",
+									"    pm.expect(body).to.have.property(\"title\", \"Success\");",
+									"",
+									"    const assetId = pm.environment.get(\"asset_id\");",
+									"    const match = body.result.find(asset =>asset.assetId === assetId);",
+									"",
+									"    pm.expect(match).to.not.be.undefined;",
+									"    pm.environment.set(\"asset_request_id\", match.id);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{cos_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": ""
+							"raw": "{{core_host}}{{auth_base}}/asset/request",
+							"host": [
+								"{{core_host}}{{auth_base}}"
+							],
+							"path": [
+								"asset",
+								"request"
+							]
 						}
 					},
 					"response": []
@@ -1092,10 +1145,37 @@
 				{
 					"name": "PF Admin: Update Asset Request",
 					"request": {
-						"method": "GET",
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{cos_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
 						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"granted\"   \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
-							"raw": ""
+							"raw": "{{core_host}}{{auth_base}}/asset/request/{{asset_request_id}}",
+							"host": [
+								"{{core_host}}{{auth_base}}"
+							],
+							"path": [
+								"asset",
+								"request",
+								"{{asset_request_id}}"
+							]
 						}
 					},
 					"response": []
@@ -1108,7 +1188,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{user_token}}",
+									"value": "{{orgmem_token}}",
 									"type": "string"
 								}
 							]
@@ -1125,15 +1205,11 @@
 							}
 						},
 						"url": {
-							"raw": "{{AUTH_ENDPOINT}}/iudx/v2/auth/compute/requests",
+							"raw": "{{core_host}}{{auth_base}}compute/requests",
 							"host": [
-								"{{AUTH_ENDPOINT}}"
+								"{{core_host}}{{auth_base}}compute"
 							],
 							"path": [
-								"iudx",
-								"v2",
-								"auth",
-								"compute",
 								"requests"
 							]
 						}
@@ -1142,13 +1218,47 @@
 				},
 				{
 					"name": "PF Admin: Get All Pending ComputeRole Requests",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test the response code",
+									"pm.test(\"response is 200 (OK)\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test the response header",
+									"pm.test(\"Check response header\", function () {",
+									"    pm.response.to.have.header(\"Content-Type\", \"application/json\");",
+									"});",
+									"",
+									"// Test the response body and extract org_create_req_id",
+									"pm.test(\"Check response body and extract compute_request_id\", function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));",
+									"    pm.expect(body).to.have.property(\"title\", \"Success\");",
+									"",
+									"    const userId = pm.environment.get(\"userId\");",
+									"    const match = body.result.find(compute =>compute.user_id === userId);",
+									"",
+									"    pm.expect(match).to.not.be.undefined;",
+									"    pm.environment.set(\"compute_req_id\", match.id);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"request": {
 						"auth": {
 							"type": "bearer",
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJfQTZiZmVueU1DWmNudXE5eXpxbC1oS0ZLMDExMGZIckkwaUlsRVRKUTJZIn0.eyJleHAiOjE3NDkwMTQ3MzMsImlhdCI6MTc0OTAxNDQzMywianRpIjoiZTIyMDMxYmYtZjVhYy00ZGFiLWExYTYtMDA0Njk2YjIxNDYzIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9teXJlYWxtIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6ImEyODk5MTM3LTg0NTgtNDBhNi05YmU4LTA4NGNmZDE4OTBlNSIsInR5cCI6IkJlYXJlciIsImF6cCI6Im15LWNsaWVudCIsInNpZCI6IjBhNDM4Mzk5LTU3MmEtNGU2YS1hMWI1LTZkYjI2YzM3ZTJmMSIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiZGVmYXVsdC1yb2xlcy1teXJlYWxtIiwib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsImNvc19hZG1pbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoicHJvZmlsZSBlbWFpbCIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwibmFtZSI6IlNyaXNodGkgTWl0dGFsIiwicHJlZmVycmVkX3VzZXJuYW1lIjoic3Jpc2h0aSIsImdpdmVuX25hbWUiOiJTcmlzaHRpIiwiZmFtaWx5X25hbWUiOiJNaXR0YWwiLCJlbWFpbCI6InNyaXNodGlAZ21haWwuY29tIn0.Kf_-fGa4Z1Ue9FCsksRgE0gKDtLyzjh2D09Jzp23lauKO7j-LGHjyfcE4KJfPHVXYYy_0Y-hdqE9Hy3p6rHYNsKJJi1yDxl_5_sxwhDA73ANTYdVBik-gXATh30Ke4dQ7Y7_11qkxZSXHewpGlNmZ09qNfi3NYJb1cDA2wkMv2URyOGvCMdHVjyqfGIyJloTlMFweUmt-QDLVPpuqR9K1FvrGCyRotdRjAE_6Wg_IkBcTCdZw9sJWqT5mBVaSgcdIMQSaIkNJRYuIXxjOKEnzg2MXU_1a8hKk6wQCFtl1exbLXhX2_drJSCxqyqujZzTSLnvgP9AptY22JrrjMfZAw",
+									"value": "{{cos_token}}",
 									"type": "string"
 								}
 							]
@@ -1156,14 +1266,11 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{AUTH_ENDPOINT}}/auth/v1/compute/requests",
+							"raw": "{{core_host}}{{auth_base}}compute/requests",
 							"host": [
-								"{{AUTH_ENDPOINT}}"
+								"{{core_host}}{{auth_base}}compute"
 							],
 							"path": [
-								"auth",
-								"v1",
-								"compute",
 								"requests"
 							]
 						}
@@ -1195,15 +1302,11 @@
 							}
 						},
 						"url": {
-							"raw": "{{AUTH_ENDPOINT}}/iudx/v2/auth/compute/requests/{{compute_req_id}}",
+							"raw": "{{core_host}}{{auth_base}}compute/requests/{{compute_req_id}}",
 							"host": [
-								"{{AUTH_ENDPOINT}}"
+								"{{core_host}}{{auth_base}}compute"
 							],
 							"path": [
-								"iudx",
-								"v2",
-								"auth",
-								"compute",
 								"requests",
 								"{{compute_req_id}}"
 							]
@@ -1287,7 +1390,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI5ajdoMFVkUENrNS1reDRPejhMNGtzeVRSV09vNEFZLUV2ZXhpYl9SRHFnIn0.eyJleHAiOjE3NTIyMjQyNDEsImlhdCI6MTc1MjIyMzM0MSwianRpIjoib25ydHJvOjdjZWM2MzU2LWJjOTYtNGE5OC1iYmU1LTEwYWZmZGE0ZTIyMSIsImlzcyI6Imh0dHBzOi8vc3RhZ2luZy5rZXljbG9hay51cGRhdGUuaXVkeC5pby9hdXRoL3JlYWxtcy90Z2RleC1waWxvdCIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiJiN2E0MWUzNy1lYzgzLTQzNmQtYmFhOC05MGIxOWM0NjY3NzIiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJmcm9udGVuZC1jbGllbnQiLCJzaWQiOiJlYjlmNzBkNy1hZGY3LTQxMWMtOWQ4NC1lYjA2NmIyNTlkNzAiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly9sb2NhbGhvc3Q6NDAwNyIsIioiLCJodHRwOi8vbG9jYWxob3N0OjMwMDAiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIm9yZ19hZG1pbiIsInByb3ZpZGVyIiwiZGVmYXVsdC1yb2xlcy10Z2RleC1waWxvdCIsImNvbnN1bWVyIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJwcm9maWxlIGVtYWlsIiwib3JnYW5pc2F0aW9uX2lkIjoiZWZjNDVkZmMtZjgyYy00ZWVmLTg0YzgtZDBjOTE5ZTBlZGRkIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImt5Y192ZXJpZmllZCI6dHJ1ZSwibmFtZSI6Im9yZyBtZW0iLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJvcmdtZW1AZ21haWwuY29tIiwib3JnYW5pc2F0aW9uX25hbWUiOiJUR0FJIFNhbmRib3giLCJnaXZlbl9uYW1lIjoib3JnIiwiZmFtaWx5X25hbWUiOiJtZW0iLCJlbWFpbCI6Im9yZ21lbUBnbWFpbC5jb20ifQ.AGzgwnKeJD_LE9gwTVEjBj0-s8E0Ag-Tin8t9-eR2QqCwuw2N1TE6bZQK02c5CUd7yklXqB3GSfr6MPjbzw7A4sdo894cYvh4q_Fr-xzoD6zzeK_TuWl2-6iY0pzGL7Ynog_npausguyDmNUeKnJZAWC_EqILKyJi-x1p84Bb1GFkGNsnuKVxfX-40malUc-rE_yvPvJFPyA6hosM3n68kSe_OqQCnWo3H4tR1lsG0h0sSRYdl97thmOFgmVHSYzyjrjw8ADtmPEvwni7JhkmyynVAw-9GrmW0WUAXkRJX5jesh9mr09lQA0XWvg_qYDdz40zJ1pfaVpV4khh0Uh5Q",
+									"value": "{{orgmem_token}}",
 									"type": "string"
 								}
 							]
@@ -1296,7 +1399,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"auth_code\": \"f8e0bcbb22cc60e737b581347628bbd9384ed61d\",\n    \"code_verifier\": \"ErebvwK1xwMIpnDuovfvmliA4wAcRMUhHd18yQa6YMc\"\n}",
+							"raw": "{\n    \"auth_code\": \"{{auth_code}}\",\n    \"code_verifier\": \"{{code_verifier}}\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1304,14 +1407,11 @@
 							}
 						},
 						"url": {
-							"raw": "{{AUTH_ENDPOINT}}/auth/v1/kyc/verify",
+							"raw": "{{core_host}}{{auth_base}}kyc/verify",
 							"host": [
-								"{{AUTH_ENDPOINT}}"
+								"{{core_host}}{{auth_base}}kyc"
 							],
 							"path": [
-								"auth",
-								"v1",
-								"kyc",
 								"verify"
 							]
 						}
@@ -1321,10 +1421,27 @@
 				{
 					"name": "Confirm KYC Verification",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{orgmem_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": ""
+							"raw": "{{core_host}}{{auth_base}}kyc/confirm/{{code_verifier}}",
+							"host": [
+								"{{core_host}}{{auth_base}}kyc"
+							],
+							"path": [
+								"confirm",
+								"{{code_verifier}}"
+							]
 						}
 					},
 					"response": []
@@ -1337,7 +1454,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{user_token}}",
+									"value": "{{orgmem_token}}",
 									"type": "string"
 								}
 							]
@@ -1354,14 +1471,11 @@
 							}
 						},
 						"url": {
-							"raw": "{{AUTH_ENDPOINT}}/iudx/v2/auth/credit/request",
+							"raw": "{{core_host}}{{auth_base}}/credit/request",
 							"host": [
-								"{{AUTH_ENDPOINT}}"
+								"{{core_host}}{{auth_base}}"
 							],
 							"path": [
-								"iudx",
-								"v2",
-								"auth",
 								"credit",
 								"request"
 							]
@@ -1371,6 +1485,43 @@
 				},
 				{
 					"name": "Get all Pending Credit Requests",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test the response code",
+									"pm.test(\"response is 200 (OK)\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test the response header",
+									"pm.test(\"Check response header\", function () {",
+									"    pm.response.to.have.header(\"Content-Type\", \"application/json\");",
+									"});",
+									"",
+									"// Test the response body and extract org_create_req_id",
+									"pm.test(\"Check response body and extract credit_req_id\", function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));",
+									"    pm.expect(body).to.have.property(\"title\", \"Success\");",
+									"",
+									"    const userId = pm.environment.get(\"userId\");",
+									"    const match = body.result.find(credit =>credit.userId === userId);",
+									"",
+									"    pm.expect(match).to.not.be.undefined;",
+									"    pm.environment.set(\"credit_req_id\", match.id);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -1384,16 +1535,21 @@
 						},
 						"method": "GET",
 						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
-							"raw": "{{AUTH_ENDPOINT}}/iudx/v2/auth/credit/request",
+							"raw": "{{core_host}}{{auth_base}}credit/request",
 							"host": [
-								"{{AUTH_ENDPOINT}}"
+								"{{core_host}}{{auth_base}}credit"
 							],
 							"path": [
-								"iudx",
-								"v2",
-								"auth",
-								"credit",
 								"request"
 							]
 						}
@@ -1417,7 +1573,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"id\":\"695a901b-850b-45a3-8089-3544cc970d07\",\n    \"status\":\"granted\",\n    \"amount\": 120.0,\n    \"expiration_date\":\"2025-08-07T10:15:00+05:30\"\n}",
+							"raw": "{\n    \"id\":\"{{credit_req_id}}\",\n    \"status\":\"granted\",\n    \"amount\": 120.0,\n    \"expiration_date\":\"2025-08-07T10:15:00+05:30\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1425,14 +1581,11 @@
 							}
 						},
 						"url": {
-							"raw": "{{AUTH_ENDPOINT}}/iudx/v2/auth/credit/request",
+							"raw": "{{core_host}}{{auth_base}}/credit/request",
 							"host": [
-								"{{AUTH_ENDPOINT}}"
+								"{{core_host}}{{auth_base}}"
 							],
 							"path": [
-								"iudx",
-								"v2",
-								"auth",
 								"credit",
 								"request"
 							]
@@ -1448,7 +1601,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI5ajdoMFVkUENrNS1reDRPejhMNGtzeVRSV09vNEFZLUV2ZXhpYl9SRHFnIn0.eyJleHAiOjE3NTAzMTMwNjAsImlhdCI6MTc1MDMxMjc2MCwianRpIjoib25ydHJvOjcwMjE2MjEzLWZlNmEtNDFhOC04MjZmLWE5M2Y2YTEyN2RjMSIsImlzcyI6Imh0dHBzOi8vc3RhZ2luZy5rZXljbG9hay51cGRhdGUuaXVkeC5pby9hdXRoL3JlYWxtcy90Z2RleC1waWxvdCIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiJlNTlkZmIwOC02NmIyLTQ5YzMtODkxYi0zOTBmOGY0ODhjNmQiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJmcm9udGVuZC1jbGllbnQiLCJzaWQiOiIyY2IwYTlkMi0zNmE0LTQzYWYtYTEyOC1mOGMwNzAzNzYwMzQiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly9sb2NhbGhvc3Q6NDAwNyIsIioiLCJodHRwOi8vbG9jYWxob3N0OjMwMDAiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIm9yZ19hZG1pbiIsImRlZmF1bHQtcm9sZXMtdGdkZXgtcGlsb3QiLCJjb25zdW1lciIsImNvc19hZG1pbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoicHJvZmlsZSBlbWFpbCIsIm9yZ2FuaXNhdGlvbl9pZCI6IjEyOTJiMTBjLWIwODgtNDk1NS1hZWFlLTkwYjQyNzU3NjIwNiIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJreWNfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJhZG1pbi5jb3MudGdkZXggdGdkZXgiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhZG1pbi5jb3MudGdkZXhAZGF0YWthdmVyaS5vcmciLCJvcmdhbmlzYXRpb25fbmFtZSI6Im5ldyBOYW1lIFNhbmRib3gxIiwiZ2l2ZW5fbmFtZSI6ImFkbWluLmNvcy50Z2RleCIsImZhbWlseV9uYW1lIjoidGdkZXgiLCJlbWFpbCI6ImFkbWluLmNvcy50Z2RleEBkYXRha2F2ZXJpLm9yZyJ9.ByjbU8uIckADic58crxpgG_JtUZ_jmSj9TlpdaJ7bY54LHs1GSh1pnnqIjlDOqFTlyN6Ca-qBtpZeBXjm0N2LhGij-GoaqBiWyGsjybV7RE71YV0OBBjqaED-Z_nEVWEmPMT9EmV2RRTBbudWsSufhoup4xsaFKnG2uzK9FyeoRn_aEUmEeRBNk89ksM4Sq0_pEmfiHKfjSX9VoO3VeBeAmf3wcE8JSiua5vEoEQ26kvMtfsiAhZIhVhQo4kzavsOFc46SvnxN5vx38PHpVK1_z5Naqjk_HN5gycUp8yH5zyydNorZIrWqLSCzImak5Xlw04Zff805dW_hdUEaUBtw",
+									"value": "{{cos_token}}",
 									"type": "string"
 								}
 							]
@@ -1457,7 +1610,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"amount\":50.0,\n    \"user_id\":\"73779569-bad3-4a4a-a553-d2d90fa98b86\",\n    \"requested_at\": \"2025-05-29T19:09\"\n}",
+							"raw": "{\n    \"amount\":50.0,\n    \"user_id\":\"{{userId}}\",\n    \"requested_at\": \"2025-05-29T19:09\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1465,14 +1618,11 @@
 							}
 						},
 						"url": {
-							"raw": "{{AUTH_ENDPOINT}}/auth/v1/admin/user/credit/deduct",
+							"raw": "{{core_host}}{{auth_base}}admin/user/credit/deduct",
 							"host": [
-								"{{AUTH_ENDPOINT}}"
+								"{{core_host}}{{auth_base}}admin"
 							],
 							"path": [
-								"auth",
-								"v1",
-								"admin",
 								"user",
 								"credit",
 								"deduct"
@@ -1489,7 +1639,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI5ajdoMFVkUENrNS1reDRPejhMNGtzeVRSV09vNEFZLUV2ZXhpYl9SRHFnIn0.eyJleHAiOjE3NTAzMTMwNjAsImlhdCI6MTc1MDMxMjc2MCwianRpIjoib25ydHJvOjcwMjE2MjEzLWZlNmEtNDFhOC04MjZmLWE5M2Y2YTEyN2RjMSIsImlzcyI6Imh0dHBzOi8vc3RhZ2luZy5rZXljbG9hay51cGRhdGUuaXVkeC5pby9hdXRoL3JlYWxtcy90Z2RleC1waWxvdCIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiJlNTlkZmIwOC02NmIyLTQ5YzMtODkxYi0zOTBmOGY0ODhjNmQiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJmcm9udGVuZC1jbGllbnQiLCJzaWQiOiIyY2IwYTlkMi0zNmE0LTQzYWYtYTEyOC1mOGMwNzAzNzYwMzQiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly9sb2NhbGhvc3Q6NDAwNyIsIioiLCJodHRwOi8vbG9jYWxob3N0OjMwMDAiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIm9yZ19hZG1pbiIsImRlZmF1bHQtcm9sZXMtdGdkZXgtcGlsb3QiLCJjb25zdW1lciIsImNvc19hZG1pbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoicHJvZmlsZSBlbWFpbCIsIm9yZ2FuaXNhdGlvbl9pZCI6IjEyOTJiMTBjLWIwODgtNDk1NS1hZWFlLTkwYjQyNzU3NjIwNiIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJreWNfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJhZG1pbi5jb3MudGdkZXggdGdkZXgiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhZG1pbi5jb3MudGdkZXhAZGF0YWthdmVyaS5vcmciLCJvcmdhbmlzYXRpb25fbmFtZSI6Im5ldyBOYW1lIFNhbmRib3gxIiwiZ2l2ZW5fbmFtZSI6ImFkbWluLmNvcy50Z2RleCIsImZhbWlseV9uYW1lIjoidGdkZXgiLCJlbWFpbCI6ImFkbWluLmNvcy50Z2RleEBkYXRha2F2ZXJpLm9yZyJ9.ByjbU8uIckADic58crxpgG_JtUZ_jmSj9TlpdaJ7bY54LHs1GSh1pnnqIjlDOqFTlyN6Ca-qBtpZeBXjm0N2LhGij-GoaqBiWyGsjybV7RE71YV0OBBjqaED-Z_nEVWEmPMT9EmV2RRTBbudWsSufhoup4xsaFKnG2uzK9FyeoRn_aEUmEeRBNk89ksM4Sq0_pEmfiHKfjSX9VoO3VeBeAmf3wcE8JSiua5vEoEQ26kvMtfsiAhZIhVhQo4kzavsOFc46SvnxN5vx38PHpVK1_z5Naqjk_HN5gycUp8yH5zyydNorZIrWqLSCzImak5Xlw04Zff805dW_hdUEaUBtw",
+									"value": "{{cos_token}}",
 									"type": "string"
 								}
 							]
@@ -1498,7 +1648,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"amount\":50.0,\n    \"user_id\":\"73779569-bad3-4a4a-a553-d2d90fa98b86\",\n    \"requested_at\": \"2025-05-29T19:09\"\n}",
+							"raw": "{\n    \"amount\":50.0,\n    \"user_id\":\"{{userId}}\",\n    \"requested_at\": \"2025-05-29T19:09\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1506,17 +1656,14 @@
 							}
 						},
 						"url": {
-							"raw": "{{AUTH_ENDPOINT}}/auth/v1/admin/user/credit/deduct",
+							"raw": "{{core_host}}{{auth_base}}admin/user/credit/add",
 							"host": [
-								"{{AUTH_ENDPOINT}}"
+								"{{core_host}}{{auth_base}}admin"
 							],
 							"path": [
-								"auth",
-								"v1",
-								"admin",
 								"user",
 								"credit",
-								"deduct"
+								"add"
 							]
 						}
 					},
@@ -1682,21 +1829,27 @@
 				{
 					"name": "Get Balance",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{orgmem_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": ""
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Add Credits",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": ""
+							"raw": "{{core_host}}{{auth_base}}user/credit/balance",
+							"host": [
+								"{{core_host}}{{auth_base}}user"
+							],
+							"path": [
+								"credit",
+								"balance"
+							]
 						}
 					},
 					"response": []
