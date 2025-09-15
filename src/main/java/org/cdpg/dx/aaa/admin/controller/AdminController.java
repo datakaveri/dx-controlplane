@@ -20,36 +20,36 @@ public class AdminController implements ApiController {
     public void register(RouterBuilder routerBuilder) {
 
         routerBuilder
-                .operation("get-auth-v1-user")
+                .operation("get-auth-v2-user")
                 .handler(adminHandler::getDxUserInfo);
 
         routerBuilder
-                .operation("get-auth-v1-user-id-admin")
+                .operation("get-auth-v2-user-id-admin")
                 .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
                 .handler(adminHandler::getDxUserFromKeycloak);
 
         routerBuilder
-                .operation("get-auth-v1-admin-user")
+                .operation("get-auth-v2-admin-user")
                 .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
                 .handler(adminHandler::getAllDxUsersKeycloak);
 
         routerBuilder
-                .operation("put-auth-v1-user")
+                .operation("put-auth-v2-user")
                 .handler(adminHandler::updateDxUserInfo);
         routerBuilder
-                .operation("put-auth-v1-user-password")
+                .operation("put-auth-v2-user-password")
                 .handler(adminHandler::updatePassword);
 
       routerBuilder
-        .operation("post-auth-v1-user-update")
+        .operation("post-auth-v2-user-update")
         .handler(adminHandler::updateUserStatus);
 
       routerBuilder
-        .operation("delete-auth-v1-user")
+        .operation("delete-auth-v2-user")
         .handler(adminHandler::deleteDxUser);
 
       routerBuilder
-        .operation("post-auth-v1-admin-id-update")
+        .operation("post-auth-v2-admin-id-update")
         .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
         .handler(adminHandler::updateDxUserStatusById);
 

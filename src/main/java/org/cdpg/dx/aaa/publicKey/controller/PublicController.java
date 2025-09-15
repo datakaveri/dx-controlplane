@@ -17,7 +17,7 @@ public class PublicController implements ApiController {
   @Override
   public void register(RouterBuilder builder) {
 
-    builder.operation("get-auth-v1-jwks").handler(this::retrievePublicKey);
+    builder.operation("get-auth-v2-jwks").handler(this::retrievePublicKey);
   }
 
   private void retrievePublicKey(RoutingContext ctx) {

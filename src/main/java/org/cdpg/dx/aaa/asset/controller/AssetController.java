@@ -24,25 +24,25 @@ public class AssetController implements ApiController {
    public void register(RouterBuilder routerBuilder)
    {
     routerBuilder
-      .operation("post-auth-v1-asset-request")
+      .operation("post-auth-v2-asset-request")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.forRoles(DxRole.PROVIDER))
       .handler(assetHandler::createAssetRequest);
 
     routerBuilder
-      .operation("get-auth-v1-asset-request")
+      .operation("get-auth-v2-asset-request")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.CONSUMER))
       .handler(assetHandler::getAllAssetRequests);
 
     routerBuilder
-      .operation("put-auth-v1-asset-request")
+      .operation("put-auth-v2-asset-request")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
       .handler(assetHandler::updateAssetRequestStatus);
 
      routerBuilder
-       .operation("delete-auth-v1-asset-request")
+       .operation("delete-auth-v2-asset-request")
        .handler(auditingHandler::handleApiAudit)
        .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
        .handler(assetHandler::deleteAssetRequest);

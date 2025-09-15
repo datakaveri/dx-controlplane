@@ -22,53 +22,53 @@ public class CreditController implements ApiController {
   public void register(RouterBuilder routerBuilder) {
 
     routerBuilder
-      .operation("post-auth-v1-credit-request")
+      .operation("post-auth-v2-credit-request")
       .handler(AuthorizationHandler.forRoles(DxRole.COMPUTE))
       .handler(creditHandler::createCreditRequest);
 
     routerBuilder
-      .operation("get-auth-v1-credit")
+      .operation("get-auth-v2-credit")
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
       .handler(creditHandler::getAllPendingCreditRequests);
 
     routerBuilder
-      .operation("put-auth-v1-credit-request")
+      .operation("put-auth-v2-credit-request")
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
       .handler(creditHandler::updateCreditRequestStatus);
 
     routerBuilder
-      .operation("put-auth-v1-user-credit")
+      .operation("put-auth-v2-user-credit")
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
       .handler(creditHandler::deductCredits);
 
     routerBuilder
-      .operation("put-auth-v1-user-credit-add")
+      .operation("put-auth-v2-user-credit-add")
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
       .handler(creditHandler::addCredits);
 
     routerBuilder
-      .operation("post-auth-v1-compute-role-request")
+      .operation("post-auth-v2-compute-role-request")
       .handler(AuthorizationHandler.requireKycVerified())
       .handler(creditHandler::createComputeRoleRequest);
 
 
     routerBuilder
-      .operation("get-auth-v1-compute-role-request")
+      .operation("get-auth-v2-compute-role-request")
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
       .handler(creditHandler::getAllComputeRequests);
 
     routerBuilder
-      .operation("put-auth-v1-compute-role-request")
+      .operation("put-auth-v2-compute-role-request")
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
       .handler(creditHandler::updateComputeRoleStatus);
 
     routerBuilder
-      .operation("get-auth-v1-admin-user-credit-balance")
+      .operation("get-auth-v2-admin-user-credit-balance")
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
       .handler(creditHandler::getBalanceofUser);
 
     routerBuilder
-      .operation("get-auth-v1-user-credit-balance")
+      .operation("get-auth-v2-user-credit-balance")
       .handler(AuthorizationHandler.forRoles(DxRole.COMPUTE))
       .handler(AuthorizationHandler.requireKycVerified())
       .handler(creditHandler::getBalance);

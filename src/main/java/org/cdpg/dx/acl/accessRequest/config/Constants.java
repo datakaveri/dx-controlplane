@@ -85,15 +85,15 @@ public class Constants {
 
 
   //operation ids
-  public static final String GET_ACCESS_REQUEST_PROVIDER_API = "get-auth-v1-access-requests-provider";
-  public static final String GET_ACCESS_REQUEST_CONSUMER_API = "get-auth-v1-access-requests-consumer";
-  public static final String CREATE_ACCESS_REQUEST_API = "post-auth-v1-access-requests";
-  public static final String UPDATE_ACCESS_REQUEST_API = "put-auth-v1-access-requests";
-  public static final String CHECK_ACCESS_REQUEST_API = "post-auth-v1-access-requests-has-access";
-  public static final String GET_ACCESS_REQUEST_REPORT_API = "get-auth-v1-access-requests-provider-report";
-  public static final String GET_ACCESS_REQUEST_REPORT_FOR_ORG_ADMIN_API = "get-auth-v1-access-requests-org-admin-report";
-  public static final String GET_ACCESS_REQUEST_FOR_ORG_ADMIN_API = "get-auth-v1-access-requests-organisation";
-  public static final String DELETE_ACCESS_REQUEST_API_FOR_CONSUMER = "delete-auth-v1-access-requests";
+  public static final String GET_ACCESS_REQUEST_PROVIDER_API = "get-auth-v2-access-requests-provider";
+  public static final String GET_ACCESS_REQUEST_CONSUMER_API = "get-auth-v2-access-requests-consumer";
+  public static final String CREATE_ACCESS_REQUEST_API = "post-auth-v2-access-requests";
+  public static final String UPDATE_ACCESS_REQUEST_API = "put-auth-v2-access-requests";
+  public static final String CHECK_ACCESS_REQUEST_API = "post-auth-v2-access-requests-has-access";
+  public static final String GET_ACCESS_REQUEST_REPORT_API = "get-auth-v2-access-requests-provider-report";
+  public static final String GET_ACCESS_REQUEST_REPORT_FOR_ORG_ADMIN_API = "get-auth-v2-access-requests-org-admin-report";
+  public static final String GET_ACCESS_REQUEST_FOR_ORG_ADMIN_API = "get-auth-v2-access-requests-organisation";
+  public static final String DELETE_ACCESS_REQUEST_API_FOR_CONSUMER = "delete-auth-v2-access-requests";
 
 
   public static final String FIRST_NAME = "firstName";
