@@ -1040,6 +1040,489 @@
 					"response": []
 				},
 				{
+					"name": "Provider: Create Asset Request",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"SFTP\",\n  \"additional_info\": {\n    \"reason\": \"\"\n  },\n  \"asset_id\": \"b15e7a64-20de-3b74-bd92-355c52fbd438\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{AUTH_ENDPOINT}}/auth/v1/asset/request",
+							"host": [
+								"{{AUTH_ENDPOINT}}"
+							],
+							"path": [
+								"auth",
+								"v1",
+								"asset",
+								"request"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PF Admin: Get Asset Request",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PF Admin: Update Asset Request",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Any User: Create Compute Role Request",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"additional_info\":\n    {\"applicantName\":\"Publisher Test\",\"isOrgMember\":true,\"orgName\":\"CDPG Tech\",\"orgType\":\"Private\",\"orgLocation\":\"India\",\"orgWebsite\":\"https://staging.catalogue.tgdex.iudx.io\",\"jobTitle\":\"Tester\",\"businessEmail\":\"publisher.sterilize253@aleeas.com\",\"projectTitle\":\"ddf \",\"projectDescription\":\"vdfvd\",\"projectSector\":\"hospitality\",\"problemStatement\":\"vdv\",\"tgdexDataset\":\"fgrg\",\"endUsers\":\"government\",\"projectStage\":\"poc\",\"modelType\":\"cnn\",\"trainingType\":\"pretrained\",\"inputDataType\":\"image\",\"trainingDataVolume\":\"less1GB\",\"gpuHours\":5,\"computeJustification\":\"ffef\",\"hasPreviousUsage\":true,\"previousUsageDetails\":\"frege\",\"confirmAccuracy\":true,\"confirmUnderstanding\":true\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{AUTH_ENDPOINT}}/iudx/v2/auth/compute/requests",
+							"host": [
+								"{{AUTH_ENDPOINT}}"
+							],
+							"path": [
+								"iudx",
+								"v2",
+								"auth",
+								"compute",
+								"requests"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PF Admin: Get All Pending ComputeRole Requests",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJfQTZiZmVueU1DWmNudXE5eXpxbC1oS0ZLMDExMGZIckkwaUlsRVRKUTJZIn0.eyJleHAiOjE3NDkwMTQ3MzMsImlhdCI6MTc0OTAxNDQzMywianRpIjoiZTIyMDMxYmYtZjVhYy00ZGFiLWExYTYtMDA0Njk2YjIxNDYzIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9teXJlYWxtIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6ImEyODk5MTM3LTg0NTgtNDBhNi05YmU4LTA4NGNmZDE4OTBlNSIsInR5cCI6IkJlYXJlciIsImF6cCI6Im15LWNsaWVudCIsInNpZCI6IjBhNDM4Mzk5LTU3MmEtNGU2YS1hMWI1LTZkYjI2YzM3ZTJmMSIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiZGVmYXVsdC1yb2xlcy1teXJlYWxtIiwib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsImNvc19hZG1pbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoicHJvZmlsZSBlbWFpbCIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwibmFtZSI6IlNyaXNodGkgTWl0dGFsIiwicHJlZmVycmVkX3VzZXJuYW1lIjoic3Jpc2h0aSIsImdpdmVuX25hbWUiOiJTcmlzaHRpIiwiZmFtaWx5X25hbWUiOiJNaXR0YWwiLCJlbWFpbCI6InNyaXNodGlAZ21haWwuY29tIn0.Kf_-fGa4Z1Ue9FCsksRgE0gKDtLyzjh2D09Jzp23lauKO7j-LGHjyfcE4KJfPHVXYYy_0Y-hdqE9Hy3p6rHYNsKJJi1yDxl_5_sxwhDA73ANTYdVBik-gXATh30Ke4dQ7Y7_11qkxZSXHewpGlNmZ09qNfi3NYJb1cDA2wkMv2URyOGvCMdHVjyqfGIyJloTlMFweUmt-QDLVPpuqR9K1FvrGCyRotdRjAE_6Wg_IkBcTCdZw9sJWqT5mBVaSgcdIMQSaIkNJRYuIXxjOKEnzg2MXU_1a8hKk6wQCFtl1exbLXhX2_drJSCxqyqujZzTSLnvgP9AptY22JrrjMfZAw",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{AUTH_ENDPOINT}}/auth/v1/compute/requests",
+							"host": [
+								"{{AUTH_ENDPOINT}}"
+							],
+							"path": [
+								"auth",
+								"v1",
+								"compute",
+								"requests"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PF Admin: Update Compute Role Request",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{cos_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\" :\"granted\" \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{AUTH_ENDPOINT}}/iudx/v2/auth/compute/requests/{{compute_req_id}}",
+							"host": [
+								"{{AUTH_ENDPOINT}}"
+							],
+							"path": [
+								"iudx",
+								"v2",
+								"auth",
+								"compute",
+								"requests",
+								"{{compute_req_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Token - Update Token for compute role",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let json = pm.response.json();",
+									"pm.environment.set(\"orgmem_token\", json.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password"
+								},
+								{
+									"key": "client_id",
+									"value": "frontend-client"
+								},
+								{
+									"key": "username",
+									"value": "{{org_mem}}"
+								},
+								{
+									"key": "password",
+									"value": "{{org_mem_pass}}"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{kc_host}}/realms/{{realm}}/protocol/openid-connect/token",
+							"host": [
+								"{{kc_host}}"
+							],
+							"path": [
+								"realms",
+								"{{realm}}",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Verify KYC",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI5ajdoMFVkUENrNS1reDRPejhMNGtzeVRSV09vNEFZLUV2ZXhpYl9SRHFnIn0.eyJleHAiOjE3NTIyMjQyNDEsImlhdCI6MTc1MjIyMzM0MSwianRpIjoib25ydHJvOjdjZWM2MzU2LWJjOTYtNGE5OC1iYmU1LTEwYWZmZGE0ZTIyMSIsImlzcyI6Imh0dHBzOi8vc3RhZ2luZy5rZXljbG9hay51cGRhdGUuaXVkeC5pby9hdXRoL3JlYWxtcy90Z2RleC1waWxvdCIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiJiN2E0MWUzNy1lYzgzLTQzNmQtYmFhOC05MGIxOWM0NjY3NzIiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJmcm9udGVuZC1jbGllbnQiLCJzaWQiOiJlYjlmNzBkNy1hZGY3LTQxMWMtOWQ4NC1lYjA2NmIyNTlkNzAiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly9sb2NhbGhvc3Q6NDAwNyIsIioiLCJodHRwOi8vbG9jYWxob3N0OjMwMDAiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIm9yZ19hZG1pbiIsInByb3ZpZGVyIiwiZGVmYXVsdC1yb2xlcy10Z2RleC1waWxvdCIsImNvbnN1bWVyIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJwcm9maWxlIGVtYWlsIiwib3JnYW5pc2F0aW9uX2lkIjoiZWZjNDVkZmMtZjgyYy00ZWVmLTg0YzgtZDBjOTE5ZTBlZGRkIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImt5Y192ZXJpZmllZCI6dHJ1ZSwibmFtZSI6Im9yZyBtZW0iLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJvcmdtZW1AZ21haWwuY29tIiwib3JnYW5pc2F0aW9uX25hbWUiOiJUR0FJIFNhbmRib3giLCJnaXZlbl9uYW1lIjoib3JnIiwiZmFtaWx5X25hbWUiOiJtZW0iLCJlbWFpbCI6Im9yZ21lbUBnbWFpbC5jb20ifQ.AGzgwnKeJD_LE9gwTVEjBj0-s8E0Ag-Tin8t9-eR2QqCwuw2N1TE6bZQK02c5CUd7yklXqB3GSfr6MPjbzw7A4sdo894cYvh4q_Fr-xzoD6zzeK_TuWl2-6iY0pzGL7Ynog_npausguyDmNUeKnJZAWC_EqILKyJi-x1p84Bb1GFkGNsnuKVxfX-40malUc-rE_yvPvJFPyA6hosM3n68kSe_OqQCnWo3H4tR1lsG0h0sSRYdl97thmOFgmVHSYzyjrjw8ADtmPEvwni7JhkmyynVAw-9GrmW0WUAXkRJX5jesh9mr09lQA0XWvg_qYDdz40zJ1pfaVpV4khh0Uh5Q",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_code\": \"f8e0bcbb22cc60e737b581347628bbd9384ed61d\",\n    \"code_verifier\": \"ErebvwK1xwMIpnDuovfvmliA4wAcRMUhHd18yQa6YMc\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{AUTH_ENDPOINT}}/auth/v1/kyc/verify",
+							"host": [
+								"{{AUTH_ENDPOINT}}"
+							],
+							"path": [
+								"auth",
+								"v1",
+								"kyc",
+								"verify"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Confirm KYC Verification",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Credit Request",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"additional_info\":\n    {\"applicantName\":\"Publisher Test\",\"isOrgMember\":true,\"orgName\":\"CDPG Tech\",\"orgType\":\"Private\",\"orgLocation\":\"India\",\"orgWebsite\":\"https://staging.catalogue.tgdex.iudx.io\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{AUTH_ENDPOINT}}/iudx/v2/auth/credit/request",
+							"host": [
+								"{{AUTH_ENDPOINT}}"
+							],
+							"path": [
+								"iudx",
+								"v2",
+								"auth",
+								"credit",
+								"request"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get all Pending Credit Requests",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{cos_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{AUTH_ENDPOINT}}/iudx/v2/auth/credit/request",
+							"host": [
+								"{{AUTH_ENDPOINT}}"
+							],
+							"path": [
+								"iudx",
+								"v2",
+								"auth",
+								"credit",
+								"request"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Credit Request Status",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{cos_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\":\"695a901b-850b-45a3-8089-3544cc970d07\",\n    \"status\":\"granted\",\n    \"amount\": 120.0,\n    \"expiration_date\":\"2025-08-07T10:15:00+05:30\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{AUTH_ENDPOINT}}/iudx/v2/auth/credit/request",
+							"host": [
+								"{{AUTH_ENDPOINT}}"
+							],
+							"path": [
+								"iudx",
+								"v2",
+								"auth",
+								"credit",
+								"request"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Deduct User Credit(COS ADMIN)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI5ajdoMFVkUENrNS1reDRPejhMNGtzeVRSV09vNEFZLUV2ZXhpYl9SRHFnIn0.eyJleHAiOjE3NTAzMTMwNjAsImlhdCI6MTc1MDMxMjc2MCwianRpIjoib25ydHJvOjcwMjE2MjEzLWZlNmEtNDFhOC04MjZmLWE5M2Y2YTEyN2RjMSIsImlzcyI6Imh0dHBzOi8vc3RhZ2luZy5rZXljbG9hay51cGRhdGUuaXVkeC5pby9hdXRoL3JlYWxtcy90Z2RleC1waWxvdCIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiJlNTlkZmIwOC02NmIyLTQ5YzMtODkxYi0zOTBmOGY0ODhjNmQiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJmcm9udGVuZC1jbGllbnQiLCJzaWQiOiIyY2IwYTlkMi0zNmE0LTQzYWYtYTEyOC1mOGMwNzAzNzYwMzQiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly9sb2NhbGhvc3Q6NDAwNyIsIioiLCJodHRwOi8vbG9jYWxob3N0OjMwMDAiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIm9yZ19hZG1pbiIsImRlZmF1bHQtcm9sZXMtdGdkZXgtcGlsb3QiLCJjb25zdW1lciIsImNvc19hZG1pbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoicHJvZmlsZSBlbWFpbCIsIm9yZ2FuaXNhdGlvbl9pZCI6IjEyOTJiMTBjLWIwODgtNDk1NS1hZWFlLTkwYjQyNzU3NjIwNiIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJreWNfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJhZG1pbi5jb3MudGdkZXggdGdkZXgiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhZG1pbi5jb3MudGdkZXhAZGF0YWthdmVyaS5vcmciLCJvcmdhbmlzYXRpb25fbmFtZSI6Im5ldyBOYW1lIFNhbmRib3gxIiwiZ2l2ZW5fbmFtZSI6ImFkbWluLmNvcy50Z2RleCIsImZhbWlseV9uYW1lIjoidGdkZXgiLCJlbWFpbCI6ImFkbWluLmNvcy50Z2RleEBkYXRha2F2ZXJpLm9yZyJ9.ByjbU8uIckADic58crxpgG_JtUZ_jmSj9TlpdaJ7bY54LHs1GSh1pnnqIjlDOqFTlyN6Ca-qBtpZeBXjm0N2LhGij-GoaqBiWyGsjybV7RE71YV0OBBjqaED-Z_nEVWEmPMT9EmV2RRTBbudWsSufhoup4xsaFKnG2uzK9FyeoRn_aEUmEeRBNk89ksM4Sq0_pEmfiHKfjSX9VoO3VeBeAmf3wcE8JSiua5vEoEQ26kvMtfsiAhZIhVhQo4kzavsOFc46SvnxN5vx38PHpVK1_z5Naqjk_HN5gycUp8yH5zyydNorZIrWqLSCzImak5Xlw04Zff805dW_hdUEaUBtw",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"amount\":50.0,\n    \"user_id\":\"73779569-bad3-4a4a-a553-d2d90fa98b86\",\n    \"requested_at\": \"2025-05-29T19:09\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{AUTH_ENDPOINT}}/auth/v1/admin/user/credit/deduct",
+							"host": [
+								"{{AUTH_ENDPOINT}}"
+							],
+							"path": [
+								"auth",
+								"v1",
+								"admin",
+								"user",
+								"credit",
+								"deduct"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add User Credit(COS ADMIN)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI5ajdoMFVkUENrNS1reDRPejhMNGtzeVRSV09vNEFZLUV2ZXhpYl9SRHFnIn0.eyJleHAiOjE3NTAzMTMwNjAsImlhdCI6MTc1MDMxMjc2MCwianRpIjoib25ydHJvOjcwMjE2MjEzLWZlNmEtNDFhOC04MjZmLWE5M2Y2YTEyN2RjMSIsImlzcyI6Imh0dHBzOi8vc3RhZ2luZy5rZXljbG9hay51cGRhdGUuaXVkeC5pby9hdXRoL3JlYWxtcy90Z2RleC1waWxvdCIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiJlNTlkZmIwOC02NmIyLTQ5YzMtODkxYi0zOTBmOGY0ODhjNmQiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJmcm9udGVuZC1jbGllbnQiLCJzaWQiOiIyY2IwYTlkMi0zNmE0LTQzYWYtYTEyOC1mOGMwNzAzNzYwMzQiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly9sb2NhbGhvc3Q6NDAwNyIsIioiLCJodHRwOi8vbG9jYWxob3N0OjMwMDAiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIm9yZ19hZG1pbiIsImRlZmF1bHQtcm9sZXMtdGdkZXgtcGlsb3QiLCJjb25zdW1lciIsImNvc19hZG1pbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoicHJvZmlsZSBlbWFpbCIsIm9yZ2FuaXNhdGlvbl9pZCI6IjEyOTJiMTBjLWIwODgtNDk1NS1hZWFlLTkwYjQyNzU3NjIwNiIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJreWNfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJhZG1pbi5jb3MudGdkZXggdGdkZXgiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhZG1pbi5jb3MudGdkZXhAZGF0YWthdmVyaS5vcmciLCJvcmdhbmlzYXRpb25fbmFtZSI6Im5ldyBOYW1lIFNhbmRib3gxIiwiZ2l2ZW5fbmFtZSI6ImFkbWluLmNvcy50Z2RleCIsImZhbWlseV9uYW1lIjoidGdkZXgiLCJlbWFpbCI6ImFkbWluLmNvcy50Z2RleEBkYXRha2F2ZXJpLm9yZyJ9.ByjbU8uIckADic58crxpgG_JtUZ_jmSj9TlpdaJ7bY54LHs1GSh1pnnqIjlDOqFTlyN6Ca-qBtpZeBXjm0N2LhGij-GoaqBiWyGsjybV7RE71YV0OBBjqaED-Z_nEVWEmPMT9EmV2RRTBbudWsSufhoup4xsaFKnG2uzK9FyeoRn_aEUmEeRBNk89ksM4Sq0_pEmfiHKfjSX9VoO3VeBeAmf3wcE8JSiua5vEoEQ26kvMtfsiAhZIhVhQo4kzavsOFc46SvnxN5vx38PHpVK1_z5Naqjk_HN5gycUp8yH5zyydNorZIrWqLSCzImak5Xlw04Zff805dW_hdUEaUBtw",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"amount\":50.0,\n    \"user_id\":\"73779569-bad3-4a4a-a553-d2d90fa98b86\",\n    \"requested_at\": \"2025-05-29T19:09\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{AUTH_ENDPOINT}}/auth/v1/admin/user/credit/deduct",
+							"host": [
+								"{{AUTH_ENDPOINT}}"
+							],
+							"path": [
+								"auth",
+								"v1",
+								"admin",
+								"user",
+								"credit",
+								"deduct"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Create Sample Databank",
 					"event": [
 						{
@@ -1192,6 +1675,28 @@
 							"path": [
 								"item"
 							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Balance",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Credits",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
 						}
 					},
 					"response": []
@@ -2936,6 +3441,237 @@
 								"protocol",
 								"openid-connect",
 								"token"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users API",
+			"item": [
+				{
+					"name": "AAA-015-Org Admin: Get User Information",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "AAA-016 - PF Admin: Get User Info",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI5ajdoMFVkUENrNS1reDRPejhMNGtzeVRSV09vNEFZLUV2ZXhpYl9SRHFnIn0.eyJleHAiOjE3NDgzMzk5MzcsImlhdCI6MTc0ODMzOTYzNywianRpIjoib25ydHJvOjlkNDBiMTc4LTQ2OWEtNGEwOS1iODY1LWJkMGVkMGMxY2Y1ZSIsImlzcyI6Imh0dHBzOi8vc3RhZ2luZy5rZXljbG9hay51cGRhdGUuaXVkeC5pby9hdXRoL3JlYWxtcy90Z2RleC1waWxvdCIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiJlNTlkZmIwOC02NmIyLTQ5YzMtODkxYi0zOTBmOGY0ODhjNmQiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJmcm9udGVuZC1jbGllbnQiLCJzaWQiOiI5ZGQ0NGY0Ni1hZjdmLTQ1ZjctYWNjZS1kZWFlMTY2MTE3Y2YiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly9sb2NhbGhvc3Q6NDAwNyIsIioiLCJodHRwOi8vbG9jYWxob3N0OjMwMDAiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbImRlZmF1bHQtcm9sZXMtdGdkZXgtcGlsb3QiLCJjb25zdW1lciIsImNvc19hZG1pbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoicHJvZmlsZSBlbWFpbCIsIm9yZ2FuaXNhdGlvbl9pZCI6ImU1OWRmYjA4LTY2YjItNDljMy04OTFiLTM5MGY4ZjQ4OGM2ZCIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJreWNfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJhZG1pbi5jb3MudGdkZXggdGdkZXgiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhZG1pbi5jb3MudGdkZXhAZGF0YWthdmVyaS5vcmciLCJvcmdhbmlzYXRpb25fbmFtZSI6ImNvcy1hZG1pbiIsImdpdmVuX25hbWUiOiJhZG1pbi5jb3MudGdkZXgiLCJmYW1pbHlfbmFtZSI6InRnZGV4IiwiZW1haWwiOiJhZG1pbi5jb3MudGdkZXhAZGF0YWthdmVyaS5vcmcifQ.QOeCuaZT7lIX7KZFQhIiYFqYxK3VEGy6RH9z0auDCMLMI0FmKhsUZk8I-OOL67-Fqbjqd9-tYYyJlvQad5_NF6k587MctfnuGOWve8RBpvnUkrtSnQUnqnBmhPvDD_z4giP8cPefkQ6522uiP2KYTe4O5csmUw-D549XQiDPS-f9GQGoRMWvrQcWivtXWLbhasp37xkokjrDhXMzEoclIxJIJpMwiwSaMRWI6_UtB_UmsX24CyY-NDvLJp84G_m84PXeif9DFNf8sohTeuyv4dNYKjMkrJxFQ_vsqoXzYQlP5XeFkJh_oW3RENbcYPpG7hrPCiG6E6Zt6drqsGa5eQ",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{AUTH_ENDPOINT}}/iudx/v2/auth/admin/user/?page=10",
+							"host": [
+								"{{AUTH_ENDPOINT}}"
+							],
+							"path": [
+								"iudx",
+								"v2",
+								"auth",
+								"admin",
+								"user",
+								""
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "AAA-017- User: Update First Name, Last Name, Social Media Information",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI5ajdoMFVkUENrNS1reDRPejhMNGtzeVRSV09vNEFZLUV2ZXhpYl9SRHFnIn0.eyJleHAiOjE3NTA2Njk5NzksImlhdCI6MTc1MDY2OTY3OSwianRpIjoib25ydHJvOjQ2YmE2OGFiLWZlMTQtNGQxMy1hZjRiLWU5MmY4OGI1ZTU0NyIsImlzcyI6Imh0dHBzOi8vc3RhZ2luZy5rZXljbG9hay51cGRhdGUuaXVkeC5pby9hdXRoL3JlYWxtcy90Z2RleC1waWxvdCIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiJiN2E0MWUzNy1lYzgzLTQzNmQtYmFhOC05MGIxOWM0NjY3NzIiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJmcm9udGVuZC1jbGllbnQiLCJzaWQiOiJhYWYxODA5Ny01ZTNlLTQwNzQtYjMyZi1hZjc5YWQ1M2JjMzkiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly9sb2NhbGhvc3Q6NDAwNyIsIioiLCJodHRwOi8vbG9jYWxob3N0OjMwMDAiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbImNvbXB1dGUiLCJwcm92aWRlciIsImRlZmF1bHQtcm9sZXMtdGdkZXgtcGlsb3QiLCJjb25zdW1lciJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoicHJvZmlsZSBlbWFpbCIsIm9yZ2FuaXNhdGlvbl9pZCI6IjY5NjBjMzlhLTkyYzEtNDVmZS05YWRjLTc0MGM0MTIzMTFmYiIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJreWNfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJPcmcgTWVtIiwicHJlZmVycmVkX3VzZXJuYW1lIjoib3JnbWVtQGdtYWlsLmNvbSIsIm9yZ2FuaXNhdGlvbl9uYW1lIjoiQUkgU2FuZGJveCIsImdpdmVuX25hbWUiOiJPcmciLCJmYW1pbHlfbmFtZSI6Ik1lbSIsImVtYWlsIjoib3JnbWVtQGdtYWlsLmNvbSJ9.W8mGTvv8nYBGXcpqupGXm3nk-8kvwd5G4n5yWieJf6tANbCC3pW207tldajZeU0gwEbIINFyrmr17lB8kG6WkVT-txtnhASpKXwsPYSpt_ISr51gs3fheYIf_oihbyIOyvoqhskSx0NfFtgjZGNCfJxK8UD0pzpL-m98gJo-dgY04vtpTcRrKuzEsjJoWu5gWMdgu9dnPLefdll7KE00g3vIF_p63f9RstbFCXVWtAwD-DqS6Pf8-Fba9tqWODcCqGE5SMk5uf-LoD_t-OOMO6USjiCKvhtaewy7LlPAc6P_noE6OtU1AuU88GpTFQaGNC5RU5tvkMj0W7XUhANckw",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"first_name\":\"rohith\",\r\n    \"last_name\":\"rohith\",\r\n    \"twitter_account\":\"http://twitter.com\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{AUTH_ENDPOINT}}/auth/v1/user",
+							"host": [
+								"{{AUTH_ENDPOINT}}"
+							],
+							"path": [
+								"auth",
+								"v1",
+								"user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "AAA-018- User: Deactivate User Account",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{AUTH_ENDPOINT}}/auth/v1/user/deactivate",
+							"host": [
+								"{{AUTH_ENDPOINT}}"
+							],
+							"path": [
+								"auth",
+								"v1",
+								"user",
+								"deactivate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "AAA-019- User: Change Password",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"new_password\": \"string\" \n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{AUTH_ENDPOINT}}/auth/v1/user/password",
+							"host": [
+								"{{AUTH_ENDPOINT}}"
+							],
+							"path": [
+								"auth",
+								"v1",
+								"user",
+								"password"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "AAA-020- User: Delete User Account",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{AUTH_ENDPOINT}}/auth/v1/user/{{user_id}}",
+							"host": [
+								"{{AUTH_ENDPOINT}}"
+							],
+							"path": [
+								"auth",
+								"v1",
+								"user",
+								"{{user_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "AAA-021-PF Admin: Deactivate User Account",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{cos_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\":\"activate\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{AUTH_ENDPOINT}}/auth/v1/admin/{{user_id}}/update",
+							"host": [
+								"{{AUTH_ENDPOINT}}"
+							],
+							"path": [
+								"auth",
+								"v1",
+								"admin",
+								"{{user_id}}",
+								"update"
 							]
 						}
 					},
