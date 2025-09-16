@@ -41,7 +41,7 @@ public class PaginationRequestBuilder {
 
   public PaginationRequestBuilder allowedFiltersDbMap(Map<String, String> allowedFiltersDbMap) {
     this.allowedFiltersDbMap =
-            allowedFiltersDbMap != null ? allowedFiltersDbMap : Collections.emptyMap();
+        allowedFiltersDbMap != null ? allowedFiltersDbMap : Collections.emptyMap();
     return this;
   }
 
@@ -94,12 +94,12 @@ public class PaginationRequestBuilder {
     Map<String, Object> mappedFilters = new HashMap<>();
 
     allowedFiltersDbMap.forEach(
-            (apiParam, dbField) -> {
-              List<String> value = getQueryParamList(apiParam);
-              if (value != null) {
-                mappedFilters.put(dbField, value);
-              }
-            });
+        (apiParam, dbField) -> {
+          List<String> value = getQueryParamList(apiParam);
+          if (value != null) {
+            mappedFilters.put(dbField, value);
+          }
+        });
 
     if (additionalFilters != null && !additionalFilters.isEmpty()) {
       mappedFilters.putAll(additionalFilters);
@@ -109,12 +109,12 @@ public class PaginationRequestBuilder {
     List<OrderBy> orderByList = extractSortOrders();
 
     LOGGER.debug(
-            "Pagination built with page: {}, size: {}, filters: {}, temporal: {}, sort: {}",
-            page,
-            size,
-            mappedFilters,
-            temporalRequests,
-            orderByList);
+        "Pagination built with page: {}, size: {}, filters: {}, temporal: {}, sort: {}",
+        page,
+        size,
+        mappedFilters,
+        temporalRequests,
+        orderByList);
 
     return new PaginatedRequest(page, size, mappedFilters, temporalRequests, orderByList);
   }
@@ -131,11 +131,11 @@ public class PaginationRequestBuilder {
       }
       if (time != null && timerel == null) {
         throw new DxBadRequestException(
-                "Parameter 'timerel' is required when 'temporal query' is provided.");
+            "Parameter 'timerel' is required when 'temporal query' is provided.");
       }
       if (timerel != null) {
         TemporalRequest tr =
-                TemporalRequestHelper.buildTemporalRequest(defaultTimeField, timerel, time, endtime);
+            TemporalRequestHelper.buildTemporalRequest(defaultTimeField, timerel, time, endtime);
         if (tr != null) temporalRequests.add(tr);
       }
     }
@@ -168,7 +168,7 @@ public class PaginationRequestBuilder {
         String[] parts = item.split(":");
         if (parts.length != 2) {
           throw new DxBadRequestException(
-                  "Invalid sort format: " + item + ". Expected field:order");
+              "Invalid sort format: " + item + ". Expected field:order");
         }
 
         String field = parts[0].trim();
@@ -190,7 +190,7 @@ public class PaginationRequestBuilder {
       }
     } else if (defaultSortBy != null) {
       orderByList.add(
-              new OrderBy(defaultSortBy, OrderBy.Direction.valueOf(defaultOrder.toUpperCase())));
+          new OrderBy(defaultSortBy, OrderBy.Direction.valueOf(defaultOrder.toUpperCase())));
     }
 
     return orderByList;
@@ -222,10 +222,6 @@ public class PaginationRequestBuilder {
   private String getQueryParam(String paramName) {
     MultiMap params = ctx.request().params(true);
     String values = params.get(paramName);
-    LOGGER.error("getQueryParam: {} = {}", paramName, values);
     return (values != null && !values.isEmpty()) ? values : null;
   }
-
-
-
 }

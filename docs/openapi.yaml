@@ -5116,6 +5116,8 @@ paths:
         Retrieve a list of activity logs for the authenticated DX user.
         This endpoint allows users to view their own activity and filter logs based on <b>assetType</b>, <b>operation</b> and a specified time range (time, endtime).
         Pagination is supported for large result sets.
+      security:
+        - authorization: [ ]
       parameters:
         - $ref: '#/components/parameters/AssetTypeParam'
         - $ref: '#/components/parameters/OperationParam'
@@ -5175,6 +5177,8 @@ paths:
         This endpoint allows filtering activity logs based on <b>userId</b>,<b>assetType</b>, <b>operation</b> and a specified time range (time, endtime).
         Use this API to get detailed audit records for administrative purposes, including pagination support for large result sets.</br>
         Note: **Platform admins** (`cos_admin`) can access all activity logs, while **organization admins** (`cos_org`) can access logs only for their own organization.
+      security:
+        - authorization: [ ]
       parameters:
         - $ref: '#/components/parameters/UserIdParam'
         - $ref: '#/components/parameters/AssetTypeParam'
@@ -5236,6 +5240,8 @@ paths:
       description: Csv file for a list of activity logs for admin.
         **Platform admins** (`cos_admin`) can access all activity logs, while **organization admins** (`cos_org`) can access logs only for their own organization.
 
+      security:
+        - authorization: [ ]
       parameters:
         - $ref: '#/components/parameters/UserIdParam'
         - $ref: '#/components/parameters/AssetTypeParam'
@@ -5292,6 +5298,8 @@ paths:
       operationId: get-consumer-report
       summary: Consumer report
       description: Csv file for a list of activity logs for consumer.
+      security:
+        - authorization: [ ]
       parameters:
         - $ref: '#/components/parameters/AssetTypeParam'
         - $ref: '#/components/parameters/OperationParam'

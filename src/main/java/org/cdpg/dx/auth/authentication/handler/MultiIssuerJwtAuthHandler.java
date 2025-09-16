@@ -54,6 +54,7 @@ public class MultiIssuerJwtAuthHandler implements AuthenticationHandler {
         .compose(jwtAuth -> jwtAuth.authenticate(new JsonObject().put("token", token)))
         .onSuccess(
             user -> {
+              LOGGER.info("Authentication successful for issuer: {}", issuer);
               ctx.setUser(user);
               ctx.next();
             })
@@ -65,7 +66,7 @@ public class MultiIssuerJwtAuthHandler implements AuthenticationHandler {
   }
 
   private Future<JWTAuth> getOrCreateAuth(String issuer) {
-      LOGGER.debug("Looking up JWTAuth for issuer: " + issuer);
+    LOGGER.debug("Looking up JWTAuth for issuer: " + issuer);
     if (authProviders.containsKey(issuer)) {
       return Future.succeededFuture(authProviders.get(issuer));
     }
