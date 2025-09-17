@@ -50,18 +50,11 @@ public class TokenServiceImpl implements TokenService {
 
   @Override
   public Future<JsonObject> createToken(String clientId, String clientSecret) {
-    // Hash client credentials before lookup
     String hashedClientId = getHashedString(clientId.trim());
     String hashedClientSecret = getHashedString(clientSecret.trim());
 
-    // Expiration in seconds (JWT standard)
-    int expirationSeconds = TokenExpirationMinutes * 60;
-
     // JWT Options
-    JWTOptions options =
-        new JWTOptions()
-            .setAlgorithm(JWT_ALGORITHM)
-            .setIssuer(issuer);
+    JWTOptions options = new JWTOptions().setAlgorithm(JWT_ALGORITHM).setIssuer(issuer);
 
     return clientcredetialService
         .getUserIdByClientIdAndSecret(hashedClientId, hashedClientSecret)

@@ -3768,8 +3768,8 @@ paths:
           required: true
           schema:
             type: string
-            minLength: 40
-            maxLength: 40
+            minLength: 10
+            maxLength: 100
       responses:
         "200":
           description: Success
