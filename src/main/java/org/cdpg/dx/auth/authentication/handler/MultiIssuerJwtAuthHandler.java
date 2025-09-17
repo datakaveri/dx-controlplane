@@ -6,8 +6,6 @@ import io.vertx.ext.auth.jwt.JWTAuth;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.AuthenticationHandler;
 import java.util.Base64;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.auth.authentication.client.JwksResolver;
@@ -17,12 +15,10 @@ import org.cdpg.dx.common.exception.DxUnauthorizedException;
 public class MultiIssuerJwtAuthHandler implements AuthenticationHandler {
   private static final Logger LOGGER = LogManager.getLogger(MultiIssuerJwtAuthHandler.class);
 
-  private final Map<String, JWTAuth> authProviders;
   private final JwksResolver jwksResolver;
 
   public MultiIssuerJwtAuthHandler(JwksResolver resolver) {
     this.jwksResolver = resolver;
-    this.authProviders = new ConcurrentHashMap<>();
   }
 
   private static String extractIssuer(String token) {
@@ -60,23 +56,14 @@ public class MultiIssuerJwtAuthHandler implements AuthenticationHandler {
             })
         .onFailure(
             err -> {
-              LOGGER.error("Authentication failed for issuer {}: {}", issuer, err.getMessage());
+              LOGGER.error(
+                  "Authentication failed for issuer {}: {}", issuer, err.getMessage(), err);
               ctx.fail(new DxUnauthorizedException("Unauthorized: %s".formatted(err.getMessage())));
             });
   }
 
   private Future<JWTAuth> getOrCreateAuth(String issuer) {
-    LOGGER.debug("Looking up JWTAuth for issuer: " + issuer);
-    if (authProviders.containsKey(issuer)) {
-      return Future.succeededFuture(authProviders.get(issuer));
-    }
-    return jwksResolver
-        .resolve(issuer)
-        .map(
-            jwtAuth -> {
-              System.out.println("Cached JWTAuth for issuer: " + issuer);
-              authProviders.put(issuer, jwtAuth);
-              return jwtAuth;
-            });
+    LOGGER.debug("Resolving JWTAuth for issuer: {}", issuer);
+    return jwksResolver.resolve(issuer);
   }
 }
