@@ -15,10 +15,12 @@ public class OrganizationController implements ApiController {
     private static final Logger LOGGER = LogManager.getLogger(OrganizationController.class);
     private final OrganizationHandler organizationHandler;
     private final AuditingHandler auditingHandler;
+    private final Boolean kycRequired;
 
-    public OrganizationController(OrganizationHandler organizationHandler, AuditingHandler auditingHandler) {
+    public OrganizationController(OrganizationHandler organizationHandler, AuditingHandler auditingHandler,Boolean kycRequired) {
         this.organizationHandler = organizationHandler;
         this.auditingHandler = auditingHandler;
+        this.kycRequired = kycRequired;
     }
 
     @Override
@@ -30,10 +32,24 @@ public class OrganizationController implements ApiController {
                 .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
                 .handler(organizationHandler::getOrganisationRequest);
 
-        routerBuilder
+//         routerBuilder
+//              .operation("get-auth-v2-user-organisations-request")
+//              .handler(auditingHandler::handleApiAudit)
+//              .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+//              .handler(organizationHandler::getUserOrganisationRequest);
+//
+//          routerBuilder
+//              .operation("delete-auth-v2-user-organisations-request")
+//              .handler(auditingHandler::handleApiAudit)
+//              .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+//              .handler(organizationHandler::deleteOrganizationCreateRequest);
+
+
+      routerBuilder
                 .operation("post-auth-v2-organisations-request")
                 .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.requireKycVerified())
+//                .handler(AuthorizationHandler.requireKycVerified())
+                .handler(kycRequired ? AuthorizationHandler.requireKycVerified() : ctx -> ctx.next())
                 .handler(organizationHandler::createOrganisationRequest);
 
         routerBuilder
@@ -45,7 +61,8 @@ public class OrganizationController implements ApiController {
         routerBuilder
                 .operation("post-auth-v2-organisations-join-requests")
                 .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.requireKycVerified())
+                //.handler(AuthorizationHandler.requireKycVerified())
+                .handler(kycRequired ? AuthorizationHandler.requireKycVerified() : ctx -> ctx.next())
                 .handler(organizationHandler::joinOrganisationRequest);
 
         routerBuilder
@@ -53,6 +70,19 @@ public class OrganizationController implements ApiController {
                 .handler(auditingHandler::handleApiAudit)
                 .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
                 .handler(organizationHandler::getJoinOrganisationRequests);
+
+//         routerBuilder
+//                .operation("get-auth-v2-user-organisations-join-requests")
+//                .handler(auditingHandler::handleApiAudit)
+//                .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+//                .handler(organizationHandler::getUserJoinOrganisationRequests);
+//
+//         routerBuilder
+//              .operation("delete-auth-v2-user-organisations-join-requests")
+//              .handler(auditingHandler::handleApiAudit)
+//              .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+//              .handler(organizationHandler::deleteUserJoinOrganisationRequests);
+
 
         routerBuilder
                 .operation("put-auth-v2-organisations-join-requests")

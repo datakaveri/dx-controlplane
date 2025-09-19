@@ -28,13 +28,13 @@ public class OrganizationControllerFactory {
 
   private OrganizationControllerFactory() {}
 
-  public static OrganizationController create(OrganizationService organizationService, UserService userService, AuditingHandler auditingHandler, EmailComposer emailComposer, Vertx vertx, PostgresService pgService, CreditService creditService, KeycloakUserService keycloakUserService, URNGenerator urnGenerator) {
+  public static OrganizationController create(OrganizationService organizationService, UserService userService, AuditingHandler auditingHandler, EmailComposer emailComposer, Vertx vertx, PostgresService pgService, CreditService creditService, KeycloakUserService keycloakUserService, URNGenerator urnGenerator, Boolean kycRequired) {
 
     OrganizationDAOFactory organizationDAOFactory = new OrganizationDAOFactory(pgService);
     CreditDAOFactory creditDAOFactory = new CreditDAOFactory(pgService);
     OrganizationCreateReportService organizationCreateReportService = new OrganizationCreateRequestReportServiceImpl(organizationDAOFactory, creditDAOFactory, vertx);
     OrganizationHandler  organizationHandler = new OrganizationHandler(organizationService, userService,emailComposer, organizationCreateReportService,creditService,keycloakUserService,urnGenerator);
-    return new OrganizationController(organizationHandler, auditingHandler);
+    return new OrganizationController(organizationHandler, auditingHandler,kycRequired);
   }
 
   public static OrganizationService createService(PostgresService pgService, KeycloakUserService keycloakUserService, ItemService itemService) {
