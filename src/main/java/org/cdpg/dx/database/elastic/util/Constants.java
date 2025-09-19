@@ -378,6 +378,11 @@ public class Constants {
   public static final String OWNER = "owner";
   public static final String COS_ADMIN = "cos_admin";
   public static final String ORG_ADMIN = "org_admin";
+  public static final String USER = "user";
+  public static final String APD_URL = "apdURL";
+  public static final String AUTHORIZATION_KEY = "Authorization";
+  public static final String BEARER_KEY = "Bearer";
+  public static final String HTTPS = "https://";
   public static final String PROVIDER_USER_ID = "ownerUserId";
   public static final String RESOURCE_SERVER_URL = "resourceServerRegURL";
   public static final String COS_ITEM = "cos";
@@ -407,6 +412,7 @@ public class Constants {
   public static final String ITEM = "item";
   public static final String RESOURCE_ID = "resourceId";
   public static final String ITEM_TYPE = "itemType";
+  public static final String ITEM_ID = "itemId";
   public static final String PROPERTY = "property";
   /** GeoRels. */
   public static final String GEOREL_WITHIN = "within";

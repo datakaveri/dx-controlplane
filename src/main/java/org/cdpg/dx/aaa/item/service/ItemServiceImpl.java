@@ -14,6 +14,7 @@ import static org.cdpg.dx.database.elastic.util.Constants.*;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.client.WebClient;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -32,24 +33,34 @@ import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxUnauthorizedException;
+import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.database.elastic.model.QueryDecoder;
 import org.cdpg.dx.database.elastic.model.QueryModel;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.elastic.util.QueryType;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class ItemServiceImpl implements ItemService {
   private static final Logger LOGGER = LogManager.getLogger(ItemServiceImpl.class);
   private final String docIndex;
+  private final String apdURL;
   private final AccessRequestService accessRequestService;
+  private final KeycloakUserService keycloakUserService;
+  private final WebClient client;
   ElasticsearchService elasticsearchService;
   QueryDecoder queryDecoder = new QueryDecoder();
 
-  public ItemServiceImpl(ElasticsearchService elasticsearchService, String docIndex,
-                         AccessRequestDao accessRequestDao) {
+  public ItemServiceImpl(ElasticsearchService elasticsearchService,
+                         KeycloakUserService keycloakUserService,
+                         AccessRequestDao accessRequestDao,
+                         WebClient webClient, String docIndex, String apdURL) {
     this.elasticsearchService = elasticsearchService;
-    this.docIndex = docIndex;
     this.accessRequestService = new AccessRequestServiceImpl(this, accessRequestDao);
+    this.keycloakUserService = keycloakUserService;
+    this.client = webClient;
+    this.docIndex = docIndex;
+    this.apdURL = apdURL;
   }
 
   @Override
@@ -139,7 +150,8 @@ public class ItemServiceImpl implements ItemService {
       if (accessPolicy.equalsIgnoreCase(PRIVATE)) {
         return getResponseWhenResourceIsPrivate(ownerUserId, request, elasticResponse, totalHits);
       } else if (accessPolicy.equalsIgnoreCase(RESTRICTED)) {
-        return getResponseWhenResourceIsRestricted(ownerUserId, request, totalHits, elasticResponse);
+        return getResponseWhenResourceIsRestricted(ownerUserId, request, totalHits,
+            elasticResponse);
       }
       return getResponseWhenResourceIsPublic(accessPolicy, totalHits, elasticResponse);
     });
@@ -213,18 +225,92 @@ public class ItemServiceImpl implements ItemService {
       return Future.succeededFuture(responseModel);
     }
 
-    // Otherwise, validate access request
-    Future<Boolean> isAccessRequestPresent =
-        accessRequestService.checkAccessRequest(UUID.fromString(request.getSubId()),
-            request.getItemId());
-    return isAccessRequestPresent.compose(v -> {
-      ResponseModel responseModel = new ResponseModel(List.of(response), 1, 1);
-      responseModel.setTotalHits(totalHits);
-      return Future.succeededFuture(responseModel);
-    }).recover(failure -> {
-      LOGGER.error("Error during restricted access check: {}", failure.getMessage());
-      return Future.failedFuture(failure);
+    // Fetch apdUrl from item source
+    String apdUrl = response.getSource().getString(APD_URL);
+    String itemType = response.getSource().getJsonArray(TYPE).getString(0);
+    if (apdUrl == null || apdUrl.isBlank()) {
+      LOGGER.error("Restricted item missing apdUrl in metadata");
+      return Future.failedFuture(new DxForbiddenException("Access denied, APD URL missing"));
+    }
+
+    if (apdUrl.equals(apdURL)) { // apdURL = default apd
+      return accessRequestService.checkAccessRequest(UUID.fromString(request.getSubId()),
+              request.getItemId())
+          .compose(v -> succeededResponse(response, totalHits))
+          .recover(failure -> {
+            LOGGER.error("Error during restricted access check: {}", failure.getMessage());
+            return Future.failedFuture(failure);
+          });
+    }
+
+    //else Verify via external APD
+    UUID requestId = UUID.fromString(request.getSubId());
+    UUID ownerId = UUID.fromString(ownerUserId);
+    Future<DxUser> requesterFut = keycloakUserService.getUserById(requestId);
+    Future<DxUser> ownerFut = keycloakUserService.getUserById(ownerId);
+
+    return Future.all(requesterFut, ownerFut).compose(cf -> {
+      DxUser requester = requesterFut.result();
+      DxUser owner = ownerFut.result();
+      return verifyWithApd(apdUrl, requester, owner, request, itemType, totalHits, response);
     });
+  }
+
+
+  // --- Helpers ---
+  private Future<ResponseModel> succeededResponse(ElasticsearchResponse response, int totalHits) {
+    ResponseModel responseModel = new ResponseModel(List.of(response), 1, 1);
+    responseModel.setTotalHits(totalHits);
+    return Future.succeededFuture(responseModel);
+  }
+
+  private Future<ResponseModel> verifyWithApd(String apdUrl, DxUser requester,
+                                              DxUser owner, GetItemRequest request,
+                                              String itemType, int totalHits,
+                                              ElasticsearchResponse response) {
+    JsonObject verifyPayload = new JsonObject()
+        .put(USER, buildUserBlock(requester))
+        .put(OWNER, buildUserBlock(owner))
+        .put(ITEM, new JsonObject()
+            .put(ITEM_ID, request.getItemId())
+            .put(ITEM_TYPE, itemType));
+
+    return client.postAbs(HTTPS + apdUrl + "/verify")
+        .putHeader(AUTHORIZATION_KEY, BEARER_KEY + " " + request.getToken())
+        .sendJsonObject(verifyPayload)
+        .compose(httpResponse -> {
+          if (httpResponse.statusCode() == 200) {
+            JsonObject body = httpResponse.bodyAsJsonObject();
+            String decision = body.getString(TYPE);
+
+            if ("urn:apd:Allow".equalsIgnoreCase(decision)) {
+              LOGGER.info("APD allowed access for user {}", request.getSubId());
+              return succeededResponse(response, totalHits);
+            } else {
+              LOGGER.warn("APD denied access for user {} with decision {}",
+                  request.getSubId(), decision);
+              return Future.failedFuture(new DxForbiddenException("Access denied by APD"));
+            }
+          } else {
+            LOGGER.error("APD verify call failed: status {}, body {}",
+                httpResponse.statusCode(), httpResponse.bodyAsString());
+            return Future.failedFuture(new DxForbiddenException("APD verification failed"));
+          }
+        })
+        .recover(failure -> {
+          LOGGER.error("Error during APD verification: {}", failure.getMessage());
+          return Future.failedFuture(new DxForbiddenException("APD verification failed"));
+        });
+  }
+
+  // Helper to convert DxUser → APD user block
+  private JsonObject buildUserBlock(DxUser user) {
+    return new JsonObject()
+        .put("id", user.sub().toString())
+        .put("name", new JsonObject()
+            .put("firstName", user.givenName())
+            .put("lastName", user.familyName()))
+        .put("email", user.email());
   }
 
   @Override

@@ -2,6 +2,7 @@ package org.cdpg.dx.aaa.item.controller;
 
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.*;
 import static org.cdpg.dx.aaa.common.Constants.*;
+import static org.cdpg.dx.aaa.common.Constants.ID;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -29,6 +30,7 @@ import org.cdpg.dx.aaa.item.util.ItemFactory;
 import org.cdpg.dx.aaa.item.util.PatchItemRequest;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auditing.model.AuditLog;
+import org.cdpg.dx.auth.authentication.util.BearerTokenExtractor;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.URNGenerator;
@@ -375,7 +377,8 @@ public class ItemController implements ApiController {
   }
 
   private void handleGetItemWithAccess(RoutingContext routingContext) {
-    String itemId = routingContext.queryParams().get("id");
+    String token = BearerTokenExtractor.extract(routingContext);
+    String itemId = routingContext.queryParams().get(ID);
     LOGGER.debug("Received GET request for item with ID '{}'", itemId);
 
     if (itemId == null || itemId.isBlank()) {
@@ -399,6 +402,7 @@ public class ItemController implements ApiController {
 
     GetItemRequest request = new GetItemRequest(itemId, subId);
     request.setRoles(roles);
+    request.setToken(token);
     itemService
         .getItemWithAccessChecks(request)
         .onSuccess(

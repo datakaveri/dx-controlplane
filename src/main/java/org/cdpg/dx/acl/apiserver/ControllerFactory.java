@@ -2,10 +2,10 @@ package org.cdpg.dx.acl.apiserver;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.client.WebClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import org.cdpg.dx.aaa.activity.factory.ActivityControllerFactory;
 import org.cdpg.dx.aaa.activity.factory.ActivityFactory;
 import org.cdpg.dx.aaa.activity.service.ActivityService;
 import org.cdpg.dx.acl.accessReport.controller.AccessReportController;
@@ -24,6 +24,8 @@ import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
 
 import java.util.List;
 
+import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
+import static org.cdpg.dx.aaa.common.Constants.VOC_CONTEXT;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.*;
 
 public class ControllerFactory {
@@ -34,8 +36,10 @@ public class ControllerFactory {
   public static List<ApdApiController> createControllers(
       Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
 
-    final String docIndex = config.getString("docIndex");
-    final String vocContext = config.getString("vocContext");
+    final String docIndex = config.getString(DOC_INDEX);
+    final String vocContext = config.getString(VOC_CONTEXT);
+
+    WebClient webClient = WebClient.create(vertx);
 
     PostgresService pgService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
     DataBrokerService dataBrokerService =
@@ -54,7 +58,11 @@ public class ControllerFactory {
             dataBrokerService, activityService, auditingExchange, routingKey, isRemoteAudit);
 
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
-    EmailComposer emailComposer = new EmailComposer(emailService, keycloakUserService, config);
+    EmailComposer emailComposer = new EmailComposer(
+        emailService,
+        keycloakUserService,
+        config);
+
 
     AccessRequestController accessRequestController =
         AccessRequestFactory.createAccessRequestController(
@@ -64,7 +72,8 @@ public class ControllerFactory {
             keycloakUserService,
             auditingHandler,
             config,
-            urnGenerator);
+            urnGenerator,
+            webClient);
 
     AccessReportController accessReportController = AccessReportFactory.create(pgService, vertx);
 

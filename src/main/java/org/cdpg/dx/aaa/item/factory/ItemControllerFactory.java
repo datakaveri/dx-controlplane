@@ -3,6 +3,7 @@ package org.cdpg.dx.aaa.item.factory;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.REQUEST_TABLE;
 
+import io.vertx.ext.web.client.WebClient;
 import org.cdpg.dx.aaa.item.controller.ItemController;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
@@ -13,6 +14,7 @@ import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class ItemControllerFactory {
 
@@ -20,13 +22,17 @@ public class ItemControllerFactory {
       AuditingHandler auditingHandler,
       ElasticsearchService elasticsearchService,
       PostgresService pgService,
+      KeycloakUserService keycloakUserService,
       String docIndex,
       String vocContext,
-      URNGenerator urnGenerator) {
+      String apdURL,
+      URNGenerator urnGenerator,
+      WebClient webClient) {
     AccessRequestDao accessRequestDao =
         new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
 
-    ItemService crudService = new ItemServiceImpl(elasticsearchService, docIndex, accessRequestDao);
+    ItemService crudService = new ItemServiceImpl(elasticsearchService, keycloakUserService,
+        accessRequestDao, webClient, docIndex, apdURL);
     return new ItemController(auditingHandler, crudService, vocContext, urnGenerator);
   }
 }

@@ -6,6 +6,7 @@ public class GetItemRequest {
   private final String itemId;
   private final String subId;
   private List<String> roles;
+  private String token;
 
   public GetItemRequest(String itemId, String subId) {
     this.itemId = itemId;
@@ -25,5 +26,13 @@ public class GetItemRequest {
 
   public String getSubId() {
     return subId;
+  }
+
+  public String getToken() {
+    return token;
+  }
+
+  public void setToken(String token) {
+    this.token = token;
   }
 }
