@@ -31,14 +31,14 @@ public class JwksResolver {
     this.leeway = issuerConfig.getInteger("jwtLeeway", 60);
     this.jwksClient = new JwksClient(vertx, aaaKeyProvider);
 
-    // reset cache every N minutes
-    long resetIntervalMin =
-        issuerConfig.getLong("jwksRefreshIntervalMinutes", 10L); // default 10 minutes
-    long resetIntervalMs = resetIntervalMin * 60 * 1000;
+    // reset cache every N milliseconds
+    long resetIntervalMs =
+        issuerConfig.getLong("jwksRefreshIntervalMs", 600_000L); // default 10 minutes = 600,000 ms
+
     vertx.setPeriodic(
         resetIntervalMs,
         id -> {
-          LOGGER.info("Resetting JWKS cache after {} minutes", resetIntervalMin);
+          LOGGER.info("Resetting JWKS cache after {} ms", resetIntervalMs);
           cache.clear();
         });
   }
