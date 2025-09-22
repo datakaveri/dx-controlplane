@@ -5112,6 +5112,8 @@ paths:
         - Activity Logs
       operationId: get-ActivityLogs-for-consumer
       summary: Consumer Activity
+      security:
+        - authorization: [ ]
       description: >
         Retrieve a list of activity logs for the authenticated DX user.
         This endpoint allows users to view their own activity and filter logs based on <b>assetType</b>, <b>operation</b> and a specified time range (time, endtime).
@@ -5171,6 +5173,8 @@ paths:
       tags:
         - Activity Logs
       operationId: get-activityLogs-for-admin
+      security:
+        - authorization: [ ]
       summary: Admin Activity
       description: >
         Retrieve a list of activity logs for DX users.

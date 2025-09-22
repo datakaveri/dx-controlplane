@@ -67,6 +67,7 @@ public class ControllerFactory {
 
     final String docIndex = config.getString("docIndex");
     final String vocContext = config.getString("vocContext");
+    final Boolean kycRequired = config.getBoolean("kycRequired");
 
     PostgresService pgService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
     DataBrokerService dataBrokerService =
@@ -129,7 +130,8 @@ public class ControllerFactory {
             pgService,
             creditService,
             keycloakUserService,
-            urnGenerator);
+            urnGenerator,
+            kycRequired);
 
     AdminHandler adminHandler =
         new AdminHandler(

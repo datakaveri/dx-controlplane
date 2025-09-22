@@ -5,6 +5,7 @@ import io.vertx.core.Promise;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.common.exception.DxBadRequestException;
+import org.cdpg.dx.databroker.model.RegisterQueueModel;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.databroker.util.PermissionOpType;
 import org.cdpg.dx.databroker.util.Vhosts;
@@ -20,8 +21,8 @@ public class ConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
-  public Future<String> createConnector(String userId, String assetId) {
-    Promise<String> promise = Promise.promise();
+  public Future<RegisterQueueModel> createConnector(String userId, String assetId) {
+    Promise<RegisterQueueModel> promise = Promise.promise();
     if (assetId == null || assetId.isEmpty() || userId == null || userId.isEmpty()) {
       promise.fail(new DxBadRequestException("Invalid input or blank value"));
       return promise.future();
@@ -32,25 +33,30 @@ public class ConnectorServiceImpl implements ConnectorService {
         .compose(
             queueCreated -> {
               LOGGER.info("Queue created in DataBroker {}", queueCreated.toJson());
-              return dataBrokerService.queueBinding(
-                  publishEx, assetId, assetId, Vhosts.IUDX_INTERNAL);
+              return dataBrokerService
+                  .queueBinding(publishEx, assetId, assetId, Vhosts.IUDX_INTERNAL)
+                  .map(v -> queueCreated);
             })
         .compose(
             queueBinded -> {
               LOGGER.info("Queue Binding successful");
-              return dataBrokerService.updatePermission(
-                  userId, assetId, PermissionOpType.ADD_READ, Vhosts.IUDX_INTERNAL);
+              return dataBrokerService
+                  .updatePermission(
+                      userId, assetId, PermissionOpType.ADD_READ, Vhosts.IUDX_INTERNAL)
+                  .map(v -> queueBinded);
             })
         .compose(
             queueBinded -> {
               LOGGER.info("Updated read permission for user");
-              return dataBrokerService.updatePermission(
-                  userId, "amq.default", PermissionOpType.ADD_WRITE, Vhosts.IUDX_INTERNAL);
+              return dataBrokerService
+                  .updatePermission(
+                      userId, "amq.default", PermissionOpType.ADD_WRITE, Vhosts.IUDX_INTERNAL)
+                  .map(v -> queueBinded);
             })
         .onSuccess(
             permissionUpdated -> {
               LOGGER.info("Permission updated successfully");
-              promise.complete("Connector created successfully");
+              promise.complete(permissionUpdated);
             })
         .onFailure(
             err -> {

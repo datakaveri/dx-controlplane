@@ -1,15 +1,3591 @@
 {
 	"info": {
-		"_postman_id": "1d173034-e4a6-4cfc-9e12-79b21bb1e52d",
-		"name": "TGDEX-WORK flow in order",
+		"_postman_id": "93fb0331-d4ee-4cf6-af17-f53b53fd800f",
+		"name": "TGDEX-WORK flow in order Copy",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "37566804",
-		"_collection_link": "https://backend-team-8806.postman.co/workspace/12-SEPT~0ae44a18-dfea-46a3-bd46-0edda8eaadc2/collection/37566804-1d173034-e4a6-4cfc-9e12-79b21bb1e52d?action=share&source=collection_link&creator=37566804"
+		"_collection_link": "https://backend-team-8806.postman.co/workspace/12-SEPT~0ae44a18-dfea-46a3-bd46-0edda8eaadc2/collection/37566804-93fb0331-d4ee-4cf6-af17-f53b53fd800f?action=share&source=collection_link&creator=37566804"
 	},
 	"item": [
 		{
 			"name": "TGDeX WORK FLOW",
 			"item": [
+				{
+					"name": "DX CRUD APIs",
+					"item": [
+						{
+							"name": "Create Item",
+							"item": [
+								{
+									"name": "Create an APPs Item - 201 (success)",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(201);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));\r",
+													"    pm.expect(body.results).to.have.property(\"id\");\r",
+													"    const ID = body.results.id;\r",
+													"    pm.globals.set(\"adex_apps_id\", ID);\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{cos_token}}",
+												"type": "text"
+											},
+											{
+												"key": "",
+												"value": "",
+												"type": "text",
+												"disabled": true
+											},
+											{
+												"key": "",
+												"value": "",
+												"type": "text",
+												"disabled": true
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"name\": \"ai_lung_diagnostics\",\r\n  \"type\": [\"adex:Apps\"],\r\n  \"tags\": [\"healthcare\", \"diagnostics\", \"medical imaging\", \"AI\"],\r\n  \"label\": \"AI-Powered Medical Imaging Diagnostics for Lung Conditions\",\r\n  \"industry\": \"Healthcare\",\r\n  \"accessPolicy\": \"OPEN\",\r\n  \"shortDescription\": \"AI-driven diagnostics platform for detecting lung conditions using chest X-rays.\",\r\n  \"description\": \"This use case showcases the application of deep learning algorithms for interpreting chest radiographs, aiding in the timely diagnosis of lung conditions such as TB, COPD, and lung cancer.\",\r\n  \"organizationType\": \"Public\",\r\n  \"sections\": [\r\n    {\r\n      \"title\": \"Introduction\",\r\n      \"content\": \"Across each procurement season, thousands of Paddy Procurement Centres (PPCs) deliver grain to a large, province-wide network of registered rice mills. Pairings are still set by manual judgement and legacy rules, which leaves spare milling capacity idle, lengthens haul distances, and makes equity goals harder to track. The rich operational data already flowing through the Online Procurement Management System (OPMS) can anchor a smarter, policy-aligned network design that balances workload, curbs transport cost, and surfaces bottlenecks before they bite.\"\r\n    },\r\n    {\r\n      \"title\": \"Current Opportunities for Improvement\",\r\n      \"subsections\": [\r\n        {\r\n          \"subtitle\": \"Limited foresight\",\r\n          \"points\": [\r\n            \"Arrival patterns and mill capacities are understood only after trucks roll, forcing reactive fixes.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Heuristic pairing\",\r\n          \"points\": [\r\n            \"Village-to-PPC and PPC-to-mill tags seldom explore alternatives that would shorten routes or absorb latent capacity.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Equity & compliance friction\",\r\n          \"points\": [\r\n            \"Mandal-level service targets and caps on cross-district movement demand painstaking manual checks.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Adaptation lag\",\r\n          \"points\": [\r\n            \"Weather shifts or labour disruptions require rapid rerouting, yet the present process is paperwork-heavy and opaque to headquarters.\"\r\n          ]\r\n        }\r\n      ]\r\n    },\r\n    {\r\n      \"title\": \"Proposed Methodology\",\r\n      \"subsections\": [\r\n        {\r\n          \"subtitle\": \"Predictive baselining\",\r\n          \"points\": [\r\n            \"Mine past OPMS feeds to forecast realistic volumes at each PPC before peak arrival.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Scenario stress-testing\",\r\n          \"points\": [\r\n            \"Generate multiple demand scenarios so policy makers can gauge how robust any allocation is under plausible swings.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Multi-objective optimisation\",\r\n          \"points\": [\r\n            \"Search for assignments that minimise haul distance while balancing mill utilisation and locking in policy constraints such as entitlement ceilings and district quotas.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Human-in-the-loop validation\",\r\n          \"points\": [\r\n            \"District officers review suggested pairings, lock or override as needed; the engine then re-optimises around those choices and logs rationale for audit.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Continuous learning\",\r\n          \"points\": [\r\n            \"Daily variances feed back to refine forecasts and flag when reallocation would materially improve cost or compliance.\"\r\n          ]\r\n        }\r\n      ]\r\n    },\r\n    {\r\n      \"title\": \"Proposed Technological Solutions\",\r\n      \"subsections\": [\r\n        {\r\n          \"subtitle\": \"Demand-forecast micro-service\",\r\n          \"points\": [\r\n            \"A lightweight temporal model that turns OPMS history into daily PPC arrival projections.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Optimisation core\",\r\n          \"points\": [\r\n            \"A solver that blends exact and heuristic techniques, exposed through open APIs.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Policy rule layer\",\r\n          \"points\": [\r\n            \"Declarative constraints so new mandates can be toggled without touching code.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Decision dashboard\",\r\n          \"points\": [\r\n            \"GIS visual of proposed pairings, expected distance savings, and override controls.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"OPMS integration\",\r\n          \"points\": [\r\n            \"Two-way data bridge so staff work inside the system they already know.\"\r\n          ]\r\n        }\r\n      ]\r\n    },\r\n    {\r\n      \"title\": \"Key Objectives / Performance Metrics\",\r\n      \"subsections\": [\r\n        {\r\n          \"subtitle\": \"Reduced Transport Distance\",\r\n          \"points\": [\r\n            \"Lower total tonne-kilometres moved across the state.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Balanced Mill Utilisation\",\r\n          \"points\": [\r\n            \"Narrow the gap between over- and under-loaded mills, improving asset productivity.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Equity Assurance\",\r\n          \"points\": [\r\n            \"Demonstrably meet mandal-level service targets built into the constraint set.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Operational Agility\",\r\n          \"points\": [\r\n            \"Shorter response time when shocks demand rerouting, with fewer manual work-arounds.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Transparency & Auditability\",\r\n          \"points\": [\r\n            \"Every allocation and override traceable in a single digital trail.\"\r\n          ]\r\n        }\r\n      ]\r\n    }\r\n  ]\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/item/",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"item",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create AI Model Item - 201 (success)",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {",
+													"    pm.response.to.have.status(201);",
+													"});",
+													"",
+													"pm.test(\"Check response header\", function () {",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+													"});",
+													"",
+													"pm.test(\"Check response body\", function () {    ",
+													"    const body = pm.response.json();",
+													"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));",
+													"    pm.expect(body.results).to.have.property(\"id\");",
+													"    const ID = body.results.id;",
+													"    pm.globals.set(\"ai_model_id\", ID);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "Authorization",
+												"value": "Bearer {{org_admin_token}}"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"type\": [\n    \"adex:AiModel\"\n  ],\n  \"name\": \"AiSandBoxAiModelPrivate\",\n  \"description\": \"ai model item for the postman collection\",\n  \"shortDescription\": \"A test AI model item created for Postman integration.\",\n  \"label\": \"ai model item for test only\",\n  \"tags\": [\n    \"ai\",\n    \"crop\",\n    \"crop disease\",\n    \"disease detection\",\n    \"ai model\"\n  ],\n  \"accessPolicy\": \"PRIVATE\",\n  \"organizationId\": \"{{organizationId}}\",\n  \"organizationType\": \"Private\",\n  \"department\": \"Agriculture and Co-operation\",\n  \"modelType\": \"ImageClassifier\",\n  \"fileFormat\": \"ipynb\",\n  \"industry\": \"Agriculture\",\n  \"uploadedBy\": \"test.user@datakaveri.org\",\n  \"license\": \"MIT\",\n  \"fileSize\": \"15MB\",\n  \"mediaURL\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/item/",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"item",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create a Data Bank Resource Item - 201 (success)",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(201);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));\r",
+													"    pm.expect(body.results).to.have.property(\"id\");\r",
+													"    const ID = body.results.id;\r",
+													"    pm.globals.set(\"data_bank_id\", ID);\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{org_admin_token}}",
+												"type": "text"
+											},
+											{
+												"key": "instance",
+												"value": "pune",
+												"type": "text",
+												"disabled": true
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"name\": \"AiSandBoxDataBankPM\",\r\n  \"type\": [\"adex:DataBank\"],\r\n  \"label\": \"Subdistrict Weather Information\",\r\n  \"shortDescription\": \"Daily aggregated temperature and rainfall data at subdistrict level.\",\r\n  \"description\": \"Daily weather statistics at subdistrict level including temperature and rainfall metrics.\",\r\n  \"tags\": [\"weather\", \"temperature\", \"rainfall\", \"environment\"],\r\n  \"uploadedBy\": \"Forecast department\",\r\n  \"accessPolicy\": \"RESTRICTED\",\r\n  \"organizationId\": \"{{organizationId}}\",\r\n  \"organizationType\": \"Public\",\r\n  \"fileFormat\": \"xlsx\",\r\n  \"department\": \"Department of IT, Electronics and Communication\",\r\n  \"industry\": \"Environmental Monitoring\",\r\n  \"geoCoverage\": \"Karnataka, India\",\r\n  \"yearRange\": \"2021-2024\",\r\n  \"uploadFrequency\": \"Daily\",\r\n  \"verifiedBy\": \"Department of Meteorology, Karnataka\",\r\n  \"license\": \"CC-BY 4.0\"\r\n}\r\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/item/",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"item",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "400 (Invalid schema)- Create DX Entity",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:InvalidSchema\");\r",
+													"});\r",
+													"\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{org_admin_token}}",
+												"type": "text"
+											},
+											{
+												"key": "instance",
+												"value": "pune",
+												"type": "text",
+												"disabled": true
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"@context\": \"https://voc.iudx.org.in/\",\r\n    \"type\": [\r\n        \"iudx:ResourceGroup\",\r\n        \"iudx:IssueReporting\"\r\n    ],\r\n    \"name\": \"agra-swachhata-app\",\r\n    \"description\": \"Civic Issues like open defecation, garbage dumping, etc., reported in Agra city via Swachhata app. Publishes all the complaints/issues lodged on the current day, on a daily basis.\",\r\n    \"tags\": [\r\n        \"swachhata\",\r\n        \"complaints\",\r\n        \"reporting\",\r\n        \"issue\",\r\n        \"garbage dump\",\r\n        \"debris removal\",\r\n        \"open defecation\",\r\n        \"construction material\",\r\n        \"requests\"\r\n    ]\r\n    \"organizationId\": \"83995e8c-fa80-4241-93c0\"\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/item/",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"item",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "400 (invalid UUID) - Create an DX Entity",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:InvalidSchema\");\r",
+													"});\r",
+													"\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{org_admin_token}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"id\": \"9beed-53e1-4f81-a863-9aa07bd98b1d\",\r\n  \"name\": \"AiSandBoxDataBankPM\",\r\n  \"type\": [\"adex:DataBank\"],\r\n  \"label\": \"Subdistrict Weather Information\",\r\n  \"shortDescription\": \"Daily aggregated temperature and rainfall data at subdistrict level.\",\r\n  \"description\": \"Daily weather statistics at subdistrict level including temperature and rainfall metrics.\",\r\n  \"tags\": [\"weather\", \"temperature\", \"rainfall\", \"environment\"],\r\n  \"uploadedBy\": \"Forecast department\",\r\n  \"accessPolicy\": \"RESTRICTED\",\r\n  \"organizationId\": \"{{organizationId}}\",\r\n  \"organizationType\": \"Public\",\r\n  \"fileFormat\": \"xlsx\",\r\n  \"department\": \"Department of IT, Electronics and Communication\",\r\n  \"industry\": \"Environmental Monitoring\",\r\n  \"geoCoverage\": \"Karnataka, India\",\r\n  \"yearRange\": \"2021-2024\",\r\n  \"uploadFrequency\": \"Daily\",\r\n  \"verifiedBy\": \"Department of Meteorology, Karnataka\",\r\n  \"license\": \"CC-BY 4.0\"\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/item/",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"item",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "401 (invalid credentials) - Create an DX Entity",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(401);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:InvalidAuthorizationToken\");\r",
+													"});\r",
+													"\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer abc",
+												"type": "text"
+											},
+											{
+												"key": "instance",
+												"value": "pune",
+												"type": "text",
+												"disabled": true
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"name\": \"ai_lung_diagnostics\",\r\n  \"type\": [\"adex:Apps\"],\r\n  \"tags\": [\"healthcare\", \"diagnostics\", \"medical imaging\", \"AI\"],\r\n  \"label\": \"AI-Powered Medical Imaging Diagnostics for Lung Conditions\",\r\n  \"industry\": \"Healthcare\",\r\n  \"shortDescription\": \"AI-driven diagnostics platform for detecting lung conditions using chest X-rays.\",\r\n  \"description\": \"This use case showcases the application of deep learning algorithms for interpreting chest radiographs, aiding in the timely diagnosis of lung conditions such as TB, COPD, and lung cancer.\",\r\n  \"organizationType\": \"Public\",\r\n  \"sections\": [\r\n    {\r\n      \"title\": \"Introduction\",\r\n      \"content\": \"Across each procurement season, thousands of Paddy Procurement Centres (PPCs) deliver grain to a large, province-wide network of registered rice mills. Pairings are still set by manual judgement and legacy rules, which leaves spare milling capacity idle, lengthens haul distances, and makes equity goals harder to track. The rich operational data already flowing through the Online Procurement Management System (OPMS) can anchor a smarter, policy-aligned network design that balances workload, curbs transport cost, and surfaces bottlenecks before they bite.\"\r\n    },\r\n    {\r\n      \"title\": \"Current Opportunities for Improvement\",\r\n      \"subsections\": [\r\n        {\r\n          \"subtitle\": \"Limited foresight\",\r\n          \"points\": [\r\n            \"Arrival patterns and mill capacities are understood only after trucks roll, forcing reactive fixes.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Heuristic pairing\",\r\n          \"points\": [\r\n            \"Village-to-PPC and PPC-to-mill tags seldom explore alternatives that would shorten routes or absorb latent capacity.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Equity & compliance friction\",\r\n          \"points\": [\r\n            \"Mandal-level service targets and caps on cross-district movement demand painstaking manual checks.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Adaptation lag\",\r\n          \"points\": [\r\n            \"Weather shifts or labour disruptions require rapid rerouting, yet the present process is paperwork-heavy and opaque to headquarters.\"\r\n          ]\r\n        }\r\n      ]\r\n    },\r\n    {\r\n      \"title\": \"Proposed Methodology\",\r\n      \"subsections\": [\r\n        {\r\n          \"subtitle\": \"Predictive baselining\",\r\n          \"points\": [\r\n            \"Mine past OPMS feeds to forecast realistic volumes at each PPC before peak arrival.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Scenario stress-testing\",\r\n          \"points\": [\r\n            \"Generate multiple demand scenarios so policy makers can gauge how robust any allocation is under plausible swings.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Multi-objective optimisation\",\r\n          \"points\": [\r\n            \"Search for assignments that minimise haul distance while balancing mill utilisation and locking in policy constraints such as entitlement ceilings and district quotas.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Human-in-the-loop validation\",\r\n          \"points\": [\r\n            \"District officers review suggested pairings, lock or override as needed; the engine then re-optimises around those choices and logs rationale for audit.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Continuous learning\",\r\n          \"points\": [\r\n            \"Daily variances feed back to refine forecasts and flag when reallocation would materially improve cost or compliance.\"\r\n          ]\r\n        }\r\n      ]\r\n    },\r\n    {\r\n      \"title\": \"Proposed Technological Solutions\",\r\n      \"subsections\": [\r\n        {\r\n          \"subtitle\": \"Demand-forecast micro-service\",\r\n          \"points\": [\r\n            \"A lightweight temporal model that turns OPMS history into daily PPC arrival projections.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Optimisation core\",\r\n          \"points\": [\r\n            \"A solver that blends exact and heuristic techniques, exposed through open APIs.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Policy rule layer\",\r\n          \"points\": [\r\n            \"Declarative constraints so new mandates can be toggled without touching code.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Decision dashboard\",\r\n          \"points\": [\r\n            \"GIS visual of proposed pairings, expected distance savings, and override controls.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"OPMS integration\",\r\n          \"points\": [\r\n            \"Two-way data bridge so staff work inside the system they already know.\"\r\n          ]\r\n        }\r\n      ]\r\n    },\r\n    {\r\n      \"title\": \"Key Objectives / Performance Metrics\",\r\n      \"subsections\": [\r\n        {\r\n          \"subtitle\": \"Reduced Transport Distance\",\r\n          \"points\": [\r\n            \"Lower total tonne-kilometres moved across the state.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Balanced Mill Utilisation\",\r\n          \"points\": [\r\n            \"Narrow the gap between over- and under-loaded mills, improving asset productivity.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Equity Assurance\",\r\n          \"points\": [\r\n            \"Demonstrably meet mandal-level service targets built into the constraint set.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Operational Agility\",\r\n          \"points\": [\r\n            \"Shorter response time when shocks demand rerouting, with fewer manual work-arounds.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Transparency & Auditability\",\r\n          \"points\": [\r\n            \"Every allocation and override traceable in a single digital trail.\"\r\n          ]\r\n        }\r\n      ]\r\n    }\r\n  ]\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/item",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"item"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Get/List Item",
+							"item": [
+								{
+									"name": "200 (success) - Get DX Entity by ID",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.be.ok;\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));\r",
+													"});\r",
+													"\r",
+													"\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{org_admin_token}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{host}}{{base}}/item?id={{data_bank_id}}",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"item"
+											],
+											"query": [
+												{
+													"key": "id",
+													"value": "{{data_bank_id}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "404 (not found) - Get DX Entity",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.be.notFound;\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:ItemNotFound\");\r",
+													"    pm.expect(body).to.have.property(\"totalHits\", 0);\r",
+													"});\r",
+													"\r",
+													"\r",
+													""
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{host}}{{base}}/item?id=7c8b58a7-6e5b-4a97-a15d-8f4aeb4e987e",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"item"
+											],
+											"query": [
+												{
+													"key": "id",
+													"value": "7c8b58a7-6e5b-4a97-a15d-8f4aeb4e987e"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "400 (invalid UUID) - Get DX Entity",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.be.badRequest;\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:InvalidUUID\");\r",
+													"});\r",
+													"\r",
+													"\r",
+													""
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{host}}{{base}}/item?id=7c8b58a7-6e5b-4a97-a15d-8f4aeb4e",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"item"
+											],
+											"query": [
+												{
+													"key": "id",
+													"value": "7c8b58a7-6e5b-4a97-a15d-8f4aeb4e"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Update Item",
+							"item": [
+								{
+									"name": "200 (success) - Update Apps Item",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Check response header\", function () {",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+													"});",
+													"",
+													"pm.test(\"Check response body\", function () {    ",
+													"    const body = pm.response.json();",
+													"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));",
+													"    pm.expect(body.results).to.have.property(\"id\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{cos_token}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"id\": \"{{adex_apps_id}}\",\n \"name\": \"ai_lung_diagnostics\",\r\n  \"type\": [\"adex:Apps\"],\r\n  \"tags\": [\"healthcare\", \"diagnostics\", \"medical imaging\", \"AI\"],\r\n  \"label\": \"AI-Powered Medical Imaging Diagnostics for Lung Conditions\",\r\n  \"industry\": \"Healthcare\",\r\n  \"shortDescription\": \"AI-driven diagnostics platform for detecting lung conditions using chest X-rays.\",\r\n  \"description\": \"This use case showcases the application of deep learning algorithms for interpreting chest radiographs, aiding in the timely diagnosis of lung conditions such as TB, COPD, and lung cancer.\",\r\n  \"organizationType\": \"Public\",\r\n  \"sections\": [\r\n    {\r\n      \"title\": \"Introduction\",\r\n      \"content\": \"Across each procurement season, thousands of Paddy Procurement Centres (PPCs) deliver grain to a large, province-wide network of registered rice mills. Pairings are still set by manual judgement and legacy rules, which leaves spare milling capacity idle, lengthens haul distances, and makes equity goals harder to track. The rich operational data already flowing through the Online Procurement Management System (OPMS) can anchor a smarter, policy-aligned network design that balances workload, curbs transport cost, and surfaces bottlenecks before they bite.\"\r\n    },\r\n    {\r\n      \"title\": \"Current Opportunities for Improvement\",\r\n      \"subsections\": [\r\n        {\r\n          \"subtitle\": \"Limited foresight\",\r\n          \"points\": [\r\n            \"Arrival patterns and mill capacities are understood only after trucks roll, forcing reactive fixes.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Heuristic pairing\",\r\n          \"points\": [\r\n            \"Village-to-PPC and PPC-to-mill tags seldom explore alternatives that would shorten routes or absorb latent capacity.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Equity & compliance friction\",\r\n          \"points\": [\r\n            \"Mandal-level service targets and caps on cross-district movement demand painstaking manual checks.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Adaptation lag\",\r\n          \"points\": [\r\n            \"Weather shifts or labour disruptions require rapid rerouting, yet the present process is paperwork-heavy and opaque to headquarters.\"\r\n          ]\r\n        }\r\n      ]\r\n    },\r\n    {\r\n      \"title\": \"Proposed Methodology\",\r\n      \"subsections\": [\r\n        {\r\n          \"subtitle\": \"Predictive baselining\",\r\n          \"points\": [\r\n            \"Mine past OPMS feeds to forecast realistic volumes at each PPC before peak arrival.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Scenario stress-testing\",\r\n          \"points\": [\r\n            \"Generate multiple demand scenarios so policy makers can gauge how robust any allocation is under plausible swings.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Multi-objective optimisation\",\r\n          \"points\": [\r\n            \"Search for assignments that minimise haul distance while balancing mill utilisation and locking in policy constraints such as entitlement ceilings and district quotas.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Human-in-the-loop validation\",\r\n          \"points\": [\r\n            \"District officers review suggested pairings, lock or override as needed; the engine then re-optimises around those choices and logs rationale for audit.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Continuous learning\",\r\n          \"points\": [\r\n            \"Daily variances feed back to refine forecasts and flag when reallocation would materially improve cost or compliance.\"\r\n          ]\r\n        }\r\n      ]\r\n    },\r\n    {\r\n      \"title\": \"Proposed Technological Solutions\",\r\n      \"subsections\": [\r\n        {\r\n          \"subtitle\": \"Demand-forecast micro-service\",\r\n          \"points\": [\r\n            \"A lightweight temporal model that turns OPMS history into daily PPC arrival projections.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Optimisation core\",\r\n          \"points\": [\r\n            \"A solver that blends exact and heuristic techniques, exposed through open APIs.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Policy rule layer\",\r\n          \"points\": [\r\n            \"Declarative constraints so new mandates can be toggled without touching code.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Decision dashboard\",\r\n          \"points\": [\r\n            \"GIS visual of proposed pairings, expected distance savings, and override controls.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"OPMS integration\",\r\n          \"points\": [\r\n            \"Two-way data bridge so staff work inside the system they already know.\"\r\n          ]\r\n        }\r\n      ]\r\n    },\r\n    {\r\n      \"title\": \"Key Objectives / Performance Metrics\",\r\n      \"subsections\": [\r\n        {\r\n          \"subtitle\": \"Reduced Transport Distance\",\r\n          \"points\": [\r\n            \"Lower total tonne-kilometres moved across the state.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Balanced Mill Utilisation\",\r\n          \"points\": [\r\n            \"Narrow the gap between over- and under-loaded mills, improving asset productivity.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Equity Assurance\",\r\n          \"points\": [\r\n            \"Demonstrably meet mandal-level service targets built into the constraint set.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Operational Agility\",\r\n          \"points\": [\r\n            \"Shorter response time when shocks demand rerouting, with fewer manual work-arounds.\"\r\n          ]\r\n        },\r\n        {\r\n          \"subtitle\": \"Transparency & Auditability\",\r\n          \"points\": [\r\n            \"Every allocation and override traceable in a single digital trail.\"\r\n          ]\r\n        }\r\n      ]\r\n    }\r\n  ]\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/item/",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"item",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "200 (success) - Update AI Model Item",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Check response header\", function () {",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+													"});",
+													"",
+													"pm.test(\"Check response body\", function () {    ",
+													"    const body = pm.response.json();",
+													"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));",
+													"    pm.expect(body.results).to.have.property(\"id\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{org_admin_token}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"type\": [\n    \"adex:AiModel\"\n  ],\n  \"id\": \"{{ai_model_id}}\",\n  \"name\": \"AiSandBoxAiModelPM\",\n  \"description\": \"ai model item for the postman collection\",\n  \"shortDescription\": \"A test AI model item created for Postman integration.\",\n  \"label\": \"ai model item for test only\",\n  \"tags\": [\n    \"ai\",\n    \"crop\",\n    \"crop disease\",\n    \"disease detection\",\n    \"ai model\"\n  ],\n  \"accessPolicy\": \"RESTRICTED\",\n  \"organizationId\": \"{{organizationId}}\",\n  \"organizationType\": \"Private\",\n  \"department\": \"Agriculture and Co-operation\",\n  \"modelType\": \"ImageClassifier\",\n  \"mediaUrl\": \"url\",\n  \"fileFormat\": \"ipynb\",\n  \"industry\": \"Agriculture\",\n  \"uploadedBy\": \"test.user@datakaveri.org\",\n  \"license\": \"MIT\",\n  \"fileSize\": \"15MB\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/item/",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"item",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "200 (success) - Update DataBank Item",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Check response header\", function () {",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+													"});",
+													"",
+													"pm.test(\"Check response body\", function () {    ",
+													"    const body = pm.response.json();",
+													"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));",
+													"    pm.expect(body.results).to.have.property(\"id\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{org_admin_token}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"id\": \"{{data_bank_id}}\",\n  \"name\": \"AiSandBoxDataBankPM\",\n  \"type\": [\"adex:DataBank\"],\n  \"label\": \"Subdistrict Weather Information\",\n  \"shortDescription\": \"Daily aggregated temperature and rainfall data at subdistrict level.\",\n  \"description\": \"updated- Daily weather statistics at subdistrict level including temperature and rainfall metrics.\",\n  \"tags\": [\"weather\", \"temperature\", \"rainfall\", \"environment\"],\n  \"uploadedBy\": \"Forecast department\",\n  \"accessPolicy\": \"RESTRICTED\",\n  \"organizationId\": \"{{organizationId}}\",\n  \"organizationType\": \"Public\",\n  \"fileFormat\": \"xlsx\",\n  \"department\": \"Department of IT, Electronics and Communication\",\n  \"industry\": \"Environmental Monitoring\",\n  \"geoCoverage\": \"Karnataka, India\",\n  \"yearRange\": \"2021-2024\",\n  \"uploadFrequency\": \"Daily\",\n  \"verifiedBy\": \"Department of Meteorology, Karnataka\",\n  \"license\": \"CC-BY 4.0\"\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/item/",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"item",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "400 (invalid schema) - Update an DX Entity",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:InvalidSchema\");\r",
+													"});\r",
+													"\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{org_admin_token}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"id\": \"5519beed-53e1-4f81-a863-9\",\r\n  \"name\": \"AiSandBoxDataBankPM\",\r\n  \"type\": [\"adex:DataBank\"],\r\n  \"label\": \"Subdistrict Weather Information\",\r\n  \"shortDescription\": \"Daily aggregated temperature and rainfall data at subdistrict level.\",\r\n  \"description\": \"updated- Daily weather statistics at subdistrict level including temperature and rainfall metrics.\",\r\n  \"tags\": [\"weather\", \"temperature\", \"rainfall\", \"environment\"],\r\n  \"uploadedBy\": \"Forecast department\",\r\n  \"accessPolicy\": \"RESTRICTED\",\r\n  \"organizationId\": \"{{organizationId}}\",\r\n  \"organizationType\": \"Public\",\r\n  \"fileFormat\": \"xlsx\",\r\n  \"department\": \"Department of IT, Electronics and Communication\",\r\n  \"industry\": \"Environmental Monitoring\",\r\n  \"geoCoverage\": \"Karnataka, India\",\r\n  \"yearRange\": \"2021-2024\",\r\n  \"uploadFrequency\": \"Daily\",\r\n  \"verifiedBy\": \"Department of Meteorology, Karnataka\",\r\n  \"license\": \"CC-BY 4.0\"\r\n}\r\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/item/",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"item",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "401 (invalid credentials) - Update an DX Entity",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(401);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:InvalidAuthorizationToken\");\r",
+													"});\r",
+													"\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer abs",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"id\": \"{{data_bank_id}}\",\r\n  \"name\": \"AiSandBoxDataBankPM\",\r\n  \"type\": [\"adex:DataBank\"],\r\n  \"label\": \"Subdistrict Weather Information\",\r\n  \"shortDescription\": \"Daily aggregated temperature and rainfall data at subdistrict level.\",\r\n  \"description\": \"updated- Daily weather statistics at subdistrict level including temperature and rainfall metrics.\",\r\n  \"tags\": [\"weather\", \"temperature\", \"rainfall\", \"environment\"],\r\n  \"uploadedBy\": \"Forecast department\",\r\n  \"accessPolicy\": \"RESTRICTED\",\r\n  \"organizationId\": \"{{organizationId}}\",\r\n  \"organizationType\": \"Public\",\r\n  \"fileFormat\": \"xlsx\",\r\n  \"department\": \"Department of IT, Electronics and Communication\",\r\n  \"industry\": \"Environmental Monitoring\",\r\n  \"geoCoverage\": \"Karnataka, India\",\r\n  \"yearRange\": \"2021-2024\",\r\n  \"uploadFrequency\": \"Daily\",\r\n  \"verifiedBy\": \"Department of Meteorology, Karnataka\",\r\n  \"license\": \"CC-BY 4.0\"\r\n}\r\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/item",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"item"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "404 (Not Found) - Update an DX Entity",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(404);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:ItemNotFound\");\r",
+													"});\r",
+													"\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{org_admin_token}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"id\": \"2592347e-f808-41da-b1a3-373b4236f151\",\r\n  \"name\": \"AiSandBoxDataBankPM\",\r\n  \"type\": [\"adex:DataBank\"],\r\n  \"label\": \"Subdistrict Weather Information\",\r\n  \"shortDescription\": \"Daily aggregated temperature and rainfall data at subdistrict level.\",\r\n  \"description\": \"updated- Daily weather statistics at subdistrict level including temperature and rainfall metrics.\",\r\n  \"tags\": [\"weather\", \"temperature\", \"rainfall\", \"environment\"],\r\n  \"uploadedBy\": \"Forecast department\",\r\n  \"accessPolicy\": \"RESTRICTED\",\r\n  \"organizationId\": \"{{organizationId}}\",\r\n  \"organizationType\": \"Public\",\r\n  \"fileFormat\": \"xlsx\",\r\n  \"department\": \"Department of IT, Electronics and Communication\",\r\n  \"industry\": \"Environmental Monitoring\",\r\n  \"geoCoverage\": \"Karnataka, India\",\r\n  \"yearRange\": \"2021-2024\",\r\n  \"uploadFrequency\": \"Daily\",\r\n  \"verifiedBy\": \"Department of Meteorology, Karnataka\",\r\n  \"license\": \"CC-BY 4.0\"\r\n}\r\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/item/",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"item",
+												""
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Delete Item",
+							"item": [
+								{
+									"name": "200 (success) - Delete DataBank Item",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Check response header\", function () {",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+													"});",
+													"",
+													"pm.test(\"Check response body\", function () {    ",
+													"    const body = pm.response.json();",
+													"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
+													"});",
+													"",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{org_admin_token}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{host}}{{base}}/item?id={{data_bank_id}}",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"item"
+											],
+											"query": [
+												{
+													"key": "id",
+													"value": "{{data_bank_id}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "200 (success) - Delete AI Model Item",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Check response header\", function () {",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+													"});",
+													"",
+													"pm.test(\"Check response body\", function () {    ",
+													"    const body = pm.response.json();",
+													"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
+													"});",
+													"",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{org_admin_token}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{host}}{{base}}/item?id={{ai_model_id}}",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"item"
+											],
+											"query": [
+												{
+													"key": "id",
+													"value": "{{ai_model_id}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "200 (success) - Delete Apps Item",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(200);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");\r",
+													"});\r",
+													"\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{cos_token}}",
+												"type": "text"
+											},
+											{
+												"key": "instance",
+												"value": "pune",
+												"type": "text",
+												"disabled": true
+											}
+										],
+										"url": {
+											"raw": "{{host}}{{base}}/item?id={{adex_apps_id}}",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"item"
+											],
+											"query": [
+												{
+													"key": "id",
+													"value": "{{adex_apps_id}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "404 (Not Found) - Delete an DX Entity",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(404);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:ItemNotFound\");\r",
+													"});\r",
+													"\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{org_admin_token}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{host}}{{base}}/item?id=7c8b58a7-6e5b-4a97-a15d-8f4aeb4e987e",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"item"
+											],
+											"query": [
+												{
+													"key": "id",
+													"value": "7c8b58a7-6e5b-4a97-a15d-8f4aeb4e987e"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "400 (invalid uuid format) - Delete an DX Entity",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.be.badRequest;\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:InvalidSyntax\");\r",
+													"});\r",
+													"\r",
+													"\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{org_admin_token}}",
+												"type": "text"
+											},
+											{
+												"key": "instance",
+												"value": "pune",
+												"type": "text",
+												"disabled": true
+											}
+										],
+										"url": {
+											"raw": "{{host}}{{base}}/item?id=7c8b58a7-6e5b-4a97-a15d-8f4aeb",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"item"
+											],
+											"query": [
+												{
+													"key": "id",
+													"value": "7c8b58a7-6e5b-4a97-a15d-8f4aeb"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "401 (invalid credentials) - Delete an DX Entity",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(401);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\",\"urn:dx:cat:InvalidAuthorizationToken\");\r",
+													"});\r",
+													"\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer abc",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{host}}{{base}}/item?id=a7815cb3-fcf2-4616-961a-07913560db81",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"item"
+											],
+											"query": [
+												{
+													"key": "id",
+													"value": "a7815cb3-fcf2-4616-961a-07913560db81"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "POST Search APIs",
+					"item": [
+						{
+							"name": "Text Search",
+							"item": [
+								{
+									"name": "Simple Text Search - 200 (success)",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(200);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"q\" : \"dataBankId\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Fuzzy search - 200",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(200);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"   pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"q\" : \"databaknId\",\n    \"fuzzy\" : true\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Prefix match search - 200 (success)",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(200);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"q\" : \"datab\",\n    \"autoComplete\" : true\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Autocomplete, Fuzzy based text search - 200",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(200);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"q\" : \"databnk\",\n    \"fuzzy\" : true,\n    \"autoComplete\" : true,\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\", \"adex:Apps\", \"adex:AiModel\"]\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "AiModel Fuzzy search - 200",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(200);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"q\" : \"sat\",\n    \"fuzzy\" : true,\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:AiModel\"]\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "DataBank Fuzzy search - 200",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(200);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"q\" : \"sat\",\n    \"fuzzy\" : true,\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Apps Fuzzy search - 200",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(200);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"q\" : \"sat\",\n    \"fuzzy\" : true,\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:Apps\"]\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "400 (invalid syntax) - Text Search",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:InvalidSyntax\");\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"abc123\" : \"text to search\",\n    \"limit\" : 50,\n    \"offset\" : 100\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "400 (Invalid request)- Search string size",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"title\", \"failed\");\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"q\" : \"Goliber Square Sivaji chowk Maharashtra near Railway station aqm pollution sensor iudx iudxadmin resource\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "400 (Invalid request)- Response filter",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"title\", \"failed\");\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"q\" : \"Bosch Climo\",\n    \"filter\" : [\"id\",\"name\",\"tags\",\"deviceId\",\"resourceServer\",\"provider\",\"location\",\"address\",\"type\",\"itemStatus\",\"authServerInfo\"]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											],
+											"query": [
+												{
+													"key": "filter",
+													"value": "[id,name,tags,deviceId,resourceServer,provider,location,address,type,itemStatus,authServerInfo]",
+													"disabled": true
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "400 (Invalid request)- Exceed limit value",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"title\", \"failed\");\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"q\" : \"Bosch Climo\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search?size=1000000",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											],
+											"query": [
+												{
+													"key": "size",
+													"value": "1000000"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "400 (Invalid Request)- Exceed offset value",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"title\", \"failed\");\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"q\" : \"Bosch Climo\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search?page=100000",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											],
+											"query": [
+												{
+													"key": "page",
+													"value": "100000"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Tag Search",
+							"item": [
+								{
+									"name": "200 (success) - Tag Search (filter,limit,offset)",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(200);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body 2\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"totalHits\");\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"tags\",\n            \"values\": [\"ai\"]\n        }\n    ],\n    \"filter\" : [\"id\", \"tags\", \"type\"]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search?size=100&page=1",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											],
+											"query": [
+												{
+													"key": "size",
+													"value": "100"
+												},
+												{
+													"key": "page",
+													"value": "1"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "200 (success) - Tag Search multi value",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(200);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body 2\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"totalHits\");\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:Apps\"]\n        },\n        {\n            \"searchType\": \"term\",\n            \"field\": \"tags\",\n            \"values\": [\"ml\", \"cnn\"]\n        }\n    ],\n    \"filter\" : [\"id\", \"tags\"]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "200 - Tag Search(filter, limit)",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:Apps\"]\n        },\n        {\n            \"searchType\": \"term\",\n            \"field\": \"tags\",\n            \"values\": [\"ai\", \"railway\"]\n        }\n    ],\n    \"filter\" : [\"id\", \"tags\"]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search?size=1",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											],
+											"query": [
+												{
+													"key": "size",
+													"value": "1"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "400 (invalid syntax) - Tag Search 2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body 1\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:InvalidPropertyValue\");\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"searchCriteria\" : [\n        {\n            \"values\": [\"abc\", \"abc123\"]\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "400 (Invalid request)- Exceed limit value",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"title\", \"failed\");\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        }\n    ],\n    \"filter\" : [\"id\",\"name\",\"tags\",\"deviceId\"]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search?size=1000000",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											],
+											"query": [
+												{
+													"key": "size",
+													"value": "1000000"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "400 (Invalid Request)- Exceed offset value",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response header\", function () {\r",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Check response body\", function () {    \r",
+													"    const body = pm.response.json();\r",
+													"    pm.expect(body).to.have.property(\"title\", \"failed\");\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        }\n    ],\n    \"filter\" : [\"id\",\"name\",\"tags\",\"deviceId\"]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search?size=100&page=1000000",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											],
+											"query": [
+												{
+													"key": "size",
+													"value": "100"
+												},
+												{
+													"key": "page",
+													"value": "1000000"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Attribute Search",
+							"item": [
+								{
+									"name": "DataBanks of a department",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"term\",\n            \"field\": \"department\",\n            \"values\": [\"Health Medical and Family Welfare\"]\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search?size=100",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											],
+											"query": [
+												{
+													"key": "size",
+													"value": "100"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Multi value attribute search",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"term\",\n            \"field\": \"department\",\n            \"values\": [\"Environment Forests Science and Technology\", \"Industries and Commerce\"]\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "DataBanks of an organizationType",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"term\",\n            \"field\": \"organizationType\",\n            \"values\": [\"Private\"]\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Range Search",
+							"item": [
+								{
+									"name": "dataReadiness",
+									"item": [
+										{
+											"name": "between rangerel",
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"betweenRange\",\n            \"field\": \"dataReadiness\",\n            \"values\": [80, 82]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{host}}{{base}}/search",
+													"host": [
+														"{{host}}{{base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "before rangerel",
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"beforeRange\",\n            \"field\": \"dataReadiness\",\n            \"values\": [85]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{host}}{{base}}/search",
+													"host": [
+														"{{host}}{{base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "after rangerel",
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"afterRange\",\n            \"field\": \"dataReadiness\",\n            \"values\": [82]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{host}}{{base}}/search",
+													"host": [
+														"{{host}}{{base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										}
+									]
+								}
+							]
+						},
+						{
+							"name": "Temporal Search",
+							"item": [
+								{
+									"name": "Before timerel",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:Apps\"]\n        },\n        {\n            \"searchType\": \"beforeTemporal\",\n            \"field\": \"itemCreatedAt\",\n            \"values\": [\"2025-05-02T09:15:27+0530\"]\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "After timerel",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:Apps\"]\n        },\n        {\n            \"searchType\": \"afterTemporal\",\n            \"field\": \"itemCreatedAt\",\n            \"values\": [\"2025-03-20T04:00:00+0530\"]\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Between timerel",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"betweenTemporal\",\n            \"field\": \"itemCreatedAt\",\n            \"values\": [\"2025-03-20T04:00:00+0530\", \"2025-08-02T09:15:27+0530\"]\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "AI Model",
+							"item": [
+								{
+									"name": "Filter on fileFormat",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:AiModel\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"fileFormat\",\n        \"values\": [\"csv\"]\n    }\n  ]\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											],
+											"query": [
+												{
+													"key": "property",
+													"value": "\"[fileFormat, type]\"",
+													"disabled": true
+												},
+												{
+													"key": "value",
+													"value": "\"[[csv],[adex:AiModel]]\"",
+													"disabled": true
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Filter on modelType",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:AiModel\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"modelType\",\n        \"values\": [\"RiskPrediction\"]\n    }\n  ]\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Filter on department",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:AiModel\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"department\",\n        \"values\": [\"Agriculture and Co-operation\"]\n    }\n  ]\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Filter on permission",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:AiModel\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"accessPolicy\",\n        \"values\": [\"OPEN\"]\n    }\n  ]\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Filter on organizationType",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:AiModel\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"organizationType\",\n        \"values\": [\"Public\"]\n    }\n  ]\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "200 (Success) - No filters",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "token",
+												"value": "{{org_admin_token}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:AiModel\"]\n    }\n  ]\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Apps",
+							"item": [
+								{
+									"name": "200 (Success) - No filters",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:Apps\"]\n    }\n  ]\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Filter on organizationType",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:Apps\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"organizationType\",\n        \"values\": [\"Public\"]\n    }\n  ]\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Filter on department",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:Apps\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"department\",\n        \"values\": [\"Endowments\"]\n    }\n  ]\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Data Bank",
+							"item": [
+								{
+									"name": "200 (Success) - No filters",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:DataBank\"]\n    }\n  ]\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Filter on organizationType",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:DataBank\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"organizationType\",\n        \"values\": [\"Private\"]\n    }\n  ]\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Filter on department",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:DataBank\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"department\",\n        \"values\": [\"Environment Forests Science and Technology\"]\n    }\n  ]\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Filter on fileFormat",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:DataBank\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"fileFormat\",\n        \"values\": [\"csv\"]\n    }\n  ]\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Filter on permissions",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:DataBank\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"accessPolicy\",\n        \"values\": [\"RESTRICTED\"]\n    }\n  ]\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{host}}{{base}}/search",
+											"host": [
+												"{{host}}{{base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var statusCode = pm.response.code;",
+									"",
+									"if(statusCode == 200) {",
+									"",
+									"    pm.test(\"Check response body\", function () {    ",
+									"        const body = pm.response.json();",
+									"    pm.expect(pm.response.json().results.length).to.be.above(0);",
+									"    });",
+									"}",
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "POST List APIs",
+					"item": [
+						{
+							"name": "LIST tags, department, fileLeFormat and etc",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Check response header\", function () {",
+											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+											"});",
+											"",
+											"pm.test(\"Check response body\", function () {    ",
+											"    const body = pm.response.json();",
+											"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"searchCriteria\": [\n    {\n      \"field\": \"type\",\n      \"values\": [\"adex:DataBank\"]\n    }\n  ],\n  \"filter\": [\"department\", \"organizationType\", \"fileFormat\", \"dataReadiness\"]\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}{{base}}/list",
+									"host": [
+										"{{host}}{{base}}"
+									],
+									"path": [
+										"list"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "LIST tags, department, fileLeFormat and etc on a specific organizationType",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Check response header\", function () {",
+											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+											"});",
+											"",
+											"pm.test(\"Check response body\", function () {    ",
+											"    const body = pm.response.json();",
+											"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"searchCriteria\": [\n    {\n      \"field\": \"type\",\n      \"values\": [\"adex:DataBank\"]\n    },\n    {\n      \"field\": \"organizationType\",\n      \"values\": [\"Private\"]\n    }\n  ],\n  \"filter\": [\"department\", \"organizationType\", \"fileFormat\", \"dataReadiness\"]\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}{{base}}/list",
+									"host": [
+										"{{host}}{{base}}"
+									],
+									"path": [
+										"list"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "LIST modelType, department, organizationType and fileFormat",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Check response header\", function () {",
+											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+											"});",
+											"",
+											"pm.test(\"Check response body\", function () {    ",
+											"    const body = pm.response.json();",
+											"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"searchCriteria\": [\n    {\n      \"field\": \"type\",\n      \"values\": [\"adex:AiModel\"]\n    }\n  ],\n  \"filter\": [\"modelType\", \"department\", \"organizationType\", \"fileFormat\"]\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}{{base}}/list",
+									"host": [
+										"{{host}}{{base}}"
+									],
+									"path": [
+										"list"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "LIST department, organizationType",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Check response header\", function () {",
+											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+											"});",
+											"",
+											"pm.test(\"Check response body\", function () {    ",
+											"    const body = pm.response.json();",
+											"    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"searchCriteria\": [\n    {\n      \"field\": \"type\",\n      \"values\": [\"adex:Apps\"]\n    }\n  ],\n  \"filter\": [\"department\", \"organizationType\"]\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}{{base}}/list",
+									"host": [
+										"{{host}}{{base}}"
+									],
+									"path": [
+										"list"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "POST Count API",
+					"item": [
+						{
+							"name": "Count Summary api",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Check response header\", function () {",
+											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+											"});",
+											"",
+											"pm.test(\"Check response body\", function () {    ",
+											"    const body = pm.response.json();",
+											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"term\",\n      \"field\": \"type\",\n      \"values\": [\"adex:DataBank\", \"adex:AiModel\", \"adex:Apps\"]\n    }\n  ]\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}{{base}}/count",
+									"host": [
+										"{{host}}{{base}}"
+									],
+									"path": [
+										"count"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "My Assets",
+					"item": [
+						{
+							"name": "Get My Assets with filters (200)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI5ajdoMFVkUENrNS1reDRPejhMNGtzeVRSV09vNEFZLUV2ZXhpYl9SRHFnIn0.eyJleHAiOjE3NTU0OTM4MTYsImlhdCI6MTc1NTQ5MjkxNiwianRpIjoib25ydGFjOjk4MTQzZmMwLWE2OWMtNDUxNC04ZjI5LTdlMGE3NTM5OWJjZiIsImlzcyI6Imh0dHBzOi8vc3RhZ2luZy5rZXljbG9hay51cGRhdGUuaXVkeC5pby9hdXRoL3JlYWxtcy90Z2RleC1waWxvdCIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiIwMGNlOTQ3OS0yZTNiLTQ1N2EtODA4ZC1hY2Q1YmMyNmFmMDciLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJhbmd1bGFyLWNsaWVudCIsInNpZCI6IjRiNGZkZjg3LTE0NjEtNDYyMy1hZGNiLTU0NmUzNzM2Mjc2YSIsImFsbG93ZWQtb3JpZ2lucyI6WyJodHRwczovL3N0YWdpbmcuY2F0YWxvZ3VlLnRnZGV4Lml1ZHguaW8iLCJodHRwczovL2NhdGFsb2d1ZS50Z2RleC5pdWR4LmlvIiwiaHR0cDovL2xvY2FsaG9zdDo0MDA3IiwiaHR0cHM6Ly9zdGFnaW5nLmNhdGFsb2d1ZS50Z2RleC5pdWR4LmlvLyoiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIm9yZ19hZG1pbiIsInByb3ZpZGVyIiwiZGVmYXVsdC1yb2xlcy10Z2RleC1waWxvdCIsImNvbnN1bWVyIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsIm9yZ2FuaXNhdGlvbl9pZCI6IjhhOTk3ZGY1LWU0OTAtNGYzNS05Y2FiLWRjYTI3OTRhOTJiMSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJreWNfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJPcmcgTWFuYWdlciB0ZXN0IiwicHJlZmVycmVkX3VzZXJuYW1lIjoib3JnLW1hbmFnZXItdGVzdC5zbm9vemUzMDZAYWxlZWFzLmNvbSIsIm9yZ2FuaXNhdGlvbl9uYW1lIjoiQ0RQRyBUZWNoIiwiZ2l2ZW5fbmFtZSI6Ik9yZyBNYW5hZ2VyIiwiZmFtaWx5X25hbWUiOiJ0ZXN0IiwiZW1haWwiOiJvcmctbWFuYWdlci10ZXN0LnNub296ZTMwNkBhbGVlYXMuY29tIn0.carrsRaY12KH5cHsVJ39XsDLP4LWxaeFZSslTJ3sULkPPV06wAdFCG_08HXgI-EXRVPB-DrO5sloNU4T-YIHg-HtcRuzfwSt6EKhibvqMJE1FjgTGzvsdnqRtHxGHJE1raaxs_-ET6a72UqN7Ajb_eTWL1FzfbJgmVoL-nyH4GRAbUwZZ6D9z4h0c_DpWqSgGilQYunLp3v5QZz7gGv5oFST-cdVow7w6XW8abyHz53oUOsr8I-PAZ_ctoDqpiMKybWF2VrQgLmOzeSKKQ1FnRFiYnuhtp_9QBSFXlU9zWjKCVK5SeGKawSQ_9nYR_rEMH68zFe5z73eE6M4QgW_3A"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"publishStatus\",\n        \"values\": [\"PENDING\"]\n    }\n  ]\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}{{base}}/search/myassets?sort=itemCreatedAt:desc&page=1&size=100",
+									"host": [
+										"{{host}}{{base}}"
+									],
+									"path": [
+										"search",
+										"myassets"
+									],
+									"query": [
+										{
+											"key": "sort",
+											"value": "itemCreatedAt:desc"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "size",
+											"value": "100"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get My Assets",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI5ajdoMFVkUENrNS1reDRPejhMNGtzeVRSV09vNEFZLUV2ZXhpYl9SRHFnIn0.eyJleHAiOjE3NTU0OTM4MTYsImlhdCI6MTc1NTQ5MjkxNiwianRpIjoib25ydGFjOjk4MTQzZmMwLWE2OWMtNDUxNC04ZjI5LTdlMGE3NTM5OWJjZiIsImlzcyI6Imh0dHBzOi8vc3RhZ2luZy5rZXljbG9hay51cGRhdGUuaXVkeC5pby9hdXRoL3JlYWxtcy90Z2RleC1waWxvdCIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiIwMGNlOTQ3OS0yZTNiLTQ1N2EtODA4ZC1hY2Q1YmMyNmFmMDciLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJhbmd1bGFyLWNsaWVudCIsInNpZCI6IjRiNGZkZjg3LTE0NjEtNDYyMy1hZGNiLTU0NmUzNzM2Mjc2YSIsImFsbG93ZWQtb3JpZ2lucyI6WyJodHRwczovL3N0YWdpbmcuY2F0YWxvZ3VlLnRnZGV4Lml1ZHguaW8iLCJodHRwczovL2NhdGFsb2d1ZS50Z2RleC5pdWR4LmlvIiwiaHR0cDovL2xvY2FsaG9zdDo0MDA3IiwiaHR0cHM6Ly9zdGFnaW5nLmNhdGFsb2d1ZS50Z2RleC5pdWR4LmlvLyoiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIm9yZ19hZG1pbiIsInByb3ZpZGVyIiwiZGVmYXVsdC1yb2xlcy10Z2RleC1waWxvdCIsImNvbnN1bWVyIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsIm9yZ2FuaXNhdGlvbl9pZCI6IjhhOTk3ZGY1LWU0OTAtNGYzNS05Y2FiLWRjYTI3OTRhOTJiMSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJreWNfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJPcmcgTWFuYWdlciB0ZXN0IiwicHJlZmVycmVkX3VzZXJuYW1lIjoib3JnLW1hbmFnZXItdGVzdC5zbm9vemUzMDZAYWxlZWFzLmNvbSIsIm9yZ2FuaXNhdGlvbl9uYW1lIjoiQ0RQRyBUZWNoIiwiZ2l2ZW5fbmFtZSI6Ik9yZyBNYW5hZ2VyIiwiZmFtaWx5X25hbWUiOiJ0ZXN0IiwiZW1haWwiOiJvcmctbWFuYWdlci10ZXN0LnNub296ZTMwNkBhbGVlYXMuY29tIn0.carrsRaY12KH5cHsVJ39XsDLP4LWxaeFZSslTJ3sULkPPV06wAdFCG_08HXgI-EXRVPB-DrO5sloNU4T-YIHg-HtcRuzfwSt6EKhibvqMJE1FjgTGzvsdnqRtHxGHJE1raaxs_-ET6a72UqN7Ajb_eTWL1FzfbJgmVoL-nyH4GRAbUwZZ6D9z4h0c_DpWqSgGilQYunLp3v5QZz7gGv5oFST-cdVow7w6XW8abyHz53oUOsr8I-PAZ_ctoDqpiMKybWF2VrQgLmOzeSKKQ1FnRFiYnuhtp_9QBSFXlU9zWjKCVK5SeGKawSQ_9nYR_rEMH68zFe5z73eE6M4QgW_3A"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{host}}{{base}}/search/myassets?sort=itemCreatedAt:desc&page=1&size=100",
+									"host": [
+										"{{host}}{{base}}"
+									],
+									"path": [
+										"search",
+										"myassets"
+									],
+									"query": [
+										{
+											"key": "sort",
+											"value": "itemCreatedAt:desc"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "size",
+											"value": "100"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "organization",
+					"item": [
+						{
+							"name": "Update publishStatus or dataUploadStatus of an item",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{orgadmin1_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"publishStatus\": \"ACTIVE\",\n    \"dataUploadStatus\": \"true\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}{{base}}/organisation/asset?id={{asset_id}}",
+									"host": [
+										"{{host}}{{base}}"
+									],
+									"path": [
+										"organisation",
+										"asset"
+									],
+									"query": [
+										{
+											"key": "id",
+											"value": "{{asset_id}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get all the items of an organization",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{org_admin_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}{{base}}/organisation/asset?sort=itemCreatedAt:asc&page=1&size=1000",
+									"host": [
+										"{{host}}{{base}}"
+									],
+									"path": [
+										"organisation",
+										"asset"
+									],
+									"query": [
+										{
+											"key": "sort",
+											"value": "itemCreatedAt:asc"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "size",
+											"value": "1000"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get items of an organization with filters",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{org_admin_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"accessPolicy\",\n            \"values\": [\n                \"OPEN\"\n            ]\n        },\n        {\n            \"searchType\": \"betweenTemporal\",\n            \"field\": \"itemCreatedAt\",\n            \"values\": [\n                \"2024-03-20T04:00:00+0530\",\n                \"2025-09-02T09:15:27+0530\"\n            ]\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}{{base}}/organisation/asset?sort=itemCreatedAt:asc&page=1&size=1000",
+									"host": [
+										"{{host}}{{base}}"
+									],
+									"path": [
+										"organisation",
+										"asset"
+									],
+									"query": [
+										{
+											"key": "sort",
+											"value": "itemCreatedAt:asc"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "size",
+											"value": "1000"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "platform",
+					"item": [
+						{
+							"name": "Update publishStatus or dataUploadStatus of an item",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{cos_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"publishStatus\": \"ACTIVE\",\n    \"dataUploadStatus\": \"true\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}{{base}}/organisation/asset?id=b6c9a5f9-676a-4e75-b7a0-e9bb0bc6ed0d",
+									"host": [
+										"{{host}}{{base}}"
+									],
+									"path": [
+										"organisation",
+										"asset"
+									],
+									"query": [
+										{
+											"key": "id",
+											"value": "b6c9a5f9-676a-4e75-b7a0-e9bb0bc6ed0d"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get all the items of the platform",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{cos_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}{{base}}/getAllAssets?sort=itemCreatedAt:asc&page=1&size=1000",
+									"host": [
+										"{{host}}{{base}}"
+									],
+									"path": [
+										"getAllAssets"
+									],
+									"query": [
+										{
+											"key": "sort",
+											"value": "itemCreatedAt:asc"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "size",
+											"value": "1000"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get items of the platform with filters",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{cos_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"publishStatus\",\n        \"values\": [\"PENDING\"]\n    }\n  ]\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}{{base}}/getAllAssets?sort=itemCreatedAt:asc&page=1&size=1000",
+									"host": [
+										"{{host}}{{base}}"
+									],
+									"path": [
+										"getAllAssets"
+									],
+									"query": [
+										{
+											"key": "sort",
+											"value": "itemCreatedAt:asc"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "size",
+											"value": "1000"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
 				{
 					"name": "Get Token - Platform  Admin",
 					"event": [
