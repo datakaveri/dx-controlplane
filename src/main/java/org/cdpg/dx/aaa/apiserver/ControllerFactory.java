@@ -15,6 +15,8 @@ import org.cdpg.dx.aaa.ActivityReport.factory.ActivityReportControllerFactory;
 // import org.cdpg.dx.aaa.accessRequest.factory.AccessRequestFactory;
 import org.cdpg.dx.aaa.activity.controller.ActivityController;
 import org.cdpg.dx.aaa.activity.factory.ActivityControllerFactory;
+import org.cdpg.dx.aaa.activity.factory.ActivityFactory;
+import org.cdpg.dx.aaa.activity.service.ActivityService;
 import org.cdpg.dx.aaa.admin.controller.AdminController;
 import org.cdpg.dx.aaa.admin.handler.AdminHandler;
 import org.cdpg.dx.aaa.asset.controller.AssetController;
@@ -73,14 +75,25 @@ public class ControllerFactory {
     EmailService emailService = EmailService.createProxy(vertx, EMAIL_SERVICE_ADDRESS);
     ElasticsearchService esService =
         ElasticsearchService.createProxy(vertx, ELASTIC_SERVICE_ADDRESS);
+    ActivityFactory.init(pgService);
+
+    // Activity Controller
+    ActivityController activityController =
+        ActivityControllerFactory.create(pgService, urnGenerator);
+    ActivityReportController activityReportController =
+        ActivityReportControllerFactory.create(pgService, vertx);
 
     ItemService itemService = new ItemServiceImpl(esService, docIndex);
 
     String auditingExchange = config.getString("auditingExchange");
     String routingKey = config.getString("auditingRoutingKey");
+    boolean isRemoteAudit = config.getBoolean("isRemoteAudit", false);
+
+    ActivityService activityService = ActivityFactory.getActivityService();
 
     AuditingHandler auditingHandler =
-        new AuditingHandler(dataBrokerService, auditingExchange, routingKey);
+        new AuditingHandler(
+            dataBrokerService, activityService, auditingExchange, routingKey, isRemoteAudit);
 
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
     CreditService creditService =
@@ -151,11 +164,6 @@ public class ControllerFactory {
 
     PublicController publicController = PublicKeycontrllerFactory.create(config, vertx);
 
-    // Activity Controller
-    ActivityController activityController =
-        ActivityControllerFactory.create(pgService, urnGenerator);
-    ActivityReportController activityReportController =
-        ActivityReportControllerFactory.create(pgService, vertx);
     IngestionService ingestionService = new IngestionServiceImpl(dataBrokerService);
 
     return List.of(

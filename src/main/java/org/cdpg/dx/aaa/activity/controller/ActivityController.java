@@ -29,7 +29,7 @@ public class ActivityController implements ApiController {
   private final ActivityService activityService;
   private final URNGenerator urnGenerator;
 
-  public ActivityController(ActivityService activityService,URNGenerator urnGenerator) {
+  public ActivityController(ActivityService activityService, URNGenerator urnGenerator) {
     this.activityService = activityService;
     this.urnGenerator = urnGenerator;
   }
@@ -77,7 +77,7 @@ public class ActivityController implements ApiController {
             pagedResult -> {
               LOGGER.info("Successfully fetched activity logs for user: {}", user.subject());
               ResponseBuilder.sendSuccess(
-                  context, pagedResult.data(), pagedResult.paginationInfo(),urnGenerator);
+                  context, pagedResult.data(), pagedResult.paginationInfo(), urnGenerator);
             })
         .onFailure(
             failure -> {
@@ -112,7 +112,7 @@ public class ActivityController implements ApiController {
             pagedResult -> {
               LOGGER.info("Successfully fetched all activity logs for admin");
               ResponseBuilder.sendSuccess(
-                  context, pagedResult.data(), pagedResult.paginationInfo(),urnGenerator);
+                  context, pagedResult.data(), pagedResult.paginationInfo(), urnGenerator);
             })
         .onFailure(
             failure -> {

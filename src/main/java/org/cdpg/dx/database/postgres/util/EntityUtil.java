@@ -35,7 +35,7 @@ public class EntityUtil {
     if (value != null && !value.isEmpty()) {
       return UUID.fromString(value);
     }
-    LOGGER.warn("requested UUID is null or empty for {}", name);
+    //LOGGER.warn("requested UUID is null or empty for {}", name);
     return null;
   }
 }

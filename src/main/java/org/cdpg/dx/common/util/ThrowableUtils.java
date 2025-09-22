@@ -23,7 +23,9 @@ public final class ThrowableUtils {
           QueueNotFoundException.class,
           QueueBindingFailedException.class,
           QueueDeletionException.class,
-          QueueRegistrationFailedException.class);
+          QueueRegistrationFailedException.class,
+          DxConflictException.class,
+          UniqueConstraintViolationException.class);
 
   // Private constructor to prevent instantiation
   private ThrowableUtils() {}

@@ -10,6 +10,8 @@ import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.cdpg.dx.database.postgres.models.*;
 import org.cdpg.dx.database.postgres.util.DxPgExceptionMapper;
 import org.slf4j.Logger;
@@ -24,14 +26,14 @@ public class PostgresServiceImpl implements PostgresService {
   }
 
   private QueryResult convertToQueryResult(RowSet<Row> rowSet) {
-    LOG.info("Inside convertToQueryResult");
+    LOG.trace("convertToQueryResult() invoked");
     JsonArray jsonArray = new JsonArray();
     Object value;
     for (Row row : rowSet) {
       JsonObject json = new JsonObject();
       for (int i = 0; i < row.size(); i++) {
         // json.put(row.getColumnName(i), row.getValue(i));
-        LOG.info("Column name: {}, value: {}", row.getColumnName(i), row.getValue(i));
+        // LOG.info("Column name: {}, value: {}", row.getColumnName(i), row.getValue(i));
         String column = row.getColumnName(i);
         value = row.getValue(i);
         if (value == null
@@ -40,7 +42,7 @@ public class PostgresServiceImpl implements PostgresService {
             || value instanceof Boolean
             || value instanceof JsonObject
             || value instanceof JsonArray) {
-          LOG.info("value:" + value);
+          //  LOG.info("value:" + value);
           json.put(column, value);
         } else {
           json.put(column, value.toString());
@@ -67,18 +69,22 @@ public class PostgresServiceImpl implements PostgresService {
   }
 
   private Future<QueryResult> executeQuery(String sql, List<Object> params) {
-    LOG.info("Executing SQL: " + sql);
-    LOG.info("With parameters: " + params);
+    String formattedParams =
+        IntStream.range(0, params.size())
+            .mapToObj(i -> "param" + (i + 1) + "=" + params.get(i))
+            .collect(Collectors.joining(", "));
+
+    LOG.info("Executing SQL: {} | With parameters: {}", sql, formattedParams);
     Tuple tuple = Tuple.tuple();
 
     try {
 
       for (Object param : params) {
-        LOG.info(
-            "Param type: "
-                + (param != null ? param.getClass().getSimpleName() : "null")
-                + ", value: "
-                + param);
+        /* LOG.info(
+        "Param type: "
+            + (param != null ? param.getClass().getSimpleName() : "null")
+            + ", value: "
+            + param);*/
 
         if (param instanceof String paramStr) {
           // Check if it's an ISO timestamp string

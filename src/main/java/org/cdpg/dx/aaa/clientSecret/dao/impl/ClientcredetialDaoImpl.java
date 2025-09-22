@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.clientSecret.dao.ClientcredetialDao;
 import org.cdpg.dx.aaa.clientSecret.model.ClientCredentials;
 import org.cdpg.dx.common.exception.BaseDxException;
+import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.database.postgres.base.dao.AbstractBaseDAO;
 import org.cdpg.dx.database.postgres.models.Condition;
 import org.cdpg.dx.database.postgres.models.SelectQuery;
@@ -50,7 +51,9 @@ public class ClientcredetialDaoImpl extends AbstractBaseDAO<ClientCredentials>
             result -> {
               if (result.getRows().isEmpty()) {
                 String msg = String.format("No client credentials found for clientId=%s", clientId);
-                return Future.failedFuture(msg);
+                LOGGER.error(msg);
+                return Future.failedFuture(
+                    new DxNotFoundException("Client does not exist or invalid credentials"));
               }
               return Future.succeededFuture(
                   result.getRows().getJsonObject(0).getString(COLUMN_USER_ID));

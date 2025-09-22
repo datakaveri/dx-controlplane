@@ -19,7 +19,8 @@ public class ClientController implements ApiController {
   private final ClientcredetialService clientcredetialService;
   private final URNGenerator urnGenerator;
 
-  public ClientController(ClientcredetialService clientcredetialService,URNGenerator urnGenerator) {
+  public ClientController(
+      ClientcredetialService clientcredetialService, URNGenerator urnGenerator) {
     this.clientcredetialService = clientcredetialService;
     this.urnGenerator = urnGenerator;
   }
@@ -47,12 +48,13 @@ public class ClientController implements ApiController {
     }
 
     clientcredetialService
-      .createClientIdAndClientSecret(userId)
-      .onSuccess(clientCredentials -> ResponseBuilder.sendSuccess(ctx, clientCredentials,urnGenerator))
-      .onFailure(
-        err -> {
-          LOGGER.error("Failed to create client credentials: {}", err.getMessage(), err);
-          ctx.fail(err);
-        });
+        .createClientIdAndClientSecret(userId)
+        .onSuccess(
+            clientCredentials -> ResponseBuilder.sendSuccess(ctx, clientCredentials, urnGenerator))
+        .onFailure(
+            err -> {
+              LOGGER.error("Failed to create client credentials: {}", err.getMessage(), err);
+              ctx.fail(err);
+            });
   }
 }
