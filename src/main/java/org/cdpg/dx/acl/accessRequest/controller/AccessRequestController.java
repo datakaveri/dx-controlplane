@@ -25,7 +25,6 @@ import org.cdpg.dx.acl.accessRequest.service.AccessRequestService;
 import org.cdpg.dx.acl.accessRequest.util.AuditingHelper;
 import org.cdpg.dx.acl.aclEmailHelper.EmailComposer;
 import org.cdpg.dx.acl.apiserver.ApdApiController;
-import org.cdpg.dx.acl.apiserver.ApdApiServerVerticle;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auditing.model.AuditLog;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
@@ -51,10 +50,10 @@ public class AccessRequestController implements ApdApiController {
   private final URNGenerator urnGenerator;
 
   public AccessRequestController(
-    AccessRequestService accessRequestService,
-    AuditingHandler auditingHandler,
-    EmailComposer emailComposer,
-    URNGenerator urnGenerator) {
+      AccessRequestService accessRequestService,
+      AuditingHandler auditingHandler,
+      EmailComposer emailComposer,
+      URNGenerator urnGenerator) {
     this.accessRequestService = accessRequestService;
     this.auditingHandler = auditingHandler;
     this.emailComposer = emailComposer;
@@ -70,7 +69,7 @@ public class AccessRequestController implements ApdApiController {
     try {
       LocalDateTime parsedTime = LocalDateTime.parse(timeString);
       LOGGER.info(
-        "Parsed time: {}, isFuture: {}", parsedTime, parsedTime.isAfter(LocalDateTime.now()));
+          "Parsed time: {}, isFuture: {}", parsedTime, parsedTime.isAfter(LocalDateTime.now()));
       if (parsedTime.isAfter(LocalDateTime.now())) {
         return parsedTime;
       } else {
@@ -85,48 +84,46 @@ public class AccessRequestController implements ApdApiController {
   public void register(RouterBuilder builder) {
     Handler<RoutingContext> orgAdminAccessHandler = AuthorizationHandler.forRoles(DxRole.ORG_ADMIN);
     Handler<RoutingContext> providerAndOrgAdminAccessHandler =
-      AuthorizationHandler.forRoles(DxRole.PROVIDER, DxRole.ORG_ADMIN);
+        AuthorizationHandler.forRoles(DxRole.PROVIDER, DxRole.ORG_ADMIN);
 
     builder
-      .operation(CREATE_ACCESS_REQUEST_API)
-      .handler(auditingHandler::handleApiAudit)
-      .handler(this::createAccessRequestHandler);
+        .operation(CREATE_ACCESS_REQUEST_API)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(this::createAccessRequestHandler);
 
     builder
-      .operation(GET_ACCESS_REQUEST_CONSUMER_API)
-      .handler(auditingHandler::handleApiAudit)
-      .handler(this::getConsumerAccessRequestHandler);
+        .operation(GET_ACCESS_REQUEST_CONSUMER_API)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(this::getConsumerAccessRequestHandler);
 
     builder
-      .operation(DELETE_ACCESS_REQUEST_API_FOR_CONSUMER)
-      .handler(auditingHandler::handleApiAudit)
-      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
-      .handler(this::deleteAccessRequestHandler);
-
-
+        .operation(DELETE_ACCESS_REQUEST_API_FOR_CONSUMER)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+        .handler(this::deleteAccessRequestHandler);
 
     builder
-      .operation(GET_ACCESS_REQUEST_FOR_ORG_ADMIN_API)
-      .handler(auditingHandler::handleApiAudit)
-      .handler(orgAdminAccessHandler)
-      .handler(this::getOrganizationAccessRequestHandler);
+        .operation(GET_ACCESS_REQUEST_FOR_ORG_ADMIN_API)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(orgAdminAccessHandler)
+        .handler(this::getOrganizationAccessRequestHandler);
 
     builder
-      .operation(GET_ACCESS_REQUEST_PROVIDER_API)
-      .handler(auditingHandler::handleApiAudit)
-      .handler(providerAndOrgAdminAccessHandler)
-      .handler(this::getAccessRequestHandler);
+        .operation(GET_ACCESS_REQUEST_PROVIDER_API)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(providerAndOrgAdminAccessHandler)
+        .handler(this::getAccessRequestHandler);
 
     builder
-      .operation(UPDATE_ACCESS_REQUEST_API)
-      .handler(auditingHandler::handleApiAudit)
-      .handler(providerAndOrgAdminAccessHandler)
-      .handler(this::updateAccessRequestHandler);
+        .operation(UPDATE_ACCESS_REQUEST_API)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(providerAndOrgAdminAccessHandler)
+        .handler(this::updateAccessRequestHandler);
 
     builder
-      .operation(CHECK_ACCESS_REQUEST_API)
-      .handler(auditingHandler::handleApiAudit)
-      .handler(this::checkAccessRequestHandler);
+        .operation(CHECK_ACCESS_REQUEST_API)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(this::checkAccessRequestHandler);
   }
 
   private void deleteAccessRequestHandler(RoutingContext routingContext) {
@@ -140,16 +137,17 @@ public class AccessRequestController implements ApdApiController {
     UUID consumerId = UUID.fromString(routingContext.user().subject());
 
     accessRequestService
-      .deleteAccessRequestForConsumer(consumerId, requestId)
-      .onSuccess(
-        deleted -> {
-          ResponseBuilder.sendSuccess(routingContext, "Request deleted successfully",urnGenerator);
-        })
-      .onFailure(
-        err -> {
-          LOGGER.error("Error deleting access request: {}", err.getMessage(), err);
-          routingContext.fail(err);
-        });
+        .deleteAccessRequestForConsumer(consumerId, requestId)
+        .onSuccess(
+            deleted -> {
+              ResponseBuilder.sendSuccess(
+                  routingContext, "Request deleted successfully", urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Error deleting access request: {}", err.getMessage(), err);
+              routingContext.fail(err);
+            });
   }
 
   private void getAccessRequestHandler(RoutingContext ctx) {
@@ -157,42 +155,43 @@ public class AccessRequestController implements ApdApiController {
     User user = ctx.user();
 
     Map<String, String> allowedFilters =
-      Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE);
+        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE);
     Map<String, Object> additionalFilters = Map.of("provider_id", user.subject());
     Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
     Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
 
     PaginatedRequest request =
-      PaginationRequestBuilder.from(ctx)
-        .allowedFiltersDbMap(allowedFilters)
-        .apiToDbMap(API_TO_DB_MAP)
-        .additionalFilters(additionalFilters)
-        .allowedTimeFields(allowedTimeFields)
-        .defaultTimeField("created_at")
-        .defaultSort("updated_at", DEFAULT_SORTING_ORDER)
-        .allowedSortFields(allowedSortFields)
-        .build();
+        PaginationRequestBuilder.from(ctx)
+            .allowedFiltersDbMap(allowedFilters)
+            .apiToDbMap(API_TO_DB_MAP)
+            .additionalFilters(additionalFilters)
+            .allowedTimeFields(allowedTimeFields)
+            .defaultTimeField("created_at")
+            .defaultSort("updated_at", DEFAULT_SORTING_ORDER)
+            .allowedSortFields(allowedSortFields)
+            .build();
 
     LOGGER.info("PaginatedRequest created getAccessRequest for Provider :  {}", request);
 
     accessRequestService
-      .listAccessRequestForProvider(request)
-      .onSuccess(
-        pagedResult -> {
-          LOGGER.info(
-            "Successfully fetched access requests for provider user: {}", user.subject());
-          ResponseBuilder.sendSuccess(
-            ctx,
-            pagedResult.data().stream()
-              .map(AccessRequestDto::toJson)
-              .collect(Collectors.toList()),
-            pagedResult.paginationInfo(),urnGenerator);
-        })
-      .onFailure(
-        err -> {
-          LOGGER.error("Error fetching access requests: {}", err.getMessage(), err);
-          ctx.fail(err);
-        });
+        .listAccessRequestForProvider(request)
+        .onSuccess(
+            pagedResult -> {
+              LOGGER.info(
+                  "Successfully fetched access requests for provider user: {}", user.subject());
+              ResponseBuilder.sendSuccess(
+                  ctx,
+                  pagedResult.data().stream()
+                      .map(AccessRequestDto::toJson)
+                      .collect(Collectors.toList()),
+                  pagedResult.paginationInfo(),
+                  urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Error fetching access requests: {}", err.getMessage(), err);
+              ctx.fail(err);
+            });
   }
 
   private void getOrganizationAccessRequestHandler(RoutingContext ctx) {
@@ -201,43 +200,44 @@ public class AccessRequestController implements ApdApiController {
 
     String organizationId = RoutingContextHelper.fromPrincipal(ctx).organisationId();
     Map<String, String> allowedFilters =
-      Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE);
+        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE);
     Map<String, Object> additionalFilters = Map.of(DB_ASSET_ORGANIZATION_ID, organizationId);
     Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
     Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
 
     PaginatedRequest request =
-      PaginationRequestBuilder.from(ctx)
-        .allowedFiltersDbMap(allowedFilters)
-        .apiToDbMap(API_TO_DB_MAP)
-        .additionalFilters(additionalFilters)
-        .allowedTimeFields(allowedTimeFields)
-        .defaultTimeField(DB_CREATED_AT)
-        .defaultSort(DB_UPDATED_AT, DEFAULT_SORTING_ORDER)
-        .allowedSortFields(allowedSortFields)
-        .build();
+        PaginationRequestBuilder.from(ctx)
+            .allowedFiltersDbMap(allowedFilters)
+            .apiToDbMap(API_TO_DB_MAP)
+            .additionalFilters(additionalFilters)
+            .allowedTimeFields(allowedTimeFields)
+            .defaultTimeField(DB_CREATED_AT)
+            .defaultSort(DB_UPDATED_AT, DEFAULT_SORTING_ORDER)
+            .allowedSortFields(allowedSortFields)
+            .build();
 
     LOGGER.info(
-      "PaginatedRequest getOrganizationAccessRequestHandler for org admin :  {}", request);
+        "PaginatedRequest getOrganizationAccessRequestHandler for org admin :  {}", request);
 
     accessRequestService
-      .listAccessRequestForProvider(request)
-      .onSuccess(
-        pagedResult -> {
-          LOGGER.info(
-            "Successfully fetched access requests for org admin user: {}", user.subject());
-          ResponseBuilder.sendSuccess(
-            ctx,
-            pagedResult.data().stream()
-              .map(AccessRequestDto::toJson)
-              .collect(Collectors.toList()),
-            pagedResult.paginationInfo(),urnGenerator);
-        })
-      .onFailure(
-        err -> {
-          LOGGER.error("Error fetching access requests: {}", err.getMessage(), err);
-          ctx.fail(err);
-        });
+        .listAccessRequestForProvider(request)
+        .onSuccess(
+            pagedResult -> {
+              LOGGER.info(
+                  "Successfully fetched access requests for org admin user: {}", user.subject());
+              ResponseBuilder.sendSuccess(
+                  ctx,
+                  pagedResult.data().stream()
+                      .map(AccessRequestDto::toJson)
+                      .collect(Collectors.toList()),
+                  pagedResult.paginationInfo(),
+                  urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Error fetching access requests: {}", err.getMessage(), err);
+              ctx.fail(err);
+            });
   }
 
   private void checkAccessRequestHandler(RoutingContext ctx) {
@@ -247,20 +247,21 @@ public class AccessRequestController implements ApdApiController {
     UUID consumerId = UUID.fromString(ctx.user().subject());
 
     accessRequestService
-      .checkAccessRequest(consumerId, itemId)
-      .onSuccess(
-        hasAccess -> {
-          if (hasAccess) {
-            ResponseBuilder.sendSuccess(ctx, "User has access to the given asset!",urnGenerator);
-          } else {
-            ctx.fail(new DxForbiddenNoAccessException("User has access to the given asset!"));
-          }
-        })
-      .onFailure(
-        err -> {
-          LOGGER.error("Error checking access request: {}", err.getMessage(), err);
-          ctx.fail(err);
-        });
+        .checkAccessRequest(consumerId, itemId)
+        .onSuccess(
+            hasAccess -> {
+              if (hasAccess) {
+                ResponseBuilder.sendSuccess(
+                    ctx, "User has access to the given asset!", urnGenerator);
+              } else {
+                ctx.fail(new DxForbiddenNoAccessException("User has access to the given asset!"));
+              }
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Error checking access request: {}", err.getMessage(), err);
+              ctx.fail(err);
+            });
   }
 
   private void updateAccessRequestHandler(RoutingContext ctx) {
@@ -269,7 +270,14 @@ public class AccessRequestController implements ApdApiController {
     UUID requestId = UUID.fromString(body.getString("requestId"));
     Status status = Status.fromString(body.getString("status"));
     UUID providerId = UUID.fromString(ctx.user().subject());
-    DxUser provider = RoutingContextHelper.fromPrincipal(ctx);
+    DxUser provider;
+    try {
+      provider = RoutingContextHelper.fromPrincipal(ctx);
+    } catch (Exception e) {
+      LOGGER.error("Error extracting user from token: {}", e.getMessage(), e);
+      ctx.fail(new DxForbiddenException("Invalid user"));
+      return;
+    }
     String organizationId = provider.organisationId();
     UUID providerOrganizationId = organizationId != null ? UUID.fromString(organizationId) : null;
     String providerOrganizationName = provider.organisationName();
@@ -279,57 +287,57 @@ public class AccessRequestController implements ApdApiController {
       LocalDateTime expiryAt = parseAndValidateFutureTime(body.getString("expiryAt"));
 
       accessRequestService
-        .approveAccessRequest(
-          providerId, requestId, expiryAt, providerOrganizationId, isUserOrgAdmin)
-        .onSuccess(
-          accessRequestDto -> {
-            ResponseBuilder.sendSuccess(ctx, "Request updated successfully",urnGenerator);
-            Future<Void> future =
-              emailComposer.sendEmailForUpdateAccessRequest(accessRequestDto, status);
+          .approveAccessRequest(
+              providerId, requestId, expiryAt, providerOrganizationId, isUserOrgAdmin)
+          .onSuccess(
+              accessRequestDto -> {
+                ResponseBuilder.sendSuccess(ctx, "Request updated successfully", urnGenerator);
+                Future<Void> future =
+                    emailComposer.sendEmailForUpdateAccessRequest(accessRequestDto, status);
 
-            // todo: AuditingLog should be created after email is sent successfully
+                // todo: AuditingLog should be created after email is sent successfully
 
-            AuditLog auditLog =
-              AuditingHelper.createAuditLog(
-                accessRequestDto,
-                ctx.user(),
-                RoutingContextHelper.getRequestPath(ctx),
-                "PUT",
-                "Download Access Granted",
-                organizationId,
-                providerOrganizationName);
-            RoutingContextHelper.setAuditingLog(ctx, auditLog);
-          })
-        .onFailure(
-          err -> {
-            LOGGER.error("Error updating access request: {}", err.getMessage(), err);
-            ctx.fail(err);
-          });
+                AuditLog auditLog =
+                    AuditingHelper.createAuditLog(
+                        accessRequestDto,
+                        ctx.user(),
+                        RoutingContextHelper.getRequestPath(ctx),
+                        "PUT",
+                        "Download Access Granted",
+                        organizationId,
+                        providerOrganizationName);
+                RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              })
+          .onFailure(
+              err -> {
+                LOGGER.error("Error updating access request: {}", err.getMessage(), err);
+                ctx.fail(err);
+              });
     } else {
       accessRequestService
-        .rejectAccessRequest(providerId, requestId, providerOrganizationId, isUserOrgAdmin)
-        .onSuccess(
-          accessRequestDto -> {
-            ResponseBuilder.sendSuccess(ctx, "Request updated successfully",urnGenerator);
-            Future<Void> future =
-              emailComposer.sendEmailForUpdateAccessRequest(accessRequestDto, status);
+          .rejectAccessRequest(providerId, requestId, providerOrganizationId, isUserOrgAdmin)
+          .onSuccess(
+              accessRequestDto -> {
+                ResponseBuilder.sendSuccess(ctx, "Request updated successfully", urnGenerator);
+                Future<Void> future =
+                    emailComposer.sendEmailForUpdateAccessRequest(accessRequestDto, status);
 
-            AuditLog auditLog =
-              AuditingHelper.createAuditLog(
-                accessRequestDto,
-                ctx.user(),
-                RoutingContextHelper.getRequestPath(ctx),
-                "PUT",
-                "Download Access Rejected",
-                organizationId,
-                providerOrganizationName);
-            RoutingContextHelper.setAuditingLog(ctx, auditLog);
-          })
-        .onFailure(
-          err -> {
-            LOGGER.error("Error rejecting access request: {}", err.getMessage(), err);
-            ctx.fail(err);
-          });
+                AuditLog auditLog =
+                    AuditingHelper.createAuditLog(
+                        accessRequestDto,
+                        ctx.user(),
+                        RoutingContextHelper.getRequestPath(ctx),
+                        "PUT",
+                        "Download Access Rejected",
+                        organizationId,
+                        providerOrganizationName);
+                RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              })
+          .onFailure(
+              err -> {
+                LOGGER.error("Error rejecting access request: {}", err.getMessage(), err);
+                ctx.fail(err);
+              });
     }
   }
 
@@ -339,33 +347,40 @@ public class AccessRequestController implements ApdApiController {
     UUID itemId = UUID.fromString(body.getString("itemId"));
     RequestType requestType = RequestType.valueOf(body.getString("requestType"));
     JsonObject additionalInfo = body.getJsonObject("additionalInfo");
-    DxUser consumer = RoutingContextHelper.fromPrincipal(ctx);
+    DxUser consumer;
+    try {
+      consumer = RoutingContextHelper.fromPrincipal(ctx);
+    } catch (Exception e) {
+      LOGGER.error("Error extracting user from token: {}", e.getMessage(), e);
+      ctx.fail(new DxForbiddenException("Invalid user"));
+      return;
+    }
     String organizationId = consumer.organisationId();
     String consumerOrganizationName = consumer.organisationName();
 
     accessRequestService
-      .createAccessRequest(consumer, itemId, requestType, additionalInfo)
-      .onSuccess(
-        accessRequestDto -> {
-          Future<Void> future = emailComposer.sendEmailForCreateAccessRequest(accessRequestDto);
-          AuditLog auditLog =
-            AuditingHelper.createAuditLog(
-              accessRequestDto,
-              ctx.user(),
-              RoutingContextHelper.getRequestPath(ctx),
-              "POST",
-              "Download Access Requested",
-              organizationId,
-              consumerOrganizationName);
-          RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        .createAccessRequest(consumer, itemId, requestType, additionalInfo)
+        .onSuccess(
+            accessRequestDto -> {
+              Future<Void> future = emailComposer.sendEmailForCreateAccessRequest(accessRequestDto);
+              AuditLog auditLog =
+                  AuditingHelper.createAuditLog(
+                      accessRequestDto,
+                      ctx.user(),
+                      RoutingContextHelper.getRequestPath(ctx),
+                      "POST",
+                      "Download Access Requested",
+                      organizationId,
+                      consumerOrganizationName);
+              RoutingContextHelper.setAuditingLog(ctx, auditLog);
 
-          ResponseBuilder.sendSuccess(ctx, "Request inserted successfully!",urnGenerator);
-        })
-      .onFailure(
-        err -> {
-          LOGGER.error("Error creating access request: {}", err.getMessage(), err);
-          ctx.fail(err);
-        });
+              ResponseBuilder.sendSuccess(ctx, "Request inserted successfully!", urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Error creating access request: {}", err.getMessage(), err);
+              ctx.fail(err);
+            });
   }
 
   private void getConsumerAccessRequestHandler(RoutingContext ctx) {
@@ -373,40 +388,41 @@ public class AccessRequestController implements ApdApiController {
     User user = ctx.user();
 
     Map<String, String> allowedFilters =
-      Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE);
+        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE);
     Map<String, Object> additionalFilters = Map.of("consumer_id", user.subject());
     Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
     Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
 
     PaginatedRequest request =
-      PaginationRequestBuilder.from(ctx)
-        .allowedFiltersDbMap(allowedFilters)
-        .apiToDbMap(API_TO_DB_MAP)
-        .additionalFilters(additionalFilters)
-        .allowedTimeFields(allowedTimeFields)
-        .defaultTimeField("created_at")
-        .defaultSort("updated_at", DEFAULT_SORTING_ORDER)
-        .allowedSortFields(allowedSortFields)
-        .build();
+        PaginationRequestBuilder.from(ctx)
+            .allowedFiltersDbMap(allowedFilters)
+            .apiToDbMap(API_TO_DB_MAP)
+            .additionalFilters(additionalFilters)
+            .allowedTimeFields(allowedTimeFields)
+            .defaultTimeField("created_at")
+            .defaultSort("updated_at", DEFAULT_SORTING_ORDER)
+            .allowedSortFields(allowedSortFields)
+            .build();
 
     LOGGER.info("PaginatedRequest created for getActivityLogForConsumer:  {}", request);
 
     accessRequestService
-      .listAccessRequestForConsumer(request)
-      .onSuccess(
-        pagedResult -> {
-          LOGGER.info("Successfully fetched access requests for user: {}", user.subject());
-          ResponseBuilder.sendSuccess(
-            ctx,
-            pagedResult.data().stream()
-              .map(AccessRequestDto::toJson) // call toJson on each object
-              .collect(Collectors.toList()),
-            pagedResult.paginationInfo(),urnGenerator);
-        })
-      .onFailure(
-        err -> {
-          LOGGER.error("Error fetching access requests: {}", err.getMessage(), err);
-          ctx.fail(err);
-        });
+        .listAccessRequestForConsumer(request)
+        .onSuccess(
+            pagedResult -> {
+              LOGGER.info("Successfully fetched access requests for user: {}", user.subject());
+              ResponseBuilder.sendSuccess(
+                  ctx,
+                  pagedResult.data().stream()
+                      .map(AccessRequestDto::toJson) // call toJson on each object
+                      .collect(Collectors.toList()),
+                  pagedResult.paginationInfo(),
+                  urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Error fetching access requests: {}", err.getMessage(), err);
+              ctx.fail(err);
+            });
   }
 }
