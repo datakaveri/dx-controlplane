@@ -1,10 +1,15 @@
 package org.cdpg.dx.acl.accessRequest.factory;
 
+import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.REQUEST_TABLE;
+import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
 
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.client.WebClient;
 import java.util.logging.Logger;
+import org.cdpg.dx.aaa.item.service.ItemService;
+import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.acl.accessRequest.controller.AccessRequestController;
 import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
 import org.cdpg.dx.acl.accessRequest.dao.impl.AccessRequestDaoImpl;
@@ -12,8 +17,6 @@ import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
 import org.cdpg.dx.acl.accessRequest.service.AccessRequestService;
 import org.cdpg.dx.acl.accessRequest.service.impl.AccessRequestServiceImpl;
 import org.cdpg.dx.acl.aclEmailHelper.EmailComposer;
-import org.cdpg.dx.aaa.item.service.ItemService;
-import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
@@ -29,25 +32,23 @@ public class AccessRequestFactory {
   }
 
   public static AccessRequestController createAccessRequestController(
-    PostgresService pgService,
-    ElasticsearchService elasticsearchService,
-    EmailService emailService,
-    KeycloakUserService keycloakUserService,
-    AuditingHandler auditingHandler,
-    JsonObject config,
-    URNGenerator urnGenerator) {
+      PostgresService pgService, ElasticsearchService elasticsearchService,
+      EmailService emailService, KeycloakUserService keycloakUserService,
+      AuditingHandler auditingHandler, JsonObject config,
+      URNGenerator urnGenerator, WebClient webClient) {
+    AccessRequestDao accessRequestDao =
+        new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
 
     ItemService itemService =
-      new ItemServiceImpl(elasticsearchService, config.getString("docIndex"));
-
-    AccessRequestDao accessRequestDao =
-      new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
+        new ItemServiceImpl(elasticsearchService, keycloakUserService,
+            accessRequestDao, webClient, config.getString(DOC_INDEX), config.getString(APD_URL));
 
     AccessRequestService accessRequestService =
-      new AccessRequestServiceImpl(itemService, accessRequestDao);
+        new AccessRequestServiceImpl(itemService, accessRequestDao);
 
     EmailComposer emailComposer = new EmailComposer(emailService, keycloakUserService, config);
 
-    return new AccessRequestController(accessRequestService, auditingHandler, emailComposer,urnGenerator);
+    return new AccessRequestController(accessRequestService, auditingHandler, emailComposer,
+        urnGenerator);
   }
 }

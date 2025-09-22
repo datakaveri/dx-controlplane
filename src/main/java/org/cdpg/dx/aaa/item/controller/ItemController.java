@@ -2,6 +2,7 @@ package org.cdpg.dx.aaa.item.controller;
 
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.*;
 import static org.cdpg.dx.aaa.common.Constants.*;
+import static org.cdpg.dx.aaa.common.Constants.ID;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -10,9 +11,11 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.apiserver.ApiController;
@@ -27,20 +30,16 @@ import org.cdpg.dx.aaa.item.util.ItemFactory;
 import org.cdpg.dx.aaa.item.util.PatchItemRequest;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auditing.model.AuditLog;
+import org.cdpg.dx.auth.authentication.util.BearerTokenExtractor;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxBadRequestException;
+import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxInternalServerErrorException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RoutingContextHelper;
-
-import java.util.HashSet;
-import java.util.Set;
-
-import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.*;
-import static org.cdpg.dx.aaa.common.Constants.*;
 
 public class ItemController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(ItemController.class);
@@ -57,7 +56,8 @@ public class ItemController implements ApiController {
       DxRole.ORG_ADMIN);
 
   public ItemController(
-    AuditingHandler auditingHandler, ItemService itemService, String vocContext, URNGenerator urnGenerator) {
+      AuditingHandler auditingHandler, ItemService itemService, String vocContext,
+      URNGenerator urnGenerator) {
     this.auditingHandler = auditingHandler;
     this.itemService = itemService;
     this.vocContext = vocContext;
@@ -68,32 +68,37 @@ public class ItemController implements ApiController {
   @Override
   public void register(RouterBuilder builder) {
     builder
-      .operation(CREATE_ITEM)
-      .handler(auditingHandler::handleApiAudit)
-      .handler(verifyItemTypeAndRole)
-      .handler(this::handleCreateOrUpdateItem);
+        .operation(CREATE_ITEM)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(verifyItemTypeAndRole)
+        .handler(this::handleCreateOrUpdateItem);
 
     builder
-      .operation(GET_ITEM)
-      .handler(auditingHandler::handleApiAudit)
-      .handler(this::handleGetItem);
+        .operation(GET_ITEM)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(this::handleGetItem);
 
     builder
-      .operation(DELETE_ITEM)
-      .handler(auditingHandler::handleApiAudit)
-      .handler(this::handleDeleteItem);
+        .operation(DELETE_ITEM)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(this::handleDeleteItem);
 
     builder
-      .operation(UPDATE_ITEM)
-      .handler(auditingHandler::handleApiAudit)
-      .handler(verifyItemTypeAndRole)
-      .handler(this::handleCreateOrUpdateItem);
+        .operation(UPDATE_ITEM)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(verifyItemTypeAndRole)
+        .handler(this::handleCreateOrUpdateItem);
 
     builder
         .operation(PATCH_ITEM)
         .handler(auditingHandler::handleApiAudit)
         .handler(adminAccessHandler)
         .handler(this::handlePatchItem);
+
+    builder
+        .operation(GET_ITEM_WITH_ACCESS)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(this::handleGetItemWithAccess);
 
     LOGGER.debug("Item Controller registered");
   }
@@ -105,7 +110,9 @@ public class ItemController implements ApiController {
     JsonObject body = ctx.body().asJsonObject();
 
     String itemType = extractAndValidateItemType(ctx, body);
-    if (itemType == null) return;
+    if (itemType == null) {
+      return;
+    }
 
     JsonObject doc = injectKeycloakInfoIfApplicable(ctx, body, itemType);
 
@@ -117,15 +124,15 @@ public class ItemController implements ApiController {
 
     doc.remove(HTTP_METHOD);
     validationPromise
-      .future()
-      .onComplete(
-        result -> {
-          if (result.failed()) {
-            handleValidationFailure(ctx, result.cause());
-            return;
-          }
-          processItemCreationOrUpdate(ctx, method, result.result());
-        });
+        .future()
+        .onComplete(
+            result -> {
+              if (result.failed()) {
+                handleValidationFailure(ctx, result.cause());
+                return;
+              }
+              processItemCreationOrUpdate(ctx, method, result.result());
+            });
   }
 
   private void handlePatchItem(RoutingContext ctx) {
@@ -146,24 +153,25 @@ public class ItemController implements ApiController {
     PatchItemRequest patchItemRequest = new PatchItemRequest(id, orgId, body, allowedRoles);
 
     itemService
-      .patchItem(patchItemRequest)
-      .onSuccess(
-        elasticsearchResponse -> {
-          AuditLog auditLog =
-            CatAuditHelper.createAuditLog(
-              elasticsearchResponse.getSource(),
-              ctx.user(),
-              "PATCH",
-              RoutingContextHelper.getRequestPath(ctx));
-          RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        .patchItem(patchItemRequest)
+        .onSuccess(
+            elasticsearchResponse -> {
+              AuditLog auditLog =
+                  CatAuditHelper.createAuditLog(
+                      elasticsearchResponse.getSource(),
+                      ctx.user(),
+                      "PATCH",
+                      RoutingContextHelper.getRequestPath(ctx));
+              RoutingContextHelper.setAuditingLog(ctx, auditLog);
 
-          ResponseBuilder.sendSuccess(ctx, "Success: Item patched successfully", new JsonArray().add(new JsonObject().put("id", id)), this.urnGenerator);
+              ResponseBuilder.sendSuccess(ctx, "Success: Item patched successfully",
+                  new JsonArray().add(new JsonObject().put("id", id)), this.urnGenerator);
 
 
-        }).onFailure(err -> {
-        LOGGER.error("Patch item failed", err);
-        ctx.fail(err);
-      });
+            }).onFailure(err -> {
+          LOGGER.error("Patch item failed", err);
+          ctx.fail(err);
+        });
   }
 
   private String extractAndValidateItemType(RoutingContext ctx, JsonObject body) {
@@ -190,10 +198,10 @@ public class ItemController implements ApiController {
   }
 
   private JsonObject injectKeycloakInfoIfApplicable(
-    RoutingContext ctx, JsonObject body, String itemType) {
+      RoutingContext ctx, JsonObject body, String itemType) {
     if (ITEM_TYPE_AI_MODEL.equals(itemType)
-      || ITEM_TYPE_DATA_BANK.equals(itemType)
-      || ITEM_TYPE_APPS.equals(itemType)) {
+        || ITEM_TYPE_DATA_BANK.equals(itemType)
+        || ITEM_TYPE_APPS.equals(itemType)) {
 
       String kcId = ctx.user().principal().getString(SUB);
       String orgName = ctx.user().principal().getString(ORG_NAME);
@@ -204,11 +212,11 @@ public class ItemController implements ApiController {
   }
 
   private void validateItemExistence(
-    RoutingContext ctx,
-    String itemType,
-    JsonObject body,
-    String method,
-    Promise<JsonObject> promise) {
+      RoutingContext ctx,
+      String itemType,
+      JsonObject body,
+      String method,
+      Promise<JsonObject> promise) {
     switch (itemType) {
       case ITEM_TYPE_AI_MODEL -> itemExistenceValidator.validateAiModel(body, method, promise);
       case ITEM_TYPE_DATA_BANK -> itemExistenceValidator.validateDataBank(body, method, promise);
@@ -233,35 +241,38 @@ public class ItemController implements ApiController {
       Item item = ItemFactory.parse(body);
       if (REQUEST_POST.equalsIgnoreCase(method)) {
         itemService
-          .createItem(item)
-          .onSuccess(
-            res -> {
-              AuditLog auditLog =
-                CatAuditHelper.createAuditLog(
-                  item.toJson(),
-                  ctx.user(),
-                  method,
-                  RoutingContextHelper.getRequestPath(ctx));
-              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+            .createItem(item)
+            .onSuccess(
+                res -> {
+                  AuditLog auditLog =
+                      CatAuditHelper.createAuditLog(
+                          item.toJson(),
+                          ctx.user(),
+                          method,
+                          RoutingContextHelper.getRequestPath(ctx));
+                  RoutingContextHelper.setAuditingLog(ctx, auditLog);
 
-              ResponseBuilder.sendCreated(ctx, "Success: Item created", item.toJson(), this.urnGenerator);
+                  ResponseBuilder.sendCreated(ctx, "Success: Item created", item.toJson(),
+                      this.urnGenerator);
 
-            })
-          .onFailure(err -> handleOperationError(ctx, err));
+                })
+            .onFailure(err -> handleOperationError(ctx, err));
       } else {
         itemService
-          .updateItem(item)
-          .onSuccess(
-            res -> {
-              LOGGER.debug("Item updated successfully: {}", item);
+            .updateItem(item)
+            .onSuccess(
+                res -> {
+                  LOGGER.debug("Item updated successfully: {}", item);
 
-              AuditLog auditLog = CatAuditHelper.createAuditLog(item.toJson(), ctx.user(), method, RoutingContextHelper.getRequestPath(ctx));
-              RoutingContextHelper.setAuditingLog(ctx, auditLog);
-              ResponseBuilder.sendSuccess(ctx, item.toJson(), this.urnGenerator);
+                  AuditLog auditLog =
+                      CatAuditHelper.createAuditLog(item.toJson(), ctx.user(), method,
+                          RoutingContextHelper.getRequestPath(ctx));
+                  RoutingContextHelper.setAuditingLog(ctx, auditLog);
+                  ResponseBuilder.sendSuccess(ctx, item.toJson(), this.urnGenerator);
 
 
-            })
-          .onFailure(err -> handleOperationError(ctx, err));
+                })
+            .onFailure(err -> handleOperationError(ctx, err));
       }
     } catch (Exception e) {
       LOGGER.error("Failed to parse item into model", e);
@@ -283,21 +294,23 @@ public class ItemController implements ApiController {
     }
 
     itemService
-      .deleteItem(id)
-      .onSuccess(
-        elasticsearchResponse -> {
-          AuditLog auditLog = CatAuditHelper.createAuditLog(elasticsearchResponse.getSource(), ctx.user(),
-            "DELETE", RoutingContextHelper.getRequestPath(ctx));
-          RoutingContextHelper.setAuditingLog(ctx, auditLog);
-          ResponseBuilder.sendSuccess(ctx, "Success: Item deleted successfully", this.urnGenerator);
-        })
+        .deleteItem(id)
+        .onSuccess(
+            elasticsearchResponse -> {
+              AuditLog auditLog =
+                  CatAuditHelper.createAuditLog(elasticsearchResponse.getSource(), ctx.user(),
+                      "DELETE", RoutingContextHelper.getRequestPath(ctx));
+              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              ResponseBuilder.sendSuccess(ctx, "Success: Item deleted successfully",
+                  this.urnGenerator);
+            })
 
 
-      .onFailure(
-        err -> {
-          LOGGER.error("Delete item failed", err);
-          ctx.fail(err);
-        });
+        .onFailure(
+            err -> {
+              LOGGER.error("Delete item failed", err);
+              ctx.fail(err);
+            });
   }
 
   private void handleGetItem(RoutingContext routingContext) {
@@ -310,42 +323,121 @@ public class ItemController implements ApiController {
     }
 
     String subId = "";
+    List<String> roles = new ArrayList<>();
     if (routingContext.user() != null) {
       subId = routingContext.user().principal().getString("sub");
+
+      JsonObject realmAccess = routingContext.user().principal().getJsonObject("realm_access");
+      if (realmAccess != null && realmAccess.containsKey("roles")) {
+        JsonArray rolesJson = realmAccess.getJsonArray("roles");
+        roles = rolesJson.stream()
+            .map(Object::toString)
+            .collect(Collectors.toList());
+      }
     }
 
     GetItemRequest request = new GetItemRequest(itemId, subId);
+    request.setRoles(roles);
     itemService
-      .getItem(request)
-      .onSuccess(
-        responseModel -> {
-          if (responseModel.getTotalHits() == 0) {
-            LOGGER.error("Fail: Item not found");
-            routingContext.fail(new DxNotFoundException("doc doesn't exist"));
-          } else {
-            LOGGER.debug("Item retrieved successfully for ID '{}'", itemId);
+        .getItem(request)
+        .onSuccess(
+            responseModel -> {
+              if (responseModel.getTotalHits() == 0) {
+                LOGGER.error("Fail: Item not found");
+                routingContext.fail(new DxNotFoundException("doc doesn't exist"));
+              } else {
+                LOGGER.debug("Item retrieved successfully for ID '{}'", itemId);
 
-            if (routingContext.user() != null) {
-              AuditLog auditLog =
-                CatAuditHelper.createAuditLog(
-                  responseModel.getResponse().getJsonArray(RESULTS).getJsonObject(0),
-                  routingContext.user(),
-                  "GET",
-                  RoutingContextHelper.getRequestPath(routingContext));
-              LOGGER.debug("Audit log created: {}", auditLog.toJson());
-              RoutingContextHelper.setAuditingLog(routingContext, auditLog);
-            }
+                if (routingContext.user() != null) {
+                  AuditLog auditLog =
+                      CatAuditHelper.createAuditLog(
+                          responseModel.getResponse().getJsonArray(RESULTS).getJsonObject(0),
+                          routingContext.user(),
+                          "GET",
+                          RoutingContextHelper.getRequestPath(routingContext));
+                  LOGGER.debug("Audit log created: {}", auditLog.toJson());
+                  RoutingContextHelper.setAuditingLog(routingContext, auditLog);
+                }
 
-            ResponseBuilder.sendSuccess(
-              routingContext,
-              responseModel.getResponse().getJsonArray(RESULTS),
-              responseModel.getPaginationInfo(), this.urnGenerator);
-          }
-        })
-      .onFailure(
-        err -> {
-          LOGGER.error("Error retrieving item with ID '{}': {}", itemId, err.getMessage());
-          routingContext.fail(new DxInternalServerErrorException(err.getMessage()));
-        });
+                ResponseBuilder.sendSuccess(
+                    routingContext,
+                    responseModel.getResponse().getJsonArray(RESULTS),
+                    responseModel.getPaginationInfo(), this.urnGenerator);
+              }
+            })
+        .onFailure(
+            err -> {
+              if (err instanceof DxForbiddenException) {
+                routingContext.fail(err);  //failure handler should map to 403
+              } else {
+                LOGGER.error("Error retrieving item with ID '{}': {}", itemId, err.getMessage());
+                routingContext.fail(new DxInternalServerErrorException(err.getMessage()));
+              }
+            });
+  }
+
+  private void handleGetItemWithAccess(RoutingContext routingContext) {
+    String token = BearerTokenExtractor.extract(routingContext);
+    String itemId = routingContext.queryParams().get(ID);
+    LOGGER.debug("Received GET request for item with ID '{}'", itemId);
+
+    if (itemId == null || itemId.isBlank()) {
+      routingContext.fail(new DxBadRequestException("Item ID is required"));
+      return;
+    }
+
+    String subId = "";
+    List<String> roles = new ArrayList<>();
+    if (routingContext.user() != null) {
+      subId = routingContext.user().principal().getString("sub");
+
+      JsonObject realmAccess = routingContext.user().principal().getJsonObject("realm_access");
+      if (realmAccess != null && realmAccess.containsKey("roles")) {
+        JsonArray rolesJson = realmAccess.getJsonArray("roles");
+        roles = rolesJson.stream()
+            .map(Object::toString)
+            .collect(Collectors.toList());
+      }
+    }
+
+    GetItemRequest request = new GetItemRequest(itemId, subId);
+    request.setRoles(roles);
+    request.setToken(token);
+    itemService
+        .getItemWithAccessChecks(request)
+        .onSuccess(
+            responseModel -> {
+              if (responseModel.getTotalHits() == 0) {
+                LOGGER.error("Fail: Item not found");
+                routingContext.fail(new DxNotFoundException("doc doesn't exist"));
+              } else {
+                LOGGER.debug("Item retrieved successfully for ID '{}'", itemId);
+
+
+                if (routingContext.user() != null) {
+                  AuditLog auditLog = CatAuditHelper.createAuditLog(
+                      responseModel.getResponse().getJsonArray(RESULTS).getJsonObject(0),
+                      routingContext.user(),
+                      "GET", RoutingContextHelper.getRequestPath(routingContext));
+                  LOGGER.debug("Audit log created: {}", auditLog.toJson());
+                  RoutingContextHelper.setAuditingLog(routingContext, auditLog);
+                }
+
+                ResponseBuilder.sendSuccess(
+                    routingContext,
+                    responseModel.getResponse().getJsonArray(RESULTS),
+                    responseModel.getPaginationInfo(),
+                    this.urnGenerator);
+              }
+            })
+        .onFailure(
+            err -> {
+              if (err instanceof DxForbiddenException) {
+                routingContext.fail(err);  //failure handler should map to 403
+              } else {
+                LOGGER.error("Error retrieving item with ID '{}': {}", itemId, err.getMessage());
+                routingContext.fail(err);
+              }
+            });
   }
 }
