@@ -40,6 +40,8 @@ import org.cdpg.dx.common.exception.DxInternalServerErrorException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RoutingContextHelper;
+import org.cdpg.dx.aaa.item.service.ItemRegistryService;
+import org.cdpg.dx.aaa.item.util.DataBankCreationRequest;
 
 public class ItemController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(ItemController.class);
@@ -50,19 +52,21 @@ public class ItemController implements ApiController {
   private final URNGenerator urnGenerator;
 
   private final ItemExistenceValidator itemExistenceValidator;
+  private final ItemRegistryService itemRegistryService;
   private final CheckIfTokenPresent checkIfTokenPresent = new CheckIfTokenPresent();
   private final VerifyItemTypeAndRole verifyItemTypeAndRole = new VerifyItemTypeAndRole();
   Handler<RoutingContext> adminAccessHandler = AuthorizationHandler.forRoles(DxRole.COS_ADMIN,
       DxRole.ORG_ADMIN);
 
   public ItemController(
-      AuditingHandler auditingHandler, ItemService itemService, String vocContext,
-      URNGenerator urnGenerator) {
+    AuditingHandler auditingHandler, ItemService itemService, String vocContext, URNGenerator urnGenerator,
+    ItemRegistryService itemRegistryService) {
     this.auditingHandler = auditingHandler;
     this.itemService = itemService;
     this.vocContext = vocContext;
     this.urnGenerator = urnGenerator;
     this.itemExistenceValidator = new ItemExistenceValidator(itemService);
+    this.itemRegistryService = itemRegistryService;
   }
 
   @Override
@@ -240,23 +244,26 @@ public class ItemController implements ApiController {
       body.remove("roles");
       Item item = ItemFactory.parse(body);
       if (REQUEST_POST.equalsIgnoreCase(method)) {
-        itemService
+        if (ITEM_TYPE_DATA_BANK.equals(ctx.get(ITEM_TYPE))) {
+          handleDataBankCreate(ctx, item, body);
+        } else {
+          itemService
             .createItem(item)
             .onSuccess(
-                res -> {
-                  AuditLog auditLog =
-                      CatAuditHelper.createAuditLog(
-                          item.toJson(),
-                          ctx.user(),
-                          method,
-                          RoutingContextHelper.getRequestPath(ctx));
-                  RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              res -> {
+                AuditLog auditLog =
+                  CatAuditHelper.createAuditLog(
+                    item.toJson(),
+                    ctx.user(),
+                    method,
+                    RoutingContextHelper.getRequestPath(ctx));
+                RoutingContextHelper.setAuditingLog(ctx, auditLog);
 
-                  ResponseBuilder.sendCreated(ctx, "Success: Item created", item.toJson(),
-                      this.urnGenerator);
+                ResponseBuilder.sendCreated(ctx, "Success: Item created", item.toJson(), this.urnGenerator);
 
-                })
+              })
             .onFailure(err -> handleOperationError(ctx, err));
+        }
       } else {
         itemService
             .updateItem(item)
@@ -280,6 +287,27 @@ public class ItemController implements ApiController {
     }
   }
 
+  private void handleDataBankCreate(RoutingContext ctx, Item item, JsonObject originalBody) {
+      LOGGER.debug("Handling DataBank item creation with integrations");
+
+      // Extract required data from RoutingContext
+      String userId = ctx.user().principal().getString(SUB);
+      String token = RoutingContextHelper.getToken(ctx);
+      JsonObject dataDescriptor = ctx.getBodyAsJson().getJsonObject("dataDescriptor", new JsonObject());
+
+      // Create DTO
+      DataBankCreationRequest dataBankCreationRequest = new DataBankCreationRequest(userId, token, dataDescriptor, originalBody);
+      
+    itemRegistryService
+      .createDataBankWithIntegrations(dataBankCreationRequest, item)
+      .onSuccess(response -> {
+          LOGGER.debug("DataBank item created successfully with integrations");
+        AuditLog auditLog = CatAuditHelper.createAuditLog(item.toJson(), ctx.user(), REQUEST_POST, RoutingContextHelper.getRequestPath(ctx));
+        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        ResponseBuilder.sendSuccess(ctx,response.toJson(), this.urnGenerator);
+      })
+      .onFailure(err -> ctx.fail(err));
+  }
   private void handleOperationError(RoutingContext ctx, Throwable err) {
     LOGGER.error("Item operation failed", err);
     ctx.fail(new DxBadRequestException(err.getMessage()));
