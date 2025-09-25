@@ -6,7 +6,6 @@ import static org.cdpg.dx.aaa.common.Constants.ID;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
@@ -109,7 +108,6 @@ public class ItemController implements ApiController {
 
   private void handleCreateOrUpdateItem(RoutingContext ctx) {
     LOGGER.debug("Handling create/update item");
-    HttpServerResponse response = ctx.response();
 
     JsonObject body = ctx.body().asJsonObject();
 

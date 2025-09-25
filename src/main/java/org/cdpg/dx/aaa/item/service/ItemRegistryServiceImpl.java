@@ -89,7 +89,7 @@ public class ItemRegistryServiceImpl implements ItemRegistryService {
   }
 
   private boolean isValidDatasetType(String datasetType) {
-    return "GATEWAY".equals(datasetType) || "NGSILD".equals(datasetType);
+    return "GATEWAY".equals(datasetType) || "NGSILD".equals(datasetType) || "OGC".equals(datasetType) ||"FILE".equals(datasetType);
   }
 
   private Future<Void> processResourceServersSequentially(DataBankCreationRequest request, String userId, String itemId, JsonArray resourceServers, JsonObject requestBody, List<Supplier<Future<Void>>> rollbackActions, DataBankCreationResponse response) {
@@ -123,17 +123,31 @@ public class ItemRegistryServiceImpl implements ItemRegistryService {
               String token = request.getToken();
               yield postToDataPlane(requestBody, token)
                       .compose(v -> {
-                            LOGGER.debug("Data Plane index creation successful, proceeding to register adapter");
+                          LOGGER.debug("Data Plane index creation successful, proceeding to register adapter");
                           return ingestionService.registerAdapter(itemId, userId);
                       })
                       .map(exchangeModel -> {
                           rollbackActions.add(() -> ingestionService.deleteAdapter(itemId, userId).recover(x -> Future.succeededFuture()));
-                          DataBankCreationResponse.ResourceServerResponse rsResponse = 
-                              new DataBankCreationResponse.ResourceServerResponse("NGSILD", exchangeModel.toJson());
+                          DataBankCreationResponse.ResourceServerResponse rsResponse =
+                                  new DataBankCreationResponse.ResourceServerResponse("NGSILD", exchangeModel.toJson());
                           response.addResourceServer(rsResponse);
                           return null;
                       })
                       .mapEmpty();
+          }
+          case "OGC" -> {
+              LOGGER.debug("OGC resource server - no additional processing required, returning success");
+              DataBankCreationResponse.ResourceServerResponse rsResponse =
+                      new DataBankCreationResponse.ResourceServerResponse("OGC", new JsonObject().put("status", "created"));
+              response.addResourceServer(rsResponse);
+              yield Future.succeededFuture();
+          }
+          case "FILE" -> {
+              LOGGER.debug("FILE resource server - no additional processing required, returning success");
+              DataBankCreationResponse.ResourceServerResponse rsResponse =
+                      new DataBankCreationResponse.ResourceServerResponse("FILE", new JsonObject().put("status", "created"));
+              response.addResourceServer(rsResponse);
+              yield Future.succeededFuture();
           }
           default -> Future.failedFuture(new DxBadRequestException("Unsupported datasetType: " + datasetType));
       };
