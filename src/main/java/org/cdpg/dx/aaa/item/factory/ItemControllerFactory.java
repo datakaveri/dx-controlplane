@@ -15,6 +15,10 @@ import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
+import org.cdpg.dx.aaa.ingestion.service.IngestionService;
+import org.cdpg.dx.aaa.connector.service.ConnectorService;
+import org.cdpg.dx.aaa.item.service.ItemRegistryService;
+import org.cdpg.dx.aaa.item.service.ItemRegistryServiceImpl;
 
 public class ItemControllerFactory {
 
@@ -27,12 +31,16 @@ public class ItemControllerFactory {
       String vocContext,
       String apdURL,
       URNGenerator urnGenerator,
-      WebClient webClient) {
-    AccessRequestDao accessRequestDao =
+      WebClient webClient,
+      IngestionService ingestionService,
+      ConnectorService connectorService,
+      String dataPlaneUrl) {
+      AccessRequestDao accessRequestDao =
         new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
 
     ItemService crudService = new ItemServiceImpl(elasticsearchService, keycloakUserService,
         accessRequestDao, webClient, docIndex, apdURL);
-    return new ItemController(auditingHandler, crudService, vocContext, urnGenerator);
+      ItemRegistryService orchestrationService = new ItemRegistryServiceImpl(crudService, ingestionService, connectorService, webClient, dataPlaneUrl);
+    return new ItemController(auditingHandler, crudService, vocContext, urnGenerator,orchestrationService);
   }
 }

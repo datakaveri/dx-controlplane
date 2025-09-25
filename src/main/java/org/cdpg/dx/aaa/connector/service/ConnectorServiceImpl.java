@@ -67,8 +67,8 @@ public class ConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
-  public Future<String> deleteConnector(String userId, String assetId) {
-    Promise<String> promise = Promise.promise();
+  public Future<Void> deleteConnector(String userId, String assetId) {
+    Promise<Void> promise = Promise.promise();
     if (assetId == null || assetId.isEmpty() || userId == null || userId.isEmpty()) {
       promise.fail(new DxBadRequestException("Invalid input or blank value"));
       return promise.future();
@@ -84,8 +84,9 @@ public class ConnectorServiceImpl implements ConnectorService {
             })
         .onSuccess(
             permissionUpdated -> {
-              LOGGER.info("Permission updated successfully");
-              promise.complete("Connector deleted successfully");
+              LOGGER.debug("Permission updated successfully");
+              LOGGER.debug("Connector deleted successfully");
+              promise.complete();
             })
         .onFailure(
             err -> {

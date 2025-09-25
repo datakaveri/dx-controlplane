@@ -49,6 +49,124 @@ servers:
     description: example server
 
 paths:
+  /resource-servers:
+    get:
+      summary: List Resource Servers
+      operationId: list resource servers
+      tags:
+        - Resource Servers
+      security:
+        - authorization: [ ]
+      description: |
+        Lists resource servers based on user role:
+        - COS Admin: Returns all resource servers
+        - ORG Admin: Returns only resource servers they created
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResourceServer'
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal Server Error
+    post:
+      summary: Create a Resource Server
+      operationId: create resource server
+      tags:
+        - Resource Servers
+      security:
+        - authorization: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceServer'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceServer'
+  /iudx/v2/resource-servers/{id}:
+    get:
+      summary: Get Resource Server by ID
+      operationId: get resource server
+      security:
+        - authorization: [ ]
+      tags:
+        - Resource Servers
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceServer'
+    put:
+      summary: Update Resource Server
+      operationId: update resource server
+      security:
+        - authorization: [ ]
+      tags:
+        - Resource Servers
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceServer'
+    delete:
+      summary: Delete Resource Server
+      operationId: delete resource server
+      security:
+        - authorization: [ ]
+      tags:
+        - Resource Servers
+      description: |
+        Deletes a resource server based on user role:
+        - COS Admin: Can delete any resource server
+        - ORG Admin: Can only delete resource servers they own
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: No Content - Resource server deleted successfully
+        '401':
+          description: Unauthorized - Invalid or missing token
+        '403':
+          description: Forbidden - Insufficient permissions or trying to delete resource server you don't own
+        '404':
+          description: Not Found - Resource server not found
   /iudx/v2/auth/organisations/requests:
     get:
       summary: 'AAA-001-PF Admin: Get Organisation Creation requests'
@@ -5650,6 +5768,29 @@ components:
       schema:
         type: string
   schemas:
+    ResourceServer:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Data Kaveri
+        url:
+          type: string
+          example: datakaveri.org
+        type:
+          type: string
+          enum: [ngsild, gateway, ogc, file]
+        visibility:
+          type: string
+          enum: [PUBLIC, PRIVATE]
+        access_type:
+          type: array
+          items:
+            type: string
+          example: ["ATTR"]
+        injection_type:
+          type: string
+          example: api
     standardResourceAlreadyExistErrorResponse:
       title: standardResourceAlreadyExistErrorResponse
       properties:

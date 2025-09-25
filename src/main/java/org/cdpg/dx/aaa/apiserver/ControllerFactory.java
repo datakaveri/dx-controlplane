@@ -35,6 +35,8 @@ import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.ingestion.service.IngestionService;
 import org.cdpg.dx.aaa.ingestion.service.IngestionServiceImpl;
+import org.cdpg.dx.aaa.connector.service.ConnectorService;
+import org.cdpg.dx.aaa.connector.service.ConnectorServiceImpl;
 import org.cdpg.dx.aaa.item.controller.ItemController;
 import org.cdpg.dx.aaa.item.factory.ItemControllerFactory;
 import org.cdpg.dx.aaa.item.service.ItemService;
@@ -48,6 +50,7 @@ import org.cdpg.dx.aaa.organization.factory.OrganizationControllerFactory;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.publicKey.controller.PublicController;
 import org.cdpg.dx.aaa.publicKey.factory.PublicKeycontrllerFactory;
+import org.cdpg.dx.aaa.resourceserver.factory.ResourceServerControllerFactory;
 import org.cdpg.dx.aaa.search.controller.SearchController;
 import org.cdpg.dx.aaa.search.factory.SearchControllerFactory;
 import org.cdpg.dx.aaa.token.controller.TokenController;
@@ -65,6 +68,7 @@ import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.email.service.EmailService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
+import io.vertx.ext.web.client.WebClient;
 
 public class ControllerFactory {
   private static final Logger LOGGER = LogManager.getLogger(ControllerFactory.class);
@@ -81,6 +85,7 @@ public class ControllerFactory {
 
     WebClient webClient = WebClient.create(vertx);
 
+    final String dataPlaneUrl = config.getString("dataPlaneUrl");
     PostgresService pgService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
     DataBrokerService dataBrokerService =
         DataBrokerService.createProxy(vertx, DATA_BROKER_SERVICE_ADDRESS);
@@ -167,12 +172,17 @@ public class ControllerFactory {
     final SearchController searchController =
         SearchControllerFactory.createSearchController(
             esService, auditingHandler, docIndex, urnGenerator);
+    IngestionService ingestionService = new IngestionServiceImpl(dataBrokerService);
+    String publishExchange = config.getString("publishExchange", "amq.topic");
+    ConnectorService connectorService = new ConnectorServiceImpl(dataBrokerService, publishExchange);
     final ItemController itemController =
         ItemControllerFactory.createCrudController(
             auditingHandler, esService, pgService, keycloakUserService, docIndex, vocContext,
-            apdURL, urnGenerator, webClient);
+            apdURL, urnGenerator, webClient,ingestionService,connectorService,dataPlaneUrl);
 
-    // TODO create other controllers
+    ApiController resourceServerController =
+        ResourceServerControllerFactory.createController(
+            pgService, auditingHandler, urnGenerator);
 
     ClientController clientController = ClientControllerFactory.create(pgService, urnGenerator);
 
@@ -181,7 +191,7 @@ public class ControllerFactory {
 
     PublicController publicController = PublicKeycontrllerFactory.create(config, vertx);
 
-    IngestionService ingestionService = new IngestionServiceImpl(dataBrokerService);
+    // ingestionService already created above for ItemController
 
     return List.of(
         organizationController,
@@ -192,6 +202,7 @@ public class ControllerFactory {
         listController,
         searchController,
         itemController,
+        resourceServerController,
         clientController,
         tokenController,
         publicController,
