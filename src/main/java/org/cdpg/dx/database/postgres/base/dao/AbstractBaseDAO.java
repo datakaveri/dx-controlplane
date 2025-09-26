@@ -34,12 +34,12 @@ public abstract class AbstractBaseDAO<T extends BaseEntity<T>> implements BaseDA
   public AbstractBaseDAO(
       PostgresService postgresService,
       String tableName,
-      String idFileld,
+      String idField,
       Function<JsonObject, T> fromJson) {
     this.postgresService = postgresService;
     this.tableName = tableName;
     this.fromJson = fromJson;
-    this.idField = idFileld;
+    this.idField = idField;
   }
 
   @Override
@@ -99,10 +99,6 @@ public abstract class AbstractBaseDAO<T extends BaseEntity<T>> implements BaseDA
         .select(query, false)
         .compose(
             result -> {
-                LOGGER.debug("Result rows: {}", result.getRows().isEmpty());
-                if (result.getRows().isEmpty()) {
-                    return Future.failedFuture(new DxNotFoundException("No records found"));
-                }
               List<T> entities =
                   result.getRows().stream()
                       .map(row -> fromJson.apply((JsonObject) row))
@@ -131,9 +127,6 @@ public abstract class AbstractBaseDAO<T extends BaseEntity<T>> implements BaseDA
         .select(query, false)
         .compose(
             result -> {
-                if (result.getRows().isEmpty()) {
-                    return Future.failedFuture(new DxNotFoundException("No records found"));
-                }
               List<T> entities =
                   result.getRows().stream()
                       .map(row -> fromJson.apply((JsonObject) row))

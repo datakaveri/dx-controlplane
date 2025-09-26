@@ -15,6 +15,7 @@
   },
   "commonOptions":{
     "dxApiBasePath": "/dx/apd/acl/v1",
+    "dataPlaneUrl" : "<data-plane-url>",
     "clientId": "<apd-delegate-client-id>",
     "clientSecret": "<apd-delegate-client-secret>",
     "apdURL": "<acl-apd-url>",
@@ -113,7 +114,8 @@
       "networkRecoveryInterval": 500,
       "automaticRecoveryEnabled": "true",
       "brokerAmqpIp": "<databroker-ip>",
-      "brokerAmqpPort": 24567
+      "brokerAmqpPort": 24567,
+      "publishExchange": "<publish-exchange>"
     },
     {
       "id": "org.cdpg.dx.aaa.apiserver.ApiServerVerticle",
@@ -137,4 +139,3 @@
     }
   ]
 }
-
