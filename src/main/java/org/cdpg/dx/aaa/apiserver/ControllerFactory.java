@@ -68,7 +68,6 @@ import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.email.service.EmailService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
-import io.vertx.ext.web.client.WebClient;
 
 public class ControllerFactory {
   private static final Logger LOGGER = LogManager.getLogger(ControllerFactory.class);
@@ -173,7 +172,7 @@ public class ControllerFactory {
         SearchControllerFactory.createSearchController(
             esService, auditingHandler, docIndex, urnGenerator);
     IngestionService ingestionService = new IngestionServiceImpl(dataBrokerService);
-    String publishExchange = config.getString("publishExchange", "amq.topic");
+    String publishExchange = config.getString("publishExchange");
     ConnectorService connectorService = new ConnectorServiceImpl(dataBrokerService, publishExchange);
     final ItemController itemController =
         ItemControllerFactory.createCrudController(
