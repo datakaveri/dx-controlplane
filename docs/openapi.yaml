@@ -2313,7 +2313,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/createNotificationForbidden'
       security:
-          - authorization: [ ]
+        - authorization: [ ]
   /iudx/v2/auth/compute/requests:
     get:
       summary: Get All Pending ComputeRole Requests (COS ADMIN)
@@ -4429,10 +4429,10 @@ paths:
     post:
       summary: Retrieve organisation assets with filters
       description: >
-          Fetch all assets belonging to the organisation using advanced filters.
-          Supports property-based, temporal, numeric range, and full-text search filters.
-
-          **Note:** This endpoint is restricted to users with the `org_admin` role.
+        Fetch all assets belonging to the organisation using advanced filters.
+        Supports property-based, temporal, numeric range, and full-text search filters.
+        
+        **Note:** This endpoint is restricted to users with the `org_admin` role.
       operationId: get org assets with filters
       tags:
         - Organisation Assets Management
@@ -4562,9 +4562,9 @@ paths:
     post:
       summary: Retrieve all platform assets with filters
       description: >
-          Fetch all assets belonging to the platform using filters.
-          Supports property-based, temporal, numeric range, and full-text search filters.
-          **Note:** This endpoint can only be accessed by users with the `cos_admin` role.
+        Fetch all assets belonging to the platform using filters.
+        Supports property-based, temporal, numeric range, and full-text search filters.
+        **Note:** This endpoint can only be accessed by users with the `cos_admin` role.
       operationId: get platform assets with filters
       tags:
         - Platform Assets Management
@@ -9614,6 +9614,19 @@ components:
           type: string
         license:
           type: string
+        resourceServer:
+          type: array
+          description: List of resource servers associated with the dataset
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              type:
+                type: string
+                enum: [ogc, ngsild, file, gateway]
+            required:
+              - type
       required:
         - name
         - type
@@ -9629,6 +9642,7 @@ components:
         - verifiedBy
         - uploadFrequency
         - license
+        - resourceServer
       additionalProperties: true
       example:
         name: 'subdistrict-weather-info'
@@ -9655,6 +9669,15 @@ components:
         verifiedBy: 'Ministry of Earth Sciences'
         uploadFrequency: 'Weekly'
         license: 'CC-BY 4.0'
+        resourceServer:
+          - name: "OGC"
+            type: "ogc"
+          - name: "NGSI-LD"
+            type: "ngsild"
+          - name: "FILE"
+            type: "file"
+          - name: "GATEWAY"
+            type: "gateway"
     exampleEntityPotentialApps:
       type: object
       title: AI Use Case Template Schema
