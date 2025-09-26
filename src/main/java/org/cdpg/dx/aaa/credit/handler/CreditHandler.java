@@ -4,6 +4,7 @@ import co.elastic.clients.elasticsearch.ingest.Local;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
@@ -22,6 +23,7 @@ import org.cdpg.dx.auditing.model.AuditLog;
 import org.cdpg.dx.common.HttpStatusCode;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxBadRequestException;
+import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.DxValidationException;
 import org.cdpg.dx.common.request.PaginatedRequest;
@@ -85,7 +87,7 @@ public class CreditHandler {
       .onFailure(ctx::fail);
   }
 
-  public void getAllPendingCreditRequests(RoutingContext ctx) {
+  public void getCreditRequests(RoutingContext ctx) {
 
     PaginatedRequest request = PaginationRequestBuilder.from(ctx)
       .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_CREDIT_REQUEST)
@@ -147,8 +149,6 @@ public class CreditHandler {
   }
 
 
-
-
   public void getBalance(RoutingContext ctx) {
 
     User user = ctx.user();
@@ -156,7 +156,7 @@ public class CreditHandler {
 
     creditService.getBalance(userId)
       .onSuccess(balance -> {
-        ResponseBuilder.sendSuccess(ctx,new JsonObject(Map.of("balance", balance)), this.urnGenerator);
+        ResponseBuilder.sendSuccess(ctx, new JsonObject(Map.of("balance", balance)), this.urnGenerator);
       })
       .onFailure(ctx::fail);
   }
@@ -165,7 +165,7 @@ public class CreditHandler {
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "id");
     creditService.getBalance(userId)
       .onSuccess(res -> {
-        ResponseBuilder.sendSuccess(ctx,new JsonObject(Map.of("user_id", userId, "balance", res.getDouble("balance"))), this.urnGenerator);
+        ResponseBuilder.sendSuccess(ctx, new JsonObject(Map.of("user_id", userId, "balance", res.getDouble("balance"))), this.urnGenerator);
       })
       .onFailure(ctx::fail);
   }
@@ -187,8 +187,8 @@ public class CreditHandler {
       throw new DxBadRequestException("Amount is required for GRANTED status");
     }
 
-    String expirationDate=null;
-    if(status == GRANTED) {
+    String expirationDate = null;
+    if (status == GRANTED) {
 
       expirationDate = creditRequestJson.getString("expiration_date");
 
@@ -335,9 +335,8 @@ public class CreditHandler {
       .build();
 
 
-
     creditService.getAllComputeRequests(request)
-      .compose(result->
+      .compose(result ->
         userService.enrichWithUserRoles(
           result.data(),
           ComputeRole::userId,
@@ -364,15 +363,15 @@ public class CreditHandler {
     User user = ctx.user();
     UUID approvedBy = UUID.fromString(user.subject());
     Status status = Status.fromString(creditRequestJson.getString("status"));
-    UUID requestId = RequestHelper.getPathParamAsUUID(ctx,"id");
+    UUID requestId = RequestHelper.getPathParamAsUUID(ctx, "id");
 
-    creditService.updateComputeRoleStatus( requestId, status, approvedBy)
+    creditService.updateComputeRoleStatus(requestId, status, approvedBy)
       .onSuccess(updated -> {
         AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
           RoutingContextHelper.getRequestPath(ctx), "PUT", "Compute Role Status Updated");
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
         ResponseBuilder.sendSuccess(ctx, "Compute Role Status " + status.getStatus(), this.urnGenerator);
-        Future<Void> future = emailComposer.sendUserEmailForComputeRoleApproval(requestId,status);
+        Future<Void> future = emailComposer.sendUserEmailForComputeRoleApproval(requestId, status);
       })
       .onFailure(ctx::fail);
   }
@@ -393,5 +392,180 @@ public class CreditHandler {
       .onFailure(ctx::fail);
   }
 
-}
+  public void getUserCreditRequests(RoutingContext ctx) {
+    AuditLog auditLog = AuditingHelper.createAuditLog(
+      ctx.user(),
+      RoutingContextHelper.getRequestPath(ctx),
+      "GET",
+      "Get Pending Credit Requests"
+    );
 
+    UUID userId = UUID.fromString(ctx.user().subject());
+
+    creditService.getCreditRequestsByUserId(userId)
+      .onSuccess(creditRequests -> {
+        if (creditRequests == null || creditRequests.isEmpty()) {
+          RoutingContextHelper.setAuditingLog(ctx, auditLog);
+          ResponseBuilder.sendSuccess(ctx, new ArrayList<>(), this.urnGenerator);
+          return;
+        }
+
+        List<Future> futures = creditRequests.stream()
+          .map(cr -> {
+            UUID crUserId = cr.userId();
+            Promise<JsonObject> promise = Promise.promise();
+
+            Future<JsonObject> balanceFuture = creditService.getBalance(crUserId)
+              .map(res -> new JsonObject().put("balance", res.getString("balance")))
+              .otherwise(new JsonObject().put("balance", 0.0));
+
+            Future<JsonObject> expiryFuture = creditService.getExpirationDateByUserId(crUserId)
+              .map(res -> new JsonObject().put("expirationDate", res.expirationDate().toString()))
+              .otherwise(new JsonObject().put("expirationDate", (String) null));
+
+            CompositeFuture.all(balanceFuture, expiryFuture)
+              .onSuccess(cf -> {
+                JsonObject creditRequestJson = JsonObject.mapFrom(cr)
+                  .mergeIn(cf.resultAt(0))
+                  .mergeIn(cf.resultAt(1));
+                promise.complete(creditRequestJson);
+              })
+              .onFailure(err -> {
+                LOGGER.warn("Failed to enrich credit request for user {}: {}", crUserId, err.getMessage());
+                JsonObject creditRequestJson = JsonObject.mapFrom(cr)
+                  .put("balance", 0.0)
+                  .put("expirationDate", (String) null);
+                promise.complete(creditRequestJson);
+              });
+
+            return promise.future();
+          })
+          .collect(Collectors.toList());
+
+        CompositeFuture.all(futures)
+          .onSuccess(cf -> {
+            List<JsonObject> enrichedList = cf.list();
+            RoutingContextHelper.setAuditingLog(ctx, auditLog);
+            ResponseBuilder.sendSuccess(ctx, enrichedList, this.urnGenerator);
+          })
+          .onFailure(ctx::fail);
+      })
+      .onFailure(err -> {
+        LOGGER.error("Failed to fetch credit requests for user {}: {}", userId, err.getMessage());
+        ctx.fail(err);
+      });
+  }
+
+
+  public void deletePendingCreditRequest(RoutingContext ctx) {
+    User user = ctx.user();
+    UUID userId = UUID.fromString(user.subject());
+
+    String requestIdStr = ctx.pathParam("id");
+    UUID requestId = UUID.fromString(requestIdStr);
+
+    creditService.getCreditRequestById(requestId).compose(request -> {
+        if (request == null) {
+          return Future.failedFuture(new DxNotFoundException("Credit request not found"));
+        }
+
+        if (!request.userId().equals(userId)) {
+          return Future.failedFuture(new DxForbiddenException("User is not authorized to delete this credit request"));
+        }
+
+        if (!request.status().equals(Status.PENDING.getStatus())) {
+          return Future.failedFuture(new DxBadRequestException("Only pending credit requests can be deleted"));
+        }
+
+        return creditService.deletePendingCreditRequestById(requestId);
+      })
+      .onSuccess(deleted -> {
+        AuditLog auditLog = AuditingHelper.createAuditLog(
+          ctx.user(),
+          RoutingContextHelper.getRequestPath(ctx),
+          "DELETE",
+          "Deleted Pending Credit Request"
+        );
+        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+
+        ResponseBuilder.sendSuccess(ctx, "Pending Credit Request deleted successfully", urnGenerator);
+      })
+      .onFailure(ctx::fail);
+  }
+
+
+  public void getComputeRequests(RoutingContext ctx) {
+    AuditLog auditLog = AuditingHelper.createAuditLog(
+      ctx.user(),
+      RoutingContextHelper.getRequestPath(ctx),
+      "GET",
+      "Get Pending Compute Request"
+    );
+
+    UUID userId = UUID.fromString(ctx.user().subject());
+
+    creditService.getComputeRequestByUserId(userId)
+      .compose(cr -> {
+        if (cr == null) {
+          ctx.fail(new DxBadRequestException("No pending compute request found"));
+          return Future.failedFuture(new DxBadRequestException("No pending compute request found"));
+        }
+
+        return userService.enrichWithUserRoles(
+          List.of(cr),
+          ComputeRole::userId,
+          ComputeRole::toJson
+        ).map(list -> list.isEmpty() ? null : list.get(0));
+      })
+      .onSuccess(enriched -> {
+        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+
+        if (enriched == null) {
+          ResponseBuilder.sendSuccess(ctx, new JsonObject(), this.urnGenerator);
+        } else {
+          ResponseBuilder.sendSuccess(ctx, enriched, this.urnGenerator);
+        }
+      })
+      .onFailure(err -> {
+        LOGGER.error("Failed to fetch pending compute request for user {}: {}", userId, err.getMessage());
+        ctx.fail(err);
+      });
+  }
+
+  public void deletePendingComputeRequests(RoutingContext ctx) {
+    User user = ctx.user();
+    UUID userId = UUID.fromString(user.subject());
+
+    String requestIdStr = ctx.pathParam("id");
+    UUID requestId = UUID.fromString(requestIdStr);
+
+    creditService.getComputeRequestById(requestId).compose(request -> {
+        if (request == null) {
+          return Future.failedFuture(new DxNotFoundException("Compute request not found"));
+        }
+
+        if (!request.userId().equals(userId)) {
+          return Future.failedFuture(new DxForbiddenException("User is not authorized to delete this compute request"));
+        }
+
+        if (!request.status().equals(Status.PENDING.getStatus())) {
+          return Future.failedFuture(new DxBadRequestException("Only pending compute requests can be deleted"));
+        }
+
+        return creditService.deletePendingComputeRequestById(requestId);
+      })
+      .onSuccess(deleted -> {
+        AuditLog auditLog = AuditingHelper.createAuditLog(
+          ctx.user(),
+          RoutingContextHelper.getRequestPath(ctx),
+          "DELETE",
+          "Deleted Pending Compute Request"
+        );
+        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+
+        ResponseBuilder.sendSuccess(ctx, "Pending Compute Request deleted successfully", urnGenerator);
+      })
+      .onFailure(ctx::fail);
+  }
+
+}

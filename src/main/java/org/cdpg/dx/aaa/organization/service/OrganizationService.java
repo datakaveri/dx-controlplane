@@ -100,5 +100,12 @@ public interface OrganizationService {
 
   Future<UUID> getUserOrgAdminId(UUID orgId);
 
+  Future<Boolean> deleteOrganizationRequestById(UUID requestId);
+
+  Future<Boolean> deleteOrganizationJoinRequestById(UUID requestId);
+
+  Future<ProviderRoleRequest> getProviderRoleRequestByUserId(UUID userId);
+
+  Future<Boolean> deleteProviderRoleRequestById(UUID id);
 }
 

@@ -862,5 +862,229 @@ public class OrganizationHandler {
   }
 
 
+  public void getUserOrganisationRequest(RoutingContext ctx) {
+    User user = ctx.user();
+    UUID userId = UUID.fromString(user.subject());
+
+    AuditLog auditLog = AuditingHelper.createAuditLog(
+      ctx.user(),
+      RoutingContextHelper.getRequestPath(ctx),
+      "GET",
+      "Get User Organization Requests"
+    );
+
+    organizationService.getOrganizationCreateRequestsByUserId(userId)
+      .compose(requests -> {
+        List<JsonObject> result = requests.stream()
+          .map(OrganizationCreateRequest::toJson)
+          .collect(Collectors.toList());
+        return Future.succeededFuture(result);
+      })
+      .onSuccess(result -> {
+        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        ResponseBuilder.sendSuccess(ctx, result, urnGenerator);
+      })
+      .onFailure(err -> {
+        LOGGER.error("Failed to fetch organization requests for user {}: {}", userId, err.getMessage());
+        ctx.fail(err);
+      });
+  }
+
+  public void deleteOrganizationCreateRequest(RoutingContext ctx) {
+    UUID requestId = UUID.fromString(ctx.pathParam("id"));
+    User user = ctx.user();
+    UUID userId = UUID.fromString(user.subject());
+
+
+    organizationService.getOrganizationCreateRequestById(requestId)
+      .compose(request -> {
+        if (request == null) {
+          ctx.fail(new DxBadRequestException("Organization request not found"));
+          return Future.failedFuture(new DxBadRequestException("Organization request not found"));
+        }
+
+        if (!request.status().equals(Status.PENDING.getStatus())) {
+          ctx.fail(new DxBadRequestException("Only pending requests can be deleted"));
+          return Future.failedFuture(new DxBadRequestException("Only pending requests can be deleted"));
+        }
+
+        if (!request.requestedBy().equals(userId)) {
+          ctx.fail(new DxForbiddenException("User is not authorized to delete this request"));
+          return Future.failedFuture(new DxForbiddenException("User is not authorized to delete this request"));
+        }
+
+        return organizationService.deleteOrganizationRequestById(requestId)
+          .compose(deleted -> {
+            if (!deleted) {
+              return Future.failedFuture(new DxNotFoundException(
+                "Failed to delete organization request with ID: " + requestId));
+            }
+            AuditLog auditLog = AuditingHelper.createAuditLog(
+              ctx.user(),
+              RoutingContextHelper.getRequestPath(ctx),
+              "DELETE",
+              "Deleted Organization Request"
+            );
+            RoutingContextHelper.setAuditingLog(ctx, auditLog);
+            ResponseBuilder.sendSuccess(ctx, "Organization request deleted successfully", urnGenerator);
+            return Future.succeededFuture(true);
+          });
+      })
+      .onFailure(ctx::fail);
+  }
+
+
+  public void getUserJoinOrganisationRequests(RoutingContext ctx) {
+    User user = ctx.user();
+    UUID userId = UUID.fromString(user.subject());
+
+    AuditLog auditLog = AuditingHelper.createAuditLog(
+      ctx.user(),
+      RoutingContextHelper.getRequestPath(ctx),
+      "GET",
+      "Get User Join Organisation Requests"
+    );
+
+    organizationService.getOrganizationJoinRequestsByUser(userId)
+      .compose(requests -> {
+        List<JsonObject> result = requests.stream()
+          .map(OrganizationJoinRequest::toJson)
+          .collect(Collectors.toList());
+        return Future.succeededFuture(result);
+      })
+      .onSuccess(result -> {
+        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        ResponseBuilder.sendSuccess(ctx, result, urnGenerator);
+      })
+      .onFailure(err -> {
+        LOGGER.error("Failed to fetch join organisation requests for user {}: {}", userId, err.getMessage());
+        ctx.fail(err);
+      });
+  }
+
+  public void deleteUserJoinOrganisationRequests(RoutingContext ctx) {
+    UUID requestId = UUID.fromString(ctx.pathParam("id"));
+    User user = ctx.user();
+    UUID userId = UUID.fromString(user.subject());
+
+    organizationService.getOrganizationJoinRequestById(requestId)
+      .compose(request -> {
+        if (request == null) {
+          ctx.fail(new DxBadRequestException("Join organisation request not found"));
+          return Future.failedFuture(new DxBadRequestException("Join organisation request not found"));
+        }
+
+        if (!request.status().equals(Status.PENDING.getStatus())) {
+          ctx.fail(new DxBadRequestException("Only pending requests can be deleted"));
+          return Future.failedFuture(new DxBadRequestException("Only pending requests can be deleted"));
+        }
+
+        if (!request.userId().equals(userId)) {
+          ctx.fail(new DxForbiddenException("User is not authorized to delete this request"));
+          return Future.failedFuture(new DxForbiddenException("User is not authorized to delete this request"));
+        }
+
+        return organizationService.deleteOrganizationJoinRequestById(requestId)
+          .compose(deleted -> {
+            if (!deleted) {
+              return Future.failedFuture(new DxNotFoundException(
+                "Failed to delete join organisation request with ID: " + requestId));
+            }
+            AuditLog auditLog = AuditingHelper.createAuditLog(
+              ctx.user(),
+              RoutingContextHelper.getRequestPath(ctx),
+              "DELETE",
+              "Deleted Join Organisation Request"
+            );
+            RoutingContextHelper.setAuditingLog(ctx, auditLog);
+            ResponseBuilder.sendSuccess(ctx, "Join organisation request deleted successfully", urnGenerator);
+            return Future.succeededFuture(true);
+          });
+      })
+      .onFailure(ctx::fail);
+  }
+
+  public void getProviderRoleRequest(RoutingContext ctx) {
+    AuditLog auditLog = AuditingHelper.createAuditLog(
+      ctx.user(),
+      RoutingContextHelper.getRequestPath(ctx),
+      "GET",
+      "Get Provider Role Request by User"
+    );
+
+    UUID userId = UUID.fromString(ctx.user().subject());
+
+    organizationService.getProviderRoleRequestByUserId(userId) // Future<ProviderRoleRequest>
+      .compose(request -> {
+        if (request == null) {
+          return Future.failedFuture(
+            new DxNotFoundException("No provider role request found for userId: " + userId)
+          );
+        }
+
+        return userService.enrichWithUserRoles(
+          List.of(request),
+          ProviderRoleRequest::userId,
+          ProviderRoleRequest::toJson
+        ).map(list -> list.isEmpty() ? null : list.get(0));
+      })
+      .onSuccess(enriched -> {
+        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+
+        if (enriched == null) {
+          ResponseBuilder.sendSuccess(ctx, new JsonObject(), this.urnGenerator);
+        } else {
+          ResponseBuilder.sendSuccess(ctx, enriched, this.urnGenerator);
+        }
+      })
+      .onFailure(err -> {
+        LOGGER.error("Failed to fetch provider role request for user {}: {}", userId, err.getMessage());
+        ctx.fail(err);
+      });
+  }
+
+  public void deleteUserProviderRoleRequest(RoutingContext ctx) {
+    UUID userId = UUID.fromString(ctx.user().subject());
+
+    organizationService.getProviderRoleRequestByUserId(userId)
+      .compose(request -> {
+        if (request == null) {
+          return Future.failedFuture(
+            new DxNotFoundException("No provider role request found for userId: " + userId)
+          );
+        }
+
+        if (!Status.PENDING.getStatus().equalsIgnoreCase(request.status())) {
+          return Future.failedFuture(
+            new DxBadRequestException("Only pending provider role requests can be deleted")
+          );
+        }
+
+        return organizationService.deleteProviderRoleRequestById(request.id());
+      })
+      .onSuccess(deleted -> {
+        if (deleted) {
+          AuditLog auditLog = AuditingHelper.createAuditLog(
+            ctx.user(),
+            RoutingContextHelper.getRequestPath(ctx),
+            "DELETE",
+            "Deleted Provider Role Request"
+          );
+          RoutingContextHelper.setAuditingLog(ctx, auditLog);
+
+          ResponseBuilder.sendSuccess(
+            ctx,
+            "Provider Role Request deleted successfully",
+            this.urnGenerator
+          );
+        } else {
+          ctx.fail(new DxNotFoundException("Failed to delete provider role request"));
+        }
+      })
+      .onFailure(err -> {
+        LOGGER.error("Failed to delete provider role request for user {}: {}", userId, err.getMessage());
+        ctx.fail(err);
+      });
+  }
 
 }

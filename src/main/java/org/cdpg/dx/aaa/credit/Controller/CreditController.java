@@ -29,7 +29,18 @@ public class CreditController implements ApiController {
     routerBuilder
       .operation("get-auth-v2-credit")
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
-      .handler(creditHandler::getAllPendingCreditRequests);
+      .handler(creditHandler::getCreditRequests);
+
+    routerBuilder
+      .operation("get-auth-v2-user-credit")
+      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+      .handler(creditHandler::getUserCreditRequests);
+
+    routerBuilder
+      .operation("delete-auth-v2-user-credit")
+      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+      .handler(creditHandler::deletePendingCreditRequest);
+
 
     routerBuilder
       .operation("put-auth-v2-credit-request")
@@ -56,6 +67,16 @@ public class CreditController implements ApiController {
       .operation("get-auth-v2-compute-role-request")
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
       .handler(creditHandler::getAllComputeRequests);
+
+    routerBuilder
+      .operation("get-auth-v2-user-compute-role-request")
+      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+      .handler(creditHandler::getComputeRequests);
+
+    routerBuilder
+      .operation("delete-auth-v2-user-compute-role-request")
+      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+      .handler(creditHandler::deletePendingComputeRequests);
 
     routerBuilder
       .operation("put-auth-v2-compute-role-request")
