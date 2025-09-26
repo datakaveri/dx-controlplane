@@ -20,5 +20,7 @@ public interface ItemService {
 
     Future<ResponseModel> getItem(GetItemRequest request);
 
+    Future<ResponseModel> getItemWithAccessChecks(GetItemRequest request);
+
     Future<ElasticsearchResponse> patchItem(PatchItemRequest patchItemRequest);
 }

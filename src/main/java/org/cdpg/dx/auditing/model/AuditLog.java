@@ -4,4 +4,8 @@ import io.vertx.core.json.JsonObject;
 
 public interface AuditLog {
   JsonObject toJson();
+
+  default String getOrigin() {
+    return toJson().getString("origin_server");
+  }
 }

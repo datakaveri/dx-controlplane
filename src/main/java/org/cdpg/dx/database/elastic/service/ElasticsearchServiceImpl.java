@@ -3,6 +3,7 @@ package org.cdpg.dx.database.elastic.service;
 import static org.cdpg.dx.database.elastic.util.Constants.*;
 
 import co.elastic.clients.elasticsearch.ElasticsearchAsyncClient;
+import co.elastic.clients.elasticsearch._types.Refresh;
 import co.elastic.clients.elasticsearch._types.Result;
 import co.elastic.clients.elasticsearch._types.Script;
 import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
@@ -414,7 +415,6 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
 
   private Future<List<String>> executeBulkIndex(String index, List<QueryModel> models) {
     Promise<List<String>> promise = Promise.promise();
-    LOGGER.debug("Index " + index);
     BulkRequest.Builder bulkBuilder = new BulkRequest.Builder();
     models.forEach(
         queryModel -> {
@@ -427,7 +427,7 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
                   operation.index(
                       docs -> docs.index(index).id(doc.getString("id")).document(jsonData)));
         });
-    BulkRequest request = bulkBuilder.build();
+    BulkRequest request = bulkBuilder.refresh(Refresh.WaitFor).build();
     asyncClient
         .bulk(request)
         .whenComplete(
@@ -451,7 +451,7 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
   private Future<Void> executeDeleteDocument(String index, String id) {
     LOGGER.debug("Deleting document with ID: {}", id);
     Promise<Void> promise = Promise.promise();
-    DeleteRequest req = DeleteRequest.of(d -> d.index(index).id(id));
+    DeleteRequest req = DeleteRequest.of(d -> d.index(index).id(id).refresh(Refresh.WaitFor));
     asyncClient
         .delete(req)
         .whenComplete(

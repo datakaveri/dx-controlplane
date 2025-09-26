@@ -1,9 +1,15 @@
 package org.cdpg.dx.aaa.apiserver;
 
+import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
+import static org.cdpg.dx.aaa.common.Constants.VOC_CONTEXT;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.REQUEST_TABLE;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.*;
+import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.client.WebClient;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,6 +21,8 @@ import org.cdpg.dx.aaa.ActivityReport.factory.ActivityReportControllerFactory;
 // import org.cdpg.dx.aaa.accessRequest.factory.AccessRequestFactory;
 import org.cdpg.dx.aaa.activity.controller.ActivityController;
 import org.cdpg.dx.aaa.activity.factory.ActivityControllerFactory;
+import org.cdpg.dx.aaa.activity.factory.ActivityFactory;
+import org.cdpg.dx.aaa.activity.service.ActivityService;
 import org.cdpg.dx.aaa.admin.controller.AdminController;
 import org.cdpg.dx.aaa.admin.handler.AdminHandler;
 import org.cdpg.dx.aaa.asset.controller.AssetController;
@@ -27,6 +35,8 @@ import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.ingestion.service.IngestionService;
 import org.cdpg.dx.aaa.ingestion.service.IngestionServiceImpl;
+import org.cdpg.dx.aaa.connector.service.ConnectorService;
+import org.cdpg.dx.aaa.connector.service.ConnectorServiceImpl;
 import org.cdpg.dx.aaa.item.controller.ItemController;
 import org.cdpg.dx.aaa.item.factory.ItemControllerFactory;
 import org.cdpg.dx.aaa.item.service.ItemService;
@@ -40,12 +50,16 @@ import org.cdpg.dx.aaa.organization.factory.OrganizationControllerFactory;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.publicKey.controller.PublicController;
 import org.cdpg.dx.aaa.publicKey.factory.PublicKeycontrllerFactory;
+import org.cdpg.dx.aaa.resourceserver.factory.ResourceServerControllerFactory;
 import org.cdpg.dx.aaa.search.controller.SearchController;
 import org.cdpg.dx.aaa.search.factory.SearchControllerFactory;
 import org.cdpg.dx.aaa.token.controller.TokenController;
 import org.cdpg.dx.aaa.token.factory.TokenControllerFactory;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.aaa.user.service.UserServiceImpl;
+import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
+import org.cdpg.dx.acl.accessRequest.dao.impl.AccessRequestDaoImpl;
+import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
@@ -63,26 +77,45 @@ public class ControllerFactory {
   public static List<ApiController> createControllers(
       Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
 
-    final String docIndex = config.getString("docIndex");
-    final String vocContext = config.getString("vocContext");
+    final String docIndex = config.getString(DOC_INDEX);
+    final String vocContext = config.getString(VOC_CONTEXT);
     final Boolean kycRequired = config.getBoolean("kycRequired");
+    final String apdURL = config.getString(APD_URL);
 
+    WebClient webClient = WebClient.create(vertx);
+
+    final String dataPlaneUrl = config.getString("dataPlaneUrl");
     PostgresService pgService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
     DataBrokerService dataBrokerService =
         DataBrokerService.createProxy(vertx, DATA_BROKER_SERVICE_ADDRESS);
     EmailService emailService = EmailService.createProxy(vertx, EMAIL_SERVICE_ADDRESS);
     ElasticsearchService esService =
         ElasticsearchService.createProxy(vertx, ELASTIC_SERVICE_ADDRESS);
+    ActivityFactory.init(pgService);
 
-    ItemService itemService = new ItemServiceImpl(esService, docIndex);
+    // Activity Controller
+    ActivityController activityController =
+        ActivityControllerFactory.create(pgService, urnGenerator);
+    ActivityReportController activityReportController =
+        ActivityReportControllerFactory.create(pgService, vertx);
+    AccessRequestDao accessRequestDao =
+        new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
 
     String auditingExchange = config.getString("auditingExchange");
     String routingKey = config.getString("auditingRoutingKey");
+    boolean isRemoteAudit = config.getBoolean("isRemoteAudit", false);
+
+    ActivityService activityService = ActivityFactory.getActivityService();
 
     AuditingHandler auditingHandler =
-        new AuditingHandler(dataBrokerService, auditingExchange, routingKey);
+        new AuditingHandler(
+            dataBrokerService, activityService, auditingExchange, routingKey, isRemoteAudit);
 
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
+
+    ItemService itemService = new ItemServiceImpl(esService, keycloakUserService,
+        accessRequestDao, webClient, docIndex, apdURL);
+
     CreditService creditService =
         CreditControllerFactory.createService(pgService, keycloakUserService, config);
     OrganizationService organizationService =
@@ -138,11 +171,17 @@ public class ControllerFactory {
     final SearchController searchController =
         SearchControllerFactory.createSearchController(
             esService, auditingHandler, docIndex, urnGenerator);
+    IngestionService ingestionService = new IngestionServiceImpl(dataBrokerService);
+    String publishExchange = config.getString("publishExchange");
+    ConnectorService connectorService = new ConnectorServiceImpl(dataBrokerService, publishExchange);
     final ItemController itemController =
         ItemControllerFactory.createCrudController(
-            auditingHandler, esService, docIndex, vocContext, urnGenerator);
+            auditingHandler, esService, pgService, keycloakUserService, docIndex, vocContext,
+            apdURL, urnGenerator, webClient,ingestionService,connectorService,dataPlaneUrl);
 
-    // TODO create other controllers
+    ApiController resourceServerController =
+        ResourceServerControllerFactory.createController(
+            pgService, auditingHandler, urnGenerator);
 
     ClientController clientController = ClientControllerFactory.create(pgService, urnGenerator);
 
@@ -151,12 +190,7 @@ public class ControllerFactory {
 
     PublicController publicController = PublicKeycontrllerFactory.create(config, vertx);
 
-    // Activity Controller
-    ActivityController activityController =
-        ActivityControllerFactory.create(pgService, urnGenerator);
-    ActivityReportController activityReportController =
-        ActivityReportControllerFactory.create(pgService, vertx);
-    IngestionService ingestionService = new IngestionServiceImpl(dataBrokerService);
+    // ingestionService already created above for ItemController
 
     return List.of(
         organizationController,
@@ -167,6 +201,7 @@ public class ControllerFactory {
         listController,
         searchController,
         itemController,
+        resourceServerController,
         clientController,
         tokenController,
         publicController,

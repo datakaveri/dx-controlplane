@@ -49,6 +49,124 @@ servers:
     description: example server
 
 paths:
+  /resource-servers:
+    get:
+      summary: List Resource Servers
+      operationId: list resource servers
+      tags:
+        - Resource Servers
+      security:
+        - authorization: [ ]
+      description: |
+        Lists resource servers based on user role:
+        - COS Admin: Returns all resource servers
+        - ORG Admin: Returns only resource servers they created
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResourceServer'
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal Server Error
+    post:
+      summary: Create a Resource Server
+      operationId: create resource server
+      tags:
+        - Resource Servers
+      security:
+        - authorization: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceServer'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceServer'
+  /iudx/v2/resource-servers/{id}:
+    get:
+      summary: Get Resource Server by ID
+      operationId: get resource server
+      security:
+        - authorization: [ ]
+      tags:
+        - Resource Servers
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceServer'
+    put:
+      summary: Update Resource Server
+      operationId: update resource server
+      security:
+        - authorization: [ ]
+      tags:
+        - Resource Servers
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceServer'
+    delete:
+      summary: Delete Resource Server
+      operationId: delete resource server
+      security:
+        - authorization: [ ]
+      tags:
+        - Resource Servers
+      description: |
+        Deletes a resource server based on user role:
+        - COS Admin: Can delete any resource server
+        - ORG Admin: Can only delete resource servers they own
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: No Content - Resource server deleted successfully
+        '401':
+          description: Unauthorized - Invalid or missing token
+        '403':
+          description: Forbidden - Insufficient permissions or trying to delete resource server you don't own
+        '404':
+          description: Not Found - Resource server not found
   /iudx/v2/auth/organisations/requests:
     get:
       summary: 'AAA-001-PF Admin: Get Organisation Creation requests'
@@ -2263,6 +2381,7 @@ paths:
                       hasNext: true
                       hasPrevious: false
       operationId: get-auth-v2-credit
+
       security:
         - authorization: [ ]
     post:
@@ -4420,8 +4539,8 @@ paths:
           required: true
           schema:
             type: string
-            minLength: 40
-            maxLength: 40
+            minLength: 10
+            maxLength: 100
       responses:
         "200":
           description: Success
@@ -4726,6 +4845,95 @@ paths:
           source: |
             curl --location --request DELETE 'https://example.com/iudx/v2/cat/item?id=uuid' \
             --header 'token: <token>'
+  /iudx/v2/cat/item/access:
+    get:
+      tags:
+        - Entity
+      description: >
+        Get an item with **access policy enforcement**.
+        - If `accessPolicy=open`, the item is accessible to anyone.
+        - If `accessPolicy=restricted`, user access will be validated.
+        - If `accessPolicy=private`, only the owner can access it.
+
+        If a Bearer token is provided in the Authorization header, the request will be authenticated, and access checks will be performed accordingly.
+
+        ❗ For items with `accessPolicy=restricted` or `accessPolicy=private`, a valid token **must** be provided.
+        Otherwise, the request will be rejected with a **401 Unauthorized** error.
+      operationId: get item with accessPolicy
+      security:
+        - optionalAuth: [ ]
+      parameters:
+        - name: id
+          in: query
+          description: ID of the DX Entity
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Found the item (access granted).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/successResponseForGetAIModelEntity'
+                  - $ref: '#/components/schemas/successResponseForGetDataBankEntity'
+                  - $ref: '#/components/schemas/successResponseForGetAdexAppsEntity'
+        '400':
+          description: Invalid ID.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/invalidIdErrorResponse'
+        '401':
+          description: Unauthorized – missing or invalid token for `restricted` or `private` items.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponseWithObjects'
+              examples:
+                MissingToken:
+                  value:
+                    type: 'urn:dx:cat:MissingAuthorizationToken'
+                    title: 'Unauthorized'
+                    detail: 'Authorization token is required for restricted/private item but not provided'
+                InvalidToken:
+                  value:
+                    type: 'urn:dx:cat:InvalidAuthorizationToken'
+                    title: 'Unauthorized'
+                    detail: 'Token is invalid for restricted/private item'
+        '403':
+          description: Forbidden – user does not have access based on `accessPolicy`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponseWithObjects'
+              examples:
+                Forbidden:
+                  value:
+                    type: 'urn:dx:cat:AccessDenied'
+                    title: 'Forbidden'
+                    detail: 'User does not have access to this item'
+        '404':
+          description: Didn't find the item.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponseForGetEntity'
+              example:
+                type: "urn:dx:cat:ItemNotFound"
+                title: 'error'
+                totalHits: 0
+                results: [ ]
+                details: "doc doesn't exist"
+
+      x-codeSamples:
+        - lang: cURL
+          label: get item with accessPolicy
+          source: |
+            curl --location --request GET 'https://example.com/iudx/v2/cat/item/access?id=uuid' \
+            --header 'Authorization: Bearer <token>'
   /iudx/v2/cat/organisation/asset:
     patch:
       tags:
@@ -4874,10 +5082,10 @@ paths:
     post:
       summary: Retrieve organisation assets with filters
       description: >
-          Fetch all assets belonging to the organisation using advanced filters.
-          Supports property-based, temporal, numeric range, and full-text search filters.
+        Fetch all assets belonging to the organisation using advanced filters.
+        Supports property-based, temporal, numeric range, and full-text search filters.
 
-          **Note:** This endpoint is restricted to users with the `org_admin` role.
+        **Note:** This endpoint is restricted to users with the `org_admin` role.
       operationId: get org assets with filters
       tags:
         - Organisation Assets Management
@@ -5007,9 +5215,9 @@ paths:
     post:
       summary: Retrieve all platform assets with filters
       description: >
-          Fetch all assets belonging to the platform using filters.
-          Supports property-based, temporal, numeric range, and full-text search filters.
-          **Note:** This endpoint can only be accessed by users with the `cos_admin` role.
+        Fetch all assets belonging to the platform using filters.
+        Supports property-based, temporal, numeric range, and full-text search filters.
+        **Note:** This endpoint can only be accessed by users with the `cos_admin` role.
       operationId: get platform assets with filters
       tags:
         - Platform Assets Management
@@ -5764,6 +5972,8 @@ paths:
         - Activity Logs
       operationId: get-ActivityLogs-for-consumer
       summary: Consumer Activity
+      security:
+        - authorization: [ ]
       description: >
         Retrieve a list of activity logs for the authenticated DX user.
         This endpoint allows users to view their own activity and filter logs based on <b>assetType</b>, <b>operation</b> and a specified time range (time, endtime).
@@ -5821,12 +6031,13 @@ paths:
       tags:
         - Activity Logs
       operationId: get-activityLogs-for-admin
+      security:
+        - authorization: [ ]
       summary: Admin Activity
       description: >
         Retrieve a list of activity logs for DX users.
         This endpoint allows filtering activity logs based on <b>userId</b>,<b>assetType</b>, <b>operation</b> and a specified time range (time, endtime).
         Use this API to get detailed audit records for administrative purposes, including pagination support for large result sets.</br>
-        Note: **Platform admins** (`cos_admin`) can access all activity logs, while **organization admins** (`cos_org`) can access logs only for their own organization.
       parameters:
         - $ref: '#/components/parameters/UserIdParam'
         - $ref: '#/components/parameters/AssetTypeParam'
@@ -5888,6 +6099,8 @@ paths:
       description: Csv file for a list of activity logs for admin.
         **Platform admins** (`cos_admin`) can access all activity logs, while **organization admins** (`cos_org`) can access logs only for their own organization.
 
+      security:
+        - authorization: [ ]
       parameters:
         - $ref: '#/components/parameters/UserIdParam'
         - $ref: '#/components/parameters/AssetTypeParam'
@@ -5944,6 +6157,8 @@ paths:
       operationId: get-consumer-report
       summary: Consumer report
       description: Csv file for a list of activity logs for consumer.
+      security:
+        - authorization: [ ]
       parameters:
         - $ref: '#/components/parameters/AssetTypeParam'
         - $ref: '#/components/parameters/OperationParam'
@@ -6206,6 +6421,29 @@ components:
       schema:
         type: string
   schemas:
+    ResourceServer:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Data Kaveri
+        url:
+          type: string
+          example: datakaveri.org
+        type:
+          type: string
+          enum: [ngsild, gateway, ogc, file]
+        visibility:
+          type: string
+          enum: [PUBLIC, PRIVATE]
+        access_type:
+          type: array
+          items:
+            type: string
+          example: ["ATTR"]
+        injection_type:
+          type: string
+          example: api
     standardResourceAlreadyExistErrorResponse:
       title: standardResourceAlreadyExistErrorResponse
       properties:
@@ -10029,6 +10267,19 @@ components:
           type: string
         license:
           type: string
+        resourceServer:
+          type: array
+          description: List of resource servers associated with the dataset
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              type:
+                type: string
+                enum: [ogc, ngsild, file, gateway]
+            required:
+              - type
       required:
         - name
         - type
@@ -10044,6 +10295,7 @@ components:
         - verifiedBy
         - uploadFrequency
         - license
+        - resourceServer
       additionalProperties: true
       example:
         name: 'subdistrict-weather-info'
@@ -10070,6 +10322,15 @@ components:
         verifiedBy: 'Ministry of Earth Sciences'
         uploadFrequency: 'Weekly'
         license: 'CC-BY 4.0'
+        resourceServer:
+          - name: "OGC"
+            type: "ogc"
+          - name: "NGSI-LD"
+            type: "ngsild"
+          - name: "FILE"
+            type: "file"
+          - name: "GATEWAY"
+            type: "gateway"
     exampleEntityPotentialApps:
       type: object
       title: AI Use Case Template Schema

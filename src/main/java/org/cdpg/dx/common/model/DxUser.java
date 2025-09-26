@@ -2,10 +2,8 @@ package org.cdpg.dx.common.model;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.cdpg.dx.aaa.organization.models.OrganizationJoinRequest;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -79,6 +77,26 @@ public record DxUser(
                 user.github_account(),
                 user.account_enabled()// retain createdAt
         );
+    }
+
+    @Override
+    public String email() {
+        return email;
+    }
+
+    @Override
+    public String familyName() {
+        return familyName;
+    }
+
+    @Override
+    public String givenName() {
+        return givenName;
+    }
+
+    @Override
+    public UUID sub() {
+        return sub;
     }
 }
 

@@ -10,11 +10,18 @@ import org.cdpg.dx.database.postgres.service.PostgresService;
 
 public class ActivityControllerFactory {
 
-  public static ActivityController create(PostgresService postgresService, URNGenerator urnGenerator) {
+  private static ActivityService activityService;
+
+  public static ActivityController create(
+      PostgresService postgresService, URNGenerator urnGenerator) {
     ActivityLogDao activityLogDao = new ActivityLogDaoImpl(postgresService);
 
-    ActivityService activityService = new ActivityServiceImpl(activityLogDao);
+    activityService = new ActivityServiceImpl(activityLogDao);
 
-    return new ActivityController(activityService,urnGenerator);
+    return new ActivityController(activityService, urnGenerator);
+  }
+
+  public static ActivityService getActivityService() {
+    return activityService;
   }
 }

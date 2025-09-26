@@ -14,7 +14,7 @@ public class DxPgExceptionMapper {
         case "42601" -> new DxPgException("Syntax error", pgEx);
 
         // Class 23 — Integrity Constraint Violation
-        case "23505" -> new UniqueConstraintViolationException(pgEx.getMessage());
+        case "23505" -> new UniqueConstraintViolationException("Entry already exists", pgEx);
         case "23503" -> new DxPgException("Foreign key violation", pgEx);
         case "23502" -> new DxPgException("Not null violation", pgEx);
         case "23514" -> new DxPgException("Check constraint violation", pgEx);

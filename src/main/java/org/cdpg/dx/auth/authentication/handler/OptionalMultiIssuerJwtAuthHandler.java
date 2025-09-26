@@ -6,8 +6,6 @@ import io.vertx.ext.auth.jwt.JWTAuth;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.AuthenticationHandler;
 import java.util.Base64;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.auth.authentication.client.JwksResolver;
@@ -18,12 +16,10 @@ public class OptionalMultiIssuerJwtAuthHandler implements AuthenticationHandler 
   private static final Logger LOGGER =
       LogManager.getLogger(OptionalMultiIssuerJwtAuthHandler.class);
 
-  private final Map<String, JWTAuth> authProviders;
   private final JwksResolver jwksResolver;
 
   public OptionalMultiIssuerJwtAuthHandler(JwksResolver resolver) {
     this.jwksResolver = resolver;
-    this.authProviders = new ConcurrentHashMap<>();
   }
 
   private static String extractIssuer(String token) {
@@ -66,15 +62,7 @@ public class OptionalMultiIssuerJwtAuthHandler implements AuthenticationHandler 
   }
 
   private Future<JWTAuth> getOrCreateAuth(String issuer) {
-    if (authProviders.containsKey(issuer)) {
-      return Future.succeededFuture(authProviders.get(issuer));
-    }
-    return jwksResolver
-        .resolve(issuer)
-        .map(
-            jwtAuth -> {
-              authProviders.put(issuer, jwtAuth);
-              return jwtAuth;
-            });
+    LOGGER.debug("Resolving JWTAuth for issuer: {}", issuer);
+    return jwksResolver.resolve(issuer);
   }
 }

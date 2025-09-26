@@ -30,14 +30,27 @@ public class JwksResolver {
     this.ignoreExpiry = issuerConfig.getBoolean("jwtIgnoreExpiry", false);
     this.leeway = issuerConfig.getInteger("jwtLeeway", 60);
     this.jwksClient = new JwksClient(vertx, aaaKeyProvider);
+
+    // reset cache every N milliseconds
+    long resetIntervalMs =
+        issuerConfig.getLong("jwksRefreshIntervalMs", 600_000L); // default 10 minutes = 600,000 ms
+
+    vertx.setPeriodic(
+        resetIntervalMs,
+        id -> {
+          LOGGER.info("Resetting JWKS cache after {} ms", resetIntervalMs);
+          cache.clear();
+        });
   }
 
   public Future<JWTAuth> resolve(String issuer) {
     LOGGER.debug("Resolving JWTAuth for issuer: {}", issuer);
 
     if (cache.containsKey(issuer)) {
+      LOGGER.info("cache hit for issuer {}", issuer);
       return Future.succeededFuture(cache.get(issuer));
     }
+    LOGGER.info("cache miss - need to create JWTAuth provider for issuer {}", issuer);
 
     JsonObject cfg = issuerConfig.getJsonObject(issuer);
     if (cfg == null) {
