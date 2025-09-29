@@ -4062,6 +4062,274 @@ paths:
       operationId: post-auth-v2-kyc-revoke
       security:
         - authorization: [ ]
+
+  /iudx/v2/auth/user/description/info:
+    post:
+      summary: (ADARV) Add user info
+      tags:
+        - Role APIs
+      operationId: post-auth-v2-user-info
+      security:
+        - authorization: [ ]
+      requestBody:
+        description: This endpoint allows adding user information.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                about:
+                  type: string
+                  description: Short description about the user
+                  example: "Lorem ipsum, dolor sit amet consectetur adipisicing elit..."
+                experience:
+                  type: array
+                  description: List of work experiences
+                  items:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                        example: "ICMR Researcher"
+                      time:
+                        type: string
+                        example: "Jan 2020–present (4yrs)"
+                      location:
+                        type: string
+                        example: "Delhi"
+                education:
+                  type: array
+                  description: Educational qualifications
+                  items:
+                    type: object
+                    properties:
+                      institute:
+                        type: string
+                        example: "IIT Delhi"
+                      time:
+                        type: string
+                        example: "2016–2020"
+                      location:
+                         type: string
+                         example: "Delhi"
+                projects:
+                    type: array
+                    description: List of projects completed by the user
+                    items:
+                      type: object
+                      properties:
+                        institute:
+                          type: string
+                          example: "ICMR"
+                        time:
+                          type: string
+                          example: "2021"
+                        location:
+                          type: string
+                          example: "Delhi"
+                        about:
+                          type: string
+                          example: "Developed a system for secure data sharing"
+                publications:
+                      type: array
+                      description: List of publications by the user
+                      items:
+                        type: object
+                        properties:
+                          institute:
+                            type: string
+                            example: "ICMR"
+                          time:
+                            type: string
+                            example: "2021"
+                          location:
+                            type: string
+                            example: "Delhi"
+                          about:
+                            type: string
+                            example: "Paper on privacy-preserving IoT data sharing"
+                skills:
+                      type: array
+                      description: List of user skills
+                      items:
+                        type: string
+                        example: "React"
+      responses:
+        '200':
+          description: User info added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: "success"
+                  title:
+                    type: string
+                    example: "User info added"
+                  result:
+                    type: object
+                    properties:
+                      about:
+                        type: string
+                        example: "Lorem ipsum..."
+                      skills:
+                        type: array
+                        items:
+                          type: string
+                        example: [ "React", "Angular" ]
+
+    patch:
+      summary: (ADARV)Update user info
+      tags:
+        - Role APIs
+      operationId: patch-auth-v2-user-info
+      security:
+        - authorization: [ ]
+      requestBody:
+        description: This endpoint allows updating user information partially. Only fields included in the request will be updated.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                about:
+                  type: string
+                  description: Short description about the user
+                  example: "Updated description about the user"
+                experience:
+                  type: array
+                  description: List of work experiences to update
+                  items:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                        example: "Senior ICMR Researcher"
+                      time:
+                        type: string
+                        example: "Jan 2020–present (5yrs)"
+                      location:
+                        type: string
+                        example: "Delhi"
+                education:
+                  type: array
+                  description: Educational qualifications to update
+                  items:
+                    type: object
+                    properties:
+                      institute:
+                        type: string
+                        example: "IIT Delhi"
+                      time:
+                        type: string
+                        example: "2016–2020"
+                      location:
+                        type: string
+                        example: "Delhi"
+                projects:
+                  type: array
+                  description: List of projects to update
+                  items:
+                    type: object
+                    properties:
+                      institute:
+                        type: string
+                        example: "ICMR"
+                      time:
+                        type: string
+                        example: "2021"
+                      location:
+                        type: string
+                        example: "Delhi"
+                      about:
+                        type: string
+                        example: "Improved secure data sharing system"
+                publications:
+                  type: array
+                  description: List of publications to update
+                  items:
+                    type: object
+                    properties:
+                      institute:
+                        type: string
+                        example: "ICMR"
+                      time:
+                        type: string
+                        example: "2021"
+                      location:
+                        type: string
+                        example: "Delhi"
+                      about:
+                        type: string
+                        example: "Paper on privacy-preserving IoT data sharing"
+                skills:
+                  type: array
+                  description: List of user skills to update
+                  items:
+                    type: string
+                    example: "React"
+      responses:
+        '200':
+          description: User info updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: "success"
+                  title:
+                    type: string
+                    example: "User info updated"
+                  result:
+                    type: object
+                    properties:
+                      about:
+                        type: string
+                        example: "Updated description about the user"
+                      skills:
+                        type: array
+                        items:
+                          type: string
+                        example: [ "React", "Angular" ]
+
+    get:
+      summary: (ADARV) Get user info
+      tags:
+        - Role APIs
+      operationId: get-auth-v2-user-info   # ✅ placed before responses
+      security:
+        - authorization: [ ]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: "success"
+                  title:
+                    type: string
+                    example: "Fetched user info"
+                  result:
+                    type: object
+                    properties:
+                      about:
+                        type: string
+                        example: "Lorem ipsum..."
+                      skills:
+                        type: array
+                        items:
+                          type: string
+                        example: [ "React", "Angular" ]
   /iudx/v2/auth/organisations/requests/report:
     get:
       summary: Get Report for Organsation Create Request

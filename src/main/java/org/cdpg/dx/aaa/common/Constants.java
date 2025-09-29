@@ -1,5 +1,7 @@
 package org.cdpg.dx.aaa.common;
 
+import org.bouncycastle.pqc.crypto.util.PQCOtherInfoGenerator;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.regex.Pattern;
@@ -19,6 +21,7 @@ public class Constants {
     public static final String DATABASE_PORT = "databasePort";
     public static final String DATABASE_UNAME = "databaseUser";
     public static final String DOC_INDEX = "docIndex";
+    public static final String DOC_USER_INDEX = "docUserIndex";
     public static final String VOC_CONTEXT = "vocContext";
 
     public static final String PUBLIC_KEY = "publicKey";

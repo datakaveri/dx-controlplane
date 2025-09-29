@@ -1,7 +1,6 @@
 package org.cdpg.dx.aaa.apiserver;
 
-import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
-import static org.cdpg.dx.aaa.common.Constants.VOC_CONTEXT;
+import static org.cdpg.dx.aaa.common.Constants.*;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.REQUEST_TABLE;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.*;
@@ -55,6 +54,8 @@ import org.cdpg.dx.aaa.search.controller.SearchController;
 import org.cdpg.dx.aaa.search.factory.SearchControllerFactory;
 import org.cdpg.dx.aaa.token.controller.TokenController;
 import org.cdpg.dx.aaa.token.factory.TokenControllerFactory;
+import org.cdpg.dx.aaa.user.controller.UserController;
+import org.cdpg.dx.aaa.user.factory.UserControllerFactory;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.aaa.user.service.UserServiceImpl;
 import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
@@ -78,6 +79,7 @@ public class ControllerFactory {
       Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
 
     final String docIndex = config.getString(DOC_INDEX);
+    final String docUserIndex = config.getString(DOC_USER_INDEX);
     final String vocContext = config.getString(VOC_CONTEXT);
     final Boolean kycRequired = config.getBoolean("kycRequired");
     final String apdURL = config.getString(APD_URL);
@@ -120,8 +122,10 @@ public class ControllerFactory {
         CreditControllerFactory.createService(pgService, keycloakUserService, config);
     OrganizationService organizationService =
         OrganizationControllerFactory.createService(pgService, keycloakUserService, itemService);
-    UserService userService =
-        new UserServiceImpl(keycloakUserService, organizationService, creditService);
+//    UserService userService =
+//        new UserServiceImpl(keycloakUserService, organizationService, creditService ,esService,docIndex);
+
+    UserService userService = UserControllerFactory.createService(keycloakUserService, organizationService, creditService ,esService,docUserIndex);
     EmailComposer emailComposer =
         new EmailComposer(
             emailService,
@@ -137,6 +141,9 @@ public class ControllerFactory {
 
     ApiController creditApiController =
         CreditControllerFactory.create(creditService, emailComposer, userService, urnGenerator);
+
+    ApiController userController = UserControllerFactory.create(userService, urnGenerator);
+
     KYCHandler kycHandler =
         KYCFactory.createHandler(vertx, config, creditService, pgService, urnGenerator);
     ApiController kycController = new KYCController(kycHandler);
@@ -205,6 +212,7 @@ public class ControllerFactory {
         clientController,
         tokenController,
         publicController,
+        userController,
         activityController,
         activityReportController);
   }
