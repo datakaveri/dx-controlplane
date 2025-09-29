@@ -49,7 +49,7 @@ servers:
     description: example server
 
 paths:
-  /resource-servers:
+  /iudx/v2/resource_servers:
     get:
       summary: List Resource Servers
       operationId: list resource servers
@@ -94,7 +94,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResourceServer'
-  /iudx/v2/resource-servers/{id}:
+  /iudx/v2/resource_servers/{id}:
     get:
       summary: Get Resource Server by ID
       operationId: get resource server
