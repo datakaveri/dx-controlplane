@@ -9522,7 +9522,6 @@ components:
         - tags
         - accessPolicy
         - organizationType
-        - organizationId
         - modelType
         - fileFormat
         - industry
@@ -9549,7 +9548,6 @@ components:
           - machine learning
           - training
           - algorithm
-        organizationId: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
         accessPolicy: 'RESTRICTED'
         organizationType: 'Private'
         department: 'Agriculture and Co-operation'
@@ -9633,7 +9631,6 @@ components:
         - shortDescription
         - description
         - tags
-        - organizationId
         - accessPolicy
         - organizationType
         - fileFormat
@@ -9656,7 +9653,6 @@ components:
           - weather
           - rainfall
           - temperature
-        organizationId: '{{UUID}}'
         accessPolicy: 'RESTRICTED'
         organizationType: 'Private'
         fileFormat: 'xlsx'
