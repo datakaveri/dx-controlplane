@@ -119,7 +119,11 @@ public class ItemController implements ApiController {
     JsonObject doc = injectKeycloakInfoIfApplicable(ctx, body, itemType);
 
     String method = ctx.request().method().toString();
-    doc.put(CONTEXT, vocContext);
+
+    // Add @context only if user hasn't provided one
+    if (!doc.containsKey(CONTEXT) || doc.getString(CONTEXT).isBlank()) {
+      doc.put(CONTEXT, vocContext);
+    }
 
     Promise<JsonObject> validationPromise = Promise.promise();
     validateItemExistence(ctx, itemType, doc, method, validationPromise);
@@ -207,7 +211,14 @@ public class ItemController implements ApiController {
 
       String kcId = ctx.user().principal().getString(SUB);
       String orgName = ctx.user().principal().getString(ORG_NAME);
-      body.put(PROVIDER_USER_ID, kcId).put(DEPARTMENT, orgName).put(UPLOADED_BY, orgName);
+      String orgId = ctx.user().principal().getString(ORGANISATION_ID);
+      body.put(PROVIDER_USER_ID, kcId)
+          .put(DEPARTMENT, orgName).
+          put(UPLOADED_BY, orgName);
+      // Only set organizationId if it exists in token and not already provided in payload
+      if (orgId != null && !orgId.isBlank()) {
+        body.put(ORGANIZATION_ID, orgId);
+      }
       body.put("roles", ctx.user().principal().getJsonObject("realm_access").getJsonArray("roles"));
     }
     return body;

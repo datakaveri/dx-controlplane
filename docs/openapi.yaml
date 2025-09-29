@@ -49,7 +49,7 @@ servers:
     description: example server
 
 paths:
-  /resource-servers:
+  /iudx/v2/resource_servers:
     get:
       summary: List Resource Servers
       operationId: list resource servers
@@ -94,7 +94,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResourceServer'
-  /iudx/v2/resource-servers/{id}:
+  /iudx/v2/resource_servers/{id}:
     get:
       summary: Get Resource Server by ID
       operationId: get resource server
@@ -10443,7 +10443,6 @@ components:
         - tags
         - accessPolicy
         - organizationType
-        - organizationId
         - modelType
         - fileFormat
         - industry
@@ -10470,7 +10469,6 @@ components:
           - machine learning
           - training
           - algorithm
-        organizationId: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
         accessPolicy: 'RESTRICTED'
         organizationType: 'Private'
         department: 'Agriculture and Co-operation'
@@ -10554,7 +10552,6 @@ components:
         - shortDescription
         - description
         - tags
-        - organizationId
         - accessPolicy
         - organizationType
         - fileFormat
@@ -10577,7 +10574,6 @@ components:
           - weather
           - rainfall
           - temperature
-        organizationId: '{{UUID}}'
         accessPolicy: 'RESTRICTED'
         organizationType: 'Private'
         fileFormat: 'xlsx'
