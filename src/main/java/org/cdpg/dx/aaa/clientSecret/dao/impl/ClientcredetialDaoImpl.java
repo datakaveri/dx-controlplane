@@ -68,4 +68,12 @@ public class ClientcredetialDaoImpl extends AbstractBaseDAO<ClientCredentials>
               return Future.failedFuture(BaseDxException.from(err));
             });
   }
+
+  @Override
+  public Future<ClientCredentials> upsertClientCredentials(
+      ClientCredentials clientCredentials,
+      List<String> conflictColumns,
+      List<String> updateColumns) {
+    return upsert(clientCredentials, conflictColumns, updateColumns);
+  }
 }

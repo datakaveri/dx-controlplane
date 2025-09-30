@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.common.exception.BaseDxException;
-import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.DxPgException;
 import org.cdpg.dx.common.exception.NoRowFoundException;
 import org.cdpg.dx.common.request.PaginatedRequest;
@@ -66,8 +65,7 @@ public abstract class AbstractBaseDAO<T extends BaseEntity<T>> implements BaseDA
 
   @Override
   public Future<T> get(UUID id) {
-    Condition condition =
-        new Condition(idField, Condition.Operator.EQUALS, List.of(id.toString()));
+    Condition condition = new Condition(idField, Condition.Operator.EQUALS, List.of(id.toString()));
     SelectQuery query = new SelectQuery(tableName, List.of("*"), condition, null, null, null, null);
 
     return postgresService
@@ -75,7 +73,8 @@ public abstract class AbstractBaseDAO<T extends BaseEntity<T>> implements BaseDA
         .compose(
             result -> {
               if (result.getRows().isEmpty()) {
-                return Future.failedFuture(new NoRowFoundException("Select query returned no rows id :" + id));
+                return Future.failedFuture(
+                    new NoRowFoundException("Select query returned no rows id :" + id));
               }
               return Future.succeededFuture(fromJson.apply(result.getRows().getJsonObject(0)));
             })
@@ -171,8 +170,7 @@ public abstract class AbstractBaseDAO<T extends BaseEntity<T>> implements BaseDA
 
   @Override
   public Future<Boolean> delete(UUID id) {
-    Condition condition =
-        new Condition(idField, Condition.Operator.EQUALS, List.of(id.toString()));
+    Condition condition = new Condition(idField, Condition.Operator.EQUALS, List.of(id.toString()));
     DeleteQuery query = new DeleteQuery(tableName, condition, null, null);
 
     return postgresService
@@ -238,6 +236,33 @@ public abstract class AbstractBaseDAO<T extends BaseEntity<T>> implements BaseDA
                   tableName,
                   err.getMessage(),
                   err);
+              return Future.failedFuture(BaseDxException.from(err));
+            });
+  }
+
+  public Future<T> upsert(T entity, List<String> conflictColumns, List<String> updateColumns) {
+    var dataMap = entity.toNonEmptyFieldsMap();
+
+    UpsertQuery query =
+        new UpsertQuery(
+            tableName,
+            List.copyOf(dataMap.keySet()),
+            List.copyOf(dataMap.values()),
+            conflictColumns,
+            updateColumns);
+
+    return postgresService
+        .upsert(query)
+        .compose(
+            result -> {
+              if (result.getRows().isEmpty()) {
+                return Future.failedFuture("Upsert query returned no rows.");
+              }
+              return Future.succeededFuture(fromJson.apply(result.getRows().getJsonObject(0)));
+            })
+        .recover(
+            err -> {
+              LOGGER.error("Error upserting into {}: {}", tableName, err.getMessage(), err);
               return Future.failedFuture(BaseDxException.from(err));
             });
   }

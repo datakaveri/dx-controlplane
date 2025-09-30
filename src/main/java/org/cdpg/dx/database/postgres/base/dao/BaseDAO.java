@@ -25,4 +25,6 @@ public interface BaseDAO<T extends BaseEntity<T>> {
   Future<PaginatedResult<T>> getAll(PaginatedRequest request);
 
   Future<PaginatedResult<T>> getAllWithFilters(PaginatedRequest request);
+
+  public Future<T> upsert(T entity, List<String> conflictColumns, List<String> updateColumns);
 }

@@ -6,6 +6,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.cdpg.dx.database.postgres.models.*;
 
+import java.util.function.Function;
+
 @VertxGen
 @ProxyGen
 public interface PostgresService {
@@ -23,4 +25,6 @@ public interface PostgresService {
   Future<QueryResult> select(SelectQuery query, boolean isCountQueryEnabled);
 
   Future<Boolean> ping();
+
+    Future<QueryResult> upsert(UpsertQuery query);
 }
