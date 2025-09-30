@@ -512,6 +512,65 @@ public class CreditServiceImpl implements CreditService {
       });
   }
 
+  @Override
+  public Future<List<CreditRequest>> getCreditRequestsByUserId(UUID userId) {
+    Map<String, Object> filter = Map.of(
+      Constants.USER_ID, userId.toString()
+    );
+
+    return creditRequestDAO.getAllWithFilters(filter)
+      .compose(requests -> {
+        if (requests.isEmpty()) {
+          return Future.failedFuture(new DxNotFoundException(
+            "No pending credit request found for userId: " + userId));
+        }
+        return Future.succeededFuture(requests);
+      });
+  }
+
+  @Override
+  public Future<ComputeRole> getComputeRequestByUserId(UUID userId) {
+    Map<String, Object> filter = Map.of(
+      Constants.USER_ID, userId.toString()
+    );
+
+    return computeRoleDAO.getAllWithFilters(filter)
+      .compose(requests -> {
+        if (requests.isEmpty()) {
+          return Future.failedFuture(new DxNotFoundException(
+            "No pending compute request found for userId: " + userId));
+        }
+        return Future.succeededFuture(requests.get(0));  // since compute request can be made only once
+      });
+  }
+
+  @Override
+  public Future<Boolean> deletePendingCreditRequestById(UUID requestId) {
+        return creditRequestDAO.delete(requestId)
+          .compose(deleted -> {
+            if (!deleted) {
+              return Future.failedFuture(new DxNotFoundException(
+                "Failed to delete pending credit request with ID: " + requestId));
+            }
+            return Future.succeededFuture(true);
+          });
+
+  }
+
+  @Override
+  public Future<Boolean> deletePendingComputeRequestById(UUID requestId) {
+        return computeRoleDAO.delete(requestId)
+          .compose(deleted -> {
+            if (!deleted) {
+              return Future.failedFuture(
+                new DxNotFoundException("Failed to delete pending compute request with ID: " + requestId)
+              );
+            }
+            return Future.succeededFuture(true);
+          });
+  }
+
+
 
 
 }

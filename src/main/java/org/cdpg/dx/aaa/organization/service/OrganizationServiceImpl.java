@@ -1,6 +1,7 @@
 package org.cdpg.dx.aaa.organization.service;
 
 import io.vertx.core.Future;
+import org.cdpg.dx.aaa.credit.models.CreditRequest;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.organization.dao.*;
 import org.cdpg.dx.aaa.organization.models.*;
@@ -28,15 +29,18 @@ public class OrganizationServiceImpl implements OrganizationService {
   private final OrganizationCreateRequestDAO createRequestDAO;
   private final OrganizationUserDAO orgUserDAO;
   private final OrganizationDAO orgDAO;
+  private final OrganizationJoinRequestDAO organizationJoinRequestDAO;
   private final OrganizationJoinRequestDAO joinRequestDAO;
   private final ProviderRoleRequestDAO providerRequestDAO;
   private final KeycloakUserService keycloakUserService;
   private final ItemService itemService;
 
+
   public OrganizationServiceImpl(OrganizationDAOFactory factory, KeycloakUserService keycloakUserService,ItemService itemService) {
     this.createRequestDAO = factory.organizationCreateRequest();
     this.orgUserDAO = factory.organizationUserDAO();
     this.orgDAO = factory.organizationDAO();
+    this.organizationJoinRequestDAO = factory.organizationJoinRequestDAO();
     this.joinRequestDAO = factory.organizationJoinRequestDAO();
     this.providerRequestDAO = factory.providerRoleRequestDAO();
     this.keycloakUserService = keycloakUserService;
@@ -521,10 +525,16 @@ public class OrganizationServiceImpl implements OrganizationService {
       Constants.STATUS, Status.GRANTED.getStatus()
     );
 
+    Map<String, Object> rejectedFilter = Map.of(
+      Constants.USER_ID, userId.toString(),
+      Constants.STATUS, Status.REJECTED.getStatus()
+    );
+
     Future<List<OrganizationJoinRequest>> pendingFuture = joinRequestDAO.getAllWithFilters(pendingFilter);
     Future<List<OrganizationJoinRequest>> grantedFuture = joinRequestDAO.getAllWithFilters(grantedFilter);
+    Future<List<OrganizationJoinRequest>> rejectedFuture = joinRequestDAO.getAllWithFilters(rejectedFilter);
 
-    return Future.all(pendingFuture, grantedFuture)
+    return Future.all(pendingFuture, grantedFuture,rejectedFuture)
       .map(cf -> {
         List<OrganizationJoinRequest> merged = new java.util.ArrayList<>();
         merged.addAll(cf.resultAt(0));
@@ -544,10 +554,17 @@ public class OrganizationServiceImpl implements OrganizationService {
       Constants.STATUS, Status.GRANTED.getStatus()
     );
 
+    Map<String, Object> rejectedFilter = Map.of(
+      Constants.REQUESTED_BY, userId.toString(),
+      Constants.STATUS, Status.REJECTED.getStatus()
+    );
+
     Future<List<OrganizationCreateRequest>> pendingFuture = createRequestDAO.getAllWithFilters(pendingFilter);
     Future<List<OrganizationCreateRequest>> grantedFuture = createRequestDAO.getAllWithFilters(grantedFilter);
+    Future<List<OrganizationCreateRequest>> rejectedFuture = createRequestDAO.getAllWithFilters(rejectedFilter);
 
-    return Future.all(pendingFuture, grantedFuture)
+
+    return Future.all(pendingFuture, grantedFuture,rejectedFuture)
       .map(cf -> {
         List<OrganizationCreateRequest> merged = new java.util.ArrayList<>();
         merged.addAll(cf.resultAt(0));
@@ -706,6 +723,76 @@ public class OrganizationServiceImpl implements OrganizationService {
       }
       return Future.succeededFuture(orgUsers.get(0).userId());
     });
+  }
+
+  @Override
+  public Future<Boolean> deleteOrganizationRequestById(UUID requestId) {
+    return orgDAO.get(requestId)
+      .compose(request -> {
+        if (request == null) {
+          return Future.failedFuture(
+            new DxNotFoundException("Organization request not found for ID: " + requestId));
+        }
+
+        return createRequestDAO.delete(requestId)
+          .compose(deleted -> {
+            if (!deleted) {
+              return Future.failedFuture(
+                new DxNotFoundException("Failed to delete organization request with ID: " + requestId));
+            }
+            return Future.succeededFuture(true);
+          });
+      });
+  }
+
+  @Override
+  public Future<Boolean> deleteOrganizationJoinRequestById(UUID requestId) {
+    return orgDAO.get(requestId)
+      .compose(request -> {
+        if (request == null) {
+          return Future.failedFuture(
+            new DxNotFoundException("Join organisation request not found for ID: " + requestId));
+        }
+
+        return organizationJoinRequestDAO.delete(requestId)
+          .compose(deleted -> {
+            if (!deleted) {
+              return Future.failedFuture(
+                new DxNotFoundException("Failed to delete join organisation request with ID: " + requestId));
+            }
+            return Future.succeededFuture(true);
+          });
+      });
+  }
+
+  @Override
+  public Future<ProviderRoleRequest> getProviderRoleRequestByUserId(UUID userId) {
+    Map<String, Object> filter = Map.of(
+      Constants.USER_ID, userId.toString(),
+      Constants.STATUS, Status.PENDING.getStatus()
+    );
+
+    return providerRequestDAO.getAllWithFilters(filter)
+      .compose(requests -> {
+        if (requests.isEmpty()) {
+          return Future.failedFuture(new DxNotFoundException(
+            "No pending credit request found for userId: " + userId));
+        }
+        return Future.succeededFuture(requests.get(0));
+      });
+  }
+
+  @Override
+  public Future<Boolean> deleteProviderRoleRequestById(UUID id) {
+    return providerRequestDAO.delete(id)
+      .compose(deleted -> {
+        if (!deleted) {
+          return Future.failedFuture(
+            new DxNotFoundException("Failed to delete provider role request with ID: " + id)
+          );
+        }
+        return Future.succeededFuture(true);
+      });
   }
 
 

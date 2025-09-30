@@ -52,4 +52,12 @@ public interface CreditService {
   Future<Boolean> deleteCreditRequest(UUID userId);
 
   Future<UserCredit> getExpirationDateByUserId(UUID userId);
+
+  Future<List<CreditRequest>> getCreditRequestsByUserId(UUID userId);
+
+  Future<ComputeRole> getComputeRequestByUserId(UUID userId);
+
+  Future<Boolean> deletePendingCreditRequestById(UUID requestId);
+
+  Future<Boolean> deletePendingComputeRequestById(UUID requestId);
 }

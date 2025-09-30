@@ -650,6 +650,312 @@ paths:
                     title: Conflict
                     detail: 'ERROR: duplicate key value violates unique constraint
                       "organizations_name_key" (23505)'
+
+  /iudx/v2/auth/user/organisations/requests:
+    get:
+      summary: 'User: Get its Organisation Creation requests'
+      tags:
+        - Organisation APIs
+      operationId: get-auth-v2-user-organisations-request
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                x-examples:
+                  Example 1:
+                    type: urn:dx:ControlPlane:success
+                    title: Success
+                    result:
+                      - id: 41290efb-057b-4296-872c-a764f6ff5615
+                        requestedBy: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                        name: Quant Sandbox
+                        logoPath: /logos/ai.png
+                        entityType: Private
+                        orgSector: Technology
+                        websiteLink: https://ai.example.com
+                        address: 123 Quant Labs, Bangalore, India
+                        certificatePath: /documents/certificate.pdf
+                        pancardPath: /documents/pancard.pdf
+                        relevantDocPath: null
+                        status: pending
+                        userName: test test
+                        empId: EMP12345
+                        jobTitle: Manager
+                        orgManagerphoneNo: +91-9876543210
+                        managerEmail: manager@gmail.com
+                        orgDocuments: null
+                        createdAt: '2025-06-03T16:01:59.532782'
+                        updatedAt: '2025-06-03T16:01:59.532782'
+                        tableName: organization_create_requests
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  result:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        requestedBy:
+                          type: string
+                        name:
+                          type: string
+                        logoPath:
+                          type: string
+                        entityType:
+                          type: string
+                        orgSector:
+                          type: string
+                        websiteLink:
+                          type: string
+                        address:
+                          type: string
+                        certificatePath:
+                          type: string
+                        pancardPath:
+                          type: string
+                        relevantDocPath:
+                          type: string
+                        status:
+                          type: string
+                        userName:
+                          type: string
+                        empId:
+                          type: string
+                        jobTitle:
+                          type: string
+                        orgManagerphoneNo:
+                          type: string
+                        managerEmail:
+                          type: string
+                        orgDocuments:
+                          type: string
+                        createdAt:
+                          type: string
+                        updatedAt:
+                          type: string
+                        tableName:
+                          type: string
+              examples:
+                Example 1:
+                  value:
+                    type: urn:dx:ControlPlane:success
+                    title: Success
+                    result:
+                      - id: 41290efb-057b-4296-872c-a764f6ff5615
+                        requestedBy: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                        name: Quant Sandbox
+                        logoPath: /logos/ai.png
+                        entityType: Private
+                        orgSector: Technology
+                        websiteLink: https://ai.example.com
+                        address: 123 Quant Labs, Bangalore, India
+                        certificatePath: /documents/certificate.pdf
+                        pancardPath: /documents/pancard.pdf
+                        relevantDocPath: null
+                        status: pending
+                        userName: test test
+                        empId: EMP12345
+                        jobTitle: Manager
+                        orgManagerphoneNo: +91-9876543210
+                        managerEmail: manager@gmail.com
+                        orgDocuments: null
+                        createdAt: '2025-06-03T16:01:59.532782'
+                        updatedAt: '2025-06-03T16:01:59.532782'
+                        tableName: organization_create_requests
+        '401':
+          description: Unauthorized – Token invalid/expired or user not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+      security:
+        - authorization: [ ]
+
+    delete:
+      tags:
+        - Organisation APIs
+      summary: 'User: Delete Pending Organization Requests'
+      description: >
+        delete the pending organization requests made by the user calling the API.
+      operationId: delete-auth-v2-user-organisations-request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique ID of the organization request
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+      responses:
+        '200':
+          description: OK - Successfully deleted organization request.
+        '400':
+          description: Bad Request – Schema validation failed or incorrect query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/updateNotificationBadRequest'
+        '401':
+          description: Unauthorized – Token invalid or expired, or caller lacks permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+      security:
+        - authorization: [ ]
+
+
+  /iudx/v2/auth/user/organisations/join_requests:
+    get:
+      summary: 'User: Get all Join requests for an organisation'
+      description: >
+        This API allows a user to view all its organization join requests made by it.
+      tags:
+        - Organisation APIs
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                x-examples:
+                  Example 1:
+                    type: urn:dx:ControlPlane:success
+                    title: Success
+                    result:
+                      - id: 5fc228bb-9a20-4052-968e-427c733d2264
+                        organizationId: e87246e2-5da5-40b0-973c-690d2f48f879
+                        userId: ac2f3390-c7b0-4d4e-bb72-0bb8d9170309
+                        userName: coder coder
+                        status: pending
+                        jobTitle: Employee
+                        empId: EMP8790
+                        officialEmail: member@gmail.com
+                        requestedAt: '2025-06-03T16:35:48.404509'
+                        processedAt: '2025-06-03T16:35:48.404509'
+                        roles: [ ]
+                        tableName: organization_join_requests
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  result:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: Unique ID of the join request.
+                        organizationId:
+                          type: string
+                          description: UUID of the organization associated with the request.
+                        userId:
+                          type: string
+                          description: UUID of the user who made the join request.
+                        userName:
+                          type: string
+                          description: Name of the user who made the join request.
+                        status:
+                          type: string
+                          description: Current status of the join request (e.g., 'pending', 'granted', 'rejected').
+                        jobTitle:
+                          type: string
+                          description: Job title of the user.
+                        empId:
+                          type: string
+                          description: Employee ID of the user.
+                        officialEmail:
+                          type: string
+                          description: Official email of the user.
+                        requestedAt:
+                          type: string
+                          description: Timestamp when the join request was made.
+                        processedAt:
+                          type: string
+                          description: Timestamp when the join request was processed.
+                        roles:
+                          type: array
+                          items:
+                            type: string
+                          description: Roles associated with the user within the organization.
+                        tableName:
+                          type: string
+                          description: Internal table name for the request.
+              examples:
+                Example 1:
+                  value:
+                    type: urn:dx:ControlPlane:success
+                    title: Success
+                    result:
+                      - id: 5fc228bb-9a20-4052-968e-427c733d2264
+                        organizationId: e87246e2-5da5-40b0-973c-690d2f48f879
+                        userId: ac2f3390-c7b0-4d4e-bb72-0bb8d9170309
+                        userName: coder coder
+                        status: pending
+                        jobTitle: Employee
+                        empId: EMP8790
+                        officialEmail: member@gmail.com
+                        requestedAt: '2025-06-03T16:35:48.404509'
+                        processedAt: '2025-06-03T16:35:48.404509'
+                        tableName: organization_join_requests
+                        roles:
+                          - consumer
+                          - provider
+                    paginationInfo:
+                      page: 1
+                      size: 1
+                      totalCount: 346
+                      totalPages: 346
+                      hasNext: true
+                      hasPrevious: false
+      operationId: get-auth-v2-user-organisations-join-requests
+      security:
+        - authorization: [ ]
+
+    delete:
+      tags:
+        - Organisation APIs
+      summary: 'User: Delete Pending Organization Join Requests'
+      description: >
+        delete the pending organization requests made by the user calling the API.
+      operationId: delete-auth-v2-user-organisations-join-requests
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique ID of the organization join request
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+      responses:
+        '200':
+          description: OK - Successfully deleted organization join request.
+        '400':
+          description: Bad Request – Schema validation failed or incorrect query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/updateNotificationBadRequest'
+        '401':
+          description: Unauthorized – Token invalid or expired, or caller lacks permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+      security:
+        - authorization: [ ]
   /iudx/v2/auth/organisations/{id}/join_requests:
     parameters:
       - name: id
@@ -939,7 +1245,6 @@ paths:
       operationId: post-auth-v2-organisations-join-requests
       security:
         - authorization: [ ]
-
   /iudx/v2/auth/organisations/{id}/join_requests/{req_id}:
     parameters:
       - name: id
@@ -1835,6 +2140,144 @@ paths:
           description: User credit record not found
         '500':
           description: Internal server error
+  /iudx/v2/auth/user/credit/request:
+    get:
+      summary: 'User: Get all pending credit requests'
+      tags:
+        - Credit APIs
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                x-examples:
+                  Example 1:
+                    type: urn:dx:ControlPlane:success
+                    title: Success
+                    result:
+                      - id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
+                        userId: 436cb796-5826-458b-a914-a54721f70997
+                        userName: test test
+                        amount: 10000
+                        status: pending
+                        requestedAt: '2025-06-04T09:47:27.323861'
+                        processedAt: '2025-06-04T09:47:27.323861'
+                        tableName: credit_requests
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  result:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        userId:
+                          type: string
+                        userName:
+                          type: string
+                        amount:
+                          type: integer
+                        status:
+                          type: string
+                        requestedAt:
+                          type: string
+                        processedAt:
+                          type: string
+                        tableName:
+                          type: string
+                  paginationInfo:
+                    type: object
+                    x-stoplight:
+                      id: my3px3mqewfgl
+                    properties:
+                      page:
+                        type: integer
+                        x-stoplight:
+                          id: 9goqrkh1sslar
+                      size:
+                        type: integer
+                        x-stoplight:
+                          id: ilgv9t0luge3z
+                      totalPages:
+                        type: integer
+                        x-stoplight:
+                          id: wuibbpgtxgiua
+                      totalCount:
+                        type: integer
+                        x-stoplight:
+                          id: 9v8m5zcqo3hz8
+                      hasNext:
+                        type: boolean
+                        x-stoplight:
+                          id: 6grp7j6i0idak
+                      hasPrevious:
+                        type: boolean
+                        x-stoplight:
+                          id: jerroo5o1sohq
+              examples:
+                Example 1:
+                  value:
+                    type: urn:dx:ControlPlane:success
+                    title: Success
+                    result:
+                      - id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
+                        userId: 436cb796-5826-458b-a914-a54721f70997
+                        userName: test test
+                        amount: 10000
+                        status: pending
+                        requestedAt: '2025-06-04T09:47:27.323861'
+                        processedAt: '2025-06-04T09:47:27.323861'
+                        tableName: credit_requests
+                    'null': null
+                    paginationInfo:
+                      page: 1
+                      size: 1
+                      totalCount: 346
+                      totalPages: 346
+                      hasNext: true
+                      hasPrevious: false
+      operationId: get-auth-v2-user-credit
+      security:
+        - authorization: [ ]
+    delete:
+      tags:
+        - Credit APIs
+      summary: 'User: Delete Pending Credit Request'
+      description: >
+        delete the pending credit requests made by the user calling the API.
+      operationId: delete-auth-v2-user-credit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique ID of the credit request
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+      responses:
+        '200':
+          description: OK - Successfully deleted asset request.
+        '400':
+          description: Bad Request – Schema validation failed or incorrect query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/updateNotificationBadRequest'
+        '401':
+          description: Unauthorized – Token invalid or expired, or caller lacks permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+      security:
+        - authorization: [ ]
   /iudx/v2/auth/credit/request:
     get:
       summary: Get all credit requests by status (COS ADMIN)
@@ -2313,6 +2756,143 @@ paths:
               schema:
                 $ref: '#/components/schemas/createNotificationForbidden'
       security:
+          - authorization: [ ]
+  /iudx/v2/auth/user/compute/requests:
+    delete:
+      tags:
+        - Credit APIs
+      summary: 'User: Delete Pending Compute Request'
+      description: >
+        delete the pending compute requests made by the user calling the API.
+      operationId: delete-auth-v2-user-compute-role-request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique ID of the compute request
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+      responses:
+        '200':
+          description: OK - Successfully deleted compute request.
+        '400':
+          description: Bad Request – Schema validation failed or incorrect query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/updateNotificationBadRequest'
+        '401':
+          description: Unauthorized – Token invalid or expired, or caller lacks permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+      security:
+        - authorization: [ ]
+    get:
+      summary: 'User: Get All ComputeRole Requests'
+      tags:
+        - Compute APIs
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                x-examples:
+                  Example 1:
+                    type: urn:dx:ControlPlane:success
+                    title: Success
+                    result:
+                      - id: 25fcafb9-d65e-454f-9196-8648dcf08854
+                        userId: 436cb796-5826-458b-a914-a54721f70997
+                        userName: test test
+                        status: pending
+                        approvedBy: null
+                        createdAt: '2025-06-04T10:54:53.301846'
+                        updatedAt: '2025-06-04T10:54:53.301846'
+                        tableName: compute_role
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  result:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        userId:
+                          type: string
+                        userName:
+                          type: string
+                        status:
+                          type: string
+                        approvedBy:
+                          type: string
+                        createdAt:
+                          type: string
+                        updatedAt:
+                          type: string
+                        tableName:
+                          type: string
+                  paginationInfo:
+                    type: object
+                    x-stoplight:
+                      id: dvchbrtielggu
+                    properties:
+                      page:
+                        type: integer
+                        x-stoplight:
+                          id: jsb48m8i9u6tf
+                      size:
+                        type: integer
+                        x-stoplight:
+                          id: kvq43ldkz27sd
+                      totalPages:
+                        type: integer
+                        x-stoplight:
+                          id: q0k9gr696ttcb
+                      totalCount:
+                        type: integer
+                        x-stoplight:
+                          id: 35bjtleqjjbku
+                      hasNext:
+                        type: boolean
+                        x-stoplight:
+                          id: sxydke5qcz876
+                      hasPrevious:
+                        type: boolean
+                        x-stoplight:
+                          id: bxo6cgx6zpp4r
+              examples:
+                Example 1:
+                  value:
+                    type: urn:dx:ControlPlane:success
+                    title: Success
+                    result:
+                      - id: 25fcafb9-d65e-454f-9196-8648dcf08854
+                        userId: 436cb796-5826-458b-a914-a54721f70997
+                        userName: test test
+                        status: pending
+                        approvedBy: null
+                        createdAt: '2025-06-04T10:54:53.301846'
+                        updatedAt: '2025-06-04T10:54:53.301846'
+                        tableName: compute_role
+                    paginationInfo:
+                      page: 1
+                      size: 1
+                      totalCount: 346
+                      totalPages: 346
+                      hasNext: true
+                      hasPrevious: false
+      operationId: get-auth-v2-user-compute-role-request
+      security:
         - authorization: [ ]
   /iudx/v2/auth/compute/requests:
     get:
@@ -2577,7 +3157,80 @@ paths:
           name: id
           in: path
           required: true
-
+      security:
+        - authorization: [ ]
+  /iudx/v2/auth/organization/user/provider_requests:
+    get:
+      summary: 'User: Get All pending provider role requests'
+      description: >
+        This API allows a user to retrieve its pending provider role requests.
+        A successful response returns a list of pending
+        requests with details such as user ID, user name, organization ID, organization name,
+        status, and timestamps.
+      tags:
+        - Organisation APIs
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                Example 1:
+                  value:
+                    type: urn:dx:controlPanel:success
+                    title: Success
+                    result:
+                      - id: e970320f-ffed-4946-ae68-cb13a9f7d7d2
+                        user_id: 719b5e7c-3a20-4f77-91f9-1f43ac4ef6a7
+                        organization_id: 0706147d-2c77-4165-8550-812804d114be
+                        status: granted
+                        created_at: 2025-08-25T05:28:20.356043
+                        updated_at: 2025-08-25T05:30:14.607398
+                        roles: [ consumer, compute, provider ]
+                        account_enabled: true
+                    paginationInfo:
+                      page: 1
+                      size: 10
+                      totalCount: 2
+                      totalPages: 1
+                      hasNext: false
+                      hasPrevious: false
+      operationId: get-auth-v2-user-provider-requests
+      security:
+        - authorization: [ ]
+    delete:
+      tags:
+        - Organisation APIs
+      summary: 'User: Delete Pending Provider Request'
+      description: >
+        delete the pending provider requests made by the user calling the API.
+      operationId: delete-auth-v2-user-provider-requests
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique ID of the provider request
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+      responses:
+        '200':
+          description: OK - Successfully deleted provider request.
+        '400':
+          description: Bad Request – Schema validation failed or incorrect query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/updateNotificationBadRequest'
+        '401':
+          description: Unauthorized – Token invalid or expired, or caller lacks permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
       security:
         - authorization: [ ]
   /iudx/v2/auth/organization/user/provider_role/requests:
@@ -3409,6 +4062,274 @@ paths:
       operationId: post-auth-v2-kyc-revoke
       security:
         - authorization: [ ]
+
+  /iudx/v2/auth/user/description/info:
+    post:
+      summary: (ADARV) Add user info
+      tags:
+        - Role APIs
+      operationId: post-auth-v2-user-info
+      security:
+        - authorization: [ ]
+      requestBody:
+        description: This endpoint allows adding user information.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                about:
+                  type: string
+                  description: Short description about the user
+                  example: "Lorem ipsum, dolor sit amet consectetur adipisicing elit..."
+                experience:
+                  type: array
+                  description: List of work experiences
+                  items:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                        example: "ICMR Researcher"
+                      time:
+                        type: string
+                        example: "Jan 2020–present (4yrs)"
+                      location:
+                        type: string
+                        example: "Delhi"
+                education:
+                  type: array
+                  description: Educational qualifications
+                  items:
+                    type: object
+                    properties:
+                      institute:
+                        type: string
+                        example: "IIT Delhi"
+                      time:
+                        type: string
+                        example: "2016–2020"
+                      location:
+                         type: string
+                         example: "Delhi"
+                projects:
+                    type: array
+                    description: List of projects completed by the user
+                    items:
+                      type: object
+                      properties:
+                        institute:
+                          type: string
+                          example: "ICMR"
+                        time:
+                          type: string
+                          example: "2021"
+                        location:
+                          type: string
+                          example: "Delhi"
+                        about:
+                          type: string
+                          example: "Developed a system for secure data sharing"
+                publications:
+                      type: array
+                      description: List of publications by the user
+                      items:
+                        type: object
+                        properties:
+                          institute:
+                            type: string
+                            example: "ICMR"
+                          time:
+                            type: string
+                            example: "2021"
+                          location:
+                            type: string
+                            example: "Delhi"
+                          about:
+                            type: string
+                            example: "Paper on privacy-preserving IoT data sharing"
+                skills:
+                      type: array
+                      description: List of user skills
+                      items:
+                        type: string
+                        example: "React"
+      responses:
+        '200':
+          description: User info added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: "success"
+                  title:
+                    type: string
+                    example: "User info added"
+                  result:
+                    type: object
+                    properties:
+                      about:
+                        type: string
+                        example: "Lorem ipsum..."
+                      skills:
+                        type: array
+                        items:
+                          type: string
+                        example: [ "React", "Angular" ]
+
+    patch:
+      summary: (ADARV)Update user info
+      tags:
+        - Role APIs
+      operationId: patch-auth-v2-user-info
+      security:
+        - authorization: [ ]
+      requestBody:
+        description: This endpoint allows updating user information partially. Only fields included in the request will be updated.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                about:
+                  type: string
+                  description: Short description about the user
+                  example: "Updated description about the user"
+                experience:
+                  type: array
+                  description: List of work experiences to update
+                  items:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                        example: "Senior ICMR Researcher"
+                      time:
+                        type: string
+                        example: "Jan 2020–present (5yrs)"
+                      location:
+                        type: string
+                        example: "Delhi"
+                education:
+                  type: array
+                  description: Educational qualifications to update
+                  items:
+                    type: object
+                    properties:
+                      institute:
+                        type: string
+                        example: "IIT Delhi"
+                      time:
+                        type: string
+                        example: "2016–2020"
+                      location:
+                        type: string
+                        example: "Delhi"
+                projects:
+                  type: array
+                  description: List of projects to update
+                  items:
+                    type: object
+                    properties:
+                      institute:
+                        type: string
+                        example: "ICMR"
+                      time:
+                        type: string
+                        example: "2021"
+                      location:
+                        type: string
+                        example: "Delhi"
+                      about:
+                        type: string
+                        example: "Improved secure data sharing system"
+                publications:
+                  type: array
+                  description: List of publications to update
+                  items:
+                    type: object
+                    properties:
+                      institute:
+                        type: string
+                        example: "ICMR"
+                      time:
+                        type: string
+                        example: "2021"
+                      location:
+                        type: string
+                        example: "Delhi"
+                      about:
+                        type: string
+                        example: "Paper on privacy-preserving IoT data sharing"
+                skills:
+                  type: array
+                  description: List of user skills to update
+                  items:
+                    type: string
+                    example: "React"
+      responses:
+        '200':
+          description: User info updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: "success"
+                  title:
+                    type: string
+                    example: "User info updated"
+                  result:
+                    type: object
+                    properties:
+                      about:
+                        type: string
+                        example: "Updated description about the user"
+                      skills:
+                        type: array
+                        items:
+                          type: string
+                        example: [ "React", "Angular" ]
+
+    get:
+      summary: (ADARV) Get user info
+      tags:
+        - Role APIs
+      operationId: get-auth-v2-user-info   # ✅ placed before responses
+      security:
+        - authorization: [ ]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: "success"
+                  title:
+                    type: string
+                    example: "Fetched user info"
+                  result:
+                    type: object
+                    properties:
+                      about:
+                        type: string
+                        example: "Lorem ipsum..."
+                      skills:
+                        type: array
+                        items:
+                          type: string
+                        example: [ "React", "Angular" ]
   /iudx/v2/auth/organisations/requests/report:
     get:
       summary: Get Report for Organsation Create Request
@@ -4197,14 +5118,14 @@ paths:
       tags:
         - Entity
       description: >
-        Get an item with **access policy enforcement**.  
-        - If `accessPolicy=open`, the item is accessible to anyone.  
-        - If `accessPolicy=restricted`, user access will be validated.  
-        - If `accessPolicy=private`, only the owner can access it.  
+        Get an item with **access policy enforcement**.
+        - If `accessPolicy=open`, the item is accessible to anyone.
+        - If `accessPolicy=restricted`, user access will be validated.
+        - If `accessPolicy=private`, only the owner can access it.
 
-        If a Bearer token is provided in the Authorization header, the request will be authenticated, and access checks will be performed accordingly.  
+        If a Bearer token is provided in the Authorization header, the request will be authenticated, and access checks will be performed accordingly.
 
-        ❗ For items with `accessPolicy=restricted` or `accessPolicy=private`, a valid token **must** be provided.  
+        ❗ For items with `accessPolicy=restricted` or `accessPolicy=private`, a valid token **must** be provided.
         Otherwise, the request will be rejected with a **401 Unauthorized** error.
       operationId: get item with accessPolicy
       security:
@@ -4431,7 +5352,7 @@ paths:
       description: >
         Fetch all assets belonging to the organisation using advanced filters.
         Supports property-based, temporal, numeric range, and full-text search filters.
-        
+
         **Note:** This endpoint is restricted to users with the `org_admin` role.
       operationId: get org assets with filters
       tags:

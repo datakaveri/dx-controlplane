@@ -1,7 +1,10 @@
 package org.cdpg.dx.aaa.user.service;
 
 import io.vertx.core.Future;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
+import org.cdpg.dx.aaa.common.ResponseModel;
+import org.cdpg.dx.aaa.user.models.UserInfo;
 import org.cdpg.dx.common.model.DxUser;
 
 import java.util.ArrayList;
@@ -14,6 +17,10 @@ public interface UserService {
 
     Future<DxUser> getUserInfo(DxUser dxUser);
     Future<DxUser> getUserInfoByID(UUID userId);
+
+    Future<Void> createUserInfo(UserInfo userInfo);
+    Future<UserInfo> getUserInfo(String userId);
+    Future<UserInfo> patchUserInfo(String userId, JsonObject updates);
 
     default <T> Future<List<JsonObject>> enrichWithUserRoles(
             List<T> items,

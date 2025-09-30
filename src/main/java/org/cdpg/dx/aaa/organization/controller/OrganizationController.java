@@ -32,17 +32,17 @@ public class OrganizationController implements ApiController {
                 .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
                 .handler(organizationHandler::getOrganisationRequest);
 
-//         routerBuilder
-//              .operation("get-auth-v2-user-organisations-request")
-//              .handler(auditingHandler::handleApiAudit)
-//              .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
-//              .handler(organizationHandler::getUserOrganisationRequest);
-//
-//          routerBuilder
-//              .operation("delete-auth-v2-user-organisations-request")
-//              .handler(auditingHandler::handleApiAudit)
-//              .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
-//              .handler(organizationHandler::deleteOrganizationCreateRequest);
+         routerBuilder
+              .operation("get-auth-v2-user-organisations-request")
+              .handler(auditingHandler::handleApiAudit)
+              .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+              .handler(organizationHandler::getUserOrganisationRequest);
+
+          routerBuilder
+              .operation("delete-auth-v2-user-organisations-request")
+              .handler(auditingHandler::handleApiAudit)
+              .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+              .handler(organizationHandler::deleteOrganizationCreateRequest);
 
 
       routerBuilder
@@ -71,17 +71,17 @@ public class OrganizationController implements ApiController {
                 .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
                 .handler(organizationHandler::getJoinOrganisationRequests);
 
-//         routerBuilder
-//                .operation("get-auth-v2-user-organisations-join-requests")
-//                .handler(auditingHandler::handleApiAudit)
-//                .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
-//                .handler(organizationHandler::getUserJoinOrganisationRequests);
-//
-//         routerBuilder
-//              .operation("delete-auth-v2-user-organisations-join-requests")
-//              .handler(auditingHandler::handleApiAudit)
-//              .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
-//              .handler(organizationHandler::deleteUserJoinOrganisationRequests);
+         routerBuilder
+                .operation("get-auth-v2-user-organisations-join-requests")
+                .handler(auditingHandler::handleApiAudit)
+                .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+                .handler(organizationHandler::getUserJoinOrganisationRequests);
+
+         routerBuilder
+              .operation("delete-auth-v2-user-organisations-join-requests")
+              .handler(auditingHandler::handleApiAudit)
+              .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+              .handler(organizationHandler::deleteUserJoinOrganisationRequests);
 
 
         routerBuilder
@@ -147,6 +147,20 @@ public class OrganizationController implements ApiController {
                 .handler(auditingHandler::handleApiAudit)
                 .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
                 .handler(organizationHandler::updateProviderRequest);
+
+
+      routerBuilder
+        .operation("get-auth-v2-user-provider-requests")
+        .handler(auditingHandler::handleApiAudit)
+        .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+        .handler(organizationHandler::getProviderRoleRequest);
+
+      routerBuilder
+        .operation("delete-auth-v2-user-provider-requests")
+        .handler(auditingHandler::handleApiAudit)
+        .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+        .handler(organizationHandler::deleteUserProviderRoleRequest);
+
 
       routerBuilder
         .operation("post-auth-v2-organization-user-provider")
