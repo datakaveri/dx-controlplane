@@ -185,4 +185,9 @@ public class PostgresServiceImpl implements PostgresService {
             });
     return promise.future();
   }
+
+  @Override
+  public Future<QueryResult> upsert(UpsertQuery query) {
+    return executeQuery(query.toSQL(), query.getQueryParams());
+  }
 }

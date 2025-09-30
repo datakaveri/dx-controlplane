@@ -7,18 +7,18 @@ import java.util.UUID;
 import org.cdpg.dx.database.postgres.base.entity.BaseEntity;
 import org.cdpg.dx.database.postgres.util.EntityUtil;
 
-public record ClientCredentials(UUID userId, String clientId, String clientSecret, String createdAt)
+public record ClientCredentials(
+    UUID userId, String clientId, String clientSecret, String createdAt, String updatedAt)
     implements BaseEntity<ClientCredentials> {
 
   public static ClientCredentials fromJson(JsonObject json) {
-    System.out.println("Parsing ClientCredentials from JSON: " + json.encodePrettily());
-
     UUID userId =
         json.getString("user_id") != null ? UUID.fromString(json.getString("user_id")) : null;
     String clientId = json.getString("client_id") != null ? json.getString("client_id") : null;
     String clientSecret = json.getString("client_secret");
     String createdAt = json.getString("created_at");
-    return new ClientCredentials(userId, clientId, clientSecret, createdAt);
+    String updatedAt = json.getString("updated_at");
+    return new ClientCredentials(userId, clientId, clientSecret, createdAt, updatedAt);
   }
 
   @Override
@@ -38,6 +38,7 @@ public record ClientCredentials(UUID userId, String clientId, String clientSecre
     json.put("client_id", clientId);
     json.put("client_secret", clientSecret);
     json.put("created_at", createdAt);
+    json.put("updated_at", updatedAt);
     return json;
   }
 
