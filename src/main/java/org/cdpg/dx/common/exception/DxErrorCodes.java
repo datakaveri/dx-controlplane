@@ -20,6 +20,7 @@ public class DxErrorCodes {
   public static final int TOKEN_INVALID = 12002;
   public static final int KEYCLOAK_SERVICE_ERROR = 12100;
 
+  public static final int RUNTIME_ERROR = 2000;
   public static final int SUBS_ERROR = 22000;
   public static final int SUBS_QUEUE_EXISTS = 22001;
   public static final int SUBS_QUEUE_REGISTRATION_FAILED = 22002;

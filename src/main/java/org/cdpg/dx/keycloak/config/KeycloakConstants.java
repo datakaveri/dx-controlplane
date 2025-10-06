@@ -4,6 +4,8 @@ package org.cdpg.dx.keycloak.config;
 public class KeycloakConstants {
     public static final String ORGANISATION_ID = "organisation_id";
     public static final String ORGANISATION_NAME = "organisation_name";
+    public static final String DID = "did";
+    public static final String AUD = "aud";
     public static final String KYC_VERIFIED = "kyc_verified";
     public static final String AADHAAR_KYC_DATA = "aadhaar_kyc_data";
     public static final String ORG_ADMIN_ROLE = "org_admin";
