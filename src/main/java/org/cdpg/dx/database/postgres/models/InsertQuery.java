@@ -14,6 +14,8 @@ public class InsertQuery implements Query {
   private String table;
   private List<String> columns;
   private List<Object> values;
+  private List<String> conflictColumns;  // columns to check for conflict (e.g., _id)
+  private List<String> updateColumns;    // columns to update on conflict
 
   // Default constructor (Needed for deserialization)
   public InsertQuery() {}
@@ -65,16 +67,49 @@ public class InsertQuery implements Query {
     return this;
   }
 
+  public List<String> getConflictColumns() {
+    return conflictColumns;
+  }
+
+  public InsertQuery setConflictColumns(List<String> conflictColumns) {
+    this.conflictColumns = conflictColumns;
+    return this;
+  }
+
+  public List<String> getUpdateColumns() {
+    return updateColumns;
+  }
+
+  public InsertQuery setUpdateColumns(List<String> updateColumns) {
+    this.updateColumns = updateColumns;
+    return this;
+  }
+
   @Override
   public String toSQL() {
-    String placeholders =
-        IntStream.rangeClosed(1, columns.size())
-            .mapToObj(i -> "$" + i)
-            .collect(Collectors.joining(", "));
+    String placeholders = IntStream.rangeClosed(1, columns.size())
+        .mapToObj(i -> "$" + i)
+        .collect(Collectors.joining(", "));
 
-    return String.format(
-        "INSERT INTO %s (%s) VALUES (%s) RETURNING *",
-        table, String.join(", ", columns), placeholders);
+    StringBuilder sql = new StringBuilder();
+    sql.append(String.format(
+        "INSERT INTO %s (%s) VALUES (%s)",
+        table, String.join(", ", columns), placeholders));
+
+    // Add ON CONFLICT clause if conflictColumns and updateColumns are set
+    if (conflictColumns != null && !conflictColumns.isEmpty() &&
+        updateColumns != null && !updateColumns.isEmpty()) {
+
+      String conflictCols = String.join(", ", conflictColumns);
+      String updates = updateColumns.stream()
+          .map(col -> col + " = EXCLUDED." + col)
+          .collect(Collectors.joining(", "));
+      sql.append(" ON CONFLICT (").append(conflictCols).append(") DO UPDATE SET ")
+          .append(updates);
+    }
+
+    sql.append(" RETURNING *");  // always return inserted/updated row
+    return sql.toString();
   }
 
   @Override

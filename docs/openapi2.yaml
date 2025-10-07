@@ -1211,7 +1211,481 @@ paths:
           source: "curl --location --request POST 'https://example.com/iudx/acl/apd/v2/access_request/has_access'\
           \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type:\
           \ application/json' \\\n  --data-raw '<payload>'\n"
+  /iudx/acl/apd/v2/policy:
+    post:
+      tags:
+        - Policies
+      summary: Create Policy
+      description: |-
 
+        The `Create Policy` API empowers both `providers` and their `delegates` to establish policies for resources owned by the `provider`. It enables `providers` to define policies for resources they own, and `delegates` can create policies on behalf of `providers` who own the resources.
+
+        ## User Policies
+
+          User policies, which are applicable to the `DATABANK` and `AIMODEL` item types, can
+           be 
+        defined by a `provider` or its `delegate`. These policies regulate access to resources owned by the `provider` and apply to `consumers` accessing these resources.
+
+        ## Item Types
+
+        - `DATABANK`: Policies can be applied to individual resources.
+        - `AIMODEL`: Policies can be set for resource groups.
+
+        By utilizing the `Create Policy` API, `providers` and their `delegates` can effectively manage access control and resource governance within the system.
+
+        `Note`: Only one policy can be generated per request.
+      operationId: post-auth-v1-policies
+      parameters:
+        - name: Authorization
+          in: header
+          description: DX Auth issued identity token
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            pattern: 'Bearer [a-zA-Z0-9_*\-*\.\/]+$|^[a-zA-Z0-9_*\-*\.\/]+$'
+      requestBody:
+        description: >
+          **Request Body Details:**
+
+            The request body should be a JSON object containing a JSON array of request.
+
+            ### User Policy Request:
+
+            - `userEmail`: The email ID of the user for whom the policy is being defined.
+            - `itemId`: The UUID value of the item for which the policy is being established.
+            - `itemType`: An enum value representing the type of the item.
+            - `expiryTime`: An optional field, representing the policy's expiry time in ISO8601 format compatible with UTC (yyyy-MM-dd'T'HH:mm:ss). If not provided, a default expiry time is set for the policy.
+            - `constraints`: A JSON object containing constraints that the resource server can interpret.
+
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                request:
+                  type: array
+                  minItems: 1
+                  uniqueItems: true
+                  items:
+                    type: object
+                    additionalProperties: false
+                    properties:
+                      userEmail:
+                        type: string
+                        pattern: >-
+                          ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$
+                        minLength: 1
+
+                      itemId:
+                        type: string
+                        pattern: '^[a-zA-Z0-9_*\-*\.\/]+$'
+                        minLength: 1
+                        maxLength: 512
+                      itemType:
+                        enum:
+                          - AIMODEL
+                          - DATABANK
+                        minLength: 1
+                      expiryTime:
+                        type: string
+                        pattern: >-
+                          ^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24\:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$
+                        minLength: 1
+                      constraints:
+                        type: object
+                      additionalInfo:
+                        type: object
+                        description: >-
+                          Additional information to access data for educational,
+                          research or testing, non-commercial, academia purposes
+                        minProperties: 0
+                        maxProperties: 10
+                      providerComment:
+                        type: string
+                        description: >-
+                          Comment from the provider regarding the resource
+                          item, which can be used to provide additional
+                          information about the resource
+                        minLength: 1
+                        maxLength: 4000
+                      feedbackToConsumer:
+                        type: string
+                        description: >-
+                          Feedback from the provider to the consumer regarding
+                          the resource item, which can be used to provide
+                          additional information about the resource
+                        maxLength: 4000
+                        minLength: 1
+                    required:
+                      - userEmail
+                      - itemId
+                      - itemType
+                      - constraints
+              required:
+                - request
+              x-examples:
+                example-1:
+                  request:
+                    - userEmail: pqr@abc.com
+                      itemId: example-resource-group
+                      itemType: DATABANK
+                      expiryTime: '2023-08-30T21:10:06'
+                      constraints: { }
+                    - userEmail: test@demo.com
+                      itemId: example-resource-group
+                      itemType: DATABANK
+                      expiryTime: '2023-08-30T21:10:06'
+                      constraints: { }
+            examples:
+              Request for resource with additionalInfo:
+                value:
+                  request:
+                    - userEmail: abc@xyz.com
+                      itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
+                      itemType: DATABANK
+                      expiryTime: '2022-08-04T20:00:19'
+                      constraints:
+                        access:
+                          - sub
+                      additionalInfo:
+                        name: Miles Davis
+                      providerComment: The resource is used for transportation data analysis
+                      feedbackToConsumer: This resource can be used for testing purposes
+              Request for resource user policy:
+                value:
+                  request:
+                    - userEmail: abc@xyz.com
+                      itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
+                      itemType: DATABANK
+                      expiryTime: '2022-10-10T04:00:19'
+                      constraints:
+                        access:
+                          - api
+                          - sub
+      responses:
+        '200':
+          description: >-
+            The policy has been successfully created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/createPolicySuccessResponse'
+        '400':
+          description: |-
+            - Missing or malformed data
+            - Invalid expiry - dateTime in the past or invalid format
+            - Invalid user - UserId is not present in db
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/createPolicyBadRequest'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+        '401':
+          description: '- Unauthorized - `token` invalid/expired'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+        '403':
+          description: >-
+            - If the user trying to set a policy does not have a  `provider` or
+            `delegate` role.
+
+            - If the user is neither the owner of the resource item/group or a
+            delegate to the owner of the resource item/group.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/createPolicyForbidden'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+        '409':
+          description: |-
+            - If a valid policy already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/conflictResponse'
+      security:
+        - authorization: [ ]
+
+      x-codeSamples:
+        - lang: 'cURL'
+          label: 'Create policy'
+          source: |
+            curl --location --request POST 'https://example-apd.com/dx/apd/acl/v1/policies' \
+            --header 'Authorization: <tokenValue>' \
+            --header 'Content-Type: application/json' \
+              --data-raw '<payload>'
+
+    get:
+      tags:
+        - Policies
+      summary: Get Policies
+      description: |
+        Get all latest policies associated with a specific user. The response is determined by the user's roles:
+
+        - If the user is a `provider`, the response includes all policies created by the provider or their delegates.
+        - If the user is a `delegate`, the response comprises policies set by the delegate or set for the consumer on whose behalf the delegate is acting.
+        - If the user is a `consumer`, the response includes policies set for the consumer.
+
+        `Note`: Please note that the response displays the policies for a user concerning a specific server.
+
+      operationId: get-auth-v1-policies
+      parameters:
+        - name: Authorization
+          in: header
+          description: DX Auth issued identity token
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            pattern: 'Bearer [a-zA-Z0-9_*\-*\.\/]+$|^[a-zA-Z0-9_*\-*\.\/]+$'
+      responses:
+        '200':
+          description: |-
+            Policies have been successfully listed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getPolicySuccessResponseWithResourceType'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+        '401':
+          description: 'Unauthorized - `token` invalid/expired'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+        '404':
+          description: 'Not Found - Policy not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/policyNotFound'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+      security:
+        - authorization: [ ]
+
+      x-codeSamples:
+        - lang: 'cURL'
+          label: 'get latest policies'
+          source: |
+            curl --location --request GET 'https://example-apd.com/dx/apd/acl/v1/policies' \
+            --header 'Authorization: <tokenValue>'
+
+    delete:
+      tags:
+        - Policies
+      summary: Delete Policy
+      description: |-
+        A provider of the resource can delete the policy. An existing active policy can be deleted by the provider or provider delegate. The request would contain id, i.e. the ID of the policy that the user wants to delete. The user can use the GET Policy API to get the policy ID.
+      operationId: delete-auth-v1-policies
+      parameters:
+        - name: Authorization
+          in: header
+          description: DX Auth issued identity token
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            pattern: 'Bearer [a-zA-Z0-9_*\-*\.\/]+$|^[a-zA-Z0-9_*\-*\.\/]+$'
+      requestBody:
+        description: Request body is a JsonObject containing ID whose value is the policy ID.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  pattern: '^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$'
+                  minLength: 36
+
+              required:
+                - id
+            examples:
+              Request body for Delete Policy:
+                value:
+                  id: 231f6eca-6276-4993-bfeb-53cbbbba6f06
+      responses:
+        '200':
+          description: User Policy deleted successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/deletePolicy'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+        '400':
+          description: |-
+            Bad Request
+            - Id is not a valid policyId
+            - Policy has expired
+            - Policy was previously deleted
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/deletePolicyErrorResponse'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+        '404':
+          description: |-
+            Not Found
+              - Policy id does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/deletePolicyNotFoundErrorResponse'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+        '401':
+          description: |-
+            Unauthorized
+              - `token` invalid/expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+      security:
+        - authorization: [ ]
+
+      x-codeSamples:
+        - lang: 'cURL'
+          label: 'Delete policy'
+          source: |
+            curl --location --request DELETE 'https://example-apd.com/dx/apd/acl/v1/policies' \
+            --header 'Content-Type: application/json' \
+            --header 'Authorization: <tokenValue>' \
+            --data-raw '<payload>'
+  /iudx/acl/apd/v2/verify:
+    post:
+      tags:
+        - Verify
+      summary: Verify Policy
+      description: |
+        This endpoint checks if a policy exists for the specified item and owner in the APD server. It returns the policy constraints if a policy is found.
+
+        `Note` : This endpoint is exclusive for internal use. The DX authentication server will invoke it before issuing access tokens to ensure the presence of a valid policy for the consumer and the requested resource.
+      operationId: get-auth-v1-verify
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            example: Bearer <JWT>
+      requestBody:
+        description: >-
+          The request body is a JSON object that contains information about the
+          user, owner, and item.The user's ID, name, and email, as well as the
+          owner's ID, name, and email, are provided.Additionally, information
+          about the item, including its ID and type, is included.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/requestBodyForVerify'
+            examples:
+              Request body for Verify Policy:
+                value:
+                  user:
+                    id: b58da193-23d9-43eb-b98a-a103d4b6103c
+                    name:
+                      firstName: demo
+                      lastName: name
+                    email: test_user_1@example.com
+                  owner:
+                    id: b2c27f3f-2524-4a84-816e-91f9ab23f837
+                    name:
+                      firstName: test
+                      lastName: provider
+                    email: test@provider.com
+                  item:
+                    itemId: b58da193-23d9-43eb-b98a-a103d4b6103c
+                    itemType: DATABANK
+      responses:
+        '200':
+          description: Policy verification successful
+          content:
+            application/json:
+              example:
+                type: urn:apd:Allow
+                constraints:
+                  rule: read
+                  duration: 3600
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              example:
+                type: urn:dx:acl:badRequest
+                title: Bad Request
+                detail: Bad Request
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              example:
+                type: urn:apd:Deny
+                title: Policy does not exist
+                detail: Invalid request format/Incorrect request
+      security:
+        - authorization: [ ]
+
+
+      x-codeSamples:
+        - lang: 'cURL'
+          label: 'Verify policy'
+          source: |
+            curl --location --request POST 'https://example-apd.com/verify' \
+            --header 'Authorization: bearer <tokenValue>' \
+            --header 'Content-Type: application/json' \
+              --data-raw '<payload>'
 components:
   securitySchemes:
     authorization:
@@ -1869,7 +2343,7 @@ components:
                 type: string
               itemType:
                 type: string
-                default: RESOURCE_GROUP
+                default: DATABANK
               consumer:
                 type: array
                 items:
@@ -1937,7 +2411,7 @@ components:
         results:
           - policyId: aaaaaaaa-6473-3546-5436-8758aaaa5897
             itemId: cccccccc-6754-8958-2456-3452aaaa5436
-            itemType: RESOURCE_GROUP
+            itemType: DATABANK
             expiryAt: '2024-09-05T20:00:19'
             constraints:
               access:
@@ -1959,7 +2433,7 @@ components:
               id: bbbbbbbb-8958-2445-2354-7587aaaa6776
           - policyId: aaaaaaaa-9870-7676-7456-2454aaaa1111
             itemId: cccccccc-2452-2455-5656-1111aaaa7878
-            itemType: RESOURCE_GROUP
+            itemType: DATABANK
             expiryAt: '2024-08-05T20:00:29'
             constraints:
               access:
@@ -2086,7 +2560,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:success
+        type: urn:dx:apdServerPanel:success
         title: Success
         detail: Policy deleted successfully
     deletePolicyInvalidUserResponse:
@@ -2108,7 +2582,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:forbidden
+        type: urn:dx:apdServerPanel:success
         title: Forbidden
         detail: 'Access Denied: You do not have ownership rights for this policy.'
     getPolicyInvalidUserResponse:
@@ -2130,7 +2604,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:forbidden
+        type: urn:dx:apdServerPanel:success
         title: Access Denied
         detail: Policy could not be fetched, user doesn't own the policy
     updateNotificationInvalidUserResponse:
@@ -2194,7 +2668,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:badRequest
+        type: urn:dx:apdServerPanel:success
         title: Bad Request
         detail: Policy could not be deleted, as policy is not ACTIVE
     deletePolicyNotFoundErrorResponse:
@@ -2216,7 +2690,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:notFound
+        type: urn:dx:apdServerPanel:success
         title: Not Found
         detail: Policy could not be deleted, as it doesn't exist
     Unauthorized:
@@ -2259,9 +2733,9 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:badRequest
+        type: urn:dx:apdServerPanel:badRequest
         title: Bad Request
-        detail: Item id given is not present
+        detail: "Item not found for ID: b34eb955-c691-4fd3-b200-f18bc78810a2"
     createPolicyForbidden:
       type: object
       additionalProperties: false
@@ -2280,7 +2754,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:forbidden
+        type: urn:dx:apdServerPanel:forbidden
         title: Forbidden
         detail: 'Access Denied: You do not have ownership rights for this resource.'
     createPolicySuccessResponse:
@@ -2299,7 +2773,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:success
+        type: urn:dx:apdServerPanel:success
         title: Success
         detail: Policy created successfully
     conflictResponse:
@@ -2317,9 +2791,9 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:conflict
+        type: urn:dx:apdServerPanel:conflict
         title: Conflict
-        detail: Policy already exist for the request object [bf9d8f85-b7b0-40bb-8197-0046725f1ca8]
+        detail: Policy already exist for some of the request objects [bf9d8f85-b7b0-40bb-8197-0046725f1ca8]
     generalBadRequest:
       additionalProperties: false
       properties:
@@ -2458,7 +2932,7 @@ components:
           results:
             - requestId: e4619679-f5d9-4eff-9f79-bbded6130bb1
               itemId: string
-              itemType: RESOURCE_GROUP
+              itemType: DATABANK
               status: pending
               expiryDuration: string
               constraints:
@@ -2534,8 +3008,8 @@ components:
           maxLength: 512
         itemType:
           enum:
-            - resource
-            - resource_group
+            - AIMODEL
+            - DATABANK
           minLength: 1
       required:
         - itemId

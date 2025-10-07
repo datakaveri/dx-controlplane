@@ -26,7 +26,9 @@ public record DxUser(
         String twitter_account,
         String linkedin_account,
         String github_account,
-        Boolean account_enabled// newly added field
+        Boolean account_enabled,// newly added field
+        String did,
+        String aud
 ) {
     public JsonObject toJson() {
         String isoCreatedAt = createdAt != null
@@ -52,7 +54,9 @@ public record DxUser(
                 .put("twitter_account", twitter_account)
                 .put("linkedin_account", linkedin_account)
                 .put("github_account", github_account)
-        .put("account_enabled", account_enabled);
+                .put("account_enabled", account_enabled)
+                .put("did", did)
+                .put("aud", aud);
     }
 
     public static DxUser withPendingRoles(DxUser user, List<String> pendingRoles, JsonObject organisation) {
@@ -75,7 +79,9 @@ public record DxUser(
                 user.twitter_account(),
                 user.linkedin_account(),
                 user.github_account(),
-                user.account_enabled()// retain createdAt
+                user.account_enabled(),// retain createdAt
+                user.did(),
+                user.aud()
         );
     }
 
@@ -97,6 +103,16 @@ public record DxUser(
     @Override
     public UUID sub() {
         return sub;
+    }
+
+    @Override
+    public String did() {
+        return did;
+    }
+
+    @Override
+    public String aud() {
+        return aud;
     }
 }
 

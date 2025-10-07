@@ -12,6 +12,8 @@ import org.cdpg.dx.acl.accessReport.controller.AccessReportController;
 import org.cdpg.dx.acl.accessReport.factory.AccessReportFactory;
 import org.cdpg.dx.acl.accessRequest.controller.AccessRequestController;
 import org.cdpg.dx.acl.accessRequest.factory.AccessRequestFactory;
+import org.cdpg.dx.acl.policy.controller.PolicyController;
+import org.cdpg.dx.acl.policy.factory.PolicyFactory;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
@@ -76,6 +78,15 @@ public class ControllerFactory {
             webClient);
 
     AccessReportController accessReportController = AccessReportFactory.create(pgService, vertx);
+    PolicyController policyController = PolicyFactory.createPolicyController(
+        pgService,
+        esService,
+        keycloakUserService,
+        auditingHandler,
+        urnGenerator,
+        webClient,
+        config
+    );
 
     //    final ListController listController =
     //        ListControllerFactory.createListController(esService, auditingHandler, docIndex);
@@ -96,6 +107,6 @@ public class ControllerFactory {
     //        accessReportController);
     ////        assetController,listController,searchController,itemController);
 
-    return List.of(accessRequestController, accessReportController);
+    return List.of(accessRequestController, accessReportController, policyController);
   }
 }
