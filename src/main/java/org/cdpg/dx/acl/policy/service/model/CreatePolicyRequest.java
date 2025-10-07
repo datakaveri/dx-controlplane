@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.cdpg.dx.aaa.common.ItemType;
+import org.cdpg.dx.catalogueService.models.ItemType;
 
 public class CreatePolicyRequest {
   private static long defaultExpiryDays;

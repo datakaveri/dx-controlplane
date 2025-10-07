@@ -29,11 +29,11 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.common.ItemType;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.service.model.CreatePolicyRequest;
+import org.cdpg.dx.catalogueService.models.ItemType;
 import org.cdpg.dx.common.HttpStatusCode;
 import org.cdpg.dx.common.ResponseUrn;
 import org.cdpg.dx.common.exception.DxForbiddenException;
@@ -423,9 +423,9 @@ public class PolicyDaoImpl implements PolicyDao {
                 } else {
                   ItemType itemType = null;
                   if (type.equalsIgnoreCase(ITEM_TYPE_DATA_BANK)) {
-                    itemType = ItemType.DATA_BANK;
+                    itemType = ItemType.DATABANK;
                   } else if (type.equalsIgnoreCase(ITEM_TYPE_AI_MODEL)) {
-                    itemType = ItemType.AI_MODEL;
+                    itemType = ItemType.AIMODEL;
                   }
                   ResourceObj resourceObj =
                       new ResourceObj(id, provider, resServerUrls, itemType);

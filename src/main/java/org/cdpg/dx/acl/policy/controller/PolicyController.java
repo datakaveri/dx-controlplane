@@ -28,7 +28,6 @@ import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.common.Constants;
-import org.cdpg.dx.aaa.common.ItemType;
 import org.cdpg.dx.acl.apiserver.ApdApiController;
 import org.cdpg.dx.acl.policy.service.PolicyService;
 import org.cdpg.dx.acl.policy.service.model.CreatePolicyRequest;
@@ -36,9 +35,9 @@ import org.cdpg.dx.acl.policy.util.UserAccessHandler;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.catalogueService.models.ItemType;
 import org.cdpg.dx.common.HttpStatusCode;
 import org.cdpg.dx.common.ResponseUrn;
-import org.cdpg.dx.common.ResponseUtil;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.model.DxUser;
@@ -180,8 +179,7 @@ public class PolicyController implements ApdApiController {
       UUID ownerId = UUID.fromString(request.getJsonObject("owner").getString("id"));
       String userEmail = request.getJsonObject("user").getString("email");
       UUID itemId = UUID.fromString(request.getJsonObject("item").getString("itemId"));
-      ItemType
-          itemType =
+      ItemType itemType =
           ItemType.fromTypeValue(request.getJsonObject("item").getString("itemType").toUpperCase());
       policyService
           .initiateVerifyPolicy(ownerId, userEmail, itemId, itemType, user)

@@ -3,7 +3,8 @@ package org.cdpg.dx.common.model;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import org.cdpg.dx.aaa.common.ItemType;
+import org.cdpg.dx.catalogueService.models.ItemType;
+
 
 /**
  * A class representing a resource object with item ID, provider ID, resource server URLs,

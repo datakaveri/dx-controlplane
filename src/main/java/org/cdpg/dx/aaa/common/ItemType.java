@@ -3,8 +3,8 @@ package org.cdpg.dx.aaa.common;
 import static org.cdpg.dx.aaa.common.Constants.*;
 
 public enum ItemType {
-  AI_MODEL("AIMODEL"),
-  DATA_BANK("DATABANK"),
+  AI_MODEL(ITEM_TYPE_AI_MODEL),
+  DATA_BANK(ITEM_TYPE_DATA_BANK),
   APPS(ITEM_TYPE_APPS);
 
   private final String typeValue;
