@@ -22,7 +22,6 @@ import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
-import org.cdpg.dx.database.postgres.service.PostgresServiceImpl;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 
