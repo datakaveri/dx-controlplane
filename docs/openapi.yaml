@@ -6695,12 +6695,10 @@ components:
         name:
           type: string
           example: Data Kaveri
+          enum: [NGSI-LD,GATEWAY, OGC, FILE]
         url:
           type: string
           example: datakaveri.org
-        type:
-          type: string
-          enum: [ngsi-ld, gateway, ogc, file]
         visibility:
           type: string
           enum: [PUBLIC, PRIVATE]
@@ -10541,11 +10539,9 @@ components:
             properties:
               name:
                 type: string
-              type:
-                type: string
-                enum: [ogc, ngsi-ld, file, gateway]
+                enum: [ NGSI-LD,GATEWAY, OGC, FILE ]
             required:
-              - type
+              - name
       required:
         - name
         - type
@@ -10588,13 +10584,9 @@ components:
         license: 'CC-BY 4.0'
         resourceServer:
           - name: "OGC"
-            type: "ogc"
           - name: "NGSI-LD"
-            type: "ngsi-ld"
           - name: "FILE"
-            type: "file"
           - name: "GATEWAY"
-            type: "gateway"
     exampleEntityPotentialApps:
       type: object
       title: AI Use Case Template Schema
