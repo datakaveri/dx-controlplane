@@ -16,7 +16,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -79,7 +78,6 @@ public class PolicyServiceImpl implements PolicyService {
         })
         .compose(policyNotExists -> {
           // Step 3: Create policy in DB
-          LOGGER.debug("came here... {}", policyNotExists.toString());
           return policyDao.insertPolicies(requests, userId);
         })
         .onSuccess(rowList -> {
@@ -242,22 +240,8 @@ public class PolicyServiceImpl implements PolicyService {
     Promise<JsonObject> promise = Promise.promise();
 
     try {
-      // Step 1: Validate the item exists and is accessible
-      Set<UUID> itemSet = new HashSet<>();
-      itemSet.add(itemId);
-
-      policyDao.checkForItemsInDb(itemSet, Set.of(itemType.getTypeValue()), user)
-          .compose(existingItemIds -> {
-            if (existingItemIds.isEmpty()) {
-              return Future.failedFuture(generateErrorResponse(
-                  HttpStatusCode.FORBIDDEN,
-                  "Item not found or access denied"
-              ));
-            }
-
-            // Step 2: Check if ACTIVE policy exists for user/item
-            return policyDao.checkExistingPoliciesForId(itemId, ownerId, userEmail);
-          })
+      // Check if ACTIVE policy exists for user/item
+      policyDao.checkExistingPoliciesForId(itemId, ownerId, userEmail)
           .onSuccess(rsPolicy -> {
             // Policy exists → fetch constraints
             if (rsPolicy.containsKey(ID)) {
