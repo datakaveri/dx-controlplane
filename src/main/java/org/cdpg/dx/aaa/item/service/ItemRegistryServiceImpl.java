@@ -80,7 +80,7 @@ public class ItemRegistryServiceImpl implements ItemRegistryService {
   private String validateResourceServers(JsonArray resourceServers) {
     for (int i = 0; i < resourceServers.size(); i++) {
       JsonObject rs = resourceServers.getJsonObject(i);
-      String datasetType = rs.getString("type", "").toUpperCase();
+      String datasetType = rs.getString("name", "").toUpperCase();
       if (!isValidDatasetType(datasetType)) {
         return "Unsupported datasetType: " + datasetType + " at index " + i;
       }
@@ -98,7 +98,7 @@ public class ItemRegistryServiceImpl implements ItemRegistryService {
     Future<Void> chain = Future.succeededFuture();
     for (int i = 0; i < resourceServers.size(); i++) {
       JsonObject rs = resourceServers.getJsonObject(i);
-      String datasetType = rs.getString("type", "").toUpperCase();
+      String datasetType = rs.getString("name", "").toUpperCase();
       LOGGER.debug("Processing resource server type: {} at index {}", datasetType, i);
       
       chain = chain.compose(v -> handleSingleResourceServer(request, userId, itemId, requestBody, datasetType, rollbackActions, response));
