@@ -322,12 +322,24 @@ public class ItemServiceImpl implements ItemService {
       return Future.failedFuture("ID not present in request");
     }
 
+    List<String> roles = patchItemRequest.getAllowedRoles();
     QueryModel queryModel;
-    if (patchItemRequest.getAllowedRoles().contains(COS_ADMIN)) {
+    if (roles.contains(COS_ADMIN)) {
       queryModel = queryDecoder.getItemIdQueryModel(patchItemRequest.getItemId());
-    } else {
+    } else if (roles.contains(ORG_ADMIN)) {
       queryModel = queryDecoder.getItemIdOrgIdQueryModel(patchItemRequest.getItemId(),
           patchItemRequest.getOrgId());
+    } else if (roles.contains(PROVIDER)) {
+      queryModel = queryDecoder.getItemIdOwnerIdQueryModel(patchItemRequest.getItemId(),
+          patchItemRequest.getUserId());
+      // Provider restriction: only allow 'dataUploadStatus'
+      JsonObject patchBody = patchItemRequest.getRequestBody();
+      if (!patchBody.containsKey("dataUploadStatus") || patchBody.size() != 1) {
+        return Future.failedFuture(
+            new DxForbiddenException("Providers can only update dataUploadStatus"));
+      }
+    } else {
+      return Future.failedFuture(new DxForbiddenException("User role not permitted to patch item"));
     }
     LOGGER.debug("query: " + queryModel.getQueries().toElasticsearchQuery());
     String id = patchItemRequest.getItemId();
@@ -335,10 +347,22 @@ public class ItemServiceImpl implements ItemService {
         .getSingleDocument(docIndex, queryModel.getQueries())
         .onSuccess(
             result -> {
-              LOGGER.debug("Item with ID {} found for update", id);
               if (ElasticsearchResponse.getTotalHits() < 1) {
-                LOGGER.debug("Item with ID {} not found for update", id);
-                promise.fail(new DxBadRequestException("Item not found for update"));
+                String errorMsg;
+
+                if (roles.contains(COS_ADMIN)) {
+                  errorMsg = "Item not found for update";
+                } else if (roles.contains(ORG_ADMIN)) {
+                  errorMsg = "No item found for update under your organization";
+                } else if (roles.contains(PROVIDER)) {
+                  errorMsg = "No item found owned by you for update";
+                } else {
+                  errorMsg = "Item not found or access denied";
+                }
+
+                LOGGER.debug("Item with ID {} not found for update. Role: {}, message: {}",
+                    id, roles, errorMsg);
+                promise.fail(new DxBadRequestException(errorMsg));
               } else {
                 LOGGER.debug("Update item with ID: {}", id);
                 String docId = result.getDocId();

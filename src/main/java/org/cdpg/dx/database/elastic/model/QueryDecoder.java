@@ -345,7 +345,21 @@ public class QueryDecoder {
         return buildBooleanQuery(filterQueries);
     }
 
-    public QueryModel getItemIdQueryModel(String id) {
+  public QueryModel getItemIdOwnerIdQueryModel(String itemId, String ownerId) {
+    List<QueryModel> filterQueries = buildIdTermQuery(itemId);
+
+    if (ownerId != null && !ownerId.isBlank()) {
+      LOGGER.debug("getItemIdOwnerIdQueryModel - ownerId: {}", ownerId);
+      QueryModel ownerIdTermQuery = new QueryModel(QueryType.TERM);
+      ownerIdTermQuery.setQueryParameters(Map.of(FIELD, PROVIDER_USER_ID + KEYWORD_KEY, VALUE, ownerId));
+      filterQueries.add(ownerIdTermQuery);
+    }
+
+    return buildBooleanQuery(filterQueries);
+  }
+
+
+  public QueryModel getItemIdQueryModel(String id) {
         return buildBooleanQuery(buildIdTermQuery(id));
     }
 
