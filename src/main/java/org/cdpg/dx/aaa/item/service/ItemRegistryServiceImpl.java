@@ -27,16 +27,22 @@ public class ItemRegistryServiceImpl implements ItemRegistryService {
   private final ConnectorService connectorService;
   private final WebClient webClient;
   private final String dataPlaneUrl;
+  private final String controlPlaneUrl;
+  private final String ogcDataPlaneUrl;
+  private final ScriptGenerationService scriptGenerationService;
   
   public ItemRegistryServiceImpl(ItemService itemService,
                                  IngestionService ingestionService,
                                  ConnectorService connectorService,
-                                 WebClient webClient, String dataPlaneUrl) {
+                                 WebClient webClient, String dataPlaneUrl,String controlPlaneUrl,String ogcDataPlaneUrl) {
     this.itemService = itemService;
     this.ingestionService = ingestionService;
     this.connectorService = connectorService;
     this.webClient = webClient;
     this.dataPlaneUrl = dataPlaneUrl;
+    this.controlPlaneUrl= controlPlaneUrl;
+    this.ogcDataPlaneUrl = ogcDataPlaneUrl;
+    this.scriptGenerationService = new ScriptGenerationService();
   }
 
   @Override
@@ -66,7 +72,7 @@ public class ItemRegistryServiceImpl implements ItemRegistryService {
     
       return itemService
               .createItem(item)
-              .compose(v -> processResourceServersSequentially(dataBankCreationRequest, userId, itemId, resourceServers, requestBody, rollbackActions, response))
+              .compose(v -> processResourceServersSequentially(dataBankCreationRequest, resourceServers, requestBody, rollbackActions, response,item))
               .map(v -> response)
               .recover(err -> {
                   LOGGER.error("Error during item creation flow, starting rollbacks. Cause: {}", err.getCause());
@@ -85,14 +91,15 @@ public class ItemRegistryServiceImpl implements ItemRegistryService {
         return "Unsupported datasetType: " + datasetType + " at index " + i;
       }
     }
-    return null; // No validation errors
+    return null; // No validation errors    JsonArray resourceServers = request.getOriginalBody().getJsonArray("resourceServer");
+
   }
 
   private boolean isValidDatasetType(String datasetType) {
     return "GATEWAY".equals(datasetType) || "NGSI-LD".equals(datasetType) || "OGC".equals(datasetType) ||"FILE".equals(datasetType);
   }
 
-  private Future<Void> processResourceServersSequentially(DataBankCreationRequest request, String userId, String itemId, JsonArray resourceServers, JsonObject requestBody, List<Supplier<Future<Void>>> rollbackActions, DataBankCreationResponse response) {
+  private Future<Void> processResourceServersSequentially(DataBankCreationRequest request, JsonArray resourceServers, JsonObject requestBody, List<Supplier<Future<Void>>> rollbackActions, DataBankCreationResponse response,Item item) {
     LOGGER.debug("Processing {} resource servers sequentially for safety", resourceServers.size());
     
     Future<Void> chain = Future.succeededFuture();
@@ -101,13 +108,15 @@ public class ItemRegistryServiceImpl implements ItemRegistryService {
       String datasetType = rs.getString("name", "").toUpperCase();
       LOGGER.debug("Processing resource server type: {} at index {}", datasetType, i);
       
-      chain = chain.compose(v -> handleSingleResourceServer(request, userId, itemId, requestBody, datasetType, rollbackActions, response));
+      chain = chain.compose(v -> handleSingleResourceServer(request, requestBody, datasetType, rollbackActions, response,item));
     }
     return chain;
   }
 
-  private Future<Void> handleSingleResourceServer(DataBankCreationRequest request, String userId, String itemId,JsonObject requestBody, String datasetType, List<Supplier<Future<Void>>> rollbackActions, DataBankCreationResponse response) {
+  private Future<Void> handleSingleResourceServer(DataBankCreationRequest request,JsonObject requestBody, String datasetType, List<Supplier<Future<Void>>> rollbackActions, DataBankCreationResponse response,Item item) {
       LOGGER.debug("Handling resource server of type: {}", datasetType);
+      String itemId = item.getId();
+      String userId = request.getUserId();
       return switch (datasetType) {
           case "GATEWAY" -> connectorService
                   .createConnector(userId, itemId)
@@ -136,11 +145,8 @@ public class ItemRegistryServiceImpl implements ItemRegistryService {
                       .mapEmpty();
           }
           case "OGC" -> {
-              LOGGER.debug("OGC resource server - no additional processing required, returning success");
-              DataBankCreationResponse.ResourceServerResponse rsResponse =
-                      new DataBankCreationResponse.ResourceServerResponse("OGC", new JsonObject().put("status", "created"));
-              response.addResourceServer(rsResponse);
-              yield Future.succeededFuture();
+              LOGGER.debug("OGC resource server - checking for vector/raster data and generating script");
+              yield handleOgcResourceServer(request, response,item);
           }
           case "FILE" -> {
               LOGGER.debug("FILE resource server - no additional processing required, returning success");
@@ -185,6 +191,72 @@ public class ItemRegistryServiceImpl implements ItemRegistryService {
       });
   }
 
+  private Future<Void> handleOgcResourceServer(DataBankCreationRequest request, DataBankCreationResponse response,Item item) {
+    LOGGER.debug("Handling OGC resource server for itemId: {}", item.getId());
+    String itemId = item.getId();
+    // Find the OGC resource server in the request to check accessType
+    JsonArray resourceServers = request.getOriginalBody().getJsonArray("resourceServer");
+    JsonObject ogcResourceServer = null;
+
+    for (int i = 0; i < resourceServers.size(); i++) {
+      JsonObject rs = resourceServers.getJsonObject(i);
+      if ("OGC".equalsIgnoreCase(rs.getString("name"))) {
+        ogcResourceServer = rs;
+        break;
+      }
+    }
+
+    // Extract common details for script generation from request body
+    String title =  item.getName();
+    String description =  item.getShortDescription();
+    String authToken = request.getToken();
+    
+    // Check if this is vector data based on accessType
+    if (scriptGenerationService.isVectorData(ogcResourceServer)) {
+      LOGGER.debug("Vector data detected in OGC resource server, generating script");
+      
+      // Generate vector creation script file
+      JsonObject fileInfo = scriptGenerationService.generateVectorScriptFile(authToken, itemId, title, description,ogcDataPlaneUrl,controlPlaneUrl);
+      JsonObject scriptResponse = scriptGenerationService.createScriptFileResponse(fileInfo, "vector", itemId);
+      
+      // Create response with script information
+      JsonObject ogcResponse = new JsonObject()
+          .put("status", "created")
+          .put("dataType", "vector")
+          .put("script", scriptResponse);
+      
+      DataBankCreationResponse.ResourceServerResponse rsResponse =
+          new DataBankCreationResponse.ResourceServerResponse("OGC", ogcResponse);
+      response.addResourceServer(rsResponse);
+      
+      LOGGER.info("OGC vector data onboarding script generated for itemId: {}", itemId);
+    } else if (scriptGenerationService.isRasterData(ogcResourceServer)) {
+      LOGGER.debug("Raster data detected in OGC resource server, generating script");
+      
+      // Generate raster creation script file
+      JsonObject fileInfo = scriptGenerationService.generateRasterScriptFile(authToken, itemId, title, description,ogcDataPlaneUrl,controlPlaneUrl);
+      JsonObject scriptResponse = scriptGenerationService.createScriptFileResponse(fileInfo, "raster", itemId);
+      
+      // Create response with script information
+      JsonObject ogcResponse = new JsonObject()
+          .put("status", "created")
+          .put("dataType", "raster")
+          .put("script", scriptResponse);
+      
+      DataBankCreationResponse.ResourceServerResponse rsResponse =
+          new DataBankCreationResponse.ResourceServerResponse("OGC", ogcResponse);
+      response.addResourceServer(rsResponse);
+      
+      LOGGER.info("OGC raster data onboarding script generated for itemId: {}", itemId);
+    } else {
+      LOGGER.debug("No vector or raster data detected in OGC resource server");
+      DataBankCreationResponse.ResourceServerResponse rsResponse =
+          new DataBankCreationResponse.ResourceServerResponse("OGC", new JsonObject().put("status", "created"));
+      response.addResourceServer(rsResponse);
+    }
+    
+    return Future.succeededFuture();
+  }
   private Future<Void> performRollbacksSequentially(List<Supplier<Future<Void>>> rollbackActions) {
     LOGGER.debug("Performing {} rollback actions sequentially", rollbackActions.size());
     

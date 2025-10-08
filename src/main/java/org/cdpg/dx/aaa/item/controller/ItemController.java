@@ -41,6 +41,11 @@ import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.aaa.item.service.ItemRegistryService;
 import org.cdpg.dx.aaa.item.util.DataBankCreationRequest;
+import org.cdpg.dx.aaa.item.service.ScriptGenerationService;
+import io.vertx.core.http.HttpServerResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class ItemController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(ItemController.class);
@@ -52,6 +57,7 @@ public class ItemController implements ApiController {
 
   private final ItemExistenceValidator itemExistenceValidator;
   private final ItemRegistryService itemRegistryService;
+  private final ScriptGenerationService scriptGenerationService;
   private final CheckIfTokenPresent checkIfTokenPresent = new CheckIfTokenPresent();
   private final VerifyItemTypeAndRole verifyItemTypeAndRole = new VerifyItemTypeAndRole();
   Handler<RoutingContext> adminAccessHandler = AuthorizationHandler.forRoles(DxRole.COS_ADMIN,
@@ -66,6 +72,7 @@ public class ItemController implements ApiController {
     this.urnGenerator = urnGenerator;
     this.itemExistenceValidator = new ItemExistenceValidator(itemService);
     this.itemRegistryService = itemRegistryService;
+    this.scriptGenerationService = new ScriptGenerationService();
   }
 
   @Override
@@ -102,6 +109,11 @@ public class ItemController implements ApiController {
         .operation(GET_ITEM_WITH_ACCESS)
         .handler(auditingHandler::handleApiAudit)
         .handler(this::handleGetItemWithAccess);
+
+//    builder
+//        .operation(DOWNLOAD_SCRIPT)
+//        .handler(auditingHandler::handleApiAudit)
+//        .handler(this::handleDownloadScript);
 
     LOGGER.debug("Item Controller registered");
   }
@@ -255,7 +267,7 @@ public class ItemController implements ApiController {
       if (REQUEST_POST.equalsIgnoreCase(method)) {
         if (ITEM_TYPE_DATA_BANK.equals(ctx.get(ITEM_TYPE))) {
           handleDataBankCreate(ctx, item, body);
-        } else {
+        } else {  
           itemService
             .createItem(item)
             .onSuccess(
@@ -476,5 +488,52 @@ public class ItemController implements ApiController {
                 routingContext.fail(err);
               }
             });
+  }
+
+  private void handleDownloadScript(RoutingContext ctx) {
+    LOGGER.debug("Handling script download request");
+    
+    String filename = ctx.request().getParam("filename");
+    if (filename == null || filename.isBlank()) {
+      LOGGER.error("Missing filename parameter");
+      ctx.fail(new DxBadRequestException("Filename parameter is required"));
+      return;
+    }
+    
+    // Security: Only allow .py files and prevent directory traversal
+    if (!filename.endsWith(".py") || filename.contains("..") || filename.contains("/") || filename.contains("\\")) {
+      LOGGER.error("Invalid filename: {}", filename);
+      ctx.fail(new DxBadRequestException("Invalid filename"));
+      return;
+    }
+    
+    Path filePath = Paths.get("generated_scripts", filename);
+    
+    if (!Files.exists(filePath)) {
+      LOGGER.error("Script file not found: {}", filePath);
+      ctx.fail(new DxNotFoundException("Script file not found"));
+      return;
+    }
+    
+    try {
+      byte[] fileContent = Files.readAllBytes(filePath);
+      
+      HttpServerResponse response = ctx.response();
+      response
+          .putHeader("Access-Control-Allow-Origin", "*")
+          .putHeader("Access-Control-Allow-Headers", "Content-Type, Authorization")
+          .putHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+          .putHeader("Content-Type", "text/x-python")
+          .putHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+          .putHeader("Content-Length", String.valueOf(fileContent.length));
+      
+      response.end(io.vertx.core.buffer.Buffer.buffer(fileContent));
+      
+      LOGGER.info("Script file downloaded successfully: {}", filename);
+      
+    } catch (Exception e) {
+      LOGGER.error("Error reading script file: {}", filename, e);
+      ctx.fail(new DxInternalServerErrorException("Error reading script file"));
+    }
   }
 }

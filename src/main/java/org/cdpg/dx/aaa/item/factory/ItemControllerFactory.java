@@ -34,13 +34,13 @@ public class ItemControllerFactory {
       WebClient webClient,
       IngestionService ingestionService,
       ConnectorService connectorService,
-      String dataPlaneUrl) {
+      String dataPlaneUrl,String controlPlaneUrl,String ogcDataPlaneUrl) {
       AccessRequestDao accessRequestDao =
         new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
 
     ItemService crudService = new ItemServiceImpl(elasticsearchService, keycloakUserService,
         accessRequestDao, webClient, docIndex, apdURL);
-      ItemRegistryService orchestrationService = new ItemRegistryServiceImpl(crudService, ingestionService, connectorService, webClient, dataPlaneUrl);
+      ItemRegistryService orchestrationService = new ItemRegistryServiceImpl(crudService, ingestionService, connectorService, webClient, dataPlaneUrl,controlPlaneUrl,ogcDataPlaneUrl);
     return new ItemController(auditingHandler, crudService, vocContext, urnGenerator,orchestrationService);
   }
 }
