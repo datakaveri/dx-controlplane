@@ -16,6 +16,8 @@
   "commonOptions":{
     "dxApiBasePath": "/dx/apd/acl/v1",
     "dataPlaneUrl" : "<data-plane-url>",
+    "ogcDataPlaneUrl": "<ogc-data-plane-url>",
+    "controlPlaneUrl": "<control-plane-url>",
     "clientId": "<apd-delegate-client-id>",
     "clientSecret": "<apd-delegate-client-secret>",
     "apdURL": "<acl-apd-url>",
