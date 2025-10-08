@@ -7,7 +7,7 @@ secrets/all-verticles-configs/*.json
 secrets/one-verticle-configs/*.json
 secrets/*.jks
 /configs/
-
+generated_scripts/
 logs/
 configs/catkeystore.ks
 configs/keystore.jks

@@ -77,7 +77,7 @@ public class ItemServiceImpl implements ItemService {
 
     elasticsearchService
         .getSingleDocument(docIndex, termQuery)
-        .onSuccess(
+        .onSuccess( 
             existingDoc -> {
               if (existingDoc != null && ElasticsearchResponse.getTotalHits() > 0) {
                 LOGGER.warn("Item with ID {} already exists", id);
