@@ -10,7 +10,10 @@ public enum DxRole {
   PROVIDER("provider"),
   COS_ADMIN("cos_admin"),
   ORG_ADMIN("org_admin"),
-  COMPUTE("compute");
+  COMPUTE("compute"),
+  DELEGATE("delegate");
+
+
 
   private final String role;
 

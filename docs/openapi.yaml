@@ -778,6 +778,7 @@ paths:
       security:
         - authorization: [ ]
 
+  /iudx/v2/auth/user/organisations/requests/{id}:
     delete:
       tags:
         - Organisation APIs
@@ -923,6 +924,7 @@ paths:
       security:
         - authorization: [ ]
 
+  /iudx/v2/auth/user/organisations/join_requests/{id}:
     delete:
       tags:
         - Organisation APIs
@@ -2245,6 +2247,7 @@ paths:
       operationId: get-auth-v2-user-credit
       security:
         - authorization: [ ]
+  /iudx/v2/auth/user/credit/reques/{id}:
     delete:
       tags:
         - Credit APIs
@@ -2756,8 +2759,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/createNotificationForbidden'
       security:
-          - authorization: [ ]
-  /iudx/v2/auth/user/compute/requests:
+        - authorization: [ ]
+  /iudx/v2/auth/user/compute/requests/{id}:
     delete:
       tags:
         - Credit APIs
@@ -2791,6 +2794,7 @@ paths:
                 $ref: '#/components/schemas/Unauthorized'
       security:
         - authorization: [ ]
+  /iudx/v2/auth/user/compute/requests:
     get:
       summary: 'User: Get All ComputeRole Requests'
       tags:
@@ -3200,6 +3204,7 @@ paths:
       operationId: get-auth-v2-user-provider-requests
       security:
         - authorization: [ ]
+  /iudx/v2/auth/organization/user/provider_requests/{id}:
     delete:
       tags:
         - Organisation APIs
@@ -4063,6 +4068,273 @@ paths:
       security:
         - authorization: [ ]
 
+
+  /iudx/v2/auth/delegation/grant:
+    post:
+      summary: Grant Delegation to another User.
+      tags:
+        - Delegation APIs
+      operationId: post-auth-v2-delegation-grant
+      security:
+        - authorization: [ ]
+      requestBody:
+        description: Create a new delegation grant with scope constraints
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                delegate_id:
+                  type: string
+                  format: uuid
+                justification:
+                  type: string
+                expiry_at:
+                  type: string
+                  format: date-time
+                scopes:
+                  type: array
+                  items:
+                    type: string
+                    example: org_management
+                constraints:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      scope:
+                        type: string
+                      entity_id:
+                        type: array
+                        items:
+                          type: string
+                          format: uuid
+                      expiry_at:
+                        type: string
+                        format: date-time
+      responses:
+        '201':
+          description: Delegation grant created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: success
+                  title:
+                    type: string
+                    example: Delegation grant created
+                  result:
+                    type: object
+
+  /iudx/v2/auth/delegation/grant/{id}:
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    get:
+      summary: Get Delegation Grant by ID
+      operationId: get-auth-v2-delegation-grant
+      tags:
+        - Delegation APIs
+      responses:
+        '200':
+          description: Delegation grant fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: "success"
+                  title:
+                    type: string
+                    example: "Delegation grant retrieved"
+                  result:
+                    type: object
+                    properties:
+                      delegation_id:
+                        type: string
+                        format: uuid
+                        description: Unique ID for the delegation grant
+                        example: "c84d49b1-1f22-4e2a-b8a9-87c1d65b7d13"
+                      delegator_id:
+                        type: string
+                        format: uuid
+                        description: ID of the user who created the delegation
+                        example: "22b96e3b-88c4-4e14-a4e2-41cc0b34c3c2"
+                      delegate_id:
+                        type: string
+                        format: uuid
+                        description: ID of the user who received the delegation
+                        example: "a5cdd22e-7c0a-4a8d-bb3a-1d1f87b7b221"
+                      justification:
+                        type: string
+                        description: Reason for granting delegation
+                        example: "Temporary org admin backup"
+                      expiry_at:
+                        type: string
+                        format: date-time
+                        description: Global expiry timestamp for this delegation
+                        example: "2025-12-31T23:59:59Z"
+                      status:
+                        type: string
+                        description: Current status of the delegation (e.g., APPROVED, REVOKED)
+                        example: "APPROVED"
+                      created_at:
+                        type: string
+                        format: date-time
+                        description: Timestamp when the delegation was created
+                        example: "2025-01-15T10:20:30Z"
+                      revoked_at:
+                        type: string
+                        format: date-time
+                        nullable: true
+                        description: Timestamp when the delegation was revoked (if applicable)
+                        example: "2025-07-01T09:00:00Z"
+        '404':
+          description: Delegation grant not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: "error"
+                  title:
+                    type: string
+                    example: "Delegation grant not found"
+                  detail:
+                    type: string
+                    example: "No record found for delegation_id provided"
+
+
+  /iudx/v2/auth/delegation/request:
+    post:
+      summary: Create a Delegation Update Request
+      description: >
+        Allows a delegate to request updated scopes, resources, or expiry for an existing delegation.
+        The reviewer (delegator) will later approve or reject this request.
+      tags:
+        - Delegation APIs
+      operationId: post-auth-v2-delegation-request
+      security:
+        - authorization: [ ]
+      requestBody:
+        required: true
+        description: Create a new delegation update request
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - delegation_id
+                - requested_scopes
+                - justification
+                - reviewer_id
+              properties:
+                delegation_id:
+                  type: string
+                  format: uuid
+                  description: Existing delegation ID for which the update is requested
+                requested_scopes:
+                  type: array
+                  description: List of scopes being requested or modified
+                  items:
+                    type: object
+                    properties:
+                      scope:
+                        type: string
+                        example: manage_org
+                      entity_id:
+                        type: string
+                        format: uuid
+                        description: Target entity (like org, asset, or user)
+                      expiry_at:
+                        type: string
+                        format: date-time
+                        description: Optional scope-level expiry (must not exceed global expiry)
+                requested_resources:
+                  type: object
+                  additionalProperties: true
+                  description: Optional JSON object containing additional requested resource details
+                requested_expiry:
+                  type: string
+                  format: date-time
+                  description: Overall requested expiry for the delegation update
+                justification:
+                  type: string
+                  example: Need to edit while owner is unavailable
+                reviewer_id:
+                  type: string
+                  format: uuid
+                  description: Reviewer (delegator) responsible for approving/rejecting this request
+      responses:
+        '201':
+          description: Delegation update request created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: success
+                  title:
+                    type: string
+                    example: Delegation update request created
+                  result:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        format: uuid
+                      delegation_id:
+                        type: string
+                        format: uuid
+                      requester_id:
+                        type: string
+                        format: uuid
+                      requested_scopes:
+                        type: object
+                      requested_resources:
+                        type: object
+                      requested_expiry:
+                        type: string
+                        format: date-time
+                      justification:
+                        type: string
+                      status:
+                        type: string
+                        example: PENDING
+                      created_at:
+                        type: string
+                        format: date-time
+                      reviewed_at:
+                        type: string
+                        format: date-time
+                        nullable: true
+                      reviewer_id:
+                        type: string
+                        format: uuid
+        '400':
+          description: Invalid or missing request parameters
+        '401':
+          description: Unauthorized or invalid token
+        '404':
+          description: Delegation not found
+        '409':
+          description: Duplicate or conflicting delegation update request
+
+
+
   /iudx/v2/auth/user/description/info:
     post:
       summary: (ADARV) Add user info
@@ -4111,53 +4383,53 @@ paths:
                         type: string
                         example: "2016–2020"
                       location:
-                         type: string
-                         example: "Delhi"
-                projects:
-                    type: array
-                    description: List of projects completed by the user
-                    items:
-                      type: object
-                      properties:
-                        institute:
-                          type: string
-                          example: "ICMR"
-                        time:
-                          type: string
-                          example: "2021"
-                        location:
-                          type: string
-                          example: "Delhi"
-                        about:
-                          type: string
-                          example: "Developed a system for secure data sharing"
-                publications:
-                      type: array
-                      description: List of publications by the user
-                      items:
-                        type: object
-                        properties:
-                          institute:
-                            type: string
-                            example: "ICMR"
-                          time:
-                            type: string
-                            example: "2021"
-                          location:
-                            type: string
-                            example: "Delhi"
-                          about:
-                            type: string
-                            example: "Paper on privacy-preserving IoT data sharing"
-                skills:
-                      type: array
-                      description: List of user skills
-                      items:
                         type: string
-                        example: "React"
+                        example: "Delhi"
+                projects:
+                  type: array
+                  description: List of projects completed by the user
+                  items:
+                    type: object
+                    properties:
+                      institute:
+                        type: string
+                        example: "ICMR"
+                      time:
+                        type: string
+                        example: "2021"
+                      location:
+                        type: string
+                        example: "Delhi"
+                      about:
+                        type: string
+                        example: "Developed a system for secure data sharing"
+                publications:
+                  type: array
+                  description: List of publications by the user
+                  items:
+                    type: object
+                    properties:
+                      institute:
+                        type: string
+                        example: "ICMR"
+                      time:
+                        type: string
+                        example: "2021"
+                      location:
+                        type: string
+                        example: "Delhi"
+                      about:
+                        type: string
+                        example: "Paper on privacy-preserving IoT data sharing"
+                skills:
+                  type: array
+                  description: List of user skills
+                  items:
+                    type: string
+                    example: "React"
       responses:
-        '200':
-          description: User info added successfully
+        '201':
+          description:  User information created successfully
           content:
             application/json:
               schema:
@@ -4165,21 +4437,13 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: "success"
+                    example: success
                   title:
                     type: string
-                    example: "User info added"
+                    example: User Information created successfully
                   result:
                     type: object
-                    properties:
-                      about:
-                        type: string
-                        example: "Lorem ipsum..."
-                      skills:
-                        type: array
-                        items:
-                          type: string
-                        example: [ "React", "Angular" ]
+
 
     patch:
       summary: (ADARV)Update user info

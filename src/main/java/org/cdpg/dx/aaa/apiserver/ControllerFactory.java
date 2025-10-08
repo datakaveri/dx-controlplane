@@ -31,6 +31,8 @@ import org.cdpg.dx.aaa.clientSecret.controller.ClientController;
 import org.cdpg.dx.aaa.clientSecret.factory.ClientControllerFactory;
 import org.cdpg.dx.aaa.credit.factory.CreditControllerFactory;
 import org.cdpg.dx.aaa.credit.service.CreditService;
+import org.cdpg.dx.aaa.delegation.factory.DelegationControllerFactory;
+import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.ingestion.service.IngestionService;
 import org.cdpg.dx.aaa.ingestion.service.IngestionServiceImpl;
@@ -120,10 +122,14 @@ public class ControllerFactory {
 
     CreditService creditService =
         CreditControllerFactory.createService(pgService, keycloakUserService, config);
+
+
+
     OrganizationService organizationService =
         OrganizationControllerFactory.createService(pgService, keycloakUserService, itemService);
-//    UserService userService =
-//        new UserServiceImpl(keycloakUserService, organizationService, creditService ,esService,docIndex);
+
+    DelegationService delegationService =
+      DelegationControllerFactory.createService(pgService,keycloakUserService,organizationService);
 
     UserService userService = UserControllerFactory.createService(keycloakUserService, organizationService, creditService ,esService,docUserIndex);
     EmailComposer emailComposer =
@@ -141,6 +147,8 @@ public class ControllerFactory {
 
     ApiController creditApiController =
         CreditControllerFactory.create(creditService, emailComposer, userService, urnGenerator);
+
+    ApiController delegationApiController = DelegationControllerFactory.create(delegationService,emailComposer,userService,urnGenerator,keycloakUserService);
 
     ApiController userController = UserControllerFactory.create(userService, urnGenerator);
 
@@ -213,6 +221,7 @@ public class ControllerFactory {
         tokenController,
         publicController,
         userController,
+        delegationApiController,
         activityController,
         activityReportController);
   }
