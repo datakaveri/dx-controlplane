@@ -1,0 +1,1 @@
+GRANT INSERT, SELECT, UPDATE ON user_table TO ${authUser};

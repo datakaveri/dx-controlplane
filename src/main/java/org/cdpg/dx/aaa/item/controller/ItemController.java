@@ -447,7 +447,12 @@ public class ItemController implements ApiController {
   }
 
   private void handleGetItemWithAccess(RoutingContext routingContext) {
-    String token = BearerTokenExtractor.extract(routingContext);
+    String token = null;
+    try {
+      token = RoutingContextHelper.getToken(routingContext);
+    } catch (Exception e) {
+      LOGGER.debug("No token present or invalid token, may be anonymous access");
+    }
     String itemId = routingContext.queryParams().get(ID);
     LOGGER.debug("Received GET request for item with ID '{}'", itemId);
 
@@ -456,19 +461,9 @@ public class ItemController implements ApiController {
       return;
     }
 
-    String subId = "";
-    List<String> roles = new ArrayList<>();
-    if (routingContext.user() != null) {
-      subId = routingContext.user().principal().getString("sub");
-
-      JsonObject realmAccess = routingContext.user().principal().getJsonObject("realm_access");
-      if (realmAccess != null && realmAccess.containsKey("roles")) {
-        JsonArray rolesJson = realmAccess.getJsonArray("roles");
-        roles = rolesJson.stream()
-            .map(Object::toString)
-            .collect(Collectors.toList());
-      }
-    }
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(routingContext);
+    String subId = dxUser.sub().toString();
+    List<String> roles = dxUser.roles();
 
     GetItemRequest request = new GetItemRequest(itemId, subId);
     request.setRoles(roles);

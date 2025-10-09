@@ -3,6 +3,7 @@ package org.cdpg.dx.acl.policy.service.impl;
 import static org.cdpg.dx.aaa.common.Constants.DETAIL;
 import static org.cdpg.dx.aaa.common.Constants.ID;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_AI_MODEL;
+import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_APPS;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_RESOURCE_GROUP;
 import static org.cdpg.dx.aaa.common.Constants.PROVIDER_USER_ID;
@@ -206,7 +207,8 @@ public class PolicyServiceImpl implements PolicyService {
                 String idFromResponse = resultJson.getString(ID);
                 /* check if the id being sent is of valid type*/
                 if (!ITEM_TYPE_DATA_BANK.equalsIgnoreCase(type) &&
-                    !ITEM_TYPE_AI_MODEL.equalsIgnoreCase(type)) {
+                    !ITEM_TYPE_AI_MODEL.equalsIgnoreCase(type) &&
+                    !ITEM_TYPE_APPS.equalsIgnoreCase(type)) {
                   LOGGER.error("Invalid item type: {}", type);
                   promise.fail(generateFailureMessage(BAD_REQUEST, ResponseUrn.BAD_REQUEST_URN,
                       "Given id is invalid - only DataBank or AiModel items are supported, but " +
@@ -254,7 +256,9 @@ public class PolicyServiceImpl implements PolicyService {
                     itemType = ItemType.DATABANK;
                   } else if (type.equalsIgnoreCase(ITEM_TYPE_AI_MODEL)) {
                     itemType = ItemType.AIMODEL;
-                  }
+                  } else if (type.equalsIgnoreCase(ITEM_TYPE_APPS)) {
+                  itemType = ItemType.APPS;
+                }
                   ResourceObj resourceObj =
                       new ResourceObj(id, provider, resServerUrls, itemType);
                   promise.complete(resourceObj);
