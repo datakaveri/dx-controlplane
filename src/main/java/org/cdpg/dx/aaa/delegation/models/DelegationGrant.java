@@ -1,14 +1,16 @@
 package org.cdpg.dx.aaa.delegation.models;
 
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.cdpg.dx.aaa.delegation.util.Constants;
+import org.cdpg.dx.aaa.delegation.util.Status;
 import org.cdpg.dx.common.exception.DxValidationException;
 import org.cdpg.dx.database.postgres.base.entity.BaseEntity;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
+import static org.cdpg.dx.aaa.delegation.util.Constants.ACTIVE;
 import static org.cdpg.dx.aaa.delegation.util.Status.APPROVED;
 import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
 import static org.cdpg.dx.common.util.DateTimeHelper.parseDateTime;
@@ -33,7 +35,7 @@ public record DelegationGrant(
         requireNonNull(UUID.fromString(json.getString("delegate_id")), "delegate_id"),
         requireNonNull(json.getString("justification"), "justification"),
         parseDateTime(json.getString("expiry_at")),
-        json.getString("status")!=null ? json.getString("status") : APPROVED.getStatus(),
+        json.getString("status") != null ? json.getString("status") : Status.ACTIVE.getStatus(),
         parseDateTime(json.getString("created_at")),
         parseDateTime(json.getString("revoked_at"))
       );
@@ -72,6 +74,6 @@ public record DelegationGrant(
 
   @Override
   public String getTableName() {
-    return "delegation_grants";
+    return Constants.DELEGATION_GRANT_TABLE;
   }
 }

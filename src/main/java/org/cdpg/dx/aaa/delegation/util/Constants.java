@@ -2,12 +2,12 @@ package org.cdpg.dx.aaa.delegation.util;
 
 public final class Constants {
 
-  public static final String DELEGATION_GRANT_TABLE="delegation_grant_table";
-  public static final String DELEGATION_REQUEST_TABLE="delegation_request_table";
+  public static final String DELEGATION_GRANT_TABLE="delegation_grants";
+  public static final String DELEGATION_REQUEST_TABLE="delegation_update_requests";
 
-  public static final String DELEGATION_SCOPE_CONSTRAINT_TABLE="delegation_scope_constraint_table";
+  public static final String DELEGATION_SCOPE_CONSTRAINT_TABLE="delegation_scope_constraints";
 
-  public static final String ISSUED_TOKEN_TABLE="issued_token_table";
+  public static final String ISSUED_TOKEN_TABLE="issued_tokens";
 
 
   //   COMMON COLUMN NAMES
@@ -48,8 +48,12 @@ public final class Constants {
 
 //     STATIC STRINGS / CONSTANT VALUES
   public static final String STATIC = "static";
-  public static final String PENDING = "PENDING";
-  public static final String APPROVED = "APPROVED";
-  public static final String REJECTED = "REJECTED";
+  public static final String PENDING = "pending";
+  public static final String APPROVED = "approved";
+
+  public static final String ACTIVE = "active";
+  public static final String REJECTED = "rejected";
+  public static final String EXPIRED = "expired";
+
 
 }

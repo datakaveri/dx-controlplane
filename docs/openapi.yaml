@@ -4092,7 +4092,8 @@ paths:
                   type: string
                 expiry_at:
                   type: string
-                  format: date-time
+                  pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
+                  example: '2025-12-31T23:59:59'
                 scopes:
                   type: array
                   items:
@@ -4112,7 +4113,8 @@ paths:
                           format: uuid
                       expiry_at:
                         type: string
-                        format: date-time
+                        pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
+                        example: '2025-12-31T23:59:59'
       responses:
         '201':
           description: Delegation grant created successfully
@@ -4142,6 +4144,8 @@ paths:
       operationId: get-auth-v2-delegation-grant
       tags:
         - Delegation APIs
+      security:
+        - authorization: [ ]
       responses:
         '200':
           description: Delegation grant fetched successfully

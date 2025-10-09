@@ -17,7 +17,7 @@ import static org.cdpg.dx.common.util.ValidationUtils.requireNonNull;
 public record DelegationScopeConstraint(
   UUID id,
   UUID delegationId,
-  RoleScopeMapping scope,
+  String scope,
   UUID entityId,
   LocalDateTime expiryAt
 ) implements BaseEntity<DelegationScopeConstraint> {
@@ -30,9 +30,7 @@ public record DelegationScopeConstraint(
         json.getString("delegation_id") != null ? UUID.fromString(json.getString("delegation_id")) : null,
         "delegation_id"
       ),
-        RoleScopeMapping.valueOf(
-        requireNonNull(json.getString("scope"), "scope").toUpperCase()
-      ),
+        requireNonNull(json.getString("scope"), "scope"),
       json.getString("entity_id") != null ? UUID.fromString(json.getString("entity_id")) : null,
       parseDateTime(json.getString("expiry_at"))
       );
@@ -46,7 +44,7 @@ public record DelegationScopeConstraint(
     JsonObject json = new JsonObject();
     if (id != null) json.put("id", id.toString());
     if (delegationId != null) json.put("delegation_id", delegationId.toString());
-    if (scope != null) json.put("scope", scope.name());
+    if (scope != null) json.put("scope", scope);
     if (entityId != null) json.put("entity_id", entityId.toString());
     if (expiryAt != null) json.put("expiry_at", expiryAt.format(FORMATTER));
     return json;
@@ -57,7 +55,7 @@ public record DelegationScopeConstraint(
     Map<String, Object> map = new HashMap<>();
     if (id != null) map.put("id", id.toString());
     if (delegationId != null) map.put("delegation_id", delegationId.toString());
-    if (scope != null) map.put("scope", scope.name());
+    if (scope != null) map.put("scope", scope);
     if (entityId != null) map.put("entity_id", entityId.toString());
     if (expiryAt != null) map.put("expiry_at", expiryAt.format(FORMATTER));
     return map;

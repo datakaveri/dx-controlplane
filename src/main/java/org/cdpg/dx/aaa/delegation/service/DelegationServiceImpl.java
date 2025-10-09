@@ -49,13 +49,13 @@ public class DelegationServiceImpl implements DelegationService{
 
 
   @Override
-  public Future<DelegationGrant> createDelegationGrant(DelegationGrant delegationGrant, Set<String>userRoles) {
+  public Future<DelegationGrant> createDelegationGrant(DelegationGrant delegationGrant, Set<String>userRoles,List<JsonObject> constraintsJson) {
+
+    LOGGER.info("ServiceImplementation of createDelegationGrant");
+
     JsonObject delegationGrantBody = delegationGrant.toJson();
 
-    List<JsonObject> constraintsJson = delegationGrantBody.getJsonArray("constraints", new JsonArray())
-      .stream()
-      .map(o -> (JsonObject) o)
-      .toList();
+
 
     if (constraintsJson.isEmpty()) {
       return Future.failedFuture(new DxBadRequestException("No constraints provided for delegation grant"));
@@ -85,12 +85,9 @@ public class DelegationServiceImpl implements DelegationService{
   }
 
   @Override
-  public Future<DelegationUpdateRequest> createDelegationRequest(DelegationUpdateRequest delegationRequest,Set<String>userRoles) {
+  public Future<DelegationUpdateRequest> createDelegationRequest(DelegationUpdateRequest delegationRequest,Set<String>userRoles,List<JsonObject> constraintsJson) {
     JsonObject delegationRequestBody = delegationRequest.toJson();
-    List<JsonObject> constraintsJson = delegationRequestBody.getJsonArray("requested_scopes", new JsonArray())
-      .stream()
-      .map(o -> (JsonObject) o)
-      .toList();
+
 
 
     return getDelegationGrantById(delegationRequest.delegationId())

@@ -3,8 +3,8 @@ CREATE TABLE IF NOT EXISTS delegation_grants (
     delegator_id UUID NOT NULL,
     delegate_id UUID NOT NULL,
     justification TEXT NOT NULL,
-    expiry_at TIMESTAMP WITH TIME ZONE NOT NULL,   -- global expiry
-    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE','REVOKED','EXPIRED')),
+    expiry_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,   -- global expiry
+    status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active','revoked','expired')),
     created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     revoked_at TIMESTAMP WITHOUT TIME ZONE
 );
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS delegation_scope_constraints (
             )
         ),
     entity_id UUID,                              -- which org_id, asset_id, etc.
-    expiry_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    expiry_at TIMESTAMP  WITHOUT TIME ZONE NOT NULL,
     UNIQUE (delegation_id, scope, entity_id)
 );
 
@@ -35,11 +35,11 @@ CREATE TABLE IF NOT EXISTS delegation_update_requests (
     request_id UUID DEFAULT public.gen_random_uuid() PRIMARY KEY,
     delegation_id UUID NOT NULL REFERENCES delegation_grants(delegation_id) ON DELETE CASCADE,
     requester_id UUID NOT NULL,   -- delegate who is asking for change
-    requested_scopes JSONB,       -- new/extra scopes requested
+    requested_scopes JSONB NOT NULL,       -- new/extra scopes requested
     requested_resources JSONB,    -- new/extra resources requested
-    requested_expiry TIMESTAMP WITH TIME ZONE, -- if asking for extension
+    requested_expiry TIMESTAMP  WITHOUT TIME ZONE, -- if asking for extension
     justification TEXT NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING','APPROVED','REJECTED')),
+    status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
     created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     reviewed_at TIMESTAMP WITHOUT TIME ZONE,
     reviewer_id UUID

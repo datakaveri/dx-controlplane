@@ -4,7 +4,10 @@ import org.cdpg.dx.common.exception.DxBadRequestException;
 public enum Status {
   APPROVED("approved"),
   REJECTED("rejected"),
-  PENDING("pending");
+  PENDING("pending"),
+  ACTIVE("active"),
+  REVOKED("revoked"),
+  EXPIRED("expired");
 
   private final String status;
 

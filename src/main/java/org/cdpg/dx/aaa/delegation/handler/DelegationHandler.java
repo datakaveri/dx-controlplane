@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.delegation.handler;
 
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
@@ -22,6 +23,7 @@ import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -70,6 +72,7 @@ public class DelegationHandler {
   }
 
   public void createDelegationGrant(RoutingContext routingContext) {
+    LOGGER.info("Handler:createDelegationGrants");
     User user = routingContext.user();
     UUID userId = UUID.fromString(user.subject());
     JsonObject principal = user.principal();
@@ -86,7 +89,7 @@ public class DelegationHandler {
     }
 
     String expirationDate = null;
-    expirationDate = delegationGrantBody.getString("expiration_at");
+    expirationDate = delegationGrantBody.getString("expiry_at");
     if (expirationDate == null || expirationDate.isEmpty()) {
       throw new DxBadRequestException("Expiration date is required");
     }
@@ -103,7 +106,12 @@ public class DelegationHandler {
 
     DelegationGrant delegationGrant = DelegationGrant.fromJson(delegationGrantBody);
 
-    delegationService.createDelegationGrant(delegationGrant,userRoles)
+    List<JsonObject> constraintsJson = delegationGrantBody.getJsonArray("constraints", new JsonArray())
+      .stream()
+      .map(o -> (JsonObject) o)
+      .toList();
+
+    delegationService.createDelegationGrant(delegationGrant,userRoles,constraintsJson)
       .onSuccess(createdGrant -> {
         AuditLog auditLog = AuditingHelper.createAuditLog(
           routingContext.user(),
@@ -125,8 +133,12 @@ public class DelegationHandler {
     JsonObject principal = user.principal();
     JsonObject body = ctx.body().asJsonObject();
 
+
+
     UUID delegationId = UUID.fromString(ctx.pathParam("delegation_id"));
-    body.put("requested_by", user.subject());
+    body.put("requester_id", user.subject());
+
+    LOGGER.info("body:",body.encodePrettily());
 
     String justification = body.getString("justification");
     if (justification == null || justification.isBlank()) {
@@ -148,7 +160,17 @@ public class DelegationHandler {
       throw new DxBadRequestException("Expiration date must be in the future");
     }
 
+    List<JsonObject> constraintsJson = body.getJsonArray("requested_scopes", new JsonArray())
+      .stream()
+      .map(o -> (JsonObject) o)
+      .toList();
+
+
+
+
     DelegationUpdateRequest delegationRequest = DelegationUpdateRequest.fromJson(body);
+
+
 
     //  Get delegator ID from existing delegation grant
     delegationService.getDelegationGrantById(delegationId)
@@ -159,7 +181,7 @@ public class DelegationHandler {
         return keycloakUserService.getUserById(delegatorId)
           .compose(delegator -> {
             Set<String> userRoles = new HashSet<>(delegator.roles());
-            return delegationService.createDelegationRequest(delegationRequest, userRoles);
+            return delegationService.createDelegationRequest(delegationRequest, userRoles,constraintsJson);
           });
       })
       .onSuccess(request -> {
