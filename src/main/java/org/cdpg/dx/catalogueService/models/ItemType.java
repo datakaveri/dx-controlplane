@@ -3,6 +3,7 @@ package org.cdpg.dx.catalogueService.models;
 public enum ItemType {
   AIMODEL("AIMODEL"),
   DATABANK("DATABANK"),
+  APPS("APPS"),
   RESOURCE_GROUP("RESOURCE_GROUP"),
   RESOURCE("RESOURCE");
 

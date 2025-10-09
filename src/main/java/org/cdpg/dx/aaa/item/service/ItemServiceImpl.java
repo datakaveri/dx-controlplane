@@ -3,6 +3,7 @@ package org.cdpg.dx.aaa.item.service;
 import static org.cdpg.dx.aaa.common.Constants.COS;
 import static org.cdpg.dx.aaa.common.Constants.FIELD;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_AI_MODEL;
+import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_APPS;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
 import static org.cdpg.dx.aaa.common.Constants.PRIVATE;
 import static org.cdpg.dx.aaa.common.Constants.PROVIDER;
@@ -253,6 +254,8 @@ public class ItemServiceImpl implements ItemService {
       itemType = ItemType.DATABANK;
     } else if (type.equalsIgnoreCase(ITEM_TYPE_AI_MODEL)) {
       itemType = ItemType.AIMODEL;
+    } else if (type.equalsIgnoreCase(ITEM_TYPE_APPS)) {
+      itemType = ItemType.APPS;
     }
     if (apdUrl == null || apdUrl.isBlank()) {
       LOGGER.error("Restricted item missing apdUrl in metadata");
@@ -287,65 +290,6 @@ public class ItemServiceImpl implements ItemService {
     ResponseModel responseModel = new ResponseModel(List.of(response), 1, 1);
     responseModel.setTotalHits(totalHits);
     return Future.succeededFuture(responseModel);
-  }
-
-  private Future<ResponseModel> verifyWithApd(String apdUrl, DxUser requester,
-                                              DxUser owner, GetItemRequest request,
-                                              String itemType, int totalHits,
-                                              ElasticsearchResponse response) {
-    JsonObject verifyPayload = new JsonObject()
-        .put(USER, buildUserBlock(requester))
-        .put(OWNER, buildUserBlock(owner))
-        .put(ITEM, new JsonObject()
-            .put(ITEM_ID, request.getItemId())
-            .put(ITEM_TYPE, itemType));
-    LOGGER.debug("verify payload: {}", verifyPayload);
-
-    return client.postAbs(HTTPS + apdUrl + "/iudx/acl/apd/v2/verify")
-        .putHeader(AUTHORIZATION_KEY, BEARER_KEY + " " + request.getToken())
-        .sendJsonObject(verifyPayload)
-        .compose(httpResponse -> {
-          if (httpResponse.statusCode() == 200) {
-            JsonObject body = httpResponse.bodyAsJsonObject();
-            JsonObject result = body.getJsonObject("result");
-            String decision = result.getString("type");
-
-            if ("urn:apd:Allow".equalsIgnoreCase(decision)) {
-              JsonArray accessConstraints = result
-                  .getJsonObject("apdConstraints")
-                  .getJsonArray("access");
-
-              LOGGER.info("APD allowed access for user {} with constraints {}",
-                  request.getSubId(), accessConstraints.encode());
-              JsonObject item = response.getSource();
-              item.put("constraints", result.getJsonObject("apdConstraints"));
-              response.setSource(item);
-              return succeededResponse(response, totalHits);
-            } else {
-              LOGGER.warn("APD denied access for user {} with decision {}",
-                  request.getSubId(), decision);
-              return Future.failedFuture(new DxForbiddenException("Access denied by APD"));
-            }
-          } else {
-            LOGGER.error("APD verify call failed: status {}, body {}",
-                httpResponse.statusCode(), httpResponse.bodyAsString());
-            return Future.failedFuture(new DxForbiddenException("APD verification failed"));
-          }
-        })
-        .recover(failure -> {
-          LOGGER.error("Error during APD verification: {}", failure.getMessage());
-          return Future.failedFuture(new DxForbiddenException("APD verification failed"));
-        });
-  }
-
-  // Helper to convert DxUser → APD user block
-  private JsonObject buildUserBlock(DxUser user) {
-    return new JsonObject()
-        .put("id", user.sub().toString())
-        .put("name", new JsonObject()
-            .put("firstName", user.givenName())
-            .put("lastName", user.familyName()))
-        .put("email", user.email());
   }
 
   @Override
