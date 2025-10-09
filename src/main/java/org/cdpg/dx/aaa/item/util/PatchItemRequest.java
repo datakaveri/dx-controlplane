@@ -7,13 +7,15 @@ public class PatchItemRequest {
 
     private final String itemId;
     private final String orgId;
+    private final String userId;
     private final JsonObject requestBody;
     private final List<String> allowedRoles;
-    public PatchItemRequest(String itemId, String subId, JsonObject requestBody,
+    public PatchItemRequest(String itemId, String subId, String userId, JsonObject requestBody,
                             List<String> allowedRoles) {
         this.itemId = itemId;
         this.orgId = subId;
-        this.requestBody = requestBody;
+      this.userId = userId;
+      this.requestBody = requestBody;
       this.allowedRoles = allowedRoles;
     }
 
@@ -31,6 +33,10 @@ public class PatchItemRequest {
 
     public List<String> getAllowedRoles() {
         return allowedRoles;
+    }
+
+    public String getUserId() {
+        return userId;
     }
 }
 

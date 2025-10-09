@@ -89,6 +89,8 @@ public class ControllerFactory {
     WebClient webClient = WebClient.create(vertx);
 
     final String dataPlaneUrl = config.getString("dataPlaneUrl");
+    final String controlPlaneUrl = config.getString("controlPlaneUrl");
+    final String ogcDataPlaneUrl = config.getString("ogcDataPlaneUrl");
     PostgresService pgService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
     DataBrokerService dataBrokerService =
         DataBrokerService.createProxy(vertx, DATA_BROKER_SERVICE_ADDRESS);
@@ -192,7 +194,7 @@ public class ControllerFactory {
     final ItemController itemController =
         ItemControllerFactory.createCrudController(
             auditingHandler, esService, pgService, keycloakUserService, docIndex, vocContext,
-            apdURL, urnGenerator, webClient,ingestionService,connectorService,dataPlaneUrl);
+            apdURL, urnGenerator, webClient,ingestionService,connectorService,dataPlaneUrl,controlPlaneUrl,ogcDataPlaneUrl);
 
     ApiController resourceServerController =
         ResourceServerControllerFactory.createController(

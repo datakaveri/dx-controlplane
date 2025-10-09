@@ -393,8 +393,9 @@ public class OrganizationServiceImpl implements OrganizationService {
       }
     }).recover(
       err -> {
+          LOGGER.error("Error :{}" , err.getMessage());
         // Log or transform the error if needed
-        return Future.failedFuture(new DxPgException("Some thing went wrong", err));
+        return Future.failedFuture(err);
       });
   }
 

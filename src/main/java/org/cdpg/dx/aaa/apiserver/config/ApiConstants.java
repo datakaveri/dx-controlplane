@@ -48,6 +48,7 @@ public class ApiConstants {
   public static final String UPDATE_ITEM = "update item";
   public static final String PATCH_ITEM = "patch item";
   public static final String GET_ITEM_WITH_ACCESS = "get item with accessPolicy";
+  public static final String DOWNLOAD_SCRIPT = "download script";
   public static final String CREATE_RESOURCE_SERVER = "create resource server";
   public static final String GET_RESOURCE_SERVER = "get resource server";
   public static final String LIST_RESOURCE_SERVERS = "list resource servers";

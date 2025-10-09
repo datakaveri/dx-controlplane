@@ -44,6 +44,9 @@ public class PostgresServiceImpl implements PostgresService {
             || value instanceof JsonArray) {
           //  LOG.info("value:" + value);
           json.put(column, value);
+        } else if (value instanceof String[]) {
+          // Handle String[] (e.g., Postgres text[])
+          json.put(column, new JsonArray(List.of((String[]) value)));
         } else {
           json.put(column, value.toString());
         }
@@ -102,6 +105,15 @@ public class PostgresServiceImpl implements PostgresService {
               LOG.info("Failed to parse timestamp, keeping as string: " + paramStr);
             }
           }
+        } else if (param instanceof JsonArray jsonArray) {
+          @SuppressWarnings("unchecked")
+          List<Object> list = (List<Object>) jsonArray.getList(); // cast raw list to List<Object>
+
+          String[] arr = list.stream()
+              .map(Object::toString)
+              .toArray(String[]::new);
+          tuple.addValue(arr);
+          continue;
         }
         // Default: keep original
         tuple.addValue(param);
@@ -184,5 +196,10 @@ public class PostgresServiceImpl implements PostgresService {
               }
             });
     return promise.future();
+  }
+
+  @Override
+  public Future<QueryResult> upsert(UpsertQuery query) {
+    return executeQuery(query.toSQL(), query.getQueryParams());
   }
 }

@@ -2,6 +2,7 @@ package org.cdpg.dx.aaa.clientSecret.service;
 
 import io.vertx.core.Future;
 import java.security.SecureRandom;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
 import org.apache.commons.codec.binary.Hex;
@@ -36,7 +37,7 @@ public class ClientcredetialServiceImpl implements ClientcredetialService {
     String hashedClientSecret = DigestUtils.sha512Hex(clientSecret);
 
     ClientCredentials clientCredentials =
-        new ClientCredentials(userId, hashedClientId, hashedClientSecret, null);
+        new ClientCredentials(userId, hashedClientId, hashedClientSecret, null, null);
     LOGGER.debug(
         "Creating client credentials for userId: {}, clientId: {}, clientSecret: {}",
         userId,
@@ -50,12 +51,16 @@ public class ClientcredetialServiceImpl implements ClientcredetialService {
         hashedClientSecret);
 
     return clientcredetialDao
-        .saveClientCredentials(clientCredentials)
+        .upsertClientCredentials(
+            clientCredentials, List.of("user_id"), List.of("client_id", "client_secret"))
         .onSuccess(
             savedCredentials ->
                 LOGGER.info("Client credentials saved successfully for userId: {}", userId))
         .onFailure(throwable -> LOGGER.error("Failed to save client credentials", throwable))
-        .map(v -> new ClientCredentials(userId, clientId.toString(), clientSecret, v.createdAt()));
+        .map(
+            v ->
+                new ClientCredentials(
+                    userId, clientId.toString(), clientSecret, v.createdAt(), v.updatedAt()));
   }
 
   @Override
