@@ -85,7 +85,7 @@ public class ScriptGenerationService {
      * @param resourceId The resource ID
      * @return JsonObject containing file information
      */
-    private JsonObject writeScriptToFile(String scriptContent, String scriptType, String resourceId) {
+    private JsonObject writeScriptToFile(String scriptContent, String scriptType, String resourceId,String controlPlaneUrl) {
         try {
             // Create output directory if it doesn't exist
             Path outputDir = Paths.get(OUTPUT_DIR);
@@ -97,7 +97,7 @@ public class ScriptGenerationService {
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
             String filename = String.format("%s_%s_%s.py", resourceId, scriptType, timestamp);
             Path filePath = outputDir.resolve(filename);
-            
+            String fileDownloadUrl= String.format("%s/iudx/v2/cat/item/script?fileName=%s", controlPlaneUrl, filename);
             // Write script content to file
             Files.write(filePath, scriptContent.getBytes());
             
@@ -108,7 +108,7 @@ public class ScriptGenerationService {
                 .put("filePath", filePath.toString())
                 .put("fileSize", Files.size(filePath))
                 .put("createdAt", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
-                .put("downloadUrl", "/items/scripts/download/" + filename);
+                .put("downloadUrl", fileDownloadUrl);
                 
         } catch (IOException e) {
             LOGGER.error("Failed to write script to file", e);
@@ -129,7 +129,7 @@ public class ScriptGenerationService {
     public JsonObject generateVectorScriptFile(String authToken, String resourceId, String title, String description, HashMap<String,String> scriptConfigMap) {
         LOGGER.debug("Generating vector script file for resourceId: {}", resourceId);
         String scriptContent = readAndCustomizeScript(VECTOR_SCRIPT_PATH, authToken, resourceId, title, description,scriptConfigMap);
-        return writeScriptToFile(scriptContent, "vector", resourceId);
+        return writeScriptToFile(scriptContent, "vector", resourceId,scriptConfigMap.get("controlPlaneUrl"));
     }
 
     /**
@@ -146,7 +146,7 @@ public class ScriptGenerationService {
         LOGGER.debug("Generating raster script file for resourceId: {}", resourceId);
         
         String scriptContent = readAndCustomizeScript(RASTER_SCRIPT_PATH, authToken, resourceId, title, description, scriptConfigMap);
-        return writeScriptToFile(scriptContent, "raster", resourceId);
+        return writeScriptToFile(scriptContent, "raster", resourceId,scriptConfigMap.get("controlPlaneUrl"));
     }
 
     /**

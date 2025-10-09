@@ -8,14 +8,13 @@ import static org.cdpg.dx.database.elastic.util.Constants.PUBLISH_STATUS;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+
+import java.util.*;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -113,10 +112,9 @@ public class ItemController implements ApiController {
         .handler(auditingHandler::handleApiAudit)
         .handler(this::handleGetItemWithAccess);
 
-//    builder
-//        .operation(DOWNLOAD_SCRIPT)
-//        .handler(auditingHandler::handleApiAudit)
-//        .handler(this::handleDownloadScript);
+    builder
+        .operation(DOWNLOAD_SCRIPT)
+        .handler(this::handleDownloadScript);
 
     LOGGER.debug("Item Controller registered");
   }
@@ -508,7 +506,7 @@ public class ItemController implements ApiController {
   private void handleDownloadScript(RoutingContext ctx) {
     LOGGER.debug("Handling script download request");
     
-    String filename = ctx.request().getParam("filename");
+    String filename = ctx.request().getParam("fileName");
     if (filename == null || filename.isBlank()) {
       LOGGER.error("Missing filename parameter");
       ctx.fail(new DxBadRequestException("Filename parameter is required"));
@@ -533,17 +531,16 @@ public class ItemController implements ApiController {
     try {
       byte[] fileContent = Files.readAllBytes(filePath);
       
+      // Set proper headers for file download
       HttpServerResponse response = ctx.response();
-      response
-          .putHeader("Access-Control-Allow-Origin", "*")
-          .putHeader("Access-Control-Allow-Headers", "Content-Type, Authorization")
-          .putHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-          .putHeader("Content-Type", "text/x-python")
-          .putHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"")
-          .putHeader("Content-Length", String.valueOf(fileContent.length));
+      response.putHeader("Content-Type", "application/octet-stream");
+      response.putHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+      response.putHeader("Content-Length", String.valueOf(fileContent.length));
       
-      response.end(io.vertx.core.buffer.Buffer.buffer(fileContent));
-      
+      // Write file content directly to response
+      Buffer buffer = Buffer.buffer(fileContent);
+      response.end(buffer);
+
       LOGGER.info("Script file downloaded successfully: {}", filename);
       
     } catch (Exception e) {

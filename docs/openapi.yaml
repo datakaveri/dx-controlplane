@@ -5113,6 +5113,87 @@ paths:
           source: |
             curl --location --request DELETE 'https://example.com/iudx/v2/cat/item?id=uuid' \
             --header 'token: <token>'
+  /iudx/v2/cat/item/script:
+    get:
+      tags:
+        - Entity
+      description: >
+        Download a generated Python script file by filename.
+        
+        This endpoint allows downloading Python script files that have been generated for data processing.
+        Only .py files are allowed and directory traversal is prevented for security.
+      operationId: download script
+      security:
+        - optionalAuth: [ ]
+      parameters:
+        - name: fileName
+          in: query
+          description: Name of the Python script filestring to download (must end with .py)
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_(vector|raster)_\d{8}_\d{6}\.py$'
+            example: "data_processing_script.py"
+      responses:
+        '200':
+          description: Script file downloaded successfully
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+            text/plain:
+              schema:
+                type: string
+                example: "# Python script content..."
+        '400':
+          description: Invalid filename or missing filename parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponseWithObjects'
+              examples:
+                Missing filename:
+                  value:
+                    type: 'urn:dx:cat:InvalidRequest'
+                    title: 'Invalid Request'
+                    detail: 'Filename parameter is required'
+                Invalid filename:
+                  value:
+                    type: 'urn:dx:cat:InvalidRequest'
+                    title: 'Invalid Request'
+                    detail: 'Invalid filename'
+        '404':
+          description: Script file not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponseWithObjects'
+              examples:
+                File not found:
+                  value:
+                    type: 'urn:dx:cat:ItemNotFound'
+                    title: 'File Not Found'
+                    detail: 'Script file not found'
+        '500':
+          description: Internal server error while reading the script file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponseWithObjects'
+              examples:
+                Read error:
+                  value:
+                    type: 'urn:dx:cat:InternalServerError'
+                    title: 'Internal Server Error'
+                    detail: 'Error reading script file'
+
+      x-codeSamples:
+        - lang: cURL
+          label: download script
+          source: |
+            curl --location --request GET 'https://example.com/iudx/v2/cat/item/script?fileName=data_processing_script.py' \
+            --header 'Authorization: Bearer <token>'
   /iudx/v2/cat/item/access:
     get:
       tags:
