@@ -4,7 +4,7 @@ import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.*;
 import static org.cdpg.dx.aaa.common.Constants.*;
 import static org.cdpg.dx.aaa.common.Constants.ID;
 import static org.cdpg.dx.database.elastic.util.Constants.DATA_UPLOAD_STATUS;
-import static org.cdpg.dx.database.elastic.util.Constants.PUBLISH_STATUS;
+import static org.cdpg.dx.database.elastic.util.Constants.VERIFIED_BY;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -21,7 +21,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.apiserver.ApiController;
 import org.cdpg.dx.aaa.common.CatAuditHelper;
-import org.cdpg.dx.aaa.common.CheckIfTokenPresent;
 import org.cdpg.dx.aaa.common.VerifyItemTypeAndRole;
 import org.cdpg.dx.aaa.item.model.Item;
 import org.cdpg.dx.aaa.item.service.ItemService;
@@ -56,22 +55,24 @@ public class ItemController implements ApiController {
   private final AuditingHandler auditingHandler;
   private final ItemService itemService;
   private final String vocContext;
+  private final String verifiedBy;
   private final URNGenerator urnGenerator;
 
   private final ItemExistenceValidator itemExistenceValidator;
   private final ItemRegistryService itemRegistryService;
   private final ScriptGenerationService scriptGenerationService;
-  private final CheckIfTokenPresent checkIfTokenPresent = new CheckIfTokenPresent();
   private final VerifyItemTypeAndRole verifyItemTypeAndRole = new VerifyItemTypeAndRole();
   Handler<RoutingContext> patchItemAccessHandler = AuthorizationHandler.forRoles(DxRole.COS_ADMIN,
       DxRole.ORG_ADMIN, DxRole.PROVIDER);
 
   public ItemController(
-    AuditingHandler auditingHandler, ItemService itemService, String vocContext, URNGenerator urnGenerator,
+    AuditingHandler auditingHandler, ItemService itemService, String vocContext,
+   String verifiedBy, URNGenerator urnGenerator,
     ItemRegistryService itemRegistryService) {
     this.auditingHandler = auditingHandler;
     this.itemService = itemService;
     this.vocContext = vocContext;
+    this.verifiedBy = verifiedBy;
     this.urnGenerator = urnGenerator;
     this.itemExistenceValidator = new ItemExistenceValidator(itemService);
     this.itemRegistryService = itemRegistryService;
@@ -246,7 +247,12 @@ public class ItemController implements ApiController {
       if (orgId != null && !orgId.isBlank()) {
         body.put(ORGANIZATION_ID, orgId);
       }
-      body.put("roles", ctx.user().principal().getJsonObject("realm_access").getJsonArray("roles"));
+      // Add verifiedBy only if user hasn't provided one
+      if (!body.containsKey(VERIFIED_BY) || body.getString(VERIFIED_BY).isBlank()) {
+        body.put(VERIFIED_BY, verifiedBy);
+      }
+      body.put("roles", ctx.user().principal().getJsonObject("realm_access")
+          .getJsonArray("roles"));
     }
     return body;
   }

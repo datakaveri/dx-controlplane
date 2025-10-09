@@ -187,7 +187,7 @@ public class PolicyController implements ApdApiController {
               handler -> {
                 if (handler.succeeded()) {
                   LOGGER.info("Policy verified successfully ");
-                  ResponseBuilder.sendSuccess(ctx, handler.result(), urnGenerator);
+                  ResponseBuilder.sendSuccess(ctx, handler.result().toJson(), urnGenerator);
                 } else {
                   LOGGER.error("Policy could not be verified {}", handler.cause().getMessage());
                   handleFailureResponse(ctx, handler.cause().getMessage());

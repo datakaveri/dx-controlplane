@@ -2,6 +2,8 @@ package org.cdpg.dx.aaa.item.service;
 
 import static org.cdpg.dx.aaa.common.Constants.COS;
 import static org.cdpg.dx.aaa.common.Constants.FIELD;
+import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_AI_MODEL;
+import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
 import static org.cdpg.dx.aaa.common.Constants.PRIVATE;
 import static org.cdpg.dx.aaa.common.Constants.PROVIDER;
 import static org.cdpg.dx.aaa.common.Constants.PROVIDER_USER_ID;
@@ -9,10 +11,27 @@ import static org.cdpg.dx.aaa.common.Constants.RESOURCE_GRP;
 import static org.cdpg.dx.aaa.common.Constants.RESOURCE_SVR;
 import static org.cdpg.dx.aaa.common.Constants.RESTRICTED;
 import static org.cdpg.dx.aaa.common.Constants.VALUE;
-import static org.cdpg.dx.database.elastic.util.Constants.*;
+import static org.cdpg.dx.database.elastic.util.Constants.ACCESS_POLICY;
+import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
+import static org.cdpg.dx.database.elastic.util.Constants.AUTHORIZATION_KEY;
+import static org.cdpg.dx.database.elastic.util.Constants.BEARER_KEY;
+import static org.cdpg.dx.database.elastic.util.Constants.COS_ADMIN;
+import static org.cdpg.dx.database.elastic.util.Constants.DETAIL_ITEM_NOT_FOUND;
+import static org.cdpg.dx.database.elastic.util.Constants.HTTPS;
+import static org.cdpg.dx.database.elastic.util.Constants.ID_KEYWORD;
+import static org.cdpg.dx.database.elastic.util.Constants.ITEM;
+import static org.cdpg.dx.database.elastic.util.Constants.ITEM_ID;
+import static org.cdpg.dx.database.elastic.util.Constants.ITEM_TYPE;
+import static org.cdpg.dx.database.elastic.util.Constants.KEYWORD_KEY;
+import static org.cdpg.dx.database.elastic.util.Constants.ORG_ADMIN;
+import static org.cdpg.dx.database.elastic.util.Constants.OWNER;
+import static org.cdpg.dx.database.elastic.util.Constants.TYPE;
+import static org.cdpg.dx.database.elastic.util.Constants.TYPE_KEYWORD;
+import static org.cdpg.dx.database.elastic.util.Constants.USER;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
 import java.util.Collections;
@@ -26,9 +45,10 @@ import org.cdpg.dx.aaa.item.model.Item;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.item.util.ItemFactory;
 import org.cdpg.dx.aaa.item.util.PatchItemRequest;
-import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
-import org.cdpg.dx.acl.accessRequest.service.AccessRequestService;
-import org.cdpg.dx.acl.accessRequest.service.impl.AccessRequestServiceImpl;
+import org.cdpg.dx.acl.policy.dao.PolicyDao;
+import org.cdpg.dx.acl.policy.service.PolicyService;
+import org.cdpg.dx.acl.policy.service.impl.PolicyServiceImpl;
+import org.cdpg.dx.catalogueService.models.ItemType;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
@@ -44,8 +64,7 @@ import org.cdpg.dx.keycloak.service.KeycloakUserService;
 public class ItemServiceImpl implements ItemService {
   private static final Logger LOGGER = LogManager.getLogger(ItemServiceImpl.class);
   private final String docIndex;
-  private final String apdURL;
-  private final AccessRequestService accessRequestService;
+  private final PolicyVerifyService policyVerifyService;
   private final KeycloakUserService keycloakUserService;
   private final WebClient client;
   ElasticsearchService elasticsearchService;
@@ -53,14 +72,15 @@ public class ItemServiceImpl implements ItemService {
 
   public ItemServiceImpl(ElasticsearchService elasticsearchService,
                          KeycloakUserService keycloakUserService,
-                         AccessRequestDao accessRequestDao,
+                         PolicyDao policyDao,
                          WebClient webClient, String docIndex, String apdURL) {
     this.elasticsearchService = elasticsearchService;
-    this.accessRequestService = new AccessRequestServiceImpl(this, accessRequestDao);
+    PolicyService policyService = new PolicyServiceImpl(this, policyDao, apdURL);
+    this.policyVerifyService = new PolicyVerifyServiceImpl(policyService, webClient,
+        apdURL);
     this.keycloakUserService = keycloakUserService;
     this.client = webClient;
     this.docIndex = docIndex;
-    this.apdURL = apdURL;
   }
 
   @Override
@@ -227,32 +247,37 @@ public class ItemServiceImpl implements ItemService {
 
     // Fetch apdUrl from item source
     String apdUrl = response.getSource().getString(APD_URL);
-    String itemType = response.getSource().getJsonArray(TYPE).getString(0);
+    String type = response.getSource().getJsonArray(TYPE).getString(0);
+    ItemType itemType = null;
+    if (type.equalsIgnoreCase(ITEM_TYPE_DATA_BANK)) {
+      itemType = ItemType.DATABANK;
+    } else if (type.equalsIgnoreCase(ITEM_TYPE_AI_MODEL)) {
+      itemType = ItemType.AIMODEL;
+    }
     if (apdUrl == null || apdUrl.isBlank()) {
       LOGGER.error("Restricted item missing apdUrl in metadata");
       return Future.failedFuture(new DxForbiddenException("Access denied, APD URL missing"));
     }
 
-    if (apdUrl.equals(apdURL)) { // apdURL = default apd
-      return accessRequestService.checkAccessRequest(UUID.fromString(request.getSubId()),
-              request.getItemId())
-          .compose(v -> succeededResponse(response, totalHits))
-          .recover(failure -> {
-            LOGGER.error("Error during restricted access check: {}", failure.getMessage());
-            return Future.failedFuture(failure);
-          });
-    }
+    UUID ownerUUID = UUID.fromString(ownerUserId);
+    UUID requesterUUID = UUID.fromString(request.getSubId());
+    ItemType finalItemType = itemType;
 
-    //else Verify via external APD
-    UUID requestId = UUID.fromString(request.getSubId());
-    UUID ownerId = UUID.fromString(ownerUserId);
-    Future<DxUser> requesterFut = keycloakUserService.getUserById(requestId);
-    Future<DxUser> ownerFut = keycloakUserService.getUserById(ownerId);
+    Future<DxUser> requesterFut = keycloakUserService.getUserById(requesterUUID);
+    Future<DxUser> ownerFut = keycloakUserService.getUserById(ownerUUID);
 
     return Future.all(requesterFut, ownerFut).compose(cf -> {
       DxUser requester = requesterFut.result();
       DxUser owner = ownerFut.result();
-      return verifyWithApd(apdUrl, requester, owner, request, itemType, totalHits, response);
+
+      return policyVerifyService.verify(apdUrl, requester, owner,
+              request.getItemId(), finalItemType, request.getToken())
+          .compose(apdConstraints -> {
+            JsonObject item = response.getSource();
+            item.put("constraints", apdConstraints);
+            response.setSource(item);
+            return succeededResponse(response, totalHits);
+          });
     });
   }
 
@@ -274,17 +299,27 @@ public class ItemServiceImpl implements ItemService {
         .put(ITEM, new JsonObject()
             .put(ITEM_ID, request.getItemId())
             .put(ITEM_TYPE, itemType));
+    LOGGER.debug("verify payload: {}", verifyPayload);
 
-    return client.postAbs(HTTPS + apdUrl + "/verify")
+    return client.postAbs(HTTPS + apdUrl + "/iudx/acl/apd/v2/verify")
         .putHeader(AUTHORIZATION_KEY, BEARER_KEY + " " + request.getToken())
         .sendJsonObject(verifyPayload)
         .compose(httpResponse -> {
           if (httpResponse.statusCode() == 200) {
             JsonObject body = httpResponse.bodyAsJsonObject();
-            String decision = body.getString(TYPE);
+            JsonObject result = body.getJsonObject("result");
+            String decision = result.getString("type");
 
             if ("urn:apd:Allow".equalsIgnoreCase(decision)) {
-              LOGGER.info("APD allowed access for user {}", request.getSubId());
+              JsonArray accessConstraints = result
+                  .getJsonObject("apdConstraints")
+                  .getJsonArray("access");
+
+              LOGGER.info("APD allowed access for user {} with constraints {}",
+                  request.getSubId(), accessConstraints.encode());
+              JsonObject item = response.getSource();
+              item.put("constraints", result.getJsonObject("apdConstraints"));
+              response.setSource(item);
               return succeededResponse(response, totalHits);
             } else {
               LOGGER.warn("APD denied access for user {} with decision {}",
