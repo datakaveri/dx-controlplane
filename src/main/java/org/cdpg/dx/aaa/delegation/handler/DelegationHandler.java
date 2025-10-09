@@ -130,58 +130,69 @@ public class DelegationHandler {
 
   public void createUpdateDelegationRequest(RoutingContext ctx) {
     User user = ctx.user();
-    JsonObject principal = user.principal();
     JsonObject body = ctx.body().asJsonObject();
 
+    LOGGER.info("Incoming request body: {}", body.encodePrettily());
 
+    // Validate delegation_id
+    String delegationIdStr = body.getString("delegation_id");
+    if (delegationIdStr == null || delegationIdStr.isBlank()) {
+      throw new DxBadRequestException("delegation_id is required");
+    }
+    UUID delegationId = UUID.fromString(delegationIdStr);
 
-    UUID delegationId = UUID.fromString(ctx.pathParam("delegation_id"));
-    body.put("requester_id", user.subject());
+    // Set requester_id from user context
+    body.put("requester_id", UUID.fromString(user.subject()));
 
-    LOGGER.info("body:",body.encodePrettily());
-
+    // Validate justification
     String justification = body.getString("justification");
     if (justification == null || justification.isBlank()) {
       throw new DxBadRequestException("Justification is required");
     }
 
-    String requestedExpiry = body.getString("requested_expiry");
-    if (requestedExpiry == null || requestedExpiry.isEmpty()) {
-      throw new DxBadRequestException("Expiration date is required");
+    // Validate requested_expiry
+    String requestedExpiryStr = body.getString("requested_expiry");
+    if (requestedExpiryStr == null || requestedExpiryStr.isBlank()) {
+      throw new DxBadRequestException("requested_expiry is required");
     }
 
+    LocalDateTime requestedExpiry;
     try {
-      LocalDateTime.parse(requestedExpiry, FORMATTER);
+      requestedExpiry = parseDateTime(requestedExpiryStr);
     } catch (Exception e) {
-      throw new DxBadRequestException("Invalid expiration date format. Expected format: " + FORMATTER);
+      throw new DxBadRequestException("Invalid requested_expiry format. Expected format: " + FORMATTER);
     }
 
-    if (parseDateTime(requestedExpiry).isBefore(LocalDateTime.now())) {
-      throw new DxBadRequestException("Expiration date must be in the future");
+    if (requestedExpiry.isBefore(LocalDateTime.now())) {
+      throw new DxBadRequestException("requested_expiry must be in the future");
     }
 
-    List<JsonObject> constraintsJson = body.getJsonArray("requested_scopes", new JsonArray())
-      .stream()
+    // Validate requested_scopes
+    JsonArray requestedScopesArray = body.getJsonArray("requested_scopes");
+    if (requestedScopesArray == null) {
+      Object scopesObj = body.getValue("requested_scopes");
+      if (scopesObj instanceof String str) {
+        requestedScopesArray = new JsonArray(str);
+      } else {
+        throw new DxBadRequestException("requested_scopes must be a JSON array");
+      }
+    }
+
+    List<JsonObject> constraintsJson = requestedScopesArray.stream()
       .map(o -> (JsonObject) o)
       .toList();
 
-
-
-
+    // Create DelegationUpdateRequest entity
     DelegationUpdateRequest delegationRequest = DelegationUpdateRequest.fromJson(body);
 
-
-
-    //  Get delegator ID from existing delegation grant
+    // Fetch delegator from existing grant
     delegationService.getDelegationGrantById(delegationId)
       .compose(grant -> {
         UUID delegatorId = grant.delegatorId();
-
-        // Fetch delegator roles from Keycloak
         return keycloakUserService.getUserById(delegatorId)
           .compose(delegator -> {
             Set<String> userRoles = new HashSet<>(delegator.roles());
-            return delegationService.createDelegationRequest(delegationRequest, userRoles,constraintsJson);
+            return delegationService.createDelegationRequest(delegationRequest, userRoles, constraintsJson);
           });
       })
       .onSuccess(request -> {
@@ -193,11 +204,9 @@ public class DelegationHandler {
         );
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
         ResponseBuilder.sendSuccess(ctx, request, urnGenerator);
-        // emailComposer.sendDelegationRequestEmail(user, request);
       })
       .onFailure(ctx::fail);
   }
-
 
   public void updateDelegationRequest(RoutingContext ctx) {
     JsonObject body = ctx.body().asJsonObject();
@@ -234,10 +243,9 @@ public class DelegationHandler {
   public void getDelegationRequest(RoutingContext ctx) {
     UUID userId = UUID.fromString(ctx.user().subject());
 
-
-    //user should be a reviewer
     delegationService.getDelegationRequestsByUser(userId)
       .onSuccess(requests -> {
+        // `requests` is List<DelegationUpdateRequest>
         ResponseBuilder.sendSuccess(ctx, requests, urnGenerator);
       })
       .onFailure(ctx::fail);

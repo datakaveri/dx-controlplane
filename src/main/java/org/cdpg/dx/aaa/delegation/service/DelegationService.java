@@ -20,5 +20,5 @@ public interface DelegationService {
 
   Future<DelegationUpdateRequest> updateDelegationRequestStatus(UUID requestId, String status,UUID delegatorId);
 
-  Future<DelegationUpdateRequest> getDelegationRequestsByUser(UUID userId);
+  Future<List<DelegationUpdateRequest>> getDelegationRequestsByUser(UUID userId);
 }

@@ -88,18 +88,18 @@ public class DelegationServiceImpl implements DelegationService{
   public Future<DelegationUpdateRequest> createDelegationRequest(DelegationUpdateRequest delegationRequest,Set<String>userRoles,List<JsonObject> constraintsJson) {
     JsonObject delegationRequestBody = delegationRequest.toJson();
 
-
-
     return getDelegationGrantById(delegationRequest.delegationId())
       .compose(ar->
       {
         UUID delegatorId = ar.delegatorId();
         LocalDateTime globalExpiryTime = ar.expiryAt();
 
-        if(delegatorId!=delegationRequest.reviewerId())
-        {
-          throw new DxBadRequestException("The reviewer/delegator id for the delegation id dont match!");
-        }
+        LOGGER.info("delegator id , reviewer id:{}",delegatorId,delegationRequest.reviewerId());
+
+//        if(delegatorId!=delegationRequest.reviewerId())
+//        {
+//          throw new DxBadRequestException("The reviewer/delegator id for the delegation id dont match!");
+//        }
 
         if(delegationRequest.requestedExpiry().isAfter(globalExpiryTime))
         {
@@ -117,6 +117,9 @@ public class DelegationServiceImpl implements DelegationService{
 
   @Override
   public Future<DelegationUpdateRequest> updateDelegationRequestStatus(UUID requestId, String status, UUID delegatorId) {
+
+    LOGGER.info("updateDelegationRequestStatus");
+
     return delegationRequestDAO.get(requestId)
       .compose(existingRequest -> {
         if (existingRequest == null) {
@@ -135,13 +138,17 @@ public class DelegationServiceImpl implements DelegationService{
 
         return delegationRequestDAO.update(conditionMap, updateMap)
           .compose(updatedDelegateRequest -> {
-            if (status.equalsIgnoreCase("APPROVED")) {
+            if (status.equalsIgnoreCase("approved")) {
 
-              JsonObject delegateRequestBody = updatedDelegateRequest.toJson();
-              List<JsonObject> constraintsJson = delegateRequestBody.getJsonArray("requested_scopes", new JsonArray())
-                .stream()
-                .map(o -> (JsonObject) o)
-                .toList();
+              List<JsonObject> constraintsJson = Collections.emptyList();
+              if (existingRequest.requestedScopes() != null) {
+                constraintsJson = existingRequest.requestedScopes()
+                  .stream()
+                  .map(o -> (JsonObject) o)
+                  .toList();
+              }
+
+              LOGGER.info("constraints:{}",constraintsJson);
 
               return insertScopeConstraints(existingRequest.delegationId(), constraintsJson)
                 .map(v -> updatedDelegateRequest);
@@ -176,10 +183,11 @@ public class DelegationServiceImpl implements DelegationService{
 
 
   @Override
-  public Future<DelegationUpdateRequest> getDelegationRequestsByUser(UUID userId) {
+  public Future<List<DelegationUpdateRequest>> getDelegationRequestsByUser(UUID userId) {
 
+    Map<String,Object> conditionMap = Map.of("reviewer_id",userId.toString());
 
-    return delegationRequestDAO.get(userId)
+    return delegationRequestDAO.getAllWithFilters(conditionMap)
       .recover(err -> {
         BaseDxException dxEx = BaseDxException.from(err);
         if (dxEx instanceof DxNotFoundException) {
@@ -194,21 +202,23 @@ public class DelegationServiceImpl implements DelegationService{
     Set<String> delegatorRoles,
     List<JsonObject> constraintsJson) {
 
+    LOGGER.info("constraints:{}",constraintsJson);
+
     // Step 1: COS_ADMIN can delegate anything
     if (delegatorRoles.contains("cos_admin")) {
       return Future.succeededFuture();
     }
 
-    // Step 2: Determine the delegator's highest role
+    // Determine the delegator's highest role
     String delegatorRole = getHighestRole(delegatorRoles);
 
-    // Step 3: Extract all requested scopes from constraints
+    // Extract all requested scopes from constraints
     List<String> requestedScopes = constraintsJson.stream()
       .map(c -> c.getString("scope"))
       .map(String::toLowerCase)
       .toList();
 
-    // Step 4: Get delegator’s allowed scopes
+    // Get delegator’s allowed scopes
     RoleScopeMapping delegatorMapping = RoleScopeMapping.fromString(delegatorRole);
     List<String> allowedScopes = delegatorMapping.getAllowedScopes();
 
@@ -225,7 +235,8 @@ public class DelegationServiceImpl implements DelegationService{
       }
     }
 
-    // Step 6: All validations passed
+
+    LOGGER.info("Validations successful !");
     return Future.succeededFuture();
   }
 

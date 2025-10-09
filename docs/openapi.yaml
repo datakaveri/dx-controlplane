@@ -4132,6 +4132,7 @@ paths:
                   result:
                     type: object
 
+
   /iudx/v2/auth/delegation/grant/{id}:
     parameters:
       - schema:
@@ -4184,13 +4185,13 @@ paths:
                         example: "Temporary org admin backup"
                       expiry_at:
                         type: string
-                        format: date-time
+                        pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
                         description: Global expiry timestamp for this delegation
-                        example: "2025-12-31T23:59:59Z"
+                        example: '2025-12-31T23:59:59'
                       status:
                         type: string
                         description: Current status of the delegation (e.g., APPROVED, REVOKED)
-                        example: "APPROVED"
+                        example: "approved"
                       created_at:
                         type: string
                         format: date-time
@@ -4219,6 +4220,80 @@ paths:
                     type: string
                     example: "No record found for delegation_id provided"
 
+  /iudx/v2/auth/delegation/requests:
+    get:
+      summary: Get Delegation Requests for Logged-in User
+      description: >
+        Fetches all delegation update requests where the authenticated user is the reviewer.
+      operationId: get-auth-v2-delegation-request
+      tags:
+        - Delegation APIs
+      security:
+        - authorization: [ ]
+      responses:
+        '200':
+          description: Delegation requests fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: "success"
+                  title:
+                    type: string
+                    example: "Delegation requests retrieved"
+                  result:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        request_id:
+                          type: string
+                          format: uuid
+                          example: "292aec71-2d77-4fd6-9569-1e05f20868a5"
+                        delegation_id:
+                          type: string
+                          format: uuid
+                          example: "c84d49b1-1f22-4e2a-b8a9-87c1d65b7d13"
+                        requester_id:
+                          type: string
+                          format: uuid
+                          example: "d8ad5095-0ff0-40e6-b6ec-ba0a9e669927"
+                        requested_scopes:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              scope:
+                                type: string
+                                example: "user_management"
+                              entity_id:
+                                type: array
+                                items:
+                                  type: string
+                                  format: uuid
+                                example: [ "5218e2b7-5663-4be4-b462-ccad543a2de8" ]
+                              expiry_at:
+                                type: string
+                                pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
+                                example: "2025-12-31T23:59:59"
+                        requested_expiry:
+                          type: string
+                          pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
+                          example: "2025-12-31T23:59:59"
+                        justification:
+                          type: string
+                          example: "Need to edit while owner is unavailable"
+                        status:
+                          type: string
+                          example: "PENDING"
+                        created_at:
+                          type: string
+                          pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
+                          example: "2025-10-09T20:12:40Z"
+
 
   /iudx/v2/auth/delegation/request:
     post:
@@ -4242,7 +4317,6 @@ paths:
                 - delegation_id
                 - requested_scopes
                 - justification
-                - reviewer_id
               properties:
                 delegation_id:
                   type: string
@@ -4250,36 +4324,28 @@ paths:
                   description: Existing delegation ID for which the update is requested
                 requested_scopes:
                   type: array
-                  description: List of scopes being requested or modified
                   items:
                     type: object
                     properties:
                       scope:
                         type: string
-                        example: manage_org
                       entity_id:
-                        type: string
-                        format: uuid
-                        description: Target entity (like org, asset, or user)
+                        type: array
+                        items:
+                          type: string
+                          format: uuid
                       expiry_at:
                         type: string
-                        format: date-time
-                        description: Optional scope-level expiry (must not exceed global expiry)
-                requested_resources:
-                  type: object
-                  additionalProperties: true
-                  description: Optional JSON object containing additional requested resource details
+                        pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
+                        example: '2025-12-31T23:59:59'
                 requested_expiry:
                   type: string
-                  format: date-time
+                  pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
+                  example: '2025-12-31T23:59:59'
                   description: Overall requested expiry for the delegation update
                 justification:
                   type: string
                   example: Need to edit while owner is unavailable
-                reviewer_id:
-                  type: string
-                  format: uuid
-                  description: Reviewer (delegator) responsible for approving/rejecting this request
       responses:
         '201':
           description: Delegation update request created successfully
@@ -4308,7 +4374,7 @@ paths:
                         format: uuid
                       requested_scopes:
                         type: object
-                      requested_resources:
+                      entity_id:
                         type: object
                       requested_expiry:
                         type: string
@@ -4337,6 +4403,96 @@ paths:
         '409':
           description: Duplicate or conflicting delegation update request
 
+  /iudx/v2/auth/delegation/request/{id}:
+    put:
+      summary: Update Delegation Request Status
+      description: >
+        Allows the delegator to approve or reject a delegation update request by updating its status.
+      tags:
+        - Delegation APIs
+      operationId: put-auth-v2-delegation-request
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the delegation update request to be updated
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        description: Update the status of an existing delegation update request
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  description: New status for the delegation request (e.g., APPROVED, REJECTED)
+                  example: approved
+      responses:
+        '200':
+          description: Delegation request status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: success
+                  title:
+                    type: string
+                    example: Delegation request status updated
+                  result:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        format: uuid
+                      delegation_id:
+                        type: string
+                        format: uuid
+                      requester_id:
+                        type: string
+                        format: uuid
+                      requested_scopes:
+                        type: array
+                        items:
+                          type: object
+                      requested_expiry:
+                        type: string
+                        format: date-time
+                      justification:
+                        type: string
+                      status:
+                        type: string
+                        example: APPROVED
+                      created_at:
+                        type: string
+                        format: date-time
+                      reviewed_at:
+                        type: string
+                        format: date-time
+                        nullable: true
+                      reviewer_id:
+                        type: string
+                        format: uuid
+        '400':
+          description: Invalid or missing request parameters
+        '401':
+          description: Unauthorized or invalid token
+        '403':
+          description: User not allowed to update status
+        '404':
+          description: Delegation request not found
+        '409':
+          description: Conflicting update (e.g., status already updated)
 
 
   /iudx/v2/auth/user/description/info:

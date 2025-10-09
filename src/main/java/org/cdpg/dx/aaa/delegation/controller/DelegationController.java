@@ -38,17 +38,16 @@ public class DelegationController implements ApiController {
       .operation("post-auth-v2-delegation-request")
       .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))   //delegate  //TODO: should add delegate here
       .handler(delegationHandler::createUpdateDelegationRequest);
-//
-//
-//    routerBuilder
-//      .operation("get-auth-v2-delegation-request")
-//      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))  // reviewer
-//      .handler(delegationHandler::getDelegationRequest);
-//
-//    routerBuilder
-//      .operation("update-auth-v2-delegation-request")
-//      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))  //reviewer
-//      .handler(delegationHandler::updateDelegationRequest);
+
+    routerBuilder
+      .operation("get-auth-v2-delegation-request")
+      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))  // reviewer
+      .handler(delegationHandler::getDelegationRequest);
+
+    routerBuilder
+      .operation("put-auth-v2-delegation-request")
+      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))  //reviewer
+      .handler(delegationHandler::updateDelegationRequest);
 
 
   }

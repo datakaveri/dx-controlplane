@@ -36,7 +36,6 @@ CREATE TABLE IF NOT EXISTS delegation_update_requests (
     delegation_id UUID NOT NULL REFERENCES delegation_grants(delegation_id) ON DELETE CASCADE,
     requester_id UUID NOT NULL,   -- delegate who is asking for change
     requested_scopes JSONB NOT NULL,       -- new/extra scopes requested
-    requested_resources JSONB,    -- new/extra resources requested
     requested_expiry TIMESTAMP  WITHOUT TIME ZONE, -- if asking for extension
     justification TEXT NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
