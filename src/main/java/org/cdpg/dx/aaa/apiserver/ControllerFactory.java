@@ -77,7 +77,8 @@ import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
 public class ControllerFactory {
   private static final Logger LOGGER = LogManager.getLogger(ControllerFactory.class);
 
-  private ControllerFactory() {}
+  private ControllerFactory() {
+  }
 
   public static List<ApiController> createControllers(
       Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
