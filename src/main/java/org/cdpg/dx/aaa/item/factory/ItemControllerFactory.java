@@ -16,6 +16,8 @@ import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
+import java.util.HashMap;
+
 public class ItemControllerFactory {
 
   public static ItemController createCrudController(
@@ -31,14 +33,14 @@ public class ItemControllerFactory {
       WebClient webClient,
       IngestionService ingestionService,
       ConnectorService connectorService,
-      String dataPlaneUrl,String controlPlaneUrl,String ogcDataPlaneUrl) {
+      HashMap<String, String> scriptConfigMap) {
       PolicyDao policyDao = new PolicyDaoImpl(pgService);
     ItemService crudService = new ItemServiceImpl(elasticsearchService, keycloakUserService,
         policyDao, webClient, docIndex, apdURL);
 
     ItemRegistryService orchestrationService =
         new ItemRegistryServiceImpl(crudService, ingestionService, connectorService, webClient,
-            dataPlaneUrl,controlPlaneUrl,ogcDataPlaneUrl);
+      scriptConfigMap);
     return new ItemController(auditingHandler, crudService, vocContext, verifiedBy, urnGenerator,
         orchestrationService);
   }

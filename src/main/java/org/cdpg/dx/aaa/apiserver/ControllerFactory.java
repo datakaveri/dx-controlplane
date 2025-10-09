@@ -15,6 +15,8 @@ import static org.cdpg.dx.database.elastic.util.Constants.VERIFIED_BY;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
+
+import java.util.HashMap;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -79,7 +81,6 @@ public class ControllerFactory {
 
   public static List<ApiController> createControllers(
       Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
-
     final String docIndex = config.getString(DOC_INDEX);
     final String docUserIndex = config.getString(DOC_USER_INDEX);
     final String vocContext = config.getString(VOC_CONTEXT);
@@ -89,9 +90,14 @@ public class ControllerFactory {
 
     WebClient webClient = WebClient.create(vertx);
 
-    final String dataPlaneUrl = config.getString("dataPlaneUrl");
-    final String controlPlaneUrl = config.getString("controlPlaneUrl");
-    final String ogcDataPlaneUrl = config.getString("ogcDataPlaneUrl");
+    final HashMap<String, String> scriptConfig = new HashMap<>();
+    scriptConfig.put("dataPlaneUrl", config.getString("dataPlaneUrl"));
+    scriptConfig.put("controlPlaneUrl", config.getString("controlPlaneUrl"));
+    scriptConfig.put("ogcDataPlaneUrl", config.getString("ogcDataPlaneUrl"));
+    scriptConfig.put("bucketName", config.getString("bucketName"));
+    scriptConfig.put("region", config.getString("region"));
+    scriptConfig.put("s3BucketIdentifier", config.getString("s3BucketIdentifier"));
+
     PostgresService pgService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
     DataBrokerService dataBrokerService =
         DataBrokerService.createProxy(vertx, DATA_BROKER_SERVICE_ADDRESS);
@@ -204,10 +210,7 @@ public class ControllerFactory {
             urnGenerator,
             webClient,
             ingestionService,
-            connectorService,
-            dataPlaneUrl,
-            controlPlaneUrl,
-            ogcDataPlaneUrl);
+            connectorService,scriptConfig);
 
     ApiController resourceServerController =
         ResourceServerControllerFactory.createController(pgService, auditingHandler, urnGenerator);
