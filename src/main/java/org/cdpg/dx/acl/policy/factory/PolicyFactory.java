@@ -1,8 +1,6 @@
 package org.cdpg.dx.acl.policy.factory;
 
 import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.REQUEST_TABLE;
 import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
 
 import io.vertx.core.json.JsonObject;
@@ -10,9 +8,6 @@ import io.vertx.ext.web.client.WebClient;
 import java.util.logging.Logger;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
-import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
-import org.cdpg.dx.acl.accessRequest.dao.impl.AccessRequestDaoImpl;
-import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
 import org.cdpg.dx.acl.policy.controller.PolicyController;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
@@ -35,14 +30,13 @@ public class PolicyFactory {
                                                         URNGenerator urnGenerator,
                                                         WebClient webClient,
                                                         JsonObject config) {
-    AccessRequestDao accessRequestDao =
-        new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
+    PolicyDao policyDao = new PolicyDaoImpl(pgService);
     ItemService itemService =
-        new ItemServiceImpl(elasticsearchService, keycloakUserService,
-            accessRequestDao, webClient, config.getString(DOC_INDEX), config.getString(APD_URL));
+        new ItemServiceImpl(elasticsearchService, keycloakUserService, policyDao, webClient,
+            config.getString(DOC_INDEX), config.getString(APD_URL));
 
-    PolicyDao policyDao = new PolicyDaoImpl(pgService, itemService, config);
-    PolicyService policyService  = new PolicyServiceImpl(policyDao, config);
+    PolicyService policyService =
+        new PolicyServiceImpl(itemService, policyDao, config.getString(APD_URL));
 
     return new PolicyController(policyService, pgService, auditingHandler, urnGenerator, config);
   }

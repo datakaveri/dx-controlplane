@@ -12,14 +12,10 @@ import org.cdpg.dx.database.postgres.models.QueryResult;
 
 
 public interface PolicyDao {
-  Future<Set<UUID>> checkForItemsInDb(Set<UUID> itemIds, Set<String> itemTypes, DxUser dxUser);
-
-  Future<Boolean> checkExistingPoliciesForId(List<CreatePolicyRequest> requests, UUID providerId);
-  Future<JsonObject> checkExistingPoliciesForId(UUID itemId, UUID ownerId, String userEmailId);
+  Future<QueryResult> checkExistingPoliciesForIds(UUID itemId, UUID ownerId, String userEmail);
+  Future<QueryResult> checkExistingPoliciesForIds(List<CreatePolicyRequest> requests, UUID ownerId);
 
   Future<List<QueryResult>> insertPolicies(List<CreatePolicyRequest> requests, UUID userId);
-
-  Future<Set<UUID>> insertItemsIntoDb(List<ResourceObj> resourceObjList);
 
   Future<QueryResult> getPoliciesByConsumer(String email);
 

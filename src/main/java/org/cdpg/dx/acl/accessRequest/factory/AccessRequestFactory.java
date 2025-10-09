@@ -17,6 +17,8 @@ import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
 import org.cdpg.dx.acl.accessRequest.service.AccessRequestService;
 import org.cdpg.dx.acl.accessRequest.service.impl.AccessRequestServiceImpl;
 import org.cdpg.dx.acl.aclEmailHelper.EmailComposer;
+import org.cdpg.dx.acl.policy.dao.PolicyDao;
+import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
@@ -39,9 +41,10 @@ public class AccessRequestFactory {
     AccessRequestDao accessRequestDao =
         new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
 
+    PolicyDao policyDao = new PolicyDaoImpl(pgService);
     ItemService itemService =
-        new ItemServiceImpl(elasticsearchService, keycloakUserService,
-            accessRequestDao, webClient, config.getString(DOC_INDEX), config.getString(APD_URL));
+        new ItemServiceImpl(elasticsearchService, keycloakUserService, policyDao, webClient,
+            config.getString(DOC_INDEX), config.getString(APD_URL));
 
     AccessRequestService accessRequestService =
         new AccessRequestServiceImpl(itemService, accessRequestDao);
