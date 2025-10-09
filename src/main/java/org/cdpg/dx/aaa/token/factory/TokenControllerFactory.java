@@ -27,53 +27,53 @@ import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
 
 public class TokenControllerFactory {
 
-  public static TokenController create(
-      PostgresService pgService,
-      ElasticsearchService elasticsearchService,
-      JsonObject config,
-      Vertx vertx,
-      WebClient webClient,
-      PolicyDao policyDao,
-      URNGenerator urnGenerator) {
+    public static TokenController create(
+            PostgresService pgService,
+            ElasticsearchService elasticsearchService,
+            JsonObject config,
+            Vertx vertx,
+            WebClient webClient,
+            PolicyDao policyDao,
+            URNGenerator urnGenerator) {
 
-    KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
-    ClientcredetialDao clientcredetialDao = new ClientcredetialDaoImpl(pgService);
-    ClientcredetialService clientcredetialService =
-        new ClientcredetialServiceImpl(clientcredetialDao);
+        KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
+        ClientcredetialDao clientcredetialDao = new ClientcredetialDaoImpl(pgService);
+        ClientcredetialService clientcredetialService =
+                new ClientcredetialServiceImpl(clientcredetialDao);
 
-    String keystorePath = config.getString("keystorePath");
-    String keystorePassword = config.getString("keystorePassword");
-    int tokenExpirationMinutes = config.getInteger("tokenExpirationMinutes", 60);
-    String isssuer = config.getString("cosDomain", "");
+        String keystorePath = config.getString("keystorePath");
+        String keystorePassword = config.getString("keystorePassword");
+        int tokenExpirationMinutes = config.getInteger("tokenExpirationMinutes", 60);
+        String isssuer = config.getString("cosDomain", "");
 
-    JWTAuth provider = jwtInitConfig(keystorePath, keystorePassword, vertx);
+        JWTAuth provider = jwtInitConfig(keystorePath, keystorePassword, vertx);
 
-    ItemService itemService =
-        new ItemServiceImpl(
-            elasticsearchService,
-            keycloakUserService,
-            policyDao,
-            webClient,
-            config.getString(DOC_INDEX),
-            config.getString(APD_URL));
+        ItemService itemService =
+                new ItemServiceImpl(
+                        elasticsearchService,
+                        keycloakUserService,
+                        policyDao,
+                        webClient,
+                        config.getString(DOC_INDEX),
+                        config.getString(APD_URL));
 
-    TokenService tokenService =
-        new TokenServiceImpl(
-            provider,
-            keycloakUserService,
-            clientcredetialService,
-            itemService,
-            isssuer,
-            tokenExpirationMinutes,
-            vertx);
+        TokenService tokenService =
+                new TokenServiceImpl(
+                        provider,
+                        keycloakUserService,
+                        clientcredetialService,
+                        itemService,
+                        isssuer,
+                        tokenExpirationMinutes,
+                        vertx);
 
-    return new TokenController(tokenService, urnGenerator);
-  }
+        return new TokenController(tokenService, urnGenerator);
+    }
 
-  public static JWTAuth jwtInitConfig(String keystorePath, String keystorePassword, Vertx vertx) {
-    JWTAuthOptions config = new JWTAuthOptions();
-    config.setKeyStore(new KeyStoreOptions().setPath(keystorePath).setPassword(keystorePassword));
+    public static JWTAuth jwtInitConfig(String keystorePath, String keystorePassword, Vertx vertx) {
+        JWTAuthOptions config = new JWTAuthOptions();
+        config.setKeyStore(new KeyStoreOptions().setPath(keystorePath).setPassword(keystorePassword));
 
-    return JWTAuth.create(vertx, config);
-  }
+        return JWTAuth.create(vertx, config);
+    }
 }
