@@ -1,14 +1,9 @@
 package org.cdpg.dx.aaa.apiserver;
 
-import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
-import static org.cdpg.dx.aaa.common.Constants.DOC_USER_INDEX;
-import static org.cdpg.dx.aaa.common.Constants.VOC_CONTEXT;
+import static org.cdpg.dx.aaa.common.Constants.*;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.REQUEST_TABLE;
-import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DATA_BROKER_SERVICE_ADDRESS;
-import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.ELASTIC_SERVICE_ADDRESS;
-import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.EMAIL_SERVICE_ADDRESS;
-import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.POSTGRES_SERVICE_ADDRESS;
+import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.*;
 import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
 import static org.cdpg.dx.database.elastic.util.Constants.VERIFIED_BY;
 
@@ -22,6 +17,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.ActivityReport.controller.ActivityReportController;
 import org.cdpg.dx.aaa.ActivityReport.factory.ActivityReportControllerFactory;
+// import org.cdpg.dx.aaa.accessReport.controller.AccessReportController;
+// import org.cdpg.dx.aaa.accessReport.factory.AccessReportFactory;
+// import org.cdpg.dx.aaa.accessRequest.controller.AccessRequestController;
+// import org.cdpg.dx.aaa.accessRequest.factory.AccessRequestFactory;
 import org.cdpg.dx.aaa.activity.controller.ActivityController;
 import org.cdpg.dx.aaa.activity.factory.ActivityControllerFactory;
 import org.cdpg.dx.aaa.activity.factory.ActivityFactory;
@@ -33,13 +32,13 @@ import org.cdpg.dx.aaa.asset.factory.AssetFactory;
 import org.cdpg.dx.aaa.asset.handler.AssetHandler;
 import org.cdpg.dx.aaa.clientSecret.controller.ClientController;
 import org.cdpg.dx.aaa.clientSecret.factory.ClientControllerFactory;
-import org.cdpg.dx.aaa.connector.service.ConnectorService;
-import org.cdpg.dx.aaa.connector.service.ConnectorServiceImpl;
 import org.cdpg.dx.aaa.credit.factory.CreditControllerFactory;
 import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.ingestion.service.IngestionService;
 import org.cdpg.dx.aaa.ingestion.service.IngestionServiceImpl;
+import org.cdpg.dx.aaa.connector.service.ConnectorService;
+import org.cdpg.dx.aaa.connector.service.ConnectorServiceImpl;
 import org.cdpg.dx.aaa.item.controller.ItemController;
 import org.cdpg.dx.aaa.item.factory.ItemControllerFactory;
 import org.cdpg.dx.aaa.item.service.ItemService;
@@ -58,8 +57,10 @@ import org.cdpg.dx.aaa.search.controller.SearchController;
 import org.cdpg.dx.aaa.search.factory.SearchControllerFactory;
 import org.cdpg.dx.aaa.token.controller.TokenController;
 import org.cdpg.dx.aaa.token.factory.TokenControllerFactory;
+import org.cdpg.dx.aaa.user.controller.UserController;
 import org.cdpg.dx.aaa.user.factory.UserControllerFactory;
 import org.cdpg.dx.aaa.user.service.UserService;
+import org.cdpg.dx.aaa.user.service.UserServiceImpl;
 import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
 import org.cdpg.dx.acl.accessRequest.dao.impl.AccessRequestDaoImpl;
 import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
@@ -127,20 +128,17 @@ public class ControllerFactory {
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
 
     PolicyDao policyDao = new PolicyDaoImpl(pgService);
-    ItemService itemService =
-        new ItemServiceImpl(esService, keycloakUserService, policyDao, webClient, docIndex, apdURL);
+    ItemService itemService = new ItemServiceImpl(esService, keycloakUserService,
+        policyDao, webClient, docIndex, apdURL);
 
     CreditService creditService =
         CreditControllerFactory.createService(pgService, keycloakUserService, config);
     OrganizationService organizationService =
         OrganizationControllerFactory.createService(pgService, keycloakUserService, itemService);
-    //    UserService userService =
-    //        new UserServiceImpl(keycloakUserService, organizationService, creditService
-    // ,esService,docIndex);
+//    UserService userService =
+//        new UserServiceImpl(keycloakUserService, organizationService, creditService ,esService,docIndex);
 
-    UserService userService =
-        UserControllerFactory.createService(
-            keycloakUserService, organizationService, creditService, esService, docUserIndex);
+    UserService userService = UserControllerFactory.createService(keycloakUserService, organizationService, creditService ,esService,docUserIndex);
     EmailComposer emailComposer =
         new EmailComposer(
             emailService,
@@ -195,21 +193,20 @@ public class ControllerFactory {
             esService, auditingHandler, docIndex, urnGenerator);
     IngestionService ingestionService = new IngestionServiceImpl(dataBrokerService);
     String publishExchange = config.getString("publishExchange");
-    ConnectorService connectorService =
-        new ConnectorServiceImpl(dataBrokerService, publishExchange);
+    ConnectorService connectorService = new ConnectorServiceImpl(dataBrokerService, publishExchange);
     final ItemController itemController =
         ItemControllerFactory.createCrudController(
             auditingHandler, esService, pgService, keycloakUserService, docIndex, vocContext,
             apdURL,verifiedBy, urnGenerator, webClient,ingestionService,connectorService,scriptConfig);
 
     ApiController resourceServerController =
-        ResourceServerControllerFactory.createController(pgService, auditingHandler, urnGenerator);
+        ResourceServerControllerFactory.createController(
+            pgService, auditingHandler, urnGenerator);
 
     ClientController clientController = ClientControllerFactory.create(pgService, urnGenerator);
 
     TokenController tokenController =
-        TokenControllerFactory.create(
-            pgService, esService, config, vertx, webClient, policyDao, urnGenerator);
+        TokenControllerFactory.create(pgService, esService, config, vertx, webClient, policyDao, urnGenerator);
 
     PublicController publicController = PublicKeycontrllerFactory.create(config, vertx);
 
