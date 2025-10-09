@@ -3,17 +3,21 @@ import requests
 import sys
 import time
 
+FILE_PATH = "/path/to/your/vector/file.gpkg"
 
 BASE_DOMAIN = "<OGC_DATA_PLANE_DOMAIN_HERE>"
 CONTROLPLANE_DOMAIN = "<CONTROL_PLANE_DOMAIN_HERE>"
 
 BASE_URL = f"{BASE_DOMAIN}/processes"
 CONTROLPLANE_URL = f"{CONTROLPLANE_DOMAIN}/iudx/v2/cat/organisation/asset"
+
 AUTH_TOKEN = "<PUT_YOUR_BEARER_TOKEN_HERE>"
 RESOURCE_ID = "<PUT_RESOURCE_ID_HERE>"
-FILE_PATH = "/path/to/your/vector/file.gpkg"
-BUCKET_NAME = "iudx-v2-ogc-rs"
-REGION = "ap-south-1"
+
+BUCKET_NAME = "<BUCKET_NAME_HERE>"
+REGION = "<REGION_HERE>"
+S3_BUCKET_IDENTIFIER = "<S3_BUCKET_IDENTIFIER_HERE>"
+
 TITLE= "<PUT_TITLE_HERE>"
 DESCRIPTION = "<PUT_DESCRIPTION_HERE>"
 
@@ -51,7 +55,7 @@ s3_payload = {
         "region": REGION,
         "fileType": "GeoPackage",
         "version": "1.0.0",
-        "s3BucketIdentifier": "default"
+        "s3BucketIdentifier": S3_BUCKET_IDENTIFIER
     }
 }
 s3_resp = requests.post(s3_exec_url, headers=headers, json=s3_payload)
@@ -82,7 +86,7 @@ onboarding_payload = {
         "title": TITLE,
         "description": DESCRIPTION,
         "resourceId": RESOURCE_ID,
-        "s3BucketIdentifier": "default",
+        "s3BucketIdentifier": S3_BUCKET_IDENTIFIER,
         "version": "1.0.0"
     },
     "response": "raw"

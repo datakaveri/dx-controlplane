@@ -4,6 +4,7 @@ import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
@@ -26,22 +27,18 @@ public class ItemRegistryServiceImpl implements ItemRegistryService {
   private final IngestionService ingestionService;
   private final ConnectorService connectorService;
   private final WebClient webClient;
-  private final String dataPlaneUrl;
-  private final String controlPlaneUrl;
-  private final String ogcDataPlaneUrl;
+  private final HashMap<String,String> scriptConfigMap;
   private final ScriptGenerationService scriptGenerationService;
   
   public ItemRegistryServiceImpl(ItemService itemService,
                                  IngestionService ingestionService,
                                  ConnectorService connectorService,
-                                 WebClient webClient, String dataPlaneUrl,String controlPlaneUrl,String ogcDataPlaneUrl) {
+                                 WebClient webClient, HashMap<String,String> scriptConfigMap) {
     this.itemService = itemService;
     this.ingestionService = ingestionService;
     this.connectorService = connectorService;
     this.webClient = webClient;
-    this.dataPlaneUrl = dataPlaneUrl;
-    this.controlPlaneUrl= controlPlaneUrl;
-    this.ogcDataPlaneUrl = ogcDataPlaneUrl;
+    this.scriptConfigMap=scriptConfigMap;
     this.scriptGenerationService = new ScriptGenerationService();
   }
 
@@ -160,7 +157,7 @@ public class ItemRegistryServiceImpl implements ItemRegistryService {
   }
 
   private Future<Void> postToDataPlane(JsonObject requestBody, String bearerToken) {
-    String url = dataPlaneUrl.concat("/admin/elasticsearch/createIndex");
+    String url = scriptConfigMap.get("dataPlaneUrl").concat("/admin/elasticsearch/createIndex");
     if (url == null || url.isBlank()) {
         LOGGER.debug("Resource server URL is missing or blank");
       return Future.failedFuture(new DxBadRequestException("resourceServer url is required"));
@@ -216,7 +213,7 @@ public class ItemRegistryServiceImpl implements ItemRegistryService {
       LOGGER.debug("Vector data detected in OGC resource server, generating script");
       
       // Generate vector creation script file
-      JsonObject fileInfo = scriptGenerationService.generateVectorScriptFile(authToken, itemId, title, description,ogcDataPlaneUrl,controlPlaneUrl);
+      JsonObject fileInfo = scriptGenerationService.generateVectorScriptFile(authToken, itemId, title, description,scriptConfigMap);
       JsonObject scriptResponse = scriptGenerationService.createScriptFileResponse(fileInfo, "vector", itemId);
       
       // Create response with script information
@@ -234,7 +231,7 @@ public class ItemRegistryServiceImpl implements ItemRegistryService {
       LOGGER.debug("Raster data detected in OGC resource server, generating script");
       
       // Generate raster creation script file
-      JsonObject fileInfo = scriptGenerationService.generateRasterScriptFile(authToken, itemId, title, description,ogcDataPlaneUrl,controlPlaneUrl);
+      JsonObject fileInfo = scriptGenerationService.generateRasterScriptFile(authToken, itemId, title, description,scriptConfigMap);
       JsonObject scriptResponse = scriptGenerationService.createScriptFileResponse(fileInfo, "raster", itemId);
       
       // Create response with script information

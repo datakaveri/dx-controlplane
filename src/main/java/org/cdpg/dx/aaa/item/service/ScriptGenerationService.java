@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -38,15 +39,25 @@ public class ScriptGenerationService {
      * @return The generated Python script as a string
      * @throws DxBadRequestException if the script file cannot be read
      */
-    private String readAndCustomizeScript(String scriptPath, String authToken, String resourceId, String title, String description,String ogcDataPlaneUrl, String controlPlaneUrl) {
+    private String readAndCustomizeScript(String scriptPath, String authToken, String resourceId, String title, String description,HashMap<String,String> scriptConfigMap) {
         try {
             Path path = Paths.get(scriptPath);
+            LOGGER.debug("map values: {}",scriptConfigMap);
             String scriptContent = Files.readString(path);
-
+            String ogcDataPlaneUrl = scriptConfigMap.get("ogcDataPlaneUrl");
+            String controlPlaneUrl = scriptConfigMap.get("controlPlaneUrl");
+            String bucketName = scriptConfigMap.get("bucketName");
+            String region = scriptConfigMap.get("region");
+            String s3BucketIdentifier = scriptConfigMap.get("s3BucketIdentifier");
 
             // Replace common placeholders
             scriptContent= scriptContent.replace("<OGC_DATA_PLANE_DOMAIN_HERE>", ogcDataPlaneUrl);
             scriptContent= scriptContent.replace("<CONTROL_PLANE_DOMAIN_HERE>", controlPlaneUrl);
+            scriptContent= scriptContent.replace("<BUCKET_NAME_HERE>", bucketName);
+            scriptContent= scriptContent.replace("<REGION_HERE>", region);
+            scriptContent= scriptContent.replace("<S3_BUCKET_IDENTIFIER_HERE>", s3BucketIdentifier);
+
+
             scriptContent = scriptContent.replace("<PUT_YOUR_BEARER_TOKEN_HERE>", authToken);
             scriptContent = scriptContent.replace("<PUT_RESOURCE_ID_HERE>", resourceId);
             
@@ -115,9 +126,9 @@ public class ScriptGenerationService {
      * @return JsonObject containing file information
      * @throws DxBadRequestException if the script template file cannot be read
      */
-    public JsonObject generateVectorScriptFile(String authToken, String resourceId, String title, String description,String ogcDataPlaneUrl, String controlPlaneUrl) {
+    public JsonObject generateVectorScriptFile(String authToken, String resourceId, String title, String description, HashMap<String,String> scriptConfigMap) {
         LOGGER.debug("Generating vector script file for resourceId: {}", resourceId);
-        String scriptContent = readAndCustomizeScript(VECTOR_SCRIPT_PATH, authToken, resourceId, title, description,ogcDataPlaneUrl,controlPlaneUrl);
+        String scriptContent = readAndCustomizeScript(VECTOR_SCRIPT_PATH, authToken, resourceId, title, description,scriptConfigMap);
         return writeScriptToFile(scriptContent, "vector", resourceId);
     }
 
@@ -131,10 +142,10 @@ public class ScriptGenerationService {
      * @return JsonObject containing file information
      * @throws DxBadRequestException if the script template file cannot be read
      */
-    public JsonObject generateRasterScriptFile(String authToken, String resourceId, String title, String description, String ogcDataPlaneUrl, String controlPlaneUrl) {
+    public JsonObject generateRasterScriptFile(String authToken, String resourceId, String title, String description, HashMap<String,String> scriptConfigMap) {
         LOGGER.debug("Generating raster script file for resourceId: {}", resourceId);
         
-        String scriptContent = readAndCustomizeScript(RASTER_SCRIPT_PATH, authToken, resourceId, title, description, ogcDataPlaneUrl, controlPlaneUrl);
+        String scriptContent = readAndCustomizeScript(RASTER_SCRIPT_PATH, authToken, resourceId, title, description, scriptConfigMap);
         return writeScriptToFile(scriptContent, "raster", resourceId);
     }
 
