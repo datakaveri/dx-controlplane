@@ -35,7 +35,7 @@ public class TextSearchQueryDecorator implements ElasticsearchQueryDecorator {
               .setQueryParameters(
                   Map.of(
                       "fields",
-                      List.of("label", "tags", "description"),
+                      List.of("label", "tags", "description", "name"),
                       "query",
                       textAttr,
                       "fuzziness",
@@ -50,7 +50,7 @@ public class TextSearchQueryDecorator implements ElasticsearchQueryDecorator {
               .setQueryParameters(
                   Map.of(
                       "fields",
-                      List.of("label", "tags", "description"),
+                      List.of("label", "tags", "description", "name"),
                       "query",
                       textAttr,
                       "type",
