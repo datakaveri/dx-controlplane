@@ -1,7 +1,11 @@
 package org.cdpg.dx.aaa.item.factory;
 
 import io.vertx.ext.web.client.WebClient;
+import org.cdpg.dx.aaa.connector.service.ConnectorService;
+import org.cdpg.dx.aaa.ingestion.service.IngestionService;
 import org.cdpg.dx.aaa.item.controller.ItemController;
+import org.cdpg.dx.aaa.item.service.ItemRegistryService;
+import org.cdpg.dx.aaa.item.service.ItemRegistryServiceImpl;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
@@ -11,10 +15,6 @@ import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
-import org.cdpg.dx.aaa.ingestion.service.IngestionService;
-import org.cdpg.dx.aaa.connector.service.ConnectorService;
-import org.cdpg.dx.aaa.item.service.ItemRegistryService;
-import org.cdpg.dx.aaa.item.service.ItemRegistryServiceImpl;
 
 import java.util.HashMap;
 
