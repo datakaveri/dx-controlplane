@@ -2,7 +2,11 @@ package org.cdpg.dx.acl.policy.service.impl;
 
 import static org.cdpg.dx.aaa.common.Constants.DETAIL;
 import static org.cdpg.dx.aaa.common.Constants.ID;
+import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_AI_MODEL;
+import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_APPS;
+import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_RESOURCE_GROUP;
+import static org.cdpg.dx.aaa.common.Constants.PROVIDER_USER_ID;
 import static org.cdpg.dx.aaa.common.Constants.TITLE;
 import static org.cdpg.dx.aaa.common.Constants.TYPE;
 import static org.cdpg.dx.auth.authorization.model.DxRole.CONSUMER;
@@ -10,38 +14,51 @@ import static org.cdpg.dx.auth.authorization.model.DxRole.CONSUMER_DELEGATE;
 import static org.cdpg.dx.auth.authorization.model.DxRole.PROVIDER;
 import static org.cdpg.dx.auth.authorization.model.DxRole.PROVIDER_DELEGATE;
 import static org.cdpg.dx.common.HttpStatusCode.BAD_REQUEST;
+import static org.cdpg.dx.common.HttpStatusCode.CONFLICT;
 import static org.cdpg.dx.common.HttpStatusCode.FORBIDDEN;
+import static org.cdpg.dx.common.HttpStatusCode.INTERNAL_SERVER_ERROR;
+import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
 
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.item.service.ItemService;
+import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.model.PolicyDto;
+import org.cdpg.dx.acl.policy.dao.model.VerifyPolicyDto;
 import org.cdpg.dx.acl.policy.service.PolicyService;
 import org.cdpg.dx.acl.policy.service.model.CreatePolicyRequest;
 import org.cdpg.dx.catalogueService.models.ItemType;
 import org.cdpg.dx.common.HttpStatusCode;
 import org.cdpg.dx.common.ResponseUrn;
+import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.common.model.ResourceObj;
 import org.cdpg.dx.database.postgres.models.QueryResult;
 
 public class PolicyServiceImpl implements PolicyService {
   private static final Logger LOGGER = LogManager.getLogger(PolicyServiceImpl.class);
   private static final String FAILURE_MESSAGE = "Policy could not be deleted";
+  private final ItemService itemService;
   private final PolicyDao policyDao;
-  JsonObject config;
+  private final String apdUrl;
 
 
-  public PolicyServiceImpl(PolicyDao policyDao, JsonObject config) {
+  public PolicyServiceImpl(ItemService itemService, PolicyDao policyDao, String apdUrl) {
+    this.itemService = itemService;
+    this.apdUrl = apdUrl;
     this.policyDao = policyDao;
-    this.config = config;
   }
 
 
@@ -51,9 +68,11 @@ public class PolicyServiceImpl implements PolicyService {
     UUID userId = caller.sub();
 
     Set<UUID> itemIds = requests.stream()
-        .map(CreatePolicyRequest::getItemId).collect(Collectors.toSet());
-    Set<String> itemTypes =
-        requests.stream().map(req -> req.getItemType().getTypeValue()).collect(Collectors.toSet());
+        .map(CreatePolicyRequest::getItemId)
+        .collect(Collectors.toSet());
+    Set<String> itemTypes = requests.stream()
+        .map(req -> req.getItemType().getTypeValue())
+        .collect(Collectors.toSet());
 
     // Fail fast if resource_group
     if (itemTypes.contains(ITEM_TYPE_RESOURCE_GROUP)) {
@@ -62,28 +81,209 @@ public class PolicyServiceImpl implements PolicyService {
           generateErrorResponse(BAD_REQUEST, "Policy creation for resource group is restricted"));
     }
 
-    LOGGER.debug("itemIds: " + itemIds);
-    LOGGER.debug("itemTypes: " + itemTypes);
-    // Step 1: Ownership check (DAO: checkForItemsInDb)
-    return policyDao.checkForItemsInDb(itemIds, itemTypes, caller)
+    LOGGER.debug("itemIds: {}", itemIds);
+    LOGGER.debug("itemTypes: {}", itemTypes);
+
+    //Ownership check
+    return checkForItemsInDb(itemIds, itemTypes, caller)
         .compose(providerIds -> {
-          LOGGER.debug("no.of providerIds: " + providerIds.size());
+          LOGGER.debug("no.of providerIds: {}", providerIds.size());
           if (providerIds.size() == 1 && providerIds.contains(userId)) {
             // Step 2: Ensure no duplicate policy
-            return policyDao.checkExistingPoliciesForId(requests, userId);
+            return policyDao.checkExistingPoliciesForIds(requests, userId);
           } else {
             return Future.failedFuture(
                 generateErrorResponse(FORBIDDEN, "Access Denied: Not owner of resource"));
           }
         })
-        .compose(policyNotExists -> {
-          // Step 3: Create policy in DB
+        .compose(queryResult -> {
+          JsonArray existingPolicies = queryResult.getRows();
+          if (existingPolicies != null && !existingPolicies.isEmpty()) {
+            List<String> existingIds = existingPolicies.stream()
+                .map(obj -> ((JsonObject) obj).getString("_id"))
+                .collect(Collectors.toList());
+            LOGGER.error("Policy already exists for items: {}", existingIds);
+            return Future.failedFuture(
+                generateErrorResponse(CONFLICT,
+                    "Policy already exists for some of the requested items: " + existingIds));
+          }
+
+          // No duplicates found → insert new policies
           return policyDao.insertPolicies(requests, userId);
         })
         .onSuccess(rowList -> {
           JsonArray response = createResponseArray(rowList);
-          LOGGER.debug("Policy is created with info {}", response);
-        }).mapEmpty();
+          LOGGER.debug("Policy created successfully with info: {}", response);
+        })
+        .onFailure(err -> {
+          LOGGER.error("Failed to create policy: {}", err.getMessage());
+        })
+        .mapEmpty();
+  }
+
+  public Future<Set<UUID>> checkForItemsInDb(
+      Set<UUID> itemIdList, Set<String> itemTypeRequest, DxUser user) {
+
+    if (itemIdList.isEmpty()) {
+      LOGGER.warn("item id list is empty...");
+      return Future.succeededFuture(Set.of());
+    }
+
+    // Fetch items from catalogue directly
+    return fetchResourcesFromCatalogue(itemIdList)
+        .compose(resourceObjs -> {
+          Set<UUID> providerIdSet = new HashSet<>();
+
+          for (ResourceObj obj : resourceObjs) {
+            // Validate item types
+            if (!itemTypeRequest.contains(obj.getItemType().name())) {
+              return Future.failedFuture(
+                  generateErrorResponse(BAD_REQUEST,
+                      "Invalid item type for ID: " + obj.getItemId()));
+            }
+
+            // Optionally: validate user has access via resource server URLs
+            // if (obj.getResourceServerUrls().stream().noneMatch(url -> url.equals(user.getResourceServerUrls()))) {
+            //     return Future.failedFuture(generateErrorResponse(FORBIDDEN,
+            //             "Access denied: user does not have rights for resource ID " + obj.getItemId()));
+            // }
+
+            providerIdSet.add(obj.getProviderId());
+          }
+
+          return Future.succeededFuture(providerIdSet);
+        })
+        .recover(failure -> {
+          String failureMessage = failure.getMessage();
+          if (failureMessage.contains(TYPE) && failureMessage.contains(TITLE)) {
+            return Future.failedFuture(failureMessage);
+          } else {
+            return Future.failedFuture(generateErrorResponse(BAD_REQUEST, failureMessage));
+          }
+        });
+  }
+
+  public Future<List<ResourceObj>> fetchResourcesFromCatalogue(Set<UUID> ids) {
+    List<Future> futures = ids.stream()
+        .map(this::fetchAndValidateResource) // fetch each UUID
+        .collect(Collectors.toList());
+
+    // Combine all futures
+    return CompositeFuture.all(futures)
+        .map(composite -> futures.stream()
+            .map(f -> ((Future<ResourceObj>) f).result())
+            .collect(Collectors.toList()));
+  }
+
+  /**
+   * Fetch a single resource using ItemService and apply all catalogue validations
+   */
+  private Future<ResourceObj> fetchAndValidateResource(UUID id) {
+    Promise<ResourceObj> promise = Promise.promise();
+
+    GetItemRequest request = new GetItemRequest(id.toString(), "");
+    itemService.getItem(request)
+        .onFailure(
+            ar -> {
+              LOGGER.error("fetchItem error : " + ar.getMessage());
+              promise.fail(INTERNAL_SERVER_ERROR.getDescription());
+            })
+        .onSuccess(
+            catSuccessResponse -> {
+              // Filter out null Elasticsearch responses
+              List<JsonObject> validResponses = catSuccessResponse.getElasticsearchResponses()
+                  .stream()
+                  .filter(Objects::nonNull)
+                  .toList();
+
+              if (!validResponses.isEmpty()) {
+                JsonObject resultJson = validResponses.getFirst();
+                LOGGER.info(resultJson.encodePrettily());
+                List<String> resServerUrls = null;
+                String apdUrlOfResource = "";
+
+                // Validate type
+                String type = resultJson.getJsonArray(TYPE).getString(0);
+                String idFromResponse = resultJson.getString(ID);
+                /* check if the id being sent is of valid type*/
+                if (!ITEM_TYPE_DATA_BANK.equalsIgnoreCase(type) &&
+                    !ITEM_TYPE_AI_MODEL.equalsIgnoreCase(type) &&
+                    !ITEM_TYPE_APPS.equalsIgnoreCase(type)) {
+                  LOGGER.error("Invalid item type: {}", type);
+                  promise.fail(generateFailureMessage(BAD_REQUEST, ResponseUrn.BAD_REQUEST_URN,
+                      "Given id is invalid - only DataBank or AiModel items are supported, but " +
+                          "got: " + type));
+                  return;
+                }
+
+                // Extract provider
+                UUID provider = UUID.fromString(resultJson.getString(PROVIDER_USER_ID));
+                if (provider == null) {
+                  promise.fail(generateFailureMessage(INTERNAL_SERVER_ERROR,
+                      ResponseUrn.INTERNAL_SERVER_ERROR,
+                      "Provider ID missing in catalogue response"));
+                  return;
+                }
+
+                // Extract resource servers
+                resServerUrls = resultJson.getJsonArray("resourceServer")
+                    .stream()
+                    .map(obj -> ((JsonObject) obj).getString("url"))
+                    .filter(Objects::nonNull)
+                    .toList();
+
+                if (resServerUrls.isEmpty()) {
+                  promise.fail(generateFailureMessage(INTERNAL_SERVER_ERROR,
+                      ResponseUrn.INTERNAL_SERVER_ERROR,
+                      "Resource server URLs missing in catalogue response"));
+                  return;
+                }
+                apdUrlOfResource = resultJson.getString(APD_URL);
+                if (!apdUrl.equals(apdUrlOfResource)) {
+                  /* if the resource has an APD URL that is not equal to the current APD URL*/
+                  String failureMessage =
+                      generateFailureMessage(
+                          FORBIDDEN,
+                          ResponseUrn.FORBIDDEN_URN,
+                          "Resource is forbidden to access, as the APD URL for the resource : "
+                              + apdUrlOfResource
+                              + " is different than the current APD : "
+                              + apdUrl);
+                  promise.fail(failureMessage);
+                } else {
+                  ItemType itemType = null;
+                  if (type.equalsIgnoreCase(ITEM_TYPE_DATA_BANK)) {
+                    itemType = ItemType.DATABANK;
+                  } else if (type.equalsIgnoreCase(ITEM_TYPE_AI_MODEL)) {
+                    itemType = ItemType.AIMODEL;
+                  } else if (type.equalsIgnoreCase(ITEM_TYPE_APPS)) {
+                  itemType = ItemType.APPS;
+                }
+                  ResourceObj resourceObj =
+                      new ResourceObj(id, provider, resServerUrls, itemType);
+                  promise.complete(resourceObj);
+                }
+              } else {
+                String message = "Item not found for ID: " + id;
+                LOGGER.error(message);
+                promise.fail(new DxForbiddenException(message));
+              }
+            });
+
+    return promise.future();
+  }
+
+
+  /**
+   * Generate failure JSON string (same as CatalogueClient)
+   */
+  private String generateFailureMessage(HttpStatusCode httpStatusCode, ResponseUrn responseUrn,
+                                        String detail) {
+    return new JsonObject()
+        .put(TYPE, httpStatusCode.getValue())
+        .put(TITLE, responseUrn.getUrn())
+        .put(DETAIL, detail)
+        .encode();
   }
 
   @Override
@@ -178,15 +378,6 @@ public class PolicyServiceImpl implements PolicyService {
       JsonObject row = result.getRows().getJsonObject(0);
       LOGGER.debug("Row: {}", row);
       String ownerId = row.getString("owner_id");
-
-      JsonArray rsJsonArray = row.getJsonArray("resource_server_urls");
-
-      List<String> rsUrl = rsJsonArray.stream()
-          .map(Object::toString)
-          .collect(Collectors.toList());
-
-      LOGGER.debug("rsUrl: {}", rsUrl);
-
       String status = row.getString("status");
 
       /* does the policy belong to the owner who is requesting */
@@ -233,39 +424,41 @@ public class PolicyServiceImpl implements PolicyService {
   }
 
   /**
-   * to verify if a policy exists for a user/item and is ACTIVE
+   * Verify if an ACTIVE policy exists for a given user/item pair.
    */
-  public Future<JsonObject> initiateVerifyPolicy(UUID ownerId, String userEmail, UUID itemId,
-                                                 ItemType itemType, DxUser user) {
-    Promise<JsonObject> promise = Promise.promise();
+  @Override
+  public Future<VerifyPolicyDto> initiateVerifyPolicy(UUID ownerId, String userEmail, UUID itemId,
+                                                      ItemType itemType, DxUser user) {
+    Promise<VerifyPolicyDto> promise = Promise.promise();
 
-    try {
-      // Check if ACTIVE policy exists for user/item
-      policyDao.checkExistingPoliciesForId(itemId, ownerId, userEmail)
-          .onSuccess(rsPolicy -> {
-            // Policy exists → fetch constraints
-            if (rsPolicy.containsKey(ID)) {
-              // Optionally, fetch policy constraints using verifyPolicy(UUID)
-              policyDao.verifyPolicy(UUID.fromString(rsPolicy.getString(ID)))
-                  .onSuccess(result -> {
-                    JsonObject responseJson = new JsonObject()
-                        .put("type", ResponseUrn.VERIFY_SUCCESS_URN.getUrn())
-                        .put("apdConstraints", rsPolicy.getJsonObject("constraints"));
-                    promise.complete(responseJson);
-                  })
-                  .onFailure(promise::fail);
-            } else {
-              promise.fail(generateErrorResponse(HttpStatusCode.FORBIDDEN,
-                  "No ACTIVE policy exists for this user/item"));
-            }
-          })
-          .onFailure(promise::fail);
+    policyDao.checkExistingPoliciesForIds(itemId, ownerId, userEmail)
+        .onSuccess(queryResult -> {
+          JsonArray rows = queryResult.getRows();
+          if (rows != null && !rows.isEmpty()) {
+            JsonObject row = rows.getJsonObject(0);
+            UUID policyId = UUID.fromString(row.getString("_id"));
+            JsonObject constraints = row.getJsonObject("constraints");
 
-    } catch (Exception e) {
-      LOGGER.error("Error in verifyPolicy: {}", e.getMessage());
-      promise.fail(generateErrorResponse(HttpStatusCode.INTERNAL_SERVER_ERROR,
-          "Failed to verify policy"));
-    }
+            // Fetch full policy constraints (optional deep validation)
+            policyDao.verifyPolicy(policyId)
+                .onSuccess(verifiedPolicy -> {
+                  VerifyPolicyDto verifyPolicyDto = new VerifyPolicyDto(
+                      ResponseUrn.VERIFY_SUCCESS_URN.getUrn(),
+                      constraints
+                  );
+                  promise.complete(verifyPolicyDto);
+                })
+                .onFailure(promise::fail);
+
+          } else {
+            promise.fail(generateErrorResponse(HttpStatusCode.FORBIDDEN,
+                "No ACTIVE policy exists for this user/item"));
+          }
+        })
+        .onFailure(err -> {
+          LOGGER.error("Error during initiateVerifyPolicy: {}", err.getMessage());
+          promise.fail(generateErrorResponse(INTERNAL_SERVER_ERROR, err.getMessage()));
+        });
 
     return promise.future();
   }

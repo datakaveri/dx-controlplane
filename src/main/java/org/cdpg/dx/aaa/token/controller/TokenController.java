@@ -2,17 +2,22 @@ package org.cdpg.dx.aaa.token.controller;
 
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.apiserver.ApiController;
+import org.cdpg.dx.aaa.token.model.AccessTokenRequest;
 import org.cdpg.dx.aaa.token.service.TokenService;
+import org.cdpg.dx.aaa.token.util.AccessTokenRequestBuilder;
 import org.cdpg.dx.common.URNGenerator;
+import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.response.ResponseBuilder;
 
 public class TokenController implements ApiController {
-
+  private static final Logger LOGGER = LogManager.getLogger(TokenController.class);
   private final TokenService tokenService;
   private final URNGenerator urnGenerator;
 
-  public TokenController(TokenService tokenService,URNGenerator urnGenerator) {
+  public TokenController(TokenService tokenService, URNGenerator urnGenerator) {
     this.tokenService = tokenService;
     this.urnGenerator = urnGenerator;
   }
@@ -23,15 +28,21 @@ public class TokenController implements ApiController {
   }
 
   private void handleCreateToken(RoutingContext ctx) {
-    String clientId = ctx.request().getHeader("clientId");
-    String clientSecret = ctx.request().getHeader("clientSecret");
+    AccessTokenRequest request;
+    try {
+      request = AccessTokenRequestBuilder.fromContext(ctx);
+    } catch (IllegalArgumentException e) {
+      ctx.fail(new DxBadRequestException(e.getMessage()));
+      return;
+    }
 
     tokenService
-      .createToken(clientId, clientSecret)
-      .onSuccess(
-        token -> {
-          ResponseBuilder.sendSuccess(ctx, token,urnGenerator);
-        })
-      .onFailure(ctx::fail);
+        .createToken(request)
+        .onSuccess(token -> ResponseBuilder.sendSuccess(ctx, token, urnGenerator))
+        .onFailure(
+            err -> {
+              LOGGER.error("Token creation failed: {}", err.getMessage());
+              ctx.fail(err);
+            });
   }
 }

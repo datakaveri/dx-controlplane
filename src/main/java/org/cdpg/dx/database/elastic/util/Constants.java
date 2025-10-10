@@ -380,6 +380,7 @@ public class Constants {
   public static final String ORG_ADMIN = "org_admin";
   public static final String USER = "user";
   public static final String APD_URL = "apdURL";
+  public static final String VERIFIED_BY = "verifiedBy";
   public static final String AUTHORIZATION_KEY = "Authorization";
   public static final String BEARER_KEY = "Bearer";
   public static final String HTTPS = "https://";
