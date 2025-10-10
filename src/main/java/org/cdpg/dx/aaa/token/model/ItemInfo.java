@@ -14,11 +14,11 @@ public record ItemInfo(
 
   /** Factory method to create ItemInfo from raw JSON response */
   public static ItemInfo fromJson(JsonObject response) {
-    if (response == null || !response.containsKey("result")) {
+    if (response == null || !response.containsKey("results")) {
       return new ItemInfo(null, null, null, null, null, new JsonArray(), new JsonObject());
     }
 
-    JsonArray resultArray = response.getJsonArray("result");
+    JsonArray resultArray = response.getJsonArray("results");
     if (resultArray == null || resultArray.isEmpty()) {
       return new ItemInfo(null, null, null, null, null, new JsonArray(), new JsonObject());
     }
