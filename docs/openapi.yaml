@@ -5473,7 +5473,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SearchCriteriaRequest'
+              anyOf:
+                - $ref: '#/components/schemas/TextSearchRequest'
+                - $ref: '#/components/schemas/SearchCriteriaRequest'
+                - $ref: '#/components/schemas/AutocompleteFuzzyTextSearchRequest'
+                - $ref: '#/components/schemas/ComplexSearchRequest'
       responses:
         '200':
           description: A successful search response with assets owned by the user
@@ -5605,7 +5609,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SearchCriteriaRequest'
+              anyOf:
+                - $ref: '#/components/schemas/TextSearchRequest'
+                - $ref: '#/components/schemas/SearchCriteriaRequest'
+                - $ref: '#/components/schemas/AutocompleteFuzzyTextSearchRequest'
+                - $ref: '#/components/schemas/ComplexSearchRequest'
       responses:
         '200':
           description: A successful search response with assets owned by the user
@@ -6176,7 +6184,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SearchCriteriaRequest'
+              anyOf:
+                - $ref: '#/components/schemas/TextSearchRequest'
+                - $ref: '#/components/schemas/SearchCriteriaRequest'
+                - $ref: '#/components/schemas/AutocompleteFuzzyTextSearchRequest'
+                - $ref: '#/components/schemas/ComplexSearchRequest'
       responses:
         '200':
           description: A successful search response with assets owned by the user
@@ -6267,12 +6279,16 @@ paths:
         - optionalAuth: [ ]
       operationId: count
       requestBody:
+        description: Request body containing unified search filters
         required: true
         content:
           application/json:
             schema:
-              oneOf:
+              anyOf:
+                - $ref: '#/components/schemas/TextSearchRequest'
                 - $ref: '#/components/schemas/SearchCriteriaRequest'
+                - $ref: '#/components/schemas/AutocompleteFuzzyTextSearchRequest'
+                - $ref: '#/components/schemas/ComplexSearchRequest'
       responses:
         '200':
           description: Aggregated count results by `type`
@@ -8782,7 +8798,6 @@ components:
         - uploadedBy
         - geoCoverage
         - yearRange
-        - verifiedBy
         - uploadFrequency
         - license
       example:
@@ -9008,7 +9023,6 @@ components:
             - uploadedBy
             - geoCoverage
             - yearRange
-            - verifiedBy
             - uploadFrequency
             - license
       example:
@@ -9374,7 +9388,6 @@ components:
             - uploadedBy
             - geoCoverage
             - yearRange
-            - verifiedBy
             - uploadFrequency
             - license
       example:
@@ -10899,7 +10912,6 @@ components:
         - fileFormat
         - industry
         - yearRange
-        - verifiedBy
         - uploadFrequency
         - license
         - resourceServer
