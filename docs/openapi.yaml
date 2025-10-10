@@ -2756,7 +2756,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/createNotificationForbidden'
       security:
-          - authorization: [ ]
+        - authorization: [ ]
   /iudx/v2/auth/user/compute/requests:
     delete:
       tags:
@@ -4111,50 +4111,50 @@ paths:
                         type: string
                         example: "2016–2020"
                       location:
-                         type: string
-                         example: "Delhi"
-                projects:
-                    type: array
-                    description: List of projects completed by the user
-                    items:
-                      type: object
-                      properties:
-                        institute:
-                          type: string
-                          example: "ICMR"
-                        time:
-                          type: string
-                          example: "2021"
-                        location:
-                          type: string
-                          example: "Delhi"
-                        about:
-                          type: string
-                          example: "Developed a system for secure data sharing"
-                publications:
-                      type: array
-                      description: List of publications by the user
-                      items:
-                        type: object
-                        properties:
-                          institute:
-                            type: string
-                            example: "ICMR"
-                          time:
-                            type: string
-                            example: "2021"
-                          location:
-                            type: string
-                            example: "Delhi"
-                          about:
-                            type: string
-                            example: "Paper on privacy-preserving IoT data sharing"
-                skills:
-                      type: array
-                      description: List of user skills
-                      items:
                         type: string
-                        example: "React"
+                        example: "Delhi"
+                projects:
+                  type: array
+                  description: List of projects completed by the user
+                  items:
+                    type: object
+                    properties:
+                      institute:
+                        type: string
+                        example: "ICMR"
+                      time:
+                        type: string
+                        example: "2021"
+                      location:
+                        type: string
+                        example: "Delhi"
+                      about:
+                        type: string
+                        example: "Developed a system for secure data sharing"
+                publications:
+                  type: array
+                  description: List of publications by the user
+                  items:
+                    type: object
+                    properties:
+                      institute:
+                        type: string
+                        example: "ICMR"
+                      time:
+                        type: string
+                        example: "2021"
+                      location:
+                        type: string
+                        example: "Delhi"
+                      about:
+                        type: string
+                        example: "Paper on privacy-preserving IoT data sharing"
+                skills:
+                  type: array
+                  description: List of user skills
+                  items:
+                    type: string
+                    example: "React"
       responses:
         '200':
           description: User info added successfully
@@ -9507,66 +9507,67 @@ components:
         result:
           type: array
           items:
-            - properties:
-                "@context":
+            type: object
+            properties:
+              "@context":
+                type: string
+                format: uri
+                description: JSON-LD context URI
+              type:
+                type: array
+                items:
                   type: string
-                  format: uri
-                  description: JSON-LD context URI
-                type:
-                  type: array
-                  items:
-                    type: string
-                  description: Type tags from the ADeX vocabulary
-                id:
+                description: Type tags from the ADeX vocabulary
+              id:
+                type: string
+                pattern: "^[a-zA-Z0-9\\-]{36}$"
+                description: Unique identifier of the model item
+              name:
+                type: string
+                pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
+                maxLength: 512
+                description: An explanation about the purpose of this instance.
+              organizationId:
+                type: string
+                pattern: "^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$"
+                maxLength: 36
+                description: UUID of the organization
+              tags:
+                type: array
+                items:
                   type: string
-                  pattern: "^[a-zA-Z0-9\\-]{36}$"
-                  description: Unique identifier of the model item
-                name:
-                  type: string
-                  pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
-                  maxLength: 512
-                  description: An explanation about the purpose of this instance.
-                organizationId:
-                  type: string
-                  pattern: "^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$"
-                  maxLength: 36
-                  description: UUID of the organization
-                tags:
-                  type: array
-                  items:
-                    type: string
-                  description: Tags describing the model
-                accessPolicy:
-                  type: string
-                  pattern: "^(RESTRICTED|OPEN|PRIVATE)$"
-                  description: Access policy for the model
-                label:
-                  type: string
-                  maxLength: 512
-                  description: User-friendly label for the model
-                description:
-                  type: string
-                  description: Detailed description of the model
-                organizationType:
-                  type: string
-                  description: Type of organization providing the model
-                department:
-                  type: string
-                  description: Department name
-                modelType:
-                  type: string
-                  description: Type of model (e.g., ImageClassifier, TimeSeriesPredictor)
-                fileFormat:
-                  type: string
-                  description: File format of the model
-                itemStatus:
-                  type: string
-                  enum: [ "ACTIVE", "INACTIVE" ]
-                  description: Current status of the model
-                itemCreatedAt:
-                  type: string
-                  format: date-time
-                  description: Creation timestamp of the model item
+                description: Tags describing the model
+              accessPolicy:
+                type: string
+                pattern: "^(RESTRICTED|OPEN|PRIVATE)$"
+                description: Access policy for the model
+              label:
+                type: string
+                maxLength: 512
+                description: User-friendly label for the model
+              description:
+                type: string
+                description: Detailed description of the model
+              organizationType:
+                type: string
+                description: Type of organization providing the model
+              department:
+                type: string
+                description: Department name
+              modelType:
+                type: string
+                description: Type of model (e.g., ImageClassifier, TimeSeriesPredictor)
+              fileFormat:
+                type: string
+                description: File format of the model
+              itemStatus:
+                type: string
+                enum: [ "ACTIVE", "INACTIVE" ]
+                description: Current status of the model
+              itemCreatedAt:
+                type: string
+                format: date-time
+                description: Creation timestamp of the model item
       required:
         - type
       example:
@@ -9622,6 +9623,8 @@ components:
           description: Detailed description of the type or response
         result:
           type: array
+          items:
+            type: object
           description: DataBank entity response body
       required:
         - type
@@ -9629,37 +9632,37 @@ components:
         type: 'urn:dx:cat:Success'
         title: 'Success'
         result:
-            - '@context': "https://agrijson.org"
-              type:
-                - "adex:DataBank"
-              id: "e27a1f6c-6a1b-45b8-a9f5-0c7424d1f0d1"
-              ownerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
-              name: 'subdistrict-weather-info'
-              label: 'Weather insights for subdistricts'
-              shortDescription: 'A short description about the dataset'
-              description: 'Dataset providing weather information such as temperature and rainfall for subdistricts across a state.'
-              tags:
-                - environment
-                - weather
-                - rainfall
-                - temperature
-              organizationId: '{{UUID}}'
-              accessPolicy: 'RESTRICTED'
-              organizationType: 'Private'
-              fileFormat: 'xlsx'
-              dataReadiness: 85
-              department: 'Department of IT, Electronics and Communication'
-              resourceType: 'DATASET'
-              industry: 'Climate Research'
-              uploadedBy: 'john.doe@datakaveri.org'
-              geoCoverage: 'Karnataka'
-              yearRange: '2015-2023'
-              verifiedBy: 'Ministry of Earth Sciences'
-              uploadFrequency: 'Weekly'
-              license: 'CC-BY 4.0'
-              itemStatus: "ACTIVE"
-              itemCreatedAt: "2024-01-05T02:09:10+0530"
-              detail: "Success: Item fetched Successfully"
+          - '@context': "https://agrijson.org"
+            type:
+              - "adex:DataBank"
+            id: "e27a1f6c-6a1b-45b8-a9f5-0c7424d1f0d1"
+            ownerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
+            name: 'subdistrict-weather-info'
+            label: 'Weather insights for subdistricts'
+            shortDescription: 'A short description about the dataset'
+            description: 'Dataset providing weather information such as temperature and rainfall for subdistricts across a state.'
+            tags:
+              - environment
+              - weather
+              - rainfall
+              - temperature
+            organizationId: '{{UUID}}'
+            accessPolicy: 'RESTRICTED'
+            organizationType: 'Private'
+            fileFormat: 'xlsx'
+            dataReadiness: 85
+            department: 'Department of IT, Electronics and Communication'
+            resourceType: 'DATASET'
+            industry: 'Climate Research'
+            uploadedBy: 'john.doe@datakaveri.org'
+            geoCoverage: 'Karnataka'
+            yearRange: '2015-2023'
+            verifiedBy: 'Ministry of Earth Sciences'
+            uploadFrequency: 'Weekly'
+            license: 'CC-BY 4.0'
+            itemStatus: "ACTIVE"
+            itemCreatedAt: "2024-01-05T02:09:10+0530"
+            detail: "Success: Item fetched Successfully"
     successResponseForGetAdexAppsEntity:
       type: object
       title: ADeX Apps Entity
@@ -9676,6 +9679,8 @@ components:
           description: Detailed description of the type or response
         result:
           type: array
+          items:
+            type: object
           description: ADeX Application entity response body
       required:
         - type
@@ -9875,6 +9880,8 @@ components:
           description: Detailed description of the type or response
         result:
           type: array
+          items:
+            type: object
           description: DataBank entity response body
       required:
         - type
@@ -9931,6 +9938,8 @@ components:
           description: Detailed description of the type or response
         result:
           type: array
+          items:
+            type: object
           description: ADeX Application entity response body
       required:
         - type
