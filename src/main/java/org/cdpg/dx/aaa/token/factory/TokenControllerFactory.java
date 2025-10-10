@@ -1,8 +1,6 @@
 package org.cdpg.dx.aaa.token.factory;
 
 import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.REQUEST_TABLE;
 import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
 
 import io.vertx.core.Vertx;
@@ -20,9 +18,7 @@ import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.aaa.token.controller.TokenController;
 import org.cdpg.dx.aaa.token.service.TokenService;
 import org.cdpg.dx.aaa.token.service.impl.TokenServiceImpl;
-import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
-import org.cdpg.dx.acl.accessRequest.dao.impl.AccessRequestDaoImpl;
-import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
+import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
@@ -37,6 +33,7 @@ public class TokenControllerFactory {
       JsonObject config,
       Vertx vertx,
       WebClient webClient,
+      PolicyDao policyDao,
       URNGenerator urnGenerator) {
 
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
@@ -50,13 +47,12 @@ public class TokenControllerFactory {
     String isssuer = config.getString("cosDomain", "");
 
     JWTAuth provider = jwtInitConfig(keystorePath, keystorePassword, vertx);
-    AccessRequestDao accessRequestDao =
-        new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
+
     ItemService itemService =
         new ItemServiceImpl(
             elasticsearchService,
             keycloakUserService,
-            accessRequestDao,
+            policyDao,
             webClient,
             config.getString(DOC_INDEX),
             config.getString(APD_URL));

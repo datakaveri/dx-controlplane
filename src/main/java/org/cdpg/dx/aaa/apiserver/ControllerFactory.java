@@ -208,7 +208,8 @@ public class ControllerFactory {
     ClientController clientController = ClientControllerFactory.create(pgService, urnGenerator);
 
     TokenController tokenController =
-        TokenControllerFactory.create(pgService, esService, config, vertx, webClient, urnGenerator);
+        TokenControllerFactory.create(
+            pgService, esService, config, vertx, webClient, policyDao, urnGenerator);
 
     PublicController publicController = PublicKeycontrllerFactory.create(config, vertx);
 

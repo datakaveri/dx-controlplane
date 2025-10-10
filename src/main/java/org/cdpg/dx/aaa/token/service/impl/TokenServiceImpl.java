@@ -142,7 +142,7 @@ public class TokenServiceImpl implements TokenService {
         TokenClaimsBuilder.buildClaims(user, issuer, "CLAIM_AUDIENCE", tokenExpirationMinutes);
     String token = provider.generateToken(claims, options);
 
-    GetItemRequest itemRequest = new GetItemRequest(user.sub().toString(), itemId);
+    GetItemRequest itemRequest = new GetItemRequest(itemId, user.sub().toString());
     itemRequest.setToken(token);
     itemRequest.setRoles(user.roles());
 
@@ -152,9 +152,10 @@ public class TokenServiceImpl implements TokenService {
   }
 
   private Future<JsonObject> generateJwtToken(DxUser user, JsonObject extraClaims) {
+      LOGGER.debug("itemInfo: {}", extraClaims);
     JsonObject claims =
         TokenClaimsBuilder.buildClaims(user, issuer, "CLAIM_AUDIENCE", tokenExpirationMinutes);
-    if (extraClaims != null) {
+    if (extraClaims != null ) {
       claims.mergeIn(extraClaims);
     }
     String token = provider.generateToken(claims, options);
