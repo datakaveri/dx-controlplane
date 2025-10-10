@@ -5145,9 +5145,9 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/successResponseForGetAIModelEntity'
-                  - $ref: '#/components/schemas/successResponseForGetDataBankEntity'
-                  - $ref: '#/components/schemas/successResponseForGetAdexAppsEntity'
+                  - $ref: '#/components/schemas/successResponseForGetAIModelEntityWithAccess'
+                  - $ref: '#/components/schemas/successResponseForGetDataBankEntityWithAccess'
+                  - $ref: '#/components/schemas/successResponseForGetAdexAppsEntityWithAccess'
         '400':
           description: Invalid ID.
           content:
@@ -9504,107 +9504,108 @@ components:
         detail:
           type: string
           description: Detailed description of the type or response
-        results:
-          type: object
-          properties:
-            "@context":
-              type: string
-              format: uri
-              description: JSON-LD context URI
-            type:
-              type: array
-              items:
-                type: string
-              description: Type tags from the ADeX vocabulary
-            id:
-              type: string
-              pattern: "^[a-zA-Z0-9\\-]{36}$"
-              description: Unique identifier of the model item
-            name:
-              type: string
-              pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
-              maxLength: 512
-              description: An explanation about the purpose of this instance.
-            organizationId:
-              type: string
-              pattern: "^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$"
-              maxLength: 36
-              description: UUID of the organization
-            tags:
-              type: array
-              items:
-                type: string
-              description: Tags describing the model
-            accessPolicy:
-              type: string
-              pattern: "^(RESTRICTED|OPEN|PRIVATE)$"
-              description: Access policy for the model
-            label:
-              type: string
-              maxLength: 512
-              description: User-friendly label for the model
-            description:
-              type: string
-              description: Detailed description of the model
-            organizationType:
-              type: string
-              description: Type of organization providing the model
-            department:
-              type: string
-              description: Department name
-            modelType:
-              type: string
-              description: Type of model (e.g., ImageClassifier, TimeSeriesPredictor)
-            fileFormat:
-              type: string
-              description: File format of the model
-            itemStatus:
-              type: string
-              enum: [ "ACTIVE", "INACTIVE" ]
-              description: Current status of the model
-            itemCreatedAt:
-              type: string
-              format: date-time
-              description: Creation timestamp of the model item
+        result:
+          type: array
+          items:
+            - properties:
+                "@context":
+                  type: string
+                  format: uri
+                  description: JSON-LD context URI
+                type:
+                  type: array
+                  items:
+                    type: string
+                  description: Type tags from the ADeX vocabulary
+                id:
+                  type: string
+                  pattern: "^[a-zA-Z0-9\\-]{36}$"
+                  description: Unique identifier of the model item
+                name:
+                  type: string
+                  pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
+                  maxLength: 512
+                  description: An explanation about the purpose of this instance.
+                organizationId:
+                  type: string
+                  pattern: "^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$"
+                  maxLength: 36
+                  description: UUID of the organization
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  description: Tags describing the model
+                accessPolicy:
+                  type: string
+                  pattern: "^(RESTRICTED|OPEN|PRIVATE)$"
+                  description: Access policy for the model
+                label:
+                  type: string
+                  maxLength: 512
+                  description: User-friendly label for the model
+                description:
+                  type: string
+                  description: Detailed description of the model
+                organizationType:
+                  type: string
+                  description: Type of organization providing the model
+                department:
+                  type: string
+                  description: Department name
+                modelType:
+                  type: string
+                  description: Type of model (e.g., ImageClassifier, TimeSeriesPredictor)
+                fileFormat:
+                  type: string
+                  description: File format of the model
+                itemStatus:
+                  type: string
+                  enum: [ "ACTIVE", "INACTIVE" ]
+                  description: Current status of the model
+                itemCreatedAt:
+                  type: string
+                  format: date-time
+                  description: Creation timestamp of the model item
       required:
         - type
       example:
         type: 'urn:dx:cat:Success'
         title: 'Success'
         detail: 'Success: Item fetched successfully'
-        results:
-          '@context': 'https://agrijson.org'
-          id: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
-          ownerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
-          type:
-            - 'adex:AiModel'
-          name: 'ai-model-crop'
-          label: 'Test-Crop Disease Detection Model'
-          shortDescription: 'Detects diseases in crop leaves using image classification.'
-          description: 'A test AI model for detecting crop disease with the help of infected leaf images.'
-          tags:
-            - ai
-            - ml
-            - model
-            - ai-model
-            - ml-model
-            - machine
-            - learning
-            - machine learning
-            - training
-            - algorithm
-          organizationId: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
-          accessPolicy: 'RESTRICTED'
-          organizationType: 'Private'
-          department: 'Agriculture and Co-operation'
-          modelType: 'ImageClassifier'
-          fileFormat: 'ipynb'
-          industry: 'Agriculture'
-          uploadedBy: 'john.doe@datakaveri.org'
-          license: 'MIT'
-          fileSize: '15MB'
-          itemStatus: "ACTIVE"
-          itemCreatedAt: "2024-01-05T02:09:10+0530"
+        result:
+          - '@context': 'https://agrijson.org'
+            id: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
+            ownerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
+            type:
+              - 'adex:AiModel'
+            name: 'ai-model-crop'
+            label: 'Test-Crop Disease Detection Model'
+            shortDescription: 'Detects diseases in crop leaves using image classification.'
+            description: 'A test AI model for detecting crop disease with the help of infected leaf images.'
+            tags:
+              - ai
+              - ml
+              - model
+              - ai-model
+              - ml-model
+              - machine
+              - learning
+              - machine learning
+              - training
+              - algorithm
+            organizationId: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
+            accessPolicy: 'RESTRICTED'
+            organizationType: 'Private'
+            department: 'Agriculture and Co-operation'
+            modelType: 'ImageClassifier'
+            fileFormat: 'ipynb'
+            industry: 'Agriculture'
+            uploadedBy: 'john.doe@datakaveri.org'
+            license: 'MIT'
+            fileSize: '15MB'
+            itemStatus: "ACTIVE"
+            itemCreatedAt: "2024-01-05T02:09:10+0530"
     successResponseForGetDataBankEntity:
       type: object
       title: DataBank Entity
@@ -9619,46 +9620,46 @@ components:
         detail:
           type: string
           description: Detailed description of the type or response
-        results:
-          type: object
+        result:
+          type: array
           description: DataBank entity response body
       required:
         - type
       example:
         type: 'urn:dx:cat:Success'
         title: 'Success'
-        results:
-          '@context': "https://agrijson.org"
-          type:
-            - "adex:DataBank"
-          id: "e27a1f6c-6a1b-45b8-a9f5-0c7424d1f0d1"
-          ownerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
-          name: 'subdistrict-weather-info'
-          label: 'Weather insights for subdistricts'
-          shortDescription: 'A short description about the dataset'
-          description: 'Dataset providing weather information such as temperature and rainfall for subdistricts across a state.'
-          tags:
-            - environment
-            - weather
-            - rainfall
-            - temperature
-          organizationId: '{{UUID}}'
-          accessPolicy: 'RESTRICTED'
-          organizationType: 'Private'
-          fileFormat: 'xlsx'
-          dataReadiness: 85
-          department: 'Department of IT, Electronics and Communication'
-          resourceType: 'DATASET'
-          industry: 'Climate Research'
-          uploadedBy: 'john.doe@datakaveri.org'
-          geoCoverage: 'Karnataka'
-          yearRange: '2015-2023'
-          verifiedBy: 'Ministry of Earth Sciences'
-          uploadFrequency: 'Weekly'
-          license: 'CC-BY 4.0'
-          itemStatus: "ACTIVE"
-          itemCreatedAt: "2024-01-05T02:09:10+0530"
-        detail: "Success: Item fetched Successfully"
+        result:
+            - '@context': "https://agrijson.org"
+              type:
+                - "adex:DataBank"
+              id: "e27a1f6c-6a1b-45b8-a9f5-0c7424d1f0d1"
+              ownerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
+              name: 'subdistrict-weather-info'
+              label: 'Weather insights for subdistricts'
+              shortDescription: 'A short description about the dataset'
+              description: 'Dataset providing weather information such as temperature and rainfall for subdistricts across a state.'
+              tags:
+                - environment
+                - weather
+                - rainfall
+                - temperature
+              organizationId: '{{UUID}}'
+              accessPolicy: 'RESTRICTED'
+              organizationType: 'Private'
+              fileFormat: 'xlsx'
+              dataReadiness: 85
+              department: 'Department of IT, Electronics and Communication'
+              resourceType: 'DATASET'
+              industry: 'Climate Research'
+              uploadedBy: 'john.doe@datakaveri.org'
+              geoCoverage: 'Karnataka'
+              yearRange: '2015-2023'
+              verifiedBy: 'Ministry of Earth Sciences'
+              uploadFrequency: 'Weekly'
+              license: 'CC-BY 4.0'
+              itemStatus: "ACTIVE"
+              itemCreatedAt: "2024-01-05T02:09:10+0530"
+              detail: "Success: Item fetched Successfully"
     successResponseForGetAdexAppsEntity:
       type: object
       title: ADeX Apps Entity
@@ -9673,8 +9674,8 @@ components:
         detail:
           type: string
           description: Detailed description of the type or response
-        results:
-          type: object
+        result:
+          type: array
           description: ADeX Application entity response body
       required:
         - type
@@ -9682,51 +9683,306 @@ components:
         type: 'urn:dx:cat:Success'
         title: 'Success'
         detail: 'Success: Item fetched Successfully'
-        results:
-          '@context': "https://agrijson.org"
-          id: 'f2c6a437-8109-4a2c-8923-efc2a9e6df1d'
-          type:
-            - 'adex:Apps'
-          name: 'crop-disease-detector-app'
-          label: 'Crop Disease Detection Application'
-          shortDescription: 'An AI-powered application to detect crop diseases early using leaf imagery.'
-          description: 'A potential application designed to detect crop diseases from infected leaf images using AI/ML models. It supports early intervention and yield optimization by analyzing input data and recommending treatments.'
-          tags:
-            - ai
-            - ml
-            - model
-            - ai-model
-            - ml-model
-            - machine
-            - learning
-            - machine learning
-            - training
-            - algorithm
-          organizationType: 'Private'
-          department: 'Agriculture and Co-operation'
-          uploadedBy: 'cdpg@datakaveri.org'
-          fileFormat: 'xlsx'
-          accessPolicy: 'Public'
-          canBeUsedFor:
-            cropMonitoring: 'Detect and classify diseases in crops using image input'
-            yieldOptimization: 'Improve crop yield by early detection of diseases'
-          dataInputsAndAiTechniques:
-            Input Data Banks:
-              - 'Annotated Leaf Image Dataset'
-              - 'Crop Type Classification Data'
-            Expected Output:
-              - 'Disease Type'
-              - 'Confidence Score'
-              - 'Recommended Treatment'
-            AI Models:
-              - 'Convolutional Neural Networks'
-              - 'Transfer Learning'
-            Potential Benefits:
-              - 'Early detection of crop diseases'
-              - 'Reduction in crop loss'
-              - 'Better planning and resource allocation'
-          itemStatus: "ACTIVE"
-          itemCreatedAt: "2024-01-05T02:09:10+0530"
+        result:
+          - '@context': "https://agrijson.org"
+            id: 'f2c6a437-8109-4a2c-8923-efc2a9e6df1d'
+            type:
+              - 'adex:Apps'
+            name: 'crop-disease-detector-app'
+            label: 'Crop Disease Detection Application'
+            shortDescription: 'An AI-powered application to detect crop diseases early using leaf imagery.'
+            description: 'A potential application designed to detect crop diseases from infected leaf images using AI/ML models. It supports early intervention and yield optimization by analyzing input data and recommending treatments.'
+            tags:
+              - ai
+              - ml
+              - model
+              - ai-model
+              - ml-model
+              - machine
+              - learning
+              - machine learning
+              - training
+              - algorithm
+            organizationType: 'Private'
+            department: 'Agriculture and Co-operation'
+            uploadedBy: 'cdpg@datakaveri.org'
+            fileFormat: 'xlsx'
+            accessPolicy: 'Public'
+            canBeUsedFor:
+              cropMonitoring: 'Detect and classify diseases in crops using image input'
+              yieldOptimization: 'Improve crop yield by early detection of diseases'
+            dataInputsAndAiTechniques:
+              Input Data Banks:
+                - 'Annotated Leaf Image Dataset'
+                - 'Crop Type Classification Data'
+              Expected Output:
+                - 'Disease Type'
+                - 'Confidence Score'
+                - 'Recommended Treatment'
+              AI Models:
+                - 'Convolutional Neural Networks'
+                - 'Transfer Learning'
+              Potential Benefits:
+                - 'Early detection of crop diseases'
+                - 'Reduction in crop loss'
+                - 'Better planning and resource allocation'
+            itemStatus: "ACTIVE"
+            itemCreatedAt: "2024-01-05T02:09:10+0530"
+    successResponseForGetAIModelEntityWithAccess:
+      type: object
+      title: AI Model Entity
+      description: AI Model item is successfully fetched
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have been triggered
+        title:
+          type: string
+          description: A human-readable title for the message response
+        detail:
+          type: string
+          description: Detailed description of the type or response
+        result:
+          type: array
+          items:
+            type: object
+            properties:
+              "@context":
+                type: string
+                format: uri
+                description: JSON-LD context URI
+              type:
+                type: array
+                items:
+                  type: string
+                description: Type tags from the ADeX vocabulary
+              id:
+                type: string
+                pattern: "^[a-zA-Z0-9\\-]{36}$"
+                description: Unique identifier of the model item
+              name:
+                type: string
+                pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
+                maxLength: 512
+                description: An explanation about the purpose of this instance.
+              organizationId:
+                type: string
+                pattern: "^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$"
+                maxLength: 36
+                description: UUID of the organization
+              tags:
+                type: array
+                items:
+                  type: string
+                description: Tags describing the model
+              accessPolicy:
+                type: string
+                pattern: "^(RESTRICTED|OPEN|PRIVATE)$"
+                description: Access policy for the model
+              label:
+                type: string
+                maxLength: 512
+                description: User-friendly label for the model
+              description:
+                type: string
+                description: Detailed description of the model
+              organizationType:
+                type: string
+                description: Type of organization providing the model
+              department:
+                type: string
+                description: Department name
+              modelType:
+                type: string
+                description: Type of model (e.g., ImageClassifier, TimeSeriesPredictor)
+              fileFormat:
+                type: string
+                description: File format of the model
+              itemStatus:
+                type: string
+                enum: [ "ACTIVE", "INACTIVE" ]
+                description: Current status of the model
+              itemCreatedAt:
+                type: string
+                format: date-time
+                description: Creation timestamp of the model item
+              constraints:
+                type: object
+                description: Access constraints returned from the APD verification process
+                properties:
+                  access:
+                    type: array
+                    items:
+                      type: string
+                    description: List of applicable access constraints
+                example:
+                  access: [ "sub" ]
+      required:
+        - type
+      example:
+        type: 'urn:dx:cat:Success'
+        title: 'Success'
+        detail: 'Success: Item fetched successfully'
+        result:
+          - '@context': 'https://agrijson.org'
+            id: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
+            ownerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
+            type:
+              - 'adex:AiModel'
+            name: 'ai-model-crop'
+            label: 'Test-Crop Disease Detection Model'
+            shortDescription: 'Detects diseases in crop leaves using image classification.'
+            description: 'A test AI model for detecting crop disease with the help of infected leaf images.'
+            tags:
+              - ai
+              - ml
+              - model
+              - ai-model
+              - ml-model
+              - machine
+              - learning
+              - machine learning
+              - training
+              - algorithm
+            organizationId: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
+            accessPolicy: 'RESTRICTED'
+            organizationType: 'Private'
+            department: 'Agriculture and Co-operation'
+            modelType: 'ImageClassifier'
+            fileFormat: 'ipynb'
+            industry: 'Agriculture'
+            uploadedBy: 'john.doe@datakaveri.org'
+            license: 'MIT'
+            fileSize: '15MB'
+            itemStatus: "ACTIVE"
+            itemCreatedAt: "2024-01-05T02:09:10+0530"
+            constraints:
+              access: [ 'sub' ]
+    successResponseForGetDataBankEntityWithAccess:
+      type: object
+      title: DataBank Entity
+      description: DataBank item is successfully fetched
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have been triggered
+        title:
+          description: A human-readable title for the message response
+        detail:
+          type: string
+          description: Detailed description of the type or response
+        result:
+          type: array
+          description: DataBank entity response body
+      required:
+        - type
+      example:
+        type: 'urn:dx:cat:Success'
+        title: 'Success'
+        result:
+          - '@context': "https://agrijson.org"
+            type:
+              - "adex:DataBank"
+            id: "e27a1f6c-6a1b-45b8-a9f5-0c7424d1f0d1"
+            ownerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
+            name: 'subdistrict-weather-info'
+            label: 'Weather insights for subdistricts'
+            shortDescription: 'A short description about the dataset'
+            description: 'Dataset providing weather information such as temperature and rainfall for subdistricts across a state.'
+            tags:
+              - environment
+              - weather
+              - rainfall
+              - temperature
+            organizationId: '{{UUID}}'
+            accessPolicy: 'RESTRICTED'
+            organizationType: 'Private'
+            fileFormat: 'xlsx'
+            dataReadiness: 85
+            department: 'Department of IT, Electronics and Communication'
+            resourceType: 'DATASET'
+            industry: 'Climate Research'
+            uploadedBy: 'john.doe@datakaveri.org'
+            geoCoverage: 'Karnataka'
+            yearRange: '2015-2023'
+            verifiedBy: 'Ministry of Earth Sciences'
+            uploadFrequency: 'Weekly'
+            license: 'CC-BY 4.0'
+            itemStatus: "ACTIVE"
+            itemCreatedAt: "2024-01-05T02:09:10+0530"
+            constraints:
+              access: [ 'sub' ]
+        detail: "Success: Item fetched Successfully"
+    successResponseForGetAdexAppsEntityWithAccess:
+      type: object
+      title: ADeX Apps Entity
+      description: ADeX Potential Application item is successfully fetched
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have been triggered
+        title:
+          description: A human-readable title for the message response
+        detail:
+          type: string
+          description: Detailed description of the type or response
+        result:
+          type: array
+          description: ADeX Application entity response body
+      required:
+        - type
+      example:
+        type: 'urn:dx:cat:Success'
+        title: 'Success'
+        detail: 'Success: Item fetched Successfully'
+        result:
+          - '@context': "https://agrijson.org"
+            id: 'f2c6a437-8109-4a2c-8923-efc2a9e6df1d'
+            type:
+              - 'adex:Apps'
+            name: 'crop-disease-detector-app'
+            label: 'Crop Disease Detection Application'
+            shortDescription: 'An AI-powered application to detect crop diseases early using leaf imagery.'
+            description: 'A potential application designed to detect crop diseases from infected leaf images using AI/ML models. It supports early intervention and yield optimization by analyzing input data and recommending treatments.'
+            tags:
+              - ai
+              - ml
+              - model
+              - ai-model
+              - ml-model
+              - machine
+              - learning
+              - machine learning
+              - training
+              - algorithm
+            organizationType: 'Private'
+            department: 'Agriculture and Co-operation'
+            uploadedBy: 'cdpg@datakaveri.org'
+            fileFormat: 'xlsx'
+            accessPolicy: 'Public'
+            canBeUsedFor:
+              cropMonitoring: 'Detect and classify diseases in crops using image input'
+              yieldOptimization: 'Improve crop yield by early detection of diseases'
+            dataInputsAndAiTechniques:
+              Input Data Banks:
+                - 'Annotated Leaf Image Dataset'
+                - 'Crop Type Classification Data'
+              Expected Output:
+                - 'Disease Type'
+                - 'Confidence Score'
+                - 'Recommended Treatment'
+              AI Models:
+                - 'Convolutional Neural Networks'
+                - 'Transfer Learning'
+              Potential Benefits:
+                - 'Early detection of crop diseases'
+                - 'Reduction in crop loss'
+                - 'Better planning and resource allocation'
+            itemStatus: "ACTIVE"
+            itemCreatedAt: "2024-01-05T02:09:10+0530"
     successResponseForAutocompleteFuzzyTextSearch:
       type: object
       title: search by text
