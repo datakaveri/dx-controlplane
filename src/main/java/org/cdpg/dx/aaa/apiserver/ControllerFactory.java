@@ -75,8 +75,7 @@ import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
 public class ControllerFactory {
   private static final Logger LOGGER = LogManager.getLogger(ControllerFactory.class);
 
-  private ControllerFactory() {
-  }
+  private ControllerFactory() {}
 
   public static List<ApiController> createControllers(
       Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
@@ -122,19 +121,20 @@ public class ControllerFactory {
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
 
     PolicyDao policyDao = new PolicyDaoImpl(pgService);
-    ItemService itemService = new ItemServiceImpl(esService, keycloakUserService, policyDao,
-        webClient, docIndex, apdURL);
+    ItemService itemService =
+        new ItemServiceImpl(esService, keycloakUserService, policyDao, webClient, docIndex, apdURL);
 
     CreditService creditService =
         CreditControllerFactory.createService(pgService, keycloakUserService, config);
     OrganizationService organizationService =
         OrganizationControllerFactory.createService(pgService, keycloakUserService, itemService);
-//    UserService userService =
-//        new UserServiceImpl(keycloakUserService, organizationService, creditService ,esService,docIndex);
+    //    UserService userService =
+    //        new UserServiceImpl(keycloakUserService, organizationService, creditService
+    // ,esService,docIndex);
 
     UserService userService =
-        UserControllerFactory.createService(keycloakUserService, organizationService, creditService,
-            esService, docUserIndex);
+        UserControllerFactory.createService(
+            keycloakUserService, organizationService, creditService, esService, docUserIndex);
     EmailComposer emailComposer =
         new EmailComposer(
             emailService,
@@ -193,18 +193,30 @@ public class ControllerFactory {
         new ConnectorServiceImpl(dataBrokerService, publishExchange);
     final ItemController itemController =
         ItemControllerFactory.createCrudController(
-            auditingHandler, esService, pgService, keycloakUserService, docIndex, vocContext,
-            apdURL, verifiedBy, urnGenerator, webClient, ingestionService, connectorService,
-            dataPlaneUrl,controlPlaneUrl,ogcDataPlaneUrl);
+            auditingHandler,
+            esService,
+            pgService,
+            keycloakUserService,
+            docIndex,
+            vocContext,
+            apdURL,
+            verifiedBy,
+            urnGenerator,
+            webClient,
+            ingestionService,
+            connectorService,
+            dataPlaneUrl,
+            controlPlaneUrl,
+            ogcDataPlaneUrl);
 
     ApiController resourceServerController =
-        ResourceServerControllerFactory.createController(
-            pgService, auditingHandler, urnGenerator);
+        ResourceServerControllerFactory.createController(pgService, auditingHandler, urnGenerator);
 
     ClientController clientController = ClientControllerFactory.create(pgService, urnGenerator);
 
     TokenController tokenController =
-        TokenControllerFactory.create(pgService, config, vertx, urnGenerator);
+        TokenControllerFactory.create(
+            pgService, esService, config, vertx, webClient, policyDao, urnGenerator);
 
     PublicController publicController = PublicKeycontrllerFactory.create(config, vertx);
 
