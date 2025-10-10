@@ -26,7 +26,9 @@
     "cosDomain":"asdasd",
     "cosAdminUserId": "<cos-admin-user-id>",
     "initialCreditBalance": 1000,
-    "corsAllowedOrigin": ["*", "http://localhost:4001"]
+    "corsAllowedOrigin": ["*", "http://localhost:4001"],
+    "defaultExpiryDays": 12,
+    "verifiedBy": ""
   },
   "emailOptions": {
     "emailSender": "some@dummy.com",
