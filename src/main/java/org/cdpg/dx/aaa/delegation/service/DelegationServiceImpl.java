@@ -1,18 +1,14 @@
 package org.cdpg.dx.aaa.delegation.service;
 
-import com.hazelcast.internal.networking.HandlerStatus;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.cdpg.dx.aaa.credit.dao.*;
+import org.cdpg.dx.aaa.delegation.DelegationValidator;
 import org.cdpg.dx.aaa.delegation.dao.*;
-import org.cdpg.dx.aaa.delegation.dao.impl.ScopeConstraintDAOImpl;
 import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
 import org.cdpg.dx.aaa.delegation.models.DelegationScopeConstraint;
 import org.cdpg.dx.aaa.delegation.models.DelegationUpdateRequest;
-import org.cdpg.dx.aaa.delegation.util.RoleScopeMapping;
-import org.cdpg.dx.aaa.organization.models.OrganizationUser;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
@@ -22,8 +18,6 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.util.*;
 
-import static org.cdpg.dx.aaa.delegation.util.Constants.REQUEST_ID;
-import static org.cdpg.dx.aaa.delegation.util.Constants.*;
 import static org.cdpg.dx.common.util.DateTimeHelper.parseDateTime;
 
 
@@ -37,6 +31,8 @@ public class DelegationServiceImpl implements DelegationService{
   private final ScopeConstraintDAO scopeConstraintDAO;
   private final OrganizationService organizationService;
   private final TokenDAO tokenDAO;
+  private final KeycloakUserService keycloakUserService;
+  private final DelegationValidator delegationValidator;
 
   public DelegationServiceImpl(DelegationDAOFactory factory, KeycloakUserService keycloakUserService, OrganizationService organizationService) {
     this.delegationGrantDAO = factory.delegationGrantDAO();
@@ -45,6 +41,8 @@ public class DelegationServiceImpl implements DelegationService{
     this.tokenDAO = factory.tokenDAO();
     this.delegationScopeConstraintDAO = factory.scopeConstraintDAO();
     this.organizationService = organizationService;
+    this.keycloakUserService = keycloakUserService;
+    this.delegationValidator = new DelegationValidator(organizationService);
   }
 
 
@@ -56,19 +54,35 @@ public class DelegationServiceImpl implements DelegationService{
     JsonObject delegationGrantBody = delegationGrant.toJson();
 
 
-
     if (constraintsJson.isEmpty()) {
       return Future.failedFuture(new DxBadRequestException("No constraints provided for delegation grant"));
     }
 
     LocalDateTime globalExpiry = parseDateTime(delegationGrantBody.getString("expiry_at"));
 
-    return validateAllConstraints(userRoles,constraintsJson)
-        .compose(map-> delegationGrantDAO.create(delegationGrant))
-        .compose(createdGrant -> insertScopeConstraints(createdGrant.delegationId(), constraintsJson).map(v->createdGrant))
+    return delegationValidator.validateAllConstraints(userRoles,constraintsJson)
+          .compose(v -> delegationValidator.validateEntityOwnership(delegationGrant.delegatorId(), userRoles, constraintsJson))
+          .compose(map-> delegationGrantDAO.create(delegationGrant))
+          .compose(createdGrant -> insertScopeConstraints(createdGrant.delegationId(), constraintsJson).map(v->createdGrant))
+//          .compose(createdGrant ->
+//        keycloakUserService.addRoleToUser(createdGrant.delegateId(), DxRole.DELEGATE)
+//          .map(v -> {
+//            LOGGER.info("Delegate role added to user: {}", createdGrant.delegateId());
+//            return createdGrant;
+//          }))
+//      .compose(createdGrant -> {
+//        List<String> scopes = extractScopesFromConstraints(constraintsJson);
+//        return keycloakUserService.addScopesToUser(createdGrant.delegateId(), scopes)
+//          .map(v -> {
+//            LOGGER.info("Scopes {} added to user {}", scopes, createdGrant.delegateId());
+//            return createdGrant;
+//          });
+//      })
         .recover(err -> Future.failedFuture(BaseDxException.from(err)));
 
   }
+
+
 
 
   @Override
@@ -85,18 +99,18 @@ public class DelegationServiceImpl implements DelegationService{
   }
 
   @Override
-  public Future<DelegationUpdateRequest> createDelegationRequest(DelegationUpdateRequest delegationRequest,Set<String>userRoles,List<JsonObject> constraintsJson) {
+  public Future<DelegationUpdateRequest> createDelegationRequest(DelegationUpdateRequest delegationRequest,Set<String>userRoles,List<JsonObject> constraintsJson,UUID delegatorRgId) {
     JsonObject delegationRequestBody = delegationRequest.toJson();
 
     return getDelegationGrantById(delegationRequest.delegationId())
       .compose(ar->
       {
-        UUID delegatorId = ar.delegatorId();
+        UUID delegatorDgId = ar.delegatorId();
         LocalDateTime globalExpiryTime = ar.expiryAt();
 
-        LOGGER.info("delegator id , reviewer id:{}",delegatorId,delegationRequest.reviewerId());
+        LOGGER.info("delegator id , reviewer id:{}",delegatorDgId,delegatorRgId);
 
-//        if(delegatorId!=delegationRequest.reviewerId())
+//        if(delegatorId!=delegationRequest.delegatorId())
 //        {
 //          throw new DxBadRequestException("The reviewer/delegator id for the delegation id dont match!");
 //        }
@@ -109,16 +123,16 @@ public class DelegationServiceImpl implements DelegationService{
         return Future.succeededFuture();
 
       })
-      .compose(ar->validateAllConstraints(userRoles,constraintsJson))
+      .compose(ar->delegationValidator.validateAllConstraints(userRoles,constraintsJson))
+      .compose(v -> delegationValidator.validateEntityOwnership(delegatorRgId , userRoles, constraintsJson))
       .compose(map-> delegationRequestDAO.create(delegationRequest))
-      .compose(createdRequest -> insertScopeConstraints(createdRequest.delegationId(), constraintsJson).map(v->createdRequest))
       .recover(err -> Future.failedFuture(BaseDxException.from(err)));
   }
 
   @Override
   public Future<DelegationUpdateRequest> updateDelegationRequestStatus(UUID requestId, String status, UUID delegatorId) {
 
-    LOGGER.info("updateDelegationRequestStatus");
+    LOGGER.info("Updating delegation request status for requestId: {}", requestId);
 
     return delegationRequestDAO.get(requestId)
       .compose(existingRequest -> {
@@ -126,57 +140,25 @@ public class DelegationServiceImpl implements DelegationService{
           return Future.failedFuture(new DxNotFoundException("Delegation request not found"));
         }
 
-        if (!existingRequest.reviewerId().equals(delegatorId)) {
-          return Future.failedFuture(new DxUnauthorizedException("Reviewer not authorized to approve/reject this request"));
-        }
 
-        Map<String, Object> conditionMap = Map.of(REQUEST_ID, requestId.toString());
+        Map<String, Object> conditionMap = Map.of("request_id", requestId.toString());
         Map<String, Object> updateMap = Map.of(
-          STATUS, status,
-          REVIEWED_AT, LocalDateTime.now().toString()
+          "status", status,
+          "reviewed_at", LocalDateTime.now().toString()
         );
 
         return delegationRequestDAO.update(conditionMap, updateMap)
-          .compose(updatedDelegateRequest -> {
-            if (status.equalsIgnoreCase("approved")) {
-
-              List<JsonObject> constraintsJson = Collections.emptyList();
-              if (existingRequest.requestedScopes() != null) {
-                constraintsJson = existingRequest.requestedScopes()
-                  .stream()
-                  .map(o -> (JsonObject) o)
-                  .toList();
-              }
-
-              LOGGER.info("constraints:{}",constraintsJson);
-
+          .compose(updatedRequest -> {
+            if ("approved".equalsIgnoreCase(status) && existingRequest.requestedScopes() != null) {
+              List<JsonObject> constraintsJson = existingRequest.requestedScopes()
+                .stream()
+                .map(o -> (JsonObject) o)
+                .toList();
               return insertScopeConstraints(existingRequest.delegationId(), constraintsJson)
-                .map(v -> updatedDelegateRequest);
+                .map(v -> updatedRequest);
             }
-            return Future.succeededFuture(updatedDelegateRequest);
+            return Future.succeededFuture(updatedRequest);
           });
-      })
-      .recover(dxEx -> {
-        if (dxEx instanceof NoRowFoundException) {
-          return Future.failedFuture(
-            new DxNotFoundException("No matching requestId found in delegation_request table", dxEx)
-          );
-        } else if (dxEx instanceof DxUnauthorizedException) {
-          return Future.failedFuture(
-            new DxUnauthorizedException("Reviewer not authorized to update this request", dxEx)
-          );
-        } else if (dxEx.getMessage().contains("duplicate key")) {
-          return Future.failedFuture(
-            new DxConflictException("Duplicate record insertion attempt", dxEx)
-          );
-        } else if (dxEx.getMessage().contains("invalid input syntax")) {
-          return Future.failedFuture(
-            new DxBadRequestException("Invalid data format for request fields", dxEx)
-          );
-        } else {
-          LOGGER.error("Unexpected error while updating delegation request");
-          return Future.failedFuture(dxEx);
-        }
       });
   }
 
@@ -185,7 +167,7 @@ public class DelegationServiceImpl implements DelegationService{
   @Override
   public Future<List<DelegationUpdateRequest>> getDelegationRequestsByUser(UUID userId) {
 
-    Map<String,Object> conditionMap = Map.of("reviewer_id",userId.toString());
+    Map<String,Object> conditionMap = Map.of("delegator_id",userId.toString());
 
     return delegationRequestDAO.getAllWithFilters(conditionMap)
       .recover(err -> {
@@ -198,46 +180,34 @@ public class DelegationServiceImpl implements DelegationService{
 
   }
 
-  private Future<Void> validateAllConstraints(
-    Set<String> delegatorRoles,
-    List<JsonObject> constraintsJson) {
+  @Override
+  public Future<List<DelegationUpdateRequest>> getDelegationRequestsByDelegationId(UUID delegationId) {
 
-    LOGGER.info("constraints:{}",constraintsJson);
+    Map<String,Object> conditionMap = Map.of("delegation_id",delegationId.toString());
 
-    // Step 1: COS_ADMIN can delegate anything
-    if (delegatorRoles.contains("cos_admin")) {
-      return Future.succeededFuture();
-    }
+    return delegationRequestDAO.getAllWithFilters(conditionMap)
+      .recover(err -> {
+        BaseDxException dxEx = BaseDxException.from(err);
+        if (dxEx instanceof DxNotFoundException) {
+          return Future.failedFuture(new DxNotFoundException("No delegation request found for delegationId" + delegationId, dxEx));
+        }
+        return Future.failedFuture(dxEx);
+      });
 
-    // Determine the delegator's highest role
-    String delegatorRole = getHighestRole(delegatorRoles);
+  }
 
-    // Extract all requested scopes from constraints
-    List<String> requestedScopes = constraintsJson.stream()
-      .map(c -> c.getString("scope"))
-      .map(String::toLowerCase)
-      .toList();
+  @Override
+  public Future<List<DelegationScopeConstraint>> getDelegationScopeConstraints(UUID delegationId) {
+    Map<String,Object> conditionMap = Map.of("delegation_id",delegationId.toString());
 
-    // Get delegator’s allowed scopes
-    RoleScopeMapping delegatorMapping = RoleScopeMapping.fromString(delegatorRole);
-    List<String> allowedScopes = delegatorMapping.getAllowedScopes();
-
-    // Step 5: Validate that all requested scopes are within allowed set
-    for (String scope : requestedScopes) {
-      if (!allowedScopes.contains(scope)) {
-        return Future.failedFuture(
-          new DxForbiddenException(
-            String.format(
-              "Delegator with role '%s' cannot delegate unauthorized or higher scope '%s'",
-              delegatorRole, scope)
-          )
-        );
-      }
-    }
-
-
-    LOGGER.info("Validations successful !");
-    return Future.succeededFuture();
+    return delegationScopeConstraintDAO.getAllWithFilters(conditionMap)
+      .recover(err -> {
+        BaseDxException dxEx = BaseDxException.from(err);
+        if (dxEx instanceof DxNotFoundException) {
+          return Future.failedFuture(new DxNotFoundException("No delegation request found for delegationId" + delegationId, dxEx));
+        }
+        return Future.failedFuture(dxEx);
+      });
   }
 
 
@@ -246,41 +216,54 @@ public class DelegationServiceImpl implements DelegationService{
 
     for (JsonObject constraint : constraints) {
       String scope = constraint.getString("scope");
-      List<String> entityIds = constraint.getJsonArray("entity_id")
-        .stream()
-        .map(Object::toString)
-        .toList();
-
+      JsonArray entityArray = constraint.getJsonArray("entity_id", new JsonArray());
       String expiryAt = constraint.getString("expiry_at");
 
-      for (String entityId : entityIds) {
+      // Case 1: No entity IDs (like cos_admin_access)
+      if (entityArray.isEmpty()) {
         JsonObject dbEntry = new JsonObject()
           .put("delegation_id", delegationId.toString())
           .put("scope", scope)
-          .put("resource_id", entityId)
           .put("expiry_at", expiryAt);
 
         DelegationScopeConstraint delegationScopeConstraint = DelegationScopeConstraint.fromJson(dbEntry);
 
-        insertionFutures.add(delegationScopeConstraintDAO.create(delegationScopeConstraint)
-          .recover(err -> {
-            LOGGER.error("Failed to insert constraint for scope {} and entity {}", scope, entityId, err);
-            return Future.failedFuture(new DxPgException("Failed to insert delegation constraint", err));
-          })
+        insertionFutures.add(
+          delegationScopeConstraintDAO.create(delegationScopeConstraint)
+            .recover(err -> {
+              LOGGER.error("Failed to insert constraint for scope {} with NULL entity_id", scope, err);
+              return Future.failedFuture(new DxPgException("Failed to insert delegation constraint", err));
+            })
         );
+
+      } else {
+        // Case 2: One or more entity IDs
+        List<String> entityIds = entityArray.stream()
+          .map(Object::toString)
+          .toList();
+
+        for (String entityId : entityIds) {
+          JsonObject dbEntry = new JsonObject()
+            .put("delegation_id", delegationId.toString())
+            .put("scope", scope)
+            .put("entity_id", entityId)
+            .put("expiry_at", expiryAt);
+
+          DelegationScopeConstraint delegationScopeConstraint = DelegationScopeConstraint.fromJson(dbEntry);
+
+          insertionFutures.add(
+            delegationScopeConstraintDAO.create(delegationScopeConstraint)
+              .recover(err -> {
+                LOGGER.error("Failed to insert constraint for scope {} and entity {}", scope, entityId, err);
+                return Future.failedFuture(new DxPgException("Failed to insert delegation constraint", err));
+              })
+          );
+        }
       }
     }
 
-    return CompositeFuture.all(insertionFutures)
-      .mapEmpty();
+    return CompositeFuture.all(insertionFutures).mapEmpty();
   }
-
-  private String getHighestRole(Set<String> roles) {
-    return roles.stream()
-      .max(Comparator.comparingInt(RoleScopeMapping::getRoleRank))
-      .orElseThrow(() -> new DxBadRequestException("No valid role found for user"));
-  }
-
 
 
 

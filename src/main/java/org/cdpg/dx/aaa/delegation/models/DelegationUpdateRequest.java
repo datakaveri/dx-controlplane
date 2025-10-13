@@ -17,15 +17,15 @@ import static org.cdpg.dx.common.util.ValidationUtils.requireNonNull;
 public record DelegationUpdateRequest(
   UUID requestId,
   UUID delegationId,
-  UUID requesterId,
+  UUID delegateId,
   JsonArray requestedScopes,
   LocalDateTime requestedExpiry,
 //  LocalDateTime localExpiry,
   String justification,
   String status,
   LocalDateTime createdAt,
-  LocalDateTime reviewedAt,
-  UUID reviewerId
+  LocalDateTime reviewedAt
+//  UUID delegatorId
 ) implements BaseEntity<DelegationUpdateRequest> {
 
   public static DelegationUpdateRequest fromJson(JsonObject json) {
@@ -37,8 +37,8 @@ public record DelegationUpdateRequest(
           "delegation_id"
         ),
         requireNonNull(
-          json.getString("requester_id") != null ? UUID.fromString(json.getString("requester_id")) : null,
-          "requester_id"
+          json.getString("delegate_id") != null ? UUID.fromString(json.getString("delegate_id")) : null,
+          "delegate_id"
         ),
         requireNonNull(parseRequestedScopes(json.getValue("requested_scopes")), "requested_scopes"),
         json.getString("requested_expiry") != null ? parseDateTime(json.getString("requested_expiry")) : null,
@@ -46,8 +46,8 @@ public record DelegationUpdateRequest(
         requireNonNull(json.getString("justification"), "justification"),
         json.getString("status") != null ? json.getString("status") : "pending",
         json.getString("created_at") != null ? parseDateTime(json.getString("created_at")) : null,
-        json.getString("reviewed_at") != null ? parseDateTime(json.getString("reviewed_at")) : null,
-        json.getString("reviewer_id") != null ? UUID.fromString(json.getString("reviewer_id")) : null
+        json.getString("reviewed_at") != null ? parseDateTime(json.getString("reviewed_at")) : null
+//        json.getString("delegator_id") != null ? UUID.fromString(json.getString("delegator_id")) : null
       );
     } catch (Exception e) {
       throw new DxValidationException("Invalid or missing field: " + e.getMessage());
@@ -59,7 +59,7 @@ public record DelegationUpdateRequest(
     JsonObject json = new JsonObject();
     if (requestId != null) json.put("request_id", requestId.toString());
     if (delegationId != null) json.put("delegation_id", delegationId.toString());
-    if (requesterId != null) json.put("requester_id", requesterId.toString());
+    if (delegateId != null) json.put("delegate_id", delegateId.toString());
     if (requestedScopes != null) json.put("requested_scopes", requestedScopes);
     if (requestedExpiry != null) json.put("requested_expiry", requestedExpiry.format(FORMATTER));
 //    if (localExpiry != null) json.put("expiry_at", localExpiry.format(FORMATTER));
@@ -67,7 +67,7 @@ public record DelegationUpdateRequest(
     if (status != null) json.put("status", status);
     if (createdAt != null) json.put("created_at", createdAt.format(FORMATTER));
     if (reviewedAt != null) json.put("reviewed_at", reviewedAt.format(FORMATTER));
-    if (reviewerId != null) json.put("reviewer_id", reviewerId.toString());
+//    if (delegatorId != null) json.put("delegator_id", delegatorId.toString());
     return json;
   }
 
@@ -93,7 +93,7 @@ public record DelegationUpdateRequest(
     Map<String, Object> map = new HashMap<>();
     if (requestId != null) map.put("request_id", requestId.toString());
     if (delegationId != null) map.put("delegation_id", delegationId.toString());
-    if (requesterId != null) map.put("requester_id", requesterId.toString());
+    if (delegateId != null) map.put("delegate_id", delegateId.toString());
     if (requestedScopes != null) map.put("requested_scopes", requestedScopes.encode()); // full objects
     if (requestedExpiry != null) map.put("requested_expiry", requestedExpiry.format(FORMATTER));
 //    if (localExpiry != null) map.put("expiry_at", localExpiry.format(FORMATTER));
@@ -102,7 +102,7 @@ public record DelegationUpdateRequest(
     if (status != null) map.put("status", status);
     if (createdAt != null) map.put("created_at", createdAt.format(FORMATTER));
     if (reviewedAt != null) map.put("reviewed_at", reviewedAt.format(FORMATTER));
-    if (reviewerId != null) map.put("reviewer_id", reviewerId.toString());
+//    if (delegatorId != null) map.put("delegator_id", delegatorId.toString());
     return map;
   }
 

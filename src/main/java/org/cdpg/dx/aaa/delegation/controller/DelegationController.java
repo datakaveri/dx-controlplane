@@ -41,12 +41,12 @@ public class DelegationController implements ApiController {
 
     routerBuilder
       .operation("get-auth-v2-delegation-request")
-      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))  // reviewer
+      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))  // delegator
       .handler(delegationHandler::getDelegationRequest);
 
     routerBuilder
       .operation("put-auth-v2-delegation-request")
-      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))  //reviewer
+      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))  //delegator
       .handler(delegationHandler::updateDelegationRequest);
 
 

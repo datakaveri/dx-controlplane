@@ -2,6 +2,7 @@ package org.cdpg.dx.keycloak.service;
 
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
+import org.cdpg.dx.aaa.delegation.util.RoleScopeMapping;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.model.DxUser;
 
@@ -25,5 +26,6 @@ public interface KeycloakUserService {
     Future<Boolean> setKycVerifiedTrueWithData(UUID userId, String userName,String txn);
     Future<Boolean> setKycVerifiedFalse(UUID userId);
     Future<Boolean> updateUserPassword(UUID userId, String password);
+    Future<Boolean> addScopesToUser(UUID userId, List<String> scopes);
 }
 

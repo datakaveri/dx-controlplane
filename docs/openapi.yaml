@@ -4140,6 +4140,7 @@ paths:
         name: id
         in: path
         required: true
+        description: UUID of the delegation_id
     get:
       summary: Get Delegation Grant by ID
       operationId: get-auth-v2-delegation-grant
@@ -4220,7 +4221,14 @@ paths:
                     type: string
                     example: "No record found for delegation_id provided"
 
-  /iudx/v2/auth/delegation/requests:
+  /iudx/v2/auth/delegation/{delegation_id}/requests:
+    parameters:
+      - schema:
+          type: string
+        name: delegation_id
+        in: path
+        required: true
+        description: UUID of the delegation_id
     get:
       summary: Get Delegation Requests for Logged-in User
       description: >
