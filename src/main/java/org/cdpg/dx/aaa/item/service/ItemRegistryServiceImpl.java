@@ -130,24 +130,19 @@ public class ItemRegistryServiceImpl implements ItemRegistryService {
                   .mapEmpty();
           case "NGSI-LD" -> {
               LOGGER.debug("NGSI-LD resource server - no additional processing required, returning success");
-              DataBankCreationResponse.ResourceServerResponse rsResponse =
-                      new DataBankCreationResponse.ResourceServerResponse("NGSI-LD", new JsonObject().put("status", "created"));
-              response.addResourceServer(rsResponse);
-              yield Future.succeededFuture();
-              //              String token = request.getToken();
-//              yield postToDataPlane(requestBody, token)
-//                      .compose(v -> {
-//                          LOGGER.debug("Data Plane index creation successful, proceeding to register adapter");
-//                          return ingestionService.registerAdapter(itemId, userId);
-//                      })
-//                      .map(exchangeModel -> {
-//                          rollbackActions.add(() -> ingestionService.deleteAdapter(itemId, userId).recover(x -> Future.succeededFuture()));
-//                          DataBankCreationResponse.ResourceServerResponse rsResponse =
-//                                  new DataBankCreationResponse.ResourceServerResponse("NGSI-LD", exchangeModel.toJson());
-//                          response.addResourceServer(rsResponse);
-//                          return null;
-//                      })
-//                      .mapEmpty();
+//              DataBankCreationResponse.ResourceServerResponse rsResponse =
+//                      new DataBankCreationResponse.ResourceServerResponse("NGSI-LD", new JsonObject().put("status", "created"));
+//              response.addResourceServer(rsResponse);
+//              yield Future.succeededFuture();
+              yield ingestionService.registerAdapter(itemId, userId)
+                      .map(exchangeModel -> {
+                          rollbackActions.add(() -> ingestionService.deleteAdapter(itemId, userId).recover(x -> Future.succeededFuture()));
+                          DataBankCreationResponse.ResourceServerResponse rsResponse =
+                                  new DataBankCreationResponse.ResourceServerResponse("NGSI-LD", exchangeModel.toJson());
+                          response.addResourceServer(rsResponse);
+                          return null;
+                      })
+                      .mapEmpty();
           }
           case "OGC" -> {
               LOGGER.debug("OGC resource server - checking for vector/raster data and generating script");
