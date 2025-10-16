@@ -3,6 +3,7 @@ package org.cdpg.dx.keycloak.service;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
+import org.cdpg.dx.aaa.delegation.util.RoleScopeMapping;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.exception.KeycloakServiceException;
 import org.cdpg.dx.common.util.BlockingExecutionUtil;
@@ -11,8 +12,10 @@ import org.cdpg.dx.keycloak.config.KeycloakConstants;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.keycloak.util.DxUserMapper;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.apache.logging.log4j.Logger;
@@ -26,12 +29,15 @@ import java.util.stream.Collectors;
 public class KeycloakUserServiceImpl implements KeycloakUserService {
     private final Keycloak keycloak;
     private final String realm;
+    private final String clientId;
 
     private final static Logger LOGGER = LogManager.getLogger(KeycloakUserServiceImpl.class);
 
     public KeycloakUserServiceImpl(JsonObject config) {
         this.keycloak = KeycloakClientProvider.getInstance(config);
         this.realm = config.getString("keycloakRealm");
+        this.clientId = config.getString("clientId");
+
     }
 
     private UsersResource usersResource() {
@@ -270,4 +276,45 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
             }
         });
     }
+
+  public Future<Boolean> addScopesToUser(UUID userId, List<String> scopes) {
+    return BlockingExecutionUtil.runBlocking(() -> {
+      try {
+        RealmResource realmResource = keycloak.realm(realm);
+        UsersResource usersResource = realmResource.users();
+
+
+        if (scopes.isEmpty()) {
+          LOGGER.warn("No scopes found in constraints for user {}", userId);
+          return false;
+        }
+
+        for (String scope : scopes) {
+          ClientRepresentation client = realmResource.clients()
+            .findByClientId(clientId).getFirst();
+
+          ClientResource clientResource = realmResource.clients().get(client.getId());
+          RoleRepresentation clientRole = clientResource.roles().get(scope).toRepresentation();
+
+          if (clientRole == null) {
+            LOGGER.warn("Scope '{}' not found in client '{}'", scope, clientId);
+            continue;
+          }
+
+          usersResource.get(userId.toString())
+            .roles()
+            .clientLevel(client.getId())
+            .add(Collections.singletonList(clientRole));
+
+          LOGGER.info("Assigned scope '{}' to user '{}'", scope, userId);
+        }
+
+        return true;
+      } catch (Exception e) {
+        LOGGER.error("Failed to assign scopes to user '{}': {}", userId, e.getMessage(), e);
+        throw new KeycloakServiceException("Failed to assign scopes to user", e);
+      }
+    });
+  }
+
 }

@@ -91,8 +91,17 @@ public class OrganizationServiceImpl implements OrganizationService {
 
   @Override
   public Future<ProviderRoleRequest> getProviderRequestById(UUID requestId) {
-    return providerRequestDAO.get(requestId);
+    return providerRequestDAO.get(requestId)
+      .compose(request -> {
+        if (request == null) {
+          return Future.failedFuture(
+            new DxNotFoundException("Provider request not found for ID: " + requestId)
+          );
+        }
+        return Future.succeededFuture(request);
+      });
   }
+
 
 
   @Override

@@ -20,6 +20,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.ActivityReport.controller.ActivityReportController;
 import org.cdpg.dx.aaa.ActivityReport.factory.ActivityReportControllerFactory;
+// import org.cdpg.dx.aaa.accessReport.controller.AccessReportController;
+// import org.cdpg.dx.aaa.accessReport.factory.AccessReportFactory;
+// import org.cdpg.dx.aaa.accessRequest.controller.AccessRequestController;
+// import org.cdpg.dx.aaa.accessRequest.factory.AccessRequestFactory;
 import org.cdpg.dx.aaa.activity.controller.ActivityController;
 import org.cdpg.dx.aaa.activity.factory.ActivityControllerFactory;
 import org.cdpg.dx.aaa.activity.factory.ActivityFactory;
@@ -35,6 +39,8 @@ import org.cdpg.dx.aaa.connector.service.ConnectorService;
 import org.cdpg.dx.aaa.connector.service.ConnectorServiceImpl;
 import org.cdpg.dx.aaa.credit.factory.CreditControllerFactory;
 import org.cdpg.dx.aaa.credit.service.CreditService;
+import org.cdpg.dx.aaa.delegation.factory.DelegationControllerFactory;
+import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.ingestion.service.IngestionService;
 import org.cdpg.dx.aaa.ingestion.service.IngestionServiceImpl;
@@ -126,11 +132,14 @@ public class ControllerFactory {
 
     CreditService creditService =
         CreditControllerFactory.createService(pgService, keycloakUserService, config);
+
+
+
     OrganizationService organizationService =
         OrganizationControllerFactory.createService(pgService, keycloakUserService, itemService);
-    //    UserService userService =
-    //        new UserServiceImpl(keycloakUserService, organizationService, creditService
-    // ,esService,docIndex);
+
+    DelegationService delegationService =
+      DelegationControllerFactory.createService(pgService,keycloakUserService,organizationService);
 
     UserService userService =
         UserControllerFactory.createService(
@@ -150,6 +159,8 @@ public class ControllerFactory {
 
     ApiController creditApiController =
         CreditControllerFactory.create(creditService, emailComposer, userService, urnGenerator);
+
+    ApiController delegationApiController = DelegationControllerFactory.create(delegationService,emailComposer,userService,urnGenerator,keycloakUserService);
 
     ApiController userController = UserControllerFactory.create(userService, urnGenerator);
 
@@ -236,6 +247,7 @@ public class ControllerFactory {
         tokenController,
         publicController,
         userController,
+        delegationApiController,
         activityController,
         activityReportController);
   }
