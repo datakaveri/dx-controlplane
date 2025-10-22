@@ -613,6 +613,121 @@ public class EmailComposer {
       });
   }
 
+  public Future<Void> sendEmailForUpdatingUserStatus(User user,String statusValue) {
+    LOGGER.info("Inside email notification for user status update");
+    String userName = user.principal().getString("name");
+
+    String userEmailId = user.principal().getString("email");
+
+    String senderEmail = config.getString("emailSender");
+    String emailTemplate = loadTemplate("templates/approved-user-status.html");
+    String adminPortalUrl = config.getString("TGDxUrl");
+    String cosAdminEmailId = config.getString("cosAdminEmailId");
+    String senderName = config.getString("senderName");
+
+
+    if(statusValue.equalsIgnoreCase("activate"))
+      statusValue="activated";
+    else if(statusValue.equalsIgnoreCase("deactivate"))
+      statusValue="deactivated";
+
+
+    Map<String, String> emailDetails = Map.of(
+      "USER_FIRST_NAME", userName,
+      "STATUS", statusValue,
+      "USER_EMAIL_ID", userEmailId,
+      "ADMIN_PORTAL_URL", adminPortalUrl,
+      "SENDER_NAME", senderName
+    );
+
+    String htmlBody = getHtmlBody(emailTemplate, emailDetails);
+
+    MailMessage mailMessage = createMailMessage(
+      senderEmail,
+      userEmailId,
+      htmlBody,
+      "Your account has been " + statusValue
+    );
+
+    return emailService.sendEmail(mailMessage).onComplete(res -> {
+      if (res.succeeded()) {
+        LOGGER.info("Account Update Status email sent to {}", userEmailId);
+      } else {
+        LOGGER.error("Failed to send account status update email: {}", res.cause().getMessage());
+      }
+    }).recover(failure -> {
+      LOGGER.error("Failed to handle email for account status update: {}", failure.getMessage());
+      return Future.failedFuture(failure);
+    });
+  }
+
+
+  public Future<Void> sendEmailForUpdatingUserStatusByAdmin(UUID userId, String statusValue) {
+
+
+    return userService.getUserInfoByID(userId).compose(userInfo -> {
+      String newstatusValue="";
+      String userEmailId = userInfo.email();
+      String userName = userInfo.name();
+
+      String senderEmail = config.getString("emailSender"); // no-org-reply
+      String emailTemplate_user = loadTemplate("templates/approved-user-status.html");
+      String emailTemplate_admin = loadTemplate("templates/approved-user-status-by-admin.html");
+
+      String adminPortalUrl = config.getString("TGDxUrl");
+      String cosAdminEmailId = config.getString("cosAdminEmailId");
+      String senderName = config.getString("senderName"); // no-org-reply
+
+
+      if (statusValue.equalsIgnoreCase("activate"))
+        newstatusValue = "activated";
+      else if (statusValue.equalsIgnoreCase("deactivate")) newstatusValue = "deactivated";
+
+      Map<String, String> emailDetails_user = Map.of(
+        "USER_FIRST_NAME", userName,
+        "STATUS", newstatusValue,
+        "USER_EMAIL_ID", userEmailId,
+        "ADMIN_PORTAL_URL", adminPortalUrl,
+        "SENDER_NAME", senderName
+      );
+
+      String htmlBody_user = getHtmlBody(emailTemplate_user, emailDetails_user);
+
+
+
+      MailMessage userMail = createMailMessage(
+        senderEmail,
+        userEmailId,
+        htmlBody_user,
+        "Your account has been " + newstatusValue
+      );
+
+
+      Map<String, String> emailDetails_admin = Map.of(
+        "USER_FIRST_NAME", "admin",
+        "STATUS", newstatusValue,
+        "USER_EMAIL_ID", userEmailId,
+        "ADMIN_PORTAL_URL", adminPortalUrl,
+        "SENDER_NAME", senderName
+      );
+
+      String htmlBody_admin = getHtmlBody(emailTemplate_admin, emailDetails_admin);
+
+
+      MailMessage adminMail = createMailMessage(
+        senderEmail,
+        cosAdminEmailId,
+        htmlBody_admin,
+        "User account " + userEmailId + " has been " + newstatusValue
+      );
+
+      return emailService.sendEmail(userMail).compose(v ->
+          emailService.sendEmail(adminMail)
+        ).onSuccess(v -> LOGGER.info("Account status update emails sent to user {} and admin {}", userEmailId, cosAdminEmailId))
+        .onFailure(err -> LOGGER.error("Failed to send account status update emails: {}", err.getMessage()));
+    });
+  }
+
 
 
 
