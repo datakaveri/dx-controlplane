@@ -181,8 +181,8 @@ public class ControllerFactory {
             kycRequired);
 
     AdminHandler adminHandler =
-        new AdminHandler(
-            userService, keycloakUserService, creditService, organizationService, urnGenerator);
+      new AdminHandler(userService, keycloakUserService, creditService, organizationService,urnGenerator,emailComposer);
+
     ApiController adminController = new AdminController(adminHandler);
 
     //    AccessRequestController accessRequestController =
