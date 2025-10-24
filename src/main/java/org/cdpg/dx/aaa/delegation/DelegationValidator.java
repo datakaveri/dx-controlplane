@@ -2,10 +2,13 @@ package org.cdpg.dx.aaa.delegation;
 import io.vertx.core.*;
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.aaa.delegation.util.RoleScopeMapping;
+import org.cdpg.dx.aaa.item.service.ItemService;
+import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
+import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,9 +21,11 @@ public class DelegationValidator {
   private static final Logger LOGGER = LoggerFactory.getLogger(DelegationValidator.class);
 
   private final OrganizationService organizationService;
+  private final ItemService itemService;
 
-  public DelegationValidator(OrganizationService organizationService) {
+  public DelegationValidator(OrganizationService organizationService, ItemService itemService) {
     this.organizationService = organizationService;
+    this.itemService = itemService;
   }
 
   /**
@@ -83,8 +88,7 @@ public class DelegationValidator {
         .map(Object::toString)
         .toList();
 
-      if (scope.equalsIgnoreCase("user_management") ||
-        scope.equalsIgnoreCase("credit_management")) {
+       if (scope.equalsIgnoreCase("credit_management")) {
         continue;
       }
 
@@ -94,6 +98,14 @@ public class DelegationValidator {
             validationFutures.add(validateOrgOwnership(delegatorId, entityIds));
           } else if (scope.equalsIgnoreCase("provider_management")) {
             validationFutures.add(validateProviderRequestOwnership(delegatorId, entityIds));
+          }
+          else if(scope.equalsIgnoreCase("asset_management"))
+          {
+            validationFutures.add(validateAssetRequestOwnership(delegatorId,entityIds));
+          }
+          else if(scope.equalsIgnoreCase("data_access"))
+          {
+            validationFutures.add(validateAssetRequestOwnership(delegatorId,entityIds));
           }
         }
         default -> {
@@ -110,6 +122,63 @@ public class DelegationValidator {
     }
 
     return CompositeFuture.all(validationFutures).mapEmpty();
+  }
+
+
+  private Future<Void> validateAssetRequestOwnership(UUID delegatorId, List<String> itemIds) {
+    if (itemIds == null || itemIds.isEmpty()) {
+      return Future.failedFuture(new DxForbiddenException("No asset IDs provided"));
+    }
+
+    //  get organization info for delegator
+    return organizationService.getOrganizationUserInfo(delegatorId).compose(orgInfo -> {
+      UUID orgDelId = orgInfo.organizationId();
+      if (orgDelId == null) {
+        return Future.failedFuture(new DxForbiddenException("User does not belong to any organization!"));
+      }
+
+      String delegatorIdStr = delegatorId.toString();
+      List<Future> validations = new ArrayList<>();
+
+      // validate each asset's organization in a loop
+      for (String itemId : itemIds) {
+        GetItemRequest itemRequest = new GetItemRequest(itemId, delegatorIdStr);
+
+        Future<Void> validationFuture = itemService.getItem(itemRequest).compose(v -> {
+          JsonObject response = v.getResponse();
+
+          if (response == null) {
+            return Future.failedFuture(new DxBadRequestException("Response is empty for item: " + itemId));
+          }
+
+          String orgIdStr = response.getString("organizationId");
+          if (orgIdStr == null) {
+            return Future.failedFuture(new DxBadRequestException("organizationId missing for item: " + itemId));
+          }
+
+          UUID orgId;
+          try {
+            orgId = UUID.fromString(orgIdStr);
+          } catch (IllegalArgumentException e) {
+            return Future.failedFuture(new DxBadRequestException("Invalid organizationId format for item: " + itemId));
+          }
+
+          // compare organization IDs
+          if (!orgDelId.equals(orgId)) {
+            return Future.failedFuture(
+              new DxForbiddenException("Asset " + itemId + " does not belong to delegator's organization!")
+            );
+          }
+
+          return Future.succeededFuture();
+        });
+
+        validations.add(validationFuture);
+      }
+
+      // combine all asset validations
+      return CompositeFuture.all(validations).mapEmpty();
+    });
   }
 
   private Future<Void> validateOrgOwnership(UUID delegatorId, List<String> orgIds) {

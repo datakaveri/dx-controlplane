@@ -13,6 +13,7 @@ import org.cdpg.dx.aaa.clientSecret.dao.ClientcredetialDao;
 import org.cdpg.dx.aaa.clientSecret.dao.impl.ClientcredetialDaoImpl;
 import org.cdpg.dx.aaa.clientSecret.service.ClientcredetialService;
 import org.cdpg.dx.aaa.clientSecret.service.ClientcredetialServiceImpl;
+import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.aaa.token.controller.TokenController;
@@ -34,6 +35,7 @@ public class TokenControllerFactory {
       Vertx vertx,
       WebClient webClient,
       PolicyDao policyDao,
+      DelegationService delegationService,
       URNGenerator urnGenerator) {
 
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
@@ -65,6 +67,7 @@ public class TokenControllerFactory {
             itemService,
             isssuer,
             tokenExpirationMinutes,
+            delegationService,
             vertx);
 
     return new TokenController(tokenService, urnGenerator);

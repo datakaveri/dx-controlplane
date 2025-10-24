@@ -9,6 +9,7 @@ import org.cdpg.dx.aaa.delegation.dao.*;
 import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
 import org.cdpg.dx.aaa.delegation.models.DelegationScopeConstraint;
 import org.cdpg.dx.aaa.delegation.models.DelegationUpdateRequest;
+import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
@@ -33,8 +34,9 @@ public class DelegationServiceImpl implements DelegationService{
   private final TokenDAO tokenDAO;
   private final KeycloakUserService keycloakUserService;
   private final DelegationValidator delegationValidator;
+  private final ItemService itemService;
 
-  public DelegationServiceImpl(DelegationDAOFactory factory, KeycloakUserService keycloakUserService, OrganizationService organizationService) {
+  public DelegationServiceImpl(DelegationDAOFactory factory, KeycloakUserService keycloakUserService, OrganizationService organizationService,ItemService itemService) {
     this.delegationGrantDAO = factory.delegationGrantDAO();
     this.delegationRequestDAO = factory.delegationRequestDAO();
     this.scopeConstraintDAO = factory.scopeConstraintDAO();
@@ -42,7 +44,8 @@ public class DelegationServiceImpl implements DelegationService{
     this.delegationScopeConstraintDAO = factory.scopeConstraintDAO();
     this.organizationService = organizationService;
     this.keycloakUserService = keycloakUserService;
-    this.delegationValidator = new DelegationValidator(organizationService);
+    this.itemService = itemService;
+    this.delegationValidator = new DelegationValidator(organizationService,itemService);
   }
 
 

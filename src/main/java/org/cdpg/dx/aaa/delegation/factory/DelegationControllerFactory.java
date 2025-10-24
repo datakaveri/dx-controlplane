@@ -15,6 +15,7 @@ import org.cdpg.dx.aaa.delegation.handler.DelegationHandler;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.delegation.service.DelegationServiceImpl;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
+import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.common.URNGenerator;
@@ -35,9 +36,9 @@ public class DelegationControllerFactory {
     return new DelegationController(delegationHandler);
   }
 
-  public static DelegationService createService(PostgresService pgService, KeycloakUserService keycloakUserService, OrganizationService organizationService) {
+  public static DelegationService createService(PostgresService pgService, KeycloakUserService keycloakUserService, OrganizationService organizationService, ItemService itemService) {
     DelegationDAOFactory delegationDAOFactory = new DelegationDAOFactory(pgService);
-    return new DelegationServiceImpl(delegationDAOFactory,keycloakUserService,organizationService);
+    return new DelegationServiceImpl(delegationDAOFactory,keycloakUserService,organizationService,itemService);
 
   }
 }
