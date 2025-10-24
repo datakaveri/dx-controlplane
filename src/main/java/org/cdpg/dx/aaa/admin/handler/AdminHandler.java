@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.audit.util.AuditingHelper;
 import org.cdpg.dx.aaa.credit.service.CreditService;
+import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.models.ProviderRoleRequest;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
@@ -36,14 +37,16 @@ public class AdminHandler {
   private final CreditService creditService;
   private final OrganizationService organizationService;
   private final URNGenerator urnGenerator;
+  private final EmailComposer emailComposer;
 
   public AdminHandler(UserService userService, KeycloakUserService keycloakUserService,
-                      CreditService creditService, OrganizationService organizationService,URNGenerator urnGenerator) {
+                      CreditService creditService, OrganizationService organizationService,URNGenerator urnGenerator,EmailComposer emailComposer) {
     this.userService = userService;
     this.keycloakUserService = keycloakUserService;
     this.creditService = creditService;
     this.organizationService = organizationService;
     this.urnGenerator = urnGenerator;
+    this.emailComposer = emailComposer;
   }
 
   public void getDxUserInfo(RoutingContext ctx) {
@@ -177,6 +180,8 @@ public class AdminHandler {
 
     JsonObject status = ctx.body().asJsonObject();
     String statusValue = status.getString("status");
+    UUID userId = UUID.fromString(user.subject());
+
 
 
     if (statusValue == null || (!statusValue.equalsIgnoreCase("activate") && !statusValue.equalsIgnoreCase("deactivate"))) {
@@ -185,26 +190,28 @@ public class AdminHandler {
     }
 
     if (statusValue.equalsIgnoreCase("deactivate")) {
-      keycloakUserService.disableUser(UUID.fromString(user.subject()))
+      keycloakUserService.disableUser(userId)
         .onSuccess(response -> {
           LOGGER.info("User {} deactivated successfully in Keycloak", user.subject());
           AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
             RoutingContextHelper.getRequestPath(ctx), "POST", "Deactivate User");
           RoutingContextHelper.setAuditingLog(ctx, auditLog);
           ResponseBuilder.sendSuccess(ctx, "User deactivated successfully",urnGenerator);
+          emailComposer.sendEmailForUpdatingUserStatus(user,statusValue);
         })
         .onFailure(err -> {
           LOGGER.error("Failed to deactivate DxUser: {}", err.getMessage(), err.getCause());
           ctx.fail(err);
         });
     } else {
-      keycloakUserService.enableUser(UUID.fromString(user.subject()))
+      keycloakUserService.enableUser(userId)
         .onSuccess(response -> {
           LOGGER.info("User {} activated successfully in Keycloak", user.subject());
           AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
             RoutingContextHelper.getRequestPath(ctx), "POST", "Activate User");
           RoutingContextHelper.setAuditingLog(ctx, auditLog);
           ResponseBuilder.sendSuccess(ctx, "User activated successfully",urnGenerator);
+          emailComposer.sendEmailForUpdatingUserStatus(user,statusValue);
         })
         .onFailure(err -> {
           LOGGER.error("Failed to activate DxUser: {}", err.getMessage(), err.getCause());
@@ -321,6 +328,7 @@ public class AdminHandler {
             RoutingContextHelper.getRequestPath(ctx), "POST", "Activate User");
           RoutingContextHelper.setAuditingLog(ctx, auditLog);
           ResponseBuilder.sendSuccess(ctx, "User activated successfully",urnGenerator);
+          emailComposer.sendEmailForUpdatingUserStatusByAdmin(userId,statusValue);
         })
         .onFailure(err -> {
           LOGGER.error("Failed to activate DxUser: {}", err.getMessage(), err.getCause());
@@ -334,6 +342,7 @@ public class AdminHandler {
             RoutingContextHelper.getRequestPath(ctx), "POST", "Deactivate User");
           RoutingContextHelper.setAuditingLog(ctx, auditLog);
           ResponseBuilder.sendSuccess(ctx, "User deactivated successfully",urnGenerator);
+          emailComposer.sendEmailForUpdatingUserStatusByAdmin(userId,statusValue);
         })
         .onFailure(err -> {
           LOGGER.error("Failed to deactivate DxUser: {}", err.getMessage(), err.getCause());
