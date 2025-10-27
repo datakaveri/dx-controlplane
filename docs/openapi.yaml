@@ -4132,6 +4132,30 @@ paths:
                   result:
                     type: object
 
+      x-codeSamples:
+        - lang: cURL
+          label: create delegation grant cURL
+          source: |
+            curl --location 'https://example.com/iudx/v2/auth/delegation/grant' \
+            --header 'Content-Type: application/json' \
+            --header 'Authorization: Bearer <keycloak_token>' \
+            --data '{
+              "delegate_id": "data_access",
+              "justification": "Granting item id access while the owner is on leave",
+              "expiry_at": "2025-12-31T23:59:59",
+              "scopes": [
+                "data_access"
+              ],
+              "constraints": [
+                {
+                  "scope": "data_access",
+                  "entity_id": ["74436122-e6f6-45bf-be53-7ee2c257826b"],
+                  "expiry_at": "2025-12-31T23:59:59"
+                }
+              ]
+            }'
+
+
 
   /iudx/v2/auth/delegation/grant/{id}:
     parameters:
@@ -4220,6 +4244,14 @@ paths:
                   detail:
                     type: string
                     example: "No record found for delegation_id provided"
+
+      x-codeSamples:
+        - lang: cURL
+          label: get delegation grant by ID cURL
+          source: |
+            curl --location 'https://example.com/iudx/v2/auth/delegation/grant/{delegation_id}' \
+            --header 'Authorization: Bearer <keycloak_token>'
+
 
   /iudx/v2/auth/delegation/{delegation_id}/requests:
     parameters:

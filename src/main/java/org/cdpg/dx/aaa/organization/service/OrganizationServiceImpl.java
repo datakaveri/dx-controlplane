@@ -86,7 +86,23 @@ public class OrganizationServiceImpl implements OrganizationService {
 
   @Override
   public Future<OrganizationJoinRequest> getOrganizationJoinRequestById(UUID requestId) {
-    return joinRequestDAO.get(requestId);
+    return joinRequestDAO.get(requestId)
+      .compose(request -> {
+        if (request == null) {
+          return Future.failedFuture(
+            new DxNotFoundException("organization join request not found for ID: " + requestId)
+          );
+        }
+        return Future.succeededFuture(request);
+      })
+      .recover(err -> {
+        LOGGER.error("Failed to fetch organization join request for ID {}: {}", requestId, err.getMessage());
+        if (err instanceof DxNotFoundException) {
+          return Future.failedFuture(err);
+        } else {
+          return Future.failedFuture(new DxRuntimeException("Database error while fetching provider request", err));
+        }
+      });
   }
 
   @Override
@@ -99,8 +115,18 @@ public class OrganizationServiceImpl implements OrganizationService {
           );
         }
         return Future.succeededFuture(request);
+      })
+      .recover(err -> {
+        LOGGER.error("Failed to fetch provider request for ID {}: {}", requestId, err.getMessage());
+        if (err instanceof DxNotFoundException) {
+          return Future.failedFuture(err);
+        } else {
+          return Future.failedFuture(new DxRuntimeException("Database error while fetching provider request", err));
+        }
       });
   }
+
+
 
 
 

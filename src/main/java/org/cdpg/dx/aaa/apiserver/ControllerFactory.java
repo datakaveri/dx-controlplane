@@ -139,7 +139,7 @@ public class ControllerFactory {
         OrganizationControllerFactory.createService(pgService, keycloakUserService, itemService);
 
     DelegationService delegationService =
-      DelegationControllerFactory.createService(pgService,keycloakUserService,organizationService);
+      DelegationControllerFactory.createService(pgService,keycloakUserService,organizationService,itemService);
 
     UserService userService =
         UserControllerFactory.createService(
@@ -227,7 +227,7 @@ public class ControllerFactory {
 
     TokenController tokenController =
         TokenControllerFactory.create(
-            pgService, esService, config, vertx, webClient, policyDao, urnGenerator);
+            pgService, esService, config, vertx, webClient, policyDao, delegationService,urnGenerator);
 
     PublicController publicController = PublicKeycontrllerFactory.create(config, vertx);
 

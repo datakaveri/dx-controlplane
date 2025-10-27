@@ -9,7 +9,6 @@ public enum RoleScopeMapping {
     "cos_admin_access",
     "org_management",
     "asset_management",
-    "user_management",
     "compute_management",
     "credit_management",
     "provider_management"
@@ -18,12 +17,13 @@ public enum RoleScopeMapping {
   ORG_ADMIN("org_admin", List.of(
     "org_management",
     "asset_management",
-    "user_management",
-    "provider_management"
+    "provider_management",
+    "data_access"
   )),
 
   PROVIDER("provider", List.of(
-    "asset_management"
+    "asset_management",
+    "data_access"
   )),
 
   CONSUMER("consumer", List.of(

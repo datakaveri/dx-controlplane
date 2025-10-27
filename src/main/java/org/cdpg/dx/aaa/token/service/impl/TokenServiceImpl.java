@@ -2,6 +2,7 @@ package org.cdpg.dx.aaa.token.service.impl;
 
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.JWTOptions;
 import io.vertx.ext.auth.jwt.JWTAuth;
@@ -9,14 +10,24 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.clientSecret.service.ClientcredetialService;
+import org.cdpg.dx.aaa.delegation.models.DelegationScopeConstraint;
+import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.token.model.AccessTokenRequest;
 import org.cdpg.dx.aaa.token.model.ItemInfo;
 import org.cdpg.dx.aaa.token.service.TokenService;
 import org.cdpg.dx.aaa.token.util.TokenClaimsBuilder;
+import org.cdpg.dx.common.exception.DxBadRequestException;
+import org.cdpg.dx.common.exception.DxForbiddenException;
+import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 public class TokenServiceImpl implements TokenService {
 
@@ -31,6 +42,7 @@ public class TokenServiceImpl implements TokenService {
   private final JWTOptions options;
   private final int tokenExpirationMinutes;
   private final Vertx vertx;
+  private final DelegationService delegationService;
 
   public TokenServiceImpl(
       JWTAuth provider,
@@ -39,6 +51,7 @@ public class TokenServiceImpl implements TokenService {
       ItemService itemService,
       String issuer,
       int expirationMinutes,
+      DelegationService delegationService,
       Vertx vertx) {
     this.provider = provider;
     this.keycloakUserService = keycloakUserService;
@@ -47,6 +60,7 @@ public class TokenServiceImpl implements TokenService {
     this.issuer = issuer;
     this.tokenExpirationMinutes = expirationMinutes;
     this.vertx = vertx;
+    this.delegationService = delegationService;
     this.options = new JWTOptions().setAlgorithm(JWT_ALGORITHM).setIssuer(issuer);
   }
 
@@ -96,18 +110,27 @@ public class TokenServiceImpl implements TokenService {
     return getDelegatedDxUser(request.clientId(), request.clientSecret(), request.delegationId())
         .compose(
             user ->
-                fetchDelegationConstraints(request.delegationId())
+                fetchDelegationConstraints(request.delegationId(),user.sub().toString())
                     .compose(
                         delegationConstraints ->
                             fetchItemInfo(user, request.itemId())
                                 .map(
                                     itemInfo -> {
-                                      // override constraints with delegation constraints
+
+                                      LOGGER.info("after itemInfo");
                                       JsonObject extraClaims = itemInfo.toJson();
-                                      extraClaims.put("constraints", delegationConstraints);
+
+                                      extraClaims.put("scopes", delegationConstraints.getJsonArray("scopes"));
+
+                                      if (delegationConstraints.containsKey("entityIds")) {
+                                        extraClaims.put("constraints", delegationConstraints.getJsonArray("entityIds"));
+                                      }
+
                                       extraClaims.put("delegationId", request.delegationId());
                                       extraClaims.put(
-                                          "did", delegationConstraints.getString("delegatorId"));
+                                          "did", delegationConstraints.getString("delegateId"));
+
+                                      LOGGER.info("extraClaims: {}",extraClaims);
                                       return extraClaims;
                                     }))
                     .compose(extraClaims -> generateJwtToken(user, extraClaims)));
@@ -132,19 +155,100 @@ public class TokenServiceImpl implements TokenService {
     // return delegationService.getUserByDelegationId(delegationId);
   }
 
-  private Future<JsonObject> fetchDelegationConstraints(String delegationId) {
-    // TODO: implement actual call to DelegationService
-    return Future.succeededFuture(new JsonObject().put("access", "delegated"));
+  private Future<JsonObject> fetchDelegationConstraints(String delegationId, String userId) {
+    UUID delegationUUID = UUID.fromString(delegationId);
+    UUID userUUID = UUID.fromString(userId);
+
+    return delegationService.getDelegationScopeConstraints(delegationUUID)
+      .compose(scopeConstraints -> {
+        if (scopeConstraints == null || scopeConstraints.isEmpty()) {
+          return Future.failedFuture(
+            new DxNotFoundException("No scope constraints found for delegation ID: " + delegationId)
+          );
+        }
+
+
+        // Assuming all constraints share same delegation info
+        UUID delegatorId = null;
+        UUID delegateId = null;
+        String status = "active";
+
+        // Extract scopes and entityIds
+        Set<String> scopes = new HashSet<>();
+        Set<String> entityIds = new HashSet<>();
+
+        for (DelegationScopeConstraint constraint : scopeConstraints) {
+//          LOGGER.info("Scope Constraints is {}",constraint.toJson());
+          scopes.add(constraint.scope());
+
+          if ("consumer".equalsIgnoreCase(constraint.scope())) {
+            if (constraint.entityId() == null) {
+              return Future.failedFuture(
+                new DxBadRequestException("Entity ID cannot be null for consumer scope")
+              );
+            }
+            entityIds.add(constraint.entityId().toString());
+          }
+
+        }
+
+        return delegationService.getDelegationGrantById(delegationUUID)
+          .compose(grant -> {
+            if (grant == null) {
+              return Future.failedFuture(
+                new DxNotFoundException("Delegation grant not found for ID: " + delegationId)
+              );
+            }
+
+            if (!"active".equalsIgnoreCase(grant.status())) {
+              return Future.failedFuture(
+                new DxForbiddenException("Delegation " + delegationId + " is not active")
+              );
+            }
+
+            if (!grant.delegateId().equals(userUUID)) {
+              return Future.failedFuture(
+                new DxForbiddenException("Delegation does not belong to this delegate")
+              );
+            }
+
+            JsonObject response = new JsonObject()
+              .put("delegationId", grant.delegationId().toString())
+              .put("delegatorId", grant.delegatorId().toString())
+              .put("delegateId", grant.delegateId().toString())
+              .put("scopes", new JsonArray(new ArrayList<>(scopes)));
+
+            if (!entityIds.isEmpty()) {
+              response.put("entityIds", new JsonArray(new ArrayList<>(entityIds)));
+            }
+
+            LOGGER.info("Delegation constraints: {}", response);
+            return Future.succeededFuture(response);
+          });
+      })
+      .recover(err -> {
+        LOGGER.error("Error fetching delegation constraints for ID {}: {}", delegationId, err.getMessage());
+        return Future.failedFuture(err);
+      });
   }
 
+
+
+
   private Future<ItemInfo> fetchItemInfo(DxUser user, String itemId) {
+
+    LOGGER.info("itemId:{}",itemId);
     JsonObject claims =
         TokenClaimsBuilder.buildClaims(user, issuer, "CLAIM_AUDIENCE", tokenExpirationMinutes);
     String token = provider.generateToken(claims, options);
 
+    LOGGER.info("claims :{}",claims);
+
     GetItemRequest itemRequest = new GetItemRequest(itemId, user.sub().toString());
     itemRequest.setToken(token);
     itemRequest.setRoles(user.roles());
+
+    LOGGER.info("error here ? ");
 
     return itemService
         .getItemWithAccessChecks(itemRequest)

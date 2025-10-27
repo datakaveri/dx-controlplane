@@ -1,11 +1,15 @@
 package org.cdpg.dx.aaa.delegation;
 import io.vertx.core.*;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.aaa.delegation.util.RoleScopeMapping;
+import org.cdpg.dx.aaa.item.service.ItemService;
+import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
+import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,9 +22,11 @@ public class DelegationValidator {
   private static final Logger LOGGER = LoggerFactory.getLogger(DelegationValidator.class);
 
   private final OrganizationService organizationService;
+  private final ItemService itemService;
 
-  public DelegationValidator(OrganizationService organizationService) {
+  public DelegationValidator(OrganizationService organizationService, ItemService itemService) {
     this.organizationService = organizationService;
+    this.itemService = itemService;
   }
 
   /**
@@ -83,8 +89,7 @@ public class DelegationValidator {
         .map(Object::toString)
         .toList();
 
-      if (scope.equalsIgnoreCase("user_management") ||
-        scope.equalsIgnoreCase("credit_management")) {
+       if (scope.equalsIgnoreCase("credit_management")) {
         continue;
       }
 
@@ -94,6 +99,19 @@ public class DelegationValidator {
             validationFutures.add(validateOrgOwnership(delegatorId, entityIds));
           } else if (scope.equalsIgnoreCase("provider_management")) {
             validationFutures.add(validateProviderRequestOwnership(delegatorId, entityIds));
+          }
+          else if(scope.equalsIgnoreCase("asset_management"))
+          {
+            validationFutures.add(validateAssetRequestOwnership(delegatorId,entityIds));
+          }
+          else if(scope.equalsIgnoreCase("data_access"))
+          {
+            validationFutures.add(validateItemIdOwnership(delegatorId,entityIds));
+          }
+        }
+        case "consumer" -> {
+          if (scope.equalsIgnoreCase("data_access")) {
+            validationFutures.add(validateItemIdOwnership(delegatorId, entityIds));
           }
         }
         default -> {
@@ -110,6 +128,100 @@ public class DelegationValidator {
     }
 
     return CompositeFuture.all(validationFutures).mapEmpty();
+  }
+
+
+  private Future<Void> validateAssetRequestOwnership(UUID delegatorId, List<String> itemIds) {
+
+    LOGGER.info("Validating every asset ownership!");
+    if (itemIds == null || itemIds.isEmpty()) {
+      return Future.failedFuture(new DxForbiddenException("No asset IDs provided"));
+    }
+
+    //  get organization info for delegator
+    return organizationService.getOrganizationUserInfo(delegatorId).compose(orgInfo -> {
+      UUID orgDelId = orgInfo.organizationId();
+      if (orgDelId == null) {
+        return Future.failedFuture(new DxForbiddenException("User does not belong to any organization!"));
+      }
+
+      String delegatorIdStr = delegatorId.toString();
+      List<Future> validations = new ArrayList<>();
+
+      for (String itemId : itemIds) {
+        GetItemRequest itemRequest = new GetItemRequest(itemId, delegatorIdStr);
+        Future<Void> validationFuture = itemService.getItem(itemRequest).compose(response -> {
+
+          if (response == null) {
+            return Future.failedFuture(new DxBadRequestException("Response is empty for item: " + itemId));
+          }
+
+          List<JsonObject> validResponses = response.getElasticsearchResponses()
+            .stream()
+            .filter(Objects::nonNull)
+            .toList();
+
+          LOGGER.info("List of valid responses: {}",validResponses);
+
+          JsonObject res = validResponses.getFirst();
+
+          String ownerId = res.getString("ownerUserId");
+
+          if(ownerId.equalsIgnoreCase(delegatorIdStr))
+            return Future.succeededFuture();
+
+          return Future.succeededFuture();
+        });
+
+        validations.add(validationFuture);
+      }
+
+      return CompositeFuture.all(validations).mapEmpty();
+    });
+  }
+
+  private Future<Void> validateItemIdOwnership(UUID delegatorId, List<String> itemIds) {
+
+    LOGGER.info("Validate Item Id ownership !");
+    if (itemIds == null || itemIds.isEmpty()) {
+      return Future.failedFuture(new DxForbiddenException("No asset IDs provided"));
+    }
+
+      String delegatorIdStr = delegatorId.toString();
+      List<Future> validations = new ArrayList<>();
+
+      // validate each asset's organization in a loop
+      for (String itemId : itemIds) {
+        GetItemRequest itemRequest = new GetItemRequest(itemId, delegatorIdStr);
+
+        Future<Void> validationFuture = itemService.getItem(itemRequest).compose(response -> {
+
+          if (response == null) {
+            return Future.failedFuture(new DxBadRequestException("Response is empty for item: " + itemId));
+          }
+
+          List<JsonObject> validResponses = response.getElasticsearchResponses()
+            .stream()
+            .filter(Objects::nonNull)
+            .toList();
+
+          LOGGER.info("List of valid responses: {}",validResponses);
+
+          JsonObject res = validResponses.getFirst();
+
+          String ownerId = res.getString("ownerUserId");
+
+          if(ownerId.equalsIgnoreCase(delegatorIdStr))
+            return Future.succeededFuture();
+
+          return Future.succeededFuture();
+        });
+
+        validations.add(validationFuture);
+      }
+
+      // combine all asset validations
+      return CompositeFuture.all(validations).mapEmpty();
   }
 
   private Future<Void> validateOrgOwnership(UUID delegatorId, List<String> orgIds) {
