@@ -17,11 +17,13 @@ public enum RoleScopeMapping {
   ORG_ADMIN("org_admin", List.of(
     "org_management",
     "asset_management",
-    "provider_management"
+    "provider_management",
+    "data_access"
   )),
 
   PROVIDER("provider", List.of(
-    "asset_management"
+    "asset_management",
+    "data_access"
   )),
 
   CONSUMER("consumer", List.of(
