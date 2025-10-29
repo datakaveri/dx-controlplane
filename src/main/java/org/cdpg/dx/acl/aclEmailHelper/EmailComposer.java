@@ -26,14 +26,14 @@ public class EmailComposer {
   private final JsonObject config;
 
   public EmailComposer(
-      EmailService emailService, KeycloakUserService keycloakUserService, JsonObject config) {
+    EmailService emailService, KeycloakUserService keycloakUserService, JsonObject config) {
     this.emailService = emailService;
     this.keycloakUserService = keycloakUserService;
     this.config = config;
     if (config.getString("publisherPanelUrl") == null
-        || config.getString("publisherPanelUrl").endsWith("/")) {
+      || config.getString("publisherPanelUrl").endsWith("/")) {
       throw new IllegalArgumentException(
-          "Publisher panel URL is not configured or ends with a slash");
+        "Publisher panel URL is not configured or ends with a slash");
     }
   }
 
@@ -51,8 +51,8 @@ public class EmailComposer {
    */
   public static String loadTemplate(String resourcePath) {
     try (InputStream inputStream =
-            EmailComposer.class.getClassLoader().getResourceAsStream(resourcePath);
-        Scanner scanner = new Scanner(inputStream, StandardCharsets.UTF_8)) {
+           EmailComposer.class.getClassLoader().getResourceAsStream(resourcePath);
+         Scanner scanner = new Scanner(inputStream, StandardCharsets.UTF_8)) {
       return scanner.useDelimiter("\\A").next();
     } catch (Exception e) {
       throw new RuntimeException("Failed to load template: " + resourcePath, e);
@@ -67,47 +67,55 @@ public class EmailComposer {
    * @return A Future that completes when the email is sent or fails if there is an error.
    */
   public Future<Void> sendEmailForUpdateAccessRequest(
-      AccessRequestDto accessRequestDto, Status requestStatus) {
+    AccessRequestDto accessRequestDto, Status requestStatus) {
     String senderEmail = config.getString("emailSender");
     String emailTemplate = loadTemplate("templates/AssetRequestApprovedEmailTemplate.html");
     String senderName = config.getString("senderName");
+    String platformName = config.getString("platformName");
     String tgdexPanelUrl =
-        getDashboardUrl(accessRequestDto.getAssetType(), accessRequestDto.getItemId());
+      getDashboardUrl(accessRequestDto.getAssetType(), accessRequestDto.getItemId());
+
     List<String> supportEmailIds = config.getJsonArray("emailSupport").getList();
     String statusMessage = "You now have access to the asset as per the granted permissions";
-    String actionMessage =
-        "You can now access the asset through the Telangana Data Exchange (TGDeX) platform: "
-            + tgdexPanelUrl;
+
+    String actionMessage = String.format(
+      "You can now access the asset through the %s platform: " + tgdexPanelUrl
+        +"%n%n",
+      platformName
+    );
+
     if (requestStatus.equals(Status.REJECTED)) {
       statusMessage = "Unfortunately, your request has been rejected by the provider";
-      actionMessage =
-          "You can reach out to the provider for more details or you can create a new request with same or different asset on Telangana Data Exchange (TGDeX) platform: "
-              + tgdexPanelUrl;
+      actionMessage = String.format(
+        "You can reach out to the provider for more details or you can create a new request with same or different asset on %s platform: " + tgdexPanelUrl
+          +"%n%n",
+        platformName
+      );
     }
     Map<String, String> emailDetails =
-        Map.of(
-            "REQUEST_STATUS", requestStatus.getStatus().toLowerCase(),
-            "CONSUMER_FIRST_NAME", accessRequestDto.getConsumerFirstName(),
-            "CONSUMER_LAST_NAME", accessRequestDto.getConsumerLastName(),
-            "STATUS_MESSAGE", statusMessage,
-            "ASSET_NAME", accessRequestDto.getAssetName(),
-            "ASSET_DESCRIPTION", accessRequestDto.getShortDescription(),
-            "ACTION_MESSAGE", actionMessage,
-            "SENDER_NAME", senderName);
+      Map.of(
+        "REQUEST_STATUS", requestStatus.getStatus().toLowerCase(),
+        "CONSUMER_FIRST_NAME", accessRequestDto.getConsumerFirstName(),
+        "CONSUMER_LAST_NAME", accessRequestDto.getConsumerLastName(),
+        "STATUS_MESSAGE", statusMessage,
+        "ASSET_NAME", accessRequestDto.getAssetName(),
+        "ASSET_DESCRIPTION", accessRequestDto.getShortDescription(),
+        "ACTION_MESSAGE", actionMessage,
+        "SENDER_NAME", senderName);
     String htmlBody = getHtmlBody(emailTemplate, emailDetails);
     MailMessage mailMessage =
-        createMailMessage(
-            senderEmail, accessRequestDto.getConsumerEmail(), supportEmailIds, htmlBody);
+      createMailMessage(
+        senderEmail, accessRequestDto.getConsumerEmail(), supportEmailIds, htmlBody);
     return emailService
-        .sendEmail(mailMessage)
-        .onComplete(
-            res -> {
-              if (res.succeeded()) {
-                LOGGER.info("Email sent successfully to {}", accessRequestDto.getConsumerEmail());
-              } else {
-                LOGGER.error("Failed to send email: {}", res.cause().getMessage());
-              }
-            });
+      .sendEmail(mailMessage)
+      .onComplete(
+        res -> {
+          if (res.succeeded()) {
+            LOGGER.info("Email sent successfully to {}", accessRequestDto.getConsumerEmail());
+          } else {
+            LOGGER.error("Failed to send email: {}", res.cause().getMessage());
+          }
+        });
   }
 
   private String getDashboardUrl(String assetType, String itemId) {
@@ -132,44 +140,44 @@ public class EmailComposer {
     List<String> supportEmailIds = config.getJsonArray("emailSupport").getList();
 
     return keycloakUserService
-        .getUserById(providerId)
-        .compose(
-            providerUser -> {
-              String providerFirstName = providerUser.givenName();
-              String providerEmailId = providerUser.email();
-              String providerLastName = providerUser.familyName();
-              Map<String, String> emailDetails =
-                  Map.of(
-                      "PROVIDER_FIRST_NAME", providerFirstName,
-                      "PROVIDER_LAST_NAME", providerLastName,
-                      "CONSUMER_FIRST_NAME", accessRequestDto.getConsumerFirstName(),
-                      "CONSUMER_LAST_NAME", accessRequestDto.getConsumerLastName(),
-                      "CONSUMER_EMAIL_ID", accessRequestDto.getConsumerEmail(),
-                      "ASSET_NAME", accessRequestDto.getAssetName(),
-                      "ASSET_DESCRIPTION", accessRequestDto.getShortDescription(),
-                      "PUBLISHER_PANEL_URL", publisherPanelUrl,
-                      "SENDER_NAME", senderName);
-              String htmlBody = getHtmlBody(emailTemplate, emailDetails);
-              MailMessage mailMessage =
-                  createMailMessage(senderEmail, providerEmailId, supportEmailIds, htmlBody);
-              return emailService
-                  .sendEmail(mailMessage)
-                  .onComplete(
-                      res -> {
-                        if (res.succeeded()) {
-                          LOGGER.info("Email sent successfully to {}", providerEmailId);
-                        } else {
-                          LOGGER.error("Failed to send email: {}", res.cause().getMessage());
-                        }
-                      });
-            })
-        .onFailure(
-            failure -> {
-              LOGGER.error(
-                  "Failed to retrieve provider user details for ID {}: {}",
-                  providerId,
-                  failure.getMessage());
-            });
+      .getUserById(providerId)
+      .compose(
+        providerUser -> {
+          String providerFirstName = providerUser.givenName();
+          String providerEmailId = providerUser.email();
+          String providerLastName = providerUser.familyName();
+          Map<String, String> emailDetails =
+            Map.of(
+              "PROVIDER_FIRST_NAME", providerFirstName,
+              "PROVIDER_LAST_NAME", providerLastName,
+              "CONSUMER_FIRST_NAME", accessRequestDto.getConsumerFirstName(),
+              "CONSUMER_LAST_NAME", accessRequestDto.getConsumerLastName(),
+              "CONSUMER_EMAIL_ID", accessRequestDto.getConsumerEmail(),
+              "ASSET_NAME", accessRequestDto.getAssetName(),
+              "ASSET_DESCRIPTION", accessRequestDto.getShortDescription(),
+              "PUBLISHER_PANEL_URL", publisherPanelUrl,
+              "SENDER_NAME", senderName);
+          String htmlBody = getHtmlBody(emailTemplate, emailDetails);
+          MailMessage mailMessage =
+            createMailMessage(senderEmail, providerEmailId, supportEmailIds, htmlBody);
+          return emailService
+            .sendEmail(mailMessage)
+            .onComplete(
+              res -> {
+                if (res.succeeded()) {
+                  LOGGER.info("Email sent successfully to {}", providerEmailId);
+                } else {
+                  LOGGER.error("Failed to send email: {}", res.cause().getMessage());
+                }
+              });
+        })
+      .onFailure(
+        failure -> {
+          LOGGER.error(
+            "Failed to retrieve provider user details for ID {}: {}",
+            providerId,
+            failure.getMessage());
+        });
   }
 
   /**
@@ -196,7 +204,7 @@ public class EmailComposer {
    * @return A MailMessage object ready to be sent.
    */
   public MailMessage createMailMessage(
-      String senderEmail, String providerEmailId, List<String> supportEmailIds, String body) {
+    String senderEmail, String providerEmailId, List<String> supportEmailIds, String body) {
     MailMessage message = new MailMessage();
     message.setFrom(senderEmail);
     message.setTo(providerEmailId);
