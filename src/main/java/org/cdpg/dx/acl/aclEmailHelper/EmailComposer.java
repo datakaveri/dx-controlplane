@@ -71,18 +71,26 @@ public class EmailComposer {
     String senderEmail = config.getString("emailSender");
     String emailTemplate = loadTemplate("templates/AssetRequestApprovedEmailTemplate.html");
     String senderName = config.getString("senderName");
+    String platformName = config.getString("platformName");
     String tgdexPanelUrl =
         getDashboardUrl(accessRequestDto.getAssetType(), accessRequestDto.getItemId());
+
     List<String> supportEmailIds = config.getJsonArray("emailSupport").getList();
     String statusMessage = "You now have access to the asset as per the granted permissions";
-    String actionMessage =
-        "You can now access the asset through the Telangana Data Exchange (TGDeX) platform: "
-            + tgdexPanelUrl;
+
+    String actionMessage = String.format(
+      "You can now access the asset through the %s platform: " + tgdexPanelUrl
+        +"%n%n",
+      platformName
+    );
+
     if (requestStatus.equals(Status.REJECTED)) {
       statusMessage = "Unfortunately, your request has been rejected by the provider";
-      actionMessage =
-          "You can reach out to the provider for more details or you can create a new request with same or different asset on Telangana Data Exchange (TGDeX) platform: "
-              + tgdexPanelUrl;
+      actionMessage = String.format(
+        "You can reach out to the provider for more details or you can create a new request with same or different asset on %s platform: " + tgdexPanelUrl
+          +"%n%n",
+        platformName
+      );
     }
     Map<String, String> emailDetails =
         Map.of(
