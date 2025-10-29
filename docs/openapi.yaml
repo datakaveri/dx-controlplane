@@ -5144,28 +5144,41 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: "urn:dx:as:Success"
+                    example: "dx:controlPlane:success"
                   title:
                     type: string
-                    example: "Created client credentials"
-                  results:
+                    example: "Success"
+                  result:
                     type: object
                     properties:
                       userId:
                         type: string
                         format: uuid
-                        example: "b3a12c3e-7f25-4a8e-9c82-89d4ff0b24ef"
+                        example: "e0782a4e-3bdb-43e3-be8c-7beafb89efc8"
                       clientId:
                         type: string
                         format: uuid
-                        example: "6d0b58c3-c0c4-48af-bca2-4f255c0e73a7"
+                        example: "b321c4a8-7183-425b-9942-6b6b668c628c"
                       clientSecret:
                         type: string
-                        example: "73b66ab55ba4d07ea487310679aa0689b4bd2c9d"
+                        example: "9a9c944dfb215e444135d76c6baa8c6e51272a33"
+                      createdAt:
+                        type: string
+                        format: date-time
+                        example: "2025-09-12T07:43:54.999972"
+                      updatedAt:
+                        type: string
+                        format: date-time
+                        example: "2025-10-29T11:38:48.246431"
         "401":
           description: Unauthorized – missing or invalid token
-        "409":
-          description: Conflict – client already exists
+      x-codeSamples:
+        - lang: curl
+          label: Example request
+          source: |
+            curl --location --request POST 'https://example.com/iudx/v2/auth/client' \
+            --header 'Authorization: Bearer <token>'
+
   /iudx/v2/auth/jwks:
     get:
       operationId: get-auth-v2-jwks
@@ -5248,6 +5261,13 @@ paths:
                           - MIIBnDCCAT+gAwIBAgIEEC1BXTAMBggqhkjOPQQDAgUAMEIxCTAHBgNVBAYTADEJMAcGA1UECBMAMQkwBwYDVQQHEwAxCTAHBgNVBAoTADEJMAcGA1UECxMAMQkwBwYDVQQDEwAwHhcNMjMwNjA1MDUwODQ4WhcNMjQwNjA0MDUwODQ4WjBCMQkwBwYDVQQGEwAxCTAHBgNVBAgTADEJMAcGA1UEBxMAMQkwBwYDVQQKEwAxCTAHBgNVBAsTADEJMAcGA1UEAxMAMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAErVwOLOln7NhUdfZOQFfTOtJ62AgdKUeYZm8DgWCWJHaaXT95dipr94zJM+inSuqohVFCTxjajdTH8/O9JO43rKMhMB8wHQYDVR0OBBYEFNH2u8eeqj3509HAFJQS4F5NF4TQMAwGCCqGSM49BAMCBQADSQAwRgIhAL7zHYdN6PFTccFm1y07X0t2mJxNfgOaxihTi2tA9D8AAiEAomGmBvXA72X1gfhK3dhaDSd52BN1fUP/ALYNiyuXHg0=
                         x: rVwOLOln7NhUdfZOQFfTOtJ62AgdKUeYZm8DgWCWJHY
                         y: ml0_eXYqa_eMyTPop0rqqIVRQk8Y2o3Ux_PzvSTuN6w
+
+
+      x-codeSamples:
+        - lang: curl
+          label: Example request
+          source: |
+            curl --location 'https://example.com/iudx/v2/auth/jwks'
       description: Get the public key in JWKS format to authenticate/validate the generated JWT using `/auth/v2/token`
   /iudx/v2/auth/token:
     parameters: [ ]
@@ -5256,7 +5276,6 @@ paths:
       operationId: post-auth-v2-token
       tags:
         - token
-
       parameters:
         - in: header
           name: clientId
@@ -5300,8 +5319,37 @@ paths:
                       expires_in_minutes:
                         type: integer
                         example: 60
+      x-codeSamples:
+        - lang: curl
+          label: Identity token request
+          source: |
+            curl --location --request POST 'https://example.com/iudx/v2/auth/token' \
+                  --header 'clientId: dd0f645d-e286-40f5-ba73-1d3a06aaaa1e' \
+                  --header 'clientSecret: dd45b0da4c3614249b8cfcb2e8a418b2b0293cfb'
+        - lang: curl
+          label: Access token request
+          source: |
+            curl --location 'https://example.com/iudx/v2/auth/token' \
+                --header 'clientId: dd0f645d-e286-40f5-ba73-1d3a06aaaa1e' \
+                --header 'clientSecret: dd45b0da4c3614249b8cfcb2e8a418b2b0293cfb' \
+                --header 'Content-Type: application/json' \
+                --data '{
+                        "itemId":"74436122-e6f6-45bf-be53-7ee2c257826b"
+                      }'
+        - lang: curl
+          label: Delegate Access token request
+          source: |
+            curl --location 'https://example.com/iudx/v2/auth/token' \
+                --header 'clientId: dd0f645d-e286-40f5-ba73-1d3a06aaaa1e' \
+                --header 'clientSecret: dd45b0da4c3614249b8cfcb2e8a418b2b0293cfb' \
+                --header 'delegationId: 66e5c06f-d318-4522-9f23-26b327bd307b' \
+                --header 'Content-Type: application/json' \
+                --data '{
+                        "itemId":"74436122-e6f6-45bf-be53-7ee2c257826b"
+                      }'
 
 
+##Cat apis
   /iudx/v2/cat/item:
     post:
       tags:
@@ -6713,7 +6761,7 @@ paths:
                     title: "Invalid Search Type"
                     detail: "Only 'term' and range/temporal filters are supported for count aggregation."
 
-
+##Auditing apis
   /iudx/v2/auditing/consumer/activity:
     get:
       tags:
