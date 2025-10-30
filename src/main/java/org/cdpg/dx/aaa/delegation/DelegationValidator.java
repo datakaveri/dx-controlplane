@@ -141,6 +141,7 @@ public class DelegationValidator {
     //  get organization info for delegator
     return organizationService.getOrganizationUserInfo(delegatorId).compose(orgInfo -> {
       UUID orgDelId = orgInfo.organizationId();
+      String orgDelIdStr = orgDelId.toString();
       if (orgDelId == null) {
         return Future.failedFuture(new DxForbiddenException("User does not belong to any organization!"));
       }
@@ -166,9 +167,15 @@ public class DelegationValidator {
           JsonObject res = validResponses.getFirst();
 
           String ownerId = res.getString("ownerUserId");
+          String itemOrgId = res.getString("organizationId");
 
           if(ownerId.equalsIgnoreCase(delegatorIdStr))
             return Future.succeededFuture();
+
+          if(!orgDelIdStr.equalsIgnoreCase(itemOrgId))
+            return Future.failedFuture(new DxBadRequestException(
+              "User " + delegatorId + " is not authorized to delegate the item " + itemId
+            ));
 
           return Future.succeededFuture();
         });

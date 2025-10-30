@@ -175,19 +175,19 @@ public class TokenServiceImpl implements TokenService {
 
         // Extract scopes and entityIds
         Set<String> scopes = new HashSet<>();
-        Set<String> entityIds = new HashSet<>();
+//        Set<String> entityIds = new HashSet<>();
 
         for (DelegationScopeConstraint constraint : scopeConstraints) {
 //          LOGGER.info("Scope Constraints is {}",constraint.toJson());
           scopes.add(constraint.scope());
 
-          if ("consumer".equalsIgnoreCase(constraint.scope())) {
+          if ("data_access".equalsIgnoreCase(constraint.scope())) {
             if (constraint.entityId() == null) {
               return Future.failedFuture(
-                new DxBadRequestException("Entity ID cannot be null for consumer scope")
+                new DxBadRequestException("Entity ID cannot be null for data_access scope")
               );
             }
-            entityIds.add(constraint.entityId().toString());
+//            entityIds.add(constraint.entityId().toString());
           }
 
         }
@@ -218,9 +218,9 @@ public class TokenServiceImpl implements TokenService {
               .put("delegateId", grant.delegateId().toString())
               .put("scopes", new JsonArray(new ArrayList<>(scopes)));
 
-            if (!entityIds.isEmpty()) {
-              response.put("entityIds", new JsonArray(new ArrayList<>(entityIds)));
-            }
+//            if (!entityIds.isEmpty()) {
+//              response.put("entityIds", new JsonArray(new ArrayList<>(entityIds)));
+//            }
 
             LOGGER.info("Delegation constraints: {}", response);
             return Future.succeededFuture(response);

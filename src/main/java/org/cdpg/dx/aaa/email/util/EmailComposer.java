@@ -79,9 +79,9 @@ public class EmailComposer {
     String platformName = config.getString("platformName");
 
     String detailsMessage = String.format(
-      "You can review and take action on this request by logging into the %s platform.%n%n",
-      platformName
-    );
+        "You can review and take action on this request by logging into the %s platform.%n%n",
+        platformName
+      );
 
 
 
@@ -296,12 +296,12 @@ public class EmailComposer {
 
 
         Map<String, String> emailDetails = Map.of(
-          "USER_FIRST_NAME", userName,
-          "ADMIN_PORTAL_URL", adminPortalUrl,
-          "SENDER_NAME", senderName,
-          "STATUS", status.getStatus(),
-          "APPROVED_MESSAGE", approvedMessage,
-          "SUBJECT", subject);
+            "USER_FIRST_NAME", userName,
+            "ADMIN_PORTAL_URL", adminPortalUrl,
+            "SENDER_NAME", senderName,
+            "STATUS", status.getStatus(),
+            "APPROVED_MESSAGE", approvedMessage,
+            "SUBJECT", subject);
 
 
         String emailTemplate = loadTemplate("templates/approved-join-organization.html"); // Path to HTML template
