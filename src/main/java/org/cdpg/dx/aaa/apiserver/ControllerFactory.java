@@ -2,6 +2,7 @@ package org.cdpg.dx.aaa.apiserver;
 
 import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
 import static org.cdpg.dx.aaa.common.Constants.DOC_USER_INDEX;
+import static org.cdpg.dx.aaa.common.Constants.UPLOADED_BY;
 import static org.cdpg.dx.aaa.common.Constants.VOC_CONTEXT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.REQUEST_TABLE;
@@ -10,7 +11,6 @@ import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.ELASTIC_SER
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.EMAIL_SERVICE_ADDRESS;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.POSTGRES_SERVICE_ADDRESS;
 import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
-import static org.cdpg.dx.database.elastic.util.Constants.VERIFIED_BY;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -85,7 +85,7 @@ public class ControllerFactory {
     final String vocContext = config.getString(VOC_CONTEXT);
     final Boolean kycRequired = config.getBoolean("kycRequired");
     final String apdURL = config.getString(APD_URL);
-    final String verifiedBy = config.getString(VERIFIED_BY);
+    final String uploadedBy = config.getString(UPLOADED_BY);
 
     WebClient webClient = WebClient.create(vertx);
 
@@ -200,7 +200,7 @@ public class ControllerFactory {
             docIndex,
             vocContext,
             apdURL,
-            verifiedBy,
+            uploadedBy,
             urnGenerator,
             webClient,
             ingestionService,
