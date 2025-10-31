@@ -186,11 +186,11 @@ public class AccessRequestServiceImpl implements AccessRequestService {
         boolean isOwner = request.getConsumerId() != null &&
           request.getConsumerId().equals(consumerId.toString());
         if (!isOwner) {
-          return Future.failedFuture(new DxForbiddenException("User cannot delete this request"));
+          return Future.failedFuture(new DxForbiddenException("User cannot withdraw this request"));
         }
 
         if (!Status.PENDING.equals(request.getStatus())) {
-          return Future.failedFuture(new DxValidationException("Only pending requests can be deleted"));
+          return Future.failedFuture(new DxValidationException("Only pending requests can be withdraw"));
         }
 
         Map<String, Object> conditions = Map.of(DB_REQUEST_ID, requestId.toString());
