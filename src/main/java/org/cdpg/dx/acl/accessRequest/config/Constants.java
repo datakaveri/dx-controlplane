@@ -93,7 +93,7 @@ public class Constants {
   public static final String GET_ACCESS_REQUEST_REPORT_API = "get-auth-v2-access-requests-provider-report";
   public static final String GET_ACCESS_REQUEST_REPORT_FOR_ORG_ADMIN_API = "get-auth-v2-access-requests-org-admin-report";
   public static final String GET_ACCESS_REQUEST_FOR_ORG_ADMIN_API = "get-auth-v2-access-requests-organisation";
-  public static final String DELETE_ACCESS_REQUEST_API_FOR_CONSUMER = "delete-auth-v2-access-requests";
+  public static final String WITHDRAW_ACCESS_REQUEST_API_FOR_CONSUMER = "patch-auth-v2-access-requests";
   public static final String CREATE_POLICY_API = "post-auth-v1-policies";
   public static final String GET_POLICY_API = "get-auth-v1-policies";
   public static final String DELETE_POLICY_API = "delete-auth-v1-policies";

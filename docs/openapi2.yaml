@@ -380,36 +380,48 @@ paths:
           source: "curl --location --request PUT 'https://example.com/iudx/acl/apd/v2/policies/requests'\
           \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type:\
           \ application/json' \\\n  --data-raw '<payload>'\n"
-    delete:
+
+  /iudx/acl/apd/v2/access_request/{id}:
+    patch:
       tags:
         - Access Request
-      summary: Delete Access Request
-      description: 'Consumers can delete their own access requests if their requests is in
+      summary: Withdraw Access Request
+      description: 'Consumers can withdraw their own access requests if their requests is in
         **pending** state.
 
         If the request is deleted
 
-        - The request is modified to the `deleted` state
+        - The request is modified to the `withdrawn` state
 
         '
-      operationId: delete-auth-v2-access-requests
-      requestBody:
-        description: '- `requestId` :  ID of the request. Can get this `id` by using
-          the GET Access request API.'
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: false
-              properties:
-                requestId:
-                  type: string
-                  format: uuid
-                  pattern: ^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$
-              required:
-              - requestId
+      operationId: patch-auth-v2-access-requests
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique ID of the organization request
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateAccessRequest'
+              examples:
+                Update:
+                  value:
+                    type: urn:dx:AclApdApd:success
+                    title: Success
+                    detail: Request updated successfully
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
         '400':
           description: Bad Request- Schema validation, missing or incorrect fields
             & values
@@ -460,6 +472,13 @@ paths:
               description: application/json
       security:
         - authorization: [ ]
+      x-codeSamples:
+        - lang: CURL
+          label: Example - Withdraw Request
+          source: |
+            curl --location --request PATCH 'http://localhost:8444/iudx/acl/apd/v2/access_request/{{requestId}}' \
+            --header 'Authorization: Bearer <JWT_TOKEN>' \
+            --header 'Content-Type: application/json'
   /iudx/acl/apd/v2/access_request/provider:
     get:
       tags:
@@ -1223,7 +1242,7 @@ paths:
         ## User Policies
 
           User policies, which are applicable to the `DATABANK` and `AIMODEL` item types, can
-           be 
+           be
         defined by a `provider` or its `delegate`. These policies regulate access to resources owned by the `provider` and apply to `consumers` accessing these resources.
 
         ## Item Types
