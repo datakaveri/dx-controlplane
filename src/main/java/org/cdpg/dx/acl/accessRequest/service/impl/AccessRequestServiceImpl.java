@@ -176,26 +176,36 @@ public class AccessRequestServiceImpl implements AccessRequestService {
   }
 
   @Override
-  public Future<Boolean> deleteAccessRequestForConsumer(UUID consumerId, UUID requestId) {
-    return accessRequestDao
-        .get(requestId)
-        .compose(
-            request -> {
-              if (request == null) {
-                return Future.failedFuture(new DxNotFoundException("Access request not found"));
-              }
-              boolean isOwner = request.getConsumerId() != null && request.getConsumerId().equals(consumerId.toString());
-              if (!isOwner) {
-                return Future.failedFuture(new DxForbiddenException("User cannot delete this request"));
-              }
-              if (!Status.PENDING.equals(request.getStatus())) {
-                return Future.failedFuture(new DxValidationException("Only pending requests can be deleted"));
-              }
-              return accessRequestDao.delete(requestId);
-            })
-        .onSuccess(v -> LOGGER.info("Deleted access request {} by consumer {}", requestId, consumerId))
-        .onFailure(err -> LOGGER.error("Failed to delete access request {}: {}", requestId, err.getMessage()));
+  public Future<AccessRequestDto> updateAccessRequestForConsumer(UUID consumerId, UUID requestId) {
+    return accessRequestDao.get(requestId)
+      .compose(request -> {
+        if (request == null) {
+          return Future.failedFuture(new DxNotFoundException("Access request not found"));
+        }
+
+        boolean isOwner = request.getConsumerId() != null &&
+          request.getConsumerId().equals(consumerId.toString());
+        if (!isOwner) {
+          return Future.failedFuture(new DxForbiddenException("User cannot withdraw this request"));
+        }
+
+        if (!Status.PENDING.equals(request.getStatus())) {
+          return Future.failedFuture(new DxValidationException("Only pending requests can be withdraw"));
+        }
+
+        Map<String, Object> conditions = Map.of(DB_REQUEST_ID, requestId.toString());
+        Map<String, Object> updates = Map.of(DB_STATUS, Status.WITHDRAWN.getStatus());
+
+        return accessRequestDao.update(conditions, updates)
+          .compose(updateResult -> {
+            request.setStatus(Status.WITHDRAWN);
+            return Future.succeededFuture(request);
+          });
+      })
+      .onSuccess(v -> LOGGER.info("Withdrew access request {} by consumer {}", requestId, consumerId))
+      .onFailure(err -> LOGGER.error("Failed to withdraw access request {}: {}", requestId, err.getMessage()));
   }
+
 
   private Asset parseAndGetAsset(JsonObject result, String id) {
     LOGGER.debug("Asset info : {}", result.encodePrettily());

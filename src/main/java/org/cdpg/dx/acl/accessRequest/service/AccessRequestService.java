@@ -26,7 +26,7 @@ public interface AccessRequestService {
 
   Future<PaginatedResult<AccessRequestDto>> listAccessRequestForProvider(PaginatedRequest paginatedRequest);
 
-  Future<Boolean> deleteAccessRequestForConsumer(UUID consumerId, UUID requestId);
+  Future<AccessRequestDto> updateAccessRequestForConsumer(UUID consumerId, UUID requestId);
 
 
 }
