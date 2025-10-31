@@ -52,9 +52,13 @@ public class PolicyController implements ApdApiController {
   private final PostgresService postgresService;
   private final URNGenerator urnGenerator;
   private final JsonObject config;
-  public PolicyController(PolicyService policyService,
-                          PostgresService postgresService, AuditingHandler auditingHandler,
-                          URNGenerator urnGenerator, JsonObject config) {
+
+  public PolicyController(
+      PolicyService policyService,
+      PostgresService postgresService,
+      AuditingHandler auditingHandler,
+      URNGenerator urnGenerator,
+      JsonObject config) {
     this.policyService = policyService;
     this.postgresService = postgresService;
     this.auditingHandler = auditingHandler;
@@ -67,8 +71,9 @@ public class PolicyController implements ApdApiController {
     Handler<RoutingContext> providerAndOrgAdmin =
         AuthorizationHandler.forRoles(DxRole.PROVIDER, DxRole.ORG_ADMIN);
     Handler<RoutingContext> apiAccessHandler =
-        AuthorizationHandler.forRoles(DxRole.CONSUMER, DxRole.PROVIDER,
-            DxRole.DELEGATE);
+        AuthorizationHandler.forRoles(DxRole.CONSUMER, DxRole.PROVIDER, DxRole.DELEGATE);
+    Handler<RoutingContext> apiAccessVerifyApiRole =
+        AuthorizationHandler.forRoles(DxRole.PROVIDER, DxRole.ORG_ADMIN, DxRole.CONSUMER);
     UserAccessHandler userAccessHandler = new UserAccessHandler(postgresService);
 
     builder.operation(CREATE_POLICY_API)
@@ -91,7 +96,7 @@ public class PolicyController implements ApdApiController {
 
     builder.operation(VERIFY_API)
         .handler(auditingHandler::handleApiAudit)
-        .handler(providerAndOrgAdmin)
+        .handler(apiAccessVerifyApiRole)
         .handler(userAccessHandler)
         .handler(this::verifyRequestHandler);
   }
@@ -120,7 +125,9 @@ public class PolicyController implements ApdApiController {
             new JsonObject()
                 .put(Constants.TYPE, BAD_REQUEST.getValue())
                 .put(Constants.TITLE, BAD_REQUEST_URN.getUrn())
-                .put(Constants.DETAIL, "Policy cannot be created, as additionalInfo contains a null value");
+                .put(
+                    Constants.DETAIL,
+                    "Policy cannot be created, as additionalInfo contains a null value");
         handleFailureResponse(ctx, failureMessage.encode());
       }
     }
@@ -129,30 +136,38 @@ public class PolicyController implements ApdApiController {
     List<CreatePolicyRequest> requests =
         CreatePolicyRequest.jsonArrayToList(policyList, request.getLong("defaultExpiryDays"));
 
-    policyService.createPolicy(requests, user)
-        .onSuccess(ar -> {
-        LOGGER.info("Policy created successfully ");
-        ResponseBuilder.sendSuccess(ctx, "Policy created successfully", urnGenerator);
-      }).onFailure(err-> {
-        LOGGER.error("Policy could not be created");
-        handleFailureResponse(ctx, err.getMessage());
-      });
+    policyService
+        .createPolicy(requests, user)
+        .onSuccess(
+            ar -> {
+              LOGGER.info("Policy created successfully ");
+              ResponseBuilder.sendSuccess(ctx, "Policy created successfully", urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Policy could not be created");
+              handleFailureResponse(ctx, err.getMessage());
+            });
   }
 
   private void handleGetPolicies(RoutingContext ctx) {
     DxUser user = RoutingContextHelper.fromPrincipal(ctx);
     policyService
         .getPolicy(user)
-        .onSuccess(res -> {
-          JsonArray resultArray = new JsonArray();
-          res.forEach(dto -> resultArray.add(dto.toJson()));
-          ResponseBuilder.sendSuccess(ctx, resultArray, urnGenerator);
-        })
-        .onFailure(err -> {
-          LOGGER.debug("Failed to get policies for user {} cause {}", user.sub(),
-              err.getLocalizedMessage());
-          handleFailureResponse(ctx, err.getMessage());
-        });
+        .onSuccess(
+            res -> {
+              JsonArray resultArray = new JsonArray();
+              res.forEach(dto -> resultArray.add(dto.toJson()));
+              ResponseBuilder.sendSuccess(ctx, resultArray, urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.debug(
+                  "Failed to get policies for user {} cause {}",
+                  user.sub(),
+                  err.getLocalizedMessage());
+              handleFailureResponse(ctx, err.getMessage());
+            });
   }
 
   private void handleDeletePolicy(RoutingContext ctx) {
@@ -202,9 +217,9 @@ public class PolicyController implements ApdApiController {
   /**
    * Handles HTTP Success response from the server
    *
-   * @param response   HttpServerResponse object
+   * @param response HttpServerResponse object
    * @param statusCode statusCode to respond with
-   * @param result     respective result returned from the service
+   * @param result respective result returned from the service
    */
   private void handleSuccessResponse(HttpServerResponse response, int statusCode, String result) {
     response.putHeader(HEADER_X_CONTENT_TYPE_OPTIONS, X_CONTENT_TYPE_OPTIONS_NOSNIFF);
