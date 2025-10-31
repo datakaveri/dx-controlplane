@@ -39,6 +39,7 @@ import org.cdpg.dx.common.model.RequestType;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
+import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 
 public class AccessRequestController implements ApdApiController {
@@ -97,10 +98,10 @@ public class AccessRequestController implements ApdApiController {
         .handler(this::getConsumerAccessRequestHandler);
 
     builder
-        .operation(DELETE_ACCESS_REQUEST_API_FOR_CONSUMER)
+        .operation(WITHDRAW_ACCESS_REQUEST_API_FOR_CONSUMER)
         .handler(auditingHandler::handleApiAudit)
         .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
-        .handler(this::deleteAccessRequestHandler);
+        .handler(this::updateAccessRequestHandlerForConumser);
 
     builder
         .operation(GET_ACCESS_REQUEST_FOR_ORG_ADMIN_API)
@@ -126,29 +127,42 @@ public class AccessRequestController implements ApdApiController {
         .handler(this::checkAccessRequestHandler);
   }
 
-  private void deleteAccessRequestHandler(RoutingContext routingContext) {
+  private void updateAccessRequestHandlerForConumser(RoutingContext routingContext) {
     LOGGER.info("Handling deleteAccessRequest request...");
-    JsonObject body = routingContext.body().asJsonObject();
-    if (body == null || body.getString("requestId") == null) {
-      routingContext.fail(new DxBadRequestException("requestId is required"));
-      return;
-    }
-    UUID requestId = UUID.fromString(body.getString("requestId"));
-    UUID consumerId = UUID.fromString(routingContext.user().subject());
+
+    DxUser user = RoutingContextHelper.fromPrincipal(routingContext);;
+    UUID userId = UUID.fromString(routingContext.user().subject());
+    UUID requestId = RequestHelper.getPathParamAsUUID(routingContext, "id");
+    String organizationId = user.organisationId();
+    String organizationName = user.organisationName();
+
 
     accessRequestService
-        .deleteAccessRequestForConsumer(consumerId, requestId)
-        .onSuccess(
-            deleted -> {
-              ResponseBuilder.sendSuccess(
-                  routingContext, "Request deleted successfully", urnGenerator);
-            })
-        .onFailure(
-            err -> {
-              LOGGER.error("Error deleting access request: {}", err.getMessage(), err);
-              routingContext.fail(err);
-            });
+        .updateAccessRequestForConsumer(userId, requestId)
+      .onSuccess(
+        accessRequestDto -> {
+          ResponseBuilder.sendSuccess(routingContext, "Request updated successfully", urnGenerator);
+//          Future<Void> future =
+//            emailComposer.sendEmailForUpdateAccessRequest(accessRequestDto, status);
+
+          AuditLog auditLog =
+            AuditingHelper.createAuditLog(
+              accessRequestDto,
+              routingContext.user(),
+              RoutingContextHelper.getRequestPath(routingContext),
+              "PUT",
+              "Download Access Withdrawn",
+              organizationId,
+              organizationName);
+          RoutingContextHelper.setAuditingLog(routingContext, auditLog);
+        })
+      .onFailure(
+        err -> {
+          LOGGER.error("Error withdrawing access request: {}", err.getMessage(), err);
+          routingContext.fail(err);
+        });
   }
+
 
   private void getAccessRequestHandler(RoutingContext ctx) {
     LOGGER.info("Handling getAccessRequest request...");

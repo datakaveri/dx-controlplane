@@ -3,7 +3,8 @@ package org.cdpg.dx.acl.accessRequest.dao.model;
 public enum Status {
   GRANTED("GRANTED"),
   PENDING("PENDING"),
-  REJECTED("REJECTED");
+  REJECTED("REJECTED"),
+  WITHDRAWN("WITHDRAWN");
 
   private final String status;
 
