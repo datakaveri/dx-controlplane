@@ -334,7 +334,11 @@ public class TokenServiceImpl implements TokenService {
 
                         LOGGER.info("Delegator {} has access to item {}", delegatorId, itemId);
 
-                        ItemInfo info = ItemInfo.fromJson(response.getResponse());
+                        JsonArray resultArray = response.getResponse().getJsonArray("results");
+                        JsonObject item = resultArray.getJsonObject(0);
+//                        ItemInfo info = ItemInfo.fromJson(item);
+
+                        ItemInfo info = ItemInfo.fromJson(item);
                         return Future.succeededFuture(
                           new DelegationValidationResult(resDelegationId, delegatorId, delegateId, info)
                         );
@@ -380,16 +384,16 @@ public class TokenServiceImpl implements TokenService {
   }
 
 
-  private Future<JsonObject> generateJwtToken(DxUser user, JsonObject delegationDetails) {
-      LOGGER.debug("Inside generation of tokens : {}", delegationDetails);
+  private Future<JsonObject> generateJwtToken(DxUser user, JsonObject extraClaims) {
+      LOGGER.debug("Inside generation of tokens : {}", extraClaims);
     JsonObject claims =
         TokenClaimsBuilder.buildClaims(user, issuer, "CLAIM_AUDIENCE", tokenExpirationMinutes);
-//    if (extraClaims != null ) {
-//      claims.mergeIn(extraClaims);
-//    }
+    if (extraClaims != null ) {
+      claims.mergeIn(extraClaims);
+    }
 
-    claims.put("drl",delegationDetails.getString("drl"));
-    claims.put("did",delegationDetails.getString("did"));
+//    claims.put("drl",extraClaims.getString("drl"));
+//    claims.put("did",extraClaims.getString("did"));
 
     String token = provider.generateToken(claims, options);
     return Future.succeededFuture(

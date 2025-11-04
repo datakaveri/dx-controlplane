@@ -2,9 +2,6 @@ package org.cdpg.dx.aaa.token.model;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.token.service.impl.TokenServiceImpl;
 
 public record ItemInfo(
   String type,
@@ -13,34 +10,17 @@ public record ItemInfo(
   String accessPolicy,
   String shortDescription,
   JsonArray resourceServer,
-  JsonArray dilr,
+  JsonArray drl,
   String did,
   JsonObject constraints) {
 
-
-  /** Factory method to create ItemInfo from raw JSON response */
   public static ItemInfo fromJson(JsonObject response) {
 
-    System.out.println("Response is " + response);
-
     if (response == null) {
-      return new ItemInfo(null, null, null, null, null, new JsonArray(), null, null, new JsonObject());
+      return new ItemInfo(null, null, null, null, null, new JsonArray(), new JsonArray(), null, new JsonObject());
     }
 
-    JsonObject item;
-
-    // If response contains "results", unwrap the first result
-    if (response.containsKey("results")) {
-      JsonArray resultArray = response.getJsonArray("results");
-      if (resultArray == null || resultArray.isEmpty()) {
-        return new ItemInfo(null, null, null, null, null, new JsonArray(), null, null, new JsonObject());
-      }
-      item = resultArray.getJsonObject(0);
-    } else {
-      // Otherwise assume this is already the item JSON
-      item = response;
-    }
-
+    JsonObject item = response;
 
     Object typeObj = item.getValue("type");
     String type = null;
@@ -55,8 +35,20 @@ public record ItemInfo(
     String accessPolicy = item.getString("accessPolicy");
     String shortDescription = item.getString("shortDescription");
     JsonArray resourceServer = item.getJsonArray("resourceServer", new JsonArray());
-    JsonArray dilr = item.getJsonArray("drl",new JsonArray());
     String did = item.getString("did");
+
+    JsonArray drl=null;
+    Object drlObj = item.getValue("drl");
+    if (drlObj instanceof String) {
+      try {
+        drl = new JsonArray((String) drlObj);
+      } catch (Exception e) {
+        drl = new JsonArray().add(drlObj);
+      }
+    } else if (drlObj instanceof JsonArray) {
+      drl = (JsonArray) drlObj;
+    }
+
     JsonObject constraints = item.getJsonObject("constraints", new JsonObject());
 
     return new ItemInfo(
@@ -66,12 +58,11 @@ public record ItemInfo(
       accessPolicy,
       shortDescription,
       resourceServer,
-      dilr,
+      drl,
       did,
       constraints);
   }
 
-  /** Convert back to JsonObject (for JWT claims, etc.) */
   public JsonObject toJson() {
     return new JsonObject()
       .put("type", type)
@@ -80,7 +71,7 @@ public record ItemInfo(
       .put("accessPolicy", accessPolicy)
       .put("shortDescription", shortDescription)
       .put("resourceServer", resourceServer)
-      .put("drl", dilr)
+      .put("drl", drl)
       .put("did", did)
       .put("constraints", constraints);
   }
