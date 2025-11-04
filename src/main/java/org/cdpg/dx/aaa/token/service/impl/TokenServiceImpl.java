@@ -255,31 +255,31 @@ public class TokenServiceImpl implements TokenService {
     return itemService
       .getItemWithAccessChecks(itemRequest)
       .compose(response -> {
+
         if (response == null || response.getResponse() == null) {
           LOGGER.warn("Item not found in item service for ID: {}. Trying delegation access...", itemId);
           return handleDelegationAccess(user, itemId)
-            .map(tokenJson -> {
+            .map(delegationDetails -> {
               LOGGER.info("Delegation token generated successfully for item {}", itemId);
-              return ItemInfo.fromJson(tokenJson);
+              return ItemInfo.fromJson(delegationDetails);
             });
         }
 
-        ItemInfo info = ItemInfo.fromJson(response.getResponse());
+        JsonArray resultArray = response.getResponse().getJsonArray("results");
+        JsonObject item = resultArray.getJsonObject(0);
+        ItemInfo info = ItemInfo.fromJson(item);
         LOGGER.info("Item {} exists for user Id (direct access)", itemId);
         return Future.succeededFuture(info);
+
       })
       .recover(err -> {
         return handleDelegationAccess(user, itemId)
-          .map(tokenJson -> {
+          .map(delegationDetails -> {
             LOGGER.info("Delegation access granted for item {} after failure from direct access", itemId);
-            return ItemInfo.fromJson(tokenJson);
+            LOGGER.debug("ExtraClaims :{}",delegationDetails);
+            LOGGER.debug("ItemInfo from json : {}",ItemInfo.fromJson(delegationDetails));
+            return ItemInfo.fromJson(delegationDetails);
           });
-//          .recover(innerErr -> {
-//            LOGGER.error("Delegation check also failed for {}: {}", itemId, innerErr.getMessage());
-//            return Future.failedFuture(
-//              "No access found for item: neither direct nor delegated access exists."
-//            );
-//          });
       });
   }
 
@@ -363,28 +363,34 @@ public class TokenServiceImpl implements TokenService {
           List<String> delegatorRoles = userInfo.roles();
 
           extraClaims.put("did", delegatorId.toString());
-          extraClaims.put("delegator_roles", new JsonArray(delegatorRoles));  // Delegator roles as JSON array
+          extraClaims.put("drl", new JsonArray(delegatorRoles));  // Delegator roles as JSON array
 
-          LOGGER.info("extraClaims: {}", extraClaims.encodePrettily());
+          LOGGER.info("Final extraClaims created: {}", extraClaims.encodePrettily());
 
           return Future.succeededFuture(extraClaims);
         });
       })
-      .compose(extraClaims -> generateJwtToken(user, extraClaims))
       .recover(err -> {
-        LOGGER.error("Delegation access check failed for user {} on item {}: {}", user.sub(), itemId, err.getMessage());
-        return Future.failedFuture(new DxForbiddenException("No access found in delegation and in direct access!"));
+        LOGGER.error("Delegation access check failed for user {} on item {}: {}",
+          user.sub(), itemId, err.getMessage());
+        return Future.failedFuture(
+          new DxForbiddenException("No access found in delegation and in direct access!")
+        );
       });
   }
 
 
-  private Future<JsonObject> generateJwtToken(DxUser user, JsonObject extraClaims) {
-      LOGGER.debug("itemInfo: {}", extraClaims);
+  private Future<JsonObject> generateJwtToken(DxUser user, JsonObject delegationDetails) {
+      LOGGER.debug("Inside generation of tokens : {}", delegationDetails);
     JsonObject claims =
         TokenClaimsBuilder.buildClaims(user, issuer, "CLAIM_AUDIENCE", tokenExpirationMinutes);
-    if (extraClaims != null ) {
-      claims.mergeIn(extraClaims);
-    }
+//    if (extraClaims != null ) {
+//      claims.mergeIn(extraClaims);
+//    }
+
+    claims.put("drl",delegationDetails.getString("drl"));
+    claims.put("did",delegationDetails.getString("did"));
+
     String token = provider.generateToken(claims, options);
     return Future.succeededFuture(
         new JsonObject()
