@@ -165,6 +165,22 @@ public class DelegationServiceImpl implements DelegationService{
       });
   }
 
+  @Override
+  public Future<List<DelegationScopeConstraint>> getAllDelegationScopeConstraints(UUID itemId) {
+
+    Map<String,Object> mp = Map.of("entity_id",itemId.toString());
+
+    return delegationScopeConstraintDAO
+      .getAllWithFilters(mp)
+      .compose(all -> {
+        if (all == null || all.isEmpty()) {
+          LOGGER.warn("No delegation scope constraints found");
+          return Future.succeededFuture(Collections.emptyList());
+        }
+        return Future.succeededFuture(all);
+      });
+  }
+
 
 
   @Override
