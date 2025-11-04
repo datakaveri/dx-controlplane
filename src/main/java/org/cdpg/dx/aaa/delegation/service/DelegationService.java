@@ -28,4 +28,6 @@ public interface DelegationService {
 
   Future<List<DelegationScopeConstraint>> getDelegationScopeConstraints(UUID delegationId);
 
+  Future<List<DelegationScopeConstraint>> getAllDelegationScopeConstraints(UUID itemId);
+
 }
