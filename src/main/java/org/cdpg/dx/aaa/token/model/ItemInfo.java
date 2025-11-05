@@ -4,7 +4,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 public record ItemInfo(
-  String type,
+  JsonArray type,
   String organizationId,
   String ownerUserId,
   String accessPolicy,
@@ -22,14 +22,15 @@ public record ItemInfo(
 
     JsonObject item = response;
 
-    Object typeObj = item.getValue("type");
-    String type = null;
-    if (typeObj instanceof JsonArray typeArray && !typeArray.isEmpty()) {
-      type = typeArray.getString(0);
-    } else if (typeObj instanceof String typeStr) {
-      type = typeStr;
-    }
+//    Object typeObj = item.getValue("type");
+//    String type = null;
+//    if (typeObj instanceof JsonArray typeArray && !typeArray.isEmpty()) {
+//      type = typeArray.getString(0);
+//    } else if (typeObj instanceof String typeStr) {
+//      type = typeStr;
+//    }
 
+    JsonArray type = item.getJsonArray("type", new JsonArray());
     String organizationId = item.getString("organizationId");
     String ownerUserId = item.getString("ownerUserId");
     String accessPolicy = item.getString("accessPolicy");
@@ -49,7 +50,7 @@ public record ItemInfo(
       drl = (JsonArray) drlObj;
     }
 
-    JsonObject constraints = item.getJsonObject("constraints", new JsonObject());
+    JsonObject constraints = item.getJsonObject("cons", new JsonObject());
 
     return new ItemInfo(
       type,
@@ -73,6 +74,6 @@ public record ItemInfo(
       .put("resourceServer", resourceServer)
       .put("drl", drl)
       .put("did", did)
-      .put("constraints", constraints);
+      .put("cons", constraints);
   }
 }
