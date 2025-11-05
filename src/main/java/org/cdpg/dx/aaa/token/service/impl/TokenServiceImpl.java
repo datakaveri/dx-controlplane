@@ -123,11 +123,6 @@ public class TokenServiceImpl implements TokenService {
                                       JsonObject extraClaims = itemInfo.toJson();
 
                                       extraClaims.put("scopes", delegationConstraints.getJsonArray("scopes"));
-
-                                      if (delegationConstraints.containsKey("entityIds")) {
-                                        extraClaims.put("constraints", delegationConstraints.getJsonArray("entityIds"));
-                                      }
-
 //                                      extraClaims.put("delegationId", request.delegationId());
                                       extraClaims.put(
                                           "did", delegationConstraints.getString("delegatorId"));
