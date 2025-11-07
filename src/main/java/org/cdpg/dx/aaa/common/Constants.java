@@ -173,6 +173,7 @@ public class Constants {
     public static final String MUST_NOT = "must_not";
     public static final String TAGS = "tags";
     public static final String DEPARTMENT = "department";
+        public static final String ORGANIZATION = "organization";
 
     public static final String UPLOADED_BY = "uploadedBy";
     public static final String ORGANIZATION_NAME = "organizationName";
