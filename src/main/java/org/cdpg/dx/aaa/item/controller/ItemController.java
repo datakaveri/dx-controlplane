@@ -242,6 +242,7 @@ public class ItemController implements ApiController {
       String name = ctx.user().principal().getString(NAME);
       String orgId = ctx.user().principal().getString(ORGANISATION_ID);
       body.put(PROVIDER_USER_ID, kcId)
+          .put(DEPARTMENT, orgName)
           .put(ORGANIZATION, orgName)
           .put(VERIFIED_BY, name);
       // Only set organizationId if it exists in token and not already provided in payload
