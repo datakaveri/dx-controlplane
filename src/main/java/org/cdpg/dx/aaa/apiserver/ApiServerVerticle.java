@@ -1,6 +1,9 @@
 package org.cdpg.dx.aaa.apiserver;
 
-import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.*;
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.APPLICATION_JSON;
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.CONTENT_TYPE;
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.ROUTE_DOC;
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.ROUTE_STATIC_SPEC;
 import static org.cdpg.dx.common.config.CorsUtil.allowedOrigins;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -10,13 +13,20 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
-import io.vertx.core.http.*;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.core.net.KeyStoreOptions;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
-import io.vertx.ext.web.handler.*;
+import io.vertx.ext.web.handler.BodyHandler;
+import io.vertx.ext.web.handler.CorsHandler;
+import io.vertx.ext.web.handler.TimeoutHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.ext.web.openapi.RouterBuilderOptions;
 import io.vertx.serviceproxy.HelperUtils;
@@ -69,7 +79,19 @@ public class ApiServerVerticle extends AbstractVerticle {
     DatabindCodec.prettyMapper()
         .setPropertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE);
 
-    Future<RouterBuilder> routerFuture = RouterBuilder.create(vertx, "docs/openapi.yaml");
+    String baseUrl = config().getString("baseUrl", "example.com");
+    String openApiPath = "docs/openapi.yaml";
+
+    // Read and replace placeholder
+    String yamlContent = vertx.fileSystem().readFileBlocking(openApiPath).toString();
+    String updatedYaml = yamlContent.replace("${BASE_URL}", baseUrl);
+
+    // Write to a temporary file
+    String tempPath = "docs/openapi-processed.yaml";
+    vertx.fileSystem().writeFileBlocking(tempPath, Buffer.buffer(updatedYaml));
+
+    // Now create router from temp file path
+    Future<RouterBuilder> routerFuture = RouterBuilder.create(vertx, tempPath);
 
     // Init shared worker executor for this verticle
     BlockingExecutionUtil.initialize(vertx);
@@ -129,7 +151,7 @@ public class ApiServerVerticle extends AbstractVerticle {
                 router
                     .get(ROUTE_STATIC_SPEC)
                     .produces(APPLICATION_JSON)
-                    .handler(ctx -> ctx.response().sendFile("docs/openapi.yaml"));
+                    .handler(ctx -> ctx.response().sendFile(tempPath));
 
                 router
                     .get(ROUTE_DOC)
