@@ -30,6 +30,8 @@ import io.vertx.ext.web.handler.TimeoutHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.ext.web.openapi.RouterBuilderOptions;
 import io.vertx.serviceproxy.HelperUtils;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -79,18 +81,24 @@ public class ApiServerVerticle extends AbstractVerticle {
     DatabindCodec.prettyMapper()
         .setPropertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE);
 
-    String baseUrl = config().getString("baseUrl", "example.com");
-    String openApiPath = "docs/openapi.yaml";
+    // Read base URL from config
+    String baseUrl = config().getString("baseUrl", "https://example.com");
 
-    // Read and replace placeholder
-    String yamlContent = vertx.fileSystem().readFileBlocking(openApiPath).toString();
+    // Load the original OpenAPI spec (read-only operation)
+    String yamlContent = vertx.fileSystem().readFileBlocking("docs/openapi.yaml").toString(
+        StandardCharsets.UTF_8);
+
+    // Replace placeholders
     String updatedYaml = yamlContent.replace("${BASE_URL}", baseUrl);
 
-    // Write to a temporary file
-    String tempPath = "docs/openapi-processed.yaml";
+    //temporary writable location inside Docker
+    String tempPath =
+        Paths.get("/tmp", "openapi-" + System.currentTimeMillis() + ".yaml").toString();
+
+    // Write the modified spec to the temporary path (short-lived)
     vertx.fileSystem().writeFileBlocking(tempPath, Buffer.buffer(updatedYaml));
 
-    // Now create router from temp file path
+    // Now build the router from this spec
     Future<RouterBuilder> routerFuture = RouterBuilder.create(vertx, tempPath);
 
     // Init shared worker executor for this verticle
