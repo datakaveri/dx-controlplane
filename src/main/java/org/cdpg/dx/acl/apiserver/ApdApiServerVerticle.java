@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.jackson.DatabindCodec;
@@ -67,7 +68,19 @@ public class ApdApiServerVerticle extends AbstractVerticle {
     DatabindCodec.prettyMapper()
         .setPropertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE);
 
-    Future<RouterBuilder> routerFuture = RouterBuilder.create(vertx, "docs/openapi2.yaml");
+    String baseUrl = config().getString("apdURL", "example.com");
+    String openApiPath = "docs/openapi2.yaml";
+
+    // Read and replace placeholder
+    String yamlContent = vertx.fileSystem().readFileBlocking(openApiPath).toString();
+    String updatedYaml = yamlContent.replace("${BASE_URL}", baseUrl);
+
+    // Write to a temporary file
+    String tempPath = "docs/openapi2-processed.yaml";
+    vertx.fileSystem().writeFileBlocking(tempPath, Buffer.buffer(updatedYaml));
+
+    // Now create router from temp file path
+    Future<RouterBuilder> routerFuture = RouterBuilder.create(vertx, tempPath);
 
     // Init shared worker executor
     BlockingExecutionUtil.initialize(vertx);
@@ -126,7 +139,7 @@ public class ApdApiServerVerticle extends AbstractVerticle {
                 router
                     .get(ROUTE_STATIC_SPEC)
                     .produces(APPLICATION_JSON)
-                    .handler(ctx -> ctx.response().sendFile("docs/openapi2.yaml"));
+                    .handler(ctx -> ctx.response().sendFile(tempPath));
                 router
                     .get(ROUTE_DOC)
                     .produces("text/html")
