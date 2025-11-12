@@ -8,8 +8,8 @@ info:
     \ access to their resources by consumers and consumer delegates.\nThis API specification\
     \ for ACL APD requires a bearer token from the **Data Exchange (DX) Keycloak**\
     \ for authentication purposes.\n\n# Configurations\n- **Server**: \n  - In the\
-    \ doc, we display the server url to be https://{{BASE_URL}} with the hostname\
-    \ as {{BASE_URL}}\n  - This could be configured according to the deployment\n\
+    \ doc, we display the server url to be https://example.com with the hostname\
+    \ as example.com\n  - This could be configured according to the deployment\n\
     - **Base path**:\n     - Base path is the path on which API is served, relative\
     \ to the host\n     - It is the initial part of the API\n     - These base path\
     \ values could be configured according to the deployment\n - All the APIs except `/verify` endpoint contain\
@@ -42,8 +42,8 @@ info:
   license:
     name: Apache 2.0
 servers:
-  - url: 'https://{{BASE_URL}}'
-    description: dynamic server url
+  - url: https://example.com
+    description: example server
 
 paths:
   /iudx/acl/apd/v2/access_request:
@@ -207,12 +207,12 @@ paths:
       x-codeSamples:
         - lang: cURL
           label: Create access request
-          source: "curl --location --request POST 'https://{{BASE_URL}}/iudx/acl/apd/v2/policies/requests'\
+          source: "curl --location --request POST 'https://example.com/iudx/acl/apd/v2/policies/requests'\
           \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type:\
           \ application/json' \\\n  --data-raw '<payload>'\n"
         - lang: cURL
           label: Create access request with additional info
-          source: "curl --location --request POST 'https://{{BASE_URL}}/iudx/acl/apd/v2/policies/requests'\
+          source: "curl --location --request POST 'https://example.com/iudx/acl/apd/v2/policies/requests'\
           \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type:\
           \ application/json' \\\n  --data-raw '<payload>'\n"
     put:
@@ -372,12 +372,12 @@ paths:
       x-codeSamples:
         - lang: cURL
           label: Reject access request
-          source: "curl --location --request PUT 'https://{{BASE_URL}}/iudx/acl/apd/v2/policies/requests'\
+          source: "curl --location --request PUT 'https://example.com/iudx/acl/apd/v2/policies/requests'\
           \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type:\
           \ application/json' \\\n  --data-raw '<payload>'\n"
         - lang: cURL
           label: Approve access request
-          source: "curl --location --request PUT 'https://{{BASE_URL}}/iudx/acl/apd/v2/policies/requests'\
+          source: "curl --location --request PUT 'https://example.com/iudx/acl/apd/v2/policies/requests'\
           \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type:\
           \ application/json' \\\n  --data-raw '<payload>'\n"
 
@@ -605,24 +605,21 @@ paths:
       x-codeSamples:
         - lang: cURL
           label: Get access requests
-          source: 'curl --location --request GET 
-          ''https://{{BASE_URL}}/iudx/acl/apd/v2/access_request/provider''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider''
           \
 
           '
           --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: Get access request with status
-          source: 'curl --location --request GET 
-          ''https://{{BASE_URL}}/iudx/acl/apd/v2/access_request/provider?requestStatus=GRANTED''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider?requestStatus=GRANTED''
           \
 
           '
           --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: With pagination query params
-          source: 'curl --location --request GET 
-          ''https://{{BASE_URL}}/iudx/acl/apd/v2/access_request/provider?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
           \
 
           '
@@ -722,24 +719,21 @@ paths:
       x-codeSamples:
         - lang: cURL
           label: Get access requests
-          source: 'curl --location --request GET 
-          ''https://{{BASE_URL}}/iudx/acl/apd/v2/access_request/provider/report''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider/report''
           \
 
           '
           --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: Get access request with status
-          source: 'curl --location --request GET 
-          ''https://{{BASE_URL}}/iudx/acl/apd/v2/access_request/provider/report?requestStatus=GRANTED''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider/report?requestStatus=GRANTED''
           \
 
           '
           --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: With pagination query params
-          source: 'curl --location --request GET 
-        ''https://{{BASE_URL}}/iudx/acl/apd/v2/access_request/provider/report?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider/report?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
           \
 
           '
@@ -842,24 +836,21 @@ paths:
       x-codeSamples:
         - lang: cURL
           label: Get access requests
-          source: 'curl --location --request GET 
-          ''https://{{BASE_URL}}/iudx/acl/apd/v2/access_request/organisation/report''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/organisation/report''
           \
 
           '
           --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: Get access request with status
-          source: 'curl --location --request GET 
-          ''https://{{BASE_URL}}/iudx/acl/apd/v2/access_request/organisation/report?requestStatus=GRANTED''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/organisation/report?requestStatus=GRANTED''
           \
 
           '
           --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: With pagination query params
-          source: 'curl --location --request GET 
-          ''https://{{BASE_URL}}/iudx/acl/apd/v2/access_request/organisation/report?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/organisation/report?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
           \
 
           '
@@ -995,24 +986,21 @@ paths:
       x-codeSamples:
         - lang: cURL
           label: Get access requests
-          source: 'curl --location --request GET 
-        ''https://{{BASE_URL}}/iudx/acl/apd/v2/access_request/provider''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider''
           \
 
           '
           --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: Get access request with status
-          source: 'curl --location --request GET 
-          ''https://{{BASE_URL}}/iudx/acl/apd/v2/access_request/provider?requestStatus=GRANTED''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider?requestStatus=GRANTED''
           \
 
           '
           --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: With pagination query params
-          source: 'curl --location --request GET 
-          ''https://{{BASE_URL}}/iudx/acl/apd/v2/access_request/provider?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/provider?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
           \
 
           '
@@ -1122,24 +1110,21 @@ paths:
       x-codeSamples:
         - lang: cURL
           label: Get consumer access requests
-          source: 'curl --location --request GET 
-          ''https://{{BASE_URL}}/iudx/acl/apd/v2/access_request/consumer''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/consumer''
           \
 
           '
           --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: Get consumer access request with status
-          source: 'curl --location --request GET 
-          ''https://{{BASE_URL}}/iudx/acl/apd/v2/access_request/consumer?requestStatus=GRANTED''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/consumer?requestStatus=GRANTED''
           \
 
           '
           --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: With pagination query params
-          source: 'curl --location --request GET 
-          ''https://{{BASE_URL}}/iudx/acl/apd/v2/access_request/consumer?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
+          source: 'curl --location --request GET ''https://example.com/iudx/acl/apd/v2/access_request/consumer?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
           \
 
           '
@@ -1242,8 +1227,7 @@ paths:
       x-codeSamples:
         - lang: cURL
           label: Check access request
-          source: "curl --location --request POST 
-              'https://{{BASE_URL}}/iudx/acl/apd/v2/access_request/has_access'\
+          source: "curl --location --request POST 'https://example.com/iudx/acl/apd/v2/access_request/has_access'\
           \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type:\
           \ application/json' \\\n  --data-raw '<payload>'\n"
   /iudx/acl/apd/v2/policy:

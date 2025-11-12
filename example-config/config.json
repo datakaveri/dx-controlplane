@@ -21,7 +21,6 @@
     "clientId": "<apd-delegate-client-id>",
     "clientSecret": "<apd-delegate-client-secret>",
     "apdURL": "<acl-apd-url>",
-    "baseUrl": "<controlplane-basUrl>",
     "jwtIgnoreExpiry": true,
     "routingKey": "##",
     "cosDomain":"asdasd",
