@@ -5,6 +5,8 @@ import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.cdpg.dx.aaa.delegation.util.RoleScopeMapping;
 import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.authorization.model.DxScope;
+import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.KeycloakServiceException;
 import org.cdpg.dx.common.util.BlockingExecutionUtil;
 import org.cdpg.dx.keycloak.client.KeycloakClientProvider;
@@ -36,7 +38,7 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
     public KeycloakUserServiceImpl(JsonObject config) {
         this.keycloak = KeycloakClientProvider.getInstance(config);
         this.realm = config.getString("keycloakRealm");
-        this.clientId = config.getString("clientId");
+        this.clientId = config.getString("keycloakClientId");
 
     }
 
@@ -144,7 +146,30 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
         });
     }
 
-    @Override
+  @Override
+  public Future<Boolean> addScopeToUser(UUID userId, DxScope dxScope) {
+    return BlockingExecutionUtil.runBlocking(() -> {
+      try {
+        RealmResource realmResource = keycloak.realm(realm);
+        UsersResource usersResource = realmResource.users();
+        RoleRepresentation role = realmResource.roles().get(dxScope.getScope()).toRepresentation();
+
+        if (role == null) {
+          LOGGER.warn("Role '{}' not found in realm '{}'", dxScope.getScope(), realm);
+          throw new KeycloakServiceException(dxScope.getScope()  + " not available in KC");
+        }
+
+        usersResource.get(userId.toString()).roles().realmLevel().add(Collections.singletonList(role));
+        LOGGER.info("Assigned role '{}' to user '{}'", dxScope.getScope(), userId);
+        return true;
+      } catch (Exception e) {
+        LOGGER.error("Failed to assign role '{}' to user '{}': {}", dxScope.getScope(), userId, e.getMessage(), e);
+        throw new KeycloakServiceException("Failed to assign role to user", e);
+      }
+    });
+  }
+
+  @Override
     public Future<Boolean> removeRoleFromUser(UUID userId, DxRole dxRole) {
         return BlockingExecutionUtil.runBlocking(() -> {
             try {
@@ -277,44 +302,5 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
         });
     }
 
-  public Future<Boolean> addScopesToUser(UUID userId, List<String> scopes) {
-    return BlockingExecutionUtil.runBlocking(() -> {
-      try {
-        RealmResource realmResource = keycloak.realm(realm);
-        UsersResource usersResource = realmResource.users();
-
-
-        if (scopes.isEmpty()) {
-          LOGGER.warn("No scopes found in constraints for user {}", userId);
-          return false;
-        }
-
-        for (String scope : scopes) {
-          ClientRepresentation client = realmResource.clients()
-            .findByClientId(clientId).getFirst();
-
-          ClientResource clientResource = realmResource.clients().get(client.getId());
-          RoleRepresentation clientRole = clientResource.roles().get(scope).toRepresentation();
-
-          if (clientRole == null) {
-            LOGGER.warn("Scope '{}' not found in client '{}'", scope, clientId);
-            continue;
-          }
-
-          usersResource.get(userId.toString())
-            .roles()
-            .clientLevel(client.getId())
-            .add(Collections.singletonList(clientRole));
-
-          LOGGER.info("Assigned scope '{}' to user '{}'", scope, userId);
-        }
-
-        return true;
-      } catch (Exception e) {
-        LOGGER.error("Failed to assign scopes to user '{}': {}", userId, e.getMessage(), e);
-        throw new KeycloakServiceException("Failed to assign scopes to user", e);
-      }
-    });
-  }
 
 }

@@ -1,6 +1,7 @@
 package org.cdpg.dx.aaa.delegation.service;
 
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
 import org.cdpg.dx.aaa.delegation.models.DelegationScopeConstraint;
@@ -14,7 +15,7 @@ import java.util.UUID;
 
 
 public interface DelegationService {
-  Future<DelegationGrant> createDelegationGrant(DelegationGrant delegationGrant, Set<String> UserRoles,List<JsonObject>constraints);
+  Future<DelegationGrant> createDelegationGrant(DelegationGrant delegationGrant, Set<String> UserRoles, List<JsonObject>constraints, JsonArray scopes);
 
   Future<DelegationGrant> getDelegationGrantById(UUID delegationId);
 

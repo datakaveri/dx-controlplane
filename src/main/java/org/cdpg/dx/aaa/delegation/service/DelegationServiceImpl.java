@@ -11,6 +11,8 @@ import org.cdpg.dx.aaa.delegation.models.DelegationScopeConstraint;
 import org.cdpg.dx.aaa.delegation.models.DelegationUpdateRequest;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
+import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.slf4j.Logger;
@@ -50,7 +52,7 @@ public class DelegationServiceImpl implements DelegationService{
 
 
   @Override
-  public Future<DelegationGrant> createDelegationGrant(DelegationGrant delegationGrant, Set<String>userRoles,List<JsonObject> constraintsJson) {
+  public Future<DelegationGrant> createDelegationGrant(DelegationGrant delegationGrant, Set<String>userRoles,List<JsonObject> constraintsJson,JsonArray scopes) {
 
     LOGGER.info("ServiceImplementation of createDelegationGrant");
 
@@ -63,29 +65,38 @@ public class DelegationServiceImpl implements DelegationService{
 
     LocalDateTime globalExpiry = parseDateTime(delegationGrantBody.getString("expiry_at"));
 
-    return delegationValidator.validateAllConstraints(userRoles,constraintsJson)
-          .compose(v -> delegationValidator.validateEntityOwnership(delegationGrant.delegatorId(), userRoles, constraintsJson))
-          .compose(map-> delegationGrantDAO.create(delegationGrant))
-          .compose(createdGrant -> insertScopeConstraints(createdGrant.delegationId(), constraintsJson).map(v->createdGrant))
-//          .compose(createdGrant ->
-//        keycloakUserService.addRoleToUser(createdGrant.delegateId(), DxRole.DELEGATE)
-//          .map(v -> {
-//            LOGGER.info("Delegate role added to user: {}", createdGrant.delegateId());
-//            return createdGrant;
-//          }))
-//      .compose(createdGrant -> {
-//        List<String> scopes = extractScopesFromConstraints(constraintsJson);
-//        return keycloakUserService.addScopesToUser(createdGrant.delegateId(), scopes)
-//          .map(v -> {
-//            LOGGER.info("Scopes {} added to user {}", scopes, createdGrant.delegateId());
-//            return createdGrant;
-//          });
-//      })
-        .recover(err -> Future.failedFuture(BaseDxException.from(err)));
+    return delegationValidator.validateAllConstraints(userRoles, constraintsJson)
+      .compose(v -> delegationValidator.validateEntityOwnership(delegationGrant.delegatorId(), userRoles, constraintsJson))
+      .compose(map -> delegationGrantDAO.create(delegationGrant))
+      .compose(createdGrant -> insertScopeConstraints(createdGrant.delegationId(), constraintsJson).map(v -> createdGrant))
+      .compose(createdGrant ->
+        keycloakUserService.addRoleToUser(createdGrant.delegateId(), DxRole.DELEGATE)
+          .map(v -> {
+            LOGGER.info("Delegate role added to user: {}", createdGrant.delegateId());
+            return createdGrant;
+          }))
+      .compose(createdGrant -> {
+        List<String> scopesList = scopes.getList();
 
+        // Chain addition of all scope roles sequentially
+        Future<Void> addAllScopesFuture = Future.succeededFuture();
+
+        for (String scope : scopesList) {
+          addAllScopesFuture = addAllScopesFuture.compose(v ->
+            keycloakUserService.addScopeToUser(createdGrant.delegateId(), DxScope.fromString(scope))
+              .onSuccess(x -> LOGGER.info("Scope {} added to user {}", scope, createdGrant.delegateId()))
+              .mapEmpty()
+          );
+        }
+
+        return addAllScopesFuture
+          .map(v -> {
+            LOGGER.info("All scopes {} added to user {}", scopesList, createdGrant.delegateId());
+            return createdGrant;
+          })
+          .recover(err -> Future.failedFuture(BaseDxException.from(err)));
+      });
   }
-
-
 
 
   @Override

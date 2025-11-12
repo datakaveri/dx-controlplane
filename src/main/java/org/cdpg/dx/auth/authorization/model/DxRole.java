@@ -15,8 +15,7 @@ public enum DxRole {
   ORG_ADMIN("org_admin"),
   CONSUMER_DELEGATE("consumerDelegate"),
   PROVIDER_DELEGATE("providerDelegate"),
-  COMPUTE("compute"),
-  DELEGATOR("delegator");
+  COMPUTE("compute");
 
   private final String role;
 

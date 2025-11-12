@@ -1,17 +1,100 @@
 package org.cdpg.dx.aaa.token.util;
 
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.time.Instant;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.common.model.DxUser;
 
 public class TokenClaimsBuilder {
 
-  public static JsonObject buildClaims(DxUser dxUser, String iss, String aud, long expiryMinutes) {
+  private static final Logger LOGGER = LogManager.getLogger(TokenClaimsBuilder.class);
+
+  public static  JsonObject buildClaims(DxUser dxUser, String iss, String aud, long expiryMinutes) {
     JsonObject claims = new JsonObject();
+
 
     Instant now = Instant.now();
     long nowEpoch = now.getEpochSecond();
     long expEpoch = now.plusSeconds(expiryMinutes * 60).getEpochSecond();
+
+    LOGGER.info("dxroles: {}",dxUser.roles());
+
+    //**************************************************************************************
+
+    JsonObject delegationAccess = new JsonObject();
+    JsonArray scopesArray = new JsonArray();
+
+    for (String scope : dxUser.roles()) {
+      if (scope.equalsIgnoreCase("data_access")) {
+        scopesArray.add(scope);
+      } else if (scope.equalsIgnoreCase("asset_management")) {
+        scopesArray.add(scope);
+      } else if (scope.equalsIgnoreCase("org_management")) {
+        scopesArray.add(scope);
+      }
+      else if (scope.equalsIgnoreCase("compute_management")) {
+        scopesArray.add(scope);
+      }
+      else if (scope.equalsIgnoreCase("credit_management")) {
+        scopesArray.add(scope);
+      }
+      else if (scope.equalsIgnoreCase("provider_management")) {
+        scopesArray.add(scope);
+      }
+      // Add more conditions as needed
+    }
+
+    LOGGER.info("scopes array :{}",scopesArray);
+    delegationAccess.put("roles", scopesArray);
+    claims.put("delegation_access",delegationAccess);
+    LOGGER.info(" delegation_access :{}",delegationAccess);
+
+    //***************************************************************************************
+
+    JsonObject realmAccess = new JsonObject();
+    JsonArray rolesArray = new JsonArray();
+
+    if (dxUser.roles() != null && !dxUser.roles().isEmpty()) {
+
+
+      for (String role : dxUser.roles()) {
+        if (role.equalsIgnoreCase("compute")) {
+          rolesArray.add(role);
+        } else if (role.equalsIgnoreCase("delegate")) {
+          rolesArray.add(role);
+        } else if (role.equalsIgnoreCase("org_admin")) {
+          rolesArray.add(role);
+        } else if (role.equalsIgnoreCase("cos_admin")) {
+          rolesArray.add(role);
+        } else if (role.equalsIgnoreCase("consumer")) {
+          rolesArray.add(role);
+        } else if (role.equalsIgnoreCase("provider")) {
+          rolesArray.add(role);
+        }
+        else if (role.equalsIgnoreCase("default-roles-tgdex-pilot")) {
+          rolesArray.add(role);
+        }
+        else if (role.equalsIgnoreCase("offline_access")) {
+          rolesArray.add(role);
+        }
+        // Add more conditions as needed
+      }
+
+      LOGGER.info("roles array :{}",rolesArray);
+      realmAccess.put("roles", rolesArray);
+      claims.put("realm_access",realmAccess);
+      LOGGER.info(" realm_access :{}",realmAccess);
+
+    }
+
+
+
+    //**********************************************************************************************
+
 
     // Standard OIDC / JWT claims
     claims.put("sub", dxUser.sub().toString());
@@ -21,17 +104,18 @@ public class TokenClaimsBuilder {
     claims.put("iat", nowEpoch);
 
     // Keycloak-like structure
-    if (dxUser.roles() != null && !dxUser.roles().isEmpty()) {
-      JsonObject realmAccess = new JsonObject().put("roles", dxUser.roles());
-      claims.put("realm_access", realmAccess);
-    }
+//    if (dxUser.roles() != null && !dxUser.roles().isEmpty()) {
+//      JsonObject realmAccess = new JsonObject().put("roles", dxUser.roles());
+//      claims.put("realm_access", realmAccess);
+//    }
 
     // Resource access (Keycloak-like)
-    if (dxUser.roles() != null && !dxUser.roles().isEmpty()) {
-      JsonObject resourceAccess =
-          new JsonObject().put("account", new JsonObject().put("roles", dxUser.roles()));
-      claims.put("resource_access", resourceAccess);
-    }
+//    if (dxUser.roles() != null && !dxUser.roles().isEmpty()) {
+//      JsonObject resourceAccess =
+//          new JsonObject().put("account", new JsonObject().put("roles", dxUser.roles()));
+//      claims.put("resource_access", resourceAccess);
+//    }
+
 
     // Keycloak-like user fields (only if present)
     putIfNotBlank(claims, "preferred_username", dxUser.preferredUsername());
