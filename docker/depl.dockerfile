@@ -12,7 +12,7 @@ COPY src src
 
 # Copying openapi docs
 COPY docs docs
-COPY configs/config-depl.json ./config.json
+COPY configs/config.json ./config.json
 
 # Build the source code to generate the fatjar
 RUN mvn clean package -Dmaven.test.skip=true
