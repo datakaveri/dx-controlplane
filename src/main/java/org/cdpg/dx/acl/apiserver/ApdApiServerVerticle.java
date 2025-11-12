@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.jackson.DatabindCodec;
@@ -21,8 +20,6 @@ import io.vertx.ext.web.handler.*;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.ext.web.openapi.RouterBuilderOptions;
 import io.vertx.serviceproxy.HelperUtils;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -70,23 +67,7 @@ public class ApdApiServerVerticle extends AbstractVerticle {
     DatabindCodec.prettyMapper()
         .setPropertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE);
 
-    String baseUrl = config().getString("apdURL", "example.com");
-    // Load the original OpenAPI spec (read-only operation)
-    String yamlContent = vertx.fileSystem().readFileBlocking("docs/openapi2.yaml").toString(
-        StandardCharsets.UTF_8);
-
-    // Replace placeholders
-    String updatedYaml = yamlContent.replace("${BASE_URL}", baseUrl);
-
-    //temporary writable location inside Docker
-    String tempPath =
-        Paths.get("/tmp", "openapi2-" + System.currentTimeMillis() + ".yaml").toString();
-
-    // Write the modified spec to the temporary path (short-lived)
-    vertx.fileSystem().writeFileBlocking(tempPath, Buffer.buffer(updatedYaml));
-
-    // Now build the router from this spec
-    Future<RouterBuilder> routerFuture = RouterBuilder.create(vertx, tempPath);
+    Future<RouterBuilder> routerFuture = RouterBuilder.create(vertx, "docs/openapi2.yaml");
 
     // Init shared worker executor
     BlockingExecutionUtil.initialize(vertx);
@@ -145,7 +126,7 @@ public class ApdApiServerVerticle extends AbstractVerticle {
                 router
                     .get(ROUTE_STATIC_SPEC)
                     .produces(APPLICATION_JSON)
-                    .handler(ctx -> ctx.response().sendFile(tempPath));
+                    .handler(ctx -> ctx.response().sendFile("docs/openapi2.yaml"));
                 router
                     .get(ROUTE_DOC)
                     .produces("text/html")
