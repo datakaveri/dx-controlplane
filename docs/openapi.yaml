@@ -22,8 +22,8 @@ info:
     \ The catalogue is a [JSON-LD](https://json-ld.org/) document stored and based on the \
     \ [RDF](https://www.w3.org/RDF/) information exchange model. \
     \n#  Configurations\n- **Server**: \n  - In the\
-    \ doc, we display the server url to be https://${BASE_URL} with the hostname\
-    \ as ${BASE_URL}\n  - This could be configured according to the deployment\n\
+    \ doc, we display the server url to be https://{{BASE_URL}} with the hostname\
+    \ as {{BASE_URL}}\n  - This could be configured according to the deployment\n\
     - **Base path**:\n     - Base path is the path on which API is served, relative\
     \ to the host\n     - It is the initial part of the API\n     - These base path\
     \ values could be configured according to the deployment\n     - The base path\
@@ -45,7 +45,7 @@ info:
   license:
     name: Apache 2.0
 servers:
-  - url: 'https://${BASE_URL}'
+  - url: 'https://{{BASE_URL}}'
     description: dynamic server url
 
 paths:
@@ -4136,7 +4136,7 @@ paths:
         - lang: cURL
           label: create delegation grant cURL
           source: |
-            curl --location 'https://example.com/iudx/v2/auth/delegation/grant' \
+            curl --location 'https://{{BASE_URL}}/iudx/v2/auth/delegation/grant' \
             --header 'Content-Type: application/json' \
             --header 'Authorization: Bearer <keycloak_token>' \
             --data '{
@@ -4249,7 +4249,7 @@ paths:
         - lang: cURL
           label: get delegation grant by ID cURL
           source: |
-            curl --location 'https://example.com/iudx/v2/auth/delegation/grant/{delegation_id}' \
+            curl --location 'https://{{BASE_URL}}/iudx/v2/auth/delegation/grant/{delegation_id}' \
             --header 'Authorization: Bearer <keycloak_token>'
 
 
@@ -5176,7 +5176,7 @@ paths:
         - lang: curl
           label: Example request
           source: |
-            curl --location --request POST 'https://example.com/iudx/v2/auth/client' \
+            curl --location --request POST 'https://{{BASE_URL}}/iudx/v2/auth/client' \
             --header 'Authorization: Bearer <token>'
 
   /iudx/v2/auth/jwks:
@@ -5267,7 +5267,7 @@ paths:
         - lang: curl
           label: Example request
           source: |
-            curl --location 'https://example.com/iudx/v2/auth/jwks'
+            curl --location 'https://{{BASE_URL}}/iudx/v2/auth/jwks'
       description: Get the public key in JWKS format to authenticate/validate the generated JWT using `/auth/v2/token`
   /iudx/v2/auth/token:
     parameters: [ ]
@@ -5323,13 +5323,13 @@ paths:
         - lang: curl
           label: Identity token request
           source: |
-            curl --location --request POST 'https://example.com/iudx/v2/auth/token' \
+            curl --location --request POST 'https://{{BASE_URL}}/iudx/v2/auth/token' \
                   --header 'clientId: dd0f645d-e286-40f5-ba73-1d3a06aaaa1e' \
                   --header 'clientSecret: dd45b0da4c3614249b8cfcb2e8a418b2b0293cfb'
         - lang: curl
           label: Access token request
           source: |
-            curl --location 'https://example.com/iudx/v2/auth/token' \
+            curl --location 'https://{{BASE_URL}}/iudx/v2/auth/token' \
                 --header 'clientId: dd0f645d-e286-40f5-ba73-1d3a06aaaa1e' \
                 --header 'clientSecret: dd45b0da4c3614249b8cfcb2e8a418b2b0293cfb' \
                 --header 'Content-Type: application/json' \
@@ -5339,7 +5339,7 @@ paths:
         - lang: curl
           label: Delegate Access token request
           source: |
-            curl --location 'https://example.com/iudx/v2/auth/token' \
+            curl --location 'https://{{BASE_URL}}/iudx/v2/auth/token' \
                 --header 'clientId: dd0f645d-e286-40f5-ba73-1d3a06aaaa1e' \
                 --header 'clientSecret: dd45b0da4c3614249b8cfcb2e8a418b2b0293cfb' \
                 --header 'delegationId: 66e5c06f-d318-4522-9f23-26b327bd307b' \
@@ -5408,7 +5408,7 @@ paths:
         - lang: cURL
           label: create item cURL
           source: |
-            curl --location --request POST 'https://${BASE_URL}/iudx/v2/cat/item/' \
+            curl --location --request POST 'https://{{BASE_URL}}/iudx/v2/cat/item/' \
             --header 'Authorization: Bearer <keycloak_token>' \
             --header 'Content-Type: application/json' \
             --data-raw '<payload>'
@@ -5499,7 +5499,7 @@ paths:
         - lang: cURL
           label: update item cURL
           source: |
-            curl --location --request PUT 'https://${BASE_URL}/iudx/v2/cat/item/' \
+            curl --location --request PUT 'https://{{BASE_URL}}/iudx/v2/cat/item/' \
             --header 'token: <token>' \
             --header 'Content-Type: application/json' \
             --data-raw '<payload>'
@@ -5557,7 +5557,7 @@ paths:
         - lang: cURL
           label: item by id
           source: |
-            curl --location --request GET 'https://${BASE_URL}/iudx/v2/cat/item?id=uuid'
+            curl --location --request GET 'https://{{BASE_URL}}/iudx/v2/cat/item?id=uuid'
     delete:
       tags:
         - Entity
@@ -5623,7 +5623,7 @@ paths:
         - lang: cURL
           label: delete item
           source: |
-            curl --location --request DELETE 'https://${BASE_URL}/iudx/v2/cat/item?id=uuid' \
+            curl --location --request DELETE 'https://{{BASE_URL}}/iudx/v2/cat/item?id=uuid' \
             --header 'token: <token>'
   /iudx/v2/cat/item/access:
     get:
@@ -5712,7 +5712,7 @@ paths:
         - lang: cURL
           label: get item with accessPolicy
           source: |
-            curl --location --request GET 'https://${BASE_URL}/iudx/v2/cat/item/access?id=uuid' \
+            curl --location --request GET 'https://{{BASE_URL}}/iudx/v2/cat/item/access?id=uuid' \
             --header 'Authorization: Bearer <token>'
   /iudx/v2/cat/organisation/asset:
     patch:
@@ -5798,7 +5798,7 @@ paths:
         - lang: cURL
           label: patch item
           source: |
-            curl --location --request PATCH 'https://${BASE_URL}/iudx/v2/organisation/asset?id=uuid' \
+            curl --location --request PATCH 'https://{{BASE_URL}}/iudx/v2/organisation/asset?id=uuid' \
             --header 'token: <token>'
             --data-raw '{
               "publishStatus": "ACTIVE",
@@ -5858,7 +5858,7 @@ paths:
           label: get organisation assets
           source: |
             curl --location --request GET 
-            'https://${BASE_URL}/iudx/v2/cat/organisation/asset?sort=name:asc&page=1' \
+            'https://{{BASE_URL}}/iudx/v2/cat/organisation/asset?sort=name:asc&page=1' \
             --header 'Authorization: Bearer <token>'
     post:
       summary: Retrieve organisation assets with filters
@@ -6191,7 +6191,7 @@ paths:
         - lang: cURL
           label: list indexed filter values
           source: |
-            curl --location 'https://${BASE_URL}/iudx/v2/cat/list' \
+            curl --location 'https://{{BASE_URL}}/iudx/v2/cat/list' \
             --header 'Content-Type: application/json' \
             --data '{
               "searchCriteria": [
@@ -6486,7 +6486,7 @@ paths:
         - lang: cURL
           label: search by item type
           source: |
-            curl --location --request POST 'https://${BASE_URL}/iudx/v2/cat/search?size=100&page=1' \
+            curl --location --request POST 'https://{{BASE_URL}}/iudx/v2/cat/search?size=100&page=1' \
               --header 'Content-Type: application/json' \
               --data '{
                 "searchCriteria": [
@@ -6501,7 +6501,7 @@ paths:
         - lang: cURL
           label: flattened field search
           source: |
-            curl --location --request POST 'https://${BASE_URL}/iudx/v2/cat/search?size=25&page=1' \
+            curl --location --request POST 'https://{{BASE_URL}}/iudx/v2/cat/search?size=25&page=1' \
             --header 'Content-Type: application/json' \
             --data '{
               "searchCriteria": [
@@ -6516,7 +6516,7 @@ paths:
         - lang: cURL
           label: search by text
           source: |
-            curl --location --request POST 'https://${BASE_URL}/iudx/v2/cat/search?size=100&page=1' \
+            curl --location --request POST 'https://{{BASE_URL}}/iudx/v2/cat/search?size=100&page=1' \
             --header 'Content-Type: application/json' \
             --data '{
               "q": "sat",
@@ -6527,7 +6527,7 @@ paths:
         - lang: cURL
           label: Temporal search
           source: |
-            curl --location --request POST 'https://${BASE_URL}/iudx/v2/cat/search?size=50&page=1' \
+            curl --location --request POST 'https://{{BASE_URL}}/iudx/v2/cat/search?size=50&page=1' \
             --header 'Content-Type: application/json' \
             --data '{
               "searchCriteria": [
@@ -6547,7 +6547,7 @@ paths:
         - lang: cURL
           label: Range search
           source: |
-            curl --location --request POST 'https://${BASE_URL}/iudx/v2/cat/search?size=25&page=1' \
+            curl --location --request POST 'https://{{BASE_URL}}/iudx/v2/cat/search?size=25&page=1' \
             --header 'Content-Type: application/json' \
             --data '{
               "searchCriteria": [
@@ -6567,7 +6567,7 @@ paths:
         - lang: cURL
           label: complex search
           source: |
-            curl --location --request POST 'https://${BASE_URL}/iudx/v2/cat/search?size=25&page=1' \
+            curl --location --request POST 'https://{{BASE_URL}}/iudx/v2/cat/search?size=25&page=1' \
             --header 'Content-Type: application/json' \
             --data '{
               "searchCriteria": [
@@ -6819,7 +6819,7 @@ paths:
         - lang: cURL
           label: Fetch Admin Activity Logs
           source: |
-            curl --location 'https://${BASE_URL}/dx/auditing/consumer/activity?starttime=2025-04-24T16%3A07%3A54.00&endtime=2025-06-24T16%3A07%3A54.00&page=1&size=1' \
+            curl --location 'https://{{BASE_URL}}/dx/auditing/consumer/activity?starttime=2025-04-24T16%3A07%3A54.00&endtime=2025-06-24T16%3A07%3A54.00&page=1&size=1' \
             --header 'Authorization: Bearer <your-token>'
 
 
@@ -6881,7 +6881,7 @@ paths:
         - lang: cURL
           label: Fetch Admin Activity Logs
           source: |
-            curl --location 'https://${BASE_URL}/dx/auditing/admin/activity?starttime=2025-05-24T16%3A07%3A54.00&endtime=2025-06-24T16%3A07%3A54.00&page=1&size=1' \
+            curl --location 'https://{{BASE_URL}}/dx/auditing/admin/activity?starttime=2025-05-24T16%3A07%3A54.00&endtime=2025-06-24T16%3A07%3A54.00&page=1&size=1' \
             --header 'Authorization: Bearer <your-token>'
 
 
@@ -6942,7 +6942,7 @@ paths:
         - lang: cURL
           label: Admin Csv Activity Logs
           source: |
-            curl --location 'https://${BASE_URL}/dx/auditing/reportactivity/admin' \
+            curl --location 'https://{{BASE_URL}}/dx/auditing/reportactivity/admin' \
             --header 'Authorization: Bearer <your-token>'
 
 
@@ -6997,7 +6997,7 @@ paths:
         - lang: cURL
           label: Admin Csv Activity Logs
           source: |
-            curl --location 'https://${BASE_URL}/dx/auditing/reportactivity/consumer' \
+            curl --location 'https://{{BASE_URL}}/dx/auditing/reportactivity/consumer' \
             --header 'Authorization: Bearer <your-token>'
 
 

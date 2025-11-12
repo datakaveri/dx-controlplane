@@ -10,8 +10,22 @@ COPY pom.xml .
 RUN mvn clean package
 COPY src src
 
+# Copying openapi docs
+COPY docs docs
+COPY configs/config.json ./config.json
+
 # Build the source code to generate the fatjar
 RUN mvn clean package -Dmaven.test.skip=true
+
+# Install jq and replace BASE_URL in OpenAPI spec
+RUN apt-get update && apt-get install -y jq && \
+    BASE_URL=$(jq -r '.commonOptions.baseUrl // empty' config.json) && \
+    BASE_URL=${BASE_URL:-example.com} && \
+    APD_URL=$(jq -r '.commonOptions.apdURL // empty' config.json) && \
+    APD_URL=${APD_URL:-example.com} && \
+    sed -i "s|{{BASE_URL}}|${BASE_URL}|g" docs/openapi.yaml && \
+    sed -i "s|{{BASE_URL}}|${APD_URL}|g" docs/openapi2.yaml && \
+    rm -f config.json
 
 # Java Runtime as the base for final image
 FROM eclipse-temurin:21-jre
@@ -21,12 +35,11 @@ ENV JAR="iudx.aaa.server-dev-${VERSION}-fat.jar"
 
 WORKDIR /usr/share/app
 
-# Copying openapi docs
-COPY docs docs
-
 # Copying dev fatjar from builder stage to final image
+COPY --from=builder /usr/share/app/docs ./docs
 COPY --from=builder /usr/share/app/target/${JAR} ./fatjar.jar
 
+# Expose ports
 EXPOSE 8080 8443
 
 # Creating a non-root user
