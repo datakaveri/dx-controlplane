@@ -20,6 +20,8 @@
     "controlPlaneUrl": "<control-plane-url>",
     "clientId": "<apd-delegate-client-id>",
     "clientSecret": "<apd-delegate-client-secret>",
+    "supportEmail": "<support-email>",
+    "baseUrl": "<controlplane-baseUrl>",
     "apdURL": "<acl-apd-url>",
     "jwtIgnoreExpiry": true,
     "routingKey": "##",
