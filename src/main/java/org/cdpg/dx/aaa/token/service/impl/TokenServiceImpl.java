@@ -241,7 +241,7 @@ public class TokenServiceImpl implements TokenService {
         TokenClaimsBuilder.buildClaims(user, issuer, "CLAIM_AUDIENCE", tokenExpirationMinutes);
     String token = provider.generateToken(claims, options);
 
-    LOGGER.info("claims :{}",claims);
+    LOGGER.info("claims1 :{}",claims);
 
     GetItemRequest itemRequest = new GetItemRequest(itemId, user.sub().toString());
     itemRequest.setToken(token);
@@ -387,6 +387,7 @@ public class TokenServiceImpl implements TokenService {
       claims.mergeIn(extraClaims);
     }
 
+    LOGGER.info("claims2 :{}",claims);
 //    claims.put("drl",extraClaims.getString("drl"));
 //    claims.put("did",extraClaims.getString("did"));
 

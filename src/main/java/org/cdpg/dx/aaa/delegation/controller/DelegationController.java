@@ -36,7 +36,7 @@ public class DelegationController implements ApiController {
 
     routerBuilder
       .operation("post-auth-v2-delegation-request")
-      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))   //delegate  //TODO: should add delegate here
+      .handler(AuthorizationHandler.forRoles(DxRole.DELEGATE))   //delegate  //TODO: should add delegate here
       .handler(delegationHandler::createUpdateDelegationRequest);
 
     routerBuilder

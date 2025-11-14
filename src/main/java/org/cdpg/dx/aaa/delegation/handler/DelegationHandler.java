@@ -98,13 +98,15 @@ public class DelegationHandler {
     }
 
     DelegationGrant delegationGrant = DelegationGrant.fromJson(body);
+    JsonArray scopes = body.getJsonArray("scopes");
     List<JsonObject> constraintsJson = delegationHandlerValidator.extractConstraintsforDelegationGrants(body);
     Set<String> userRoles = delegationHandlerValidator.extractRoles(user);
 
     LOGGER.info("constraintsJson:{}",constraintsJson);
     LOGGER.info("userRoles:{}",userRoles);
 
-    delegationService.createDelegationGrant(delegationGrant, userRoles, constraintsJson)
+
+    delegationService.createDelegationGrant(delegationGrant, userRoles, constraintsJson,scopes)
       .onSuccess(createdGrant -> {
         AuditLog auditLog = AuditingHelper.createAuditLog(
           ctx.user(),
