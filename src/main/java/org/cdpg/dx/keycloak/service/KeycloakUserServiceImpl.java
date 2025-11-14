@@ -89,7 +89,7 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
         UsersResource users = usersResource();
 
         if (searchTerm != null && !searchTerm.isBlank()) {
-q          List<UserRepresentation> matchedUsers = users.search(searchTerm, 0, Integer.MAX_VALUE);
+          List<UserRepresentation> matchedUsers = users.search(searchTerm, 0, Integer.MAX_VALUE);
           return matchedUsers.size();
         }
 
