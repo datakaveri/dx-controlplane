@@ -130,39 +130,40 @@ public class AccessRequestController implements ApdApiController {
   private void updateAccessRequestHandlerForConumser(RoutingContext routingContext) {
     LOGGER.info("Handling deleteAccessRequest request...");
 
-    DxUser user = RoutingContextHelper.fromPrincipal(routingContext);;
+    DxUser user = RoutingContextHelper.fromPrincipal(routingContext);
+    ;
     UUID userId = UUID.fromString(routingContext.user().subject());
     UUID requestId = RequestHelper.getPathParamAsUUID(routingContext, "id");
     String organizationId = user.organisationId();
     String organizationName = user.organisationName();
 
-
     accessRequestService
         .updateAccessRequestForConsumer(userId, requestId)
-      .onSuccess(
-        accessRequestDto -> {
-          ResponseBuilder.sendSuccess(routingContext, "Request updated successfully", urnGenerator);
-//          Future<Void> future =
-//            emailComposer.sendEmailForUpdateAccessRequest(accessRequestDto, status);
+        .onSuccess(
+            accessRequestDto -> {
 
-          AuditLog auditLog =
-            AuditingHelper.createAuditLog(
-              accessRequestDto,
-              routingContext.user(),
-              RoutingContextHelper.getRequestPath(routingContext),
-              "PUT",
-              "Download Access Withdrawn",
-              organizationId,
-              organizationName);
-          RoutingContextHelper.setAuditingLog(routingContext, auditLog);
-        })
-      .onFailure(
-        err -> {
-          LOGGER.error("Error withdrawing access request: {}", err.getMessage(), err);
-          routingContext.fail(err);
-        });
+              //          Future<Void> future =
+              //            emailComposer.sendEmailForUpdateAccessRequest(accessRequestDto, status);
+
+              AuditLog auditLog =
+                  AuditingHelper.createAuditLog(
+                      accessRequestDto,
+                      routingContext.user(),
+                      RoutingContextHelper.getRequestPath(routingContext),
+                      "PUT",
+                      "Download Access Withdrawn",
+                      organizationId,
+                      organizationName);
+              RoutingContextHelper.setAuditingLog(routingContext, auditLog);
+              ResponseBuilder.sendSuccess(
+                  routingContext, "Request updated successfully", urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Error withdrawing access request: {}", err.getMessage(), err);
+              routingContext.fail(err);
+            });
   }
-
 
   private void getAccessRequestHandler(RoutingContext ctx) {
     LOGGER.info("Handling getAccessRequest request...");
@@ -305,12 +306,6 @@ public class AccessRequestController implements ApdApiController {
               providerId, requestId, expiryAt, providerOrganizationId, isUserOrgAdmin)
           .onSuccess(
               accessRequestDto -> {
-                ResponseBuilder.sendSuccess(ctx, "Request updated successfully", urnGenerator);
-                Future<Void> future =
-                    emailComposer.sendEmailForUpdateAccessRequest(accessRequestDto, status);
-
-                // todo: AuditingLog should be created after email is sent successfully
-
                 AuditLog auditLog =
                     AuditingHelper.createAuditLog(
                         accessRequestDto,
@@ -321,6 +316,9 @@ public class AccessRequestController implements ApdApiController {
                         organizationId,
                         providerOrganizationName);
                 RoutingContextHelper.setAuditingLog(ctx, auditLog);
+                ResponseBuilder.sendSuccess(ctx, "Request updated successfully", urnGenerator);
+                Future<Void> future =
+                    emailComposer.sendEmailForUpdateAccessRequest(accessRequestDto, status);
               })
           .onFailure(
               err -> {
@@ -332,10 +330,6 @@ public class AccessRequestController implements ApdApiController {
           .rejectAccessRequest(providerId, requestId, providerOrganizationId, isUserOrgAdmin)
           .onSuccess(
               accessRequestDto -> {
-                ResponseBuilder.sendSuccess(ctx, "Request updated successfully", urnGenerator);
-                Future<Void> future =
-                    emailComposer.sendEmailForUpdateAccessRequest(accessRequestDto, status);
-
                 AuditLog auditLog =
                     AuditingHelper.createAuditLog(
                         accessRequestDto,
@@ -346,6 +340,9 @@ public class AccessRequestController implements ApdApiController {
                         organizationId,
                         providerOrganizationName);
                 RoutingContextHelper.setAuditingLog(ctx, auditLog);
+                ResponseBuilder.sendSuccess(ctx, "Request updated successfully", urnGenerator);
+                Future<Void> future =
+                    emailComposer.sendEmailForUpdateAccessRequest(accessRequestDto, status);
               })
           .onFailure(
               err -> {
@@ -376,7 +373,6 @@ public class AccessRequestController implements ApdApiController {
         .createAccessRequest(consumer, itemId, requestType, additionalInfo)
         .onSuccess(
             accessRequestDto -> {
-              Future<Void> future = emailComposer.sendEmailForCreateAccessRequest(accessRequestDto);
               AuditLog auditLog =
                   AuditingHelper.createAuditLog(
                       accessRequestDto,
@@ -387,8 +383,8 @@ public class AccessRequestController implements ApdApiController {
                       organizationId,
                       consumerOrganizationName);
               RoutingContextHelper.setAuditingLog(ctx, auditLog);
-
               ResponseBuilder.sendSuccess(ctx, "Request inserted successfully!", urnGenerator);
+              Future<Void> future = emailComposer.sendEmailForCreateAccessRequest(accessRequestDto);
             })
         .onFailure(
             err -> {

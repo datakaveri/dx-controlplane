@@ -55,7 +55,7 @@ public class ItemController implements ApiController {
   private final AuditingHandler auditingHandler;
   private final ItemService itemService;
   private final String vocContext;
-  private final String verifiedBy;
+  private final String uploadedBy;
   private final URNGenerator urnGenerator;
 
   private final ItemExistenceValidator itemExistenceValidator;
@@ -67,12 +67,12 @@ public class ItemController implements ApiController {
 
   public ItemController(
     AuditingHandler auditingHandler, ItemService itemService, String vocContext,
-   String verifiedBy, URNGenerator urnGenerator,
+   String uploadedBy, URNGenerator urnGenerator,
     ItemRegistryService itemRegistryService) {
     this.auditingHandler = auditingHandler;
     this.itemService = itemService;
     this.vocContext = vocContext;
-    this.verifiedBy = verifiedBy;
+    this.uploadedBy = uploadedBy;
     this.urnGenerator = urnGenerator;
     this.itemExistenceValidator = new ItemExistenceValidator(itemService);
     this.itemRegistryService = itemRegistryService;
@@ -239,17 +239,19 @@ public class ItemController implements ApiController {
 
       String kcId = ctx.user().principal().getString(SUB);
       String orgName = ctx.user().principal().getString(ORG_NAME);
+      String name = ctx.user().principal().getString(NAME);
       String orgId = ctx.user().principal().getString(ORGANISATION_ID);
       body.put(PROVIDER_USER_ID, kcId)
-          .put(DEPARTMENT, orgName).
-          put(UPLOADED_BY, orgName);
+          .put(DEPARTMENT, orgName)
+          .put(ORGANIZATION, orgName)
+          .put(VERIFIED_BY, name);
       // Only set organizationId if it exists in token and not already provided in payload
       if (orgId != null && !orgId.isBlank()) {
         body.put(ORGANIZATION_ID, orgId);
       }
-      // Add verifiedBy only if user hasn't provided one
-      if (!body.containsKey(VERIFIED_BY) || body.getString(VERIFIED_BY).isBlank()) {
-        body.put(VERIFIED_BY, verifiedBy);
+      // Add uploadedBy only if user hasn't provided one
+      if (!body.containsKey(UPLOADED_BY) || body.getString(UPLOADED_BY).isBlank()) {
+        body.put(UPLOADED_BY, uploadedBy);
       }
       body.put("roles", ctx.user().principal().getJsonObject("realm_access")
           .getJsonArray("roles"));

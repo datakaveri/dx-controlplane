@@ -26,7 +26,7 @@ public class ItemControllerFactory {
       String docIndex,
       String vocContext,
       String apdURL,
-      String verifiedBy,
+      String uploadedBy,
       URNGenerator urnGenerator,
       WebClient webClient,
       IngestionService ingestionService,
@@ -39,7 +39,7 @@ public class ItemControllerFactory {
     ItemRegistryService orchestrationService =
         new ItemRegistryServiceImpl(crudService, ingestionService, connectorService, webClient,
             dataPlaneUrl,controlPlaneUrl,ogcDataPlaneUrl);
-    return new ItemController(auditingHandler, crudService, vocContext, verifiedBy, urnGenerator,
+    return new ItemController(auditingHandler, crudService, vocContext, uploadedBy, urnGenerator,
         orchestrationService);
   }
 }

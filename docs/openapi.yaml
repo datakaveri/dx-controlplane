@@ -22,8 +22,8 @@ info:
     \ The catalogue is a [JSON-LD](https://json-ld.org/) document stored and based on the \
     \ [RDF](https://www.w3.org/RDF/) information exchange model. \
     \n#  Configurations\n- **Server**: \n  - In the\
-    \ doc, we display the server url to be https://example.com with the hostname\
-    \ as example.com\n  - This could be configured according to the deployment\n\
+    \ doc, we display the server url to be https://${HOSTNAME} with the hostname\
+    \ as ${HOSTNAME}\n  - This could be configured according to the deployment\n\
     - **Base path**:\n     - Base path is the path on which API is served, relative\
     \ to the host\n     - It is the initial part of the API\n     - These base path\
     \ values could be configured according to the deployment\n     - The base path\
@@ -40,12 +40,12 @@ info:
     \  "
   contact:
     name: For support contact CDPG Team at
-    email: support@datakaveri.org
+    email: ${SUPPORT_EMAIL}
     url: https://dataforpublicgood.org.in/
   license:
     name: Apache 2.0
 servers:
-  - url: https://example.com
+  - url: 'https://${HOSTNAME}'
     description: example server
 
 paths:
@@ -4896,7 +4896,7 @@ paths:
         - lang: cURL
           label: create item cURL
           source: |
-            curl --location --request POST 'https://example.com/iudx/v2/cat/item/' \
+            curl --location --request POST 'https://${HOSTNAME}/iudx/v2/cat/item/' \
             --header 'Authorization: Bearer <keycloak_token>' \
             --header 'Content-Type: application/json' \
             --data-raw '<payload>'
@@ -4987,7 +4987,7 @@ paths:
         - lang: cURL
           label: update item cURL
           source: |
-            curl --location --request PUT 'https://example.com/iudx/v2/cat/item/' \
+            curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/cat/item/' \
             --header 'token: <token>' \
             --header 'Content-Type: application/json' \
             --data-raw '<payload>'
@@ -5045,7 +5045,7 @@ paths:
         - lang: cURL
           label: item by id
           source: |
-            curl --location --request GET 'https://example.com/iudx/v2/cat/item?id=uuid'
+            curl --location --request GET 'https://${HOSTNAME}/iudx/v2/cat/item?id=uuid'
     delete:
       tags:
         - Entity
@@ -5111,7 +5111,7 @@ paths:
         - lang: cURL
           label: delete item
           source: |
-            curl --location --request DELETE 'https://example.com/iudx/v2/cat/item?id=uuid' \
+            curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/cat/item?id=uuid' \
             --header 'token: <token>'
   /iudx/v2/cat/item/access:
     get:
@@ -5200,7 +5200,7 @@ paths:
         - lang: cURL
           label: get item with accessPolicy
           source: |
-            curl --location --request GET 'https://example.com/iudx/v2/cat/item/access?id=uuid' \
+            curl --location --request GET 'https://${HOSTNAME}/iudx/v2/cat/item/access?id=uuid' \
             --header 'Authorization: Bearer <token>'
   /iudx/v2/cat/organisation/asset:
     patch:
@@ -5286,7 +5286,7 @@ paths:
         - lang: cURL
           label: patch item
           source: |
-            curl --location --request PATCH 'https://example.com/iudx/v2/organisation/asset?id=uuid' \
+            curl --location --request PATCH 'https://${HOSTNAME}/iudx/v2/organisation/asset?id=uuid' \
             --header 'token: <token>'
             --data-raw '{
               "publishStatus": "ACTIVE",
@@ -5345,7 +5345,8 @@ paths:
         - lang: cURL
           label: get organisation assets
           source: |
-            curl --location --request GET 'https://example.com/iudx/v2/cat/organisation/asset?sort=name:asc&page=1' \
+            curl --location --request GET 
+            'https://${HOSTNAME}/iudx/v2/cat/organisation/asset?sort=name:asc&page=1' \
             --header 'Authorization: Bearer <token>'
     post:
       summary: Retrieve organisation assets with filters
@@ -5678,7 +5679,7 @@ paths:
         - lang: cURL
           label: list indexed filter values
           source: |
-            curl --location 'https://example.com/iudx/v2/cat/list' \
+            curl --location 'https://${HOSTNAME}/iudx/v2/cat/list' \
             --header 'Content-Type: application/json' \
             --data '{
               "searchCriteria": [
@@ -5973,7 +5974,7 @@ paths:
         - lang: cURL
           label: search by item type
           source: |
-            curl --location --request POST 'https://example.com/iudx/v2/cat/search?size=100&page=1' \
+            curl --location --request POST 'https://${HOSTNAME}/iudx/v2/cat/search?size=100&page=1' \
               --header 'Content-Type: application/json' \
               --data '{
                 "searchCriteria": [
@@ -5988,7 +5989,7 @@ paths:
         - lang: cURL
           label: flattened field search
           source: |
-            curl --location --request POST 'https://example.com/iudx/v2/cat/search?size=25&page=1' \
+            curl --location --request POST 'https://${HOSTNAME}/iudx/v2/cat/search?size=25&page=1' \
             --header 'Content-Type: application/json' \
             --data '{
               "searchCriteria": [
@@ -6003,7 +6004,7 @@ paths:
         - lang: cURL
           label: search by text
           source: |
-            curl --location --request POST 'https://example.com/iudx/v2/cat/search?size=100&page=1' \
+            curl --location --request POST 'https://${HOSTNAME}/iudx/v2/cat/search?size=100&page=1' \
             --header 'Content-Type: application/json' \
             --data '{
               "q": "sat",
@@ -6014,7 +6015,7 @@ paths:
         - lang: cURL
           label: Temporal search
           source: |
-            curl --location --request POST 'https://example.com/iudx/v2/cat/search?size=50&page=1' \
+            curl --location --request POST 'https://${HOSTNAME}/iudx/v2/cat/search?size=50&page=1' \
             --header 'Content-Type: application/json' \
             --data '{
               "searchCriteria": [
@@ -6034,7 +6035,7 @@ paths:
         - lang: cURL
           label: Range search
           source: |
-            curl --location --request POST 'https://example.com/iudx/v2/cat/search?size=25&page=1' \
+            curl --location --request POST 'https://${HOSTNAME}/iudx/v2/cat/search?size=25&page=1' \
             --header 'Content-Type: application/json' \
             --data '{
               "searchCriteria": [
@@ -6054,7 +6055,7 @@ paths:
         - lang: cURL
           label: complex search
           source: |
-            curl --location --request POST 'https://example.com/iudx/v2/cat/search?size=25&page=1' \
+            curl --location --request POST 'https://${HOSTNAME}/iudx/v2/cat/search?size=25&page=1' \
             --header 'Content-Type: application/json' \
             --data '{
               "searchCriteria": [
@@ -6306,7 +6307,7 @@ paths:
         - lang: cURL
           label: Fetch Admin Activity Logs
           source: |
-            curl --location 'https://example-auditing.com/dx/auditing/consumer/activity?starttime=2025-04-24T16%3A07%3A54.00&endtime=2025-06-24T16%3A07%3A54.00&page=1&size=1' \
+            curl --location 'https://${HOSTNAME}/dx/auditing/consumer/activity?starttime=2025-04-24T16%3A07%3A54.00&endtime=2025-06-24T16%3A07%3A54.00&page=1&size=1' \
             --header 'Authorization: Bearer <your-token>'
 
 
@@ -6368,7 +6369,7 @@ paths:
         - lang: cURL
           label: Fetch Admin Activity Logs
           source: |
-            curl --location 'https://example-auditing.com/dx/auditing/admin/activity?starttime=2025-05-24T16%3A07%3A54.00&endtime=2025-06-24T16%3A07%3A54.00&page=1&size=1' \
+            curl --location 'https://${HOSTNAME}/dx/auditing/admin/activity?starttime=2025-05-24T16%3A07%3A54.00&endtime=2025-06-24T16%3A07%3A54.00&page=1&size=1' \
             --header 'Authorization: Bearer <your-token>'
 
 
@@ -6429,7 +6430,7 @@ paths:
         - lang: cURL
           label: Admin Csv Activity Logs
           source: |
-            curl --location 'https://example-auditing.com/dx/auditing/reportactivity/admin' \
+            curl --location 'https://${HOSTNAME}/dx/auditing/reportactivity/admin' \
             --header 'Authorization: Bearer <your-token>'
 
 
@@ -6484,7 +6485,7 @@ paths:
         - lang: cURL
           label: Admin Csv Activity Logs
           source: |
-            curl --location 'https://example-auditing.com/dx/auditing/reportactivity/consumer' \
+            curl --location 'https://${HOSTNAME}/dx/auditing/reportactivity/consumer' \
             --header 'Authorization: Bearer <your-token>'
 
 
@@ -8977,6 +8978,26 @@ components:
           license: 'CC-BY 4.0'
           itemStatus: "ACTIVE"
           itemCreatedAt: "2024-01-05T02:09:10+0530"
+          dataSample:
+            id: 10293847
+            name: "Ficus religiosa"
+            observed_on: "2023-04-12"
+            lat: 26.9124
+            lon: 75.7873
+            quality_grade: "research"
+          dataDescriptor:
+            "@context": "https://voc.forest-stack.iudx.io/"
+            dataDescriptorLabel: "Data Descriptor for Plantae Observations in Rajasthan"
+            description: "Schema and attribute definitions for Plantae observations collected via iNaturalist within Rajasthan, including taxonomic, spatial, temporal, quality-grade, and attribution fields."
+            type: [ "iudx:DataDescriptor" ]
+            id:
+              dataSchema: "iudx:Number"
+              description: "Unique observation identifier from iNaturalist."
+              type: [ "ValueDescriptor" ]
+            name:
+              dataSchema: "iudx:Text"
+              description: "Scientific name of the observed organism."
+              type: [ "ValueDescriptor" ]
     successResponseForCreatePotentialAppsEntity:
       type: object
       title: Potential Applications Entity
@@ -9341,6 +9362,26 @@ components:
           resourceType: DATASET
           itemStatus: "ACTIVE"
           itemCreatedAt: "2024-01-07T04:53:31+0530"
+          dataSample:
+            id: 10293847
+            name: "Ficus religiosa"
+            observed_on: "2023-04-12"
+            lat: 26.9124
+            lon: 75.7873
+            quality_grade: "research"
+          dataDescriptor:
+            "@context": "https://voc.forest-stack.iudx.io/"
+            dataDescriptorLabel: "Data Descriptor for Plantae Observations in Rajasthan"
+            description: "Schema and attribute definitions for Plantae observations collected via iNaturalist within Rajasthan, including taxonomic, spatial, temporal, quality-grade, and attribution fields."
+            type: [ "iudx:DataDescriptor" ]
+            id:
+              dataSchema: "iudx:Number"
+              description: "Unique observation identifier from iNaturalist."
+              type: [ "ValueDescriptor" ]
+            name:
+              dataSchema: "iudx:Text"
+              description: "Scientific name of the observed organism."
+              type: [ "ValueDescriptor" ]
     successResponseForUpdateAdexAppsEntity:
       type: object
       title: ADeX Potential Application Entity
@@ -10809,6 +10850,38 @@ components:
           type: string
         license:
           type: string
+        dataDescriptor:
+          type: object
+          description: >
+            A JSON object describing the structure or schema of the dataset.
+            Must be a valid JSON object (not a stringified JSON). 
+            Any key-value pairs are allowed. Flattened in Elasticsearch for flexible nested key indexing.
+          additionalProperties: true
+          example:
+            columns:
+              - name: "temperature"
+                type: "float"
+              - name: "humidity"
+                type: "integer"
+            formatVersion: "v1.0"
+        dataSample:
+          type: object
+          description: >
+            Sample or representative data for the dataset.
+            Must be passed as a **valid JSON object**, not as a string.
+            Flattened in Elasticsearch for flexible nested key indexing.
+          additionalProperties: true
+          example:
+            id: 265033699
+            name: "Cyclosa"
+            preferred_common_name: "Trashline Orbweavers"
+            lat: 26.9146063779
+            lon: 75.7319014363
+            observed_on: "2010-09-14"
+            place_guess: "Vaishali Nagar, Jaipur, Rajasthan, India"
+            quality_grade: "needs_id"
+            medium_url: "https://inaturalist-open-data.s3.amazonaws.com/photos/70762630/medium.jpg"
+            attribution: "(c) Meghan Cassidy, some rights reserved (CC BY-SA)"
         resourceServer:
           type: array
           description: List of resource servers associated with the dataset
@@ -10864,6 +10937,26 @@ components:
           - name: "NGSI-LD"
           - name: "FILE"
           - name: "GATEWAY"
+        dataSample:
+          id: 10293847
+          name: "Ficus religiosa"
+          observed_on: "2023-04-12"
+          lat: 26.9124
+          lon: 75.7873
+          quality_grade: "research"
+        dataDescriptor:
+          "@context": "https://voc.forest-stack.iudx.io/"
+          dataDescriptorLabel: "Data Descriptor for Plantae Observations in Rajasthan"
+          description: "Schema and attribute definitions for Plantae observations collected via iNaturalist within Rajasthan, including taxonomic, spatial, temporal, quality-grade, and attribution fields."
+          type: [ "iudx:DataDescriptor" ]
+          id:
+            dataSchema: "iudx:Number"
+            description: "Unique observation identifier from iNaturalist."
+            type: [ "ValueDescriptor" ]
+          name:
+            dataSchema: "iudx:Text"
+            description: "Scientific name of the observed organism."
+            type: [ "ValueDescriptor" ]
     exampleEntityPotentialApps:
       type: object
       title: AI Use Case Template Schema
