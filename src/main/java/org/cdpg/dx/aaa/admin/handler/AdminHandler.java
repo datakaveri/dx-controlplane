@@ -90,7 +90,7 @@ public class AdminHandler {
     PaginatedRequest request = PaginationRequestBuilder.from(ctx).build();
     String name = ctx.queryParam("search_term").stream().findFirst().orElse(null);
 
-    keycloakUserService.getTotalCount().compose(totalCount -> keycloakUserService.getUsers(request.page(), request.size(), name)
+    keycloakUserService.getTotalCount(name).compose(totalCount -> keycloakUserService.getUsers(request.page(), request.size(), name)
       .compose(users -> {
         List<Future> futures = new ArrayList<>();
         for (DxUser user : users) {
