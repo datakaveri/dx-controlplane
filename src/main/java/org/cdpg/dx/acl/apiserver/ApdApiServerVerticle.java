@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.jackson.DatabindCodec;
@@ -20,6 +21,9 @@ import io.vertx.ext.web.handler.*;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.ext.web.openapi.RouterBuilderOptions;
 import io.vertx.serviceproxy.HelperUtils;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,7 +54,7 @@ public class ApdApiServerVerticle extends AbstractVerticle {
   }
 
   @Override
-  public void start() {
+  public void start() throws Exception {
     port = config().getInteger("httpPort", 8444);
     allowedOrigins = config().getJsonArray("corsAllowedOrigin").getList();
     String urnPrefix = config().getString("urnPrefix2", "urn:dx:apdServerPanel:");
@@ -67,7 +71,29 @@ public class ApdApiServerVerticle extends AbstractVerticle {
     DatabindCodec.prettyMapper()
         .setPropertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE);
 
-    Future<RouterBuilder> routerFuture = RouterBuilder.create(vertx, "docs/openapi2.yaml");
+    String baseUrl = config().getString("apdURL", "example.com");
+    String supportEmail = config().getString("supportEmail", "support@datakaveri.org");
+
+    // Load the OpenAPI spec
+    String yamlContent = vertx.fileSystem().readFileBlocking("docs/openapi2.yaml").toString(
+        StandardCharsets.UTF_8);
+
+    /* Initialize api spec buffer - since configured hostname support_email needs to be in it */
+    String updatedYaml = yamlContent
+        .replace("${HOSTNAME}", baseUrl)
+        .replace("${SUPPORT_EMAIL}", supportEmail);
+
+    // Create a temporary file (OS-independent)
+    Path tempFile = Files.createTempFile("openapi2-", ".yaml");
+
+    // Optional: delete on JVM exit
+    tempFile.toFile().deleteOnExit();
+
+    // Write the modified spec to the temporary path (short-lived)
+    vertx.fileSystem().writeFileBlocking(tempFile.toAbsolutePath().toString(), Buffer.buffer(updatedYaml));
+
+    // Now build the router from this spec
+    Future<RouterBuilder> routerFuture = RouterBuilder.create(vertx, tempFile.toAbsolutePath().toString());
 
     // Init shared worker executor
     BlockingExecutionUtil.initialize(vertx);
@@ -126,7 +152,7 @@ public class ApdApiServerVerticle extends AbstractVerticle {
                 router
                     .get(ROUTE_STATIC_SPEC)
                     .produces(APPLICATION_JSON)
-                    .handler(ctx -> ctx.response().sendFile("docs/openapi2.yaml"));
+                    .handler(ctx -> ctx.response().sendFile(tempFile.toAbsolutePath().toString()));
                 router
                     .get(ROUTE_DOC)
                     .produces("text/html")
