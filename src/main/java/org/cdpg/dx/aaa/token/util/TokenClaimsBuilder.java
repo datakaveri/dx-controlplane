@@ -128,13 +128,9 @@ public class TokenClaimsBuilder {
     claims.put(
         "account_enabled", dxUser.account_enabled() != null ? dxUser.account_enabled() : true);
 
-    if (dxUser.createdAt() != null) {
-      claims.put("created_at", dxUser.createdAt().toString());
-    }
-
     // Organisation info (only if present)
-    putIfNotBlank(claims, "organisationId", dxUser.organisationId());
-    putIfNotBlank(claims, "organisationName", dxUser.organisationName());
+    putIfNotBlank(claims, "organisation_id", dxUser.organisationId());
+    putIfNotBlank(claims, "organisation_name", dxUser.organisationName());
     if (dxUser.organisation() != null && !dxUser.organisation().isEmpty()) {
       claims.put("organisation", dxUser.organisation());
     }
