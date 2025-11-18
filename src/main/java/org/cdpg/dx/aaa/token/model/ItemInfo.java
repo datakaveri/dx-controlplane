@@ -50,7 +50,7 @@ public record ItemInfo(
       drl = (JsonArray) drlObj;
     }
 
-    JsonObject constraints = item.getJsonObject("cons", new JsonObject());
+    JsonObject constraints = item.getJsonObject("constraints", new JsonObject());
 
     return new ItemInfo(
       type,
