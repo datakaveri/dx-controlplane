@@ -26,30 +26,10 @@ public class TokenClaimsBuilder {
     //**************************************************************************************
 
     JsonObject delegationAccess = new JsonObject();
-    JsonArray scopesArray = new JsonArray();
+    JsonObject scopesObj = dxUser.scopes();
 
-    for (String scope : dxUser.roles()) {
-      if (scope.equalsIgnoreCase("data_access")) {
-        scopesArray.add(scope);
-      } else if (scope.equalsIgnoreCase("asset_management")) {
-        scopesArray.add(scope);
-      } else if (scope.equalsIgnoreCase("org_management")) {
-        scopesArray.add(scope);
-      }
-      else if (scope.equalsIgnoreCase("compute_management")) {
-        scopesArray.add(scope);
-      }
-      else if (scope.equalsIgnoreCase("credit_management")) {
-        scopesArray.add(scope);
-      }
-      else if (scope.equalsIgnoreCase("provider_management")) {
-        scopesArray.add(scope);
-      }
-      // Add more conditions as needed
-    }
-
-    LOGGER.info("scopes array :{}",scopesArray);
-    delegationAccess.put("roles", scopesArray);
+    LOGGER.info("scopes array :{}",scopesObj.encode());
+    delegationAccess.put("roles", scopesObj);
     claims.put("delegation_access",delegationAccess);
     LOGGER.info(" delegation_access :{}",delegationAccess);
 
@@ -62,35 +42,14 @@ public class TokenClaimsBuilder {
 
 
       for (String role : dxUser.roles()) {
-        if (role.equalsIgnoreCase("compute")) {
-          rolesArray.add(role);
-        } else if (role.equalsIgnoreCase("delegate")) {
-          rolesArray.add(role);
-        } else if (role.equalsIgnoreCase("org_admin")) {
-          rolesArray.add(role);
-        } else if (role.equalsIgnoreCase("cos_admin")) {
-          rolesArray.add(role);
-        } else if (role.equalsIgnoreCase("consumer")) {
-          rolesArray.add(role);
-        } else if (role.equalsIgnoreCase("provider")) {
           rolesArray.add(role);
         }
-        else if (role.equalsIgnoreCase("default-roles-tgdex-pilot")) {
-          rolesArray.add(role);
-        }
-        else if (role.equalsIgnoreCase("offline_access")) {
-          rolesArray.add(role);
-        }
-        // Add more conditions as needed
       }
 
       LOGGER.info("roles array :{}",rolesArray);
       realmAccess.put("roles", rolesArray);
       claims.put("realm_access",realmAccess);
       LOGGER.info(" realm_access :{}",realmAccess);
-
-    }
-
 
 
     //**********************************************************************************************

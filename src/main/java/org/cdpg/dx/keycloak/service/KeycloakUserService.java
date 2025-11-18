@@ -22,12 +22,12 @@ public interface KeycloakUserService {
     Future<Boolean> enableUser(UUID userId);
     Future<Boolean> disableUser(UUID userId);
     Future<Boolean> addRoleToUser(UUID userId, DxRole role);
-    Future<Boolean> addScopeToUser(UUID userId , DxScope scope);
     Future<Boolean> removeRoleFromUser(UUID userId, DxRole dxRole);
     Future<Boolean> setOrganisationDetails(UUID userId, UUID orgId, String orgName);
     Future<Boolean> setKycVerifiedTrueWithData(UUID userId, String userName,String txn);
     Future<Boolean> setKycVerifiedFalse(UUID userId);
     Future<Boolean> updateUserPassword(UUID userId, String password);
+    Future<Boolean> setDelegationScopes(UUID userId , DxScope scope);
 //    Future<Boolean> addScopesToUser(UUID userId, List<String> scopes);
 }
 

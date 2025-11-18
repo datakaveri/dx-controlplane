@@ -83,7 +83,7 @@ public class DelegationServiceImpl implements DelegationService{
 
         for (String scope : scopesList) {
           addAllScopesFuture = addAllScopesFuture.compose(v ->
-            keycloakUserService.addScopeToUser(createdGrant.delegateId(), DxScope.fromString(scope))
+            keycloakUserService.setDelegationScopes(createdGrant.delegateId(), DxScope.fromString(scope))
               .onSuccess(x -> LOGGER.info("Scope {} added to user {}", scope, createdGrant.delegateId()))
               .mapEmpty()
           );
