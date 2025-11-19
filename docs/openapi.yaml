@@ -10384,6 +10384,10 @@ components:
                 type: string
                 format: date-time
                 description: Creation timestamp of the model item
+              expiryAt:
+                type: string
+                format: date-time
+                description: expiry time of the policy
               constraints:
                 type: object
                 description: Access constraints returned from the APD verification process
@@ -10434,6 +10438,7 @@ components:
             fileSize: '15MB'
             itemStatus: "ACTIVE"
             itemCreatedAt: "2024-01-05T02:09:10+0530"
+            expiryAt: "2025-12-04T20:00:19"
             constraints:
               access: [ 'sub' ]
     successResponseForGetDataBankEntityWithAccess:

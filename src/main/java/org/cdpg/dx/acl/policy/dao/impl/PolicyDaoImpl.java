@@ -4,6 +4,16 @@ import static org.cdpg.dx.aaa.common.Constants.ACTIVE;
 import static org.cdpg.dx.aaa.common.Constants.DETAIL;
 import static org.cdpg.dx.aaa.common.Constants.TITLE;
 import static org.cdpg.dx.aaa.common.Constants.TYPE;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ADDITIONAL_INFO;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CONSTRAINTS;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_EXPIRY_AT;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_FEEDBACK_TO_CONSUMER;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ITEM_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_OWNER_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_PROVIDER_COMMENT;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_USER_EMAIL_ID;
 import static org.cdpg.dx.common.HttpStatusCode.INTERNAL_SERVER_ERROR;
 
 import io.vertx.core.Future;
@@ -45,11 +55,11 @@ public class PolicyDaoImpl implements PolicyDao {
 
     Condition condition = new Condition(
         List.of(
-            new Condition("item_id", Condition.Operator.EQUALS, List.of(itemId.toString())),
-            new Condition("owner_id", Condition.Operator.EQUALS, List.of(ownerId.toString())),
-            new Condition("status", Condition.Operator.EQUALS, List.of(ACTIVE)),
-            new Condition("user_emailid", Condition.Operator.EQUALS, List.of(userEmail)),
-            new Condition("expiry_at", Condition.Operator.GREATER,
+            new Condition(DB_ITEM_ID, Condition.Operator.EQUALS, List.of(itemId.toString())),
+            new Condition(DB_OWNER_ID, Condition.Operator.EQUALS, List.of(ownerId.toString())),
+            new Condition(DB_STATUS, Condition.Operator.EQUALS, List.of(ACTIVE)),
+            new Condition(DB_USER_EMAIL_ID, Condition.Operator.EQUALS, List.of(userEmail)),
+            new Condition(DB_EXPIRY_AT, Condition.Operator.GREATER,
                 List.of(LocalDateTime.now().toString()))
         ),
         Condition.LogicalOperator.AND
@@ -57,7 +67,7 @@ public class PolicyDaoImpl implements PolicyDao {
 
     SelectQuery query = new SelectQuery()
         .setTable(POLICY_TABLE)
-        .setColumns(List.of("_id", "constraints"))
+        .setColumns(List.of(DB_ID, DB_CONSTRAINTS, DB_EXPIRY_AT))
         .setCondition(condition);
 
     postgresService.select(query, false)
@@ -85,18 +95,18 @@ public class PolicyDaoImpl implements PolicyDao {
 
     Condition cond = new Condition(
         List.of(
-            new Condition("item_id", Condition.Operator.EQUALS, itemIds),
-            new Condition("owner_id", Condition.Operator.EQUALS, List.of(ownerId.toString())),
-            new Condition("status", Condition.Operator.EQUALS, List.of(ACTIVE)),
-            new Condition("user_emailid", Condition.Operator.EQUALS, emails),
-            new Condition("expiry_at", Condition.Operator.GREATER, List.of(LocalDateTime.now().toString()))
+            new Condition(DB_ITEM_ID, Condition.Operator.EQUALS, itemIds),
+            new Condition(DB_OWNER_ID, Condition.Operator.EQUALS, List.of(ownerId.toString())),
+            new Condition(DB_STATUS, Condition.Operator.EQUALS, List.of(ACTIVE)),
+            new Condition(DB_USER_EMAIL_ID, Condition.Operator.EQUALS, emails),
+            new Condition(DB_EXPIRY_AT, Condition.Operator.GREATER, List.of(LocalDateTime.now().toString()))
         ),
         Condition.LogicalOperator.AND
     );
 
     SelectQuery query = new SelectQuery()
         .setTable(POLICY_TABLE)
-        .setColumns(List.of("_id", "constraints"))
+        .setColumns(List.of(DB_ID, DB_CONSTRAINTS))
         .setCondition(cond);
 
     postgresService.select(query, false)
@@ -128,17 +138,17 @@ public class PolicyDaoImpl implements PolicyDao {
           );
 
           InsertQuery insertQuery = new InsertQuery()
-              .setTable("policy")
+              .setTable(POLICY_TABLE)
               .setColumns(List.of(
-                  "user_emailid",
-                  "item_id",
-                  "owner_id",
-                  "expiry_at",
-                  "constraints",
-                  "status",
-                  "additional_info",
-                  "provider_comment",
-                  "feedback_to_consumer"
+                  DB_USER_EMAIL_ID,
+                  DB_ITEM_ID,
+                  DB_OWNER_ID,
+                  DB_EXPIRY_AT,
+                  DB_CONSTRAINTS,
+                  DB_STATUS,
+                  DB_ADDITIONAL_INFO,
+                  DB_PROVIDER_COMMENT,
+                  DB_FEEDBACK_TO_CONSUMER
               ))
               .setValues(values);
 
@@ -251,15 +261,15 @@ public class PolicyDaoImpl implements PolicyDao {
         .setGroup(true)
         .setLogicalOperator(Condition.LogicalOperator.AND)
         .setConditions(List.of(
-            new Condition().setColumn("_id").setValues(List.of(policyId.toString()))
+            new Condition().setColumn(DB_ID).setValues(List.of(policyId.toString()))
                 .setOperator(Condition.Operator.EQUALS),
-            new Condition().setColumn("expiry_at")
+            new Condition().setColumn(DB_EXPIRY_AT)
                 .setValues(List.of(LocalDateTime.now().toString()))
                 .setOperator(Condition.Operator.GREATER)
         ));
     UpdateQuery query = new UpdateQuery()
         .setTable(POLICY_TABLE)
-        .setColumns(List.of("status"))
+        .setColumns(List.of(DB_STATUS))
         .setValues(List.of("DELETED"))
         .setCondition(condition);
 
