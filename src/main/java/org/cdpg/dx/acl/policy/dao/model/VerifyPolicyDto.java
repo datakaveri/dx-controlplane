@@ -4,14 +4,25 @@ import io.vertx.core.json.JsonObject;
 
 public class VerifyPolicyDto {
   private String type;
-  private JsonObject apdConstraints;
+  private JsonObject constraints;
+  private String expiryAt;
 
   public VerifyPolicyDto() {
   }
 
-  public VerifyPolicyDto(String type, JsonObject apdConstraints) {
+  public VerifyPolicyDto(JsonObject json) {
+    if (json == null) {
+      return;
+    }
+    this.type = json.getString("type");
+    this.constraints = json.getJsonObject("constraints");
+    this.expiryAt = json.getString("expiryAt");
+  }
+
+  public VerifyPolicyDto(String type, JsonObject constraints, String expiryAt) {
     this.type = type;
-    this.apdConstraints = apdConstraints;
+    this.constraints = constraints;
+    this.expiryAt = expiryAt;
   }
 
   public String getType() {
@@ -22,18 +33,35 @@ public class VerifyPolicyDto {
     this.type = type;
   }
 
-  public JsonObject getApdConstraints() {
-    return apdConstraints;
+  public JsonObject getConstraints() {
+    return constraints;
   }
 
-  public void setApdConstraints(JsonObject apdConstraints) {
-    this.apdConstraints = apdConstraints;
+  public void setConstraints(JsonObject constraints) {
+    this.constraints = constraints;
   }
 
+  public String getExpiryAt() {
+    return expiryAt;
+  }
+
+  public void setExpiryAt(String expiryAt) {
+    this.expiryAt = expiryAt;
+  }
 
   public JsonObject toJson() {
-    return new JsonObject()
-        .put("type", type)
-        .put("apdConstraints", apdConstraints);
+    JsonObject json = new JsonObject();
+
+    if (type != null) {
+      json.put("type", type);
+    }
+    if (constraints != null) {
+      json.put("constraints", constraints);
+    }
+    if (expiryAt != null) {
+      json.put("expiryAt", expiryAt);
+    }
+
+    return json;
   }
 }

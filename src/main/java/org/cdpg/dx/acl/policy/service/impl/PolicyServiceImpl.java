@@ -1,14 +1,38 @@
 package org.cdpg.dx.acl.policy.service.impl;
 
+import static org.cdpg.dx.aaa.common.Constants.ACTIVE;
 import static org.cdpg.dx.aaa.common.Constants.DETAIL;
 import static org.cdpg.dx.aaa.common.Constants.ID;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_AI_MODEL;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_APPS;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_RESOURCE_GROUP;
+import static org.cdpg.dx.aaa.common.Constants.NAME;
 import static org.cdpg.dx.aaa.common.Constants.PROVIDER_USER_ID;
 import static org.cdpg.dx.aaa.common.Constants.TITLE;
 import static org.cdpg.dx.aaa.common.Constants.TYPE;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.CONSUMER_EMAIL_ID;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.CONSUMER_LAST_NAME;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_EMAIL_ID;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_FIRST_NAME;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_LAST_NAME;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSTRAINTS;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_FIRST_NAME;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_EXPIRY_AT;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ITEM_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_OWNER_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_USER_EMAIL_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.EMAIL;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.EXPIRY_AT;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.FIRST_NAME;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ITEM_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.LAST_NAME;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.OWNER_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.POLICY_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.USER_EMAIL_ID;
 import static org.cdpg.dx.auth.authorization.model.DxRole.CONSUMER;
 import static org.cdpg.dx.auth.authorization.model.DxRole.CONSUMER_DELEGATE;
 import static org.cdpg.dx.auth.authorization.model.DxRole.PROVIDER;
@@ -34,6 +58,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
+import org.cdpg.dx.acl.accessRequest.dao.config.DbConstants;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.model.PolicyDto;
 import org.cdpg.dx.acl.policy.dao.model.VerifyPolicyDto;
@@ -341,23 +366,23 @@ public class PolicyServiceImpl implements PolicyService {
   }
 
   private JsonObject getConsumerInfo(JsonObject row) {
-    return new JsonObject().put("consumer", new JsonObject()
-        .put("id", row.getString("consumerId"))
-        .put("email", row.getString("consumerEmailId"))
-        .put("name", new JsonObject()
-            .put("firstName", row.getString("consumerFirstName"))
-            .put("lastName", row.getString("consumerLastName"))
+    return new JsonObject().put(DbConstants.CONSUMER, new JsonObject()
+        .put(ID, row.getString(CONSUMER_ID))
+        .put(EMAIL, row.getString(CONSUMER_EMAIL_ID))
+        .put(NAME, new JsonObject()
+            .put(FIRST_NAME, row.getString(CONSUMER_FIRST_NAME))
+            .put(LAST_NAME, row.getString(CONSUMER_LAST_NAME))
         )
     );
   }
 
   private JsonObject getProviderInfo(JsonObject row) {
-    return new JsonObject().put("provider", new JsonObject()
-        .put("id", row.getString("ownerId"))
-        .put("email", row.getString("ownerEmailId"))
-        .put("name", new JsonObject()
-            .put("firstName", row.getString("ownerFirstName"))
-            .put("lastName", row.getString("ownerLastName"))
+    return new JsonObject().put(DbConstants.PROVIDER, new JsonObject()
+        .put(ID, row.getString(OWNER_ID))
+        .put(EMAIL, row.getString(OWNER_EMAIL_ID))
+        .put(NAME, new JsonObject()
+            .put(FIRST_NAME, row.getString(OWNER_FIRST_NAME))
+            .put(LAST_NAME, row.getString(OWNER_LAST_NAME))
         )
     );
   }
@@ -377,13 +402,13 @@ public class PolicyServiceImpl implements PolicyService {
       }
       JsonObject row = result.getRows().getJsonObject(0);
       LOGGER.debug("Row: {}", row);
-      String ownerId = row.getString("owner_id");
-      String status = row.getString("status");
+      String ownerId = row.getString(DB_OWNER_ID);
+      String status = row.getString(DB_STATUS);
 
       /* does the policy belong to the owner who is requesting */
       if (ownerId.equals(user.sub().toString())) {
         /* is policy in ACTIVE status */
-        if (!"ACTIVE".equalsIgnoreCase(status)) {
+        if (!ACTIVE.equalsIgnoreCase(status)) {
           LOGGER.error("Failure : policy is not active");
           return Future.failedFuture(
               getFailureResponse(
@@ -393,8 +418,8 @@ public class PolicyServiceImpl implements PolicyService {
         LOGGER.error("Failure : policy does not belong to the user");
         return Future.failedFuture(
             new JsonObject()
-                .put("type", HttpStatusCode.FORBIDDEN.getValue())
-                .put("title", ResponseUrn.FORBIDDEN_URN.getUrn())
+                .put(TYPE, HttpStatusCode.FORBIDDEN.getValue())
+                .put(TITLE, ResponseUrn.FORBIDDEN_URN.getUrn())
                 .put(DETAIL, FAILURE_MESSAGE + ", as policy doesn't belong to the user")
                 .encode());
       }
@@ -436,15 +461,16 @@ public class PolicyServiceImpl implements PolicyService {
           JsonArray rows = queryResult.getRows();
           if (rows != null && !rows.isEmpty()) {
             JsonObject row = rows.getJsonObject(0);
-            UUID policyId = UUID.fromString(row.getString("_id"));
-            JsonObject constraints = row.getJsonObject("constraints");
+            UUID policyId = UUID.fromString(row.getString(DB_ID));
+            JsonObject constraints = row.getJsonObject(CONSTRAINTS);
+            String expiryAt = row.getString(DB_EXPIRY_AT);
 
             // Fetch full policy constraints (optional deep validation)
             policyDao.verifyPolicy(policyId)
                 .onSuccess(verifiedPolicy -> {
                   VerifyPolicyDto verifyPolicyDto = new VerifyPolicyDto(
                       ResponseUrn.VERIFY_SUCCESS_URN.getUrn(),
-                      constraints
+                      constraints, expiryAt
                   );
                   promise.complete(verifyPolicyDto);
                 })
@@ -480,14 +506,14 @@ public class PolicyServiceImpl implements PolicyService {
         JsonObject row = queryResult.getRows().getJsonObject(i);
 
         JsonObject jsonObject = new JsonObject()
-            .put("policyId", row.getString("_id"))
-            .put("userEmailId", row.getString("user_emailid"))
-            .put("itemId", row.getString("item_id"))
-            .put("expiryAt", row.getString("expiry_at"));
+            .put(POLICY_ID, row.getString(DB_ID))
+            .put(USER_EMAIL_ID, row.getString(DB_USER_EMAIL_ID))
+            .put(ITEM_ID, row.getString(DB_ITEM_ID))
+            .put(EXPIRY_AT, row.getString(DB_EXPIRY_AT));
 
         if (ownerJsonObject[0] == null) {
           ownerJsonObject[0] = new JsonObject()
-              .put("ownerId", row.getValue("owner_id").toString());
+              .put(OWNER_ID, row.getValue(DB_OWNER_ID).toString());
         }
         response.add(jsonObject);
       }
