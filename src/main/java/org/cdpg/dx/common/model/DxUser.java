@@ -28,8 +28,8 @@ public record DxUser(
         String github_account,
         Boolean account_enabled,// newly added field
         String did,
-        String aud
-) {
+        String aud,
+        JsonObject scopes) {
     public JsonObject toJson() {
         String isoCreatedAt = createdAt != null
                 ? createdAt.toString()
@@ -56,7 +56,8 @@ public record DxUser(
                 .put("github_account", github_account)
                 .put("account_enabled", account_enabled)
                 .put("did", did)
-                .put("aud", aud);
+                .put("aud", aud)
+                .put("delegation_scope",scopes);
     }
 
     public static DxUser withPendingRoles(DxUser user, List<String> pendingRoles, JsonObject organisation) {
@@ -81,7 +82,8 @@ public record DxUser(
                 user.github_account(),
                 user.account_enabled(),// retain createdAt
                 user.did(),
-                user.aud()
+                user.aud(),
+                user.scopes()
         );
     }
 
@@ -114,5 +116,12 @@ public record DxUser(
     public String aud() {
         return aud;
     }
+
+  @Override
+  public JsonObject scopes() {
+    return scopes;
+  }
+
+
 }
 

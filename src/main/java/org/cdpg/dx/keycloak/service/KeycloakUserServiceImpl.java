@@ -1,6 +1,7 @@
 package org.cdpg.dx.keycloak.service;
 
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.cdpg.dx.aaa.delegation.util.RoleScopeMapping;
@@ -165,28 +166,35 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
         });
     }
 
+
   @Override
-  public Future<Boolean> addScopeToUser(UUID userId, DxScope dxScope) {
-    return BlockingExecutionUtil.runBlocking(() -> {
-      try {
-        RealmResource realmResource = keycloak.realm(realm);
-        UsersResource usersResource = realmResource.users();
-        RoleRepresentation role = realmResource.roles().get(dxScope.getScope()).toRepresentation();
+  public Future<Boolean> setDelegationScopes(UUID userId, DxScope scope) {
 
-        if (role == null) {
-          LOGGER.warn("Role '{}' not found in realm '{}'", dxScope.getScope(), realm);
-          throw new KeycloakServiceException(dxScope.getScope()  + " not available in KC");
-        }
+    UserRepresentation user = usersResource().get(userId.toString()).toRepresentation();
+    Map<String, List<String>> attrs = Optional.ofNullable(user.getAttributes())
+      .orElse(new HashMap<>());
 
-        usersResource.get(userId.toString()).roles().realmLevel().add(Collections.singletonList(role));
-        LOGGER.info("Assigned role '{}' to user '{}'", dxScope.getScope(), userId);
-        return true;
-      } catch (Exception e) {
-        LOGGER.error("Failed to assign role '{}' to user '{}': {}", dxScope.getScope(), userId, e.getMessage(), e);
-        throw new KeycloakServiceException("Failed to assign role to user", e);
-      }
-    });
+    String existing = attrs.getOrDefault(KeycloakConstants.SCOPES,
+        List.of("[]"))      // default to empty array
+      .get(0);
+
+    JsonArray scopesArray = new JsonArray(existing);
+
+    if (!scopesArray.contains(scope.getScope())) {
+      scopesArray.add(scope.getScope());
+    }
+
+    LOGGER.info("Saving scopes: {}", scopesArray.encode());
+
+    attrs.put(KeycloakConstants.SCOPES, List.of(scopesArray.encode()));
+
+    user.setAttributes(attrs);
+    usersResource().get(userId.toString()).update(user);
+
+    return Future.succeededFuture(true);
   }
+
+
 
   @Override
     public Future<Boolean> removeRoleFromUser(UUID userId, DxRole dxRole) {

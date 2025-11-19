@@ -1,5 +1,6 @@
 package org.cdpg.dx.keycloak.util;
 
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.keycloak.config.KeycloakConstants;
 import org.cdpg.dx.common.model.DxUser;
@@ -44,9 +45,37 @@ public class DxUserMapper {
                 getAttr(attrs, "github_account") != null ? getAttr(attrs, "github_account") : "",
                 user.isEnabled(),
                 getAttr(attrs, KeycloakConstants.DID),
-                getAttr(attrs, KeycloakConstants.AUD)
+                getAttr(attrs, KeycloakConstants.AUD),
+                parseScopes(attrs)
         );
     }
+
+  private static JsonObject parseScopes(Map<String, List<String>> attrs) {
+    List<String> values = attrs.getOrDefault("delegation_scope", List.of());
+
+    if (values.isEmpty() || values.get(0) == null || values.get(0).isBlank()) {
+      return new JsonObject().put("delegation_scope", new JsonArray());
+    }
+
+    String raw = values.get(0).trim();
+
+    JsonArray scopes = new JsonArray();
+
+    try {
+      JsonArray parsed = new JsonArray(raw);
+
+      for (Object o : parsed) {
+        scopes.add(o.toString());
+      }
+    } catch (Exception e) {
+      scopes.add(raw);
+    }
+
+    return new JsonObject().put("delegation_scope", scopes);
+  }
+
+
+
 
 
     private static String getAttr(Map<String, List<String>> attrs, String key) {

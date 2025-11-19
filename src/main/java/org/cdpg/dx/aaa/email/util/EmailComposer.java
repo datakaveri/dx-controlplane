@@ -586,7 +586,7 @@ public class EmailComposer {
         String approvedMessage="";
         if(status.equals(org.cdpg.dx.aaa.organization.models.Status.GRANTED)) {
           approvedMessage = String.format(
-            "You can now manage your organisation and users in the %s platform  as a Provider.%n%n",
+            "You can now manage your organisation and users in the %s platform  as an Org Admin.%n%n",
             platformName
           );
         }
