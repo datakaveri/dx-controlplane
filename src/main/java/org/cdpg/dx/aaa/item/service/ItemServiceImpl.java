@@ -12,6 +12,8 @@ import static org.cdpg.dx.aaa.common.Constants.RESOURCE_GRP;
 import static org.cdpg.dx.aaa.common.Constants.RESOURCE_SVR;
 import static org.cdpg.dx.aaa.common.Constants.RESTRICTED;
 import static org.cdpg.dx.aaa.common.Constants.VALUE;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSTRAINTS;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.EXPIRY_AT;
 import static org.cdpg.dx.database.elastic.util.Constants.ACCESS_POLICY;
 import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
 import static org.cdpg.dx.database.elastic.util.Constants.AUTHORIZATION_KEY;
@@ -275,9 +277,10 @@ public class ItemServiceImpl implements ItemService {
 
       return policyVerifyService.verify(apdUrl, requester, owner,
               request.getItemId(), finalItemType, request.getToken())
-          .compose(apdConstraints -> {
+          .compose(verifyPolicyDto -> {
             JsonObject item = response.getSource();
-            item.put("constraints", apdConstraints);
+            item.put(CONSTRAINTS, verifyPolicyDto.getConstraints());
+            item.put(EXPIRY_AT, verifyPolicyDto.getExpiryAt());
             response.setSource(item);
             return succeededResponse(response, totalHits);
           });

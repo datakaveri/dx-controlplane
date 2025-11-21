@@ -82,6 +82,7 @@ public class Constants {
   // endpoints
   public static final String ACCESS_REQUEST_HAS_ACCESS_PATH = "/access_request/has_access";
   public static final String ACCESS_REQUEST_API = "/access_request";
+  public static final String VERIFY_API_PATH = "/iudx/acl/apd/v2/verify";
 
 
   //operation ids
@@ -105,6 +106,12 @@ public class Constants {
   public static final String EMAIL_ID = "emailId";
   public static final String RS_SERVER_URL = "resourceServerUrl";
   public static final String USER_ROLE = "userRole";
+  public static final String OWNER_EMAIL_ID = "ownerEmailId";
+  public static final String OWNER_FIRST_NAME = "ownerFirstName";
+  public static final String OWNER_LAST_NAME = "ownerLastName";
+  public static final String CONSUMER_EMAIL_ID = "consumerEmailId";
+  public static final String CONSUMER_FIRST_NAME = "consumerFirstName";
+  public static final String CONSUMER_LAST_NAME = "consumerLastName";
 
 
 }

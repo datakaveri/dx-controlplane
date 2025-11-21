@@ -1690,10 +1690,14 @@ paths:
           content:
             application/json:
               example:
-                type: urn:apd:Allow
-                constraints:
-                  rule: read
-                  duration: 3600
+                type: urn:dx:apdServerPanel:success
+                title: Success
+                result:
+                  type: urn:apd:Allow
+                  constraints:
+                    access:
+                      - sub
+                  expiryAt: "2026-08-04T20:00:19"
         '400':
           description: Bad Request
           content:

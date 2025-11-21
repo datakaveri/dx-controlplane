@@ -10,7 +10,7 @@ public class DbConstants {
   public static final String DB_FEEDBACK_TO_CONSUMER = "feedback_to_consumer";
   public static final String POLICY_TABLE = "policy";
   public static final String DB_OWNER_ID = "owner_id";
-  public static final String DB_USER_EMAIL = "user_email";
+  public static final String DB_USER_EMAIL_ID = "user_emailid";
   public static final String DB_POLICY_ID = "policy_id";
   public static final String DB_PROVIDER_ID = "provider_id";
   public static final String DB_CONSUMER_ID = "consumer_id";
@@ -28,7 +28,7 @@ public class DbConstants {
   public static final String DB_CREATED_AT = "created_at";
   public static final String DB_UPDATED_AT = "updated_at";
   public static final String REQUEST_TABLE = "request";
-  public static final String DB_ID  = "id";
+  public static final String DB_ID  = "_id";
 
   // Access request dto constants
   public static final String REQUEST_ID = "requestId";
@@ -37,6 +37,7 @@ public class DbConstants {
   public static final String ADDITIONAL_INFO = "additionalInfo";
   public static final String USER = "user";
   public static final String PROVIDER_ID = "providerId";
+  public static final String CONSUMER = "consumer";
   public static final String CONSUMER_ID = "consumerId";
   public static final String CONSUMER_ORGANIZATION = "consumerOrganization";
   public static final String CONSUMER_FIRST_NAME = "consumerFirstName";
@@ -44,6 +45,10 @@ public class DbConstants {
   public static final String CONSUMER_EMAIL = "consumerEmail";
   public static final String ASSET = "asset";
   public static final String ITEM_ID = "itemId";
+  public static final String POLICY_ID = "policyId";
+  public static final String USER_EMAIL_ID = "userEmailId";
+  public static final String OWNER_ID = "ownerId";
+  public static final String PROVIDER = "provider";
   public static final String ASSET_NAME = "assetName";
   public static final String ASSET_TYPE = "assetType";
   public static final String PROVIDER_ORGANIZATION = "providerOrganization";
@@ -53,4 +58,10 @@ public class DbConstants {
   public static final String EXPIRY_AT = "expiryAt";
   public static final String CREATED_AT = "createdAt";
   public static final String UPDATED_AT = "updatedAt";
+  public static final String RESULT = "result";
+  public static final String CONSTRAINTS = "constraints";
+  public static final String ACCESS = "access";
+  public static final String FIRST_NAME = "firstName";
+  public static final String LAST_NAME = "lastName";
+  public static final String EMAIL = "email";
 }
