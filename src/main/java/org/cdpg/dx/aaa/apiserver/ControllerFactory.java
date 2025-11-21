@@ -178,7 +178,8 @@ public class ControllerFactory {
             creditService,
             keycloakUserService,
             urnGenerator,
-            kycRequired);
+            kycRequired,
+            delegationService);
 
     AdminHandler adminHandler =
       new AdminHandler(userService, keycloakUserService, creditService, organizationService,urnGenerator,emailComposer);

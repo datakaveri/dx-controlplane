@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.util.*;
 
+import static org.cdpg.dx.aaa.delegation.util.Constants.*;
 import static org.cdpg.dx.common.util.DateTimeHelper.parseDateTime;
 
 
@@ -83,7 +84,7 @@ public class DelegationServiceImpl implements DelegationService{
 
         for (String scope : scopesList) {
           addAllScopesFuture = addAllScopesFuture.compose(v ->
-            keycloakUserService.setDelegationScopes(createdGrant.delegateId(), DxScope.fromString(scope))
+            keycloakUserService.setDelegationScopes(createdGrant.delegateId(), DxScope.fromString(scope),delegationGrant.delegatorId())
               .onSuccess(x -> LOGGER.info("Scope {} added to user {}", scope, createdGrant.delegateId()))
               .mapEmpty()
           );
@@ -107,6 +108,21 @@ public class DelegationServiceImpl implements DelegationService{
         BaseDxException dxEx = BaseDxException.from(err);
         if (dxEx instanceof DxNotFoundException) {
           return Future.failedFuture(new DxNotFoundException("No delegation grant found with id " + delegationId, dxEx));
+        }
+        return Future.failedFuture(dxEx);
+      });
+  }
+
+
+  @Override
+  public Future<List<DelegationScopeConstraint>>getDelegationScopeByEntityId(UUID entityId) {
+
+    Map<String,Object> filter = Map.of(ENTITY_ID,entityId.toString());
+    return delegationScopeConstraintDAO.getAllWithFilters(filter)
+      .recover(err -> {
+        BaseDxException dxEx = BaseDxException.from(err);
+        if (dxEx instanceof DxNotFoundException) {
+          return Future.failedFuture(new DxNotFoundException("No delegation grant found with id " + entityId, dxEx));
         }
         return Future.failedFuture(dxEx);
       });

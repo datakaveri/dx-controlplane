@@ -812,7 +812,7 @@ public class OrganizationServiceImpl implements OrganizationService {
       .compose(requests -> {
         if (requests.isEmpty()) {
           return Future.failedFuture(new DxNotFoundException(
-            "No pending credit request found for userId: " + userId));
+            "No pending provider request found for userId: " + userId));
         }
         return Future.succeededFuture(requests.get(0));
       });
@@ -830,6 +830,25 @@ public class OrganizationServiceImpl implements OrganizationService {
         return Future.succeededFuture(true);
       });
   }
+
+  public Future<OrganizationUser> getOrganisationUserByUserId(UUID userId) {
+
+    Map<String, Object> filters = Map.of("userId", userId);
+
+    return orgUserDAO.getAllWithFilters(filters)
+      .compose(users -> {
+
+        if (users == null || users.isEmpty()) {
+          return Future.failedFuture(
+            new DxNotFoundException("No organization user found with userId: " + userId)
+          );
+        }
+
+        // Return the first record (should be unique per user)
+        return Future.succeededFuture(users.get(0));
+      });
+  }
+
 
 
 }

@@ -29,7 +29,7 @@ public class OrganizationController implements ApiController {
         routerBuilder
                 .operation("get-auth-v2-organisations-request")
                 .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
+                .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
                 .handler(organizationHandler::getOrganisationRequest);
 
          routerBuilder
@@ -55,7 +55,7 @@ public class OrganizationController implements ApiController {
         routerBuilder
                 .operation("post-auth-v2-approve-create_org")
                 .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
+                .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
                 .handler(organizationHandler::approveOrganisationRequest);
 
         routerBuilder
@@ -68,7 +68,7 @@ public class OrganizationController implements ApiController {
         routerBuilder
                 .operation("get-auth-v2-organisations-join-requests")
                 .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
+                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN,DxRole.DELEGATE))
                 .handler(organizationHandler::getJoinOrganisationRequests);
 
          routerBuilder
@@ -87,7 +87,7 @@ public class OrganizationController implements ApiController {
         routerBuilder
                 .operation("put-auth-v2-organisations-join-requests")
                 .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
+                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN,DxRole.DELEGATE))
                 .handler(organizationHandler::approveJoinOrganisationRequests);
 
         routerBuilder
@@ -98,25 +98,25 @@ public class OrganizationController implements ApiController {
         routerBuilder
                 .operation("delete-auth-v2-organisations-id")
                 .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN, DxRole.ORG_ADMIN))
+                .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN, DxRole.ORG_ADMIN,DxRole.DELEGATE))
                 .handler(organizationHandler::deleteOrganisationById);
 
         routerBuilder
                 .operation("put-auth-v2-organisations-id")
                 .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
+                .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
                 .handler(organizationHandler::updateOrganisationById);
 
         //Organization User
         routerBuilder
                 .operation("get-auth-v2-org-users")
                 .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
+                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN,DxRole.DELEGATE))
                 .handler(organizationHandler::getOrganisationUsers);
         routerBuilder
                 .operation("get-auth-v2-organisations-id-users-user_id")
                 .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
+                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN,DxRole.DELEGATE))
                 .handler(organizationHandler::getOrganisationUserInfo);
 
         routerBuilder
@@ -139,7 +139,7 @@ public class OrganizationController implements ApiController {
         routerBuilder
                 .operation("get-auth-v2-user-roles")
                 .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
+                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN,DxRole.DELEGATE))
                 .handler(organizationHandler::getProviderRequest);
 
         routerBuilder
