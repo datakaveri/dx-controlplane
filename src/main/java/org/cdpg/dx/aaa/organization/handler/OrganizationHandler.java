@@ -35,6 +35,7 @@ import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.config.KeycloakConstants;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -71,8 +72,7 @@ public class OrganizationHandler {
     this.delegationService = delegationService;
   }
 
-  public Future<Boolean> validateEntityId(UUID delegatorId,UUID orgId)
-  {
+  public Future<Boolean> validateEntityId(UUID delegatorId, UUID orgId) {
 
     return delegationService.getDelegationScopeByEntityId(orgId)
       .compose(scopeConstraints -> {
@@ -80,12 +80,20 @@ public class OrganizationHandler {
         boolean exists = scopeConstraints.stream()
           .anyMatch(scopeConstraint ->
             "org_management".equalsIgnoreCase(scopeConstraint.scope()) &&
-              orgId.equals(scopeConstraint.entityId())
+              orgId.equals(scopeConstraint.entityId()) &&
+              LocalDateTime.now().isBefore(scopeConstraint.expiryAt())
           );
 
-        return Future.succeededFuture(exists);
+        if (!exists) {
+          return Future.failedFuture(
+            new DxForbiddenException("Delegation not found or expired for org_management scope")
+          );
+        }
+
+        return Future.succeededFuture(true);
       });
   }
+
 
   public Future<Void> verifyUserBelongsToOrg(UUID userId, UUID orgId) {
 
@@ -107,6 +115,7 @@ public class OrganizationHandler {
         return Future.succeededFuture();
       });
   }
+
   public Future<Void> validateDelegatedAccess(UUID requesterId, UUID orgId, DxScope requiredScope) {
 
     return userService.getUserInfoByID(requesterId)
@@ -133,6 +142,7 @@ public class OrganizationHandler {
           }
 
           UUID delegatorId = UUID.fromString(dxUser.did());
+          LOGGER.info("delegator is: {}",delegatorId);
 
           // Case 2A: orgId is NOT provided → fetch delegator's org
           if (orgId == null) {
@@ -140,13 +150,14 @@ public class OrganizationHandler {
             return keycloakUserService.getUserById(delegatorId)
               .compose(delegatorUser -> {
 
-                UUID derivedOrgId = UUID.fromString(delegatorUser.organisationId());
-
-                if (derivedOrgId == null) {
+                if (delegatorUser.organisationId() == null) {
                   return Future.failedFuture(
                     new DxForbiddenException("Delegator does not belong to any organisation")
                   );
                 }
+
+                UUID derivedOrgId = UUID.fromString(delegatorUser.organisationId());
+
 
                 // Validate delegator’s access
                 return validateEntityId(delegatorId, derivedOrgId)
@@ -204,22 +215,22 @@ public class OrganizationHandler {
           JsonObject scopesObj = dxuser.scopes();
           JsonArray delegationScopes = scopesObj.getJsonArray("delegation_scope");
 
-          if (!delegationScopes.contains("org_management")) {
+          if (!delegationScopes.contains("cos_admin_access")) {
             return Future.failedFuture(new DxForbiddenException(
               "This user doesn't have the scope to do this !"));
           }
           delegatorId = UUID.fromString(dxuser.did());
 
-          return validateEntityId(delegatorId, orgId)
-            .compose(hasAccess -> {
-              if (!hasAccess) {
-                return Future.failedFuture(
-                  new DxForbiddenException("This user doesn't have delegation access to the organisation")
-                );
-              }
-
-              return Future.succeededFuture().mapEmpty();
-            });
+//          return validateEntityId(delegatorId, orgId)
+//            .compose(hasAccess -> {
+//              if (!hasAccess) {
+//                return Future.failedFuture(
+//                  new DxForbiddenException("This user doesn't have delegation access to the organisation")
+//                );
+//              }
+//
+//              return Future.succeededFuture().mapEmpty();
+//            });
         }
 
           UpdateOrgDTO updateOrgDTO = RequestHelper.parseBody(ctx, UpdateOrgDTO::fromJson);
@@ -259,7 +270,7 @@ public class OrganizationHandler {
           JsonObject scopesObj = dxuser.scopes();
           JsonArray delegationScopes = scopesObj.getJsonArray("delegation_scope");
 
-          if (!delegationScopes.contains("org_management")) {
+          if (!delegationScopes.contains("cos_admin_access")) {
             return Future.failedFuture(new DxForbiddenException(
               "This user doesn't have the scope to do this !"
             ));
@@ -269,14 +280,14 @@ public class OrganizationHandler {
 //          ctx.queryParams().set("requestedBy", delegatorId.toString());
 //          LOGGER.debug("Injected 'requestedBy' into query params: {}", delegatorId);
 
-          return validateEntityId(delegatorId, orgId)
-            .compose(hasAccess -> {
-              if (!hasAccess) {
-                return Future.failedFuture(
-                  new DxForbiddenException("This user doesn't have delegation access to the organisation"));
-              }
-              return Future.succeededFuture().mapEmpty();
-            });
+//          return validateEntityId(delegatorId, orgId)
+//            .compose(hasAccess -> {
+//              if (!hasAccess) {
+//                return Future.failedFuture(
+//                  new DxForbiddenException("This user doesn't have delegation access to the organisation"));
+//              }
+//              return Future.succeededFuture().mapEmpty();
+//            });
         }
         return organizationService.deleteOrganization(orgId);
       })
@@ -541,7 +552,7 @@ public class OrganizationHandler {
             JsonObject scopesObj = dxuser.scopes();
             JsonArray delegationScopes = scopesObj.getJsonArray("delegation_scope");
 
-            if (!delegationScopes.contains("org_management")) {
+            if (!delegationScopes.contains("cos_admin_access")) {
               return Future.failedFuture(new DxForbiddenException(
                 "This user doesn't have the scope to do this !"
               ));
@@ -582,7 +593,7 @@ public class OrganizationHandler {
         }
 
         // Delegate but not cos_admin → validate scope first
-        if (!dxuser.scopes().getJsonArray("delegation_scope").contains("org_management")) {
+        if (!dxuser.scopes().getJsonArray("delegation_scope").contains("cos_admin_access")) {
           return Future.failedFuture(
             new DxForbiddenException("This user doesn't have the scope to do this!")
           );
@@ -888,19 +899,29 @@ public class OrganizationHandler {
     JsonObject OrgRequestJson = ctx.body().asJsonObject();
     UUID reqId = RequestHelper.getPathParamAsUUID(ctx, "id");
     Status status = Status.fromString(OrgRequestJson.getString("status"));
+    User user = ctx.user();
+    UUID requesterId = UUID.fromString(user.subject());
 
-
-    organizationService.updateProviderRequestStatus(reqId,status)
-      .onSuccess(requests -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx), "PUT", "Update Provider Role Request");
+    validateDelegatedAccess(requesterId, null, DxScope.ORG_MANAGEMENT)
+      .compose(isAllowed -> {
+        return organizationService.updateProviderRequestStatus(reqId, status);
+      })
+      .onSuccess(updated -> {
+        AuditLog auditLog = AuditingHelper.createAuditLog(
+          ctx.user(),
+          RoutingContextHelper.getRequestPath(ctx),
+          "PUT",
+          "Update Provider Role Request"
+        );
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, "Provider role updated",urnGenerator);
-        Future<Void> future = emailComposer.sendUserEmailForProviderRoleApproval(reqId,status);
+        ResponseBuilder.sendSuccess(ctx, "Provider role updated", urnGenerator);
 
+        // fire and forget email
+        emailComposer.sendUserEmailForProviderRoleApproval(reqId, status);
       })
       .onFailure(ctx::fail);
   }
+
 
   public void getProviderRequest(RoutingContext ctx) {
 

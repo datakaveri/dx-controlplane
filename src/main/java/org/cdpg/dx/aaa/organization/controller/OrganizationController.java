@@ -145,7 +145,7 @@ public class OrganizationController implements ApiController {
         routerBuilder
                 .operation("put-auth-v2-user-roles")
                 .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
+                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN,DxRole.DELEGATE))
                 .handler(organizationHandler::updateProviderRequest);
 
 

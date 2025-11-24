@@ -4108,6 +4108,7 @@ paths:
                         type: string
                       entity_id:
                         type: array
+                        nullable: true
                         items:
                           type: string
                           format: uuid
@@ -5347,7 +5348,7 @@ paths:
                 --data '{
                         "itemId":"74436122-e6f6-45bf-be53-7ee2c257826b"
                       }'
-  
+
 
   ##Cat apis
   /iudx/v2/cat/item:
@@ -5798,7 +5799,7 @@ paths:
         - lang: cURL
           label: patch item
           source: |
-            curl --location --request PATCH 
+            curl --location --request PATCH
             'https://${HOSTNAME}/iudx/v2/organisation/asset?id=uuid' \
             --header 'token: <token>'
             --data-raw '{
@@ -5858,7 +5859,7 @@ paths:
         - lang: cURL
           label: get organisation assets
           source: |
-            curl --location --request GET 
+            curl --location --request GET
             'https://${HOSTNAME}/iudx/v2/cat/organisation/asset?sort=name:asc&page=1' \
             --header 'Authorization: Bearer <token>'
     post:
@@ -6487,7 +6488,7 @@ paths:
         - lang: cURL
           label: search by item type
           source: |
-            curl --location --request POST 
+            curl --location --request POST
             'https://${HOSTNAME}/iudx/v2/cat/search?size=100&page=1' \
               --header 'Content-Type: application/json' \
               --data '{
@@ -6518,7 +6519,7 @@ paths:
         - lang: cURL
           label: search by text
           source: |
-            curl --location --request POST 
+            curl --location --request POST
             'https://${HOSTNAME}/iudx/v2/cat/search?size=100&page=1' \
             --header 'Content-Type: application/json' \
             --data '{
@@ -11377,7 +11378,7 @@ components:
           type: object
           description: >
             A JSON object describing the structure or schema of the dataset.
-            Must be a valid JSON object (not a stringified JSON). 
+            Must be a valid JSON object (not a stringified JSON).
             Any key-value pairs are allowed. Flattened in Elasticsearch for flexible nested key indexing.
           additionalProperties: true
           example:
