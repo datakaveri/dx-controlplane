@@ -187,7 +187,7 @@ public class SubscriptionServiceDAOImpl extends AbstractBaseDAO<SubscriptionDTO>
         new Condition("id", Condition.Operator.EQUALS, List.of(subscriptionId.toString()));
     SelectQuery selectQuery =
         new SelectQuery(
-            tableName, List.of("entityId", "queue_name"), subsId, null, null, null, null);
+            tableName, List.of("*"), subsId, null, null, null, null);
     return postgresService
         .select(selectQuery, false)
         .compose(

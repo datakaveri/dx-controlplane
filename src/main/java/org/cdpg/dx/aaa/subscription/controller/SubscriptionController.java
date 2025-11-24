@@ -21,6 +21,7 @@ import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxValidationException;
+import org.cdpg.dx.common.util.RoutingContextHelper;
 
 public class SubscriptionController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(SubscriptionController.class);
@@ -179,7 +180,7 @@ public class SubscriptionController implements ApiController {
   private void createSubscription(RoutingContext routingContext) {
     JsonObject requestBody = routingContext.body().asJsonObject();
     String userId = routingContext.user().subject();
-    String policyAt = routingContext.user().principal().getString("expiryAt", "");
+    String policyAt = RoutingContextHelper.getPolicyExpiryAt(routingContext);
     String entitiesId = requestBody.getJsonArray("entities").getString(0);
     String subscriptionName =
         requestBody.getString(
@@ -213,7 +214,7 @@ public class SubscriptionController implements ApiController {
     HttpServerRequest request = routingContext.request();
     String subsId = request.getParam(SUBSCRIPTION_ID);
     JsonObject requestJson = routingContext.body().asJsonObject();
-    String policyAt = routingContext.user().principal().getString("expiryAt", "");
+    String policyAt = RoutingContextHelper.getPolicyExpiryAt(routingContext);
     /*String entities = requestJson.getJsonArray("entities").getString(0);*/
 
     subscriptionService
@@ -275,7 +276,7 @@ public class SubscriptionController implements ApiController {
                         "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
                     .putHeader("Access-Control-Allow-Headers", "Authorization, Content-Type")
                     .setStatusCode(200)
-                    .end(getResult.listString().toString()))
+                    .end(getResult.jsonArray().encode()))
         .onFailure(routingContext::fail);
   }
 
