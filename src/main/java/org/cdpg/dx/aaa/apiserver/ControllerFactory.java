@@ -60,6 +60,8 @@ import org.cdpg.dx.aaa.publicKey.factory.PublicKeycontrllerFactory;
 import org.cdpg.dx.aaa.resourceserver.factory.ResourceServerControllerFactory;
 import org.cdpg.dx.aaa.search.controller.SearchController;
 import org.cdpg.dx.aaa.search.factory.SearchControllerFactory;
+import org.cdpg.dx.aaa.subscription.controller.SubscriptionController;
+import org.cdpg.dx.aaa.subscription.factory.SubscriptionControllerFactory;
 import org.cdpg.dx.aaa.token.controller.TokenController;
 import org.cdpg.dx.aaa.token.factory.TokenControllerFactory;
 import org.cdpg.dx.aaa.user.factory.UserControllerFactory;
@@ -133,13 +135,12 @@ public class ControllerFactory {
     CreditService creditService =
         CreditControllerFactory.createService(pgService, keycloakUserService, config);
 
-
-
     OrganizationService organizationService =
         OrganizationControllerFactory.createService(pgService, keycloakUserService, itemService);
 
     DelegationService delegationService =
-      DelegationControllerFactory.createService(pgService,keycloakUserService,organizationService,itemService);
+        DelegationControllerFactory.createService(
+            pgService, keycloakUserService, organizationService, itemService);
 
     UserService userService =
         UserControllerFactory.createService(
@@ -160,7 +161,9 @@ public class ControllerFactory {
     ApiController creditApiController =
         CreditControllerFactory.create(creditService, emailComposer, userService, urnGenerator);
 
-    ApiController delegationApiController = DelegationControllerFactory.create(delegationService,emailComposer,userService,urnGenerator,keycloakUserService);
+    ApiController delegationApiController =
+        DelegationControllerFactory.create(
+            delegationService, emailComposer, userService, urnGenerator, keycloakUserService);
 
     ApiController userController = UserControllerFactory.create(userService, urnGenerator);
 
@@ -182,7 +185,13 @@ public class ControllerFactory {
             delegationService);
 
     AdminHandler adminHandler =
-      new AdminHandler(userService, keycloakUserService, creditService, organizationService,urnGenerator,emailComposer);
+        new AdminHandler(
+            userService,
+            keycloakUserService,
+            creditService,
+            organizationService,
+            urnGenerator,
+            emailComposer);
 
     ApiController adminController = new AdminController(adminHandler);
 
@@ -228,12 +237,21 @@ public class ControllerFactory {
 
     TokenController tokenController =
         TokenControllerFactory.create(
-            pgService, esService, config, vertx, webClient, policyDao, delegationService,urnGenerator);
+            pgService,
+            esService,
+            config,
+            vertx,
+            webClient,
+            policyDao,
+            delegationService,
+            urnGenerator);
 
     PublicController publicController = PublicKeycontrllerFactory.create(config, vertx);
 
     // ingestionService already created above for ItemController
 
+    SubscriptionController subscriptionController =
+        SubscriptionControllerFactory.create(dataBrokerService, pgService, urnGenerator);
     return List.of(
         organizationController,
         creditApiController,
@@ -250,6 +268,7 @@ public class ControllerFactory {
         userController,
         delegationApiController,
         activityController,
-        activityReportController);
+        activityReportController,
+        subscriptionController);
   }
 }

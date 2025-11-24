@@ -7006,6 +7006,235 @@ paths:
 
 
 
+  ##NGSI-LD apis
+  /ngsi-ld/v1/subscriptions:
+    post:
+      tags:
+        - Subscriptions
+      summary: Create subscription
+      description: Create a new NGSI-LD subscription to do streaming, used as consumer api's.
+      operationId: postSubscriptions
+      #security:
+      #  - authorization: [ ]
+      requestBody:
+        description: Create Subscription details
+        required: true
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - $ref: '#/components/schemas/createastreamingsubscriptionrequest'
+                - $ref: '#/components/schemas/createastreamingsubscriptionrequest2'
+                - $ref: '#/components/schemas/createastreamingsubscriptionrequest3'
+                - $ref: '#/components/schemas/createastreamingsubscriptionrequest4'
+
+      responses:
+        '201':
+          description: Subscription created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NgsiLdSubscriptionResponse'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal Server Error
+
+    get:
+      tags:
+        - Subscriptions
+      summary: List of all subscription queues (based on user id)
+      operationId: getAllSubscriptionQueues
+      parameters:
+        - name: limit
+          in: query
+          description: Limit the no of data to be shown
+          schema:
+            type: integer
+            minimum: 1
+            default: 100
+        - name: offset
+          in: query
+          description: Offset to see more data
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        200:
+          description: 'Successfully retrieving list of all subscription queues'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Allqueue'
+
+#        401:
+#          content:
+#            application/json:
+#              schema:
+#                "$ref": "#/components/schemas/standardInvalidTokenErrorResponseAllQueueAndExcahnge"
+#          description: |-
+#            - Unauthorized - `token` invalid/expired
+#            - Unauthorized - `clientId` & `clientSecret` invalid/not match
+      description: |
+        This API could be used by a consumer to get the list of all the data subscription under the given user. The API could be used by the subscriber by providing the user access token.
+    
+
+  /ngsi-ld/v1/subscriptions/{subscriptionId}:
+    get:
+      tags:
+        - Subscriptions
+      summary: Retrieve subscription details
+      operationId: getstreamingsubscription
+      parameters:
+        - name: subscriptionId
+          in: path
+          description: 'Subscription ID obtained during registration.'
+          required: true
+          style: simple
+          schema:
+            type: string
+
+      responses:
+        200:
+          description: 'Successful retrieval of streaming subscription'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Allqueue'
+
+#        401:
+#          content:
+#            application/json:
+#              schema:
+#                "$ref": "#/components/schemas/standardInvalidTokenErrorResponse"
+#          description: |-
+#            - Unauthorized - `token` invalid/expired
+#            - Unauthorized - `clientId` & `clientSecret` invalid/not match
+
+#        404:
+#          content:
+#            application/json:
+#              schema:
+#                "$ref": "#/components/schemas/resourceNotFoundErrorResponse"
+#          description: 'Subscription details not found'
+
+      deprecated: false
+
+      description: |
+        Retrieve Subscription API allows a subscriber to fetch the list of `entities` subscribed. Based on the input provided, the API validates the access control of the user with DX(Data exchange) Auth server to allow or deny access to the API. 
+
+        #### Retrieve Subscription Details
+        To retrieve subscriber list, the provider must present the `subscriptionId` and `token`.
+
+
+    patch:
+      tags:
+        - Subscriptions
+      summary: Update subscription
+      operationId: updatestreamingsubscription
+      parameters:
+        - name: subscriptionId
+          in: path
+          description: 'Subscription ID obtained during registration.'
+          required: true
+          style: simple
+          schema:
+            type: string
+
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createastreamingsubscriptionrequest3'
+        required: true
+      responses:
+        201:
+          description: 'Successful updated of streaming subscription'
+#          content:
+#            application/json:
+#              schema:
+#                $ref: '#/components/schemas/appendstreaming'
+#        400:
+#          content:
+#            application/json:
+#              schema:
+#                "$ref": "#/components/schemas/subscriptionInvalidParamBadRequestErrorResponse"
+#          description: 'Bad query - Missing/Invalid parameters'
+
+#        401:
+#          content:
+#            application/json:
+#              schema:
+#                "$ref": "#/components/schemas/standardInvalidTokenErrorResponse"
+#          description: |-
+#            - Unauthorized - `token` invalid/expired
+#            - Unauthorized - `clientId` & `clientSecret` invalid/not match
+
+#        404:
+#          content:
+#            application/json:
+#              schema:
+#                "$ref": "#/components/schemas/standardResourceNotFoundErrorResponse"
+#          description: 'Subscription details not found'
+
+      description: |
+        Update Subscription API allows a subscriber to update expiry of the subscriptions. Based on the input provided, the API validates the access control of the user with DX(Data exchange) Auth server to allow or deny access to the API. 
+        
+        #### Update Subscription 
+        To replace the subscriber list, the provider must present the `subscriptionId` and `token` along with the list of `entities`.
+      deprecated: false
+
+    delete:
+      tags:
+        - Subscriptions
+      summary: Delete subscription
+      operationId: deleteasubscription
+      parameters:
+
+        - name: subscriptionId
+          in: path
+          description: 'Subscription ID obtained during registration.'
+          required: true
+          style: simple
+          schema:
+            type: string
+
+      responses:
+        200:
+          description: 'Successful deletion of streaming subscription'
+#          content:
+#            application/json:
+#              schema:
+#                $ref: '#/components/schemas/deletestreaming'
+
+#        401:
+#          content:
+#            application/json:
+#              schema:
+#                "$ref": "#/components/schemas/standardInvalidTokenErrorResponse"
+#          description: |-
+#            - Unauthorized - `token` invalid/expired
+#            - Unauthorized - `clientId` & `clientSecret` invalid/not match
+
+#        404:
+#          content:
+#            application/json:
+#              schema:
+#                "$ref": "#/components/schemas/resourceNotFoundErrorResponse"
+#          description: 'Subscription details not found'
+
+
+      description: |
+        Delete Subscription API allows a subscriber to delete the subscription. Based on the input provided, the API validates the access control of the user with DX(Data exchange) Auth server to allow or deny access to the API. 
+
+        #### Delete Subscription 
+        To delete the subscription list, the provider must present the `subscriptionId` and `token`.
+
+      deprecated: false
 
 tags:
   - name: Activity Logs
@@ -7035,6 +7264,11 @@ tags:
       List DX Entities of a certain type.
       These apis are intended to be used by User Interfaces.
     x-displayName: List
+  - name: Subscriptions
+    description: |
+      NGSI-LD subscriptions apis.
+      These apis are intended to be for the streaming purpose.
+    x-displayName: Subscriptions
 
 components:
   securitySchemes:
@@ -7222,6 +7456,102 @@ components:
       schema:
         type: string
   schemas:
+    createastreamingsubscriptionrequest:
+      title: createastreamingsubscriptionrequest with subscriptionName
+      required:
+        - type
+        - entities
+      type: object
+      properties:
+        subscriptionName:
+          type: string
+          maxLength: 512
+        type:
+          type: string
+          enum: [ Subscription ]
+        entities:
+          type: array
+          maxItems: 1
+          items:
+            type: string
+          description: ''
+      example:
+        subscriptionName: alias-name-of-application
+        type: Subscription
+        entities:
+          - <item-id-uuid>
+    createastreamingsubscriptionrequest2:
+      title: createastreamingsubscriptionrequest with id
+      required:
+        - type
+        - entities
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [ Subscription ]
+        entities:
+          type: array
+          maxItems: 1
+          items:
+            type: string
+          description: ''
+      example:
+        id: <uuid>
+        type: Subscription
+        entities:
+          - <item-id-uuid>
+
+    createastreamingsubscriptionrequest3:
+      title: createastreamingsubscriptionrequest with expiryAt
+      required:
+        - type
+        - entities
+      type: object
+      properties:
+        expiryAt:
+          type: string
+          description: 'must be in ISO 8601 format'
+        type:
+          type: string
+          enum: [ Subscription ]
+        entities:
+          type: array
+          maxItems: 1
+          items:
+            type: string
+          description: ''
+
+    createastreamingsubscriptionrequest4:
+      title: createastreamingsubscriptionrequest with combination
+      description: Combination of subscriptionName and expiryAt, subscriptionName and id, id and expiryAt and all three.
+      required:
+        - type
+        - entities
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        subscriptionName:
+          type: string
+          maxLength: 512
+        expiryAt:
+          type: string
+          description: 'must be in `ISO8601` format.'
+        type:
+          type: string
+          enum: [ Subscription ]
+        entities:
+          type: array
+          maxItems: 1
+          items:
+            type: string
+          description: ''
+
     ResourceServer:
       type: object
       properties:
@@ -7363,6 +7693,59 @@ components:
         type: urn:dx:controlplane:success
         title: Success
         detail: Adapter deleted
+    NgsiLdSubscriptionResponse:
+      title: createstreaming
+      required:
+        - id
+        - username
+        - apiKey
+        - queueName
+        - URL
+        - port
+        - vHost
+      type: object
+      properties:
+        results:
+          description: An array of objects
+          type: array
+          items:
+            type: object
+      example:
+        [
+          {
+            "id": "3fcXXd38-5b8a-XXe1-8cf7-e1ZZ4406e169",
+            "userId": "5XX824Xb-7bXb-XXXX-8003-7fbXX559965a",
+            "apiKey": "Use the apiKey returned on registration, if lost please use /resetPassword API",
+            "queueName": "5XX824Xb-7bXb-XXXX-8003-7fbXX559965a/sub-73547979",
+            "url": "databroker.iudx.io",
+            "port": 24567,
+            "vHost": "IUDX-V2"
+          }
+        ]
+    Allqueue:
+      title: Get All subscriptions
+      type: object
+      properties:
+        results:
+          description: An array of objects
+          type: array
+          items:
+            type: object
+      example:
+       [
+          {
+            "id": "04XX5967-addf-4e96-XXXX-dcfa16c3e83b",
+            "queue_name": "50e82XXb-7b2b-494a-XXXX-7fbed559965a/sub-deced3d5",
+            "entityid": "f6f265dd-XXX6-4191-9b67-3b88904cd93e",
+            "expiryat": "2026-11-22T15:56:02.762135",
+            "created_at": "2025-11-22T10:26:04.932798",
+            "updated_at": "2025-11-22T10:26:04.932798",
+            "dataset_name": "abc",
+            "user_id": "50e82XXb-7b2b-494a-XXXX-7fbed559965a",
+            "delegator_id": "04d45967-addf-4e96-a1fb-dcfa16c3e83b",
+            "provider_id": "04d45967-addf-4e96-a1fb-dcfa16c3e83b"
+          }
+        ]
     generalResourceNotFoundErrorResponse:
       title: generalResourceNotFoundErrorResponse
       properties:
