@@ -34,7 +34,7 @@ public interface DataBrokerService {
   Future<Void> updatePermission(
       String userId, String queueOrExchangeName, PermissionOpType permissionType, Vhosts vhosts);
 
-  Future<Void> deleteQueue(String queueName, String userid, Vhosts vhosts);
+  Future<Void> deleteQueue(String queueName, Vhosts vhosts);
 
   Future<List<String>> listQueue(String queueName, Vhosts vhosts);
 

@@ -42,7 +42,7 @@ public class DataBrokerServiceImpl implements DataBrokerService {
   }
 
   @Override
-  public Future<Void> deleteQueue(String queueName, String userid, Vhosts vhosts) {
+  public Future<Void> deleteQueue(String queueName, Vhosts vhosts) {
     LOGGER.trace("Info : deleteQueue() started");
     Promise<Void> promise = Promise.promise();
 
