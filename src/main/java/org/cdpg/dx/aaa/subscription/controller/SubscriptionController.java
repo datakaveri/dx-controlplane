@@ -22,6 +22,7 @@ import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxValidationException;
 import org.cdpg.dx.common.util.RoutingContextHelper;
+import org.cdpg.dx.common.validations.idhandler.GetIdFromBodyHandler;
 
 public class SubscriptionController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(SubscriptionController.class);
@@ -167,14 +168,23 @@ public class SubscriptionController implements ApiController {
 
   @Override
   public void register(RouterBuilder builder) {
+    GetIdFromBodyHandler getIdFromBodyHandler = new GetIdFromBodyHandler();
     builder.operation(DELETE_SUBSCRIPTION).handler(roleAllowed).handler(this::deleteSubscription);
     builder
         .operation(GET_BY_ID_SUBSCRIPTION)
         .handler(roleAllowed)
         .handler(this::getSubscriptionById);
     builder.operation(GET_ALL_SUBSCRIPTION).handler(roleAllowed).handler(this::getAllSubscriptions);
-    builder.operation(UPDATE_SUBSCRIPTION).handler(roleAllowed).handler(this::updateSubscription);
-    builder.operation(CREATE_SUBSCRIPTION).handler(roleAllowed).handler(this::createSubscription);
+    builder
+        .operation(UPDATE_SUBSCRIPTION)
+        .handler(getIdFromBodyHandler)
+        .handler(roleAllowed)
+        .handler(this::updateSubscription);
+    builder
+        .operation(CREATE_SUBSCRIPTION)
+        .handler(getIdFromBodyHandler)
+        .handler(roleAllowed)
+        .handler(this::createSubscription);
   }
 
   private void createSubscription(RoutingContext routingContext) {
