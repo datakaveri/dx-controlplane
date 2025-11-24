@@ -168,7 +168,7 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
 
 
   @Override
-  public Future<Boolean> setDelegationScopes(UUID userId, DxScope scope) {
+  public Future<Boolean> setDelegationScopes(UUID userId, DxScope scope,UUID delegatorId) {
 
     UserRepresentation user = usersResource().get(userId.toString()).toRepresentation();
     Map<String, List<String>> attrs = Optional.ofNullable(user.getAttributes())
@@ -177,6 +177,12 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
     String existing = attrs.getOrDefault(KeycloakConstants.SCOPES,
         List.of("[]"))      // default to empty array
       .get(0);
+
+//    String did = attrs.getOrDefault(KeycloakConstants.DID,List.of("[]")).get(0);
+
+      String did = delegatorId.toString();
+
+      attrs.put(KeycloakConstants.DID,List.of(did));
 
     JsonArray scopesArray = new JsonArray(existing);
 

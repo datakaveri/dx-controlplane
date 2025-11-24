@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.Map;
 
+import static org.cdpg.dx.aaa.organization.config.Constants.USER_ID;
 import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
 
 public class OrganizationServiceImpl implements OrganizationService {
@@ -351,7 +352,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     Map<String, Object> conditionMap = Map.of(
       Constants.ORGANIZATION_ID, orgId.toString(),
-      Constants.USER_ID, userId.toString()
+      USER_ID, userId.toString()
     );
 
 
@@ -416,7 +417,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
   @Override
   public Future<OrganizationUser> getOrganizationUserInfo(UUID userId) {
-    Map<String, Object> filterMap = Map.of(Constants.USER_ID, userId.toString());
+    Map<String, Object> filterMap = Map.of(USER_ID, userId.toString());
     return orgUserDAO.getAllWithFilters(filterMap).compose(orgUserList -> {
       if (orgUserList.isEmpty()) {
         return Future.failedFuture(new DxNotFoundException("No user found !"));
@@ -436,7 +437,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
   @Override
   public Future<ProviderRoleRequest> createProviderRequest(ProviderRoleRequest providerRoleRequest) {
-    Map<String, Object> filterMap = Map.of(Constants.USER_ID, providerRoleRequest.userId().toString());
+    Map<String, Object> filterMap = Map.of(USER_ID, providerRoleRequest.userId().toString());
 
     // check if there is a pending or granted request for the same user
     // if yes then dont create a new request
@@ -544,7 +545,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
   public Future<Boolean> hasPendingProviderRole(UUID userId, UUID orgId){
     Map<String, Object> filterMap = Map.of(
-      Constants.STATUS, Status.PENDING.getStatus(), Constants.USER_ID, userId.toString(), Constants.ORGANIZATION_ID, orgId.toString()
+      Constants.STATUS, Status.PENDING.getStatus(), USER_ID, userId.toString(), Constants.ORGANIZATION_ID, orgId.toString()
     );
 
     return providerRequestDAO.getAllWithFilters(filterMap)
@@ -553,16 +554,16 @@ public class OrganizationServiceImpl implements OrganizationService {
 
   public Future<List<OrganizationJoinRequest>> getOrganizationJoinRequestsByUser(UUID userId){
     Map<String, Object> pendingFilter = Map.of(
-      Constants.USER_ID, userId.toString(),
+      USER_ID, userId.toString(),
       Constants.STATUS, Status.PENDING.getStatus()
     );
     Map<String, Object> grantedFilter = Map.of(
-      Constants.USER_ID, userId.toString(),
+      USER_ID, userId.toString(),
       Constants.STATUS, Status.GRANTED.getStatus()
     );
 
     Map<String, Object> rejectedFilter = Map.of(
-      Constants.USER_ID, userId.toString(),
+      USER_ID, userId.toString(),
       Constants.STATUS, Status.REJECTED.getStatus()
     );
 
@@ -621,7 +622,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     Map<String, Object> filterMap = Map.of(
       Constants.ORGANIZATION_ID, orgId.toString(),
-      Constants.USER_ID, userId.toString()
+      USER_ID, userId.toString()
     );
 
     return orgUserDAO.getAllWithFilters(filterMap).compose(ar -> {
@@ -630,7 +631,7 @@ public class OrganizationServiceImpl implements OrganizationService {
       } else {
         Map<String, Object> filterMapProviderRole = Map.of(
           Constants.ORGANIZATION_ID, orgId.toString(),
-          Constants.USER_ID, userId.toString()
+          USER_ID, userId.toString()
         );
 
         return providerRequestDAO.getAllWithFilters(filterMapProviderRole)
@@ -702,7 +703,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
   public Future<Boolean> deleteOrganizationJoinRequest(UUID orgId, UUID userId) {
     Map<String, Object> conditionMap = Map.of(
-      Constants.USER_ID, userId.toString(),
+      USER_ID, userId.toString(),
       Constants.ORGANIZATION_ID, orgId.toString()
     );
 
@@ -725,7 +726,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
   public Future<Boolean> deleteProviderRoleRequest(UUID orgId, UUID userId) {
     Map<String, Object> conditionMap = Map.of(
-      Constants.USER_ID, userId.toString(),
+      USER_ID, userId.toString(),
       Constants.ORGANIZATION_ID, orgId.toString()
     );
 
@@ -804,7 +805,7 @@ public class OrganizationServiceImpl implements OrganizationService {
   @Override
   public Future<ProviderRoleRequest> getProviderRoleRequestByUserId(UUID userId) {
     Map<String, Object> filter = Map.of(
-      Constants.USER_ID, userId.toString(),
+      USER_ID, userId.toString(),
       Constants.STATUS, Status.PENDING.getStatus()
     );
 
@@ -812,7 +813,7 @@ public class OrganizationServiceImpl implements OrganizationService {
       .compose(requests -> {
         if (requests.isEmpty()) {
           return Future.failedFuture(new DxNotFoundException(
-            "No pending credit request found for userId: " + userId));
+            "No pending provider request found for userId: " + userId));
         }
         return Future.succeededFuture(requests.get(0));
       });
@@ -830,6 +831,25 @@ public class OrganizationServiceImpl implements OrganizationService {
         return Future.succeededFuture(true);
       });
   }
+
+  public Future<OrganizationUser> getOrganisationUserByUserId(UUID userId) {
+
+    Map<String, Object> filters = Map.of(USER_ID, userId.toString());
+
+    return orgUserDAO.getAllWithFilters(filters)
+      .compose(users -> {
+
+        if (users == null || users.isEmpty()) {
+          return Future.failedFuture(
+            new DxNotFoundException("No organization user found with userId: " + userId)
+          );
+        }
+
+        // Return the first record (should be unique per user)
+        return Future.succeededFuture(users.get(0));
+      });
+  }
+
 
 
 }

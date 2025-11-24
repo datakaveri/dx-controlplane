@@ -10,7 +10,8 @@ import java.util.stream.Collectors;
 
 public enum DxScope {
   ORG_MANAGEMENT("org_management"),
-  DATA_ACCESS("data_access");
+  DATA_ACCESS("data_access"),
+  COS_ADMIN("cos_admin_access");
 
   private final String scope;
 

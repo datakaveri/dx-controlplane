@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Logger;
 
 import org.cdpg.dx.aaa.credit.dao.CreditDAOFactory;
 import org.cdpg.dx.aaa.credit.service.CreditService;
+import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.organization.controller.OrganizationController;
@@ -28,12 +29,12 @@ public class OrganizationControllerFactory {
 
   private OrganizationControllerFactory() {}
 
-  public static OrganizationController create(OrganizationService organizationService, UserService userService, AuditingHandler auditingHandler, EmailComposer emailComposer, Vertx vertx, PostgresService pgService, CreditService creditService, KeycloakUserService keycloakUserService, URNGenerator urnGenerator, Boolean kycRequired) {
+  public static OrganizationController create(OrganizationService organizationService, UserService userService, AuditingHandler auditingHandler, EmailComposer emailComposer, Vertx vertx, PostgresService pgService, CreditService creditService, KeycloakUserService keycloakUserService, URNGenerator urnGenerator, Boolean kycRequired, DelegationService delegationService) {
 
     OrganizationDAOFactory organizationDAOFactory = new OrganizationDAOFactory(pgService);
     CreditDAOFactory creditDAOFactory = new CreditDAOFactory(pgService);
     OrganizationCreateReportService organizationCreateReportService = new OrganizationCreateRequestReportServiceImpl(organizationDAOFactory, creditDAOFactory, vertx);
-    OrganizationHandler  organizationHandler = new OrganizationHandler(organizationService, userService,emailComposer, organizationCreateReportService,creditService,keycloakUserService,urnGenerator);
+    OrganizationHandler  organizationHandler = new OrganizationHandler(organizationService, userService,emailComposer, organizationCreateReportService,creditService,keycloakUserService,urnGenerator,delegationService);
     return new OrganizationController(organizationHandler, auditingHandler,kycRequired);
   }
 

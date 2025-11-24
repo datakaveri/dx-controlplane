@@ -169,9 +169,11 @@ public class DelegationValidator {
           String ownerId = res.getString("ownerUserId");
           String itemOrgId = res.getString("organizationId");
 
+          //checking if the delegator is the owner of the item id
           if(ownerId.equalsIgnoreCase(delegatorIdStr))
             return Future.succeededFuture();
 
+          // org id of the user doesnt match org id fetched from item info
           if(!orgDelIdStr.equalsIgnoreCase(itemOrgId))
             return Future.failedFuture(new DxBadRequestException(
               "User " + delegatorId + " is not authorized to delegate the item " + itemId

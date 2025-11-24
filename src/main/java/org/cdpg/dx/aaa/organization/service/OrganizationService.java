@@ -66,6 +66,8 @@ public interface OrganizationService {
 
   Future<PaginatedResult<OrganizationUser>> getOrganizationUsers(PaginatedRequest paginatedRequest); //UUID orgId
 
+  Future<OrganizationUser> getOrganisationUserByUserId(UUID userId);
+
   Future<Boolean> updateUserRole(UUID orgId, UUID userId, Role Role);
 
   Future<Boolean> isOrgAdmin (UUID orgid, UUID userid);

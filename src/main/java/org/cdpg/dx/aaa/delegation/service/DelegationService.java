@@ -6,6 +6,7 @@ import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
 import org.cdpg.dx.aaa.delegation.models.DelegationScopeConstraint;
 import org.cdpg.dx.aaa.delegation.models.DelegationUpdateRequest;
+import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.util.ExceptionHttpStatusMapper;
 
 import java.util.HashSet;
@@ -18,6 +19,8 @@ public interface DelegationService {
   Future<DelegationGrant> createDelegationGrant(DelegationGrant delegationGrant, Set<String> UserRoles, List<JsonObject>constraints, JsonArray scopes);
 
   Future<DelegationGrant> getDelegationGrantById(UUID delegationId);
+
+  Future<List<DelegationScopeConstraint>> getDelegationScopeByEntityId(UUID entity);
 
   Future<DelegationUpdateRequest> createDelegationRequest(DelegationUpdateRequest delegationRequest,Set<String> UserRoles,List<JsonObject> constraintsJson,UUID delegatorId);
 
