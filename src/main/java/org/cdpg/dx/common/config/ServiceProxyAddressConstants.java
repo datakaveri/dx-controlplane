@@ -9,5 +9,6 @@ public class ServiceProxyAddressConstants {
   public static final String CATALOGUE_SERVICE_ADDRESS = "org.cdpg.dx.catalogue.service";
   public static final String AAA_SERVICE_ADDRESS = "org.cdpg.dx.aaa.service";
   public static final String EMAIL_SERVICE_ADDRESS = "org.cdpg.dx.email.service";
+    public static final String SCHEDULER_SERVICE_ADDRESS = "org.cdpg.dx.scheduler.service";
 
 }

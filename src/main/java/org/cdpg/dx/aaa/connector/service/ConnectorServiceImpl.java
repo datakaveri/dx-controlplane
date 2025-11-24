@@ -75,7 +75,7 @@ public class ConnectorServiceImpl implements ConnectorService {
     }
 
     dataBrokerService
-        .deleteQueue(assetId, userId, Vhosts.IUDX_INTERNAL)
+        .deleteQueue(assetId, Vhosts.IUDX_INTERNAL)
         .compose(
             queueDeleted -> {
               LOGGER.info("Queue deleted in DataBroker");

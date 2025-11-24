@@ -282,7 +282,7 @@ public class RabbitClient {
             handler -> {
               if (handler.succeeded()) {
                   LOGGER.debug(vhostPermissions);
-                LOGGER.debug("setVhost status code " + handler.result().statusCode() + handler.result().bodyAsString());
+                LOGGER.debug("setVhost status code " + handler.result().statusCode() + " " + handler.result().bodyAsString());
                 if (handler.result().statusCode() == HttpStatus.SC_CREATED) {
                   LOGGER.debug(
                       "Success :write permission set for user [ "
@@ -446,7 +446,7 @@ public class RabbitClient {
 
                 if (rmqResponse.statusCode() == HttpStatus.SC_OK) {
                   JsonArray permissionArray = new JsonArray(rmqResponse.body().toString());
-                  LOGGER.debug("permissionArray" + permissionArray);
+                  LOGGER.trace("permissionArray " + permissionArray);
                   promise.complete(permissionArray.getJsonObject(0));
                 } else if (handler.result().statusCode() == HttpStatus.SC_NOT_FOUND) {
                   promise.fail(new DxRabbitMqException("user not exist."));

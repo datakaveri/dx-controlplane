@@ -142,6 +142,13 @@
       "serverTimeoutMs": 30000,
       "corsRegexString":"^https://.+\\.iudx\\.org\\.in$",
       "urnPrefix2":"dx:aclApdServer:"
+    },
+    {
+      "id": "org.cdpg.dx.scheduler.verticle.SchedulerVerticle",
+      "verticleInstances": 1,
+      "isWorkerVerticle": true,
+      "schedulerTimeIntervalInMinutes": 30,
+      "threadPoolSize": 3
     }
   ]
 }
