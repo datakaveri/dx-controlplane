@@ -81,7 +81,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
               LOGGER.debug("entityId found {}", entitiesId);
               return dataBrokerService
                   .listQueue(queueName, Vhosts.IUDX_PROD)
-                  .map(listStream -> new GetSubscriptionModel(listStream, entitiesId));
+                  .map(listStream -> new GetSubscriptionModel(listStream, entitiesId, postgresSuccess));
             })
         .onComplete(
             getDataBroker -> {

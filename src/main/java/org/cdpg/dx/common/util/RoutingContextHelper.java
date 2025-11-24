@@ -30,6 +30,7 @@ public class RoutingContextHelper {
     //  private static final String JWT_DATA = "jwtData";
     private static final String RESPONSE_SIZE = "responseSize";
     private static final String AUDITING_LOG = "auditingLog";
+    private static final String POLICY_EXPIRY_AT = "policyExpiryAt";
 
     public static void setUser(RoutingContext routingContext, User user) {
         routingContext.put(USER, user);
@@ -46,6 +47,12 @@ public class RoutingContextHelper {
                 .put(API_METHOD, getMethod(routingContext));
     }
 
+    public static String getPolicyExpiryAt(RoutingContext routingContext) {
+        return routingContext.get(POLICY_EXPIRY_AT);
+    }
+    public static void setPolicyExpiryAt(RoutingContext routingContext, String policyExpiryAt) {
+        routingContext.put(POLICY_EXPIRY_AT, policyExpiryAt);
+    }
     public static String getToken(RoutingContext routingContext) {
         /* token would can be of the type : Bearer <JWT-Token> */
         /* Send Bearer <JWT-Token> if Authorization header is present */
