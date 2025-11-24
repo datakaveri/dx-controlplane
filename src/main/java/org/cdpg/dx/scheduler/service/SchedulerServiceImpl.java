@@ -3,9 +3,7 @@ package org.cdpg.dx.scheduler.service;
 import io.vertx.core.*;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -33,7 +31,7 @@ public class SchedulerServiceImpl implements SchedulerService {
 
     this.postgresService = postgresService;
     this.dataBrokerService = dataBrokerService;
-
+    checkSubscriptionStatus();
     vertx.setPeriodic(
         TimeUnit.MINUTES.toMillis(timeIntervalInHours), handler -> checkSubscriptionStatus());
   }
@@ -42,7 +40,8 @@ public class SchedulerServiceImpl implements SchedulerService {
     LOGGER.debug("Checking subscription status...");
 
     Condition condition =
-        new Condition("expiryAt", Condition.Operator.LESS_EQUALS, List.of(LocalDateTime.now().toString()));
+        new Condition(
+            "expiryAt", Condition.Operator.LESS_EQUALS, List.of(LocalDateTime.now().toString()));
 
     SelectQuery query =
         new SelectQuery(
