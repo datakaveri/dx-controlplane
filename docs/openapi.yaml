@@ -7013,8 +7013,8 @@ paths:
       summary: Create subscription
       description: Create a new NGSI-LD subscription to do streaming, used as consumer api's.
       operationId: postSubscriptions
-      #security:
-      #  - authorization: [ ]
+      security:
+        - authorization: [ ]
       requestBody:
         description: Create Subscription details
         required: true
@@ -7046,6 +7046,8 @@ paths:
         - Subscriptions
       summary: List of all subscription queues (based on user id)
       operationId: getAllSubscriptionQueues
+      security:
+        - authorization: [ ]
       parameters:
         - name: limit
           in: query
@@ -7087,6 +7089,8 @@ paths:
         - Subscriptions
       summary: Retrieve subscription details
       operationId: getstreamingsubscription
+      security:
+        - authorization: [ ]
       parameters:
         - name: subscriptionId
           in: path
@@ -7134,6 +7138,8 @@ paths:
         - Subscriptions
       summary: Update subscription
       operationId: updatestreamingsubscription
+      security:
+        - authorization: [ ]
       parameters:
         - name: subscriptionId
           in: path
@@ -7192,6 +7198,8 @@ paths:
         - Subscriptions
       summary: Delete subscription
       operationId: deleteasubscription
+      security:
+        - authorization: [ ]
       parameters:
 
         - name: subscriptionId
