@@ -23,6 +23,7 @@ import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
+import org.cdpg.dx.database.postgres.service.PostgresServiceImpl;
 import org.cdpg.dx.email.service.EmailService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
@@ -47,11 +48,11 @@ public class AccessRequestFactory {
             config.getString(DOC_INDEX), config.getString(APD_URL));
 
     AccessRequestService accessRequestService =
-        new AccessRequestServiceImpl(itemService, accessRequestDao);
+        new AccessRequestServiceImpl(itemService, accessRequestDao, policyDao);
 
     EmailComposer emailComposer = new EmailComposer(emailService, keycloakUserService, config);
 
     return new AccessRequestController(accessRequestService, auditingHandler, emailComposer,
-        urnGenerator);
+        urnGenerator, pgService);
   }
 }

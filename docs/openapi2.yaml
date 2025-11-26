@@ -76,7 +76,7 @@ paths:
           application/json:
             schema:
               type: object
-              additionalProperties: false
+              additionalProperties: true
               properties:
                 itemId:
                   type: string
@@ -93,6 +93,10 @@ paths:
                   type: object
                   minProperties: 1
                   maxProperties: 10
+                constraints:
+                  type: object
+                  description: Optional access constraints requested by the consumer
+                  additionalProperties: true
               required:
                 - itemId
                 - requestType
@@ -116,6 +120,10 @@ paths:
                     purpose: testing
                     description: The resource would be used for testing the abcd application
                       in which services are offered free of cost for public welfare
+                  constraints:
+                    access:
+                      - api
+                      - file
       responses:
         '200':
           description: OK
@@ -207,14 +215,19 @@ paths:
       x-codeSamples:
         - lang: cURL
           label: Create access request
-          source: "curl --location --request POST 'https://${HOSTNAME}/iudx/acl/apd/v2/policies/requests'\
-          \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type:\
-          \ application/json' \\\n  --data-raw '<payload>'\n"
-        - lang: cURL
-          label: Create access request with additional info
-          source: "curl --location --request POST 'https://${HOSTNAME}/iudx/acl/apd/v2/policies/requests'\
-          \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type:\
-          \ application/json' \\\n  --data-raw '<payload>'\n"
+          source: |
+            curl --location --request POST 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request' \
+              --header 'Authorization: <tokenValue>' \
+              --header 'Content-Type: application/json' \
+              --data-raw '<payload>'
+            
+            - lang: cURL
+            label: Create access request with additional info
+            source: |
+            curl --location --request POST 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request' \
+              --header 'Authorization: <tokenValue>' \
+              --header 'Content-Type: application/json' \
+              --data-raw '<payload>'
     put:
       tags:
         - Access Request
@@ -253,7 +266,7 @@ paths:
             schema:
               oneOf:
                 - title: approve access request
-                  additionalProperties: false
+                  additionalProperties: true
                   type: object
                   properties:
                     requestId:
@@ -268,6 +281,10 @@ paths:
                       type: string
                       description: ISO 8601 format timestamp to provide access to the
                         given asset
+                    constraints:
+                      type: object
+                      description: Access constraints that the provider can apply (e.g., allowed access types)
+                      additionalProperties: true
                   required:
                     - requestId
                     - status
@@ -297,6 +314,10 @@ paths:
                   requestId: bca11712-f381-46a5-afa3-a29b00568ace
                   status: granted
                   expiryAt: '2026-03-05T20:00:19'
+                  constraints:
+                    access:
+                      - api
+                      - file
               Update Rejected access request:
                 value:
                   requestId: bca11712-f381-46a5-afa3-a29b00568ace
