@@ -20,6 +20,7 @@ import org.cdpg.dx.aaa.organization.util.ProviderRoleRequestMapper;
 import org.cdpg.dx.aaa.orgReport.service.OrganizationCreateReportService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.AuditLog;
+import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxBadRequestException;
@@ -34,6 +35,7 @@ import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.config.KeycloakConstants;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
+import org.cdpg.dx.keycloak.util.DxUserMapper;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -588,12 +590,12 @@ public class OrganizationHandler {
       .compose(dxuser -> {
 
         // If requester is not a delegate, OR is cos_admin → no filtering required
-        if (!dxuser.roles().contains("delegate") || dxuser.roles().contains("cos_admin")) {
+        if (dxuser.roles().contains(DxRole.COS_ADMIN)) {
           return Future.succeededFuture();
         }
 
         // Delegate but not cos_admin → validate scope first
-        if (!dxuser.scopes().getJsonArray("delegation_scope").contains("cos_admin_access")) {
+        if (!dxuser.scopes().getJsonArray("delegation_scope").contains(DxScope.COS_ADMIN)) {
           return Future.failedFuture(
             new DxForbiddenException("This user doesn't have the scope to do this!")
           );
