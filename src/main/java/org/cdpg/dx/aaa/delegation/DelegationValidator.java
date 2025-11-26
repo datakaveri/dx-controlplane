@@ -97,9 +97,10 @@ public class DelegationValidator {
         case "org_admin" -> {
           if (scope.equalsIgnoreCase("org_management")) {
             validationFutures.add(validateOrgOwnership(delegatorId, entityIds));
-          } else if (scope.equalsIgnoreCase("provider_management")) {
-            validationFutures.add(validateProviderRequestOwnership(delegatorId, entityIds));
           }
+//          else if (scope.equalsIgnoreCase("provider_management")) {
+//            validationFutures.add(validateProviderRequestOwnership(delegatorId, entityIds));
+//          }
           else if(scope.equalsIgnoreCase("asset_management"))
           {
             validationFutures.add(validateAssetRequestOwnership(delegatorId,entityIds));
@@ -251,60 +252,60 @@ public class DelegationValidator {
       });
   }
 
-  /**
-   * Validate ownership of provider requests made to same organization as delegator’s.
-   */
-  private Future<Void> validateProviderRequestOwnership(UUID delegatorId, List<String> providerReqIds) {
-    if (providerReqIds == null || providerReqIds.isEmpty()) {
-      return Future.failedFuture(new DxBadRequestException("No provider request IDs provided"));
-    }
-
-    return organizationService.getOrganizationUserInfo(delegatorId)
-      .compose(userInfo -> {
-        if (userInfo == null || userInfo.organizationId() == null) {
-          return Future.failedFuture(new DxForbiddenException("Delegator is not associated with any organization"));
-        }
-
-        UUID delegatorOrgId = userInfo.organizationId();
-        LOGGER.info("Delegator {} belongs to org {}", delegatorId, delegatorOrgId);
-
-        List<Future<Void>> futures = new ArrayList<>();
-
-        for (String reqId : providerReqIds) {
-          UUID prId;
-          try {
-            prId = UUID.fromString(reqId);
-          } catch (IllegalArgumentException e) {
-            LOGGER.error("Invalid provider request ID format: {}", reqId);
-            futures.add(Future.failedFuture(new DxBadRequestException("Invalid provider request ID: " + reqId)));
-            continue;
-          }
-
-          Future<Void> validationFuture = organizationService.getProviderRequestById(prId)
-            .compose(pr -> {
-
-              if (pr == null) {
-                return Future.failedFuture(
-                  new DxNotFoundException("Provider request not found: " + reqId)
-                );
-              }
-
-              UUID requestOrgId = pr.orgId();
-              if (!delegatorOrgId.equals(requestOrgId)) {
-                LOGGER.error("Delegator org {} does not own provider request {}", delegatorOrgId, reqId);
-                return Future.failedFuture(
-                  new DxForbiddenException("Delegator not authorized for provider request " + reqId)
-                );
-              }
-              return succeededFuture();
-            });
-
-          futures.add(validationFuture);
-        }
-
-        return CompositeFuture.all(new ArrayList<>(futures)).mapEmpty();
-      });
-  }
+//  /**
+//   * Validate ownership of provider requests made to same organization as delegator’s.
+//   */
+//  private Future<Void> validateProviderRequestOwnership(UUID delegatorId, List<String> providerReqIds) {
+//    if (providerReqIds == null || providerReqIds.isEmpty()) {
+//      return Future.failedFuture(new DxBadRequestException("No provider request IDs provided"));
+//    }
+//
+//    return organizationService.getOrganizationUserInfo(delegatorId)
+//      .compose(userInfo -> {
+//        if (userInfo == null || userInfo.organizationId() == null) {
+//          return Future.failedFuture(new DxForbiddenException("Delegator is not associated with any organization"));
+//        }
+//
+//        UUID delegatorOrgId = userInfo.organizationId();
+//        LOGGER.info("Delegator {} belongs to org {}", delegatorId, delegatorOrgId);
+//
+//        List<Future<Void>> futures = new ArrayList<>();
+//
+//        for (String reqId : providerReqIds) {
+//          UUID prId;
+//          try {
+//            prId = UUID.fromString(reqId);
+//          } catch (IllegalArgumentException e) {
+//            LOGGER.error("Invalid provider request ID format: {}", reqId);
+//            futures.add(Future.failedFuture(new DxBadRequestException("Invalid provider request ID: " + reqId)));
+//            continue;
+//          }
+//
+//          Future<Void> validationFuture = organizationService.getProviderRequestById(prId)
+//            .compose(pr -> {
+//
+//              if (pr == null) {
+//                return Future.failedFuture(
+//                  new DxNotFoundException("Provider request not found: " + reqId)
+//                );
+//              }
+//
+//              UUID requestOrgId = pr.orgId();
+//              if (!delegatorOrgId.equals(requestOrgId)) {
+//                LOGGER.error("Delegator org {} does not own provider request {}", delegatorOrgId, reqId);
+//                return Future.failedFuture(
+//                  new DxForbiddenException("Delegator not authorized for provider request " + reqId)
+//                );
+//              }
+//              return succeededFuture();
+//            });
+//
+//          futures.add(validationFuture);
+//        }
+//
+//        return CompositeFuture.all(new ArrayList<>(futures)).mapEmpty();
+//      });
+//  }
 
   /**
    * Helper: Determine highest role from a role set.

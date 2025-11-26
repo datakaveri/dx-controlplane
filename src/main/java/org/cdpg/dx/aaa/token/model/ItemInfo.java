@@ -12,12 +12,14 @@ public record ItemInfo(
   JsonArray resourceServer,
   JsonArray drl,
   String did,
-  JsonObject constraints) {
+  JsonObject constraints,
+  String expiryAt,
+  String iid) {
 
   public static ItemInfo fromJson(JsonObject response) {
 
     if (response == null) {
-      return new ItemInfo(null, null, null, null, null, new JsonArray(), new JsonArray(), null, new JsonObject());
+      return new ItemInfo(null, null, null, null, null, new JsonArray(), new JsonArray(), null, new JsonObject(),null,null);
     }
 
     JsonObject item = response;
@@ -37,6 +39,8 @@ public record ItemInfo(
     String shortDescription = item.getString("shortDescription");
     JsonArray resourceServer = item.getJsonArray("resourceServer", new JsonArray());
     String did = item.getString("did");
+    String iid = item.getString("id");
+    String expiryAt = item.getString("expiryAt");
 
     JsonArray drl=null;
     Object drlObj = item.getValue("drl");
@@ -61,7 +65,9 @@ public record ItemInfo(
       resourceServer,
       drl,
       did,
-      constraints);
+      constraints,
+      expiryAt,
+      iid);
   }
 
   public JsonObject toJson() {
@@ -74,6 +80,8 @@ public record ItemInfo(
       .put("resourceServer", resourceServer)
       .put("drl", drl)
       .put("did", did)
-      .put("cons", constraints);
+      .put("cons", constraints)
+      .put("expiryAt",expiryAt)
+      .put("iid",iid);
   }
 }
