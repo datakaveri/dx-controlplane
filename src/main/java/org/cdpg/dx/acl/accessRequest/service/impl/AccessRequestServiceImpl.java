@@ -208,7 +208,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
           Set<String> allowedAccessTypes = getAllowedAccessTypes(resourceServers);
 
           JsonObject requestedConstraints =
-              request.getConstraints() == null ? new JsonObject() : request.getConstraints();
+              request.getConstraints() == null ? constraints : request.getConstraints();
           // validate; throws DxValidationException on invalid constraints
           validateAccessConstraints(requestedConstraints, allowedAccessTypes);
 
