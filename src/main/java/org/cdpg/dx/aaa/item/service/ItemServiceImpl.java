@@ -12,29 +12,19 @@ import static org.cdpg.dx.aaa.common.Constants.RESOURCE_GRP;
 import static org.cdpg.dx.aaa.common.Constants.RESOURCE_SVR;
 import static org.cdpg.dx.aaa.common.Constants.RESTRICTED;
 import static org.cdpg.dx.aaa.common.Constants.VALUE;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSTRAINTS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.EXPIRY_AT;
 import static org.cdpg.dx.database.elastic.util.Constants.ACCESS_POLICY;
 import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
-import static org.cdpg.dx.database.elastic.util.Constants.AUTHORIZATION_KEY;
-import static org.cdpg.dx.database.elastic.util.Constants.BEARER_KEY;
 import static org.cdpg.dx.database.elastic.util.Constants.COS_ADMIN;
 import static org.cdpg.dx.database.elastic.util.Constants.DETAIL_ITEM_NOT_FOUND;
-import static org.cdpg.dx.database.elastic.util.Constants.HTTPS;
 import static org.cdpg.dx.database.elastic.util.Constants.ID_KEYWORD;
-import static org.cdpg.dx.database.elastic.util.Constants.ITEM;
-import static org.cdpg.dx.database.elastic.util.Constants.ITEM_ID;
-import static org.cdpg.dx.database.elastic.util.Constants.ITEM_TYPE;
 import static org.cdpg.dx.database.elastic.util.Constants.KEYWORD_KEY;
 import static org.cdpg.dx.database.elastic.util.Constants.ORG_ADMIN;
-import static org.cdpg.dx.database.elastic.util.Constants.OWNER;
 import static org.cdpg.dx.database.elastic.util.Constants.TYPE;
 import static org.cdpg.dx.database.elastic.util.Constants.TYPE_KEYWORD;
-import static org.cdpg.dx.database.elastic.util.Constants.USER;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
 import java.util.Collections;
@@ -279,7 +269,7 @@ public class ItemServiceImpl implements ItemService {
               request.getItemId(), finalItemType, request.getToken())
           .compose(verifyPolicyDto -> {
             JsonObject item = response.getSource();
-            item.put(CONSTRAINTS, verifyPolicyDto.getConstraints());
+            item.put("cons", verifyPolicyDto.getConstraints());
             item.put(EXPIRY_AT, verifyPolicyDto.getExpiryAt());
             response.setSource(item);
             return succeededResponse(response, totalHits);

@@ -25,12 +25,12 @@ import org.cdpg.dx.acl.accessRequest.service.AccessRequestService;
 import org.cdpg.dx.acl.accessRequest.util.AuditingHelper;
 import org.cdpg.dx.acl.aclEmailHelper.EmailComposer;
 import org.cdpg.dx.acl.apiserver.ApdApiController;
+import org.cdpg.dx.acl.policy.util.UserAccessHandler;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auditing.model.AuditLog;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.URNGenerator;
-import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxForbiddenNoAccessException;
 import org.cdpg.dx.common.exception.DxValidationException;
@@ -41,11 +41,13 @@ import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
+import org.cdpg.dx.database.postgres.service.PostgresService;
 
 public class AccessRequestController implements ApdApiController {
   private static final Logger LOGGER = LogManager.getLogger(AccessRequestController.class);
 
   private final AccessRequestService accessRequestService;
+  private final PostgresService postgresService;
   private final AuditingHandler auditingHandler;
   private final EmailComposer emailComposer;
   private final URNGenerator urnGenerator;
@@ -54,11 +56,13 @@ public class AccessRequestController implements ApdApiController {
       AccessRequestService accessRequestService,
       AuditingHandler auditingHandler,
       EmailComposer emailComposer,
-      URNGenerator urnGenerator) {
+      URNGenerator urnGenerator,
+      PostgresService postgresService) {
     this.accessRequestService = accessRequestService;
     this.auditingHandler = auditingHandler;
     this.emailComposer = emailComposer;
     this.urnGenerator = urnGenerator;
+    this.postgresService = postgresService;
   }
 
   private static LocalDateTime parseAndValidateFutureTime(String timeString) {
@@ -86,6 +90,7 @@ public class AccessRequestController implements ApdApiController {
     Handler<RoutingContext> orgAdminAccessHandler = AuthorizationHandler.forRoles(DxRole.ORG_ADMIN);
     Handler<RoutingContext> providerAndOrgAdminAccessHandler =
         AuthorizationHandler.forRoles(DxRole.PROVIDER, DxRole.ORG_ADMIN);
+    UserAccessHandler userAccessHandler = new UserAccessHandler(postgresService);
 
     builder
         .operation(CREATE_ACCESS_REQUEST_API)
@@ -118,6 +123,7 @@ public class AccessRequestController implements ApdApiController {
     builder
         .operation(UPDATE_ACCESS_REQUEST_API)
         .handler(auditingHandler::handleApiAudit)
+        .handler(userAccessHandler)
         .handler(providerAndOrgAdminAccessHandler)
         .handler(this::updateAccessRequestHandler);
 
@@ -284,7 +290,11 @@ public class AccessRequestController implements ApdApiController {
     JsonObject body = ctx.body().asJsonObject();
     UUID requestId = UUID.fromString(body.getString("requestId"));
     Status status = Status.fromString(body.getString("status"));
+    JsonObject constraints = body.getJsonObject("constraints");
+    String feedbackToConsumer = body.getString("feedbackToConsumer", "");
+    String providerComment = body.getString("providerComment", "");
     UUID providerId = UUID.fromString(ctx.user().subject());
+
     DxUser provider;
     try {
       provider = RoutingContextHelper.fromPrincipal(ctx);
@@ -293,6 +303,7 @@ public class AccessRequestController implements ApdApiController {
       ctx.fail(new DxForbiddenException("Invalid user"));
       return;
     }
+
     String organizationId = provider.organisationId();
     UUID providerOrganizationId = organizationId != null ? UUID.fromString(organizationId) : null;
     String providerOrganizationName = provider.organisationName();
@@ -303,7 +314,8 @@ public class AccessRequestController implements ApdApiController {
 
       accessRequestService
           .approveAccessRequest(
-              providerId, requestId, expiryAt, providerOrganizationId, isUserOrgAdmin)
+              providerId, requestId, expiryAt, providerOrganizationId, isUserOrgAdmin, constraints,
+              providerComment, feedbackToConsumer)
           .onSuccess(
               accessRequestDto -> {
                 AuditLog auditLog =
@@ -326,8 +338,10 @@ public class AccessRequestController implements ApdApiController {
                 ctx.fail(err);
               });
     } else {
+      // pass providerComment and feedbackToConsumer to be stored
       accessRequestService
-          .rejectAccessRequest(providerId, requestId, providerOrganizationId, isUserOrgAdmin)
+          .rejectAccessRequest(providerId, requestId, providerOrganizationId, isUserOrgAdmin,
+              providerComment, feedbackToConsumer)
           .onSuccess(
               accessRequestDto -> {
                 AuditLog auditLog =
@@ -358,6 +372,7 @@ public class AccessRequestController implements ApdApiController {
     UUID itemId = UUID.fromString(body.getString("itemId"));
     RequestType requestType = RequestType.valueOf(body.getString("requestType"));
     JsonObject additionalInfo = body.getJsonObject("additionalInfo");
+    JsonObject constraints = body.getJsonObject("constraints");
     DxUser consumer;
     try {
       consumer = RoutingContextHelper.fromPrincipal(ctx);
@@ -370,7 +385,7 @@ public class AccessRequestController implements ApdApiController {
     String consumerOrganizationName = consumer.organisationName();
 
     accessRequestService
-        .createAccessRequest(consumer, itemId, requestType, additionalInfo)
+        .createAccessRequest(consumer, itemId, requestType, additionalInfo, constraints)
         .onSuccess(
             accessRequestDto -> {
               AuditLog auditLog =

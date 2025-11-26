@@ -22,6 +22,19 @@ public enum ItemType {
     throw new IllegalArgumentException("No matching ItemType for: " + value);
   }
 
+  public static ItemType fromCatalogueItemType(String value) {
+    if (value == null) {
+      throw new IllegalArgumentException("Item type cannot be null");
+    }
+
+    // Handle cases like: adex:AiModel, adex:DataBank, adex:Apps
+    if (value.contains(":")) {
+      value = value.substring(value.indexOf(":") + 1);
+    }
+
+    return fromTypeValue(value.toUpperCase());
+  }
+
   public String getTypeValue() {
     return typeValue;
   }

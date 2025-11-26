@@ -113,7 +113,7 @@ public class PolicyServiceImpl implements PolicyService {
     return checkForItemsInDb(itemIds, itemTypes, caller)
         .compose(providerIds -> {
           LOGGER.debug("no.of providerIds: {}", providerIds.size());
-          if (providerIds.size() == 1 && providerIds.contains(userId)) {
+          if (providerIds.stream().allMatch(id -> id.equals(userId))) {
             // Step 2: Ensure no duplicate policy
             return policyDao.checkExistingPoliciesForIds(requests, userId);
           } else {

@@ -13,12 +13,17 @@ import org.cdpg.dx.database.postgres.models.PaginatedResult;
 
 public interface AccessRequestService {
   Future<AccessRequestDto> createAccessRequest(DxUser consumer, UUID itemId, RequestType requestType,
-                                               JsonObject additionalInfo);
+                                               JsonObject additionalInfo, JsonObject constraints);
 
   Future<AccessRequestDto> approveAccessRequest(UUID providerId, UUID requestId, LocalDateTime expiryAt,
-                                                UUID providerOrganizationId, boolean isUserOrgAdmin);
+                                                UUID providerOrganizationId,
+                                                boolean isUserOrgAdmin, JsonObject constraints,
+                                                String providerComment, String feedbackToConsumer);
 
-  Future<AccessRequestDto> rejectAccessRequest(UUID providerId, UUID requestId, UUID providerOrganizationId, boolean isUserOrgAdmin);
+  Future<AccessRequestDto> rejectAccessRequest(UUID providerId, UUID requestId,
+                                               UUID providerOrganizationId,
+                                               boolean isUserOrgAdmin, String providerComment,
+                                               String feedbackToConsumer);
 
   Future<Boolean> checkAccessRequest(UUID userId, String itemId);
 

@@ -10926,7 +10926,7 @@ components:
             itemStatus: "ACTIVE"
             itemCreatedAt: "2024-01-05T02:09:10+0530"
             expiryAt: "2025-12-04T20:00:19"
-            constraints:
+            cons:
               access: [ 'sub' ]
     successResponseForGetDataBankEntityWithAccess:
       type: object
@@ -10983,7 +10983,7 @@ components:
             license: 'CC-BY 4.0'
             itemStatus: "ACTIVE"
             itemCreatedAt: "2024-01-05T02:09:10+0530"
-            constraints:
+            cons:
               access: [ 'sub' ]
         detail: "Success: Item fetched Successfully"
     successResponseForGetAdexAppsEntityWithAccess:
