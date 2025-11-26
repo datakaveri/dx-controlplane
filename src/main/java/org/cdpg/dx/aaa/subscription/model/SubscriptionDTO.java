@@ -15,7 +15,6 @@ public record SubscriptionDTO(
     String queue_name,
     String entityId,
     LocalDateTime expiryAt,
-    String dataset_name,
     String userid,
     String provider_id,
     String delegator_id,
@@ -24,13 +23,11 @@ public record SubscriptionDTO(
     implements BaseEntity<SubscriptionDTO> {
 
   public static SubscriptionDTO fromJson(JsonObject json) {
-    System.out.println("------------------------>>>>>>"+json.getString("expiryAt"));
     return new SubscriptionDTO(
         UUID.fromString(json.getString("id")),
         json.getString("queue_name"),
         json.getString("entityId"),
         LocalDateTime.parse(json.getString("expiryAt")),
-        json.getString("dataset_name"),
         json.getString("userid"),
         json.getString("provider_id"),
         json.getString("delegator_id"),
@@ -45,7 +42,6 @@ public record SubscriptionDTO(
     if (queue_name != null) map.put("queue_name", queue_name);
     if (entityId != null) map.put("entityId", entityId);
     if (expiryAt != null) map.put("expiryAt", expiryAt.toString());
-    if (dataset_name != null) map.put("dataset_name", dataset_name);
     if (userid != null) map.put("user_id", userid);
     if (provider_id != null) map.put("provider_id", provider_id);
     if (delegator_id != null) map.put("delegator_id", delegator_id);
@@ -59,7 +55,6 @@ public record SubscriptionDTO(
     if (queue_name != null) json.put("queue_name", queue_name);
     if (entityId != null) json.put("entityId", entityId);
     if (expiryAt != null) json.put("expiryAt", expiryAt);
-    if (dataset_name != null) json.put("dataset_name", dataset_name);
     if (userid != null) json.put("userid", userid);
     if (provider_id != null) json.put("provider_id", provider_id);
     if (delegator_id != null) json.put("delegator_id", delegator_id);

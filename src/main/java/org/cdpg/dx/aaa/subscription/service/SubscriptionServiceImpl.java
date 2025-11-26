@@ -5,7 +5,6 @@ import static org.cdpg.dx.aaa.subscription.util.SubscriptionConstants.RESOURCE_N
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
@@ -35,7 +34,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   public Future<Void> deleteSubscription(String subscriptionId, String userid) {
     LOGGER.info("subsid to delete :: {}", subscriptionId);
     Promise<Void> promise = Promise.promise();
-    getMetaDataFromSubscriptionId(subscriptionId)
+    getMetaDataFromSubscriptionIdAndUserId(subscriptionId, userid)
         .compose(
             foundEntityId -> {
               String entityId = foundEntityId.getJsonObject(0).getString("entityId");
@@ -70,10 +69,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
-  public Future<GetSubscriptionModel> getSubscriptionById(String subsId) {
+  public Future<GetSubscriptionModel> getSubscriptionById(String subsId, String userId) {
     LOGGER.info("getSubscription() method started");
     Promise<GetSubscriptionModel> promise = Promise.promise();
-    getMetaDataFromSubscriptionId(subsId)
+    getMetaDataFromSubscriptionIdAndUserId(subsId, userId)
         .compose(
             postgresSuccess -> {
               String entitiesId = postgresSuccess.getJsonObject(0).getString("entityId");
@@ -81,7 +80,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
               LOGGER.debug("entityId found {}", entitiesId);
               return dataBrokerService
                   .listQueue(queueName, Vhosts.IUDX_PROD)
-                  .map(listStream -> new GetSubscriptionModel(listStream, entitiesId, postgresSuccess));
+                  .map(
+                      listStream ->
+                          new GetSubscriptionModel(listStream, entitiesId, postgresSuccess));
             })
         .onComplete(
             getDataBroker -> {
@@ -109,19 +110,17 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
-  public Future<Void> updateSubscription(
-      /*String entitiesid,*/ String subsId, LocalDateTime expiryAt) {
+  public Future<Void> updateSubscription(String entitiesid, String subsId, LocalDateTime expiryAt) {
     LOGGER.info("updateSubscription() method started");
     Promise<Void> promise = Promise.promise();
 
-    /*subscriptionServiceDAO
-    .getSubscriptionByQueueNameAndEntityId(subsId, entitiesid)*/
-    getMetaDataFromSubscriptionId(subsId)
+    subscriptionServiceDAO
+        .getSubscriptionBySubIdAndEntityId(subsId, entitiesid)
         .compose(
             selectQueryHandler -> {
               LOGGER.debug("selectQueryHandler result {}", selectQueryHandler);
               if (selectQueryHandler.isEmpty()) {
-                LOGGER.warn("Subscription not found for [queue,entity]");
+                LOGGER.warn("Subscription not found for [subsId,entitiesid]");
                 return Future.failedFuture(new DxSubscriptionException(RESOURCE_NOT_FOUND));
               }
               return subscriptionServiceDAO.updateSubscriptionExpiryByQueueNameAndEntityId(
@@ -147,7 +146,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
       UUID subscriptionId,
       String subscriptionName,
       String entitiesId,
-      LocalDateTime expiryAt) {
+      LocalDateTime expiryAt,
+      String providerId) {
     LOGGER.info("createSubscription() method started with subscriptionId {}", subscriptionId);
     Promise<RegisterSubscription> promise = Promise.promise();
 
@@ -179,7 +179,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             })
         .compose(
             updateHandler -> {
-              LOGGER.debug("Permission added" + expiryAt);
+              LOGGER.debug("Permission added");
               return subscriptionServiceDAO
                   .insertSubscription(
                       new SubscriptionDTO(
@@ -187,10 +187,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                           queueName,
                           entitiesId,
                           expiryAt,
-                          "abc",
                           userId,
-                          subscriptionId.toString(),
-                          subscriptionId.toString(),
+                          providerId,
+                          userId,
                           null,
                           null))
                   .map(v -> updateHandler);
@@ -201,21 +200,21 @@ public class SubscriptionServiceImpl implements SubscriptionService {
               promise.complete(successHandler);
             })
         /*.recover(
-            recoverHanlder -> {
-              LOGGER.error(
-                  "Error occurred during subscription creation: {}", recoverHanlder.getMessage());
-              // Rollback: Delete the created queue in Data Broker
-              return dataBrokerService
-                  .deleteQueue(queueName, Vhosts.IUDX_PROD)
-                  .compose(
-                      v -> {
-                        LOGGER.info("Rolled back: Deleted queue {}", queueName);
-                        return Future.failedFuture(recoverHanlder);
-                      });
-            })*/
+        recoverHanlder -> {
+          LOGGER.error(
+              "Error occurred during subscription creation: {}", recoverHanlder.getMessage());
+          // Rollback: Delete the created queue in Data Broker
+          return dataBrokerService
+              .deleteQueue(queueName, Vhosts.IUDX_PROD)
+              .compose(
+                  v -> {
+                    LOGGER.info("Rolled back: Deleted queue {}", queueName);
+                    return Future.failedFuture(recoverHanlder);
+                  });
+        })*/
         .onFailure(
             failureHandler -> {
-                failureHandler.printStackTrace();
+              failureHandler.printStackTrace();
               LOGGER.error(
                   "Failed to create subscription {}", failureHandler.getLocalizedMessage());
               promise.fail(failureHandler);
@@ -224,10 +223,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     return promise.future();
   }
 
-  private Future<JsonArray> getMetaDataFromSubscriptionId(String subscriptionId) {
+  private Future<JsonArray> getMetaDataFromSubscriptionIdAndUserId(
+      String subscriptionId, String userId) {
     Promise<JsonArray> promise = Promise.promise();
     subscriptionServiceDAO
-        .getEntitiesIdAndQueueNameBySubscriptionId(UUID.fromString(subscriptionId))
+        .getEntitiesIdAndQueueNameBySubscriptionIdAndUserId(
+            UUID.fromString(subscriptionId), UUID.fromString(userId))
         .onComplete(
             entityResult -> {
               if (entityResult.succeeded()) {

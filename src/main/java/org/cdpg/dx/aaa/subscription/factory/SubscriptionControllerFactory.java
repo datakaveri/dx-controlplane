@@ -10,9 +10,9 @@ import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 
 public class SubscriptionControllerFactory {
-    public static SubscriptionController create(DataBrokerService dataBrokerService, PostgresService postgresService, URNGenerator urnGenerator){
+    public static SubscriptionController create(DataBrokerService dataBrokerService, PostgresService postgresService, URNGenerator urnGenerator, String controlPlaneDomain){
         SubscriptionServiceDAO subscriptionServiceDAO = new SubscriptionServiceDAOImpl(postgresService);
         SubscriptionService subscriptionService = new SubscriptionServiceImpl(subscriptionServiceDAO, dataBrokerService);
-        return new SubscriptionController(subscriptionService, urnGenerator);
+        return new SubscriptionController(subscriptionService, urnGenerator, controlPlaneDomain);
     }
 }
