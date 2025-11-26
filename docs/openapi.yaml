@@ -7014,8 +7014,8 @@ paths:
       summary: Create subscription
       description: Create a new NGSI-LD subscription to do streaming, used as consumer api's.
       operationId: postSubscriptions
-      #security:
-      #  - authorization: [ ]
+      security:
+        - authorization: [ ]
       requestBody:
         description: Create Subscription details
         required: true
@@ -7037,16 +7037,36 @@ paths:
                 $ref: '#/components/schemas/NgsiLdSubscriptionResponse'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse400'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse401'
+        '409':
+          description: Conflict - Subscription already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse409'
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse500'
 
     get:
       tags:
         - Subscriptions
       summary: List of all subscription queues (based on user id)
       operationId: getAllSubscriptionQueues
+      security:
+        - authorization: [ ]
       parameters:
         - name: limit
           in: query
@@ -7069,15 +7089,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Allqueue'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse400'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse401'
+        500:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse500'
 
-#        401:
-#          content:
-#            application/json:
-#              schema:
-#                "$ref": "#/components/schemas/standardInvalidTokenErrorResponseAllQueueAndExcahnge"
-#          description: |-
-#            - Unauthorized - `token` invalid/expired
-#            - Unauthorized - `clientId` & `clientSecret` invalid/not match
       description: |
         This API could be used by a consumer to get the list of all the data subscription under the given user. The API could be used by the subscriber by providing the user access token.
     
@@ -7088,6 +7118,8 @@ paths:
         - Subscriptions
       summary: Retrieve subscription details
       operationId: getstreamingsubscription
+      security:
+        - authorization: [ ]
       parameters:
         - name: subscriptionId
           in: path
@@ -7104,22 +7136,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Allqueue'
-
-#        401:
-#          content:
-#            application/json:
-#              schema:
-#                "$ref": "#/components/schemas/standardInvalidTokenErrorResponse"
-#          description: |-
-#            - Unauthorized - `token` invalid/expired
-#            - Unauthorized - `clientId` & `clientSecret` invalid/not match
-
-#        404:
-#          content:
-#            application/json:
-#              schema:
-#                "$ref": "#/components/schemas/resourceNotFoundErrorResponse"
-#          description: 'Subscription details not found'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse400'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse401'
+        500:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse500'
+        404:
+          description: 'Subscription details not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse404'
 
       deprecated: false
 
@@ -7135,6 +7175,8 @@ paths:
         - Subscriptions
       summary: Update subscription
       operationId: updatestreamingsubscription
+      security:
+        - authorization: [ ]
       parameters:
         - name: subscriptionId
           in: path
@@ -7154,32 +7196,30 @@ paths:
       responses:
         201:
           description: 'Successful updated of streaming subscription'
-#          content:
-#            application/json:
-#              schema:
-#                $ref: '#/components/schemas/appendstreaming'
-#        400:
-#          content:
-#            application/json:
-#              schema:
-#                "$ref": "#/components/schemas/subscriptionInvalidParamBadRequestErrorResponse"
-#          description: 'Bad query - Missing/Invalid parameters'
-
-#        401:
-#          content:
-#            application/json:
-#              schema:
-#                "$ref": "#/components/schemas/standardInvalidTokenErrorResponse"
-#          description: |-
-#            - Unauthorized - `token` invalid/expired
-#            - Unauthorized - `clientId` & `clientSecret` invalid/not match
-
-#        404:
-#          content:
-#            application/json:
-#              schema:
-#                "$ref": "#/components/schemas/standardResourceNotFoundErrorResponse"
-#          description: 'Subscription details not found'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse400'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse401'
+        500:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse500'
+        404:
+          description: 'Subscription details not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse404'
 
       description: |
         Update Subscription API allows a subscriber to update expiry of the subscriptions. Based on the input provided, the API validates the access control of the user with DX(Data exchange) Auth server to allow or deny access to the API. 
@@ -7193,6 +7233,8 @@ paths:
         - Subscriptions
       summary: Delete subscription
       operationId: deleteasubscription
+      security:
+        - authorization: [ ]
       parameters:
 
         - name: subscriptionId
@@ -7206,27 +7248,30 @@ paths:
       responses:
         200:
           description: 'Successful deletion of streaming subscription'
-#          content:
-#            application/json:
-#              schema:
-#                $ref: '#/components/schemas/deletestreaming'
-
-#        401:
-#          content:
-#            application/json:
-#              schema:
-#                "$ref": "#/components/schemas/standardInvalidTokenErrorResponse"
-#          description: |-
-#            - Unauthorized - `token` invalid/expired
-#            - Unauthorized - `clientId` & `clientSecret` invalid/not match
-
-#        404:
-#          content:
-#            application/json:
-#              schema:
-#                "$ref": "#/components/schemas/resourceNotFoundErrorResponse"
-#          description: 'Subscription details not found'
-
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse400'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse401'
+        500:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse500'
+        404:
+          description: 'Subscription details not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse404'
 
       description: |
         Delete Subscription API allows a subscriber to delete the subscription. Based on the input provided, the API validates the access control of the user with DX(Data exchange) Auth server to allow or deny access to the API. 
@@ -7722,6 +7767,64 @@ components:
             "vHost": "IUDX-V2"
           }
         ]
+    NgsiLdSubscriptionErrorResponse400:
+        title: NgsiLdSubscriptionErrorResponse400
+        properties:
+          type:
+            type: string
+          title:
+            type: string
+          detail:
+            type: string
+          instance:
+            type: string
+    NgsiLdSubscriptionErrorResponse404:
+      title: NgsiLdSubscriptionErrorResponse404
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+        instance:
+          type: string
+    NgsiLdSubscriptionErrorResponse401:
+      title: NgsiLdSubscriptionErrorResponse401
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+        instance:
+          type: string
+
+    NgsiLdSubscriptionErrorResponse409:
+      title: NgsiLdSubscriptionErrorResponse409
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+        instance:
+          type: string
+
+    NgsiLdSubscriptionErrorResponse500:
+      title: NgsiLdSubscriptionErrorResponse500
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+        instance:
+          type: string
+
     Allqueue:
       title: Get All subscriptions
       type: object
@@ -10823,7 +10926,7 @@ components:
             itemStatus: "ACTIVE"
             itemCreatedAt: "2024-01-05T02:09:10+0530"
             expiryAt: "2025-12-04T20:00:19"
-            constraints:
+            cons:
               access: [ 'sub' ]
     successResponseForGetDataBankEntityWithAccess:
       type: object
@@ -10880,7 +10983,7 @@ components:
             license: 'CC-BY 4.0'
             itemStatus: "ACTIVE"
             itemCreatedAt: "2024-01-05T02:09:10+0530"
-            constraints:
+            cons:
               access: [ 'sub' ]
         detail: "Success: Item fetched Successfully"
     successResponseForGetAdexAppsEntityWithAccess:

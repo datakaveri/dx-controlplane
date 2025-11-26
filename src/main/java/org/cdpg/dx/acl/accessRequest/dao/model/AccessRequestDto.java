@@ -19,6 +19,7 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
   private Status status;
   private RequestType requestType;
   private JsonObject additionalInfo;
+  private JsonObject constraints;
   private String providerId;
   private String consumerId;
   private String itemId;
@@ -41,6 +42,7 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
     setStatus(Status.fromString(request.getString(DB_STATUS)));
     setRequestType(RequestType.valueOf(request.getString(DB_REQUEST_TYPE)));
     setAdditionalInfo(new JsonObject(request.getString(DB_ADDITIONAL_INFO)));
+    setConstraints(new JsonObject(request.getString(DB_CONSTRAINTS)));
     setProviderId(request.getString(DB_PROVIDER_ID));
     setConsumerId(request.getString(DB_CONSUMER_ID));
     setItemId(request.getString(DB_ITEM_ID));
@@ -71,6 +73,7 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
     dto.setStatus(Status.fromString(entries.getString(DB_STATUS)));
     dto.setRequestType(RequestType.valueOf(entries.getString(DB_REQUEST_TYPE)));
     dto.setAdditionalInfo(new JsonObject(entries.getString(DB_ADDITIONAL_INFO)));
+    dto.setConstraints(new JsonObject(entries.getString(DB_CONSTRAINTS)));
     dto.setProviderId(entries.getString(DB_PROVIDER_ID));
     dto.setConsumerId(entries.getString(DB_CONSUMER_ID));
     dto.setItemId(entries.getString(DB_ITEM_ID));
@@ -101,6 +104,7 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
     EntityUtil.putIfPresent(fieldsMap, DB_STATUS, getStatus());
     EntityUtil.putIfPresent(fieldsMap, DB_REQUEST_TYPE, getRequestType());
     EntityUtil.putIfPresent(fieldsMap, DB_ADDITIONAL_INFO, getAdditionalInfo());
+    EntityUtil.putIfPresent(fieldsMap, DB_CONSTRAINTS, getConstraints());
     EntityUtil.putIfPresent(fieldsMap, DB_PROVIDER_ID, getProviderId());
     EntityUtil.putIfPresent(fieldsMap, DB_ASSET_NAME, getAssetName());
     EntityUtil.putIfPresent(fieldsMap, DB_EXPIRY_AT, getExpiryAt());
@@ -124,6 +128,7 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
             .put(REQUEST_STATUS, getStatus())
             .put(REQUEST_TYPE, getRequestType())
             .put(ADDITIONAL_INFO, getAdditionalInfo())
+            .put(CONSTRAINTS, getConstraints())
             .put(
                 USER,
                 new JsonObject()
@@ -212,6 +217,15 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
 
   public AccessRequestDto setAdditionalInfo(JsonObject additionalInfo) {
     this.additionalInfo = additionalInfo;
+    return this;
+  }
+
+  public JsonObject getConstraints() {
+    return constraints;
+  }
+
+  public AccessRequestDto setConstraints(JsonObject constraints) {
+    this.constraints = constraints;
     return this;
   }
 
@@ -326,6 +340,8 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
         + requestType
         + ", additionalInfo="
         + additionalInfo
+        + ", constraints="
+        + constraints
         + ", providerId='"
         + providerId
         + '\''

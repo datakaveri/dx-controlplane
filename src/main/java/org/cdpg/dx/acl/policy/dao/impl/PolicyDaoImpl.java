@@ -21,7 +21,9 @@ import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -125,16 +127,16 @@ public class PolicyDaoImpl implements PolicyDao {
     // Compose futures for each policy insert
     List<Future<QueryResult>> insertFutures = createPolicyRequestList.stream()
         .map(req -> {
-          List<Object> values = List.of(
-              req.getUserEmail(),                     // String
-              req.getItemId().toString(),             // UUID
-              userId.toString(),                      // UUID
-              req.getExpiryTime().toString(),         // LocalDateTime
-              req.getConstraints(),                   // JsonObject
-              ACTIVE,                                 // String
-              req.getAdditionalInfo(),                // String or nullable
-              req.getProviderComment(),               // String or nullable
-              req.getFeedbackToConsumer()             // String or nullable
+          List<Object> values = Arrays.asList(
+              req.getUserEmail(),
+              req.getItemId().toString(),
+              userId.toString(),
+              req.getExpiryTime().toString(),
+              Optional.ofNullable(req.getConstraints()).orElse(new JsonObject()),
+              ACTIVE,
+              Optional.ofNullable(req.getAdditionalInfo()).orElse(new JsonObject()),
+              Optional.ofNullable(req.getProviderComment()).orElse(""),
+              Optional.ofNullable(req.getFeedbackToConsumer()).orElse("")
           );
 
           InsertQuery insertQuery = new InsertQuery()
