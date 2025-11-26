@@ -14,6 +14,7 @@
     "poolSize": 25
   },
   "commonOptions":{
+    "controlPlaneDomain": "https://v2.dev.controlplane.iudx.io",
     "dxApiBasePath": "/dx/apd/acl/v1",
     "dataPlaneUrl" : "<data-plane-url>",
     "ogcDataPlaneUrl": "<ogc-data-plane-url>",

@@ -23,16 +23,22 @@ import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxValidationException;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.common.validations.idhandler.GetIdFromBodyHandler;
+import org.cdpg.dx.common.validations.itemcheck.SubscriptionAuthorizationHandler;
 
 public class SubscriptionController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(SubscriptionController.class);
   private final SubscriptionService subscriptionService;
   Handler<RoutingContext> roleAllowed =
       AuthorizationHandler.forRoles(DxRole.CONSUMER_DELEGATE, DxRole.CONSUMER);
+  SubscriptionAuthorizationHandler subscriptionAuthorizationHandler;
 
   public SubscriptionController(
-      SubscriptionService subscriptionService, URNGenerator urnGenerator) {
+      SubscriptionService subscriptionService,
+      URNGenerator urnGenerator,
+      String controlPlaneDomain) {
     this.subscriptionService = subscriptionService;
+    this.subscriptionAuthorizationHandler =
+        new SubscriptionAuthorizationHandler(controlPlaneDomain);
   }
 
   private static int parseIntOrDefault(List<String> values, int defaultValue) {
@@ -105,14 +111,14 @@ public class SubscriptionController implements ApiController {
     return userExpiry;
   }*/
 
-  private static ZonedDateTime parseAndValidateFutureTimeWithPolicy2(
+  private static LocalDateTime parseAndValidateFutureTimeWithPolicy2(
       String expiryAt, String policyExpiry) {
     ZonedDateTime now = ZonedDateTime.now();
     if (policyExpiry == null || policyExpiry.isBlank()) {
 
       if (expiryAt == null || expiryAt.isBlank()) {
         // both null → default expiry = now + 1 year
-        return now.plusYears(1);
+        return now.plusYears(1).toLocalDateTime();
       }
       ZonedDateTime userExpiry;
       try {
@@ -122,21 +128,21 @@ public class SubscriptionController implements ApiController {
       }
 
       if (userExpiry.isAfter(now)) {
-        return userExpiry;
+        return userExpiry.toLocalDateTime();
       } else {
         throw new DxValidationException("expiryAt must be a future time");
       }
     }
 
-    ZonedDateTime policyTime;
+    LocalDateTime policyTime;
     try {
-      policyTime = ZonedDateTime.parse(policyExpiry);
+      policyTime = LocalDateTime.parse(policyExpiry);
     } catch (DateTimeParseException e) {
-      throw new DxValidationException("policyExpiry has invalid format, expected ISO format");
+      throw new DxValidationException("policyExpiry has invalid format, expected format");
     }
 
     // policy must be in the future too
-    if (!policyTime.isAfter(now)) {
+    if (!policyTime.isAfter(now.toLocalDateTime())) {
       throw new DxValidationException("policyExpiry must be a future time");
     }
 
@@ -159,11 +165,11 @@ public class SubscriptionController implements ApiController {
     }
 
     // must NOT exceed policy
-    if (userExpiry.isAfter(policyTime)) {
+    if (userExpiry.toLocalDateTime().isAfter(policyTime)) {
       throw new DxValidationException("expiryAt cannot be greater than policyExpiry");
     }
 
-    return userExpiry;
+    return userExpiry.toLocalDateTime();
   }
 
   @Override
@@ -178,11 +184,13 @@ public class SubscriptionController implements ApiController {
     builder
         .operation(UPDATE_SUBSCRIPTION)
         .handler(getIdFromBodyHandler)
+        .handler(subscriptionAuthorizationHandler)
         .handler(roleAllowed)
         .handler(this::updateSubscription);
     builder
         .operation(CREATE_SUBSCRIPTION)
         .handler(getIdFromBodyHandler)
+        .handler(subscriptionAuthorizationHandler)
         .handler(roleAllowed)
         .handler(this::createSubscription);
   }
@@ -197,13 +205,18 @@ public class SubscriptionController implements ApiController {
             SUBSCRIPTION_NAME,
             "sub-" + UUID.randomUUID().toString().replace("-", "").substring(0, 8));
     String subscriptionId = requestBody.getString("id", UUID.randomUUID().toString());
-    ZonedDateTime expiryAt2 =
+    LocalDateTime expiryAt =
         parseAndValidateFutureTimeWithPolicy2(requestBody.getString("expiryAt"), policyAt);
-    LocalDateTime expiryAt = expiryAt2.toLocalDateTime();
     LOGGER.debug("expiryAt {}", expiryAt);
+    String providerId = RoutingContextHelper.getProviderId(routingContext);
     subscriptionService
         .createSubscription(
-            userId, UUID.fromString(subscriptionId), subscriptionName, entitiesId, expiryAt)
+            userId,
+            UUID.fromString(subscriptionId),
+            subscriptionName,
+            entitiesId,
+            expiryAt,
+            providerId)
         .onSuccess(
             v ->
                 routingContext
@@ -225,13 +238,13 @@ public class SubscriptionController implements ApiController {
     String subsId = request.getParam(SUBSCRIPTION_ID);
     JsonObject requestJson = routingContext.body().asJsonObject();
     String policyAt = RoutingContextHelper.getPolicyExpiryAt(routingContext);
-    /*String entities = requestJson.getJsonArray("entities").getString(0);*/
+    String entities = requestJson.getJsonArray("entities").getString(0);
 
     subscriptionService
         .updateSubscription(
-            /*entities,*/ subsId,
-            parseAndValidateFutureTimeWithPolicy2(requestJson.getString("expiryAt"), policyAt)
-                .toLocalDateTime())
+            entities,
+            subsId,
+            parseAndValidateFutureTimeWithPolicy2(requestJson.getString("expiryAt"), policyAt))
         .onSuccess(
             v ->
                 routingContext
@@ -273,9 +286,10 @@ public class SubscriptionController implements ApiController {
   private void getSubscriptionById(RoutingContext routingContext) {
     HttpServerRequest request = routingContext.request();
     String subsId = request.getParam(SUBSCRIPTION_ID);
+    String userId = routingContext.user().subject();
     LOGGER.info("subscriptionId {}", subsId);
     subscriptionService
-        .getSubscriptionById(subsId)
+        .getSubscriptionById(subsId, userId)
         .onSuccess(
             getResult ->
                 routingContext
