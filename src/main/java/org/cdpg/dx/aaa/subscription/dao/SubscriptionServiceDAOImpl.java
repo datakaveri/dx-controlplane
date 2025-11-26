@@ -127,9 +127,9 @@ public class SubscriptionServiceDAOImpl extends AbstractBaseDAO<SubscriptionDTO>
   }
 
   @Override
-  public Future<JsonArray> getSubscriptionBySubIdAndEntityId(String queueName, String entityId) {
+  public Future<JsonArray> getSubscriptionBySubIdAndEntityId(String subId, String entityId) {
     Promise<JsonArray> promise = Promise.promise();
-    SelectQuery selectQuery = getSelectQueryForQueueNameAndEntityId(queueName, entityId);
+    SelectQuery selectQuery = getSelectQueryForSubIdAndEntityId(subId, entityId);
     postgresService
         .select(selectQuery, false)
         .onComplete(
@@ -204,9 +204,9 @@ public class SubscriptionServiceDAOImpl extends AbstractBaseDAO<SubscriptionDTO>
             });
   }
 
-  private SelectQuery getSelectQueryForQueueNameAndEntityId(String queueName, String entityId) {
+  private SelectQuery getSelectQueryForSubIdAndEntityId(String subId, String entityId) {
     Condition queueNameCondition =
-        new Condition("queue_name", Condition.Operator.EQUALS, List.of(queueName));
+        new Condition("id", Condition.Operator.EQUALS, List.of(subId));
     Condition entityCondition =
         new Condition("entityId", Condition.Operator.EQUALS, List.of(entityId));
     Condition condition =
