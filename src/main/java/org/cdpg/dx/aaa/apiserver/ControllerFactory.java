@@ -99,6 +99,7 @@ public class ControllerFactory {
 
     final String dataPlaneUrl = config.getString("dataPlaneUrl");
     final String controlPlaneUrl = config.getString("controlPlaneUrl");
+    final String controlPlaneDomain = config.getString("controlPlaneDomain");
     final String ogcDataPlaneUrl = config.getString("ogcDataPlaneUrl");
     PostgresService pgService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
     DataBrokerService dataBrokerService =
@@ -251,7 +252,7 @@ public class ControllerFactory {
     // ingestionService already created above for ItemController
 
     SubscriptionController subscriptionController =
-        SubscriptionControllerFactory.create(dataBrokerService, pgService, urnGenerator);
+        SubscriptionControllerFactory.create(dataBrokerService, pgService, urnGenerator, controlPlaneDomain);
     return List.of(
         organizationController,
         creditApiController,

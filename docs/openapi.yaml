@@ -7843,7 +7843,6 @@ components:
             "expiryat": "2026-11-22T15:56:02.762135",
             "created_at": "2025-11-22T10:26:04.932798",
             "updated_at": "2025-11-22T10:26:04.932798",
-            "dataset_name": "abc",
             "user_id": "50e82XXb-7b2b-494a-XXXX-7fbed559965a",
             "delegator_id": "04d45967-addf-4e96-a1fb-dcfa16c3e83b",
             "provider_id": "04d45967-addf-4e96-a1fb-dcfa16c3e83b"

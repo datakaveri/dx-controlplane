@@ -127,10 +127,9 @@ public class SubscriptionServiceDAOImpl extends AbstractBaseDAO<SubscriptionDTO>
   }
 
   @Override
-  public Future<JsonArray> getSubscriptionByQueueNameAndEntityId(
-      String queueName, String entityId) {
+  public Future<JsonArray> getSubscriptionBySubIdAndEntityId(String subId, String entityId) {
     Promise<JsonArray> promise = Promise.promise();
-    SelectQuery selectQuery = getSelectQueryForQueueNameAndEntityId(queueName, entityId);
+    SelectQuery selectQuery = getSelectQueryForSubIdAndEntityId(subId, entityId);
     postgresService
         .select(selectQuery, false)
         .onComplete(
@@ -182,12 +181,16 @@ public class SubscriptionServiceDAOImpl extends AbstractBaseDAO<SubscriptionDTO>
   }
 
   @Override
-  public Future<JsonArray> getEntitiesIdAndQueueNameBySubscriptionId(UUID subscriptionId) {
+  public Future<JsonArray> getEntitiesIdAndQueueNameBySubscriptionIdAndUserId(
+      UUID subscriptionId, UUID userId) {
     Condition subsId =
         new Condition("id", Condition.Operator.EQUALS, List.of(subscriptionId.toString()));
+    Condition userIdC =
+        new Condition("user_id", Condition.Operator.EQUALS, List.of(userId.toString()));
+    Condition combinedCondition =
+        new Condition(List.of(subsId, userIdC), Condition.LogicalOperator.AND);
     SelectQuery selectQuery =
-        new SelectQuery(
-            tableName, List.of("*"), subsId, null, null, null, null);
+        new SelectQuery(tableName, List.of("*"), combinedCondition, null, null, null, null);
     return postgresService
         .select(selectQuery, false)
         .compose(
@@ -201,9 +204,9 @@ public class SubscriptionServiceDAOImpl extends AbstractBaseDAO<SubscriptionDTO>
             });
   }
 
-  private SelectQuery getSelectQueryForQueueNameAndEntityId(String queueName, String entityId) {
+  private SelectQuery getSelectQueryForSubIdAndEntityId(String subId, String entityId) {
     Condition queueNameCondition =
-        new Condition("queue_name", Condition.Operator.EQUALS, List.of(queueName));
+        new Condition("id", Condition.Operator.EQUALS, List.of(subId));
     Condition entityCondition =
         new Condition("entityId", Condition.Operator.EQUALS, List.of(entityId));
     Condition condition =

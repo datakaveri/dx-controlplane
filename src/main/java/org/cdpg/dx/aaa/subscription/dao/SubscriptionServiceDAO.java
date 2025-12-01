@@ -15,12 +15,12 @@ public interface SubscriptionServiceDAO extends BaseDAO<SubscriptionDTO> {
 
   Future<GetAllSubscription> getAllSubscriptionByUserId(String userId, int limit, int offset);
 
-  Future<JsonArray> getSubscriptionByQueueNameAndEntityId(String subscriptionId, String entityId);
+  Future<JsonArray> getSubscriptionBySubIdAndEntityId(String subscriptionId, String entityId);
 
   Future<Void> updateSubscriptionExpiryByQueueNameAndEntityId(
       String subsId, /*String entitiesid,*/ LocalDateTime expiryAt);
 
-  Future<JsonArray> getEntitiesIdAndQueueNameBySubscriptionId(UUID subscriptionId);
+  Future<JsonArray> getEntitiesIdAndQueueNameBySubscriptionIdAndUserId(UUID subscriptionId, UUID userId);
 
   Future<Void> insertSubscription(SubscriptionDTO subscriptionDTO);
 }
