@@ -314,7 +314,7 @@ public class DelegationValidator {
     if (roles.contains("cos_admin")) return "cos_admin";
     if (roles.contains("org_admin")) return "org_admin";
     if (roles.contains("provider")) return "provider";
-    return "user";
+    return "consumer";
   }
 
 
