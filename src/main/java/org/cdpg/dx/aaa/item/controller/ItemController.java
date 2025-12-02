@@ -30,7 +30,6 @@ import org.cdpg.dx.aaa.item.util.ItemFactory;
 import org.cdpg.dx.aaa.item.util.PatchItemRequest;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auditing.model.AuditLog;
-import org.cdpg.dx.auth.authentication.util.BearerTokenExtractor;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.URNGenerator;
@@ -464,10 +463,12 @@ public class ItemController implements ApiController {
     DxUser dxUser = RoutingContextHelper.fromPrincipal(routingContext);
     String subId = dxUser.sub().toString();
     List<String> roles = dxUser.roles();
+    String did = dxUser.did();
 
     GetItemRequest request = new GetItemRequest(itemId, subId);
     request.setRoles(roles);
     request.setToken(token);
+    request.setDid(did);
     itemService
         .getItemWithAccessChecks(request)
         .onSuccess(

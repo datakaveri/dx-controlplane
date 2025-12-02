@@ -147,16 +147,16 @@ public class ScriptGenerationService {
     private String getDataType(JsonObject resourceServer) {
         LOGGER.debug("Checking resource server data type: {}", resourceServer);
 
-        // Check for accessTypes (plural) first, then fallback to accessType (singular)
-        JsonArray accessType = resourceServer.getJsonArray("accessTypes");
+        // Check for queryTypes (plural) first, then fallback to accessType (singular)
+        JsonArray queryType = resourceServer.getJsonArray("queryTypes");
 
-        List<Object> accessTypes = accessType.getList();
+        List<Object> queryTypes = queryType.getList();
         // Check for vector data (FEATURES)
-        if (accessTypes.contains("FEATURES")) {
+        if (queryTypes.contains("FEATURES")) {
             return "vector";
         }
         // Check for raster data (STAC)
-        if (accessTypes.contains("STAC")) {
+        if (queryTypes.contains("STAC")) {
             return "raster";
         }
         return null;
