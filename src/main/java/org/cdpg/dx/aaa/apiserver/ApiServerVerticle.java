@@ -41,13 +41,13 @@ public class ApiServerVerticle extends AbstractVerticle {
   private HttpServer server;
   private Router router;
 
-  public static String errorResponse(HttpStatusCode code) {
+/*  public static String errorResponse(HttpStatusCode code) {
     return new JsonObject()
         .put("type", code.getUrn())
         .put("title", code.getDescription())
         .put("detail", code.getDescription())
         .toString();
-  }
+  }*/
 
   @Override
   public void start() {
