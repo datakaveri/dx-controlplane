@@ -20,6 +20,7 @@ import org.cdpg.dx.aaa.organization.util.ProviderRoleRequestMapper;
 import org.cdpg.dx.aaa.orgReport.service.OrganizationCreateReportService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.AuditLog;
+import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.URNGenerator;
@@ -195,7 +196,6 @@ public class OrganizationHandler {
 
 
 
-
   public void updateOrganisationById(RoutingContext ctx) {
 
     // updates org
@@ -203,42 +203,19 @@ public class OrganizationHandler {
     // check if request param and delegated org id is same
 
     User user = ctx.user();
-    UUID userId = UUID.fromString(user.subject());
+    JsonObject userJson = user.principal();
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.COS_ADMIN.getRole()),
+      List.of(DxScope.ORG_MANAGEMENT.getScope(),DxScope.COS_ADMIN.getScope())
+    );
+
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
+    UpdateOrgDTO updateOrgDTO = RequestHelper.parseBody(ctx, UpdateOrgDTO::fromJson);
 
-    userService.getUserInfoByID(userId)
-      .compose(dxuser -> {
-
-        UUID delegatorId = null;
-
-        // If user is a delegate (but not cos_admin)
-        if (dxuser.roles().contains("delegate") && !dxuser.roles().contains("cos_admin")) {
-
-          JsonObject scopesObj = dxuser.scopes();
-          JsonArray delegationScopes = scopesObj.getJsonArray("delegation_scope");
-
-          if (!delegationScopes.contains("cos_admin_access")) {
-            return Future.failedFuture(new DxForbiddenException(
-              "This user doesn't have the scope to do this !"));
-          }
-          delegatorId = UUID.fromString(dxuser.did());
-
-//          return validateEntityId(delegatorId, orgId)
-//            .compose(hasAccess -> {
-//              if (!hasAccess) {
-//                return Future.failedFuture(
-//                  new DxForbiddenException("This user doesn't have delegation access to the organisation")
-//                );
-//              }
-//
-//              return Future.succeededFuture().mapEmpty();
-//            });
-        }
-
-          UpdateOrgDTO updateOrgDTO = RequestHelper.parseBody(ctx, UpdateOrgDTO::fromJson);
-          return organizationService.updateOrganizationById(orgId, updateOrgDTO);
-
-      })
+    organizationService.updateOrganizationById(orgId, updateOrgDTO)
       .onSuccess(updatedOrg ->{
         AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
           RoutingContextHelper.getRequestPath(ctx), "PUT", "Update Organization By ID");
@@ -330,145 +307,63 @@ public class OrganizationHandler {
 
   public void approveJoinOrganisationRequests(RoutingContext ctx) {
 
-    JsonObject orgRequestJson = ctx.body().asJsonObject();
     User user = ctx.user();
-    UUID userId = UUID.fromString(user.subject());
-    UUID reqId = RequestHelper.getPathParamAsUUID(ctx, "req_id");
+    JsonObject userJson = user.principal();
 
-    Status status = Status.fromString(orgRequestJson.getString("status"));
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.ORG_ADMIN.getRole()),
+      List.of(DxScope.ORG_MANAGEMENT.getScope())
+    );
 
-    userService.getUserInfoByID(userId)
-      .compose(dxuser -> {
+    JsonObject OrgRequestJson = ctx.body().asJsonObject();
 
-        // Case 1 — Delegate (not org_admin)
-        if (dxuser.roles().contains("delegate") && !dxuser.roles().contains("org_admin")) {
+    UUID requestId = RequestHelper.getPathParamAsUUID(ctx, "req_id");
 
-          JsonArray delegationScopes = dxuser.scopes().getJsonArray("delegation_scope");
+    Status status = Status.fromString(OrgRequestJson.getString("status"));
 
-          if (!delegationScopes.contains("org_management")) {
-            return Future.failedFuture(
-              new DxForbiddenException("This user doesn't have the scope to do this !")
-            );
-          }
-
-          UUID delegatorId = UUID.fromString(dxuser.did());
-
-          // Get orgId from the join request (org of the request being approved)
-          return organizationService.getOrganizationJoinRequestById(reqId)
-            .compose(joinReq -> {
-              if (joinReq == null) {
-                return Future.failedFuture(new DxNotFoundException("Request Not Found"));
-              }
-
-              UUID orgIdFromRequest = joinReq.organizationId();
-
-              // Delegate → verify delegator is admin of this organisation
-              return validateEntityId(delegatorId, orgIdFromRequest)
-                .compose(hasAccess -> {
-                  if (!hasAccess) {
-                    return Future.failedFuture(
-                      new DxForbiddenException("This user doesn't have delegation access to the organisation")
-                    );
-                  }
-
-                  return organizationService.updateOrganizationJoinRequestStatus(reqId, status);
-                });
-            });
-        }
-
-        // Case 2 — org_admin
-        return organizationService.updateOrganizationJoinRequestStatus(reqId, status);
-      })
+    organizationService.updateOrganizationJoinRequestStatus(requestId, status)
       .onSuccess(approved -> {
         if (approved) {
-          AuditLog auditLog = AuditingHelper.createAuditLog(
-            ctx.user(),
-            RoutingContextHelper.getRequestPath(ctx),
-            "PUT",
-            "Approved Join Request"
-          );
+          AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+            RoutingContextHelper.getRequestPath(ctx), "PUT", "Approved Join Request");
           RoutingContextHelper.setAuditingLog(ctx, auditLog);
+          ResponseBuilder.sendSuccess(ctx,  "Updated Organisation Join Request",urnGenerator);
+          Future<Void> future = emailComposer.sendUserEmailForOrgJoinRequestApproval(requestId,status);
 
-          ResponseBuilder.sendSuccess(ctx, "Updated Organisation Join Request", urnGenerator);
-
-          // Fire and forget email
-          emailComposer.sendUserEmailForOrgJoinRequestApproval(reqId, status);
         } else {
           ctx.fail(new DxNotFoundException("Request Not Found"));
         }
       })
       .onFailure(ctx::fail);
+
   }
 
   public void getJoinOrganisationRequests(RoutingContext ctx) {
 
-    // gets org_join_req
-    // delegate requirement: scope - org_management and delegator is org_admin
-    // delegation table has the org_id
-
-    User user = ctx.user();
-    UUID userId = UUID.fromString(user.subject());
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
+    User user = ctx.user();
+    JsonObject userJson = user.principal();
 
-    userService.getUserInfoByID(userId)
-      .compose(dxuser -> {
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.ORG_ADMIN.getRole()),
+      List.of(DxScope.ORG_MANAGEMENT.getScope())
+    );
 
-        UUID delegatorId = null;
+    PaginatedRequest request = PaginationRequestBuilder.from(ctx)
+      .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_ORG_JOIN_REQUEST)
+      .apiToDbMap(API_TO_DB_ORG_JOIN_REQUEST)
+      .additionalFilters(Map.of(ORGANIZATION_ID, orgId.toString()))
+      .allowedTimeFields(Set.of(REQUESTED_AT))
+      .defaultTimeField(REQUESTED_AT)
+      .defaultSort(REQUESTED_AT, DEFAULT_SORTING_ORDER)
+      .allowedSortFields(API_TO_DB_ORG_JOIN_REQUEST.keySet())
+      .build();
 
-        // If user is a delegate (but not cos_admin)
-        if (dxuser.roles().contains("delegate") && !dxuser.roles().contains("org_admin")) {
-
-          JsonObject scopesObj = dxuser.scopes();
-          JsonArray delegationScopes = scopesObj.getJsonArray("delegation_scope");
-
-          if (!delegationScopes.contains("org_management")) {
-            return Future.failedFuture(new DxForbiddenException(
-              "This user doesn't have the scope to do this !"
-            ));
-          }
-
-          delegatorId = UUID.fromString(dxuser.did());
-
-          return validateEntityId(delegatorId, orgId)
-            .compose(hasAccess -> {
-              if (!hasAccess) {
-                return Future.failedFuture(
-                  new DxForbiddenException("This user doesn't have delegation access to the organisation"));
-              }
-
-              ctx.queryParams().set("organizationId", orgId.toString());
-
-              PaginatedRequest request = PaginationRequestBuilder.from(ctx)
-                .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_ORG_JOIN_REQUEST)
-                .apiToDbMap(API_TO_DB_ORG_JOIN_REQUEST)
-                .additionalFilters(Map.of(ORGANIZATION_ID, orgId.toString()))
-                .allowedTimeFields(Set.of(REQUESTED_AT))
-                .defaultTimeField(REQUESTED_AT)
-                .defaultSort(REQUESTED_AT, DEFAULT_SORTING_ORDER)
-                .allowedSortFields(API_TO_DB_ORG_JOIN_REQUEST.keySet())
-                .build();
-
-              LOGGER.info("Delegate: Pagination request info : {}", request);
-
-              return organizationService.getOrganizationPendingJoinRequests(request);
-            });
-        }
-
-        // Case 2 — org_admin / cos_admin / others
-        PaginatedRequest request = PaginationRequestBuilder.from(ctx)
-          .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_ORG_JOIN_REQUEST)
-          .apiToDbMap(API_TO_DB_ORG_JOIN_REQUEST)
-          .additionalFilters(Map.of(ORGANIZATION_ID, orgId.toString()))
-          .allowedTimeFields(Set.of(REQUESTED_AT))
-          .defaultTimeField(REQUESTED_AT)
-          .defaultSort(REQUESTED_AT, DEFAULT_SORTING_ORDER)
-          .allowedSortFields(API_TO_DB_ORG_JOIN_REQUEST.keySet())
-          .build();
-
-        LOGGER.info("Admin: Pagination request info : {}", request);
-
-        return organizationService.getOrganizationPendingJoinRequests(request);
-      })
+    organizationService.getOrganizationPendingJoinRequests(request)
       .compose(result ->
         userService.enrichWithUserRoles(
           result.data(),
@@ -479,11 +374,10 @@ public class OrganizationHandler {
       .onSuccess(entry -> {
         AuditLog auditLog = AuditingHelper.createAuditLog(
           ctx.user(), RoutingContextHelper.getRequestPath(ctx),
-          "GET", "Get Pending Join Requests"
-        );
+          "GET", "Get Pending Join Requests");
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
 
-        ResponseBuilder.sendSuccess(ctx, entry.getKey(), entry.getValue(), urnGenerator);
+        ResponseBuilder.sendSuccess(ctx, entry.getKey(), entry.getValue(),urnGenerator);
       })
       .onFailure(ctx::fail);
   }
@@ -530,39 +424,23 @@ public class OrganizationHandler {
 
   public void approveOrganisationRequest(RoutingContext ctx) {
 
-    // approve org_create_req
-    // delegate requirement: scope - org_management and delegator is cos_admin
 
     JsonObject OrgRequestJson = ctx.body().asJsonObject();
+    User user = ctx.user();
+    JsonObject userJson = user.principal();
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.COS_ADMIN.getRole()),
+      List.of(DxScope.COS_ADMIN.getScope())
+    );
 
     UUID requestId = UUID.fromString(OrgRequestJson.getString("req_id"));
     Status status = Status.fromString(OrgRequestJson.getString("status"));
 
     JsonObject responseObject = OrgRequestJson.copy();
     responseObject.remove("status");
-
-    User user = ctx.user();
-    UUID userId = UUID.fromString(user.subject());
-
-    userService.getUserInfoByID(userId)
-      .compose(dxuser -> {
-          UUID delegatorId = null;
-
-          // If user is a delegate (but not cos_admin)
-          if (dxuser.roles().contains("delegate") && !dxuser.roles().contains("cos_admin")) {
-
-            JsonObject scopesObj = dxuser.scopes();
-            JsonArray delegationScopes = scopesObj.getJsonArray("delegation_scope");
-
-            if (!delegationScopes.contains("cos_admin_access")) {
-              return Future.failedFuture(new DxForbiddenException(
-                "This user doesn't have the scope to do this !"
-              ));
-            }
-          }
-
-          return Future.succeededFuture().mapEmpty();
-        });
 
     organizationService.updateOrganizationCreateRequestStatus(requestId, status)
       .onSuccess(updated -> {
@@ -578,61 +456,42 @@ public class OrganizationHandler {
 
 
 
+
   public void getOrganisationRequest(RoutingContext ctx) {
 
-    // get org create requests
-    // delegate requirement: scope - org_management and delegator is cos_admin
+    User user = ctx.user();
+    JsonObject userJson = user.principal();
 
-    User authUser = ctx.user();
-    UUID requesterId = UUID.fromString(authUser.subject());
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.COS_ADMIN.getRole()),
+      List.of(DxScope.COS_ADMIN.getScope())
+    );
 
-    userService.getUserInfoByID(requesterId)
-      .compose(dxuser -> {
+    PaginatedRequest request = PaginationRequestBuilder.from(ctx)
+      .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_ORG_CREATE_REQUEST)
+      .apiToDbMap(API_TO_DB_ORG_CREATE_REQUEST)
+      .allowedTimeFields(Set.of(CREATED_AT))
+      .defaultTimeField(CREATED_AT)
+      .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
+      .allowedSortFields(API_TO_DB_ORG_CREATE_REQUEST.keySet())
+      .build();
 
-        // If requester is not a delegate, OR is cos_admin → no filtering required
-        if (dxuser.roles().contains(DxRole.COS_ADMIN)) {
-          return Future.succeededFuture();
-        }
 
-        // Delegate but not cos_admin → validate scope first
-        if (!dxuser.scopes().getJsonArray("delegation_scope").contains(DxScope.COS_ADMIN)) {
-          return Future.failedFuture(
-            new DxForbiddenException("This user doesn't have the scope to do this!")
-          );
-        }
-
-        // Inject delegator-based filter
-        UUID delegatorId = UUID.fromString(dxuser.did());
-        ctx.queryParams().set("requestedBy", delegatorId.toString());
-        LOGGER.debug("Injected delegated filter: requestedBy={}", delegatorId);
-
-        return Future.succeededFuture();
-      })
-      .compose(v -> {
-
-        PaginatedRequest request = PaginationRequestBuilder.from(ctx)
-          .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_ORG_CREATE_REQUEST)
-          .apiToDbMap(API_TO_DB_ORG_CREATE_REQUEST)
-          .allowedTimeFields(Set.of(CREATED_AT))
-          .defaultTimeField(CREATED_AT)
-          .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
-          .allowedSortFields(API_TO_DB_ORG_CREATE_REQUEST.keySet())
-          .build();
-
-        return organizationService.getAllOrganizationCreateRequests(request);
-      })
+    organizationService.getAllOrganizationCreateRequests(request)
       .onSuccess(res -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(
-          ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx),
-          "GET",
-          "Get All Organisation Requests"
-        );
+        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+          RoutingContextHelper.getRequestPath(ctx), "GET", "Get All Organisation Requests");
+
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, res.data(), res.paginationInfo(), urnGenerator);
+        ResponseBuilder.sendSuccess(ctx, res.data(), res.paginationInfo(),urnGenerator);
+
       })
       .onFailure(ctx::fail);
+
   }
+
 
   public void createOrganisationRequest(RoutingContext ctx) {
     JsonObject OrgRequestJson = ctx.body().asJsonObject();
@@ -745,84 +604,89 @@ public class OrganizationHandler {
   }
 
 
-  public void getOrganisationUserInfo(RoutingContext ctx) {
 
+  public void getOrganisationUserInfo(RoutingContext ctx) {
     // gets org_user info
     // delegate requirement: scope - org_management and delegator is org_admin or cos_admin
     // delegation table has the org_id
 
+    User user = ctx.user();
+    JsonObject userJson = user.principal();
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.ORG_ADMIN.getRole()),
+      List.of(DxScope.ORG_MANAGEMENT.getScope())
+    );
+
+
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
-    UUID targetUserId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
+    UUID userId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
 
-    UUID requesterId = UUID.fromString(ctx.user().subject());
+    // TODO check this belogns to the org
 
-    validateDelegatedAccess(requesterId, orgId, DxScope.ORG_MANAGEMENT)
-      .compose(v -> verifyUserBelongsToOrg(targetUserId, orgId))
-      .compose(v -> userService.getUserInfoByID(targetUserId))
-      .onSuccess(userInfo -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(
-          ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx),
-          "GET",
-          "Get User Info By ID"
-        );
+    userService.getUserInfoByID(userId).onSuccess(users -> {
+        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+          RoutingContextHelper.getRequestPath(ctx), "GET", "Get User Info By ID");
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, userInfo, urnGenerator);
+        ResponseBuilder.sendSuccess(ctx, users, urnGenerator);
       })
       .onFailure(ctx::fail);
+
   }
 
 
-  // gets org_user
-  // delegate requirement: scope - org_management and delegator is org_admin
-  // delegation table has the org_id
-  public void getOrganisationUsers(RoutingContext ctx) {
+
+    public void getOrganisationUsers(RoutingContext ctx) {
+    // gets org_user
+    // delegate requirement: scope - org_management and delegator is org_admin
+    // delegation table has the org_id
+
+    User user = ctx.user();
+    JsonObject userJson = user.principal();
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.ORG_ADMIN.getRole()),
+      List.of(DxScope.ORG_MANAGEMENT.getScope())
+    );
+
 
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
-    UUID requesterId = UUID.fromString(ctx.user().subject());
 
-    // Validate delegated access before doing anything else
-    validateDelegatedAccess(requesterId, orgId, DxScope.ORG_MANAGEMENT)
-      .compose(v -> {
+    PaginatedRequest request = PaginationRequestBuilder.from(ctx)
+      .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_ORG_USERS)
+      .apiToDbMap(API_TO_DB_ORG_USERS)
+      .additionalFilters(Map.of(ORGANIZATION_ID, orgId.toString()))
+      .allowedTimeFields(Set.of(CREATED_AT))
+      .defaultTimeField(CREATED_AT)
+      .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
+      .allowedSortFields(API_TO_DB_ORG_USERS.keySet())
+      .build();
 
-        PaginatedRequest request = PaginationRequestBuilder.from(ctx)
-          .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_ORG_USERS)
-          .apiToDbMap(API_TO_DB_ORG_USERS)
-          .additionalFilters(Map.of(ORGANIZATION_ID, orgId.toString()))
-          .allowedTimeFields(Set.of(CREATED_AT))
-          .defaultTimeField(CREATED_AT)
-          .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
-          .allowedSortFields(API_TO_DB_ORG_USERS.keySet())
-          .build();
+    AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+      RoutingContextHelper.getRequestPath(ctx), "GET", "Get Organisation Users by OrgID");
 
-        AuditLog auditLog = AuditingHelper.createAuditLog(
-          ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx),
-          "GET",
-          "Get Organisation Users by OrgID"
-        );
-
-        return organizationService.getOrganizationUsers(request)
-          .compose(res ->
-            userService.enrichWithUserRoles(
-              res.data(),
-              OrganizationUser::userId,
-              OrganizationUser::toJson
-            ).map(enriched -> {
-
-              RoutingContextHelper.setAuditingLog(ctx, auditLog);
-              return Map.entry(enriched, res.paginationInfo());
-            })
-          );
-      })
-      .onSuccess(entry ->
-        ResponseBuilder.sendSuccess(ctx, entry.getKey(), entry.getValue(), urnGenerator)
+    organizationService.getOrganizationUsers(request)
+      .compose(res ->
+        userService.enrichWithUserRoles(
+          res.data(),
+          OrganizationUser::userId,
+          OrganizationUser::toJson
+        ).map(enriched -> Map.entry(enriched, res.paginationInfo()))
       )
+      .onSuccess(entry -> {
+        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        ResponseBuilder.sendSuccess(ctx, entry.getKey(), entry.getValue(), urnGenerator);
+      })
       .onFailure(ctx::fail);
+
   }
 
 
-  public void updateOrganisationUserRole(RoutingContext ctx) {
+    public void updateOrganisationUserRole(RoutingContext ctx) {
 
     // updates org_user role
     // delegate requirement: scope - org_management and delegator is org_admin or cos_admin
@@ -894,74 +758,73 @@ public class OrganizationHandler {
 
   public void updateProviderRequest(RoutingContext ctx) {
 
-    // updates provider requests
-    // delegate requirement: scope - provider_management and delegator is org_admin or cos_admin
-    // optional : delegation table has provider_req for that user/ the org id of the delegation and provider req org id match
+    User user = ctx.user();
+    JsonObject userJson = user.principal();
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.ORG_ADMIN.getRole()),
+      List.of(DxScope.ORG_MANAGEMENT.getScope())
+    );
 
     JsonObject OrgRequestJson = ctx.body().asJsonObject();
     UUID reqId = RequestHelper.getPathParamAsUUID(ctx, "id");
     Status status = Status.fromString(OrgRequestJson.getString("status"));
-    User user = ctx.user();
-    UUID requesterId = UUID.fromString(user.subject());
 
-    validateDelegatedAccess(requesterId, null, DxScope.ORG_MANAGEMENT)
-      .compose(isAllowed -> {
-        return organizationService.updateProviderRequestStatus(reqId, status);
-      })
-      .onSuccess(updated -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(
-          ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx),
-          "PUT",
-          "Update Provider Role Request"
-        );
+
+    organizationService.updateProviderRequestStatus(reqId, status)
+      .onSuccess(requests -> {
+        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+          RoutingContextHelper.getRequestPath(ctx), "PUT", "Update Provider Role Request");
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
         ResponseBuilder.sendSuccess(ctx, "Provider role updated", urnGenerator);
+        Future<Void> future = emailComposer.sendUserEmailForProviderRoleApproval(reqId, status);
 
-        // fire and forget email
-        emailComposer.sendUserEmailForProviderRoleApproval(reqId, status);
       })
       .onFailure(ctx::fail);
+
   }
 
 
-  public void getProviderRequest(RoutingContext ctx) {
+    public void getProviderRequest(RoutingContext ctx) {
+
 
     User user = ctx.user();
-    if (user == null || user.subject() == null) {
+    JsonObject userJson = user.principal();
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.ORG_ADMIN.getRole()),
+      List.of(DxScope.ORG_MANAGEMENT.getScope())
+    );
+
+    LOGGER.debug("User: {}", user);
+    if (user == null || user.subject() == null || user.principal() == null) {
       ctx.fail(new DxForbiddenException("User not found"));
       return;
     }
 
-    UUID requesterId = UUID.fromString(user.subject());
+    String userId = user.subject();
+    String orgID = user.principal().getString("organisation_id");
 
-    validateDelegatedAccess(requesterId, null, DxScope.ORG_MANAGEMENT)
-      .compose(v -> keycloakUserService.getUserById(requesterId))
-      .compose(dxUser -> {
+    if (userId == null || userId.isEmpty()) {
+      ctx.fail(new DxForbiddenException("User not found"));
+      return;
+    }
 
-        // Case 1: requester already has an organization
-        if (dxUser.organisationId() != null && !dxUser.organisationId().isEmpty()) {
-          return Future.succeededFuture(UUID.fromString(dxUser.organisationId()));
-        }
+    if (orgID == null || orgID.isEmpty()) {
+      ctx.fail(new DxForbiddenException("User is not part any organisation"));
+      return;
+    }
 
-        // Case 2: requester is a delegate → get delegator’s organisation from Keycloak
-        UUID delegatorId = UUID.fromString(dxUser.did());
-
-        return keycloakUserService.getUserById(delegatorId).compose(delegatorUser -> {
-          if (delegatorUser.organisationId() == null || delegatorUser.organisationId().isEmpty()) {
-            return Future.failedFuture(
-              new DxForbiddenException("Delegator does not belong to any organisation")
-            );
-          }
-
-          UUID orgId = UUID.fromString(delegatorUser.organisationId());
-          return Future.succeededFuture(orgId);
-        });
-      })
-      .compose(orgId -> {
-
-        ctx.queryParams().set("organization_id", orgId.toString());
-
+    organizationService.getOrganizationUserInfo(UUID.fromString(user.subject())).compose(
+      orgUser -> {
+//        if (orgUser == null || orgUser.role() != Role.ADMIN) {
+//          return Future.failedFuture(new DxForbiddenException("User not found or not a admin"));
+//        }
+        UUID orgId = orgUser.organizationId();
         PaginatedRequest request = PaginationRequestBuilder.from(ctx)
           .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_PROVIDER_ROLE_REQUEST)
           .apiToDbMap(API_TO_DB_PROVIDER_ROLE_REQUEST)
@@ -973,33 +836,23 @@ public class OrganizationHandler {
           .build();
 
         return organizationService.getAllPendingProviderRoleRequests(request);
-      })
-      .compose(requests ->
-        userService.enrichWithUserRoles(
-          requests.data(),
-          ProviderRoleRequest::userId,
-          ProviderRoleRequest::toJson
-        ).map(enriched -> Map.entry(enriched, requests.paginationInfo()))
-      )
-      .onSuccess(entry -> {
-
-        AuditLog auditLog = AuditingHelper.createAuditLog(
-          ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx),
-          "GET",
-          "Get Provider Role Requests"
-        );
-
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
-
-        ResponseBuilder.sendSuccess(
-          ctx,
-          entry.getKey(),
-          entry.getValue(),
-          urnGenerator
-        );
-      })
-      .onFailure(ctx::fail);
+      }
+    ).compose(requests ->
+      userService.enrichWithUserRoles(
+        requests.data(),
+        ProviderRoleRequest::userId,
+        ProviderRoleRequest::toJson
+      ).map(enrichedList -> Map.entry(enrichedList, requests.paginationInfo()))
+    ).onSuccess(entry -> {
+      AuditLog auditLog = AuditingHelper.createAuditLog(
+        ctx.user(),
+        RoutingContextHelper.getRequestPath(ctx),
+        "GET",
+        "Get Provider Role Requests"
+      );
+      RoutingContextHelper.setAuditingLog(ctx, auditLog);
+      ResponseBuilder.sendSuccess(ctx, entry.getKey(), entry.getValue(),urnGenerator);
+    }).onFailure(ctx::fail);
   }
 
 
