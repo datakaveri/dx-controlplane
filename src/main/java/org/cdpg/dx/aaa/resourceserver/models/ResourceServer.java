@@ -28,7 +28,7 @@ public record ResourceServer(
   UUID ownerId,
   String visibility,
   String status,
-  JsonArray accessType,
+  JsonArray queryType,
   String injectionType,
   LocalDateTime createdAt,
   LocalDateTime updatedAt
@@ -45,7 +45,7 @@ public record ResourceServer(
         json.getString(Constants.OWNER_ID) != null ? UUID.fromString(json.getString(Constants.OWNER_ID)) : null,
         requireNonNull(json.getString(Constants.VISIBILITY), Constants.VISIBILITY),
         json.getString(Constants.STATUS)!=null?json.getString(Constants.STATUS):getStatusFromJson(json),
-        json.getJsonArray(Constants.ACCESS_TYPE),
+        json.getJsonArray(Constants.QUERY_TYPE),
         json.getString(Constants.INJECTION_TYPE),
         json.getString(Constants.CREATED_AT) != null ? LocalDateTime.parse(json.getString(Constants.CREATED_AT), FORMATTER) : null,
         json.getString(Constants.UPDATED_AT) != null ? LocalDateTime.parse(json.getString(Constants.UPDATED_AT), FORMATTER) : null
@@ -66,7 +66,7 @@ public record ResourceServer(
     json.put(Constants.OWNER_ID, ownerId.toString());
     json.put(Constants.VISIBILITY, visibility);
     json.put(Constants.STATUS, status);
-    json.put(Constants.ACCESS_TYPE, accessType);
+    json.put(Constants.QUERY_TYPE, queryType);
     json.put(Constants.INJECTION_TYPE, injectionType);
     json.put(Constants.CREATED_AT, createdAt.format(FORMATTER));
     json.put(Constants.UPDATED_AT, updatedAt.format(FORMATTER));
@@ -83,7 +83,7 @@ public record ResourceServer(
     if (ownerId != null) map.put(Constants.OWNER_ID, ownerId.toString());
     if (visibility != null && !visibility.isEmpty()) map.put(Constants.VISIBILITY, visibility);
     if (status != null && !status.isEmpty()) map.put(Constants.STATUS, status);
-    if (accessType != null && !accessType.isEmpty()) map.put(Constants.ACCESS_TYPE, accessType);
+    if (queryType != null && !queryType.isEmpty()) map.put(Constants.QUERY_TYPE, queryType);
     if (injectionType != null && !injectionType.isEmpty()) map.put(Constants.INJECTION_TYPE, injectionType);
     if (createdAt != null) map.put(Constants.CREATED_AT, createdAt.format(FORMATTER));
     if (updatedAt != null) map.put(Constants.UPDATED_AT, updatedAt.format(FORMATTER));

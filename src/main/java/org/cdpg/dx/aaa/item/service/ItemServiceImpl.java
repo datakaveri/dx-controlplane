@@ -39,6 +39,7 @@ import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.item.util.ItemFactory;
 import org.cdpg.dx.aaa.item.util.PatchItemRequest;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
+import org.cdpg.dx.acl.policy.dao.model.VerifyPolicyDto;
 import org.cdpg.dx.acl.policy.service.PolicyService;
 import org.cdpg.dx.acl.policy.service.impl.PolicyServiceImpl;
 import org.cdpg.dx.catalogueService.models.ItemType;
@@ -90,7 +91,7 @@ public class ItemServiceImpl implements ItemService {
 
     elasticsearchService
         .getSingleDocument(docIndex, termQuery)
-        .onSuccess( 
+        .onSuccess(
             existingDoc -> {
               if (existingDoc != null && ElasticsearchResponse.getTotalHits() > 0) {
                 LOGGER.warn("Item with ID {} already exists", id);
@@ -223,19 +224,27 @@ public class ItemServiceImpl implements ItemService {
                                                                    GetItemRequest request,
                                                                    int totalHits,
                                                                    ElasticsearchResponse response) {
-    if (request.getSubId() == null || request.getSubId().isEmpty()) {
+    String subId = request.getSubId();
+    String did = request.getDid();
+    if (subId == null || subId.isEmpty()) {
       LOGGER.warn("Restricted item access denied: Missing token (subId is null/empty)");
       return Future.failedFuture(
           new DxUnauthorizedException("Authorization token is required for restricted item"));
     }
 
     // Allow the owner direct access
-    if (request.getSubId().equalsIgnoreCase(ownerUserId)) {
+    if (subId.equalsIgnoreCase(ownerUserId)) {
       LOGGER.debug("Restricted item access granted: User {} is the owner of item {}",
-          request.getSubId(), request.getItemId());
+          subId, request.getItemId());
       ResponseModel responseModel = new ResponseModel(List.of(response), 1, 1);
       responseModel.setTotalHits(totalHits);
       return Future.succeededFuture(responseModel);
+    }
+
+    // Owner direct access check using delegatorId (did)
+    if (did != null && did.equalsIgnoreCase(ownerUserId)) {
+      LOGGER.debug("Delegator {} is the owner; direct access granted.", did);
+      return succeededResponse(response, totalHits);
     }
 
     // Fetch apdUrl from item source
@@ -253,28 +262,52 @@ public class ItemServiceImpl implements ItemService {
       LOGGER.error("Restricted item missing apdUrl in metadata");
       return Future.failedFuture(new DxForbiddenException("Access denied, APD URL missing"));
     }
-
-    UUID ownerUUID = UUID.fromString(ownerUserId);
-    UUID requesterUUID = UUID.fromString(request.getSubId());
     ItemType finalItemType = itemType;
 
-    Future<DxUser> requesterFut = keycloakUserService.getUserById(requesterUUID);
-    Future<DxUser> ownerFut = keycloakUserService.getUserById(ownerUUID);
+    // Fetch requester (sub) & delegator (did)
+    Future<DxUser> subFut = keycloakUserService.getUserById(UUID.fromString(subId));
+    Future<DxUser> ownerFut = keycloakUserService.getUserById(UUID.fromString(ownerUserId));
 
-    return Future.all(requesterFut, ownerFut).compose(cf -> {
-      DxUser requester = requesterFut.result();
+    Future<DxUser> delegatorFut =
+        (did != null) ? keycloakUserService.getUserById(UUID.fromString(did))
+            : Future.succeededFuture(null);
+
+    return Future.all(subFut, ownerFut, delegatorFut).compose(v -> {
+      DxUser requester = subFut.result();
       DxUser owner = ownerFut.result();
+      DxUser delegator = delegatorFut.result();
 
-      return policyVerifyService.verify(apdUrl, requester, owner,
-              request.getItemId(), finalItemType, request.getToken())
-          .compose(verifyPolicyDto -> {
-            JsonObject item = response.getSource();
-            item.put("cons", verifyPolicyDto.getConstraints());
-            item.put(EXPIRY_AT, verifyPolicyDto.getExpiryAt());
-            response.setSource(item);
-            return succeededResponse(response, totalHits);
-          });
+      // Try policy verification with delegator first, if present
+      if (did != null) {
+        return policyVerifyService.verify(apdUrl, delegator, owner, request.getItemId(),
+                finalItemType, request.getToken())
+            .compose(dto -> completePolicySuccess(dto, response, totalHits))
+            .recover(err -> {
+              // If delegator fails --> try requester
+              LOGGER.info("Delegator {} not authorized, trying requester {}", did, subId);
+              return policyVerifyService.verify(apdUrl, requester, owner, request.getItemId(),
+                      finalItemType, request.getToken())
+                  .compose(dto -> completePolicySuccess(dto, response, totalHits));
+            });
+      } else {
+        // No delegator → verify only requester
+        return policyVerifyService.verify(apdUrl, requester, owner,
+                request.getItemId(), finalItemType, request.getToken())
+            .compose(dto -> completePolicySuccess(dto, response, totalHits));
+      }
     });
+  }
+
+  private Future<ResponseModel> completePolicySuccess(VerifyPolicyDto dto,
+                                                      ElasticsearchResponse response,
+                                                      int totalHits) {
+
+    JsonObject item = response.getSource();
+    item.put("cons", dto.getConstraints());
+    item.put(EXPIRY_AT, dto.getExpiryAt());
+    response.setSource(item);
+
+    return succeededResponse(response, totalHits);
   }
 
 

@@ -13,7 +13,7 @@ public final class Constants {
   public static final String ROLES = "role";
   public static final String VISIBILITY = "visibility";
   public static final String STATUS = "status";
-  public static final String ACCESS_TYPE = "access_type";
+  public static final String QUERY_TYPE = "query_type";
   public static final String INJECTION_TYPE = "injection_type";
   public static final String CREATED_AT = "created_at";
   public static final String UPDATED_AT = "updated_at";
