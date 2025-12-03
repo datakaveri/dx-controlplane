@@ -7610,7 +7610,7 @@ components:
         visibility:
           type: string
           enum: [PUBLIC, PRIVATE]
-        access_type:
+        query_type:
           type: array
           items:
             type: string
