@@ -5,6 +5,7 @@ import static org.cdpg.dx.aaa.common.Constants.FIELD;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_AI_MODEL;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_APPS;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
+import static org.cdpg.dx.aaa.common.Constants.PII;
 import static org.cdpg.dx.aaa.common.Constants.PRIVATE;
 import static org.cdpg.dx.aaa.common.Constants.PROVIDER;
 import static org.cdpg.dx.aaa.common.Constants.PROVIDER_USER_ID;
@@ -163,7 +164,7 @@ public class ItemServiceImpl implements ItemService {
       String ownerUserId = source.getString(PROVIDER_USER_ID);
       if (accessPolicy.equalsIgnoreCase(PRIVATE)) {
         return getResponseWhenResourceIsPrivate(ownerUserId, request, elasticResponse, totalHits);
-      } else if (accessPolicy.equalsIgnoreCase(RESTRICTED)) {
+      } else if (accessPolicy.equalsIgnoreCase(RESTRICTED) || accessPolicy.equalsIgnoreCase(PII)) {
         return getResponseWhenResourceIsRestricted(ownerUserId, request, totalHits,
             elasticResponse);
       }
