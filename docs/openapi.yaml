@@ -9574,7 +9574,7 @@ components:
           pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
         accessPolicy:
           type: string
-          pattern: '^(RESTRICTED|OPEN|PRIVATE)$'
+          pattern: '^(RESTRICTED|OPEN|PRIVATE|PII)$'
         organizationType:
           type: string
           enum: [ 'Private', 'Public', 'Academic Institution', "NGO/Non-profit", 'NA', '' ]
@@ -9796,7 +9796,7 @@ components:
               description: Tags associated with the AI Model item
             accessPolicy:
               type: string
-              pattern: "^(RESTRICTED|OPEN|PRIVATE)$"
+              pattern: "^(RESTRICTED|OPEN|PRIVATE|PII)$"
               description: Access policy for the model
             label:
               type: string
@@ -10172,7 +10172,7 @@ components:
                 type: string
             accessPolicy:
               type: string
-              pattern: '^(RESTRICTED|OPEN|PRIVATE)$'
+              pattern: '^(RESTRICTED|OPEN|PRIVATE|PII)$'
             organizationType:
               type: string
               enum: [ 'Private', 'Public', 'Academic Institution', "NGO/Non-profit", 'NA', '' ]
@@ -10597,7 +10597,7 @@ components:
                 description: Tags describing the model
               accessPolicy:
                 type: string
-                pattern: "^(RESTRICTED|OPEN|PRIVATE)$"
+                pattern: "^(RESTRICTED|OPEN|PRIVATE|PII)$"
                 description: Access policy for the model
               label:
                 type: string
@@ -10841,7 +10841,7 @@ components:
                 description: Tags describing the model
               accessPolicy:
                 type: string
-                pattern: "^(RESTRICTED|OPEN|PRIVATE)$"
+                pattern: "^(RESTRICTED|OPEN|PRIVATE|PII)$"
                 description: Access policy for the model
               label:
                 type: string
@@ -11741,7 +11741,7 @@ components:
             type: string
         accessPolicy:
           type: string
-          pattern: '^(RESTRICTED|OPEN|PRIVATE)$'
+          pattern: '^(RESTRICTED|OPEN|PRIVATE|PII)$'
         organizationType:
           type: string
           enum: [ 'Private', 'Public', "Academic Institution", "NGO/Non-profit", "NA", '' ]
@@ -11813,8 +11813,11 @@ components:
         id:
           type: string
           format: uuid
+          pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
         name:
           type: string
+          pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
+          maxLength: 512
         type:
           type: array
           items:
@@ -11835,10 +11838,13 @@ components:
         organizationId:
           type: string
           format: uuid
+          pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
         accessPolicy:
           type: string
+          pattern: '^(RESTRICTED|OPEN|PRIVATE|PII)$'
         organizationType:
           type: string
+          enum: [ 'Private', 'Public', "Academic Institution", "NGO/Non-profit", "NA", '' ]
         fileFormat:
           type: string
         dataReadiness:
@@ -12046,7 +12052,7 @@ components:
           enum: [ "Private", "Public", "Academic Institution", "NGO/Non-profit", "Other", "NA", "" ]
         accessPolicy:
           type: string
-          pattern: "^(RESTRICTED|OPEN|PRIVATE)$"
+          pattern: "^(RESTRICTED|OPEN|PRIVATE|PII)$"
       additionalProperties: true
       example:
         '@context': 'https://agrijson.org'

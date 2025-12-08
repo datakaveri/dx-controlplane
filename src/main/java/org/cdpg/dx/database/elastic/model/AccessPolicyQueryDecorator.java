@@ -1,5 +1,6 @@
 package org.cdpg.dx.database.elastic.model;
 
+import static org.cdpg.dx.aaa.common.Constants.PII;
 import static org.cdpg.dx.database.elastic.util.Constants.*;
 
 import java.util.List;
@@ -40,6 +41,9 @@ public class AccessPolicyQueryDecorator implements ElasticsearchQueryDecorator {
         QueryModel restrictedAccess =
             new QueryModel(QueryType.MATCH)
                 .setQueryParameters(Map.of(FIELD, ACCESS_POLICY, VALUE, RESTRICTED));
+        QueryModel piiAccess =
+            new QueryModel(QueryType.MATCH)
+                .setQueryParameters(Map.of(FIELD, ACCESS_POLICY, VALUE, PII));
         QueryModel privateAccess =
             new QueryModel(QueryType.MATCH)
                 .setQueryParameters(Map.of(FIELD, ACCESS_POLICY, VALUE, PRIVATE));
@@ -49,7 +53,7 @@ public class AccessPolicyQueryDecorator implements ElasticsearchQueryDecorator {
         QueryModel privateOwned =
             new QueryModel(QueryType.BOOL).setMustQueries(List.of(privateAccess, ownerMatch));
         QueryModel accessFilter = new QueryModel(QueryType.BOOL);
-        accessFilter.setShouldQueries(List.of(publicAccess, restrictedAccess, privateOwned));
+        accessFilter.setShouldQueries(List.of(publicAccess, restrictedAccess, privateOwned, piiAccess));
         accessFilter.setMinimumShouldMatch("1");
         queryMap.get(FilterType.MUST).add(accessFilter);
       }
