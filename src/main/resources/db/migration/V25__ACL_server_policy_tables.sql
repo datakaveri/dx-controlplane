@@ -22,8 +22,13 @@ ALTER SCHEMA ${flyway:defaultSchema} OWNER TO ${flyway:user};
 -- 4️Create ENUM type if not exists
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'status_type') THEN
-        CREATE TYPE status_type AS ENUM ('ACTIVE', 'DELETED');
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON t.typnamespace = n.oid
+        WHERE t.typname = 'status_type' AND n.nspname = '${flyway:defaultSchema}'
+    ) THEN
+        EXECUTE format('CREATE TYPE %I.status_type AS ENUM (''ACTIVE'', ''DELETED'')', '${flyway:defaultSchema}');
     END IF;
 END
 $$;
@@ -46,7 +51,7 @@ CREATE TABLE IF NOT EXISTS policy (
     user_emailid varchar NOT NULL,
     item_id uuid NOT NULL,
     owner_id uuid NOT NULL,
-    status status_type NOT NULL,
+    status ${flyway:defaultSchema}.status_type NOT NULL,
     expiry_at timestamp without time zone NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
