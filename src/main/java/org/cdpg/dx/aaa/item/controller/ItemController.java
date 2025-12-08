@@ -8,11 +8,16 @@ import static org.cdpg.dx.database.elastic.util.Constants.VERIFIED_BY;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -23,7 +28,10 @@ import org.cdpg.dx.aaa.apiserver.ApiController;
 import org.cdpg.dx.aaa.common.CatAuditHelper;
 import org.cdpg.dx.aaa.common.VerifyItemTypeAndRole;
 import org.cdpg.dx.aaa.item.model.Item;
+import org.cdpg.dx.aaa.item.service.ItemRegistryService;
 import org.cdpg.dx.aaa.item.service.ItemService;
+import org.cdpg.dx.aaa.item.service.ScriptGenerationService;
+import org.cdpg.dx.aaa.item.util.DataBankCreationRequest;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.item.util.ItemExistenceValidator;
 import org.cdpg.dx.aaa.item.util.ItemFactory;
@@ -40,13 +48,6 @@ import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RoutingContextHelper;
-import org.cdpg.dx.aaa.item.service.ItemRegistryService;
-import org.cdpg.dx.aaa.item.util.DataBankCreationRequest;
-import org.cdpg.dx.aaa.item.service.ScriptGenerationService;
-import io.vertx.core.http.HttpServerResponse;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class ItemController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(ItemController.class);
@@ -65,9 +66,9 @@ public class ItemController implements ApiController {
       DxRole.ORG_ADMIN, DxRole.PROVIDER);
 
   public ItemController(
-    AuditingHandler auditingHandler, ItemService itemService, String vocContext,
-   String verifiedBy, URNGenerator urnGenerator,
-    ItemRegistryService itemRegistryService) {
+      AuditingHandler auditingHandler, ItemService itemService, String vocContext,
+      String verifiedBy, URNGenerator urnGenerator,
+      ItemRegistryService itemRegistryService) {
     this.auditingHandler = auditingHandler;
     this.itemService = itemService;
     this.vocContext = vocContext;
@@ -287,23 +288,24 @@ public class ItemController implements ApiController {
       if (REQUEST_POST.equalsIgnoreCase(method)) {
         if (ITEM_TYPE_DATA_BANK.equals(ctx.get(ITEM_TYPE))) {
           handleDataBankCreate(ctx, item, body);
-        } else {  
+        } else {
           itemService
-            .createItem(item)
-            .onSuccess(
-              res -> {
-                AuditLog auditLog =
-                  CatAuditHelper.createAuditLog(
-                    item.toJson(),
-                    ctx.user(),
-                    method,
-                    RoutingContextHelper.getRequestPath(ctx));
-                RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              .createItem(item)
+              .onSuccess(
+                  res -> {
+                    AuditLog auditLog =
+                        CatAuditHelper.createAuditLog(
+                            item.toJson(),
+                            ctx.user(),
+                            method,
+                            RoutingContextHelper.getRequestPath(ctx));
+                    RoutingContextHelper.setAuditingLog(ctx, auditLog);
 
-                ResponseBuilder.sendCreated(ctx, "Success: Item created", item.toJson(), this.urnGenerator);
+                    ResponseBuilder.sendCreated(ctx, "Success: Item created", item.toJson(),
+                        this.urnGenerator);
 
-              })
-            .onFailure(err -> handleOperationError(ctx, err));
+                  })
+              .onFailure(err -> handleOperationError(ctx, err));
         }
       } else {
         itemService
@@ -329,26 +331,30 @@ public class ItemController implements ApiController {
   }
 
   private void handleDataBankCreate(RoutingContext ctx, Item item, JsonObject originalBody) {
-      LOGGER.debug("Handling DataBank item creation with integrations");
+    LOGGER.debug("Handling DataBank item creation with integrations");
 
-      // Extract required data from RoutingContext
-      String userId = ctx.user().principal().getString(SUB);
-      String token = RoutingContextHelper.getToken(ctx);
-      JsonObject dataDescriptor = ctx.getBodyAsJson().getJsonObject("dataDescriptor", new JsonObject());
+    // Extract required data from RoutingContext
+    String userId = ctx.user().principal().getString(SUB);
+    String token = RoutingContextHelper.getToken(ctx);
+    JsonObject dataDescriptor =
+        ctx.getBodyAsJson().getJsonObject("dataDescriptor", new JsonObject());
 
-      // Create DTO
-      DataBankCreationRequest dataBankCreationRequest = new DataBankCreationRequest(userId, token, dataDescriptor, originalBody);
-      
+    // Create DTO
+    DataBankCreationRequest dataBankCreationRequest =
+        new DataBankCreationRequest(userId, token, dataDescriptor, originalBody);
+
     itemRegistryService
-      .createDataBankWithIntegrations(dataBankCreationRequest, item)
-      .onSuccess(response -> {
+        .createDataBankWithIntegrations(dataBankCreationRequest, item)
+        .onSuccess(response -> {
           LOGGER.debug("DataBank item created successfully with integrations");
-        AuditLog auditLog = CatAuditHelper.createAuditLog(item.toJson(), ctx.user(), REQUEST_POST, RoutingContextHelper.getRequestPath(ctx));
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx,response.toJson(), this.urnGenerator);
-      })
-      .onFailure(err -> ctx.fail(err));
+          AuditLog auditLog = CatAuditHelper.createAuditLog(item.toJson(), ctx.user(), REQUEST_POST,
+              RoutingContextHelper.getRequestPath(ctx));
+          RoutingContextHelper.setAuditingLog(ctx, auditLog);
+          ResponseBuilder.sendSuccess(ctx, response.toJson(), this.urnGenerator);
+        })
+        .onFailure(err -> ctx.fail(err));
   }
+
   private void handleOperationError(RoutingContext ctx, Throwable err) {
     LOGGER.error("Item operation failed", err);
     ctx.fail(new DxBadRequestException(err.getMessage()));
@@ -450,7 +456,7 @@ public class ItemController implements ApiController {
     try {
       token = RoutingContextHelper.getToken(routingContext);
     } catch (Exception e) {
-      LOGGER.debug("No token present or invalid token, may be anonymous access");
+      LOGGER.warn("No token present or invalid token, may be anonymous access");
     }
     String itemId = routingContext.queryParams().get(ID);
     LOGGER.debug("Received GET request for item with ID '{}'", itemId);
@@ -460,15 +466,23 @@ public class ItemController implements ApiController {
       return;
     }
 
-    DxUser dxUser = RoutingContextHelper.fromPrincipal(routingContext);
-    String subId = dxUser.sub().toString();
-    List<String> roles = dxUser.roles();
-    String did = dxUser.did();
+    DxUser dxUser = null;
+    String subId = null;
+    List<String> roles = Collections.emptyList();
+    String did = null;
+
+    if (token != null) {         // only if authenticated request
+      dxUser = RoutingContextHelper.fromPrincipal(routingContext);
+      subId = dxUser.sub().toString();
+      roles = dxUser.roles();
+      did = dxUser.did();
+    }
 
     GetItemRequest request = new GetItemRequest(itemId, subId);
     request.setRoles(roles);
     request.setToken(token);
     request.setDid(did);
+
     itemService
         .getItemWithAccessChecks(request)
         .onSuccess(
@@ -509,32 +523,33 @@ public class ItemController implements ApiController {
 
   private void handleDownloadScript(RoutingContext ctx) {
     LOGGER.debug("Handling script download request");
-    
+
     String filename = ctx.request().getParam("filename");
     if (filename == null || filename.isBlank()) {
       LOGGER.error("Missing filename parameter");
       ctx.fail(new DxBadRequestException("Filename parameter is required"));
       return;
     }
-    
+
     // Security: Only allow .py files and prevent directory traversal
-    if (!filename.endsWith(".py") || filename.contains("..") || filename.contains("/") || filename.contains("\\")) {
+    if (!filename.endsWith(".py") || filename.contains("..") || filename.contains("/") ||
+        filename.contains("\\")) {
       LOGGER.error("Invalid filename: {}", filename);
       ctx.fail(new DxBadRequestException("Invalid filename"));
       return;
     }
-    
+
     Path filePath = Paths.get("generated_scripts", filename);
-    
+
     if (!Files.exists(filePath)) {
       LOGGER.error("Script file not found: {}", filePath);
       ctx.fail(new DxNotFoundException("Script file not found"));
       return;
     }
-    
+
     try {
       byte[] fileContent = Files.readAllBytes(filePath);
-      
+
       HttpServerResponse response = ctx.response();
       response
           .putHeader("Access-Control-Allow-Origin", "*")
@@ -543,11 +558,11 @@ public class ItemController implements ApiController {
           .putHeader("Content-Type", "text/x-python")
           .putHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"")
           .putHeader("Content-Length", String.valueOf(fileContent.length));
-      
+
       response.end(io.vertx.core.buffer.Buffer.buffer(fileContent));
-      
+
       LOGGER.info("Script file downloaded successfully: {}", filename);
-      
+
     } catch (Exception e) {
       LOGGER.error("Error reading script file: {}", filename, e);
       ctx.fail(new DxInternalServerErrorException("Error reading script file"));

@@ -47,6 +47,7 @@ import org.cdpg.dx.catalogueService.models.ItemType;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
+import org.cdpg.dx.common.exception.DxInternalServerErrorException;
 import org.cdpg.dx.common.exception.DxUnauthorizedException;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
@@ -230,7 +231,7 @@ public class ItemServiceImpl implements ItemService {
     if (subId == null || subId.isEmpty()) {
       LOGGER.warn("Restricted item access denied: Missing token (subId is null/empty)");
       return Future.failedFuture(
-          new DxUnauthorizedException("Authorization token is required for restricted item"));
+          new DxUnauthorizedException("Authorization token is required for restricted/pii item"));
     }
 
     // Allow the owner direct access
@@ -278,24 +279,33 @@ public class ItemServiceImpl implements ItemService {
       DxUser owner = ownerFut.result();
       DxUser delegator = delegatorFut.result();
 
-      // Try policy verification with delegator first, if present
+      Future<ResponseModel> verificationChain;
+
       if (did != null) {
-        return policyVerifyService.verify(apdUrl, delegator, owner, request.getItemId(),
-                finalItemType, request.getToken())
-            .compose(dto -> completePolicySuccess(dto, response, totalHits))
-            .recover(err -> {
-              // If delegator fails --> try requester
-              LOGGER.info("Delegator {} not authorized, trying requester {}", did, subId);
-              return policyVerifyService.verify(apdUrl, requester, owner, request.getItemId(),
-                      finalItemType, request.getToken())
-                  .compose(dto -> completePolicySuccess(dto, response, totalHits));
-            });
+        verificationChain =
+            policyVerifyService.verify(apdUrl, delegator, owner, request.getItemId(),
+                    finalItemType, request.getToken())
+                .compose(dto -> completePolicySuccess(dto, response, totalHits))
+                .recover(err -> {
+                  LOGGER.info("Delegator {} not authorized, trying requester {}", did, subId);
+                  return policyVerifyService.verify(apdUrl, requester, owner, request.getItemId(),
+                          finalItemType, request.getToken())
+                      .compose(dto -> completePolicySuccess(dto, response, totalHits));
+                });
+
       } else {
-        // No delegator → verify only requester
-        return policyVerifyService.verify(apdUrl, requester, owner,
-                request.getItemId(), finalItemType, request.getToken())
-            .compose(dto -> completePolicySuccess(dto, response, totalHits));
+        verificationChain =
+            policyVerifyService.verify(apdUrl, requester, owner, request.getItemId(),
+                    finalItemType, request.getToken())
+                .compose(dto -> completePolicySuccess(dto, response, totalHits));
       }
+
+      // Final fallback — ensure requester failure becomes 403
+      return verificationChain.recover(err -> {
+        LOGGER.error("Final policy verification failed: {}", err.getMessage());
+        return Future.failedFuture(
+            new DxForbiddenException(err.getLocalizedMessage()));
+      });
     });
   }
 
