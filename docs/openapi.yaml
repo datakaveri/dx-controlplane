@@ -11813,8 +11813,11 @@ components:
         id:
           type: string
           format: uuid
+          pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
         name:
           type: string
+          pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
+          maxLength: 512
         type:
           type: array
           items:
@@ -11835,10 +11838,13 @@ components:
         organizationId:
           type: string
           format: uuid
+          pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
         accessPolicy:
           type: string
+          pattern: '^(RESTRICTED|OPEN|PRIVATE|PII)$'
         organizationType:
           type: string
+          enum: [ 'Private', 'Public', "Academic Institution", "NGO/Non-profit", "NA", '' ]
         fileFormat:
           type: string
         dataReadiness:
