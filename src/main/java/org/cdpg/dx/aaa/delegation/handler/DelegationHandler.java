@@ -19,19 +19,20 @@ import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
+import org.cdpg.dx.common.request.PaginatedRequest;
+import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
+import static org.cdpg.dx.aaa.delegation.util.Constants.*;
 import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
 import static org.cdpg.dx.common.util.DateTimeHelper.parseDateTime;
+import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
 public class DelegationHandler {
 
@@ -80,6 +81,30 @@ public class DelegationHandler {
           .onFailure(ctx::fail);
       })
       .onFailure(ctx::fail);
+  }
+
+  public void getAllDelegations(RoutingContext ctx) {
+
+    PaginatedRequest request = PaginationRequestBuilder.from(ctx)
+      .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_DELEGATION_GRANT)
+      .apiToDbMap(API_TO_DB_DELEGATION_GRANT)
+      .allowedTimeFields(Set.of(CREATED_AT))
+      .defaultTimeField(CREATED_AT)
+      .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
+      .allowedSortFields(API_TO_DB_DELEGATION_GRANT.keySet())
+      .build();
+
+    delegationService.getAllDelegations(request)
+      .onSuccess(res -> {
+        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+          RoutingContextHelper.getRequestPath(ctx), "GET", "Get All Delegation Requests");
+
+        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        ResponseBuilder.sendSuccess(ctx, res.data(), res.paginationInfo(),urnGenerator);
+
+      })
+      .onFailure(ctx::fail);
+
   }
 
 
@@ -203,7 +228,7 @@ public class DelegationHandler {
 
 
   public void getDelegationRequest(RoutingContext ctx) {
-    UUID delegationId = UUID.fromString(ctx.pathParam("delegation_id"));
+    UUID delegationId = UUID.fromString(ctx.pathParam("id"));
 
     delegationService.getDelegationRequestsByDelegationId(delegationId)
       .onSuccess(requests -> {

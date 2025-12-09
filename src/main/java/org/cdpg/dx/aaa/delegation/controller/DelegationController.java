@@ -23,15 +23,20 @@ public class DelegationController implements ApiController {
   {
 
     routerBuilder
-      .operation("post-auth-v2-delegation-grant")
+      .operation("post-auth-v2-delegation")
     .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))  //anyone can create the delegation grant.
     .handler(delegationHandler::createDelegationGrant);
 
 
     routerBuilder
-      .operation("get-auth-v2-delegation-grant")
+      .operation("get-auth-v2-delegation-id")
       .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))   //both delegate and delegator can view the requests
       .handler(delegationHandler::getDelegationGrant);
+
+    routerBuilder
+      .operation("get-auth-v2-delegation")
+      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))   //both delegate and delegator can view the requests
+      .handler(delegationHandler::getAllDelegations);
 
 
     routerBuilder

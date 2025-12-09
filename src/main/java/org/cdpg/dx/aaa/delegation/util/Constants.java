@@ -1,5 +1,7 @@
 package org.cdpg.dx.aaa.delegation.util;
 
+import java.util.Map;
+
 public final class Constants {
 
   public static final String DELEGATION_GRANT_TABLE="delegation_grants";
@@ -17,7 +19,6 @@ public final class Constants {
   public static final String DELEGATE_ID = "delegate_id";
   public static final String JUSTIFICATION = "justification";
   public static final String EXPIRY_AT = "expiry_at";
-  public static final String STATUS = "status";
   public static final String CREATED_AT = "created_at";
   public static final String REVOKED_AT = "revoked_at";
   public static final String REVIEWED_AT = "reviewed_at";
@@ -47,13 +48,31 @@ public final class Constants {
   public static final String REVOKED = "revoked";
 
 //     STATIC STRINGS / CONSTANT VALUES
-  public static final String STATIC = "static";
+  public static final String STATUS = "status";
+
   public static final String PENDING = "pending";
   public static final String APPROVED = "approved";
 
   public static final String ACTIVE = "active";
   public static final String REJECTED = "rejected";
   public static final String EXPIRED = "expired";
+
+
+  public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_DELEGATION_GRANT = Map.of(
+    "delegationId", DELEGATION_ID,
+    "delegatorId", DELEGATOR_ID,
+    "delegateId", DELEGATE_ID,
+    "status", STATUS);
+
+  public static final Map<String,String> API_TO_DB_DELEGATION_GRANT = Map.ofEntries(
+    Map.entry("delegationId", DELEGATION_ID),
+    Map.entry("delegatorId",DELEGATOR_ID),
+    Map.entry("delegateId",DELEGATE_ID),
+    Map.entry("createdAt",CREATED_AT),
+    Map.entry("revokedAt",REVOKED_AT),
+    Map.entry("expiryAt",EXPIRY_AT),
+    Map.entry("justification",JUSTIFICATION),
+    Map.entry("status",STATUS));
 
 
 }

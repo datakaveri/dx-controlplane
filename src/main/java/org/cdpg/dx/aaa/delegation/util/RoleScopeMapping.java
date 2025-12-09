@@ -10,14 +10,12 @@ public enum RoleScopeMapping {
     "org_management",
     "asset_management",
     "compute_management",
-    "credit_management",
-    "provider_management"
+    "credit_management"
   )),
 
   ORG_ADMIN("org_admin", List.of(
     "org_management",
     "asset_management",
-    "provider_management",
     "data_access"
   )),
 

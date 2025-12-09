@@ -14,6 +14,8 @@ import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.exception.*;
+import org.cdpg.dx.common.request.PaginatedRequest;
+import org.cdpg.dx.database.postgres.models.PaginatedResult;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,6 +113,11 @@ public class DelegationServiceImpl implements DelegationService{
         }
         return Future.failedFuture(dxEx);
       });
+  }
+
+  @Override
+  public Future<PaginatedResult<DelegationGrant>> getAllDelegations(PaginatedRequest request) {
+    return delegationGrantDAO.getAllWithFilters(request);
   }
 
 
