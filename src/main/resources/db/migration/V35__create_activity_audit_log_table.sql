@@ -17,12 +17,12 @@ END$$;
 
 
 ------------------------------------------------------------
--- 2. ENUM: origin_system (UPPERCASE, consistent)
+-- 2. ENUM: origin_server (UPPERCASE, consistent)
 ------------------------------------------------------------
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'origin_server') THEN
-        CREATE TYPE origin_system AS ENUM (
+        CREATE TYPE origin_server AS ENUM (
             'CATALOGUE',
             'AAA',
             'FILE',
@@ -108,12 +108,13 @@ END$$;
 ------------------------------------------------------------
 -- 6. FINAL AUDIT LOG TABLE
 ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS  audit_log (
+CREATE TABLE IF NOT EXISTS  activity_audit_log (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
     -- User context
     user_id             UUID NOT NULL,
     org_id              UUID,
+    org_name            VARCHAR,
     role                user_role NOT NULL,
     is_delegate         BOOLEAN NOT NULL DEFAULT false,
 
@@ -129,6 +130,7 @@ CREATE TABLE IF NOT EXISTS  audit_log (
     method              http_method NOT NULL,
     action              action_type NOT NULL,
     origin_server       origin_server NOT NULL,
+    issuer              VARCHAR,
 
     -- Business entity context
     entity_type          entity_type NOT NULL,
@@ -149,7 +151,7 @@ CREATE TABLE IF NOT EXISTS  audit_log (
     ingested_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     -- Result metadata
-    status              TEXT DEFAULT 'SUCCESS',
+    status              VARCHAR DEFAULT 'SUCCESS',
     status_message      TEXT,
 
     -- Flexible structured metadata
@@ -163,9 +165,9 @@ CREATE TABLE IF NOT EXISTS  audit_log (
 ------------------------------------------------------------
 -- 7. Indexes
 ------------------------------------------------------------
-CREATE INDEX IF NOT EXISTS idx_audit_user_id        ON  audit_log(user_id);
-CREATE INDEX IF NOT EXISTS idx_audit_entity         ON  audit_log(entity_type, entity_id);
-CREATE INDEX IF NOT EXISTS idx_audit_action         ON  audit_log(action);
-CREATE INDEX IF NOT EXISTS idx_audit_created_at     ON  audit_log(created_at);
-CREATE INDEX IF NOT EXISTS idx_audit_epoch_ms       ON  audit_log(epoch_ms);
-CREATE INDEX IF NOT EXISTS idx_audit_provider_id    ON  audit_log(provider_id);
+CREATE INDEX IF NOT EXISTS idx_audit_user_id        ON  activity_audit_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_entity         ON  activity_audit_log(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_audit_action         ON  activity_audit_log(action);
+CREATE INDEX IF NOT EXISTS idx_audit_created_at     ON  activity_audit_log(created_at);
+CREATE INDEX IF NOT EXISTS idx_audit_epoch_ms       ON  activity_audit_log(epoch_ms);
+CREATE INDEX IF NOT EXISTS idx_audit_provider_id    ON  activity_audit_log(provider_id);
