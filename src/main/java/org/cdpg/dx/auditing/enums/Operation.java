@@ -1,6 +1,6 @@
 package org.cdpg.dx.auditing.enums;
 
-public enum ActionType {
+public enum Operation {
   CREATE,
   UPDATE,
   DELETE,

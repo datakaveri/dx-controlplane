@@ -4,10 +4,11 @@ import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.auditing.enums.*;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 
-import java.time.Instant;
 import java.util.UUID;
 
-public class ActivityAuditLog {
+import static org.cdpg.dx.auditing.schema.ActivityAuditSchema.*;
+
+public class ActivityAuditLogBuilder {
 
   private UUID id;
 
@@ -25,7 +26,7 @@ public class ActivityAuditLog {
 
   private String api;
   private HttpMethod method;
-  private ActionType action;
+  private Operation operation;
   private OriginServer originServer;
   private String issuer;
 
@@ -38,9 +39,9 @@ public class ActivityAuditLog {
   private String userAgent;
   private Long sizeBytes;
 
-  private Instant createdAt;
+  private String createdAt;
   private Long epochMs;
-  private Instant ingestedAt;
+  private String ingestedAt;
 
   private String status;
   private String statusMessage;
@@ -48,7 +49,7 @@ public class ActivityAuditLog {
   private JsonObject details;
   private boolean myActivityEnabled;
 
-  public ActivityAuditLog() {}
+  public ActivityAuditLogBuilder() {}
 
   public UUID getId() {
     return id;
@@ -138,12 +139,12 @@ public class ActivityAuditLog {
     this.method = method;
   }
 
-  public ActionType getAction() {
-    return action;
+  public Operation getOperation() {
+    return operation;
   }
 
-  public void setAction(ActionType action) {
-    this.action = action;
+  public void setOperation(Operation operation) {
+    this.operation = operation;
   }
 
   public OriginServer getOriginServer() {
@@ -218,11 +219,11 @@ public class ActivityAuditLog {
     this.sizeBytes = sizeBytes;
   }
 
-  public Instant getCreatedAt() {
+  public String getCreatedAt() {
     return createdAt;
   }
 
-  public void setCreatedAt(Instant createdAt) {
+  public void setCreatedAt(String createdAt) {
     this.createdAt = createdAt;
   }
 
@@ -234,11 +235,11 @@ public class ActivityAuditLog {
     this.epochMs = epochMs;
   }
 
-  public Instant getIngestedAt() {
+  public String getIngestedAt() {
     return ingestedAt;
   }
 
-  public void setIngestedAt(Instant ingestedAt) {
+  public void setIngestedAt(String ingestedAt) {
     this.ingestedAt = ingestedAt;
   }
 
@@ -274,10 +275,6 @@ public class ActivityAuditLog {
     this.myActivityEnabled = myActivityEnabled;
   }
 
-  // --------------------------------------------------
-  // SAFE HELPERS (NO PMD/Sonar warnings)
-  // --------------------------------------------------
-
   private static String safeEnum(Enum<?> e) {
     return e == null ? null : e.name();
   }
@@ -290,51 +287,50 @@ public class ActivityAuditLog {
 
     JsonObject json = new JsonObject();
 
-    json.put("id", safeString(id));
-    json.put("user_id", safeString(userId));
-    json.put("org_id", safeString(orgId));
-    json.put("org_name", orgName);
+    json.put(ID, safeString(id));
+    json.put(USER_ID, safeString(userId));
+    json.put(ORG_ID, safeString(orgId));
+    json.put(ORG_NAME, orgName);
 
-    json.put("role", safeEnum(role));
-    json.put("is_delegate", isDelegate);
+    json.put(ROLE, role != null ? role.getRole() : null);
+    json.put(IS_DELEGATE, isDelegate);
 
-    json.put("delegator_id", safeString(delegatorId));
-    json.put("delegator_role", safeEnum(delegatorRole));
+    json.put(DELEGATOR_ID, safeString(delegatorId));
+    json.put(DELEGATOR_ROLE, safeEnum(delegatorRole));
 
-    json.put("provider_id", safeString(providerId));
+    json.put(PROVIDER_ID, safeString(providerId));
 
-    json.put("api", api);
-    json.put("method", safeEnum(method));
-    json.put("action", safeEnum(action));
-    json.put("origin_server", safeEnum(originServer));
-    json.put("issuer", issuer);
+    json.put(API, api);
+    json.put(METHOD, safeEnum(method));
+    json.put(ACTION, safeEnum(operation));
+    json.put(ORIGIN_SERVER, safeEnum(originServer));
+    json.put(ISSUER, issuer);
 
-    json.put("entity_type", safeEnum(entityType));
-    json.put("entity_id", safeString(entityId));
-    json.put("entity_name", entityName);
-    json.put("short_description", shortDescription);
+    json.put(ENTITY_TYPE, safeEnum(entityType));
+    json.put(ENTITY_ID, safeString(entityId));
+    json.put(ENTITY_NAME, entityName);
+    json.put(SHORT_DESCRIPTION, shortDescription);
 
-    json.put("ip_address", ipAddress);
-    json.put("user_agent", userAgent);
-    json.put("size_bytes", sizeBytes);
+    json.put(IP_ADDRESS, ipAddress);
+    json.put(USER_AGENT, userAgent);
+    json.put(SIZE_BYTES, sizeBytes);
 
-    json.put("created_at", safeString(createdAt));
-    json.put("epoch_ms", epochMs);
-    json.put("ingested_at", safeString(ingestedAt));
+    json.put(CREATED_AT, safeString(createdAt));
+    json.put(EPOCH_MS, epochMs);
+    json.put(INGESTED_AT, safeString(ingestedAt));
 
-    json.put("status", status);
-    json.put("status_message", statusMessage);
+    json.put(STATUS, status);
+    json.put(STATUS_MESSAGE, statusMessage);
 
-    json.put("details", details);
-
-    json.put("myactivity_enabled", myActivityEnabled);
+    json.put(DETAILS, details);
+    json.put(MYACTIVITY_ENABLED, myActivityEnabled);
 
     return json;
   }
 
   public static class Builder {
 
-    private final ActivityAuditLog log = new ActivityAuditLog();
+    private final ActivityAuditLogBuilder log = new ActivityAuditLogBuilder();
 
     public Builder withId(UUID id) {
       log.id = id;
@@ -361,7 +357,7 @@ public class ActivityAuditLog {
       return this;
     }
 
-    public Builder withDelegate(boolean val) {
+    public Builder withIsDelegate(boolean val) {
       log.isDelegate = val;
       return this;
     }
@@ -391,8 +387,8 @@ public class ActivityAuditLog {
       return this;
     }
 
-    public Builder withAction(ActionType a) {
-      log.action = a;
+    public Builder withOperation(Operation a) {
+      log.operation = a;
       return this;
     }
 
@@ -441,7 +437,7 @@ public class ActivityAuditLog {
       return this;
     }
 
-    public Builder withCreatedAt(Instant instant) {
+    public Builder withCreatedAt(String instant) {
       log.createdAt = instant;
       return this;
     }
@@ -471,7 +467,7 @@ public class ActivityAuditLog {
       return this;
     }
 
-    public ActivityAuditLog build() {
+    public ActivityAuditLogBuilder build() {
       return log;
     }
   }

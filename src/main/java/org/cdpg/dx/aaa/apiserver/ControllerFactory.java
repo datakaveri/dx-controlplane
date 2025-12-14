@@ -27,6 +27,7 @@ import org.cdpg.dx.aaa.ActivityReport.factory.ActivityReportControllerFactory;
 import org.cdpg.dx.aaa.activity.controller.ActivityController;
 import org.cdpg.dx.aaa.activity.factory.ActivityControllerFactory;
 import org.cdpg.dx.aaa.activity.factory.ActivityFactory;
+import org.cdpg.dx.aaa.activity.service.ActivityLogService;
 import org.cdpg.dx.aaa.activity.service.ActivityService;
 import org.cdpg.dx.aaa.admin.controller.AdminController;
 import org.cdpg.dx.aaa.admin.handler.AdminHandler;
@@ -121,11 +122,11 @@ public class ControllerFactory {
     String routingKey = config.getString("auditingRoutingKey");
     boolean isRemoteAudit = config.getBoolean("isRemoteAudit", false);
 
-    ActivityService activityService = ActivityFactory.getActivityService();
+    ActivityLogService activityLogService = ActivityFactory.getActivityService();
 
     AuditingHandler auditingHandler =
         new AuditingHandler(
-            dataBrokerService, activityService, auditingExchange, routingKey, isRemoteAudit);
+            dataBrokerService, activityLogService, auditingExchange, routingKey, isRemoteAudit);
 
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
 
@@ -252,7 +253,8 @@ public class ControllerFactory {
     // ingestionService already created above for ItemController
 
     SubscriptionController subscriptionController =
-        SubscriptionControllerFactory.create(dataBrokerService, pgService, urnGenerator, controlPlaneDomain);
+        SubscriptionControllerFactory.create(
+            dataBrokerService, pgService, urnGenerator, controlPlaneDomain);
     return List.of(
         organizationController,
         creditApiController,

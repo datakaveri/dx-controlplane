@@ -59,9 +59,10 @@ DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'entity_type') THEN
         CREATE TYPE entity_type AS ENUM (
-            'DATASET',
-            'MODEL',
+            'DATABANK',
+            'AI_MODEL',
             'USECASE',
+            'APPS'
             'ASSET',
             'USER_ACCOUNT',
             'ORGANIZATION',
@@ -83,8 +84,8 @@ END$$;
 ------------------------------------------------------------
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'action_type') THEN
-        CREATE TYPE action_type AS ENUM (
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'operation_type') THEN
+        CREATE TYPE operation_type AS ENUM (
             'CREATE',
             'UPDATE',
             'DELETE',
@@ -128,7 +129,7 @@ CREATE TABLE IF NOT EXISTS  activity_audit_log (
     -- API request metadata
     api                 TEXT NOT NULL,
     method              http_method NOT NULL,
-    action              action_type NOT NULL,
+    operation           operation_type NOT NULL,
     origin_server       origin_server NOT NULL,
     issuer              VARCHAR,
 
@@ -144,11 +145,11 @@ CREATE TABLE IF NOT EXISTS  activity_audit_log (
     size_bytes          BIGINT DEFAULT 0,
 
     -- Event timestamps (from backend)
-    created_at          TIMESTAMPTZ NOT NULL,
+    created_at          timestamp without time zone NOT NULL,
     epoch_ms            BIGINT NOT NULL,
 
     -- DB ingestion time
-    ingested_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    ingested_at         timestamp without time zone NOT NULL DEFAULT now(),
 
     -- Result metadata
     status              VARCHAR DEFAULT 'SUCCESS',
@@ -167,7 +168,11 @@ CREATE TABLE IF NOT EXISTS  activity_audit_log (
 ------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_audit_user_id        ON  activity_audit_log(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_entity         ON  activity_audit_log(entity_type, entity_id);
-CREATE INDEX IF NOT EXISTS idx_audit_action         ON  activity_audit_log(action);
+CREATE INDEX IF NOT EXISTS idx_audit_operation      ON  activity_audit_log(operation);
 CREATE INDEX IF NOT EXISTS idx_audit_created_at     ON  activity_audit_log(created_at);
 CREATE INDEX IF NOT EXISTS idx_audit_epoch_ms       ON  activity_audit_log(epoch_ms);
 CREATE INDEX IF NOT EXISTS idx_audit_provider_id    ON  activity_audit_log(provider_id);
+
+GRANT USAGE ON SCHEMA ${flyway:defaultSchema} TO ${authUser};
+GRANT SELECT, INSERT, DELETE ON activity_audit_log TO ${authUser};
+

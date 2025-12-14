@@ -6,7 +6,12 @@ import io.vertx.ext.web.client.WebClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import org.cdpg.dx.aaa.ActivityReport.controller.ActivityReportController;
+import org.cdpg.dx.aaa.ActivityReport.factory.ActivityReportControllerFactory;
+import org.cdpg.dx.aaa.activity.controller.ActivityController;
+import org.cdpg.dx.aaa.activity.factory.ActivityControllerFactory;
 import org.cdpg.dx.aaa.activity.factory.ActivityFactory;
+import org.cdpg.dx.aaa.activity.service.ActivityLogService;
 import org.cdpg.dx.aaa.activity.service.ActivityService;
 import org.cdpg.dx.acl.accessReport.controller.AccessReportController;
 import org.cdpg.dx.acl.accessReport.factory.AccessReportFactory;
@@ -53,18 +58,19 @@ public class ControllerFactory {
     String auditingExchange = config.getString("auditingExchange");
     String routingKey = config.getString("auditingRoutingKey");
     boolean isRemoteAudit = config.getBoolean("isRemoteAudit", false);
-      ActivityFactory.init(pgService);
-    ActivityService activityService = ActivityFactory.getActivityService();
+    // Activity Controller
+    ActivityController activityController =
+        ActivityControllerFactory.create(pgService, urnGenerator);
+    ActivityReportController activityReportController =
+        ActivityReportControllerFactory.create(pgService, vertx);
+    ActivityLogService activityLogService = ActivityFactory.getActivityService();
+
     AuditingHandler auditingHandler =
         new AuditingHandler(
-            dataBrokerService, activityService, auditingExchange, routingKey, isRemoteAudit);
+            dataBrokerService, activityLogService, auditingExchange, routingKey, isRemoteAudit);
 
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
-    EmailComposer emailComposer = new EmailComposer(
-        emailService,
-        keycloakUserService,
-        config);
-
+    EmailComposer emailComposer = new EmailComposer(emailService, keycloakUserService, config);
 
     AccessRequestController accessRequestController =
         AccessRequestFactory.createAccessRequestController(
@@ -78,35 +84,15 @@ public class ControllerFactory {
             webClient);
 
     AccessReportController accessReportController = AccessReportFactory.create(pgService, vertx);
-    PolicyController policyController = PolicyFactory.createPolicyController(
-        pgService,
-        esService,
-        keycloakUserService,
-        auditingHandler,
-        urnGenerator,
-        webClient,
-        config
-    );
-
-    //    final ListController listController =
-    //        ListControllerFactory.createListController(esService, auditingHandler, docIndex);
-    //    final SearchController searchController =
-    //        SearchControllerFactory.createSearchController(esService, auditingHandler, docIndex);
-    //    final ItemController itemController =
-    //        ItemControllerFactory.createCrudController(
-    //            auditingHandler, esService, docIndex, vocContext);
-
-    // TODO create other controllers
-
-    //    return List.of(
-    ////        organizationController,
-    ////        creditApiController,
-    ////        kycController,
-    ////        adminController,
-    //        accessRequestController,
-    //        accessReportController);
-    ////        assetController,listController,searchController,itemController);
-
+    PolicyController policyController =
+        PolicyFactory.createPolicyController(
+            pgService,
+            esService,
+            keycloakUserService,
+            auditingHandler,
+            urnGenerator,
+            webClient,
+            config);
     return List.of(accessRequestController, accessReportController, policyController);
   }
 }

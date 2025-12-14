@@ -5,6 +5,7 @@ import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_FIELD
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
 import io.vertx.core.Handler;
+import io.vertx.core.json.JsonArray;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
@@ -12,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.activity.service.ActivityLogService;
 import org.cdpg.dx.aaa.activity.service.ActivityService;
 import org.cdpg.dx.aaa.activity.util.Util;
 import org.cdpg.dx.aaa.apiserver.ApiController;
@@ -27,10 +29,15 @@ import org.cdpg.dx.common.util.RoutingContextHelper;
 public class ActivityController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(ActivityController.class);
   private final ActivityService activityService;
+  private final ActivityLogService activityLogService;
   private final URNGenerator urnGenerator;
 
-  public ActivityController(ActivityService activityService, URNGenerator urnGenerator) {
+  public ActivityController(
+      ActivityService activityService,
+      ActivityLogService activityLogService,
+      URNGenerator urnGenerator) {
     this.activityService = activityService;
+    this.activityLogService = activityLogService;
     this.urnGenerator = urnGenerator;
   }
 
@@ -71,13 +78,23 @@ public class ActivityController implements ApiController {
 
     LOGGER.info("PaginatedRequest created for getActivityLogForUser:  {}", request);
 
-    activityService
+    activityLogService
         .getActivityLogForConsumer(request)
         .onSuccess(
             pagedResult -> {
               LOGGER.info("Successfully fetched activity logs for user: {}", user.subject());
+              if (pagedResult.data().isEmpty()) {
+                LOGGER.info("No activity logs found for user: {}", user.subject());
+                ResponseBuilder.sendNoContent(context, urnGenerator);
+                return;
+              }
+              LOGGER.info("Paged Result: {}", pagedResult.data().get(0).toJson());
+
+              JsonArray resultArr = new JsonArray();
+              pagedResult.data().forEach(item -> resultArr.add(item.toJson()));
+
               ResponseBuilder.sendSuccess(
-                  context, pagedResult.data(), pagedResult.paginationInfo(), urnGenerator);
+                  context, resultArr, pagedResult.paginationInfo(), urnGenerator);
             })
         .onFailure(
             failure -> {
@@ -106,13 +123,16 @@ public class ActivityController implements ApiController {
 
     LOGGER.info("PaginatedRequest created for handleGetAllActivityLogsForAdmin:  {}", request);
 
-    activityService
+    activityLogService
         .getAllActivityLogsForAdmin(request)
         .onSuccess(
             pagedResult -> {
               LOGGER.info("Successfully fetched all activity logs for admin");
+              JsonArray resultArr = new JsonArray();
+              pagedResult.data().forEach(item -> resultArr.add(item.toJson()));
+
               ResponseBuilder.sendSuccess(
-                  context, pagedResult.data(), pagedResult.paginationInfo(), urnGenerator);
+                  context, resultArr, pagedResult.paginationInfo(), urnGenerator);
             })
         .onFailure(
             failure -> {

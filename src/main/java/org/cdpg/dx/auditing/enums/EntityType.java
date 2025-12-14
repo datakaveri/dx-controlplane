@@ -1,8 +1,9 @@
 package org.cdpg.dx.auditing.enums;
 
 public enum EntityType {
-  DATASET,
-  MODEL,
+  AI_MODEL,
+  DATABANK,
+  APPS,
   USECASE,
   ASSET,
   USER_ACCOUNT,
