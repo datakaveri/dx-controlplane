@@ -2247,7 +2247,7 @@ paths:
       operationId: get-auth-v2-user-credit
       security:
         - authorization: [ ]
-  /iudx/v2/auth/user/credit/reques/{id}:
+  /iudx/v2/auth/user/credit/request/{id}:
     delete:
       tags:
         - Credit APIs
@@ -2463,6 +2463,8 @@ paths:
 
       security:
         - authorization: [ ]
+
+  /iudx/v2/auth/credit/request/{id}:
     put:
       summary: Update Credit Request Status (COS ADMIN)
       tags:
@@ -2534,37 +2536,51 @@ paths:
                       updatedBalance: 20000
                       tableName: credit_transactions
       operationId: put-auth-v2-credit-request
-
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the credit request
+          schema:
+            type: string
+            format: uuid
       security:
         - authorization: [ ]
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                status:
-                  type: string
-                  description: Status of the credit request. Valid values are 'granted' or 'rejected'.
-                amount:
-                  type: number
-                  format: double
-                  description : Amount to be credited to the user's account.Amount is required only when cos admin approves the request.For 'rejected' , amount is not required.
-                expiration_date:
-                  type: string
-                  format: date-time
-                  description: Expiration date of the credit in ISO 8601 format (e.g., '2025-12-31T23:59:59'). It is only required when cos admin approves the request.
-                id:
-                  type: string
-                  format: uuid
-                  description: ID of the credit request to be updated.
-              required:
-                - id
-                - status
+              oneOf:
+                - type: object
+                  properties:
+                    status:
+                      type: string
+                      enum: [ granted ]
+                    amount:
+                      type: number
+                      format: double
+                    expiration_date:
+                      type: string
+                      description: ISO-8601 LocalDateTime (no timezone)
+                      pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
+                  required:
+                    - status
+                    - amount
+                    - expiration_date
+                  additionalProperties: false
+
+                - type: object
+                  properties:
+                    status:
+                      type: string
+                      enum: [ rejected ]
+                  required:
+                    - status
+                  additionalProperties: false
             examples:
               Example 1:
                 value:
-                  id: 3225340e-78f6-4a75-ac85-91fb39022b3b
                   status: granted
                   amount: 10000
                   expiration_date: '2025-12-31T23:59:59'
@@ -2640,8 +2656,8 @@ paths:
                   description: User id of the user whose credit is to be deducted.
                 requested_at:
                   type: string
-                  format: date-time
-                  description: Timestamp when the credit deduction was requested.
+                  description: ISO-8601 LocalDateTime (no timezone)
+                  pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
               required:
                 - amount
                 - user_id
@@ -2671,8 +2687,8 @@ paths:
                   description: Amount to be added to the user's credit balance.
                 requested_at:
                   type: string
-                  format: date-time
-                  description: Timestamp when the credit addition was requested.
+                  description: ISO-8601 LocalDateTime (no timezone)
+                  pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
                 user_id:
                   type: string
                   format: uuid

@@ -22,10 +22,7 @@ import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.AuditLog;
 import org.cdpg.dx.common.HttpStatusCode;
 import org.cdpg.dx.common.URNGenerator;
-import org.cdpg.dx.common.exception.DxBadRequestException;
-import org.cdpg.dx.common.exception.DxForbiddenException;
-import org.cdpg.dx.common.exception.DxNotFoundException;
-import org.cdpg.dx.common.exception.DxValidationException;
+import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
@@ -181,7 +178,7 @@ public class CreditHandler {
     User user = ctx.user();
     UUID transactedBy = UUID.fromString(user.subject());
     Status status = Status.fromString(creditRequestJson.getString("status"));
-    UUID requestId = UUID.fromString(creditRequestJson.getString("id"));
+    UUID requestId = UUID.fromString(ctx.pathParam("id"));
 
     if (status == Status.GRANTED && creditRequestJson.getValue("amount") == null) {
       throw new DxBadRequestException("Amount is required for GRANTED status");
@@ -271,6 +268,11 @@ public class CreditHandler {
     User user = ctx.user();
     String userID = user.subject();
     String userName = user.principal().getString("name");
+
+    if (ctx.body() == null || ctx.body().isEmpty() || ctx.body().asJsonObject() == null) {
+      ctx.fail(new DxBadRequestException("Request Body is required and must be valid JSON."));
+      return;
+    }
 
     JsonObject computeRoleJsonBody = ctx.body().asJsonObject();
     System.out.println("Additional Info: " + computeRoleJsonBody);
