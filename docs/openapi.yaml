@@ -2582,7 +2582,7 @@ paths:
               Example 1:
                 value:
                   status: granted
-                  amount: 10000
+                  amount: 10000.0
                   expiration_date: '2025-12-31T23:59:59'
   /iudx/v2/auth/admin/user/credit/deduct:
     put:
@@ -2631,7 +2631,7 @@ paths:
                     result:
                       id: bbc203ba-b7e2-43aa-9533-da2dee243bc7
                       userId: 436cb796-5826-458b-a914-a54721f70997
-                      amount: 50
+                      amount: 50.0
                       transactedBy: a2899137-8458-40a6-9be8-084cfd1890e5
                       transactionStatus: success
                       transactionType: debit
@@ -2665,7 +2665,7 @@ paths:
             examples:
               Example 1:
                 value:
-                  amount: 50
+                  amount: 50.0
                   user_id: 436cb796-5826-458b-a914-a54721f70997
                   requested_at: '2025-05-29T19:07:00'
       security:
@@ -2697,6 +2697,12 @@ paths:
                 - amount
                 - user_id
                 - requested_at
+            examples:
+              Example 1:
+                value:
+                  amount: 50.0
+                  user_id: 436cb796-5826-458b-a914-a54721f70997
+                  requested_at: '2025-05-29T19:07:00'
       tags:
         - Credit APIs
       responses:
@@ -2741,7 +2747,7 @@ paths:
                   result:
                     id: bbc203ba-b7e2-43aa-9533-da2dee243bc7
                     userId: 436cb796-5826-458b-a914-a54721f70997
-                    amount: 50
+                    amount: 50.0
                     transactedBy: a2899137-8458-40a6-9be8-084cfd1890e5
                     transactionStatus: success
                     transactionType: credit
@@ -2810,6 +2816,8 @@ paths:
                 $ref: '#/components/schemas/Unauthorized'
       security:
         - authorization: [ ]
+
+
   /iudx/v2/auth/user/compute/requests:
     get:
       summary: 'User: Get All ComputeRole Requests'
@@ -2914,6 +2922,7 @@ paths:
       operationId: get-auth-v2-user-compute-role-request
       security:
         - authorization: [ ]
+
   /iudx/v2/auth/compute/requests:
     get:
       summary: Get All Pending ComputeRole Requests (COS ADMIN)
