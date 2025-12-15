@@ -5685,100 +5685,15 @@ paths:
             curl --location --request GET 'https://${HOSTNAME}/iudx/v2/cat/item/access?id=uuid' \
             --header 'Authorization: Bearer <token>'
   /iudx/v2/cat/organisation/asset:
-    patch:
-      tags:
-        - Organisation Assets Management
-      description: Patch an item used to update the status from pending to active if the item exist.
-      operationId: patch item
-      security:
-        - authorization: [ ]
-      parameters:
-        - name: id
-          in: query
-          description: ID of the DX Entity
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: Update item status and data upload status
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                publishStatus:
-                  type: string
-                  enum:
-                    - ACTIVE
-                    - PENDING
-                    - DECLINED
-                  description: Status of the item publication
-                  example: ACTIVE
-            example:
-              publishStatus: "ACTIVE"
-      responses:
-        '200':
-          description: Successfully updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/successResponseWithObjects'
-              examples:
-                Patch Success:
-                  value:
-                    type: 'dx:controlPlane:success'
-                    title: Success
-                    results:
-                      - id: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
-                    detail: 'Success: Item patched successfully'
-        '400':
-          description: Invalid uuid format
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/unAuthorizedAccess'
-              examples:
-                Invalid uuid:
-                  value:
-                    type: 'urn:dx:cat:InvalidSyntax'
-                    title: "Invalid Syntax"
-                    detail: "Fail: The syntax of the id is incorrect"
-        '401':
-          description: Unauthorized access
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/unAuthorizedAccess'
-        '404':
-          description: Didn't find the item
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/unAuthorizedAccess'
-              examples:
-                Item not found to Delete:
-                  value:
-                    type: 'urn:dx:cat:ItemNotFound'
-                    title: "Item is not found"
-                    details: "Fail: Doc doesn't exist, can't perform operation"
-
-      x-codeSamples:
-        - lang: cURL
-          label: patch item
-          source: |
-            curl --location --request PATCH
-            'https://${HOSTNAME}/iudx/v2/organisation/asset?id=uuid' \
-            --header 'token: <token>'
-            --data-raw '{
-              "publishStatus": "ACTIVE",
-              "dataUploadStatus": true
-            }'
     get:
       tags:
         - Organisation Assets Management
-      description: Get all the asset belonging to a particular organisation.
+      description: |
+        Retrieve all assets belonging to the organisation of the authenticated user.
+
+        This endpoint is restricted to users with the `org_admin` role and returns
+        organisation-owned assets regardless of their publication status.
+        It supports pagination and sorting but is not part of public catalogue discovery.
       operationId: get organisation assets
       security:
         - authorization: [ ]
@@ -5811,19 +5726,106 @@ paths:
             type: string
       responses:
         '200':
-          description: A successful search response
+          description: Assets belonging to an organisation | org_admin can access this endpoint
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SearchResponse'
-        '400':
-          description: Invalid request query
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  paginationInfo:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                      size:
+                        type: integer
+                      totalCount:
+                        type: integer
+                      totalPages:
+                        type: integer
+                      hasNext:
+                        type: boolean
+                      hasPrevious:
+                        type: boolean
+              example:
+                type: dx:controlPlane:success
+                title: Success
+                result:
+                  - id: 674caec0-b39d-418b-8e23-167306751396
+                    name: Subdistrict Weather Information for PM103
+                    label: Subdistrict Weather Information
+                    shortDescription: Daily aggregated temperature and rainfall data at subdistrict level.
+                    description: Daily weather statistics at subdistrict level including temperature and rainfall metrics.
+                    type:
+                      - adex:DataBank
+                    department: Test Org11
+                    organizationId: 74e3b919-1d1b-44de-ace1-504f1887fcc1
+                    organizationType: Public
+                    industry: Environmental Monitoring
+                    geoCoverage: Karnataka, India
+                    tags:
+                      - weather
+                      - temperature
+                      - rainfall
+                      - environment
+                    publishStatus: PENDING
+                    itemStatus: ACTIVE
+                    dataUploadStatus: false
+                    uploadFrequency: Daily
+                    yearRange: "2021-2024"
+                    license: CC-BY 4.0
+                    fileFormat: xlsx
+                    accessPolicy: RESTRICTED
+                    ownerUserId: 2f945b8d-0cc8-4c5d-9a3e-53fa88e6e9b2
+                    itemCreatedAt: "2025-12-12T01:31:54+0530"
+                    lastUpdated: "12 December, 2025 - 01:31 PM"
+                    resourceServer:
+                      - name: NGSI-LD
+                        type: ngsi-ld
+                        datasetType: DATASET
+                        url: v2.dev.rs.iudx.io
+                        accessTypes:
+                          - api
+                        queryTypes:
+                          - ATTR
+                paginationInfo:
+                  page: 1
+                  size: 1
+                  totalCount: 77
+                  totalPages: 77
+                  hasNext: true
+                  hasPrevious: false
+        '401':
+          description: Missing or invalid authentication token
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Missing or invalid authentication token
+              example:
+                type: dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing Bearer token
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:badRequest
+                title: Bad Request
+                detail: "Invalid sort format: itemCreatedAt-desc. Expected field:order"
       x-codeSamples:
         - lang: cURL
           label: get organisation assets
@@ -5833,11 +5835,16 @@ paths:
             --header 'Authorization: Bearer <token>'
     post:
       summary: Retrieve organisation assets with filters
-      description: >
-        Fetch all assets belonging to the organisation using advanced filters.
-        Supports property-based, temporal, numeric range, and full-text search filters.
+      description: |
+        Retrieve organisation assets using advanced discovery filters.
 
-        **Note:** This endpoint is restricted to users with the `org_admin` role.
+        This endpoint allows organisation administrators to perform filtered searches
+        over all assets owned by their organisation, including unpublished items.
+        It supports property-based, temporal, numeric range, and full-text search
+        filters.
+
+        This operation is restricted to users with the `org_admin` role and is not part
+        of public catalogue discovery.
       operationId: get org assets with filters
       tags:
         - Organisation Assets Management
@@ -5883,19 +5890,72 @@ paths:
                 - $ref: '#/components/schemas/ComplexSearchRequest'
       responses:
         '200':
-          description: A successful search response with assets owned by the user
+          description: A successful search response with assets owned by the organization
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SearchResponse'
-        '400':
-          description: Invalid request query
+              examples:
+                ExampleResponse:
+                  summary: Organisation assets response
+                  value:
+                    type: dx:controlPlane:success
+                    title: Success
+                    results:
+                      - id: "e86cca04-83ae-4467-bf4f-2e5bd30bb3fd"
+                        type: [ "adex:AiModel" ]
+                        label: "testmodel789"
+                        organizationId: "74e3b919-1d1b-44de-ace1-504f1887fcc1"
+                        ownerUserId: "2f945b8d-0cc8-4c5d-9a3e-53fa88e6e9b2"
+                        itemCreatedAt: "2025-08-26T10:06:20+0530"
+                      - id: "51b148a4-2b47-4e49-b629-cf0e89cb019f"
+                        type: [ "adex:AiModel" ]
+                        label: "g4h5h"
+                        organizationId: "74e3b919-1d1b-44de-ace1-504f1887fcc1"
+                        ownerUserId: "2f945b8d-0cc8-4c5d-9a3e-53fa88e6e9b2"
+                        itemCreatedAt: "2025-08-27T10:57:00+0530"
+                      - id: "ee3ee905-899f-4452-a7ea-ee83d4316fa7"
+                        type: [ "adex:DataBank" ]
+                        label: "Air Quality Data"
+                        organizationId: "74e3b919-1d1b-44de-ace1-504f1887fcc1"
+                        ownerUserId: "2f945b8d-0cc8-4c5d-9a3e-53fa88e6e9b2"
+                        itemCreatedAt: "2025-09-19T02:34:41+0530"
+                    paginationInfo:
+                      page: 1
+                      size: 1000
+                      totalCount: 3
+                      totalPages: 1
+                      hasNext: false
+                      hasPrevious: false
+        '401':
+          description: Missing or invalid authentication token
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Missing or invalid authentication token
+              example:
+                type: dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing Bearer token
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                InvalidSortFormat:
+                  summary: Invalid sort format
+                  value:
+                    type: dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: "Invalid sort format: itemCreatedAt-desc. Expected field:order"
+                MissingOrMalformedRequest:
+                  summary: Missing or malformed request body
+                  value:
+                    type: dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: "Missing or malformed request"
       x-codeSamples:
         - lang: cURL
           label: get organisation assets
@@ -5907,16 +5967,140 @@ paths:
                 "searchCriteria": [
                   {
                     "searchType": "term",
-                    "field": "accessPolicy",
-                    "values": ["OPEN"]
+                    "field": "publishStatus",
+                    "values": ["PENDING"]
                   }
-                ]
+                ],
+                "filter": ["id", "type", "label", "organizationId", "ownerUserId", "itemCreatedAt"]
               }
+    patch:
+      tags:
+        - Organisation Assets Management
+      description: >
+        Update the publication or data upload status of an organisation asset.
+
+        **Role-based behavior:**
+          - `org_admin` or `cos_admin` can update both `publishStatus` and `dataUploadStatus`
+          - `provider` can update only `dataUploadStatus`
+          - Attempting to update unauthorized fields will result in `403 Forbidden`
+      operationId: patch item
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: id
+          in: query
+          description: ID of the DX Entity
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: >
+          Request payload to update the asset status.
+          At least one of the following fields must be provided.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                publishStatus:
+                  type: string
+                  enum:
+                    - ACTIVE
+                    - PENDING
+                    - DECLINED
+                  description: Publication status of the asset
+                  example: ACTIVE
+                dataUploadStatus:
+                  type: boolean
+                  description: >
+                    Indicates whether data has been uploaded for the asset.
+                    Must be a boolean value.
+                  example: true
+              additionalProperties: false
+            example:
+              publishStatus: ACTIVE
+              dataUploadStatus: true
+      responses:
+        '200':
+          description: Item status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/successResponseWithObjects'
+              examples:
+                Patch Success:
+                  value:
+                    type: dx:controlPlane:success
+                    title: Success
+                    detail: "Success: Item patched successfully"
+                    result:
+                      - id: "f5600bf0-7312-4b09-9583-ba742281ebf1"
+        '400':
+          description: Invalid request or update not permitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                MissingOrMalformedRequest:
+                  summary: Missing or malformed request body
+                  value:
+                    type: dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: "Missing or malformed request"
+
+                ItemNotFoundUnderOrganisation:
+                  summary: Item does not belong to the organisation
+                  value:
+                    type: dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: "No item found for update under your organization"
+        '401':
+          description: Missing or invalid authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                MissingBearerToken:
+                  summary: Authorization header not provided
+                  value:
+                    type: dx:controlPlane:notAuthorized
+                    title: Not Authorized
+                    detail: "Missing Bearer token"
+        '403':
+          description: Forbidden – insufficient privileges
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:forbidden
+                title: Forbidden
+                detail: Providers can only patch dataUploadStatus field
+
+      x-codeSamples:
+        - lang: cURL
+          label: patch item
+          source: |
+            curl --location --request PATCH
+            'https://${HOSTNAME}/iudx/v2/organisation/asset?id=uuid' \
+            --header 'token: <token>'
+            --data-raw '{
+              "publishStatus": "ACTIVE",
+              "dataUploadStatus": true
+            }'
   /iudx/v2/cat/getAllAssets:
     get:
       tags:
         - Platform Assets Management
-      description: Get all the assets belonging to the platform.
+      description: >
+        Get all the assets belonging to the platform.
+        
+        **Role-based behavior:**
+        - Only users with the `cos_admin` role can access this endpoint.
       operationId: get platform assets
       security:
         - authorization: [ ]
@@ -5949,31 +6133,96 @@ paths:
             type: string
       responses:
         '200':
-          description: A successful search response with assets in the platform
+          description: A successful response with all platform assets
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SearchResponse'
+              examples:
+                PlatformAssetsExample:
+                  summary: Sample response for platform assets
+                  value:
+                    type: "dx:controlPlane:success"
+                    title: "Success"
+                    result:
+                      -  description: "Support Vector Machine (SVM) is a powerful supervised learning algorithm that creates a hyperplane or set of hyperplanes in a high-dimensional space for classification, regression, or outlier detection tasks. SVMs are effective in high-dimensional spaces, memory efficient, and versatile through different kernel functions (linear, polynomial, RBF, sigmoid). They work by finding the optimal hyperplane that maximizes the margin between different classes in the training data. SVMs are particularly effective for classification problems where the boundary between classes is complex, and they handle both linear and non-linear classification tasks through the kernel trick."
+                         industry: "Sector Agnostic"
+                         type: [ "adex:AiModel" ]
+                         organizationId: "5519beed-53e1-4f81-a863-9aa07bd98b1d"
+                         lastUpdated: "01 June, 2025 - 06:28 PM"
+                         itemStatus: "ACTIVE"
+                         id: "ebfd8b9c-d1f2-4113-84b7-85e49fdaaf77"
+                         department: "NA"
+                         uploadedBy: "NA"
+                         publishStatus: "ACTIVE"
+                         mediaURL: "https://github.com/scikit-learn/scikit-learn"
+                         shortDescription: "A supervised learning algorithm used for classification, regression, and outlier detection"
+                         label: "Support Vector Machine (SVM)"
+                         modelType: "Classical Machine Learning"
+                         '@context': "https://voc.iudx.org.in/"
+                         tags: [ "classical-ml", "traditional-ml", "baseline-models", "machine-learning", "algorithms" ]
+                         organizationType: "Public"
+                         itemCreatedAt: "2025-06-01T18:28:00+0530"
+                         license: "BSD-3-Clause"
+                         fileSize: "-"
+                         name: "SupportVectorMachine"
+                         ownerUserId: "96dd9006-7193-49ed-ad8b-37592525d119"
+                         accessPolicy: "OPEN"
+                         fileFormat: "Python pickle file"
+                    paginationInfo:
+                      page: 1
+                      size: 1
+                      totalCount: 615
+                      totalPages: 615
+                      hasNext: true
+                      hasPrevious: false
         '403':
-          description: Unauthorized access
+          description: User does not have the required role to access this endpoint
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/forbiddenAccess'
-
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                ForbiddenExample:
+                  summary: Forbidden response
+                  value:
+                    type: "dx:controlPlane:forbidden"
+                    title: "Forbidden"
+                    detail: "User does not have the required role."
+        '401':
+          description: Missing or invalid authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                MissingToken:
+                  summary: Missing Bearer token
+                  value:
+                    type: "dx:controlPlane:notAuthorized"
+                    title: "Not Authorized"
+                    detail: "Missing Bearer token"
+                InvalidToken:
+                  summary: Invalid token format
+                  value:
+                    type: "dx:controlPlane:notAuthorized"
+                    title: "Not Authorized"
+                    detail: "Invalid token format"
       x-codeSamples:
         - lang: cURL
           label: get organisation assets
           source: |
             curl --location --request GET 'https://example
-            .com/iudx/v2/cat/getAllAssets?sort=name:asc&page=1' \
+            .com/iudx/v2/cat/getAllAssets?sort=name:asc&page=1&size=1' \
             --header 'Authorization: Bearer <token>'
     post:
       summary: Retrieve all platform assets with filters
       description: >
         Fetch all assets belonging to the platform using filters.
         Supports property-based, temporal, numeric range, and full-text search filters.
-        **Note:** This endpoint can only be accessed by users with the `cos_admin` role.
+        
+        **Role-based behavior:**
+        - Only users with the `cos_admin` role can access this endpoint.
       operationId: get platform assets with filters
       tags:
         - Platform Assets Management
@@ -6019,19 +6268,103 @@ paths:
                 - $ref: '#/components/schemas/ComplexSearchRequest'
       responses:
         '200':
-          description: A successful search response with assets owned by the user
+          description: A successful response with all platform assets
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SearchResponse'
-        '400':
-          description: Invalid request query
+              examples:
+                PlatformAssetsExample:
+                  summary: Sample response for platform assets
+                  value:
+                    type: "dx:controlPlane:success"
+                    title: "Success"
+                    result:
+                      - description: "Support Vector Machine (SVM) is a powerful supervised learning algorithm that creates a hyperplane or set of hyperplanes in a high-dimensional space for classification, regression, or outlier detection tasks. SVMs are effective in high-dimensional spaces, memory efficient, and versatile through different kernel functions (linear, polynomial, RBF, sigmoid). They work by finding the optimal hyperplane that maximizes the margin between different classes in the training data. SVMs are particularly effective for classification problems where the boundary between classes is complex, and they handle both linear and non-linear classification tasks through the kernel trick."
+                        industry: "Sector Agnostic"
+                        type: [ "adex:AiModel" ]
+                        organizationId: "5519beed-53e1-4f81-a863-9aa07bd98b1d"
+                        lastUpdated: "01 June, 2025 - 06:28 PM"
+                        itemStatus: "ACTIVE"
+                        id: "ebfd8b9c-d1f2-4113-84b7-85e49fdaaf77"
+                        department: "NA"
+                        uploadedBy: "NA"
+                        publishStatus: "ACTIVE"
+                        mediaURL: "https://github.com/scikit-learn/scikit-learn"
+                        shortDescription: "A supervised learning algorithm used for classification, regression, and outlier detection"
+                        label: "Support Vector Machine (SVM)"
+                        modelType: "Classical Machine Learning"
+                        '@context': "https://voc.iudx.org.in/"
+                        tags: [ "classical-ml", "traditional-ml", "baseline-models", "machine-learning", "algorithms" ]
+                        organizationType: "Public"
+                        itemCreatedAt: "2025-06-01T18:28:00+0530"
+                        license: "BSD-3-Clause"
+                        fileSize: "-"
+                        name: "SupportVectorMachine"
+                        ownerUserId: "96dd9006-7193-49ed-ad8b-37592525d119"
+                        accessPolicy: "OPEN"
+                        fileFormat: "Python pickle file"
+                    paginationInfo:
+                      page: 1
+                      size: 1
+                      totalCount: 615
+                      totalPages: 615
+                      hasNext: true
+                      hasPrevious: false
+        '403':
+          description: User does not have the required role to access this endpoint
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                ForbiddenExample:
+                  summary: Forbidden response
+                  value:
+                    type: "dx:controlPlane:forbidden"
+                    title: "Forbidden"
+                    detail: "User does not have the required role."
         '401':
           description: Missing or invalid authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                MissingToken:
+                  summary: Missing Bearer token
+                  value:
+                    type: "dx:controlPlane:notAuthorized"
+                    title: "Not Authorized"
+                    detail: "Missing Bearer token"
+                InvalidToken:
+                  summary: Invalid token format
+                  value:
+                    type: "dx:controlPlane:notAuthorized"
+                    title: "Not Authorized"
+                    detail: "Invalid token format"
+        '400':
+          description: Bad Request – Malformed request, missing required fields, or unsupported searchType.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:badRequest
+                  title:
+                    type: string
+                    example: Bad Request
+                  detail:
+                    type: string
+              examples:
+                missingFields:
+                  summary: Missing searchType or malformed searchCriteria
+                  value:
+                    type: dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: "Missing or malformed request"
       x-codeSamples:
         - lang: cURL
           label: search by item type
