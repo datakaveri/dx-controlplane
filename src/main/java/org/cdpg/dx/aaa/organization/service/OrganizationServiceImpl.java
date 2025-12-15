@@ -762,9 +762,16 @@ public class OrganizationServiceImpl implements OrganizationService {
     });
   }
 
+
+  @Override
+  public Future<List<OrganizationJoinRequest>> getAllOrganizationJoinRequests()
+  {
+    return organizationJoinRequestDAO.getAll();
+  }
+
   @Override
   public Future<Boolean> deleteOrganizationRequestById(UUID requestId) {
-    return orgDAO.get(requestId)
+    return createRequestDAO.get(requestId)
       .compose(request -> {
         if (request == null) {
           return Future.failedFuture(

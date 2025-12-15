@@ -1,3 +1,4 @@
+
 package org.cdpg.dx.aaa.organization.handler;
 
 
@@ -230,47 +231,9 @@ public class OrganizationHandler {
 
   public void deleteOrganisationById(RoutingContext ctx) {
 
-    // deletes org
-    // delegate requirement: scope - org_management and delegator is cos_admin/org_admin
-    // delegation table has the org_id
-    // check if request param and delegated org id is same
-
-    User user = ctx.user();
-    UUID userId = UUID.fromString(user.subject());
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
-
-    userService.getUserInfoByID(userId)
-      .compose(dxuser -> {
-        UUID delegatorId = null;
-
-        // If user is a delegate (but not cos_admin)
-        if (dxuser.roles().contains("delegate") && !dxuser.roles().contains("cos_admin") && !dxuser.roles().contains("org_admin")) {
-
-          JsonObject scopesObj = dxuser.scopes();
-          JsonArray delegationScopes = scopesObj.getJsonArray("delegation_scope");
-
-          if (!delegationScopes.contains("cos_admin_access")) {
-            return Future.failedFuture(new DxForbiddenException(
-              "This user doesn't have the scope to do this !"
-            ));
-          }
-          delegatorId = UUID.fromString(dxuser.did());
-
-//          ctx.queryParams().set("requestedBy", delegatorId.toString());
-//          LOGGER.debug("Injected 'requestedBy' into query params: {}", delegatorId);
-
-//          return validateEntityId(delegatorId, orgId)
-//            .compose(hasAccess -> {
-//              if (!hasAccess) {
-//                return Future.failedFuture(
-//                  new DxForbiddenException("This user doesn't have delegation access to the organisation"));
-//              }
-//              return Future.succeededFuture().mapEmpty();
-//            });
-        }
-        return organizationService.deleteOrganization(orgId);
-      })
-      .onSuccess(res -> {
+    organizationService.deleteOrganization(orgId)
+      .onSuccess(updatedOrg -> {
         AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
           RoutingContextHelper.getRequestPath(ctx), "DELETE", "Delete Organization By ID");
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
@@ -278,6 +241,7 @@ public class OrganizationHandler {
       })
       .onFailure(ctx::fail);
   }
+
 
 
 
@@ -391,22 +355,40 @@ public class OrganizationHandler {
     OrgRequestJson.put("user_id", user.subject());
 
     String userName = user.principal().getString("name");
+
     OrgRequestJson.put("user_name", userName);
     OrgRequestJson.put("organization_id", orgId.toString());
 
     System.out.println("OrgRequestJson: " + OrgRequestJson.encodePrettily());
 
     organizationJoinRequest = OrganizationJoinRequest.fromJson(OrgRequestJson);
+    JsonObject jsonBody = organizationJoinRequest.toJson();
+    String officialEmailStr = jsonBody.getString("official_email");
 
-
-    organizationService.getOrganizationJoinRequestsByUser(UUID.fromString(user.subject()))
+    organizationService.getAllOrganizationJoinRequests()
       .compose(joinRequests -> {
         for (OrganizationJoinRequest request : joinRequests) {
 
-          if (request.organizationId().equals(orgId)) {
-            return Future.failedFuture(new DxConflictException("User already has a pending/ granted join request for this organization"));
+//          if (request.organizationId().equals(orgId.toString())
+//            && request.userId().equals(user.subject()))
+          if (request.organizationId().equals(orgId)
+            && request.userId().equals(UUID.fromString(user.subject()))) {
+
+            return Future.failedFuture(
+              new DxConflictException(
+                "User already has a pending/ granted join request for this organization"
+              )
+            );
           }
+
+
+
+          if (!request.status().equals(Status.REJECTED) && request.officialEmail().equals(officialEmailStr)) {
+            return Future.failedFuture(new DxConflictException("This email has been used already!"));
+          }
+
         }
+
         return organizationService.joinOrganizationRequest(organizationJoinRequest)
           .onSuccess(createdRequest -> {
             AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
