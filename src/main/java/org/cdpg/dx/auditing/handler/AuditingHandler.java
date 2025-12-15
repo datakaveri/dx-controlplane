@@ -4,9 +4,11 @@ import io.vertx.ext.web.RoutingContext;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.activity.model.ActivityLog;
-import org.cdpg.dx.aaa.activity.service.ActivityService;
-import org.cdpg.dx.auditing.model.AuditLog;
+import org.cdpg.dx.aaa.activity.model.ActivityAuditLogEntity;
+
+import org.cdpg.dx.aaa.activity.service.ActivityLogService;
+
+import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 
@@ -16,14 +18,14 @@ public class AuditingHandler {
   private static final List<Integer> STATUS_CODES_TO_AUDIT = List.of(200, 201, 204);
 
   private final DataBrokerService databrokerService;
-  private final ActivityService activityService;
+  private final ActivityLogService activityService;
   private final String auditingExchange;
   private final String routingKey;
   private final boolean isRemoteAudit;
 
   public AuditingHandler(
       DataBrokerService databrokerService,
-      ActivityService activityService,
+      ActivityLogService activityService,
       String auditingExchange,
       String routingKey,
       boolean isRemoteAudit) {
@@ -35,7 +37,7 @@ public class AuditingHandler {
   }
 
   public void handleApiAudit(RoutingContext context) {
-    LOGGER.debug("AuditingHandler invoked for isRemoteAudit path: {}",isRemoteAudit);
+    LOGGER.debug("AuditingHandler invoked for isRemoteAudit path: {}", isRemoteAudit);
     context.addBodyEndHandler(
         v -> {
           int statusCode = context.response().getStatusCode();
@@ -45,13 +47,14 @@ public class AuditingHandler {
             return;
           }
 
-          RoutingContextHelper.getAuditingLog(context)
+          RoutingContextHelper.getAuditingLogNew(context)
               .ifPresentOrElse(
                   auditLogs -> {
                     LOGGER.info("isRemoteAudit value in AuditingHandler: {}", isRemoteAudit);
                     if (isRemoteAudit) {
                       publishAuditLogs(auditLogs);
                     } else {
+
                       insertAuditLogIntoDb(auditLogs);
                     }
                   },
@@ -61,7 +64,7 @@ public class AuditingHandler {
     context.next();
   }
 
-  private void publishAuditLogs(List<AuditLog> auditLogs) {
+  private void publishAuditLogs(List<ActivityAuditLogBuilder> auditLogs) {
     LOGGER.trace("Publishing audit logs");
 
     auditLogs.forEach(
@@ -70,22 +73,25 @@ public class AuditingHandler {
                 .publishMessageInternal(log.toJson(), auditingExchange, routingKey)
                 .onSuccess(
                     success ->
-                        LOGGER.info("Auditing log published successfully for {}", log.getOrigin()))
+                        LOGGER.info(
+                            "Auditing log published successfully for {}", log.getOriginServer()))
                 .onFailure(
                     err ->
                         LOGGER.error(
                             "Failed to publish auditing log {}: {}",
-                            log.getOrigin(),
+                            log.getOriginServer(),
                             err.getMessage(),
                             err)));
   }
 
-  private void insertAuditLogIntoDb(List<AuditLog> auditLogs) {
+  private void insertAuditLogIntoDb(List<ActivityAuditLogBuilder> auditLogs) {
     LOGGER.trace("Inserting audit logs into DB");
 
     auditLogs.forEach(
         auditLog -> {
-          ActivityLog activityLog = ActivityLog.fromJson(auditLog.toJson());
+          ActivityAuditLogEntity activityLog = ActivityAuditLogEntity.fromJson(auditLog.toJson());
+
+          LOGGER.debug("Inserting activity log into DB: {}", activityLog.toJson());
 
           activityService
               .insertActivityLogIntoDb(activityLog)
@@ -93,12 +99,12 @@ public class AuditingHandler {
                   success ->
                       LOGGER.info(
                           "Activity log inserted successfully for server {}",
-                          activityLog.originServer()))
+                          auditLog.getOriginServer()))
               .onFailure(
                   err ->
                       LOGGER.error(
                           "Failed to insert activity log for server {}: {}",
-                          activityLog.originServer(),
+                          auditLog.getOriginServer(),
                           err.getMessage(),
                           err));
         });
