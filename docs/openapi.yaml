@@ -5528,7 +5528,7 @@ paths:
               examples:
                 Delete Success:
                   value:
-                    type: 'urn:dx:cat:Success'
+                    type: 'dx:controlPlane:success'
                     title: Success
                     results:
                       - id: "6e58c916-f6c1-448d-acea-756f3272bc57"
@@ -5703,7 +5703,7 @@ paths:
               examples:
                 Patch Success:
                   value:
-                    type: 'urn:dx:cat:Success'
+                    type: 'dx:controlPlane:success'
                     title: Success
                     results:
                       - id: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
@@ -6027,11 +6027,25 @@ paths:
   /iudx/v2/cat/list:
     post:
       tags:
-        - List
-      summary: List available filter values
+        - List Available Filters
+      summary: List available filters values
       description: |
-        Retrieve available filter values for specified indexed fields (e.g., tags, department, fileFormat, etc.) based on optional search criteria.
-        This API is intended to assist user interfaces by listing current values from the catalogue, based on indexed fields in Elasticsearch.
+        Retrieves the list of available filter values for specific indexed fields in the catalogue.
+        This API is used by user interfaces to populate dynamic filter dropdowns based on the
+        selected entity type (e.g., `adex:DataBank`, `adex:AiModel`, `adex:Apps`).
+
+        The API supports:
+        - Filtering by entity type using `searchCriteria` (e.g., `"type": "adex:DataBank"`).
+        - Returning only those filter values that are relevant to the selected entity type.
+        - Returning UI-specific filters for each entity category:
+            - adex:DataBank → `concepts`, `tags`, `fileFormat`, `organizationType`, `accessPolicy`,
+                              `resourceServer.url`, `department`, `industry`
+            - adex:AiModel → `department`, `organizationType`, `industry`, `fileFormat`,
+                             `accessPolicy`, `modelType`
+            - adex:Apps → `department`, `organizationType`
+
+        The `filter` array determines which fields to return values for. Filters must be
+        indexed fields in Elasticsearch and supported by the catalogue.
       operationId: listAvailableFilters
       security:
         - optionalAuth: [ ]
@@ -6072,7 +6086,8 @@ paths:
                   description: List of indexed fields for which values should be listed.
                   items:
                     type: string
-                  example: [ "tags", "department", "fileFormat" ]
+                  example: [ "concepts", "tags", "fileFormat", "organizationType", "accessPolicy",
+                             "resourceServer.url", "department", "industry" ]
       responses:
         '200':
           description: Success
@@ -6083,7 +6098,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: urn:dx:cat:Success
+                    example: dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -6095,29 +6110,47 @@ paths:
                         type: array
                         items:
                           type: string
-                    example:
-                      - tags:
-                          - Transport
-                          - Community Health
-                          - Corporate
-                          - Geospatial
-                          - HR Analytics
-                          - Healthcare
-                          - Maternal Health
-                          - Network
-                          - Performance
-                          - Railway
-                          - Satellite
-                      - department:
-                          - Industries and Commerce
-                          - Environment Forests Science and Technology
-                          - Health Medical and Family Welfare
-                          - Home
-                      - fileFormat:
-                          - pdf
-                          - csv
+
+              examples:
+                DataBankFilters:
+                  summary: Filter values for adex:DataBank
+                  value:
+                    type: dx:controlPlane:success
+                    title: Success
+                    results:
+                      - concepts: [ "Mobility", "Climate", "Public Safety" ]
+                      - tags: [ "Transport", "Healthcare", "Satellite" ]
+                      - fileFormat: [ "csv", "pdf", "zip" ]
+                      - organizationType: [ "Public", "Private", "Academic Institution" ]
+                      - accessPolicy: [ "OPEN", "RESTRICTED" ]
+                      - resourceServer.url: [ "datakaveri.org", "geoserver.gov" ]
+                      - department: [ "Health", "Industries", "Environment" ]
+                      - industry: [ "Agriculture", "Transport", "Healthcare" ]
+
+                AiModelFilters:
+                  summary: Filter values for adex:AiModel
+                  value:
+                    type: dx:controlPlane:success
+                    title: Success
+                    results:
+                      - department: [ "IT", "Health" ]
+                      - organizationType: [ "Government", "Private" ]
+                      - industry: [ "Finance", "Retail" ]
+                      - fileFormat: [ "onnx", "pickle" ]
+                      - accessPolicy: [ "OPEN", "RESTRICTED" ]
+                      - modelType: [ "classification", "regression", "nlp" ]
+
+                AppsFilters:
+                  summary: Filter values for adex:Apps
+                  value:
+                    type: dx:controlPlane:success
+                    title: Success
+                    results:
+                      - department: [ "Tourism", "Transport" ]
+                      - organizationType: [ "NGO/Non-profit", "Private" ]
+
         '400':
-          description: Bad Request – Malformed request or unsupported filters.
+          description: Bad Request – Malformed request, missing required fields, or unsupported searchType.
           content:
             application/json:
               schema:
@@ -6125,17 +6158,30 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: urn:dx:cat:InvalidSyntax
+                    example: dx:controlPlane:badRequest
                   title:
                     type: string
-                    example: Invalid Syntax
+                    example: Bad Request
                   detail:
                     type: string
-                    example: "Wrong Item Type"
+                    example: "Unsupported searchType: fjjo"
+              examples:
+                unsupportedSearchType:
+                  summary: Invalid or unsupported searchType
+                  value:
+                    type: dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: "Unsupported searchType: fjjo"
+                missingFields:
+                  summary: Missing searchType or malformed searchCriteria
+                  value:
+                    type: dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: "Missing or malformed request"
 
       x-codeSamples:
         - lang: cURL
-          label: list indexed filter values
+          label: List filter values for adex:DataBank
           source: |
             curl --location 'https://${HOSTNAME}/iudx/v2/cat/list' \
             --header 'Content-Type: application/json' \
@@ -6147,16 +6193,84 @@ paths:
                   "values": ["adex:DataBank"]
                 }
               ],
-              "filter": ["tags", "department", "organizationType", "fileFormat", "dataReadiness"]
+              "filter": [
+                "concepts",
+                "tags",
+                "fileFormat",
+                "organizationType",
+                "accessPolicy",
+                "resourceServer.url",
+                "department",
+                "industry"
+              ]
             }'
+
+        - lang: cURL
+          label: List filter values for adex:AiModel
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/cat/list' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "searchCriteria": [
+                {
+                  "searchType": "term",
+                  "field": "type",
+                  "values": ["adex:AiModel"]
+                }
+              ],
+              "filter": [
+                "department",
+                "organizationType",
+                "industry",
+                "fileFormat",
+                "accessPolicy",
+                "modelType"
+              ]
+            }'
+
+        - lang: cURL
+          label: List filter values for adex:Apps
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/cat/list' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "searchCriteria": [
+                {
+                  "searchType": "term",
+                  "field": "type",
+                  "values": ["adex:Apps"]
+                }
+              ],
+              "filter": [
+                "department",
+                "organizationType"
+              ]
+            }'
+
   /iudx/v2/cat/search:
     post:
       tags:
-        - Discovery
+        - Discovery – Public
       description: |
         Unified catalogue search query for discovering entities that meet complex criteria. The
         `/search` endpoint supports a rich combination of property-based (`term`, `flattenedTerm`),
         range-based, and temporal-based searches using a common `searchCriteria` array format.
+        
+        ### 📌 Visibility of Entities in Discovery
+        The `/search` API returns only entities that are fully published and available for
+        discovery. An entity is included in results when:
+
+        - `publishStatus` is `ACTIVE`
+        - `dataUploadStatus` is `true`
+
+         #### 🔐 Private Items (`accessPolicy = "PRIVATE"`)
+        Items with `accessPolicy = "PRIVATE"` are **only visible to their owner** (based on the
+        authenticated user’s token). For all other users—authenticated or not—private items are
+        excluded from search results.
+
+        These visibility rules apply uniformly across all catalogue entity types such as
+        `adex:DataBank`, `adex:AiModel`, and `adex:Apps`.
+
 
         #### 📌 `searchCriteria` Format (Unified)
         Each entry in `searchCriteria` must define:
@@ -6223,6 +6337,7 @@ paths:
             }
           ]
         }
+        ```
 
         #### 📈 Range Search (Numeric)
         Filters based on numeric values and supports various relational conditions.
@@ -6377,56 +6492,16 @@ paths:
               schema:
                 $ref: '#/components/schemas/errorResponseForDiscovery'
               examples:
-                Invalid Geo Value:
+                Bad Request:
                   value:
-                    type: 'urn:dx:cat:InvalidGeoValue'
-                    "title": "Geoquery value error"
-                    "detail": "Invalid value for a query param"
-                Invalid Syntax:
+                    "type": "dx:controlPlane:badRequest"
+                    "title": "Bad Request"
+                    "detail": "Missing or malformed request"
+                Exceed page|size value:
                   value:
-                    "type": "urn:dx:cat:InvalidSyntax"
-                    "title": "Invalid Syntax"
-                    "detail": "Invalid value for a query param"
-                Invalid Syntax 1:
-                  value:
-                    "type": "urn:dx:cat:InvalidSyntax"
-                    "title": "Invalid Syntax"
-                    "detail": "Mandatory field(s) not provided"
-                Precision validation:
-                  value:
-                    "title": "failed"
-                    "type": "urn:dx:cat:InvalidPropertyValue"
-                    "detail": "The max point of 'coordinates' precision is 6"
-                Coordinate pair:
-                  value:
-                    "title": "failed"
-                    "type": "urn:dx:cat:InvalidPropertyValue"
-                    "detail": "The max number of 'coordinates' value is 10"
-                Max Distance limit:
-                  value:
-                    "title": "failed"
-                    "type": "urn:dx:cat:InvalidPropertyValue"
-                    "detail": "The 'maxDistance' should range between 0-10000m"
-                Coordinates value limit:
-                  value:
-                    "title": "failed"
-                    "type": "urn:dx:cat:InvalidPropertyValue"
-                    "detail": "Unable to parse 'coordinates'; value is Infinity"
-                Invalid request - Max string size:
-                  value:
-                    "title": "failed"
-                    "type": "urn:dx:cat:InvalidPropertyValue"
-                    "detail": "The max string(q) size supported is 100"
-                Bad filter:
-                  value:
-                    "title": "failed"
-                    "type": "urn:dx:cat:BadFilter"
-                    "detail": "The max number of 'filter' should be 10"
-                Exceed limit|offset value:
-                  value:
-                    "title": "failed"
-                    "type": "urn:dx:cat:InvalidPropertyValue"
-                    "detail": "The limit + offset should be between 1 to 10000"
+                    "title": "dx:controlPlane:badRequest"
+                    "type": "Bad Request"
+                    "detail": "Invalid pagination. The value of (page * size) must be between 1 and 10,000"
 
       x-codeSamples:
         - lang: cURL
@@ -6542,6 +6617,126 @@ paths:
               ],
               "filter": ["id", "type", "department", "itemCreatedAt", "dataReadiness"]
             }'
+  /iudx/v2/cat/count:
+    post:
+      tags:
+        - Discovery – Public
+      summary: Count matching catalogue entities by type
+      description: |
+        Performs a count aggregation of catalogue entities based on the provided search filters.
+        This API returns counts grouped by `type.keyword`. Only items matching the search
+        criteria are counted. Typical use cases include dashboard count cards for Data Banks,
+        AI Models, and Applications.
+
+        Aggregation is always done on `type.keyword`. The response contains a `result` array
+        with type→count pairs.
+
+        The request body supports:
+        - **Text-only count search** (via `q`)
+        - **Text count with autocomplete and fuzzy matching**
+        - **Structured filter count search** (via `searchCriteria`)
+        - **Combined structured and text count search**
+      security:
+        - optionalAuth: [ ]
+      operationId: count
+
+      requestBody:
+        description: Request body containing count search parameters
+        required: true
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - $ref: '#/components/schemas/TextOnly'
+                - $ref: '#/components/schemas/TextFuzzyAuto'
+                - $ref: '#/components/schemas/AttributesBasedFilteringCount'
+                - $ref: '#/components/schemas/ComplexRequestForCount'
+            examples:
+              TextOnly:
+                summary: Full-text only
+                value:
+                  q: "test"
+
+              TextFuzzyAuto:
+                summary: Full-text with autocomplete and fuzzy
+                value:
+                  q: "text"
+                  autoComplete: true
+                  fuzzy: true
+
+              TagBased:
+                summary: filter by attributes
+                value:
+                  searchCriteria:
+                    - searchType: "term"
+                      field: "tags"
+                      values: [ "ai" ]
+
+              Count Summary api - Summary API:
+                summary: Count Summary api | Filter by type
+                value:
+                  searchCriteria:
+                    - searchType: "term"
+                      field: "type"
+                      values: [ "adex:DataBank", "adex:AiModel", "adex:Apps" ]
+
+              ComplexCount:
+                summary: Complex count search with text, fuzzy, and structured filters
+                value:
+                  q: "ai data"
+                  autoComplete: true
+                  fuzzy: true
+                  searchCriteria:
+                    - searchType: "term"
+                      field: "type"
+                      values: [ "adex:DataBank" ]
+                    - searchType: "betweenTemporal"
+                      field: "itemCreatedAt"
+                      values: [ "2025-03-20T04:00:00+0530", "2025-08-02T09:15:27+0530" ]
+      responses:
+        '200':
+          description: Aggregated count results by `type`
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties:
+                        type: integer
+              examples:
+                CountAllTypes:
+                  summary: Count results for all types
+                  value:
+                    type: "dx:controlPlane:success"
+                    title: "Success"
+                    result:
+                      - adex:DataBank: 74
+                        adex:AiModel: 110
+                        adex:Apps: 76
+
+        '400':
+          description: Invalid input or unsupported search criteria
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                BadRequest:
+                  summary: Bad Request
+                  value:
+                    "type": "dx:controlPlane:badRequest"
+                    "title": "Bad Request"
+                    "detail": "Missing or malformed request"
   /iudx/v2/cat/search/myassets:
     post:
       summary: Search assets created by the current authenticated user
@@ -6555,7 +6750,7 @@ paths:
         full-text search.
       operationId: post myAssetsSearch
       tags:
-        - Discovery
+        - Discovery – My Assets
       security:
         - authorization: [ ]
       requestBody:
@@ -6594,7 +6789,7 @@ paths:
         No other filters are applied.
       operationId: get myAssetsSearch
       tags:
-        - Discovery
+        - Discovery – My Assets
       security:
         - authorization: [ ]
       parameters:
@@ -6633,82 +6828,6 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Missing or invalid authentication token
-  /iudx/v2/cat/count:
-    post:
-      tags:
-        - Discovery
-      description: |
-        Count aggregation query for catalogue metadata using filters defined via `searchCriteria`.
-
-        #### 🚩 Behavior
-        - All objects in the `searchCriteria` array are combined using logical **AND**.
-        - Filters with `searchType` of `"term"`, `"flattenedTerm"` and `"range"` (numeric or temporal)
-        are supported.
-        - The response always includes a count **aggregated by `type.keyword`**.
-
-        #### 🎯 UI Use Case:
-        Used in summary dashboards to show:
-        - Number of Data Banks (`type=adex:DataBank`)
-        - Number of AI Models (`type=adex:AiModel`)
-        - Number of Potential Applications (`type=adex:Apps`)
-        - Distribution by `type` after applying department/tags/date filters
-
-        > 📌 Aggregation is always based on `type.keyword`.
-        > The `results` object contains key-value pairs for each `type`.
-      security:
-        - optionalAuth: [ ]
-      operationId: count
-      requestBody:
-        description: Request body containing unified search filters
-        required: true
-        content:
-          application/json:
-            schema:
-              anyOf:
-                - $ref: '#/components/schemas/TextSearchRequest'
-                - $ref: '#/components/schemas/SearchCriteriaRequest'
-                - $ref: '#/components/schemas/AutocompleteFuzzyTextSearchRequest'
-                - $ref: '#/components/schemas/ComplexSearchRequest'
-      responses:
-        '200':
-          description: Aggregated count results by `type`
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                    example: urn:dx:cat:Success
-                  title:
-                    type: string
-                    example: Success
-                  results:
-                    type: array
-                    items:
-                      type: object
-                      additionalProperties:
-                        type: integer
-                    example:
-                      - adex:DataBank: 131
-                        adex:Apps: 14
-        '400':
-          description: Invalid input or unsupported search criteria
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/errorResponseForDiscovery'
-              examples:
-                Missing Search Criteria:
-                  value:
-                    type: "urn:dx:cat:InvalidSyntax"
-                    title: "Missing Search Criteria"
-                    detail: "The request must contain a non-empty searchCriteria block."
-                Invalid Search Type:
-                  value:
-                    type: "urn:dx:cat:InvalidPropertyValue"
-                    title: "Invalid Search Type"
-                    detail: "Only 'term' and range/temporal filters are supported for count aggregation."
 
   ##Auditing apis
   /iudx/v2/auditing/consumer/activity:
@@ -7242,17 +7361,10 @@ tags:
       Manage catalogue entities and perform Create/Update/Read/Delete operations on them.
       These apis are intended to be used by DX(Data Exchange) Data *Providers*.
     x-displayName: Entity
-  - name: Discovery
-    description: |
-      Discovery DX Entities using a rich discovery api supporting property, text and geo-based queries.
-      These apis are intended to be used by DX(Data Exchange) Data *Consumers*.
-      <br> Geo-Query APIs list the location of the dataset ids' given in the request body of a particular instance
-    x-displayName: Discovery
-  - name: List
-    description: |
-      List DX Entities of a certain type.
-      These apis are intended to be used by User Interfaces.
-    x-displayName: List
+  - name: Discovery – Public
+    description: Global catalogue search and count APIs.
+  - name: Discovery – My Assets
+    description: Owner-specific search APIs.
   - name: Subscriptions
     description: |
       NGSI-LD subscriptions apis.
@@ -9138,7 +9250,7 @@ components:
         - type
       x-examples:
         Example 1:
-          type: 'urn:dx:cat:Success'
+          type: 'dx:controlPlane:success'
           title: Success
           totalHits: 10
           results:
@@ -9147,7 +9259,7 @@ components:
               type:
                 - 'iudx:Resource'
       example:
-        type: 'urn:dx:cat:Success'
+        type: 'dx:controlPlane:success'
         title: Success
         totalHits: 10
         results:
@@ -9215,7 +9327,7 @@ components:
       required:
         - type
       example:
-        type: 'urn:dx:cat:Success'
+        type: 'dx:controlPlane:success'
         title: Success
         totalHits: 3
         results:
@@ -9254,7 +9366,7 @@ components:
       required:
         - type
       example:
-        type: 'urn:dx:cat:Success'
+        type: 'dx:controlPlane:success'
         title: Success
         totalHits: 3
         results:
@@ -9401,7 +9513,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:cat:Success
+          example: dx:controlPlane:success
         title:
           type: string
           example: Success
@@ -9414,6 +9526,64 @@ components:
         - type
         - title
         - result
+    AttributesBasedFilteringCount:
+      type: object
+      additionalProperties: false
+      properties:
+        searchCriteria:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchCriteria'
+      required:
+        - searchCriteria
+    TextOnly:
+      type: object
+      additionalProperties: false
+      properties:
+        q:
+          type: string
+          description: The search query string.
+      required:
+        - q
+      example:
+        q: "text"
+    ComplexRequestForCount:
+      type: object
+      additionalProperties: true
+      properties:
+        q:
+          type: string
+          description: The search query string.
+        autoComplete:
+          type: boolean
+          description: Enables autocomplete suggestions.
+        searchCriteria:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchCriteria'
+          description: List of property-based search criteria.
+      required:
+        - q
+        - searchCriteria
+    TextFuzzyAuto:
+      type: object
+      additionalProperties: false
+      properties:
+        q:
+          type: string
+          description: The search query string for autocomplete.
+        fuzzy:
+          type: boolean
+          description: Enables fuzzy matching for the search query.
+        autoComplete:
+          type: boolean
+          description: Enables autocomplete suggestions.
+      required:
+        - q
+      example:
+        q: "sat"
+        autoComplete: true
+        fuzzy: true
     ErrorResponse:
       type: object
       properties:
@@ -9787,7 +9957,7 @@ components:
             - license
             - fileSize
       example:
-        type: 'urn:dx:cat:Success'
+        type: 'dx:controlPlane:success'
         title: 'Success'
         detail: 'Success: Item created'
         results:
@@ -9893,7 +10063,7 @@ components:
             - uploadFrequency
             - license
       example:
-        type: 'urn:dx:cat:Success'
+        type: 'dx:controlPlane:success'
         title: 'Success'
         detail: 'Success: Item created'
         results:
@@ -10022,7 +10192,7 @@ components:
             - canBeUsedFor
             - dataInputsAndAiTechniques
       example:
-        type: 'urn:dx:cat:Success'
+        type: 'dx:controlPlane:success'
         title: 'Success'
         detail: 'Success: Item created'
         results:
@@ -10151,7 +10321,7 @@ components:
             - license
             - fileSize
       example:
-        type: 'urn:dx:cat:Success'
+        type: 'dx:controlPlane:success'
         title: 'Success'
         detail: 'Success: Item updated successfully'
         results:
@@ -10279,7 +10449,7 @@ components:
             - uploadFrequency
             - license
       example:
-        type: 'urn:dx:cat:Success'
+        type: 'dx:controlPlane:success'
         title: 'Success'
         results:
           '@context': 'https://agrijson.org'
@@ -10444,7 +10614,7 @@ components:
             - canBeUsedFor
             - dataInputsAndAiTechniques
       example:
-        type: 'urn:dx:cat:Success'
+        type: 'dx:controlPlane:success'
         title: 'Success'
         detail: 'Success: Item updated successfully'
         results:
@@ -10573,7 +10743,7 @@ components:
       required:
         - type
       example:
-        type: 'urn:dx:cat:Success'
+        type: 'dx:controlPlane:success'
         title: 'Success'
         detail: 'Success: Item fetched successfully'
         result:
@@ -10631,7 +10801,7 @@ components:
       required:
         - type
       example:
-        type: 'urn:dx:cat:Success'
+        type: 'dx:controlPlane:success'
         title: 'Success'
         result:
           - '@context': "https://agrijson.org"
@@ -10687,7 +10857,7 @@ components:
       required:
         - type
       example:
-        type: 'urn:dx:cat:Success'
+        type: 'dx:controlPlane:success'
         title: 'Success'
         detail: 'Success: Item fetched Successfully'
         result:
@@ -10832,7 +11002,7 @@ components:
       required:
         - type
       example:
-        type: 'urn:dx:cat:Success'
+        type: 'dx:controlPlane:success'
         title: 'Success'
         detail: 'Success: Item fetched successfully'
         result:
@@ -10893,7 +11063,7 @@ components:
       required:
         - type
       example:
-        type: 'urn:dx:cat:Success'
+        type: 'dx:controlPlane:success'
         title: 'Success'
         result:
           - '@context': "https://agrijson.org"
@@ -10951,7 +11121,7 @@ components:
       required:
         - type
       example:
-        type: 'urn:dx:cat:Success'
+        type: 'dx:controlPlane:success'
         title: 'Success'
         detail: 'Success: Item fetched Successfully'
         result:
@@ -11071,7 +11241,7 @@ components:
         - pagination
         - results
       example:
-        type: "urn:dx:cat:Success"
+        type: "dx:controlPlane:success"
         title: "Success"
         pagination:
           page: 1
@@ -11212,7 +11382,7 @@ components:
         - pagination
         - results
       example:
-        type: "urn:dx:cat:Success"
+        type: "dx:controlPlane:success"
         title: "Success"
         pagination:
           page: 1
@@ -11282,7 +11452,7 @@ components:
         - pagination
         - results
       example:
-        type: "urn:dx:cat:Success"
+        type: "dx:controlPlane:success"
         title: "Success"
         pagination:
           page: 1
@@ -11359,7 +11529,7 @@ components:
         - pagination
         - results
       example:
-        type: "urn:dx:cat:Success"
+        type: "dx:controlPlane:success"
         title: "Success"
         pagination:
           page: 1
@@ -11458,7 +11628,7 @@ components:
         - pagination
         - results
       example:
-        type: "urn:dx:cat:Success"
+        type: "dx:controlPlane:success"
         title: "Success"
         pagination:
           page: 1

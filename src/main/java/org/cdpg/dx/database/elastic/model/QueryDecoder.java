@@ -9,6 +9,7 @@ import java.util.*;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxEsException;
 import org.cdpg.dx.database.elastic.util.AggregationType;
 import org.cdpg.dx.database.elastic.util.QueryType;
@@ -48,19 +49,43 @@ public class QueryDecoder {
 
     if (searchType != null && searchType.matches(SEARCH_CRITERIA_REGEX)) {
       LOGGER.debug("Info: searchCriteria block");
-      new SearchCriteriaQueryDecorator(queryMap, request.getSearchCriteriaRequest()).add();
-      isValidQuery = true;
+      try {
+        new SearchCriteriaQueryDecorator(queryMap, request.getSearchCriteriaRequest()).add();
+        isValidQuery = true;
+      } catch (DxEsException e) {
+        LOGGER.error("SearchCriteriaQueryDecorator failed: {}", e.getMessage());
+        throw e;
+      } catch (Exception e) {
+        LOGGER.error("Unexpected error in SearchCriteriaQueryDecorator: {}", e.getMessage());
+        throw new DxEsException("Failed to process searchCriteria block");
+      }
     }
 
     if (searchType != null && searchType.matches(TEXTSEARCH_REGEX)) {
       LOGGER.debug("Info: Text search block");
-      new TextSearchQueryDecorator(queryMap, request.getTextSearchRequest()).add();
-      isValidQuery = true;
+      try {
+        new TextSearchQueryDecorator(queryMap, request.getTextSearchRequest()).add();
+        isValidQuery = true;
+      } catch (DxEsException e) {
+        LOGGER.error("TextSearchQueryDecorator failed: {}", e.getMessage());
+        throw e;
+      } catch (Exception e) {
+        LOGGER.error("Unexpected error in TextSearchQueryDecorator: {}", e.getMessage());
+        throw new DxEsException("Failed to process text search block");
+      }
     }
 
-    if (!searchType.matches(PF_ASSETS_SEARCH_REGEX) && !searchType.matches(ORG_ASSETS_SEARCH_REGEX)) {
-      new AccessPolicyQueryDecorator(queryMap,
-          request.getAccessPolicyRequest()).add();
+    if (!searchType.matches(PF_ASSETS_SEARCH_REGEX)
+        && !searchType.matches(ORG_ASSETS_SEARCH_REGEX)) {
+      try {
+        new AccessPolicyQueryDecorator(queryMap, request.getAccessPolicyRequest()).add();
+      } catch (DxEsException e) {
+        LOGGER.error("AccessPolicyQueryDecorator failed: {}", e.getMessage());
+        throw e;
+      } catch (Exception e) {
+        LOGGER.error("Unexpected error in AccessPolicyQueryDecorator: {}", e.getMessage());
+        throw new DxEsException("Failed to process access policy block");
+      }
     }
 
     // Exclude blocks only if NOT myAssetsAll search
@@ -95,9 +120,19 @@ public class QueryDecoder {
     }
 
     if (searchType.matches(RESPONSE_FILTER_REGEX)) {
-      new ResponseFilterDecorator(queryMap, request.getResponseFilterRequest()).add();
-      isValidQuery = true;
+      LOGGER.debug("Info: Response filter block");
+      try {
+        new ResponseFilterDecorator(queryMap, request.getResponseFilterRequest()).add();
+        isValidQuery = true;
+      } catch (DxEsException e) {
+        LOGGER.error("ResponseFilterDecorator failed: {}", e.getMessage());
+        throw e;
+      } catch (Exception e) {
+        LOGGER.error("Unexpected error in ResponseFilterDecorator: {}", e.getMessage());
+        throw new DxEsException("Failed to process response filter block");
+      }
     }
+
 
     if (!isValidQuery) {
       throw new DxEsException("Invalid search query");
@@ -108,7 +143,6 @@ public class QueryDecoder {
 
     //Setting source field
     for (QueryModel qm : queryMap.get(FilterType.INCLUDES)) {
-      LOGGER.debug("Qm: " + qm.toJson());
       if (qm.getIncludeFields() != null) {
         q.setIncludeFields(qm.getIncludeFields());
       }
@@ -225,9 +259,14 @@ public class QueryDecoder {
       queryMap.put(filterType, new ArrayList<>());
     }
 
-    new AccessPolicyQueryDecorator(queryMap, request.getAccessPolicyRequest()).add();
-    new SearchCriteriaQueryDecorator(queryMap, request.getSearchCriteriaRequest()).add();
-    new InstanceFilterQueryDecorator(queryMap, request.getInstanceFilterRequest()).add();
+    try {
+      new AccessPolicyQueryDecorator(queryMap, request.getAccessPolicyRequest()).add();
+      new SearchCriteriaQueryDecorator(queryMap, request.getSearchCriteriaRequest()).add();
+      new InstanceFilterQueryDecorator(queryMap, request.getInstanceFilterRequest()).add();
+    } catch (DxEsException ex) {
+      LOGGER.error("Failed while creating ES query: {}", ex.getMessage(), ex);
+      throw new DxBadRequestException(ex.getMessage(), ex);
+    }
 
     QueryModel excludeDatabankFalse = buildUploadStatusExclusion(ITEM_TYPE_DATA_BANK);
     QueryModel excludeAiModelFalse = buildUploadStatusExclusion(ITEM_TYPE_AI_MODEL);
