@@ -6510,6 +6510,7 @@ paths:
                   - $ref: '#/components/schemas/successResponseForRangeSearch'
                   - $ref: '#/components/schemas/successResponseForTemporalSearch'
                   - $ref: '#/components/schemas/successResponseForComplexSearch'
+                  - $ref: '#/components/schemas/successResponseForFlattenedTermSearch'
         '400':
           description: Bad Request
           content:
@@ -6517,16 +6518,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/errorResponseForDiscovery'
               examples:
-                Bad Request:
+                MissingOrMalformedRequest:
+                  summary: Missing or malformed request
                   value:
-                    "type": "dx:controlPlane:badRequest"
-                    "title": "Bad Request"
-                    "detail": "Missing or malformed request"
-                Exceed page|size value:
+                    type: dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: Missing or malformed request
+
+                InvalidPaginationRange:
+                  summary: Pagination limit exceeded
                   value:
-                    "title": "dx:controlPlane:badRequest"
-                    "type": "Bad Request"
-                    "detail": "Invalid pagination. The value of (page * size) must be between 1 and 10,000"
+                    type: dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: Invalid pagination. The value of (page * size) must be between 1 and 10,000
+
+                InvalidSortFormat:
+                  summary: Invalid sort format
+                  value:
+                    type: dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: "Invalid sort format: itemCreatedAt-desc. Expected field:order"
 
       x-codeSamples:
         - lang: cURL
@@ -6763,49 +6774,8 @@ paths:
                     "title": "Bad Request"
                     "detail": "Missing or malformed request"
   /iudx/v2/cat/search/myassets:
-    post:
-      summary: Search assets created by the current authenticated user
-      description: >
-        Returns assets owned by the current authenticated user, using the same
-        unified search format as the `/search` endpoint. This endpoint automatically
-        filters results to only include items where `ownerUserId` matches the
-        authenticated user's `sub` value from the token.
-
-        Supports property-based, temporal, and numeric range filters, as well as
-        full-text search.
-      operationId: post myAssetsSearch
-      tags:
-        - Discovery – My Assets
-      security:
-        - authorization: [ ]
-      requestBody:
-        description: Request body containing unified search filters
-        required: true
-        content:
-          application/json:
-            schema:
-              anyOf:
-                - $ref: '#/components/schemas/TextSearchRequest'
-                - $ref: '#/components/schemas/SearchCriteriaRequest'
-                - $ref: '#/components/schemas/AutocompleteFuzzyTextSearchRequest'
-                - $ref: '#/components/schemas/ComplexSearchRequest'
-      responses:
-        '200':
-          description: A successful search response with assets owned by the user
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SearchResponse'
-        '400':
-          description: Invalid request query
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Missing or invalid authentication token
     get:
-      summary: Search assets created by the current authenticated user
+      summary: Retrieve assets owned by the authenticated user | without filters
       description: >
         Returns assets owned by the current authenticated user.
         This endpoint automatically filters results to only include items where
@@ -6840,19 +6810,296 @@ paths:
             default: 10
       responses:
         '200':
-          description: A successful search response with assets owned by the user
+          description: Assets owned by the authenticated user
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SearchResponse'
-        '400':
-          description: Invalid request query
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  paginationInfo:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                      size:
+                        type: integer
+                      totalCount:
+                        type: integer
+                      totalPages:
+                        type: integer
+                      hasNext:
+                        type: boolean
+                      hasPrevious:
+                        type: boolean
+              example:
+                type: dx:controlPlane:success
+                title: Success
+                result:
+                  - id: 674caec0-b39d-418b-8e23-167306751396
+                    name: Subdistrict Weather Information for PM103
+                    label: Subdistrict Weather Information
+                    shortDescription: Daily aggregated temperature and rainfall data at subdistrict level.
+                    description: Daily weather statistics at subdistrict level including temperature and rainfall metrics.
+                    type:
+                      - adex:DataBank
+                    department: Test Org11
+                    organizationId: 74e3b919-1d1b-44de-ace1-504f1887fcc1
+                    organizationType: Public
+                    industry: Environmental Monitoring
+                    geoCoverage: Karnataka, India
+                    tags:
+                      - weather
+                      - temperature
+                      - rainfall
+                      - environment
+                    publishStatus: PENDING
+                    itemStatus: ACTIVE
+                    dataUploadStatus: false
+                    uploadFrequency: Daily
+                    yearRange: "2021-2024"
+                    license: CC-BY 4.0
+                    fileFormat: xlsx
+                    accessPolicy: RESTRICTED
+                    ownerUserId: 2f945b8d-0cc8-4c5d-9a3e-53fa88e6e9b2
+                    itemCreatedAt: "2025-12-12T01:31:54+0530"
+                    lastUpdated: "12 December, 2025 - 01:31 PM"
+                    resourceServer:
+                      - name: NGSI-LD
+                        type: ngsi-ld
+                        datasetType: DATASET
+                        url: v2.dev.rs.iudx.io
+                        accessTypes:
+                          - api
+                        queryTypes:
+                          - ATTR
+                paginationInfo:
+                  page: 1
+                  size: 1
+                  totalCount: 77
+                  totalPages: 77
+                  hasNext: true
+                  hasPrevious: false
+        '401':
+          description: Missing or invalid authentication token
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing Bearer token
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:badRequest
+                title: Bad Request
+                detail: "Invalid sort format: itemCreatedAt-desc. Expected field:order"
+    post:
+      summary: Search assets owned by the current authenticated user | with filters
+      description: >
+        Returns assets owned by the current authenticated user, using the same
+        unified search format as the `/search` endpoint. This endpoint automatically
+        filters results to only include items where `ownerUserId` matches the
+        authenticated user's `sub` value from the token.
+
+        Supports property-based, temporal, and numeric range filters, as well as
+        full-text search.
+      operationId: post myAssetsSearch
+      tags:
+        - Discovery – My Assets
+      security:
+        - authorization: [ ]
+      requestBody:
+        description: Request body containing unified search filters
+        required: true
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - $ref: '#/components/schemas/TextSearchRequest'
+                - $ref: '#/components/schemas/SearchCriteriaRequest'
+                - $ref: '#/components/schemas/AutocompleteFuzzyTextSearchRequest'
+                - $ref: '#/components/schemas/ComplexSearchRequest'
+      responses:
+        '200':
+          description: All the query parameters yielded results.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/successResponseForMyAssetsTextSearch'
+                  - $ref: '#/components/schemas/successResponseForMyAssetsItemTypeSearch'
+                  - $ref: '#/components/schemas/successResponseForMyAssetsRangeSearch'
+                  - $ref: '#/components/schemas/successResponseForMyAssetsTemporalSearch'
+                  - $ref: '#/components/schemas/successResponseForMyAssetsComplexSearch'
+                  - $ref: '#/components/schemas/successResponseForMyAssetsFlattenedTermSearch'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponseForDiscovery'
+              examples:
+                MissingOrMalformedRequest:
+                  summary: Missing or malformed request
+                  value:
+                    type: dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: Missing or malformed request
+
+                InvalidPaginationRange:
+                  summary: Pagination limit exceeded
+                  value:
+                    type: dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: Invalid pagination. The value of (page * size) must be between 1 and 10,000
+
+                InvalidSortFormat:
+                  summary: Invalid sort format
+                  value:
+                    type: dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: "Invalid sort format: itemCreatedAt-desc. Expected field:order"
         '401':
           description: Missing or invalid authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing Bearer token
+      x-codeSamples:
+        - lang: cURL
+          label: search by item type
+          source: |
+            curl --location --request POST
+            'https://${HOSTNAME}/iudx/v2/cat/search/myassets?size=100&page=1' \
+              --header 'Content-Type: application/json' \
+              --data '{
+                "searchCriteria": [
+                  {
+                    "searchType": "term",
+                    "field": "type",
+                    "values": ["adex:AiModel"]
+                  }
+                ],
+                "filter": ["id", "ownerUserId"]
+              }'
+        - lang: cURL
+          label: flattened field search
+          source: |
+            curl --location --request POST 'https://${HOSTNAME}/iudx/v2/cat/search/myassets?size=25&page=1' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "searchCriteria": [
+                {
+                  "searchType": "flattenedTerm",
+                  "field": "resourceServer.url",
+                  "values": ["rs.forestdx.iudx.io"]
+                }
+              ],
+              "filter": ["id", "type", "resourceServer", "ownerUserId"]
+            }'
+        - lang: cURL
+          label: search by text
+          source: |
+            curl --location --request POST
+            'https://${HOSTNAME}/iudx/v2/cat/search/myassets?size=100&page=1' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "q": "sat",
+              "autoComplete": true,
+              "fuzzy": true,
+              "filter": ["id", "label", "name", "description", "tags", "ownerUserId"]
+            }'
+        - lang: cURL
+          label: Temporal search
+          source: |
+            curl --location --request POST 'https://${HOSTNAME}/iudx/v2/cat/search/myassets?size=50&page=1' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "searchCriteria": [
+                {
+                  "searchType": "betweenTemporal",
+                  "field": "itemCreatedAt",
+                  "values": ["2025-03-20T04:00:00+0530", "2025-05-02T09:15:27+0530"]
+                },
+                {
+                  "searchType": "term",
+                  "field": "type",
+                  "values": ["adex:AiModel"]
+                }
+              ],
+              "filter": ["id","tags","itemCreatedAt", "ownerUserId"]
+            }'
+        - lang: cURL
+          label: Range search
+          source: |
+            curl --location --request POST 'https://${HOSTNAME}/iudx/v2/cat/search/myassets?size=25&page=1' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "searchCriteria": [
+                {
+                  "searchType": "beforeRange",
+                  "field": "dataReadiness",
+                  "values": [85]
+                },
+                {
+                  "searchType": "term",
+                  "field": "type",
+                  "values": ["adex:DataBank"]
+                }
+              ],
+              "filter": ["id","dataReadiness","tags", "ownerUserId"]
+            }'
+        - lang: cURL
+          label: complex search
+          source: |
+            curl --location --request POST 'https://${HOSTNAME}/iudx/v2/cat/search/myassets?size=25&page=1' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "searchCriteria": [
+                {
+                  "searchType": "term",
+                  "field": "type",
+                  "values": ["adex:DataBank"]
+                },
+                {
+                  "searchType": "term",
+                  "field": "department",
+                  "values": ["Environment Forests Science and Technology"]
+                },
+                {
+                  "searchType": "betweenTemporal",
+                  "field": "itemCreatedAt",
+                  "values": ["2024-04-20T04:00:00+0530", "2025-05-02T09:15:27+0530"]
+                },
+                {
+                  "searchType": "betweenRange",
+                  "field": "dataReadiness",
+                  "values": [80, 84]
+                }
+              ],
+              "filter": ["id", "type", "department", "itemCreatedAt", "dataReadiness", "ownerUserId"]
+            }'
 
   ##Auditing apis
   /iudx/v2/auditing/consumer/activity:
@@ -7582,6 +7829,35 @@ components:
       schema:
         type: string
   schemas:
+    PaginationInfo:
+      type: object
+      description: Pagination metadata for paged responses
+      properties:
+        page:
+          type: integer
+          description: Current page number
+        size:
+          type: integer
+          description: Number of items per page
+        totalCount:
+          type: integer
+          description: Total number of items across all pages
+        totalPages:
+          type: integer
+          description: Total number of pages available
+        hasNext:
+          type: boolean
+          description: Indicates if more pages are available
+        hasPrevious:
+          type: boolean
+          description: Indicates if previous pages exist
+      required:
+        - page
+        - size
+        - totalCount
+        - totalPages
+        - hasNext
+        - hasPrevious
     createastreamingsubscriptionrequest:
       title: createastreamingsubscriptionrequest with subscriptionName
       required:
@@ -11204,7 +11480,7 @@ components:
         title:
           type: string
           description: A human-readable title for the message response.
-        pagination:
+        paginationInfo:
           type: object
           properties:
             page:
@@ -11232,7 +11508,7 @@ components:
             - totalPages
             - hasNext
             - hasPrevious
-        results:
+        result:
           type: array
           items:
             type: object
@@ -11263,19 +11539,19 @@ components:
       required:
         - type
         - title
-        - pagination
-        - results
+        - paginationInfo
+        - result
       example:
         type: "dx:controlPlane:success"
         title: "Success"
-        pagination:
+        paginationInfo:
           page: 1
           size: 100
           totalCount: 5
           totalPages: 1
           hasNext: false
           hasPrevious: false
-        results:
+        result:
           - id: "32cf54e7-be31-474c-ae4c-3d41e556dd2d"
             label: "Satellite-Derived Geospatial Layers"
             name: "satellite-derived-geospatial-layers"
@@ -11347,7 +11623,7 @@ components:
         title:
           type: string
           description: A human-readable title for the message response
-        pagination:
+        paginationInfo:
           type: object
           description: Pagination metadata for the results
           properties:
@@ -11376,7 +11652,7 @@ components:
             - totalPages
             - hasNext
             - hasPrevious
-        results:
+        result:
           type: array
           items:
             type: object
@@ -11396,32 +11672,154 @@ components:
                 type: string
                 format: date-time
                 description: Item creation timestamp in ISO 8601 format
+              dataReadiness:
+                type: integer
+                description: Optional field indicating how ready the data is (if applicable)
             required:
               - type
               - id
               - department
               - itemCreatedAt
+              - dataReadiness
       required:
         - type
         - title
-        - pagination
-        - results
+        - paginationInfo
+        - result
       example:
         type: "dx:controlPlane:success"
         title: "Success"
-        pagination:
+        paginationInfo:
           page: 1
           size: 25
           totalCount: 1
           totalPages: 1
           hasNext: false
           hasPrevious: false
-        results:
+        result:
           - type:
               - "adex:DataBank"
             id: "32cf54e7-be31-474c-ae4c-3d41e556dd2d"
             department: "Environment Forests Science and Technology"
             itemCreatedAt: "2025-04-15T10:30:00Z"
+            dataReadiness: 87
+    successResponseForFlattenedTermSearch:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+
+        paginationInfo:
+          type: object
+          properties:
+            page:
+              type: integer
+            size:
+              type: integer
+            totalCount:
+              type: integer
+            totalPages:
+              type: integer
+            hasNext:
+              type: boolean
+            hasPrevious:
+              type: boolean
+          required:
+            - page
+            - size
+            - totalCount
+            - totalPages
+            - hasNext
+            - hasPrevious
+
+        result:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              type:
+                type: array
+                items:
+                  type: string
+              resourceServer:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    queryTypes:
+                      type: array
+                      items:
+                        type: string
+                    name:
+                      type: string
+                    accessTypes:
+                      type: array
+                      items:
+                        type: string
+                    datasetType:
+                      type: string
+                    url:
+                      type: string
+                  required:
+                    - queryTypes
+                    - name
+                    - accessTypes
+                    - datasetType
+                    - url
+            required:
+              - id
+              - type
+              - resourceServer
+      required:
+        - type
+        - title
+        - paginationInfo
+        - result
+      example:
+        type: "dx:controlPlane:success"
+        title: "Success"
+        paginationInfo:
+          page: 1
+          size: 2
+          totalCount: 58
+          totalPages: 29
+          hasNext: true
+          hasPrevious: false
+        result:
+          - id: "d72e27de-4f39-4c2f-90cc-87fc0ffb4d5d"
+            type:
+              - "adex:DataBank"
+            resourceServer:
+              - queryTypes:
+                  - "ATTR"
+                name: "NGSI-LD"
+                accessTypes:
+                  - "api"
+                datasetType: "DATASET"
+                url: "rs.iudx.io"
+
+          - id: "13c2e8a4-71fa-40c0-9e00-27e391b1117e"
+            type:
+              - "adex:DataBank"
+            resourceServer:
+              - queryTypes:
+                  - "ATTR"
+                name: "NGSI-LD"
+                accessTypes:
+                  - "api"
+                datasetType: "DATASET"
+                url: "rs.iudx.io"
+              - queryTypes:
+                  - "ATTR"
+                name: "FILE"
+                accessTypes:
+                  - "api"
+                datasetType: "FILE"
+                url: "xxx.xxx.iudx.io"
     successResponseForSearchByItemType:
       type: object
       title: search by item type
@@ -11432,7 +11830,7 @@ components:
         title:
           type: string
           description: A human-readable title for the message response.
-        pagination:
+        paginationInfo:
           type: object
           description: Pagination metadata for the results.
           properties:
@@ -11461,7 +11859,7 @@ components:
             - totalPages
             - hasNext
             - hasPrevious
-        results:
+        result:
           type: array
           items:
             type: object
@@ -11474,19 +11872,19 @@ components:
       required:
         - type
         - title
-        - pagination
-        - results
+        - paginationInfo
+        - result
       example:
         type: "dx:controlPlane:success"
         title: "Success"
-        pagination:
+        paginationInfo:
           page: 1
           size: 100
           totalCount: 3
           totalPages: 1
           hasNext: false
           hasPrevious: false
-        results:
+        result:
           - id: "a4e3b98f-d073-4a2f-8587-e8d1718f2a89"
           - id: "d7d34f8d-8cd4-4a68-8a4d-3b7fc5e8bb13"
           - id: "2b1a2e8d-45f4-43a1-9e8e-d1f8ad1002bb"
@@ -11500,7 +11898,7 @@ components:
         title:
           type: string
           description: A human-readable title for the message response
-        pagination:
+        paginationInfo:
           type: object
           description: Pagination metadata for the results
           properties:
@@ -11529,7 +11927,7 @@ components:
             - totalPages
             - hasNext
             - hasPrevious
-        results:
+        result:
           type: array
           items:
             type: object
@@ -11551,36 +11949,40 @@ components:
       required:
         - type
         - title
-        - pagination
-        - results
+        - paginationInfo
+        - result
       example:
         type: "dx:controlPlane:success"
         title: "Success"
-        pagination:
+        paginationInfo:
           page: 1
           size: 25
           totalCount: 5
           totalPages: 1
           hasNext: false
           hasPrevious: false
-        results:
+        result:
           - id: "32cf54e7-be31-474c-ae4c-3d41e556dd2d"
             tags:
               - "Satellite"
               - "Geospatial"
+            dataReadiness: 70
           - id: "861bc29a-fca7-45b5-b4c8-5b07dc88a594"
             tags:
               - "Transport"
               - "Network"
+            dataReadiness: 75
           - id: "d09a4b85-3899-4bfc-93f4-430bba8aefb4"
             tags:
               - "Maternal Health"
               - "Healthcare"
               - "Community Health"
+            dataReadiness: 83
           - id: "28653cd7-9715-47d5-b12b-9d725ecfcad0"
             tags:
               - "Transport"
               - "Railway"
+            dataReadiness: 83
           - id: "9c0737d6-17df-484f-a7f8-aa472002eae5"
             tags:
               - "Corporate"
@@ -11597,7 +11999,7 @@ components:
         title:
           type: string
           description: A human-readable title for the message response
-        pagination:
+        paginationInfo:
           type: object
           description: Pagination metadata for the results.
           properties:
@@ -11626,7 +12028,7 @@ components:
             - totalPages
             - hasNext
             - hasPrevious
-        results:
+        result:
           type: array
           items:
             type: object
@@ -11650,8 +12052,8 @@ components:
       required:
         - type
         - title
-        - pagination
-        - results
+        - paginationInfo
+        - result
       example:
         type: "dx:controlPlane:success"
         title: "Success"
@@ -11696,6 +12098,302 @@ components:
               - "risk prediction"
               - "student analytics"
             itemCreatedAt: "2025-04-15T10:30:00Z"
+    successResponseForMyAssetsTextSearch:
+      type: object
+      title: My Assets – Text search
+      properties:
+        type:
+          type: string
+          description: URN indicating successful response
+        title:
+          type: string
+          description: Human-readable response title
+        paginationInfo:
+          $ref: '#/components/schemas/PaginationInfo'
+        result:
+          type: array
+          description: >
+            List of datasets owned by the authenticated user.
+            `ownerUserId` always matches the token `sub`.
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              label:
+                type: string
+              name:
+                type: string
+              description:
+                type: string
+              tags:
+                type: array
+                items:
+                  type: string
+              ownerUserId:
+                type: string
+                description: Owner of the dataset (token subject)
+            required:
+              - id
+              - name
+              - ownerUserId
+      required:
+        - type
+        - title
+        - paginationInfo
+        - result
+      example:
+        type: "dx:controlPlane:success"
+        title: "Success"
+        paginationInfo:
+          page: 1
+          size: 10
+          totalCount: 2
+          totalPages: 1
+          hasNext: false
+          hasPrevious: false
+        result:
+          - id: "32cf54e7-be31-474c-ae4c-3d41e556dd2d"
+            name: "satellite-derived-geospatial-layers"
+            label: "Satellite Layers"
+            description: "High-resolution satellite imagery dataset"
+            tags: [ "satellite", "geospatial" ]
+            ownerUserId: "auth0|abc123"
+          - id: "9c0737d6-17df-484f-a7f8-aa472002eae5"
+            name: "employee-performance-data"
+            label: "Employee Performance"
+            description: "Internal analytics dataset"
+            tags: [ "hr", "analytics" ]
+            ownerUserId: "auth0|abc123"
+    successResponseForMyAssetsComplexSearch:
+      type: object
+      title: My Assets – Complex search
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        paginationInfo:
+          $ref: '#/components/schemas/PaginationInfo'
+        result:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              type:
+                type: array
+                items:
+                  type: string
+              department:
+                type: string
+              itemCreatedAt:
+                type: string
+                format: date-time
+              dataReadiness:
+                type: integer
+              ownerUserId:
+                type: string
+            required:
+              - id
+              - ownerUserId
+      required:
+        - type
+        - title
+        - paginationInfo
+        - result
+      example:
+        type: "dx:controlPlane:success"
+        title: "Success"
+        paginationInfo:
+          page: 1
+          size: 25
+          totalCount: 1
+          totalPages: 1
+          hasNext: false
+          hasPrevious: false
+        result:
+          - id: "32cf54e7-be31-474c-ae4c-3d41e556dd2d"
+            type: [ "adex:DataBank" ]
+            department: "Environment"
+            itemCreatedAt: "2025-04-15T10:30:00Z"
+            dataReadiness: 87
+            ownerUserId: "auth0|abc123"
+    successResponseForMyAssetsFlattenedTermSearch:
+      type: object
+      title: My Assets – Term search
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        paginationInfo:
+          $ref: '#/components/schemas/PaginationInfo'
+        result:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              type:
+                type: array
+                items:
+                  type: string
+              resourceServer:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResourceServer'
+              ownerUserId:
+                type: string
+            required:
+              - id
+              - ownerUserId
+      example:
+        type: "dx:controlPlane:success"
+        title: "Success"
+        paginationInfo:
+          page: 1
+          size: 2
+          totalCount: 2
+          totalPages: 1
+          hasNext: false
+          hasPrevious: false
+        result:
+          - id: "d72e27de-4f39-4c2f-90cc-87fc0ffb4d5d"
+            type: [ "adex:DataBank" ]
+            resourceServer:
+              - name: "NGSI-LD"
+                queryTypes: [ "ATTR" ]
+                accessTypes: [ "api" ]
+                datasetType: "DATASET"
+                url: "rs.iudx.io"
+            ownerUserId: "auth0|abc123"
+    successResponseForMyAssetsRangeSearch:
+      type: object
+      title: My Assets – Range search
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        paginationInfo:
+          $ref: '#/components/schemas/PaginationInfo'
+        result:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              tags:
+                type: array
+                items:
+                  type: string
+              dataReadiness:
+                type: integer
+              ownerUserId:
+                type: string
+            required:
+              - id
+              - ownerUserId
+      example:
+        type: "dx:controlPlane:success"
+        title: "Success"
+        paginationInfo:
+          page: 1
+          size: 25
+          totalCount: 2
+          totalPages: 1
+          hasNext: false
+          hasPrevious: false
+        result:
+          - id: "32cf54e7-be31-474c-ae4c-3d41e556dd2d"
+            tags: [ "satellite", "geo" ]
+            dataReadiness: 70
+            ownerUserId: "auth0|abc123"
+    successResponseForMyAssetsTemporalSearch:
+      type: object
+      title: My Assets – Temporal search
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        paginationInfo:
+          $ref: '#/components/schemas/PaginationInfo'
+        result:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              tags:
+                type: array
+                items:
+                  type: string
+              itemCreatedAt:
+                type: string
+                format: date-time
+              ownerUserId:
+                type: string
+            required:
+              - id
+              - ownerUserId
+      example:
+        type: "dx:controlPlane:success"
+        title: "Success"
+        paginationInfo:
+          page: 1
+          size: 10
+          totalCount: 1
+          totalPages: 1
+          hasNext: false
+          hasPrevious: false
+        result:
+          - id: "a4e3b98f-d073-4a2f-8587-e8d1718f2a89"
+            tags: [ "ai", "ml" ]
+            itemCreatedAt: "2025-04-15T10:30:00Z"
+            ownerUserId: "auth0|abc123"
+    successResponseForMyAssetsItemTypeSearch:
+      type: object
+      title: My Assets – Item type search
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        paginationInfo:
+          $ref: '#/components/schemas/PaginationInfo'
+        result:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              ownerUserId:
+                type: string
+            required:
+              - id
+              - ownerUserId
+      example:
+        type: "dx:controlPlane:success"
+        title: "Success"
+        paginationInfo:
+          page: 1
+          size: 10
+          totalCount: 3
+          totalPages: 1
+          hasNext: false
+          hasPrevious: false
+        result:
+          - id: "a4e3b98f-d073-4a2f-8587-e8d1718f2a89"
+            ownerUserId: "auth0|abc123"
+          - id: "d7d34f8d-8cd4-4a68-8a4d-3b7fc5e8bb13"
+            ownerUserId: "auth0|abc123"
     errorInvalidSchema:
       type: object
       title: Response - invalid schema
