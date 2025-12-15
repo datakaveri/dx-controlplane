@@ -200,13 +200,30 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
         aggResult.put(aggKey, keys);
       }
     } else if (COUNT_AGGREGATION_ONLY.equals(options)) {
-      JsonObject resultsAgg = rawAggs.getJsonObject(RESULTS);
 
+      //Pre-populate only known canonical itemTypes with 0
+      ITEM_TYPE_CANONICAL_MAP.values()
+          .forEach(type -> aggResult.put(type, 0));
+
+      JsonObject resultsAgg = rawAggs.getJsonObject(RESULTS);
       if (resultsAgg != null && resultsAgg.containsKey(BUCKETS)) {
+
         JsonArray buckets = resultsAgg.getJsonArray(BUCKETS);
         for (int i = 0; i < buckets.size(); i++) {
           JsonObject bucket = buckets.getJsonObject(i);
-          aggResult.put(bucket.getString(KEY), bucket.getInteger(DOC_COUNT));
+
+          String rawKey = bucket.getString(KEY);          // e.g. adex:databank
+          Integer count = bucket.getInteger(DOC_COUNT);
+
+          // Map only if it is a known itemType
+          String canonicalKey = ITEM_TYPE_CANONICAL_MAP.get(rawKey);
+
+          if (canonicalKey != null) {
+            aggResult.put(canonicalKey, count);
+          } else {
+            // Unknown type → add as-is
+            aggResult.put(rawKey, count);
+          }
         }
       }
     } else {

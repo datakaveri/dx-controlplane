@@ -32,7 +32,12 @@ public class ListServiceImpl implements ListService {
       return Future.failedFuture(new DxBadRequestException("Missing or empty 'filter' array"));
     }
     QueryDecoder queryDecoder = new QueryDecoder();
-    QueryModel queryModel = queryDecoder.listMultipleItemTypesQuery(queryDecoderRequestDTO);
+    QueryModel queryModel;
+    try {
+      queryModel = queryDecoder.listMultipleItemTypesQuery(queryDecoderRequestDTO);
+    } catch (DxBadRequestException e) {
+      return Future.failedFuture(e);
+    }
     return elasticsearchService
         .search(docIndex, queryModel, AGGREGATION_LIST)
         .map(ResponseModel::new)

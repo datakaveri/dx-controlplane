@@ -4,6 +4,7 @@ import com.hazelcast.map.impl.PartitioningStrategyFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 public class Constants {
@@ -106,6 +107,13 @@ public class Constants {
   public static final String SOURCE_AND_ID_GEOQUERY = "SOURCE_ID_GEOQUERY";
   public static final String RESOURCE_AGGREGATION_ONLY = "RESOURCE_AGGREGATION";
   public static final String PROVIDER_AGGREGATION_ONLY = "PROVIDER_AGGREGATION";
+
+  public static final Map<String, String> ITEM_TYPE_CANONICAL_MAP =
+      Map.of(
+          "adex:databank", "adex:DataBank",
+          "adex:apps", "adex:Apps",
+          "adex:aimodel", "adex:AiModel"
+      );
 
   public static final String RESPONSE_ATTRS = "attrs";
   public static final String CASE_INSENSITIVE = "case_insensitive";
