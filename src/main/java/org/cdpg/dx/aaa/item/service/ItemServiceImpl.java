@@ -48,6 +48,7 @@ import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxInternalServerErrorException;
+import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.DxUnauthorizedException;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
@@ -448,7 +449,7 @@ public class ItemServiceImpl implements ItemService {
                     new DxConflictException("Item has associated entities and cannot be deleted"));
               } else if (ElasticsearchResponse.getTotalHits() < 1) {
                 LOGGER.debug("Item with ID {} not found for deletion", id);
-                promise.fail("Item not found for deletion");
+                promise.fail(new DxNotFoundException("Item not found for deletion"));
               } else {
                 LOGGER.debug("Deleting item with ID: {}", id);
                 String docId = result.getDocId();
