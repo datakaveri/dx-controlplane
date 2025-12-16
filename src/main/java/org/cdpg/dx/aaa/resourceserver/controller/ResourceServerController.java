@@ -59,11 +59,11 @@ public class ResourceServerController implements ApiController {
             .handler(orgAndCosAdminAccessHandler)
       .handler(this::handleGet);
 
-    builder.operation(ApiConstants.UPDATE_RESOURCE_SERVER)
-      .handler(auditingHandler::handleApiAudit)
-            .handler(orgAndCosAdminAccessHandler)
-
-            .handler(this::handleUpdate);
+//    builder.operation(ApiConstants.UPDATE_RESOURCE_SERVER)
+//      .handler(auditingHandler::handleApiAudit)
+//            .handler(orgAndCosAdminAccessHandler)
+//
+//            .handler(this::handleUpdate);
 
     builder.operation(ApiConstants.DELETE_RESOURCE_SERVER)
             .handler(auditingHandler::handleApiAudit)
