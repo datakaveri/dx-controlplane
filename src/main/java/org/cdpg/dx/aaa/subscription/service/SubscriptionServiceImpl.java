@@ -14,6 +14,8 @@ import org.cdpg.dx.aaa.subscription.model.GetAllSubscription;
 import org.cdpg.dx.aaa.subscription.model.GetSubscriptionModel;
 import org.cdpg.dx.aaa.subscription.model.RegisterSubscription;
 import org.cdpg.dx.aaa.subscription.model.SubscriptionDTO;
+import org.cdpg.dx.common.exception.DxBadRequestException;
+import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.DxSubscriptionException;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.databroker.util.PermissionOpType;
@@ -121,7 +123,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
               LOGGER.debug("selectQueryHandler result {}", selectQueryHandler);
               if (selectQueryHandler.isEmpty()) {
                 LOGGER.warn("Subscription not found for [subsId,entitiesid]");
-                return Future.failedFuture(new DxSubscriptionException(RESOURCE_NOT_FOUND));
+                return Future.failedFuture(new DxNotFoundException(RESOURCE_NOT_FOUND));
               }
               return subscriptionServiceDAO.updateSubscriptionExpiryByQueueNameAndEntityId(
                   subsId, /*entitiesid, */ expiryAt);

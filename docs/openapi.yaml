@@ -8023,6 +8023,7 @@ paths:
                 - $ref: '#/components/schemas/createastreamingsubscriptionrequest2'
                 - $ref: '#/components/schemas/createastreamingsubscriptionrequest3'
                 - $ref: '#/components/schemas/createastreamingsubscriptionrequest4'
+                - $ref: '#/components/schemas/createastreamingsubscriptionrequest5'
 
       responses:
         '201':
@@ -8085,12 +8086,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Allqueue'
-        400:
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse400'
         401:
           description: Unauthorized
           content:
@@ -8190,7 +8185,7 @@ paths:
               $ref: '#/components/schemas/createastreamingsubscriptionrequest3'
         required: true
       responses:
-        201:
+        204:
           description: 'Successful updated of streaming subscription'
         400:
           description: Bad Request
@@ -8640,6 +8635,24 @@ components:
           items:
             type: string
           description: ''
+
+    createastreamingsubscriptionrequest5:
+      title: createastreamingsubscriptionrequest without additional params
+      description: Simple subscription request
+      required:
+        - type
+        - entities
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [ Subscription ]
+        entities:
+          type: array
+          maxItems: 1
+          items:
+            type: string
+          description: item id to create subscription for.
 
     ResourceServer:
       type: object
