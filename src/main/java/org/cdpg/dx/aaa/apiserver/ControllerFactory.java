@@ -54,7 +54,9 @@ import org.cdpg.dx.aaa.kyc.factory.KYCFactory;
 import org.cdpg.dx.aaa.kyc.handler.KYCHandler;
 import org.cdpg.dx.aaa.list.controller.ListController;
 import org.cdpg.dx.aaa.list.factory.ListControllerFactory;
+import org.cdpg.dx.aaa.organization.controller.OrganizationReportController;
 import org.cdpg.dx.aaa.organization.factory.OrganizationControllerFactory;
+import org.cdpg.dx.aaa.organization.factory.OrganizationReportControllerFactory;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.publicKey.controller.PublicController;
 import org.cdpg.dx.aaa.publicKey.factory.PublicKeycontrllerFactory;
@@ -136,14 +138,11 @@ public class ControllerFactory {
 
     CreditService creditService =
         CreditControllerFactory.createService(pgService, keycloakUserService, config);
-
     OrganizationService organizationService =
         OrganizationControllerFactory.createService(pgService, keycloakUserService, itemService);
-
     DelegationService delegationService =
         DelegationControllerFactory.createService(
             pgService, keycloakUserService, organizationService, itemService);
-
     UserService userService =
         UserControllerFactory.createService(
             keycloakUserService, organizationService, creditService, esService, docUserIndex);
@@ -172,19 +171,25 @@ public class ControllerFactory {
     KYCHandler kycHandler =
         KYCFactory.createHandler(vertx, config, creditService, pgService, urnGenerator);
     ApiController kycController = new KYCController(kycHandler);
+
     ApiController organizationController =
         OrganizationControllerFactory.create(
-            organizationService,
             userService,
             auditingHandler,
             emailComposer,
-            vertx,
             pgService,
+            esService,
             creditService,
             keycloakUserService,
             urnGenerator,
+            delegationService,
+            webClient,
             kycRequired,
-            delegationService);
+            docIndex,
+            apdURL);
+
+    OrganizationReportController organizationReportController =
+        OrganizationReportControllerFactory.create(vertx, pgService, delegationService);
 
     AdminHandler adminHandler =
         new AdminHandler(
@@ -257,6 +262,7 @@ public class ControllerFactory {
             dataBrokerService, pgService, urnGenerator, controlPlaneDomain);
     return List.of(
         organizationController,
+        organizationReportController,
         creditApiController,
         kycController,
         adminController,
