@@ -58,22 +58,91 @@ paths:
       security:
         - authorization: [ ]
       description: |
-        Lists resource servers based on user role:
-        - COS Admin: Returns all resource servers
-        - ORG Admin: Returns only resource servers they created
+        Retrieves a list of resource servers.
+        
+        **Access Control**
+        - Accessible only to users with `cos_admin` or `org_admin` roles.
+        
+        **Role-based behavior**
+        - `cos_admin`: Returns all resource servers available in the system.
+        - `org_admin`: Returns only the resource servers created by the requesting organization administrator.
       responses:
         '200':
-          description: OK
+          description: Resource servers retrieved successfully
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ResourceServer'
+                type: object
+                required:
+                  - type
+                  - title
+                  - result
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ResourceServer'
+              example:
+                type: dx:controlPlane:success
+                title: Success
+                result:
+                  - id: 2ef0f344-dc41-4369-a50b-1515a0db5db2
+                    name: GATEWAY-TESTING
+                    url: gateway.forestdx.iudx.io
+                    type: gateway
+                    owner_id: 1dc28cc6-d614-461a-9b8f-d6110feb3e2f
+                    visibility: PUBLIC
+                    status: ACTIVE
+                    query_type: [ SPATIAL, ATTR ]
+                    injection_type: api
+                    created_at: "2025-09-29T08:38:27.149785"
+                    updated_at: "2025-09-29T08:38:27.149785"
+        '401':
+          description: Unauthorized - Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingToken:
+                  value:
+                    type: dx:controlPlane:notAuthorized
+                    title: Not Authorized
+                    detail: Missing Bearer token
+                invalidToken:
+                  value:
+                    type: dx:controlPlane:notAuthorized
+                    title: Not Authorized
+                    detail: Invalid token format
         '403':
           description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: List Resource Servers
+          source: |
+            curl --location \
+            'https://${HOSTNAME}/iudx/v2/resource_servers' \
+            --header 'Authorization: Bearer <YOUR_ACCESS_TOKEN>'
     post:
       summary: Create a Resource Server
       operationId: create resource server
@@ -81,25 +150,98 @@ paths:
         - Resource Servers
       security:
         - authorization: [ ]
+      description: |
+        Creates a new resource server configuration.
+        
+        **Access Control**
+        - Accessible only to users with `cos_admin` or `org_admin` roles.
+        
+        **Notes**
+        - The created resource server will initially be in `PENDING` status.
+        - Ownership is automatically assigned to the requesting user’s organization.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ResourceServer'
+              $ref: '#/components/schemas/ResourceServerCreateRequest'
+            example:
+              name: FILE
+              url: datakaveri.org
+              type: file testing
+              visibility: PUBLIC
+              query_type:
+                - ATTR
+              injection_type: api
       responses:
         '201':
-          description: Created
+          description: Resource Server created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResourceServer'
+                $ref: '#/components/schemas/ResourceServerResponse'
+              example:
+                type: dx:controlPlane:success
+                title: Success
+                result:
+                  id: cabd5e4d-a426-4472-8d5d-80f8ac55cead
+                  name: FILE
+                  url: datakaveri.org
+                  type: file testing
+                  owner_id: 64cb5154-6f8c-40ff-891f-baee2aac8b85
+                  visibility: PUBLIC
+                  status: PENDING
+                  query_type:
+                    - ATTR
+                  injection_type: api
+                  created_at: "2025-12-16T07:00:14.225681"
+                  updated_at: "2025-12-16T07:00:14.225681"
+        '403':
+          description: Forbidden - User does not have the required role
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:forbidden
+                  title:
+                    type: string
+                    example: Forbidden
+                  detail:
+                    type: string
+                    example: User does not have the required role.
+      x-codeSamples:
+        - lang: cURL
+          label: Create Resource Server
+          source: |
+            curl --location --request POST 'https://${HOSTNAME}/iudx/v2/resource_servers' \
+            --header 'Authorization: Bearer <YOUR_ACCESS_TOKEN>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "name": "FILE",
+              "url": "datakaveri.org",
+              "type": "file testing",
+              "visibility": "PUBLIC",
+              "query_type": ["ATTR"],
+              "injection_type": "api"
+            }'
   /iudx/v2/resource_servers/{id}:
     get:
       summary: Get Resource Server by ID
       operationId: get resource server
       security:
         - authorization: [ ]
+      description: |
+        Retrieves the details of a specific resource server using its unique identifier.
+        
+        **Access Control**
+        - Accessible only to users with `cos_admin` or `org_admin` roles.
+        
+        **Role-based behavior**
+        - `cos_admin`: Can fetch details of any resource server.
+        - `org_admin`: Can fetch details only for resource servers they own.
       tags:
         - Resource Servers
       parameters:
@@ -115,32 +257,44 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResourceServer'
-    put:
-      summary: Update Resource Server
-      operationId: update resource server
-      security:
-        - authorization: [ ]
-      tags:
-        - Resource Servers
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        '200':
-          description: OK
+              example:
+                type: dx:controlPlane:success
+                title: Success
+                result:
+                  id: 7e9f1f76-baa1-4230-817f-f61ef3c0c411
+                  name: FILE
+                  url: datakaveri.org
+                  type: file testing
+                  owner_id: 64cb5154-6f8c-40ff-891f-baee2aac8b85
+                  visibility: PUBLIC
+                  status: PENDING
+                  query_type:
+                    - ATTR
+                  injection_type: api
+                  created_at: "2025-12-16T07:14:25.034849"
+                  updated_at: "2025-12-16T07:14:25.034849"
+        '403':
+          description: Forbidden - User does not have the required role
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResourceServer'
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:forbidden
+                  title:
+                    type: string
+                    example: Forbidden
+                  detail:
+                    type: string
+                    example: User does not have the required role.
+      x-codeSamples:
+        - lang: cURL
+          label: Get Resource Server by ID
+          source: |
+            curl --location --request GET 'https://${HOSTNAME}/iudx/v2/resource_servers/7e9f1f76-baa1-4230-817f-f61ef3c0c411' \
+            --header 'Authorization: Bearer <YOUR_ACCESS_TOKEN>'
     delete:
       summary: Delete Resource Server
       operationId: delete resource server
@@ -149,9 +303,17 @@ paths:
       tags:
         - Resource Servers
       description: |
-        Deletes a resource server based on user role:
-        - COS Admin: Can delete any resource server
-        - ORG Admin: Can only delete resource servers they own
+        Deletes an existing resource server.
+        
+        **Access Control**
+        - Accessible only to users with `cos_admin` or `org_admin` roles.
+        
+        **Role-based behavior**
+        - `cos_admin`: Can delete any resource server.
+        - `org_admin`: Can delete only resource servers owned by their organization.
+        
+        **Note**
+        - Once deleted, the resource server configuration cannot be recovered.
       parameters:
         - in: path
           name: id
@@ -162,11 +324,49 @@ paths:
         '204':
           description: No Content - Resource server deleted successfully
         '401':
-          description: Unauthorized - Invalid or missing token
+          description: Unauthorized - Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingToken:
+                  value:
+                    type: dx:controlPlane:notAuthorized
+                    title: Not Authorized
+                    detail: Missing Bearer token
+                invalidToken:
+                  value:
+                    type: dx:controlPlane:notAuthorized
+                    title: Not Authorized
+                    detail: Invalid token format
         '403':
-          description: Forbidden - Insufficient permissions or trying to delete resource server you don't own
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
         '404':
           description: Not Found - Resource server not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:notFound
+                title: Not Found
+                detail: No matching requestId found in resource table
+      x-codeSamples:
+        - lang: cURL
+          label: Delete Resource Server
+          source: |
+            curl --location --request DELETE \
+            'https://${HOSTNAME}/iudx/v2/resource_servers/7e9f1f76-baa1-4230-817f-f61ef3c0c411' \
+            --header 'Authorization: Bearer <YOUR_ACCESS_TOKEN>'
   /iudx/v2/auth/organisations/requests:
     get:
       summary: 'AAA-001-PF Admin: Get Organisation Creation requests'
@@ -5381,6 +5581,7 @@ paths:
                   - $ref: '#/components/schemas/successResponseForCreateAIModelEntity'
                   - $ref: '#/components/schemas/successResponseForCreateDataBankResourceEntity'
                   - $ref: '#/components/schemas/successResponseForCreatePotentialAppsEntity'
+
         '400':
           description: Bad Request
           content:
@@ -8088,15 +8289,41 @@ tags:
     description: >
       APIs for generating CSV reports of activity logs.
       These endpoints allow administrators and consumers to download activity logs in CSV format for offline analysis and reporting.
-  - name: Entity
+  - name: Resource Servers
+    description: |
+      Manage resource server configurations used for data provisioning and ingestion.
+      These APIs allow creation, listing, retrieval, and deletion of resource servers and are
+      restricted to administrative users (`cos_admin` and `org_admin`).
+  - name: CAT Entity
     description: |
       Manage catalogue entities and perform Create/Update/Read/Delete operations on them.
       These apis are intended to be used by DX(Data Exchange) Data *Providers*.
-    x-displayName: Entity
+    x-displayName: CAT Entity
+  - name: List Available Filters
+    description: |
+      APIs that expose available filter values for indexed catalogue fields.
+      These endpoints are primarily used by UI clients to dynamically populate filter options
+      based on the selected entity type (e.g., DataBank, AI Model, Apps).
   - name: Discovery – Public
-    description: Global catalogue search and count APIs.
+    description: |
+      Public catalogue discovery APIs.
+      These APIs support global search and count operations over published catalogue entities
+      and do not require ownership of the assets.
   - name: Discovery – My Assets
-    description: Owner-specific search APIs.
+    description: |
+      Owner-specific discovery APIs.
+      These APIs allow authenticated users to search and view assets owned by them including unpublished or draft entities.
+  - name: Organisation Assets Management
+    description: |
+      APIs for managing assets owned by a specific organization.
+      These endpoints are restricted to users with the `org_admin` role and allow organisation
+      administrators to view and manage all assets belonging to their organisation, regardless
+      of publication or data upload status.
+  - name: Platform Assets Management
+    description: |
+      Platform-wide asset management APIs.
+      These endpoints are restricted to users with the `cos_admin` role and allow viewing and
+      managing all assets across the platform, irrespective of ownership or status.
   - name: Subscriptions
     description: |
       NGSI-LD subscriptions apis.
@@ -8435,6 +8662,74 @@ components:
         injection_type:
           type: string
           example: api
+    ResourceServerCreateRequest:
+      type: object
+      description: Payload to register a new Resource Server
+      properties:
+        name:
+          type: string
+          description: Logical name of the resource server
+          enum: [ NGSI-LD, GATEWAY, OGC, FILE ]
+        url:
+          type: string
+          description: Resource server endpoint or host name
+          example: datakaveri.org
+        type:
+          type: string
+          description: Backend adapter or implementation identifier
+          example: file testing
+        visibility:
+          type: string
+          enum: [ PUBLIC, PRIVATE ]
+        query_type:
+          type: array
+          description: Supported query capabilities
+          items:
+            type: string
+            example: [ ATTR, TEMPORAL, FEATURES ]
+        injection_type:
+          type: string
+          description: Data ingestion mechanism
+          example: api
+      required:
+        - name
+        - url
+        - visibility
+        - query_type
+        - injection_type
+    ResourceServerResponse:
+      type: object
+      description: Resource Server entity
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        url:
+          type: string
+        type:
+          type: string
+        owner_id:
+          type: string
+          format: uuid
+        visibility:
+          type: string
+        status:
+          type: string
+          example: [ PENDING, ACTIVE, INACTIVE ]
+        query_type:
+          type: array
+          items:
+            type: string
+        injection_type:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
     standardResourceAlreadyExistErrorResponse:
       title: standardResourceAlreadyExistErrorResponse
       properties:
@@ -10638,7 +10933,7 @@ components:
         detail:
           type: string
           description: Detailed description of the type or response
-        results:
+        result:
           type: object
           properties:
             '@context':
@@ -10752,7 +11047,7 @@ components:
         type: 'dx:controlPlane:success'
         title: 'Created'
         detail: 'Success: Item created'
-        results:
+        result:
           '@context': 'https://voc.iudx.io/'
           id: 'fb6d2109-6c1c-4c2d-9ae3-0879463b8b4b'
           ownerUserId: '2f945b8d-0cc8-4c5d-9a3e-53fa88e6e9b2'
@@ -10786,69 +11081,75 @@ components:
           publishStatus: 'PENDING'
     successResponseForCreateDataBankResourceEntity:
       type: object
-      title: Data Bank Resource Entity
-      description: A Data Bank Resource item is successfully created
+      description: Successful response for Data Bank Resource creation
+      required:
+        - type
+        - title
+        - result
       properties:
         type:
           type: string
-          description: |
-            URN type of the response indicating if the query was successful or if any errors have been triggered
+          example: dx:controlPlane:success
         title:
           type: string
-          description: A human-readable title for the message response
-        detail:
+          example: Success
+        result:
+          $ref: '#/components/schemas/DataBankResourceCreateResult'
+    DataBankResourceCreateResult:
+      type: object
+      description: Result payload for successful Data Bank Resource creation
+      required:
+        - itemId
+        - itemType
+        - itemName
+        - resourceServers
+      properties:
+        itemId:
           type: string
-          description: Detailed description of the type or response
-        results:
+          format: uuid
+          description: Unique identifier of the created Data Bank Resource item
+
+        itemType:
+          type: array
+          description: Type tags from the ADeX vocabulary
+          items:
+            type: string
+            example: adex:DataBank
+
+        itemName:
+          type: string
+          description: Name of the Data Bank Resource item
+
+        resourceServers:
           type: object
-          properties:
-            itemId:
-              type: string
-              pattern: "^[a-zA-Z0-9\\-]{36}$"
-              description: Unique identifier of the created Data Bank Resource item
-            itemType:
-              type: array
-              items:
-                type: string
-              description: Type tags from the ADeX vocabulary
-            itemName:
-              type: string
-              description: Name of the Data Bank Resource item
-            resourceServers:
-              type: object
-              description: Resource server details for the created Data Bank item
-              additionalProperties:
+          description: Resource server–specific provisioning details
+          additionalProperties:
+            type: object
+            required:
+              - data
+            properties:
+              data:
                 type: object
-                properties:
-                  data:
-                    type: object
-                    additionalProperties: true
-          required:
-            - itemId
-            - itemType
-            - itemName
-            - resourceServers
+                description: Resource server response payload
+                additionalProperties: true
+
       example:
-        type: "dx:controlPlane:success"
-        title: "Success"
-        detail: "Success: Item created"
-        results:
-          itemId: "179757e2-55ce-4d4b-a9f6-7ca079a631f8"
-          itemType:
-            - "adex:DataBank"
-          itemName: "Subdistrict Weather Information for Postman test"
-          resourceServers:
-            NGSI-LD:
-              data:
-                username: "2f945b8d-0cc8-4c5d-9a3e-53fa88e6e9b2"
-                apiKey: "Use the apiKey returned on registration, if lost please use /resetPassword API"
-                id: "179757e2-55ce-4d4b-a9f6-7ca079a631f8"
-                URL: "databroker.iudx.io"
-                port: 24567
-                vHost: "IUDX-V2"
-            FILE:
-              data:
-                status: "created"
+        itemId: 8bc9543d-7474-4f18-87ba-6bab02ab47e3
+        itemType:
+          - adex:DataBank
+        itemName: Subdistrict Weather Information for Postman test
+        resourceServers:
+          NGSI-LD:
+            data:
+              username: 2f945b8d-0cc8-4c5d-9a3e-53fa88e6e9b2
+              apiKey: Use the apiKey returned on registration, if lost please use /resetPassword API
+              id: 8bc9543d-7474-4f18-87ba-6bab02ab47e3
+              URL: databroker.iudx.io
+              port: 24567
+              vHost: IUDX-V2
+          FILE:
+            data:
+              status: created
     successResponseForCreatePotentialAppsEntity:
       type: object
       title: Potential Applications Entity
@@ -10864,7 +11165,7 @@ components:
         detail:
           type: string
           description: Detailed description of the type or response
-        results:
+        result:
           type: object
           properties:
             '@context':
@@ -10988,7 +11289,7 @@ components:
         type: "dx:controlPlane:success"
         title: "Created"
         detail: "Success: Item created"
-        results:
+        result:
           '@context': "https://voc.forest-stack.iudx.io/"
           id: "5fa8234b-e9fc-42c2-b9b4-94197840c1e8"
           type:
