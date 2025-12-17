@@ -323,6 +323,12 @@ paths:
       responses:
         '204':
           description: No Content - Resource server deleted successfully
+          content:
+            application/json:
+              examples:
+                success:
+                  summary: Resource server deleted successfully
+                  value:
         '401':
           description: Unauthorized - Missing or invalid token
           content:
@@ -10920,7 +10926,7 @@ components:
         resourceType: DATASET
     successResponseForCreateAIModelEntity:
       type: object
-      title: AI Model Entity
+      title: AiModel Entity
       description: An AI Model item is successfully created
       properties:
         type:
@@ -11081,6 +11087,7 @@ components:
           publishStatus: 'PENDING'
     successResponseForCreateDataBankResourceEntity:
       type: object
+      title: DataBank Entity
       description: Successful response for Data Bank Resource creation
       required:
         - type
@@ -11108,18 +11115,15 @@ components:
           type: string
           format: uuid
           description: Unique identifier of the created Data Bank Resource item
-
         itemType:
           type: array
           description: Type tags from the ADeX vocabulary
           items:
             type: string
             example: adex:DataBank
-
         itemName:
           type: string
           description: Name of the Data Bank Resource item
-
         resourceServers:
           type: object
           description: Resource server–specific provisioning details
@@ -11132,7 +11136,6 @@ components:
                 type: object
                 description: Resource server response payload
                 additionalProperties: true
-
       example:
         itemId: 8bc9543d-7474-4f18-87ba-6bab02ab47e3
         itemType:
@@ -11152,7 +11155,7 @@ components:
               status: created
     successResponseForCreatePotentialAppsEntity:
       type: object
-      title: Potential Applications Entity
+      title: Usecase/Apps Entity
       description: An ADeX Potential Application item is successfully created
       properties:
         type:
@@ -11290,7 +11293,7 @@ components:
         title: "Created"
         detail: "Success: Item created"
         result:
-          '@context': "https://voc.forest-stack.iudx.io/"
+          '@context': "https://voc.iudx.io/"
           id: "5fa8234b-e9fc-42c2-b9b4-94197840c1e8"
           type:
             - "adex:Apps"
@@ -11327,18 +11330,15 @@ components:
           publishStatus: "ACTIVE"
     successResponseForUpdateAIModelEntity:
       type: object
-      title: AI Model Entity
+      title: AiModel Entity
       description: AI Model item is successfully updated
       properties:
         type:
           type: string
-          description: URN type of the response indicating if the query was successful or if any errors have been triggered
+          description: URN type of the response
         title:
           type: string
-          description: A human-readable title for the message response
-        detail:
-          type: string
-          description: Detailed description of the type or response
+          description: A human-readable title for the response
         result:
           type: object
           properties:
@@ -11347,15 +11347,14 @@ components:
               format: uri
             id:
               type: string
-              pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
-            name:
-              type: string
-              pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
-              maxLength: 512
+              format: uuid
             type:
               type: array
               items:
                 type: string
+            name:
+              type: string
+              maxLength: 512
             label:
               type: string
               maxLength: 512
@@ -11371,17 +11370,19 @@ components:
                 type: string
             accessPolicy:
               type: string
-              pattern: '^(RESTRICTED|OPEN|PRIVATE|PII)$'
+              enum: [ RESTRICTED, OPEN, PRIVATE, PII ]
             organizationType:
               type: string
-              enum: [ 'Private', 'Public', 'Academic Institution', "NGO/Non-profit", 'NA', '' ]
+            organizationId:
+              type: string
+              format: uuid
+            industry:
+              type: string
             department:
               type: string
             modelType:
               type: string
             fileFormat:
-              type: string
-            industry:
               type: string
             uploadedBy:
               type: string
@@ -11389,7 +11390,27 @@ components:
               type: string
             fileSize:
               type: string
+            itemStatus:
+              type: string
+            itemCreatedAt:
+              type: string
+              format: date-time
+            dataUploadStatus:
+              type: boolean
+            mediaURL:
+              type: string
+              format: uri
+            ownerUserId:
+              type: string
+              format: uuid
+            verifiedBy:
+              type: string
+            lastUpdated:
+              type: string
+            publishStatus:
+              type: string
           required:
+            - id
             - type
             - name
             - label
@@ -11398,51 +11419,49 @@ components:
             - tags
             - accessPolicy
             - organizationType
+            - industry
             - department
             - modelType
             - fileFormat
-            - industry
             - uploadedBy
             - license
             - fileSize
       example:
-        type: 'dx:controlPlane:success'
-        title: 'Success'
+        type: dx:controlPlane:success
+        title: Success
         result:
-          '@context': 'https://agrijson.org'
-          id: '8b95ab80-2aaf-4636-a65e-7f2563d0d371'
+          "@context": https://voc.iudx.io/
+          id: 7736036b-1d66-4a88-b998-09be3b3eee43
           type:
-            [ 'adex:AiModel' ]
-          name: 'ai-model-crop'
-          label: 'Test-Crop Disease Detection Model'
-          shortDescription: 'Detects diseases in crop leaves using image classification.'
-          description: 'A test AI model for detecting crop disease with the help of infected leaf images.'
+            - adex:AiModel
+          name: AiSandBoxAiModelPM
+          label: ai model item for test only
+          shortDescription: A test AI model item created for Postman integration.
+          description: ai model item for the postman collection
           tags:
             - ai
-            - ml
-            - model
-            - aimodel
-            - mlmodel
-            - ai-model
-            - ml-model
-            - machine
-            - learning
-            - machine learning
-            - training
-            - algorithm
-          resourceType: 'MODEL'
-          accessPolicy: 'RESTRICTED'
-          organizationType: 'Private'
-          department: 'Agriculture and Co-operation'
-          modelType: 'ImageClassifier'
-          fileFormat: 'ipynb'
-          industry: 'Agriculture'
-          uploadedBy: 'john.doe@datakaveri.org'
-          ownerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
-          license: 'MIT'
-          fileSize: '15MB'
-          itemStatus: "ACTIVE"
-          itemCreatedAt: "2024-01-07T04:53:31+0530"
+            - crop
+            - crop disease
+            - disease detection
+            - ai model
+          accessPolicy: RESTRICTED
+          organizationType: Private
+          organizationId: 74e3b919-1d1b-44de-ace1-504f1887fcc1
+          industry: Agriculture
+          department: Test Org11
+          modelType: ImageClassifier
+          fileFormat: ipynb
+          uploadedBy: Test Org11
+          license: MIT
+          fileSize: 15MB
+          itemStatus: ACTIVE
+          itemCreatedAt: 2025-12-17T12:30:08+0530
+          dataUploadStatus: true
+          mediaURL: https://iudx.io/
+          ownerUserId: 2f945b8d-0cc8-4c5d-9a3e-53fa88e6e9b2
+          verifiedBy: Centre of Data for Public Good (CDPG), IISc
+          lastUpdated: 17 December, 2025 - 12:30 PM
+          publishStatus: ACTIVE
     successResponseForUpdateDataBankEntity:
       type: object
       title: DataBank Entity
@@ -11450,18 +11469,19 @@ components:
       properties:
         type:
           type: string
-          description: |
-            URN type of the response indicating if the query was successful or if any errors have been triggered
+          description: URN indicating success or error type
         title:
-          description: A human-readable title for the message response
-        detail:
           type: string
-          description: Detailed description of the type or response
+          description: Human-readable response title
         result:
           type: object
           properties:
-            '@context':
+            "@context":
               type: string
+              format: uri
+            id:
+              type: string
+              format: uuid
             type:
               type: array
               items:
@@ -11480,22 +11500,22 @@ components:
               type: array
               items:
                 type: string
-            provider:
-              type: string
-              format: uuid
-            resourceGroup:
-              type: string
-              format: uuid
-            resourceServer:
-              type: string
-              format: uuid
             accessPolicy:
               type: string
+              enum: [ OPEN, RESTRICTED, PRIVATE, PII ]
+            organizationId:
+              type: string
+              format: uuid
             organizationType:
               type: string
-            fileFormat:
+            ownerUserId:
+              type: string
+              format: uuid
+            department:
               type: string
             industry:
+              type: string
+            fileFormat:
               type: string
             uploadedBy:
               type: string
@@ -11509,244 +11529,356 @@ components:
               type: string
             license:
               type: string
-            department:
-              type: string
             resourceType:
               type: string
+            itemStatus:
+              type: string
+              enum: [ ACTIVE, INACTIVE ]
+            publishStatus:
+              type: string
+              enum: [ ACTIVE, PENDING ]
+            dataUploadStatus:
+              type: boolean
+            apdURL:
+              type: string
+            resourceServer:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  type:
+                    type: string
+                  url:
+                    type: string
+                  datasetType:
+                    type: string
+                  queryTypes:
+                    type: array
+                    items:
+                      type: string
+                  accessTypes:
+                    type: array
+                    items:
+                      type: string
+            dataSample:
+              type: object
+              additionalProperties: true
+            dataDescriptor:
+              type: object
+              additionalProperties: true
+            itemCreatedAt:
+              type: string
+              format: date-time
+            lastUpdated:
+              type: string
           required:
+            - id
             - type
             - name
-            - label
-            - description
-            - shortDescription
-            - tags
             - accessPolicy
-            - organizationType
-            - fileFormat
-            - department
-            - resourceType
-            - industry
-            - uploadedBy
-            - geoCoverage
-            - yearRange
-            - verifiedBy
-            - uploadFrequency
-            - license
+            - itemStatus
+            - itemCreatedAt
+      required:
+        - type
+        - title
+        - result
       example:
-        type: 'dx:controlPlane:success'
-        title: 'Success'
+        type: dx:controlPlane:success
+        title: Success
         result:
-          '@context': 'https://agrijson.org'
+          "@context": https://voc.iudx.io/
+          id: 1cd0a3d4-c819-47b3-a5a8-b09ad5305368
           type:
-            - 'adex:DataBank'
+            - adex:DataBank
           name: subdistrict-weather-info
-          label: Subdistrict Weather Info
-          description: Weather-related statistics like rainfall and temperature for subdistricts.
-          shortDescription: A short description about the item
+          label: Subdistrict Weather Information
+          shortDescription: Daily aggregated temperature and rainfall data at subdistrict level.
+          description: Daily weather statistics at subdistrict level including temperature and rainfall metrics.
           tags:
-            - environment
             - weather
-            - rainfall
             - temperature
-          organizationId: '85bc97bf-904f-2306-gb49-89d77896cf2e'
-          ownerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
+            - rainfall
+            - environment
           accessPolicy: RESTRICTED
-          organizationType: Private
-          fileFormat: .xls
-          industry: Climate Research
-          uploadedBy: 'john.doe@datakaveri.org'
-          geoCoverage: Pan India
-          yearRange: '2015-2023'
-          verifiedBy: 'Ministry of Earth Sciences'
-          uploadFrequency: Weekly
+          organizationType: Public
+          organizationId: 74e3b919-1d1b-44de-ace1-504f1887fcc1
+          ownerUserId: 2f945b8d-0cc8-4c5d-9a3e-53fa88e6e9b2
+          department: Test Org11
+          industry: Environmental Monitoring
+          fileFormat: xlsx
+          uploadedBy: Test Org11
+          geoCoverage: Karnataka, India
+          yearRange: 2021-2024
+          verifiedBy: Department of Meteorology, Karnataka
+          uploadFrequency: Daily
           license: CC-BY 4.0
-          department: Department of IT, Electronics and Communication
           resourceType: DATASET
-          itemStatus: "ACTIVE"
-          itemCreatedAt: "2024-01-07T04:53:31+0530"
+          itemStatus: ACTIVE
+          publishStatus: PENDING
+          dataUploadStatus: false
+          apdURL: v2.dev.controlplane.iudx.io/acl
+          resourceServer:
+            - name: NGSI-LD
+              type: ngsi-ld
+              url: v2.dev.rs.iudx.io
+              datasetType: DATASET
+              queryTypes:
+                - ATTR
+              accessTypes:
+                - api
+            - name: FILE
+              type: file
+              url: v2.dev.file.iudx.io
+              datasetType: FILE
+              queryTypes:
+                - ATTR
+              accessTypes:
+                - api
           dataSample:
             id: 10293847
-            name: "Ficus religiosa"
-            observed_on: "2023-04-12"
+            name: Ficus religiosa
+            observed_on: 2023-04-12
             lat: 26.9124
             lon: 75.7873
-            quality_grade: "research"
           dataDescriptor:
-            "@context": "https://voc.forest-stack.iudx.io/"
-            dataDescriptorLabel: "Data Descriptor for Plantae Observations in Rajasthan"
-            description: "Schema and attribute definitions for Plantae observations collected via iNaturalist within Rajasthan, including taxonomic, spatial, temporal, quality-grade, and attribution fields."
-            type: [ "iudx:DataDescriptor" ]
-            id:
-              dataSchema: "iudx:Number"
-              description: "Unique observation identifier from iNaturalist."
-              type: [ "ValueDescriptor" ]
-            name:
-              dataSchema: "iudx:Text"
-              description: "Scientific name of the observed organism."
-              type: [ "ValueDescriptor" ]
+            "@context": https://voc.iudx.io/
+            dataDescriptorLabel: Data Descriptor for Weather Dataset
+            type:
+              - iudx:DataDescriptor
+          itemCreatedAt: 2025-12-17T12:07:59+0530
+          lastUpdated: 17 December, 2025 - 12:07 PM
     successResponseForUpdateAdexAppsEntity:
       type: object
-      title: ADeX Potential Application Entity
+      title: Usecase / Apps Entity
       description: ADeX Application metadata item is successfully updated
+      required:
+        - type
+        - title
+        - result
       properties:
         type:
           type: string
-          description: |
-            URN type of the response indicating if the query was successful or if any errors have been triggered
+          description: URN indicating success or error type
+          example: dx:controlPlane:success
         title:
           type: string
-          description: A human-readable title for the message response
+          description: Human-readable response title
+          example: Success
         detail:
           type: string
-          description: Detailed description of the type or response
+          description: Detailed response message
         result:
           type: object
+          required:
+            - id
+            - name
+            - type
+            - label
+            - shortDescription
+            - description
+            - tags
+            - accessPolicy
+            - organizationType
+            - department
+            - itemStatus
+            - itemCreatedAt
           properties:
-            '@context':
+            "@context":
               type: string
               format: uri
             id:
               type: string
-              pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
-            name:
-              type: string
-              pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
-              maxLength: 512
+              format: uuid
+              description: Unique identifier of the Apps entity
             type:
               type: array
               items:
                 type: string
+              description: ADeX entity type
+              example: [ adex:Apps ]
+            name:
+              type: string
+              maxLength: 512
+              description: System name of the application
+            label:
+              type: string
+              maxLength: 512
+              description: User-friendly label of the application
+            shortDescription:
+              type: string
+              maxLength: 3200
+              description: Short summary of the application
+            description:
+              type: string
+              maxLength: 12000
+              description: Detailed description of the application
             tags:
               type: array
               items:
                 type: string
-            label:
+              description: Tags associated with the application
+            accessPolicy:
               type: string
-              maxLength: 512
-            shortDescription:
-              type: string
-              maxLength: 512
-            description:
-              type: string
-              maxLength: 4000
+              enum: [ OPEN, PRIVATE ]
+              description: Access policy of the application
             organizationType:
               type: string
-              enum: [ 'Private', 'Public', "Academic Institution", "NGO/Non-profit", "NA", '' ]
+              description: Type of organization providing the application
+            organizationId:
+              type: string
+              format: uuid
+              description: Organization UUID
+            industry:
+              type: string
+              description: Industry domain of the application
             department:
               type: string
-            canBeUsedFor:
-              type: object
-              additionalProperties:
-                type: string
-                maxLength: 300
-              maxProperties: 5
-            dataInputsAndAiTechniques:
-              type: object
-              properties:
-                Input Data Banks:
-                  type: array
-                  items:
+              description: Department under which the application is published
+            sections:
+              type: array
+              description: Structured content sections of the application
+              items:
+                type: object
+                required:
+                  - title
+                properties:
+                  title:
                     type: string
-                    maxLength: 200
-                Expected Output:
-                  type: array
-                  items:
+                  content:
                     type: string
-                    maxLength: 200
-                AI Models:
-                  type: array
-                  items:
-                    type: string
-                    maxLength: 200
-                Potential Benefits:
-                  type: array
-                  items:
-                    type: string
-                    maxLength: 200
-              required:
-                - Input Data Banks
-                - Expected Output
-                - AI Models
-                - Potential Benefits
-              additionalProperties: false
+                  subsections:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        subtitle:
+                          type: string
+                        points:
+                          type: array
+                          items:
+                            type: string
             itemStatus:
               type: string
-              enum: [ 'ACTIVE', 'INACTIVE' ]
+              enum: [ ACTIVE, INACTIVE ]
+              description: Lifecycle status of the application
             itemCreatedAt:
               type: string
               format: date-time
+              description: Creation timestamp
+            ownerUserId:
+              type: string
+              format: uuid
+              description: Owner user ID
             uploadedBy:
               type: string
-              format: email
-            fileFormat:
+              description: Name of uploader
+            verifiedBy:
               type: string
-            accessPolicy:
+              description: Verifying authority
+            lastUpdated:
               type: string
-              enum: [ 'Public', 'Private' ]
-          required:
-            - name
-            - type
-            - tags
-            - label
-            - shortDescription
-            - description
-            - organizationType
-            - department
-            - uploadedBy
-            - fileFormat
-            - accessPolicy
-            - canBeUsedFor
-            - dataInputsAndAiTechniques
+              description: Last updated timestamp (human-readable)
       example:
-        type: 'dx:controlPlane:success'
-        title: 'Success'
+        type: "dx:controlPlane:success"
+        title: "Success"
         result:
-          "@context": "https://agrijson.org"
-          type: [ "adex:Apps" ]
-          id: "8b95ab80-2aaf-4636-a65e-7f2563d0d371"
-          name: 'crop-disease-app'
+          '@context': "https://voc.iudx.io/"
+          id: "8fd42dfc-6a54-46a3-9d5c-ce3f7fb11887"
+          name: "ai_lung_diagnostics postman test"
+          type:
+            - "adex:Apps"
+          label: "AI-Powered Medical Imaging Diagnostics for Lung Conditions"
           tags:
-            - ai
-            - ml
-            - model
-            - ai-model
-            - ml-model
-            - machine
-            - learning
-            - machine learning
-            - training
-            - algorithm
-          label: 'Test-Crop Disease Detection Model'
-          shortDescription: 'A test potential application item for detecting crop disease'
-          description: 'A test potential application item for detecting crop disease with the help of infected leaf images.'
-          organizationType: 'Private'
-          department: 'Agriculture and Co-operation'
-          uploadedBy: 'cdpg@datakaveri.org'
-          fileFormat: 'xlsx'
-          accessPolicy: 'Public'
-          canBeUsedFor:
-            cropMonitoring: 'Detect and classify diseases in crops using image input'
-            yieldOptimization: 'Improve crop yield by early detection of diseases'
-          dataInputsAndAiTechniques:
-            Input Data Banks:
-              - 'Annotated Leaf Image Dataset'
-              - 'Crop Type Classification Data'
-            Expected Output:
-              - 'Disease Type'
-              - 'Confidence Score'
-              - 'Recommended Treatment'
-            AI Models:
-              - 'Convolutional Neural Networks'
-              - 'Transfer Learning'
-            Potential Benefits:
-              - 'Early detection of crop diseases'
-              - 'Reduction in crop loss'
-              - 'Better planning and resource allocation'
+            - "healthcare"
+            - "diagnostics"
+            - "medical imaging"
+            - "AI"
+          industry: "Healthcare"
+          shortDescription: "AI-driven diagnostics platform for detecting lung conditions using chest X-rays."
+          description: "This use case showcases the application of deep learning algorithms for interpreting chest radiographs, aiding in the timely diagnosis of lung conditions such as TB, COPD, and lung cancer."
+          organizationType: "Public"
+          accessPolicy: "OPEN"
+          sections:
+            - title: "Introduction"
+              content: "Across each procurement season, thousands of Paddy Procurement Centres (PPCs) deliver grain to a large, province-wide network of registered rice mills. Pairings are still set by manual judgement and legacy rules, which leaves spare milling capacity idle, lengthens haul distances, and makes equity goals harder to track. The rich operational data already flowing through the Online Procurement Management System (OPMS) can anchor a smarter, policy-aligned network design that balances workload, curbs transport cost, and surfaces bottlenecks before they bite."
+            - title: "Current Opportunities for Improvement"
+              subsections:
+                - subtitle: "Limited foresight"
+                  points:
+                    - "Arrival patterns and mill capacities are understood only after trucks roll, forcing reactive fixes."
+                - subtitle: "Heuristic pairing"
+                  points:
+                    - "Village-to-PPC and PPC-to-mill tags seldom explore alternatives that would shorten routes or absorb latent capacity."
+                - subtitle: "Equity & compliance friction"
+                  points:
+                    - "Mandal-level service targets and caps on cross-district movement demand painstaking manual checks."
+                - subtitle: "Adaptation lag"
+                  points:
+                    - "Weather shifts or labour disruptions require rapid rerouting, yet the present process is paperwork-heavy and opaque to headquarters."
+            - title: "Proposed Methodology"
+              subsections:
+                - subtitle: "Predictive baselining"
+                  points:
+                    - "Mine past OPMS feeds to forecast realistic volumes at each PPC before peak arrival."
+                - subtitle: "Scenario stress-testing"
+                  points:
+                    - "Generate multiple demand scenarios so policy makers can gauge how robust any allocation is under plausible swings."
+                - subtitle: "Multi-objective optimisation"
+                  points:
+                    - "Search for assignments that minimise haul distance while balancing mill utilisation and locking in policy constraints such as entitlement ceilings and district quotas."
+                - subtitle: "Human-in-the-loop validation"
+                  points:
+                    - "District officers review suggested pairings, lock or override as needed; the engine then re-optimises around those choices and logs rationale for audit."
+                - subtitle: "Continuous learning"
+                  points:
+                    - "Daily variances feed back to refine forecasts and flag when reallocation would materially improve cost or compliance."
+            - title: "Proposed Technological Solutions"
+              subsections:
+                - subtitle: "Demand-forecast micro-service"
+                  points:
+                    - "A lightweight temporal model that turns OPMS history into daily PPC arrival projections."
+                - subtitle: "Optimisation core"
+                  points:
+                    - "A solver that blends exact and heuristic techniques, exposed through open APIs."
+                - subtitle: "Policy rule layer"
+                  points:
+                    - "Declarative constraints so new mandates can be toggled without touching code."
+                - subtitle: "Decision dashboard"
+                  points:
+                    - "GIS visual of proposed pairings, expected distance savings, and override controls."
+                - subtitle: "OPMS integration"
+                  points:
+                    - "Two-way data bridge so staff work inside the system they already know."
+            - title: "Key Objectives / Performance Metrics"
+              subsections:
+                - subtitle: "Reduced Transport Distance"
+                  points:
+                    - "Lower total tonne-kilometres moved across the state."
+                - subtitle: "Balanced Mill Utilisation"
+                  points:
+                    - "Narrow the gap between over- and under-loaded mills, improving asset productivity."
+                - subtitle: "Equity Assurance"
+                  points:
+                    - "Demonstrably meet mandal-level service targets built into the constraint set."
+                - subtitle: "Operational Agility"
+                  points:
+                    - "Shorter response time when shocks demand rerouting, with fewer manual work-arounds."
+                - subtitle: "Transparency & Auditability"
+                  points:
+                    - "Every allocation and override traceable in a single digital trail."
+          department: "new Name Sandbox1"
+          uploadedBy: "new Name Sandbox1"
           itemStatus: "ACTIVE"
-          itemCreatedAt: "2024-01-07T04:53:31+0530"
+          itemCreatedAt: "2025-12-15T05:04:38+0530"
+          ownerUserId: "e59dfb08-66b2-49c3-891b-390f8f488c6d"
+          verifiedBy: "Centre of Data for Public Good (CDPG), IISc"
+          lastUpdated: "15 December, 2025 - 05:04 PM"
+          publishStatus: "ACTIVE"
     successResponseForGetAIModelEntity:
       type: object
-      title: AI Model Entity
+      title: AiModel Entity
       description: AI Model item is successfully fetched
       properties:
         type:
@@ -11767,119 +11899,94 @@ components:
                 type: string
                 format: uri
                 description: JSON-LD context URI
-
               id:
                 type: string
                 format: uuid
                 description: Unique identifier of the AI model item
-
               type:
                 type: array
                 items:
                   type: string
                 description: Type tags from the ADeX vocabulary
-
               name:
                 type: string
                 maxLength: 512
                 pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
                 description: System name of the AI model
-
               label:
                 type: string
                 maxLength: 512
                 description: User-friendly label of the model
-
               shortDescription:
                 type: string
                 maxLength: 3200
                 description: Short summary of the AI model
-
               description:
                 type: string
                 maxLength: 12000
                 description: Detailed description of the AI model
-
               tags:
                 type: array
                 items:
                   type: string
                 description: Tags associated with the model
-
               accessPolicy:
                 type: string
                 pattern: "^(RESTRICTED|OPEN|PRIVATE|PII)$"
                 description: Access policy of the model
-
               organizationId:
                 type: string
                 format: uuid
                 description: Organization UUID to which the model belongs
-
               organizationType:
                 type: string
                 description: Type of organization providing the model
-
               department:
                 type: string
                 description: Department under which the model is published
-
               ownerUserId:
                 type: string
                 format: uuid
                 description: User ID of the model owner
-
               uploadedBy:
                 type: string
                 description: Name or identifier of the uploader
-
               modelType:
                 type: string
                 description: Type of AI model (e.g., ImageClassifier)
-
               fileFormat:
                 type: string
                 description: File format of the model artifact
-
               fileSize:
                 type: string
                 description: Size of the model artifact
-
               industry:
                 type: string
                 description: Industry domain of the AI model
-
               license:
                 type: string
                 description: License under which the model is shared
-
               verifiedBy:
                 type: string
                 description: Authority that verified the model
-
               itemStatus:
                 type: string
                 enum: [ "ACTIVE", "INACTIVE" ]
                 description: Current lifecycle status of the model
-
               publishStatus:
                 type: string
                 enum: [ "ACTIVE", "PENDING" ]
                 description: Publication status of the model
-
               dataUploadStatus:
                 type: boolean
                 description: Indicates whether model data has been uploaded
-
               itemCreatedAt:
                 type: string
                 format: date-time
                 description: Creation timestamp of the model item
-
               lastUpdated:
                 type: string
                 description: Last updated timestamp (human-readable)
-
             required:
               - id
               - type
@@ -11887,16 +11994,19 @@ components:
               - accessPolicy
               - itemStatus
               - itemCreatedAt
+        paginationInfo:
+          $ref: '#/components/schemas/PaginationInfo'
       required:
         - type
         - title
         - result
+        - paginationInfo
       example:
         type: "dx:controlPlane:success"
         title: "Success"
         detail: "Success: Item fetched successfully"
         result:
-          - "@context": "https://voc.forest-stack.iudx.io/"
+          - "@context": "https://voc.iudx.io/"
             id: "fb6d2109-6c1c-4c2d-9ae3-0879463b8b4b"
             type:
               - "adex:AiModel"
@@ -11927,6 +12037,13 @@ components:
             dataUploadStatus: false
             itemCreatedAt: "2025-12-15T05:16:43+0530"
             lastUpdated: "15 December, 2025 - 05:16 PM"
+        paginationInfo:
+          page: 1
+          size: 1
+          totalCount: 1
+          totalPages: 1
+          hasNext: false
+          hasPrevious: false
     successResponseForGetDataBankEntity:
       type: object
       title: DataBank Entity
@@ -12085,16 +12202,19 @@ components:
               - accessPolicy
               - itemStatus
               - itemCreatedAt
+        paginationInfo:
+          $ref: '#/components/schemas/PaginationInfo'
       required:
         - type
         - title
         - result
+        - paginationInfo
       example:
         type: "dx:controlPlane:success"
         title: "Success"
         detail: "Success: Item fetched successfully"
         result:
-          - "@context": "https://voc.forest-stack.iudx.io/"
+          - "@context": "https://voc.iudx.io/"
             id: "e27a1f6c-6a1b-45b8-a9f5-0c7424d1f0d1"
             type:
               - "adex:DataBank"
@@ -12157,9 +12277,16 @@ components:
             dataUploadStatus: false
             itemCreatedAt: "2024-01-05T02:09:10+0530"
             lastUpdated: "15 December, 2025 - 05:04 PM"
+        paginationInfo:
+          page: 1
+          size: 1
+          totalCount: 1
+          totalPages: 1
+          hasNext: false
+          hasPrevious: false
     successResponseForGetAdexAppsEntity:
       type: object
-      title: ADeX Apps Entity
+      title: Usecase/Apps Entity
       description: ADeX Potential Application item is successfully fetched
       required:
         - type
@@ -12184,58 +12311,47 @@ components:
                 type: string
                 format: uri
                 description: JSON-LD context URI
-
               id:
                 type: string
                 format: uuid
                 description: Unique identifier of the application item
-
               type:
                 type: array
                 items:
                   type: string
                 description: Entity type from ADeX vocabulary
-
               name:
                 type: string
                 maxLength: 512
                 description: Name of the application / use case
-
               label:
                 type: string
                 maxLength: 512
                 description: User-friendly label for the application
-
               shortDescription:
                 type: string
                 maxLength: 3200
                 description: Brief summary of the application
-
               description:
                 type: string
                 maxLength: 12000
                 description: Detailed description of the application
-
               tags:
                 type: array
                 items:
                   type: string
                 description: Tags associated with the application
-
               industry:
                 type: string
                 description: Industry domain of the application
-
               organizationType:
                 type: string
                 enum: [ "Private", "Public", "Academic Institution", "NGO/Non-profit", "Other", "NA", "" ]
                 description: Type of organization providing the application
-
               accessPolicy:
                 type: string
                 pattern: "^(RESTRICTED|OPEN|PRIVATE|PII)$"
                 description: Access policy of the application
-
               sections:
                 type: array
                 description: Structured sections describing the AI use case
@@ -12272,44 +12388,38 @@ components:
                     - required: [ "content" ]
                     - required: [ "points" ]
                     - required: [ "subsections" ]
-
               # --- Backend-managed / platform fields (optional) ---
               organizationId:
                 type: string
                 format: uuid
                 description: Owning organization UUID
-
               uploadedBy:
                 type: string
                 description: User or system that uploaded the application
-
               ownerUserId:
                 type: string
                 format: uuid
                 description: Owner of the application item
-
               publishStatus:
                 type: string
-                enum: [ "DRAFT", "PENDING", "PUBLISHED", "REJECTED" ]
+                enum: [ "ACTIVE", "PENDING", "DECLINED" ]
                 description: Publication status
-
               itemStatus:
                 type: string
                 enum: [ "ACTIVE", "INACTIVE" ]
                 description: Current lifecycle status
-
               itemCreatedAt:
                 type: string
                 format: date-time
                 description: Creation timestamp
-
               lastUpdated:
                 type: string
                 description: Last updated timestamp (human-readable)
-
               verifiedBy:
                 type: string
                 description: Authority that verified the application
+        paginationInfo:
+          $ref: '#/components/schemas/PaginationInfo'
       example:
         type: 'dx:controlPlane:success'
         title: 'Success'
@@ -12334,13 +12444,11 @@ components:
             industry: 'Agriculture'
             organizationType: 'Public'
             accessPolicy: 'OPEN'
-
             sections:
               - title: 'Introduction'
                 content: >
                   Crop diseases significantly impact agricultural productivity. Early detection using AI
                   can help farmers take preventive actions and reduce losses.
-
               - title: 'Current Challenges'
                 subsections:
                   - subtitle: 'Delayed diagnosis'
@@ -12351,7 +12459,6 @@ components:
                     points:
                       - Diseases spread rapidly before detection
                       - Limited access to diagnostic tools
-
               - title: 'Proposed Methodology'
                 subsections:
                   - subtitle: 'Image-based diagnosis'
@@ -12362,26 +12469,60 @@ components:
                     points:
                       - Convolutional Neural Networks
                       - Transfer Learning
-
               - title: 'Expected Outcomes'
                 points:
                   - Early detection of crop diseases
                   - Reduced crop loss
                   - Improved decision-making for farmers
-
             # --- Backend-managed fields ---
             organizationId: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
             ownerUserId: 'b2c27f3f-2524-4a84-816e-91f9ab23f837'
             uploadedBy: 'john.doe@datakaveri.org'
-            publishStatus: 'PUBLISHED'
+            publishStatus: 'PENDING'
             itemStatus: 'ACTIVE'
             itemCreatedAt: '2024-01-05T02:09:10+0530'
             lastUpdated: '2024-01-10T11:30:00+0530'
             verifiedBy: 'Department of Agriculture'
+        paginationInfo:
+          page: 1
+          size: 1
+          totalCount: 1
+          totalPages: 1
+          hasNext: false
+          hasPrevious: false
+    GetPaginationInfo:
+      type: object
+      description: Pagination metadata for list responses
+      required:
+        - page
+        - size
+        - totalCount
+        - totalPages
+        - hasNext
+        - hasPrevious
+      properties:
+        page:
+          type: integer
+          example: 1
+        size:
+          type: integer
+          example: 1
+        totalCount:
+          type: integer
+          example: 1
+        totalPages:
+          type: integer
+          example: 1
+        hasNext:
+          type: boolean
+          example: false
+        hasPrevious:
+          type: boolean
+          example: false
 
     successResponseForGetAIModelEntityWithAccess:
       type: object
-      title: AI Model Entity
+      title: AiModel Entity
       description: AI Model item is successfully fetched
       properties:
         type:
@@ -12490,6 +12631,17 @@ components:
               lastUpdated:
                 type: string
                 description: Last updated timestamp (human-readable)
+              expiryAt:
+                type: string
+                description: If the fetched item is of RESTRICTED accessPolicy, then the response
+                  will include the expiry time of the policy
+              cons:
+                type: object
+                description: Constraints associated with the model
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string
             required:
               - id
               - type
@@ -12497,16 +12649,19 @@ components:
               - accessPolicy
               - itemStatus
               - itemCreatedAt
+        paginationInfo:
+          $ref: '#/components/schemas/PaginationInfo'
       required:
         - type
         - title
         - result
+        - paginationInfo
       example:
         type: "dx:controlPlane:success"
         title: "Success"
         detail: "Success: Item fetched successfully"
         result:
-          - "@context": "https://voc.forest-stack.iudx.io/"
+          - "@context": "https://voc.iudx.io/"
             id: "fb6d2109-6c1c-4c2d-9ae3-0879463b8b4b"
             type:
               - "adex:AiModel"
@@ -12540,6 +12695,13 @@ components:
             expiryAt: "2025-12-04T20:00:19"
             cons:
               access: [ 'sub' ]
+        paginationInfo:
+          page: 1
+          size: 1
+          totalCount: 1
+          totalPages: 1
+          hasNext: false
+          hasPrevious: false
     successResponseForGetDataBankEntityWithAccess:
       type: object
       title: DataBank Entity
@@ -12691,6 +12853,17 @@ components:
               lastUpdated:
                 type: string
                 description: Last updated timestamp (human-readable)
+              expiryAt:
+                type: string
+                description: If the fetched item is of RESTRICTED accessPolicy, then the response
+                  will include the expiry time of the policy
+              cons:
+                type: object
+                description: Constraints associated with the model
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string
             required:
               - id
               - type
@@ -12702,12 +12875,13 @@ components:
         - type
         - title
         - result
+        - paginationInfo
       example:
         type: "dx:controlPlane:success"
         title: "Success"
         detail: "Success: Item fetched successfully"
         result:
-          - "@context": "https://voc.forest-stack.iudx.io/"
+          - "@context": "https://voc.iudx.io/"
             id: "e27a1f6c-6a1b-45b8-a9f5-0c7424d1f0d1"
             type:
               - "adex:DataBank"
@@ -12773,9 +12947,16 @@ components:
             expiryAt: "2025-12-04T20:00:19"
             cons:
               access: [ 'sub' ]
+        paginationInfo:
+          page: 1
+          size: 1
+          totalCount: 1
+          totalPages: 1
+          hasNext: false
+          hasPrevious: false
     successResponseForGetAdexAppsEntityWithAccess:
       type: object
-      title: ADeX Apps Entity
+      title: Usecase/Apps Entity
       description: ADeX Potential Application item is successfully fetched
       required:
         - type
@@ -12800,58 +12981,47 @@ components:
                 type: string
                 format: uri
                 description: JSON-LD context URI
-
               id:
                 type: string
                 format: uuid
                 description: Unique identifier of the application item
-
               type:
                 type: array
                 items:
                   type: string
                 description: Entity type from ADeX vocabulary
-
               name:
                 type: string
                 maxLength: 512
                 description: Name of the application / use case
-
               label:
                 type: string
                 maxLength: 512
                 description: User-friendly label for the application
-
               shortDescription:
                 type: string
                 maxLength: 3200
                 description: Brief summary of the application
-
               description:
                 type: string
                 maxLength: 12000
                 description: Detailed description of the application
-
               tags:
                 type: array
                 items:
                   type: string
                 description: Tags associated with the application
-
               industry:
                 type: string
                 description: Industry domain of the application
-
               organizationType:
                 type: string
                 enum: [ "Private", "Public", "Academic Institution", "NGO/Non-profit", "Other", "NA", "" ]
                 description: Type of organization providing the application
-
               accessPolicy:
                 type: string
                 pattern: "^(RESTRICTED|OPEN|PRIVATE|PII)$"
                 description: Access policy of the application
-
               sections:
                 type: array
                 description: Structured sections describing the AI use case
@@ -12888,44 +13058,49 @@ components:
                     - required: [ "content" ]
                     - required: [ "points" ]
                     - required: [ "subsections" ]
-
               # --- Backend-managed / platform fields (optional) ---
               organizationId:
                 type: string
                 format: uuid
                 description: Owning organization UUID
-
               uploadedBy:
                 type: string
                 description: User or system that uploaded the application
-
               ownerUserId:
                 type: string
                 format: uuid
                 description: Owner of the application item
-
               publishStatus:
                 type: string
-                enum: [ "DRAFT", "PENDING", "PUBLISHED", "REJECTED" ]
+                enum: [ "ACTIVE", "PENDING", "DECLINED" ]
                 description: Publication status
-
               itemStatus:
                 type: string
                 enum: [ "ACTIVE", "INACTIVE" ]
                 description: Current lifecycle status
-
               itemCreatedAt:
                 type: string
                 format: date-time
                 description: Creation timestamp
-
               lastUpdated:
                 type: string
                 description: Last updated timestamp (human-readable)
-
               verifiedBy:
                 type: string
                 description: Authority that verified the application
+              expiryAt:
+                type: string
+                description: If the fetched item is of RESTRICTED accessPolicy, then the response
+                  will include the expiry time of the policy
+              cons:
+                type: object
+                description: Constraints associated with the model
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string
+        paginationInfo:
+          $ref: '#/components/schemas/PaginationInfo'
       example:
         type: 'dx:controlPlane:success'
         title: 'Success'
@@ -12950,7 +13125,6 @@ components:
             industry: 'Agriculture'
             organizationType: 'Public'
             accessPolicy: 'OPEN'
-
             sections:
               - title: 'Introduction'
                 content: >
@@ -12978,18 +13152,16 @@ components:
                     points:
                       - Convolutional Neural Networks
                       - Transfer Learning
-
               - title: 'Expected Outcomes'
                 points:
                   - Early detection of crop diseases
                   - Reduced crop loss
                   - Improved decision-making for farmers
-
             # --- Backend-managed fields ---
             organizationId: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
             ownerUserId: 'b2c27f3f-2524-4a84-816e-91f9ab23f837'
             uploadedBy: 'john.doe@datakaveri.org'
-            publishStatus: 'PUBLISHED'
+            publishStatus: 'PENDING'
             itemStatus: 'ACTIVE'
             itemCreatedAt: '2024-01-05T02:09:10+0530'
             lastUpdated: '2024-01-10T11:30:00+0530'
@@ -12997,6 +13169,13 @@ components:
             expiryAt: "2025-12-04T20:00:19"
             cons:
               access: [ 'sub' ]
+        paginationInfo:
+          page: 1
+          size: 1
+          totalCount: 1
+          totalPages: 1
+          hasNext: false
+          hasPrevious: false
     successResponseForAutocompleteFuzzyTextSearch:
       type: object
       title: search by text
@@ -14072,7 +14251,7 @@ components:
         detail: 'Fail: Doc doesn''t exist, can''t update'
     exampleEntityAIModel:
       type: object
-      title: AI Model entity
+      title: AiModel Entity
       description: An example AI model entity for first-time onboarding (without system-generated fields like itemCreatedAt or itemStatus)
       properties:
         '@context':
@@ -14170,7 +14349,7 @@ components:
         mediaURL: ''
     exampleEntityDataBank:
       type: object
-      title: Data Bank entity
+      title: DataBank Entity
       description: An example entity without ID (For first time onboarding)
       properties:
         '@context':
@@ -14300,6 +14479,7 @@ components:
         - resourceServer
       additionalProperties: true
       example:
+        id: "1cd0a3d4-c819-47b3-a5a8-b09ad5305368"
         name: "Subdistrict Weather Information for Postman test"
         type:
           - "adex:DataBank"
@@ -14358,7 +14538,7 @@ components:
           formatVersion: "v1.0"
     exampleEntityPotentialApps:
       type: object
-      title: AI Use Case Template Schema
+      title: Usecase/Apps Entity
       description: Schema for defining structured AI use case templates with sections, subsections, and bullet points.
       required:
         - sections
@@ -14437,6 +14617,7 @@ components:
           pattern: "^(RESTRICTED|OPEN|PRIVATE|PII)$"
       additionalProperties: true
       example:
+        id: "8fd42dfc-6a54-46a3-9d5c-ce3f7fb11887"
         name: "ai_lung_diagnostics postman test"
         type:
           - "adex:Apps"
