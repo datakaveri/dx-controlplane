@@ -48,7 +48,7 @@ public class ItemControllerFactory {
     ItemRegistryService orchestrationService =
         new ItemRegistryServiceImpl(itemService, ingestionService, connectorService, webClient,
             dataPlaneUrl,controlPlaneUrl,ogcDataPlaneUrl);
-    return new ItemController(auditingHandler, centralItemService, itemService, vocContext,
-        verifiedBy, urnGenerator, orchestrationService, isCentralCatEnabled, isEdgeCatalogue, isStandalone);
+    return new ItemController(auditingHandler, itemService, vocContext, verifiedBy, urnGenerator,
+        orchestrationService);
   }
 }

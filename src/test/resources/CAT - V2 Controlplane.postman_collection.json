@@ -4,7 +4,7 @@
 		"name": "CAT | V2 Controlplane",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "29449699",
-		"_collection_link": "https://kranthi-7706.postman.co/workspace/AI-SandBox-Workspace~7b17c3e8-8468-4272-ac8a-42e14886620a/collection/29449699-452bc802-53f6-479e-bf77-30f5006f42f5?action=share&source=collection_link&creator=29449699"
+		"_collection_link": "https://kranthi-7706.postman.co/workspace/7b17c3e8-8468-4272-ac8a-42e14886620a/collection/29449699-452bc802-53f6-479e-bf77-30f5006f42f5?action=share&source=collection_link&creator=29449699"
 	},
 	"item": [
 		{
@@ -2157,6 +2157,296 @@
 							"raw": "{{localhost}}{{base}}/list",
 							"host": [
 								"{{localhost}}{{base}}"
+							],
+							"path": [
+								"list"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "List Available Central CAT Filters",
+			"item": [
+				{
+					"name": "For DataBank",
+					"item": [
+						{
+							"name": "200 Success - LIST concepts, tags, fileFormat, organizationType, accessPolicy, resourceServer.url,  department, industry",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Check response header\", function () {",
+											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+											"});",
+											"",
+											"pm.test(\"Check response body\", function () {    ",
+											"    const body = pm.response.json();",
+											"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\n                \"adex:DataBank\"\n            ]\n        }\n    ],\n    \"filter\": [\n        \"concepts\",\n        \"tags\",\n        \"fileFormat\",\n        \"organizationType\",\n        \"accessPolicy\",\n        \"resourceServer.url\",\n        \"department\",\n        \"industry\"\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{v2_host}}{{central-base}}/list",
+									"host": [
+										"{{v2_host}}{{central-base}}"
+									],
+									"path": [
+										"list"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "For AiModel",
+					"item": [
+						{
+							"name": "LIST department, organizationType, industry, fileFormat, accessPolicy, modelType",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Check response header\", function () {",
+											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+											"});",
+											"",
+											"pm.test(\"Check response body\", function () {    ",
+											"    const body = pm.response.json();",
+											"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\n                \"adex:AiModel\"\n            ]\n        }\n    ],\n    \"filter\": [\n        \"department\",\n        \"organizationType\",\n        \"industry\",\n        \"fileFormat\",\n        \"accessPolicy\",\n        \"modelType\"\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{v2_host}}{{central-base}}/list",
+									"host": [
+										"{{v2_host}}{{central-base}}"
+									],
+									"path": [
+										"list"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "For Apps",
+					"item": [
+						{
+							"name": "LIST organizationType,department",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Check response header\", function () {",
+											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+											"});",
+											"",
+											"pm.test(\"Check response body\", function () {    ",
+											"    const body = pm.response.json();",
+											"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\n                \"adex:Apps\"\n            ]\n        }\n    ],\n    \"filter\": [\n        \"department\",\n        \"organizationType\"\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{v2_host}}{{central-base}}/list",
+									"host": [
+										"{{v2_host}}{{central-base}}"
+									],
+									"path": [
+										"list"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "400 Bad Request- Missing or malformed request",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Check response header\", function () {",
+									"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+									"});",
+									"",
+									"pm.test(\"Check response body\", function () {    ",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property(\"detail\", \"Missing or malformed request\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"searchCriteria\": [\n        {\n            \"field\": \"type\",\n            \"values\": [\n                \"adex:DataBank\"\n            ]\n        }\n    ],\n    \"filter\": [\n        \"concepts\",\n        \"tags\",\n        \"fileFormat\",\n        \"organizationType\",\n        \"accessPolicy\",\n        \"resourceServer.url\",\n        \"department\",\n        \"industry\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{v2_host}}{{central-base}}/list",
+							"host": [
+								"{{v2_host}}{{central-base}}"
+							],
+							"path": [
+								"list"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "400 Bad Request - LIST concepts, tags, fileFormat, organizationType, accessPolicy, resourceServer.url,  department, industry Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Check response header\", function () {",
+									"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+									"});",
+									"",
+									"pm.test(\"Check response body\", function () {    ",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property(\"detail\", \"Unsupported searchType: fjjo\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"fjjo\",\n            \"field\": \"type\",\n            \"values\": [\n                \"adex:DataBank\"\n            ]\n        }\n    ],\n    \"filter\": [\n        \"concepts\",\n        \"tags\",\n        \"fileFormat\",\n        \"organizationType\",\n        \"accessPolicy\",\n        \"resourceServer.url\",\n        \"department\",\n        \"industry\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{localhost}}{{central-base}}/list",
+							"host": [
+								"{{localhost}}{{central-base}}"
 							],
 							"path": [
 								"list"
@@ -4581,6 +4871,2461 @@
 									"raw": "{{v2_host}}{{base}}/count",
 									"host": [
 										"{{v2_host}}{{base}}"
+									],
+									"path": [
+										"count"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"var statusCode = pm.response.code;",
+							"",
+							"if(statusCode == 200) {",
+							"",
+							"    pm.test(\"Check response body\", function () {    ",
+							"        const body = pm.response.json();",
+							"    pm.expect(pm.response.json().results.length).to.be.above(0);",
+							"    });",
+							"}",
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Central CAT Discovery – Public",
+			"item": [
+				{
+					"name": "About Page | Text search",
+					"item": [
+						{
+							"name": "Count | Fuzzy Text Search",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Check response header\", function () {\r",
+											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Check response body\", function () {    \r",
+											"    const body = pm.response.json();\r",
+											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"q\" : \"test\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{v2_host}}{{central-base}}/search?size=5000&page=1",
+									"host": [
+										"{{v2_host}}{{central-base}}"
+									],
+									"path": [
+										"search"
+									],
+									"query": [
+										{
+											"key": "size",
+											"value": "5000"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Fuzzy search - 200",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Check response header\", function () {\r",
+											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Check response body\", function () {    \r",
+											"    const body = pm.response.json();\r",
+											"    pm.expect(body).to.not.be.undefined; // Check for undefined response body\r",
+											"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"q\" : \"ai\",\n    \"fuzzy\" : true\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{v2_host}}{{central-base}}/search",
+									"host": [
+										"{{v2_host}}{{central-base}}"
+									],
+									"path": [
+										"search"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Prefix match search - 200 (success)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Check response header\", function () {\r",
+											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Check response body\", function () {    \r",
+											"    const body = pm.response.json();\r",
+											"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"q\" : \"ai\",\n    \"autoComplete\" : true\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{v2_host}}{{central-base}}/search",
+									"host": [
+										"{{v2_host}}{{central-base}}"
+									],
+									"path": [
+										"search"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Prefix match | Fuzzy text search - 200 (success)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Check response header\", function () {\r",
+											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Check response body\", function () {    \r",
+											"    const body = pm.response.json();\r",
+											"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"q\" : \"ai\",\n    \"autoComplete\" : true\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{v2_host}}{{central-base}}/search",
+									"host": [
+										"{{v2_host}}{{central-base}}"
+									],
+									"path": [
+										"search"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "search",
+					"item": [
+						{
+							"name": "Data Bank",
+							"item": [
+								{
+									"name": "Attribute search",
+									"item": [
+										{
+											"name": "term searchType",
+											"item": [
+												{
+													"name": "Filter on concepts",
+													"request": {
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Bearer {{consumer_token}}",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:DataBank\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"concepts\",\n        \"values\": [\"administration\"]\n    }\n  ]\n}\n",
+															"options": {
+																"raw": {
+																	"language": "json"
+																}
+															}
+														},
+														"url": {
+															"raw": "{{v2_host}}{{central-base}}/search",
+															"host": [
+																"{{v2_host}}{{central-base}}"
+															],
+															"path": [
+																"search"
+															]
+														}
+													},
+													"response": []
+												},
+												{
+													"name": "Filter on tags",
+													"request": {
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Bearer {{consumer_token}}",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:DataBank\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"tags\",\n        \"values\": [\"species\"]\n    }\n  ]\n}\n",
+															"options": {
+																"raw": {
+																	"language": "json"
+																}
+															}
+														},
+														"url": {
+															"raw": "{{v2_host}}{{central-base}}/search",
+															"host": [
+																"{{v2_host}}{{central-base}}"
+															],
+															"path": [
+																"search"
+															]
+														}
+													},
+													"response": []
+												},
+												{
+													"name": "Filter on fileFormat",
+													"request": {
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Bearer {{consumer_token}}",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:DataBank\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"fileFormat\",\n        \"values\": [\"csv\"]\n    }\n  ]\n}\n",
+															"options": {
+																"raw": {
+																	"language": "json"
+																}
+															}
+														},
+														"url": {
+															"raw": "{{v2_host}}{{central-base}}/search",
+															"host": [
+																"{{v2_host}}{{central-base}}"
+															],
+															"path": [
+																"search"
+															]
+														}
+													},
+													"response": []
+												},
+												{
+													"name": "Filter on organizationType",
+													"request": {
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Bearer {{consumer_token}}",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:DataBank\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"organizationType\",\n        \"values\": [\"Private\"]\n    }\n  ]\n}\n",
+															"options": {
+																"raw": {
+																	"language": "json"
+																}
+															}
+														},
+														"url": {
+															"raw": "{{v2_host}}{{central-base}}/search",
+															"host": [
+																"{{v2_host}}{{central-base}}"
+															],
+															"path": [
+																"search"
+															]
+														}
+													},
+													"response": []
+												},
+												{
+													"name": "Filter on permissions",
+													"request": {
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Bearer {{consumer_token}}",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:DataBank\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"accessPolicy\",\n        \"values\": [\"RESTRICTED\"]\n    }\n  ]\n}\n",
+															"options": {
+																"raw": {
+																	"language": "json"
+																}
+															}
+														},
+														"url": {
+															"raw": "{{v2_host}}{{central-base}}/search",
+															"host": [
+																"{{v2_host}}{{central-base}}"
+															],
+															"path": [
+																"search"
+															]
+														}
+													},
+													"response": []
+												},
+												{
+													"name": "Filter on department",
+													"request": {
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Bearer {{consumer_token}}",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:DataBank\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"department\",\n        \"values\": [\"Environment Forests Science and Technology\"]\n    }\n  ]\n}\n",
+															"options": {
+																"raw": {
+																	"language": "json"
+																}
+															}
+														},
+														"url": {
+															"raw": "{{v2_host}}{{central-base}}/search",
+															"host": [
+																"{{v2_host}}{{central-base}}"
+															],
+															"path": [
+																"search"
+															]
+														}
+													},
+													"response": []
+												},
+												{
+													"name": "Filter on industry",
+													"request": {
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Bearer {{consumer_token}}",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:DataBank\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"industry\",\n        \"values\": [\"census\"]\n    }\n  ]\n}\n",
+															"options": {
+																"raw": {
+																	"language": "json"
+																}
+															}
+														},
+														"url": {
+															"raw": "{{v2_host}}{{central-base}}/search",
+															"host": [
+																"{{v2_host}}{{central-base}}"
+															],
+															"path": [
+																"search"
+															]
+														}
+													},
+													"response": []
+												}
+											]
+										},
+										{
+											"name": "flattendTerm searchType apis",
+											"item": [
+												{
+													"name": "Filter on resource server name",
+													"request": {
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Bearer {{consumer_token}}",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:DataBank\"]\n    },\n    {\n        \"searchType\": \"flattenedTerm\",\n        \"field\": \"resourceServer.name\",\n        \"values\": [\"FILE\"]\n    }\n  ]\n}\n",
+															"options": {
+																"raw": {
+																	"language": "json"
+																}
+															}
+														},
+														"url": {
+															"raw": "{{v2_host}}{{central-base}}/search",
+															"host": [
+																"{{v2_host}}{{central-base}}"
+															],
+															"path": [
+																"search"
+															]
+														}
+													},
+													"response": []
+												}
+											]
+										}
+									]
+								},
+								{
+									"name": "Temporal Search",
+									"item": [
+										{
+											"name": "Before timerel",
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"beforeTemporal\",\n            \"field\": \"itemCreatedAt\",\n            \"values\": [\"2025-05-02T09:15:27+0530\"]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "After timerel",
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"afterTemporal\",\n            \"field\": \"itemCreatedAt\",\n            \"values\": [\"2025-03-20T04:00:00+0530\"]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Between timerel",
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"betweenTemporal\",\n            \"field\": \"itemCreatedAt\",\n            \"values\": [\"2025-03-20T04:00:00+0530\", \"2025-08-02T09:15:27+0530\"]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										}
+									]
+								},
+								{
+									"name": "Range Search",
+									"item": [
+										{
+											"name": "dataReadiness",
+											"item": [
+												{
+													"name": "between rangerel",
+													"event": [
+														{
+															"listen": "test",
+															"script": {
+																"exec": [
+																	"pm.test(\"Response status\", function () {",
+																	"    pm.response.to.have.status(200);",
+																	"});",
+																	"",
+																	"pm.test(\"Check response header\", function () {",
+																	"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+																	"});",
+																	"",
+																	"pm.test(\"Check response body\", function () {    ",
+																	"    const body = pm.response.json();",
+																	"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");",
+																	"});"
+																],
+																"type": "text/javascript",
+																"packages": {}
+															}
+														}
+													],
+													"request": {
+														"method": "POST",
+														"header": [],
+														"body": {
+															"mode": "raw",
+															"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"betweenRange\",\n            \"field\": \"dataReadiness\",\n            \"values\": [80, 82]\n        }\n    ]\n}",
+															"options": {
+																"raw": {
+																	"language": "json"
+																}
+															}
+														},
+														"url": {
+															"raw": "{{v2_host}}{{central-base}}/search",
+															"host": [
+																"{{v2_host}}{{central-base}}"
+															],
+															"path": [
+																"search"
+															]
+														}
+													},
+													"response": []
+												},
+												{
+													"name": "before rangerel",
+													"request": {
+														"method": "POST",
+														"header": [],
+														"body": {
+															"mode": "raw",
+															"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"beforeRange\",\n            \"field\": \"dataReadiness\",\n            \"values\": [85]\n        }\n    ]\n}",
+															"options": {
+																"raw": {
+																	"language": "json"
+																}
+															}
+														},
+														"url": {
+															"raw": "{{v2_host}}{{central-base}}/search",
+															"host": [
+																"{{v2_host}}{{central-base}}"
+															],
+															"path": [
+																"search"
+															]
+														}
+													},
+													"response": []
+												},
+												{
+													"name": "after rangerel",
+													"request": {
+														"method": "POST",
+														"header": [],
+														"body": {
+															"mode": "raw",
+															"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"afterRange\",\n            \"field\": \"dataReadiness\",\n            \"values\": [82]\n        }\n    ]\n}",
+															"options": {
+																"raw": {
+																	"language": "json"
+																}
+															}
+														},
+														"url": {
+															"raw": "{{v2_host}}{{central-base}}/search",
+															"host": [
+																"{{v2_host}}{{central-base}}"
+															],
+															"path": [
+																"search"
+															]
+														}
+													},
+													"response": []
+												}
+											]
+										}
+									]
+								},
+								{
+									"name": "Text Search",
+									"item": [
+										{
+											"name": "Simple text search - 200",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Response status\", function () {\r",
+															"    pm.response.to.have.status(200);\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response header\", function () {\r",
+															"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response body\", function () {    \r",
+															"    const body = pm.response.json();\r",
+															"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"q\" : \"data\",\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Fuzzy text search - 200",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Response status\", function () {\r",
+															"    pm.response.to.have.status(200);\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response header\", function () {\r",
+															"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response body\", function () {    \r",
+															"    const body = pm.response.json();\r",
+															"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"q\" : \"dat\",\n    \"fuzzy\" : true,\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Prefix match text search - 200",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Response status\", function () {\r",
+															"    pm.response.to.have.status(200);\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response header\", function () {\r",
+															"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response body\", function () {    \r",
+															"    const body = pm.response.json();\r",
+															"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"q\" : \"dat\",\n    \"autoComplete\" : true,\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Autocomplete & Fuzzy text search - 200",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Response status\", function () {\r",
+															"    pm.response.to.have.status(200);\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response header\", function () {\r",
+															"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response body\", function () {    \r",
+															"    const body = pm.response.json();\r",
+															"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"q\" : \"data\",\n    \"fuzzy\": true,\n    \"autoComplete\" : true,\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "400 (invalid key) - Text Search",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Response status\", function () {\r",
+															"    pm.response.to.have.status(400);\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response header\", function () {\r",
+															"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response body\", function () {    \r",
+															"    const body = pm.response.json();\r",
+															"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:badRequest\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"abc123\" : \"text to search\",\n    \"limit\" : 50,\n    \"offset\" : 100\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "400 (Invalid Request)- Invalid pagination request",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Response status\", function () {\r",
+															"    pm.response.to.have.status(400);\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response header\", function () {\r",
+															"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response body\", function () {    \r",
+															"    const body = pm.response.json();\r",
+															"    pm.expect(body).to.have.property(\"detail\", \"Invalid pagination. The value of (page * size) must be between 1 and 10,000\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"q\" : \"Bosch Climo\"\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search?page=100000",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													],
+													"query": [
+														{
+															"key": "page",
+															"value": "100000"
+														}
+													]
+												}
+											},
+											"response": []
+										}
+									]
+								},
+								{
+									"name": "200 (Success) - Fetch All DataBanks without filters",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "{{consumer_token}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:DataBank\"]\n    }\n  ]\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{v2_host}}{{central-base}}/search",
+											"host": [
+												"{{v2_host}}{{central-base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "AiModel",
+							"item": [
+								{
+									"name": "Attribute search",
+									"item": [
+										{
+											"name": "Filter on department",
+											"request": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Bearer {{consumer_token}}",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:AiModel\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"department\",\n        \"values\": [\"Environment Forests Science and Technology\"]\n    }\n  ]\n}\n",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Filter on organizationType",
+											"request": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Bearer {{consumer_token}}",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:AiModel\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"organizationType\",\n        \"values\": [\"Private\"]\n    }\n  ]\n}\n",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Filter on industry",
+											"request": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Bearer {{consumer_token}}",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:AiModel\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"industry\",\n        \"values\": [\"education\"]\n    }\n  ]\n}\n",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Filter on fileFormat",
+											"request": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Bearer {{consumer_token}}",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:AiModel\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"fileFormat\",\n        \"values\": [\"csv\"]\n    }\n  ]\n}\n",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Filter on permissions",
+											"request": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Bearer {{consumer_token}}",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:AiModel\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"accessPolicy\",\n        \"values\": [\"RESTRICTED\"]\n    }\n  ]\n}\n",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Filter on modelType",
+											"request": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Bearer {{consumer_token}}",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:AiModel\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"modelType\",\n        \"values\": [\"Structured\"]\n    }\n  ]\n}\n",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										}
+									]
+								},
+								{
+									"name": "Temporal Search",
+									"item": [
+										{
+											"name": "Before timerel",
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:AiModel\"]\n        },\n        {\n            \"searchType\": \"beforeTemporal\",\n            \"field\": \"itemCreatedAt\",\n            \"values\": [\"2026-12-02T09:15:27+0530\"]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "After timerel",
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:AiModel\"]\n        },\n        {\n            \"searchType\": \"afterTemporal\",\n            \"field\": \"itemCreatedAt\",\n            \"values\": [\"2025-03-20T04:00:00+0530\"]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Between timerel",
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:AiModel\"]\n        },\n        {\n            \"searchType\": \"betweenTemporal\",\n            \"field\": \"itemCreatedAt\",\n            \"values\": [\"2025-03-20T04:00:00+0530\", \"2025-08-02T09:15:27+0530\"]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										}
+									]
+								},
+								{
+									"name": "Text Search",
+									"item": [
+										{
+											"name": "Simple text search - 200",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Response status\", function () {\r",
+															"    pm.response.to.have.status(200);\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response header\", function () {\r",
+															"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response body\", function () {    \r",
+															"    const body = pm.response.json();\r",
+															"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"q\" : \"ai\",\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:AiModel\"]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Fuzzy text search - 200",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Response status\", function () {\r",
+															"    pm.response.to.have.status(200);\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response header\", function () {\r",
+															"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response body\", function () {    \r",
+															"    const body = pm.response.json();\r",
+															"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"q\" : \"ai\",\n    \"fuzzy\" : true,\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:AiModel\"]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Prefix match text search - 200",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Response status\", function () {\r",
+															"    pm.response.to.have.status(200);\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response header\", function () {\r",
+															"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response body\", function () {    \r",
+															"    const body = pm.response.json();\r",
+															"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"q\" : \"ai\",\n    \"autoComplete\" : true,\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:AiModel\"]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Autocomplete & Fuzzy text search - 200",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Response status\", function () {\r",
+															"    pm.response.to.have.status(200);\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response header\", function () {\r",
+															"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response body\", function () {    \r",
+															"    const body = pm.response.json();\r",
+															"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"q\" : \"ai\",\n    \"fuzzy\": true,\n    \"autoComplete\" : true,\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:AiModel\"]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "400 (invalid key) - Text Search",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Response status\", function () {\r",
+															"    pm.response.to.have.status(400);\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response header\", function () {\r",
+															"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response body\", function () {    \r",
+															"    const body = pm.response.json();\r",
+															"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:badRequest\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"abc123\" : \"text to search\",\n    \"limit\" : 50,\n    \"offset\" : 100\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "400 (Invalid Request)- Invalid pagination request",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Response status\", function () {\r",
+															"    pm.response.to.have.status(400);\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response header\", function () {\r",
+															"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response body\", function () {    \r",
+															"    const body = pm.response.json();\r",
+															"    pm.expect(body).to.have.property(\"detail\", \"Invalid pagination. The value of (page * size) must be between 1 and 10,000\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"q\" : \"Bosch Climo\"\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search?page=100000",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													],
+													"query": [
+														{
+															"key": "page",
+															"value": "100000"
+														}
+													]
+												}
+											},
+											"response": []
+										}
+									]
+								},
+								{
+									"name": "200 (Success) - Fetch All AiModels without filters",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "{{consumer_token}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:AiModel\"]\n    }\n  ]\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{v2_host}}{{central-base}}/search",
+											"host": [
+												"{{v2_host}}{{central-base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Apps",
+							"item": [
+								{
+									"name": "Attribute search",
+									"item": [
+										{
+											"name": "Filter on department",
+											"request": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Bearer {{consumer_token}}",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:Apps\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"department\",\n        \"values\": [\"Finance\"]\n    }\n  ]\n}\n",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Filter on organizationType",
+											"request": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Bearer {{consumer_token}}",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:Apps\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"organizationType\",\n        \"values\": [\"Private\"]\n    }\n  ]\n}\n",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										}
+									]
+								},
+								{
+									"name": "Temporal Search",
+									"item": [
+										{
+											"name": "Before timerel",
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:Apps\"]\n        },\n        {\n            \"searchType\": \"beforeTemporal\",\n            \"field\": \"itemCreatedAt\",\n            \"values\": [\"2026-12-02T09:15:27+0530\"]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "After timerel",
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:Apps\"]\n        },\n        {\n            \"searchType\": \"afterTemporal\",\n            \"field\": \"itemCreatedAt\",\n            \"values\": [\"2025-03-20T04:00:00+0530\"]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Between timerel",
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:Apps\"]\n        },\n        {\n            \"searchType\": \"betweenTemporal\",\n            \"field\": \"itemCreatedAt\",\n            \"values\": [\"2025-03-20T04:00:00+0530\", \"2025-08-02T09:15:27+0530\"]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										}
+									]
+								},
+								{
+									"name": "Text Search",
+									"item": [
+										{
+											"name": "Simple text search - 200",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Response status\", function () {\r",
+															"    pm.response.to.have.status(200);\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response header\", function () {\r",
+															"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response body\", function () {    \r",
+															"    const body = pm.response.json();\r",
+															"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"q\" : \"sat\",\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:Apps\"]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Fuzzy text search - 200",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Response status\", function () {\r",
+															"    pm.response.to.have.status(200);\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response header\", function () {\r",
+															"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response body\", function () {    \r",
+															"    const body = pm.response.json();\r",
+															"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"q\" : \"sat\",\n    \"fuzzy\" : true,\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:Apps\"]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Prefix match text search - 200",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Response status\", function () {\r",
+															"    pm.response.to.have.status(200);\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response header\", function () {\r",
+															"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response body\", function () {    \r",
+															"    const body = pm.response.json();\r",
+															"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"q\" : \"sat\",\n    \"autoComplete\" : true,\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:Apps\"]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Autocomplete & Fuzzy text search - 200",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Response status\", function () {\r",
+															"    pm.response.to.have.status(200);\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response header\", function () {\r",
+															"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response body\", function () {    \r",
+															"    const body = pm.response.json();\r",
+															"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"q\" : \"sat\",\n    \"fuzzy\": true,\n    \"autoComplete\" : true,\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:Apps\"]\n        }\n    ]\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "400 (invalid key) - Text Search",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Response status\", function () {\r",
+															"    pm.response.to.have.status(400);\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response header\", function () {\r",
+															"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response body\", function () {    \r",
+															"    const body = pm.response.json();\r",
+															"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:badRequest\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"abc123\" : \"text to search\",\n    \"limit\" : 50,\n    \"offset\" : 100\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "400 (Invalid Request)- Invalid pagination request",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Response status\", function () {\r",
+															"    pm.response.to.have.status(400);\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response header\", function () {\r",
+															"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+															"});\r",
+															"\r",
+															"pm.test(\"Check response body\", function () {    \r",
+															"    const body = pm.response.json();\r",
+															"    pm.expect(body).to.have.property(\"detail\", \"Invalid pagination. The value of (page * size) must be between 1 and 10,000\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"q\" : \"Bosch Climo\"\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{v2_host}}{{central-base}}/search?page=100000",
+													"host": [
+														"{{v2_host}}{{central-base}}"
+													],
+													"path": [
+														"search"
+													],
+													"query": [
+														{
+															"key": "page",
+															"value": "100000"
+														}
+													]
+												}
+											},
+											"response": []
+										}
+									]
+								},
+								{
+									"name": "200 (Success) - Fetch All Usecases without filters",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "{{consumer_token}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:Apps\"]\n    }\n  ]\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{v2_host}}{{central-base}}/search",
+											"host": [
+												"{{v2_host}}{{central-base}}"
+											],
+											"path": [
+												"search"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "count",
+					"item": [
+						{
+							"name": "Filters",
+							"item": [
+								{
+									"name": "Count | Simple Text Search | Full-text only",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Check response header\", function () {",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+													"});",
+													"",
+													"pm.test(\"Check response body\", function () {    ",
+													"    const body = pm.response.json();",
+													"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"q\" : \"test\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{v2_host}}{{central-base}}/count",
+											"host": [
+												"{{v2_host}}{{central-base}}"
+											],
+											"path": [
+												"count"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Count | Full-text with autocomplete and fuzzy",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Check response header\", function () {",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+													"});",
+													"",
+													"pm.test(\"Check response body\", function () {    ",
+													"    const body = pm.response.json();",
+													"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"q\" : \"test\",\n    \"autoComplete\": true,\n    \"fuzzy\": true\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{v2_host}}{{central-base}}/count",
+											"host": [
+												"{{v2_host}}{{central-base}}"
+											],
+											"path": [
+												"count"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Count | filter by attributes",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Response status\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Check response header\", function () {",
+													"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+													"});",
+													"",
+													"pm.test(\"Check response body\", function () {    ",
+													"    const body = pm.response.json();",
+													"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"term\",\n      \"field\": \"tags\",\n      \"values\": [\"ai\"]\n    }\n  ]\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{v2_host}}{{central-base}}/count",
+											"host": [
+												"{{v2_host}}{{central-base}}"
+											],
+											"path": [
+												"count"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Count Summary api | Filter by type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Check response header\", function () {",
+											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+											"});",
+											"",
+											"pm.test(\"Check response body\", function () {    ",
+											"    const body = pm.response.json();",
+											"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"term\",\n      \"field\": \"type\",\n      \"values\": [\"adex:DataBank\", \"adex:AiModel\", \"adex:Apps\"]\n    }\n  ]\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{v2_host}}{{central-base}}/count",
+									"host": [
+										"{{v2_host}}{{central-base}}"
+									],
+									"path": [
+										"count"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "400 - Bad Request",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status\", function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test(\"Check response header\", function () {",
+											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
+											"});",
+											"",
+											"pm.test(\"Check response body\", function () {    ",
+											"    const body = pm.response.json();",
+											"    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:badRequest\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"kmk\",\n      \"field\": \"type\",\n      \"values\": [\"adex:DataBank\", \"adex:AiModel\", \"adex:Apps\"]\n    }\n  ]\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{v2_host}}{{central-base}}/count",
+									"host": [
+										"{{v2_host}}{{central-base}}"
 									],
 									"path": [
 										"count"
