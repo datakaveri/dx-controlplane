@@ -14,9 +14,7 @@ import org.cdpg.dx.aaa.subscription.model.GetAllSubscription;
 import org.cdpg.dx.aaa.subscription.model.GetSubscriptionModel;
 import org.cdpg.dx.aaa.subscription.model.RegisterSubscription;
 import org.cdpg.dx.aaa.subscription.model.SubscriptionDTO;
-import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
-import org.cdpg.dx.common.exception.DxSubscriptionException;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.databroker.util.PermissionOpType;
 import org.cdpg.dx.databroker.util.Vhosts;
@@ -149,7 +147,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
       String subscriptionName,
       String entitiesId,
       LocalDateTime expiryAt,
-      String providerId) {
+      String providerId,
+      String did) {
     LOGGER.info("createSubscription() method started with subscriptionId {}", subscriptionId);
     Promise<RegisterSubscription> promise = Promise.promise();
 
@@ -191,7 +190,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                           expiryAt,
                           userId,
                           providerId,
-                          userId,
+                          did,
                           null,
                           null))
                   .map(v -> updateHandler);

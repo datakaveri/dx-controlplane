@@ -18,6 +18,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.apiserver.ApiController;
 import org.cdpg.dx.aaa.subscription.service.SubscriptionService;
+import org.cdpg.dx.aaa.subscription.util.GetDid;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.URNGenerator;
@@ -30,7 +31,7 @@ public class SubscriptionController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(SubscriptionController.class);
   private final SubscriptionService subscriptionService;
   Handler<RoutingContext> roleAllowed =
-      AuthorizationHandler.forRoles(DxRole.CONSUMER_DELEGATE, DxRole.CONSUMER);
+      AuthorizationHandler.forRoles(DxRole.DELEGATE, DxRole.CONSUMER);
   SubscriptionAuthorizationHandler subscriptionAuthorizationHandler;
 
   public SubscriptionController(
@@ -204,6 +205,7 @@ public class SubscriptionController implements ApiController {
         parseAndValidateFutureTimeWithPolicy2(requestBody.getString("expiryAt"), policyAt);
     LOGGER.debug("expiryAt {}", expiryAt);
     String providerId = RoutingContextHelper.getProviderId(routingContext);
+    String did = String.valueOf(GetDid.getDid(routingContext.user().principal(), userId));
     subscriptionService
         .createSubscription(
             userId,
@@ -211,7 +213,8 @@ public class SubscriptionController implements ApiController {
             subscriptionName,
             entitiesId,
             expiryAt,
-            providerId)
+            providerId,
+            did)
         .onSuccess(
             v ->
                 routingContext
