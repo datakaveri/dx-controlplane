@@ -1,0 +1,923 @@
+{
+	"info": {
+		"_postman_id": "8cae60ac-f46f-45d4-b0c1-d74eb9595509",
+		"name": "DX AAA – Subscriptions API (OpenAPI Aligned, Tested)",
+		"description": "Fully tested Postman collection for NGSI-LD Subscriptions API. Includes pm.test scripts, auto-extraction of subscriptionId, and OpenAPI-aligned request bodies.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "20457128"
+	},
+	"item": [
+		{
+			"name": "Token",
+			"item": [
+				{
+					"name": "Keycloak Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"response is 200 (OK)\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"token\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password",
+									"type": "text"
+								},
+								{
+									"key": "client_id",
+									"value": "frontend-client",
+									"type": "text"
+								},
+								{
+									"key": "username",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://{{keycloak-url}}/auth/realms/tgdex-pilot/protocol/openid-connect/token",
+							"protocol": "https",
+							"host": [
+								"{{keycloak-url}}"
+							],
+							"path": [
+								"auth",
+								"realms",
+								"tgdex-pilot",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Create Subscription – anyOf cases",
+			"item": [
+				{
+					"name": "Create – entities only",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('201 Created', () => pm.response.to.have.status(201));",
+									"const r = pm.response.json();",
+									"pm.environment.set('subscriptionId', r.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"Subscription\",\n  \"entities\": [\n    \"74436122-e6f6-45bf-be53-7ee2c257826b\"\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ngsi-ld",
+								"v1",
+								"subscriptions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create – with expiryAt",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('201 Created', () => pm.response.to.have.status(201));",
+									"const r = pm.response.json();",
+									"pm.environment.set('subscriptionId', r.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"Subscription\",\n  \"entities\": [\n    \"74436122-e6f6-45bf-be53-7ee2c257826b\"\n  ],\n  \"expiryAt\": \"2026-12-31T23:59:59Z\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ngsi-ld",
+								"v1",
+								"subscriptions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create – with subscriptionName",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('201 Created', () => pm.response.to.have.status(201));",
+									"const r = pm.response.json();",
+									"pm.environment.set('subscriptionId', r.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"Subscription\",\n  \"entities\": [\n    \"74436122-e6f6-45bf-be53-7ee2c257826b\"\n  ],\n  \"subscriptionName\": \"mine-sub\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ngsi-ld",
+								"v1",
+								"subscriptions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create – with combination",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('201 Created', () => pm.response.to.have.status(201));",
+									"const r = pm.response.json();",
+									"pm.environment.set('subscriptionId', r.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"Subscription\",\n  \"entities\": [\n    \"74436122-e6f6-45bf-be53-7ee2c257826b\"\n  ],\n  \"expiryAt\": \"2026-12-31T23:59:59Z\",\n  \"subscriptionName\": \"mine-sub2\",\n  \"id\": \"74336122-e6f6-45bf-be53-7ee2c257826b\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ngsi-ld",
+								"v1",
+								"subscriptions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Conflict – with combination",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('409', () => pm.response.to.have.status(409));",
+									"const r = pm.response.json();",
+									"pm.environment.set('subscriptionId', r.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"Subscription\",\n  \"entities\": [\n    \"74436122-e6f6-45bf-be53-7ee2c257826b\"\n  ],\n  \"expiryAt\": \"2026-12-31T23:59:59Z\",\n  \"subscriptionName\": \"mine-sub2\",\n  \"id\": \"74336122-e6f6-45bf-be53-7ee2c257826b\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ngsi-ld",
+								"v1",
+								"subscriptions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Bad request – invalid expiryAt (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+									"const r = pm.response.json();",
+									"pm.expect(r).to.have.property('type');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"Subscription\",\n  \"entities\": [\n    \"74436122-e6f6-45bf-be53-7ee2c257826b\"\n  ],\n  \"expiryAt\": \"31-12-2026\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ngsi-ld",
+								"v1",
+								"subscriptions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Unauthorized - expiryAt (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('401', () => pm.response.to.have.status(401));",
+									"const r = pm.response.json();",
+									"pm.expect(r).to.have.property('type');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"disabled": true
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"Subscription\",\n  \"entities\": [\n    \"74436122-e6f6-45bf-be53-7ee2c257826b\"\n  ],\n  \"expiryAt\": \"31-12-2026\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ngsi-ld",
+								"v1",
+								"subscriptions"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Read Subscriptions",
+			"item": [
+				{
+					"name": "Get All Subscriptions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('200 OK', () => pm.response.to.have.status(200));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions?limit=100&offset=0",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ngsi-ld",
+								"v1",
+								"subscriptions"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "100"
+								},
+								{
+									"key": "offset",
+									"value": "0"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Subscription By ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('200 OK', () => pm.response.to.have.status(200));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions/{{subscriptionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ngsi-ld",
+								"v1",
+								"subscriptions",
+								"{{subscriptionId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Not Found - Get Subscription By ID (404)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('404', () => pm.response.to.have.status(404));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions/{{subscriptionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ngsi-ld",
+								"v1",
+								"subscriptions",
+								"{{subscriptionId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Unauthorized - Get Subscription By ID (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('401', () => pm.response.to.have.status(401));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions/{{subscriptionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ngsi-ld",
+								"v1",
+								"subscriptions",
+								"{{subscriptionId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Bad Request - Get Subscription By ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('400', () => pm.response.to.have.status(400));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions/290dd141-3f82-4778-8d8f-5753dc9346101",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ngsi-ld",
+								"v1",
+								"subscriptions",
+								"290dd141-3f82-4778-8d8f-5753dc9346101"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Update Subscription",
+			"item": [
+				{
+					"name": "Patch expiryAt",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('204', () => pm.response.to.have.status(204));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"Subscription\",\n  \"entities\": [\n    \"74436122-e6f6-45bf-be53-7ee2c257826b\"\n  ],\n  \"expiryAt\": \"2027-12-31T23:59:59Z\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions/{{subscriptionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ngsi-ld",
+								"v1",
+								"subscriptions",
+								"{{subscriptionId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Not Found - Patch expiryAt (404)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('404', () => pm.response.to.have.status(404));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"Subscription\",\n  \"entities\": [\n    \"74436122-e6f6-45bf-be53-7ee2c257826b\"\n  ],\n  \"expiryAt\": \"2027-12-31T23:59:59Z\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions/a5c85d7f-4d3d-457b-ab49-da4ce3c8d314",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ngsi-ld",
+								"v1",
+								"subscriptions",
+								"a5c85d7f-4d3d-457b-ab49-da4ce3c8d314"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Bad Request - Patch expiryAt (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('400', () => pm.response.to.have.status(400));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"subscription\",\n  \"entities\": [\n    \"74436122-e6f6-45bf-be53-7ee2c257826b\"\n  ],\n  \"expiryAt\": \"2027-12-31T23:59:59Z\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions/{{subscriptionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ngsi-ld",
+								"v1",
+								"subscriptions",
+								"{{subscriptionId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Unauthorized - Patch expiryAt (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('401', () => pm.response.to.have.status(401));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"disabled": true
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"Subscription\",\n  \"entities\": [\n    \"74436122-e6f6-45bf-be53-7ee2c257826b\"\n  ],\n  \"expiryAt\": \"2027-12-31T23:59:59Z\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions/{{subscriptionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ngsi-ld",
+								"v1",
+								"subscriptions",
+								"{{subscriptionId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Delete Subscription",
+			"item": [
+				{
+					"name": "Delete by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('204', () => pm.response.to.have.status(204));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions/{{subscriptionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ngsi-ld",
+								"v1",
+								"subscriptions",
+								"{{subscriptionId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Unauthorization -  Delete ID (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('401', () => pm.response.to.have.status(401));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions/{{subscriptionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ngsi-ld",
+								"v1",
+								"subscriptions",
+								"{{subscriptionId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Not Found - Delete by ID (404)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('404', () => pm.response.to.have.status(404));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions/460a2f7f-f8ef-4f53-b31e-f6872425066d",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ngsi-ld",
+								"v1",
+								"subscriptions",
+								"460a2f7f-f8ef-4f53-b31e-f6872425066d"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "test",
+			"script": {
+				"exec": [
+					"pm.test('Response time < 2s', () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+					"pm.test('JSON response', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json'));"
+				],
+				"type": "text/javascript"
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080"
+		},
+		{
+			"key": "token",
+			"value": "<JWT_TOKEN>"
+		},
+		{
+			"key": "subscriptionId",
+			"value": ""
+		}
+	]
+}
