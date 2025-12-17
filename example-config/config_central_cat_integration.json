@@ -1,0 +1,238 @@
+{
+  "version": "1.0",
+  "zookeepers": [
+    "0.0.0.0:2181"
+  ],
+  "clusterId": "iudx-v2-control-panel-cluster",
+  "postgresOptions": {
+    "databaseIP": "<database-ip>",
+    "databasePort": 5433,
+    "databaseName": "<db-name>",
+    "databaseSchema": "<schema-name>",
+    "databaseUserName": "<db-username>",
+    "databasePassword": "<db-password>",
+    "poolSize": 25
+  },
+  "commonOptions": {
+    "isCentralCatEnabled": true,
+    "isEdgeCatalogue": false,
+    "isStandalone": false,
+    "dxApiBasePath": "/dx/apd/acl/v1",
+    "cosDomain":"asdasd",
+    "tokenExpirationMinutes": 60,
+    "clientId": "<client-id>",
+    "clientSecret": "<client-secret>",
+    "apdURL": "<acl-apd-url>",
+    "baseUrl": "<controlplane-url>>",
+    "supportEmail": "<valid-support-email>",
+    "tenantPrefix": "<tenant-prefix>",
+    "kycRequired": false,
+    "jwtIgnoreExpiry": true,
+    "defaultExpiryDays": 12,
+    "routingKey": "##",
+    "cosAdminUserId": "<user-id>",
+    "initialCreditBalance": 1000,
+    "corsAllowedOrigin": ["*", "http://localhost:4001"],
+    "publisherPanelUrl": "<dashboard-url>",
+    "docIndex": "<cat-local-index>",
+    "centralCatDocIndex": "<cat-central-index>",
+    "vocContext": "<vocab-server-url>",
+    "uploadedBy": ""
+  },
+  "emailOptions": {
+    "emailSender": "some@dummy.com",
+    "senderName": "<email-sender-name>",
+    "cosAdminEmailId":"<cos-admin-email-id>",
+    "TGDxUrl": "https://something.com/"
+  },
+  "emailConfig": {
+    "emailSender": "some@dummy.com",
+    "emailSupport": [
+      "dummy@email.com"
+    ],
+    "publisherPanelUrl": "<dashboard-url>",
+    "senderName": "<Email-Sender-Name>"
+  },
+  "scriptConfig": {
+    "ogcDataPlaneUrl": "",
+    "controlPlaneUrl": "",
+    "bucketName": "",
+    "region": "",
+    "s3BucketIdentifier": ""
+  },
+  "keycloakOptions": {
+    "keycloakRealm": "",
+    "keycloakUrl": "",
+    "keycloakAdminClientId": "",
+    "keycloakAdminClientSecret": "",
+    "keycloakAdminPoolSize": "",
+    "adminUsername": "",
+    "authPorvider": [
+      {
+        "certUrl": "",
+        "iss": ""
+      },
+      {
+        "name": "",
+        "clientId": "",
+        "clientSecret": "",
+        "redirectUri": ""
+      }
+    ],
+    "adminPassword": "",
+    "issuers": {
+      "jwtIgnoreExpiry": true,
+      "leeway": 30,
+      "jwksRefreshIntervalMs": 21600000,
+      "controlplaneurl": {
+        "type": "",
+        "audience": []
+      },
+      "{{kc-url}}/auth/realms/{{realm}}": {
+        "type": "",
+        "jwksUrl": "",
+        "audience": []
+      }
+    }
+  },
+  "KYCOptions": {
+    "digilockerTokenUrl":"<digilocker-token-url>",
+    "digilockerAadhaarUrl":"<digilocker-aadhaar-url>",
+    "clientId" :"<client-id>",
+    "clientSecret": "<client-secret>",
+    "redirectUri":"<redirection-uri>"
+  },
+  "jwtKeystoreOptions":{
+    "keystorePath": "configs/keystore.jks",
+    "keystorePassword": "<keystore-password>"
+  },
+  "databrokerOptions": {
+    "dataBrokerIP": "",
+    "dataBrokerPort": 24568,
+    "prodVhost": "",
+    "internalVhost": "",
+    "externalVhost": "",
+    "dataBrokerUserName": "",
+    "dataBrokerPassword": "",
+    "dataBrokerManagementPort": 28042,
+    "connectionTimeout": 6000,
+    "requestedHeartbeat": 60,
+    "handshakeTimeout": 6000,
+    "requestedChannelMax": 5,
+    "networkRecoveryInterval": 500,
+    "automaticRecoveryEnabled": "true",
+    "brokerAmqpIp": "<databroker-ip>",
+    "brokerAmqpPort": 24567
+  },
+  "auditOptions": {
+    "auditingExchange": "",
+    "auditingRoutingKey": "",
+    "auditingQueue": "",
+    "isRemoteAudit": true
+  },
+  "modules": [
+    {
+      "id": "org.cdpg.dx.database.postgres.verticle.PostgresVerticle",
+      "verticleInstances": 1,
+      "isWorkerVerticle": false,
+      "required": [
+        "postgresOptions",
+        "commonOptions"
+      ]
+    },
+    {
+      "id": "org.cdpg.dx.email.verticle.EmailVerticle",
+      "verticleInstances": 1,
+      "isWorkerVerticle": true,
+      "threadPoolName": "emailVerticleThreadPool",
+      "threadPoolSize": 10,
+      "required":["commonOptions"],
+      "emailHostName": "<email-smtp-host-url>",
+      "emailPort": 587,
+      "emailUserName": "<email-username>",
+      "emailPassword": "<email-password>",
+      "notifyByEmail": true
+    },
+    {
+      "id": "org.cdpg.dx.catalogueService.CatalogueVerticle",
+      "isWorkerVerticle": false,
+      "verticleInstances": 1,
+      "dxCatalogueBasePath": "/iudx/v2/cat",
+      "catServerHost": "<dx-catalogue-server-url>",
+      "catServerPort": 443,
+      "required": [
+        "commonOptions"
+      ]
+    },
+    {
+      "id": "org.cdpg.dx.databroker.DataBrokerVerticle",
+      "isWorkerVerticle": false,
+      "verticleInstances": 1,
+      "required": [
+        "databrokerOptions",
+        "auditOptions"
+      ]
+    },
+    {
+      "id": "org.cdpg.dx.database.elastic.ElasticsearchVerticle",
+      "isWorkerVerticle": false,
+      "verticleInstances": 1,
+      "tenantPrefix": "",
+      "databaseIP": "",
+      "databasePort": 24034,
+      "databaseUser": "",
+      "databasePassword": ""
+    },
+    {
+      "id": "org.cdpg.dx.database.elastic.central.CentralElasticsearchVerticle",
+      "isWorkerVerticle": false,
+      "verticleInstances": 1,
+      "tenantPrefix": "",
+      "databaseIP": "",
+      "databasePort": 24034,
+      "databaseUser": "",
+      "databasePassword": ""
+    },
+    {
+      "id": "org.cdpg.dx.aaa.apiserver.ApiServerVerticle",
+      "verticleInstances": 1,
+      "isWorkerVerticle": false,
+      "httpPort": 8080,
+      "required": [
+        "postgresOptions",
+        "commonOptions",
+        "keycloakOptions",
+        "KYCOptions",
+        "emailOptions",
+        "emailConfig",
+        "jwtKeystoreOptions",
+        "databrokerOptions",
+        "auditOptions",
+        "scriptConfig"
+      ],
+      "urnPrefix": "dx:controlPlane:",
+      "serverTimeoutMs": 30000,
+      "corsRegexString": "^https://.+\\.iudx\\.org\\.in$"
+    },
+    {
+      "id": "org.cdpg.dx.acl.apiserver.ApdApiServerVerticle",
+      "verticleInstances": 1,
+      "isWorkerVerticle": false,
+      "httpPort": 8444,
+      "required": [
+        "postgresOptions",
+        "commonOptions",
+        "keycloakOptions",
+        "KYCOptions",
+        "emailOptions",
+        "emailConfig",
+        "jwtKeystoreOptions",
+        "databrokerOptions",
+        "auditOptions"
+      ],
+      "serverTimeoutMs": 30000,
+      "corsRegexString": "^https://.+\\.iudx\\.org\\.in$",
+      "urnPrefix": "dx:aclApd:"
+    }
+  ]
+}
