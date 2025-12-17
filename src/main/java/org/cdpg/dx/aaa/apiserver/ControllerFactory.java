@@ -1,10 +1,11 @@
 package org.cdpg.dx.aaa.apiserver;
 
+import static org.cdpg.dx.aaa.common.Constants.CENTRAL_CAT_DOC_INDEX;
 import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
 import static org.cdpg.dx.aaa.common.Constants.DOC_USER_INDEX;
+import static org.cdpg.dx.aaa.common.Constants.IS_CENTRAL_CATALOGUE_ENABLED;
 import static org.cdpg.dx.aaa.common.Constants.VOC_CONTEXT;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.REQUEST_TABLE;
+import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.CENTRAL_ELASTIC_SERVICE_ADDRESS;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DATA_BROKER_SERVICE_ADDRESS;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.ELASTIC_SERVICE_ADDRESS;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.EMAIL_SERVICE_ADDRESS;
@@ -15,6 +16,7 @@ import static org.cdpg.dx.database.elastic.util.Constants.VERIFIED_BY;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,6 +33,10 @@ import org.cdpg.dx.aaa.asset.controller.AssetController;
 import org.cdpg.dx.aaa.asset.factory.AssetFactory;
 import org.cdpg.dx.aaa.asset.handler.AssetHandler;
 import org.cdpg.dx.aaa.bookmarks.factory.BookmarksControllerFactory;
+import org.cdpg.dx.aaa.central.catalogue.list.controller.CentralListController;
+import org.cdpg.dx.aaa.central.catalogue.list.factory.CentralListControllerFactory;
+import org.cdpg.dx.aaa.central.catalogue.search.controller.CentralSearchController;
+import org.cdpg.dx.aaa.central.catalogue.search.factory.CentralSearchControllerFactory;
 import org.cdpg.dx.aaa.clientSecret.controller.ClientController;
 import org.cdpg.dx.aaa.clientSecret.factory.ClientControllerFactory;
 import org.cdpg.dx.aaa.connector.service.ConnectorService;
@@ -68,13 +74,11 @@ import org.cdpg.dx.aaa.token.factory.AppTokenControllerFactory;
 import org.cdpg.dx.aaa.token.factory.TokenControllerFactory;
 import org.cdpg.dx.aaa.user.factory.UserControllerFactory;
 import org.cdpg.dx.aaa.user.service.UserService;
-import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
-import org.cdpg.dx.acl.accessRequest.dao.impl.AccessRequestDaoImpl;
-import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.common.URNGenerator;
+import org.cdpg.dx.database.elastic.central.service.CentralElasticsearchService;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.service.DataBrokerService;
@@ -85,12 +89,14 @@ import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
 public class ControllerFactory {
   private static final Logger LOGGER = LogManager.getLogger(ControllerFactory.class);
 
-  private ControllerFactory() {}
+  private ControllerFactory() {
+  }
 
   public static List<ApiController> createControllers(
       Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
 
     final String docIndex = config.getString(DOC_INDEX);
+    final String centralCatDocIndex = config.getString(CENTRAL_CAT_DOC_INDEX);
     final String docUserIndex = config.getString(DOC_USER_INDEX);
     final String vocContext = config.getString(VOC_CONTEXT);
     final Boolean isKycRequired = config.getBoolean("kycRequired", false);
@@ -116,8 +122,6 @@ public class ControllerFactory {
         ActivityControllerFactory.create(pgService, urnGenerator);
     ActivityReportController activityReportController =
         ActivityReportControllerFactory.create(pgService, vertx);
-    AccessRequestDao accessRequestDao =
-        new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
 
     String auditingExchange = config.getString("auditingExchange");
     String routingKey = config.getString("auditingRoutingKey");
@@ -199,13 +203,6 @@ public class ControllerFactory {
 
     ApiController adminController = new AdminController(adminHandler);
 
-    //    AccessRequestController accessRequestController =
-    //      AccessRequestFactory.createAccessRequestController(
-    //        pgService, esService, emailService, keycloakUserService, auditingHandler, config);
-    //
-    //    AccessReportController accessReportController = AccessReportFactory.create(pgService,
-    // vertx);
-
     final ListController listController =
         ListControllerFactory.createListController(
             esService, auditingHandler, docIndex, urnGenerator);
@@ -216,12 +213,36 @@ public class ControllerFactory {
     String publishExchange = config.getString("publishExchange");
     ConnectorService connectorService =
         new ConnectorServiceImpl(dataBrokerService, publishExchange);
+
+    boolean isCentralCatEnabled = config.getBoolean(IS_CENTRAL_CATALOGUE_ENABLED, false);
+    boolean isEdgeCatalogue = config.getBoolean("isEdgeCatalogue", false);
+    boolean isStandalone = config.getBoolean("isStandalone", false);
+
+    CentralElasticsearchService centralEsService = null;
+    CentralSearchController centralSearchController = null;
+    CentralListController centralListController = null;
+
+    // Initialize central ES service
+    if (isCentralCatEnabled) {
+      LOGGER.debug("Central catalogue mode enabled. Initializing CentralElasticsearchService and central controllers.");
+      centralEsService = CentralElasticsearchService.createProxy(
+          vertx, CENTRAL_ELASTIC_SERVICE_ADDRESS);
+
+      centralSearchController = CentralSearchControllerFactory.createSearchController(
+          centralEsService, auditingHandler, centralCatDocIndex, urnGenerator);
+
+      centralListController = CentralListControllerFactory.createListController(
+          centralEsService, auditingHandler, centralCatDocIndex, urnGenerator);
+    }
+
     final ItemController itemController =
         ItemControllerFactory.createCrudController(
             auditingHandler,
             esService,
+            centralEsService,
             pgService,
             keycloakUserService,
+            centralCatDocIndex,
             docIndex,
             vocContext,
             apdURL,
@@ -232,7 +253,10 @@ public class ControllerFactory {
             connectorService,
             dataPlaneUrl,
             controlPlaneUrl,
-            ogcDataPlaneUrl);
+            ogcDataPlaneUrl,
+            isCentralCatEnabled,
+            isEdgeCatalogue,
+            isStandalone);
 
     ApiController resourceServerController =
         ResourceServerControllerFactory.createController(pgService, auditingHandler, urnGenerator);
@@ -265,6 +289,7 @@ public class ControllerFactory {
         AppTokenControllerFactory.create(
             pgService, keycloakUserService, urnGenerator, config, vertx);
 
+<<<<<<< HEAD
     return List.of(
         organizationController,
         organizationReportController,
@@ -287,5 +312,37 @@ public class ControllerFactory {
         bookmarksController,
         appCredentialsController,
         appTokenController);
+=======
+    List<ApiController> controllers = new ArrayList<>();
+
+    controllers.add(organizationController);
+    controllers.add(organizationReportController);
+    controllers.add(creditApiController);
+    controllers.add(kycController);
+    controllers.add(adminController);
+    controllers.add(assetController);
+    controllers.add(listController);
+    controllers.add(searchController);
+    controllers.add(itemController);
+    controllers.add(resourceServerController);
+    controllers.add(clientController);
+    controllers.add(tokenController);
+    controllers.add(publicController);
+    controllers.add(userController);
+    controllers.add(delegationApiController);
+    controllers.add(activityController);
+    controllers.add(activityReportController);
+    controllers.add(subscriptionController);
+    controllers.add(bookmarksController);
+    controllers.add(appCredentialsController);
+
+    // Add central controllers only if enabled
+    if (isCentralCatEnabled) {
+      controllers.add(centralListController);
+      controllers.add(centralSearchController);
+    }
+
+    return controllers;
+>>>>>>> 9d0d96c (fix: resolve conflicts from central catalogue stashes)
   }
 }
