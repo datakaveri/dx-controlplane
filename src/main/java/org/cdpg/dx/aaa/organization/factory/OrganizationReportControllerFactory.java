@@ -7,12 +7,12 @@ import org.cdpg.dx.aaa.orgReport.service.OrganizationCreateReportService;
 import org.cdpg.dx.aaa.orgReport.service.impl.OrganizationCreateRequestReportServiceImpl;
 import org.cdpg.dx.aaa.organization.controller.OrganizationReportController;
 import org.cdpg.dx.aaa.organization.dao.OrganizationDAOFactory;
+import org.cdpg.dx.aaa.organization.handler.OrganizationReportHandler;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 
 public class OrganizationReportControllerFactory {
 
-  public static OrganizationReportController create(
-      Vertx vertx, PostgresService pgService, DelegationService delegationService) {
+  public static OrganizationReportController create(Vertx vertx, PostgresService pgService) {
 
     OrganizationDAOFactory organizationDAOFactory = new OrganizationDAOFactory(pgService);
     CreditDAOFactory creditDAOFactory = new CreditDAOFactory(pgService);
@@ -21,6 +21,9 @@ public class OrganizationReportControllerFactory {
         new OrganizationCreateRequestReportServiceImpl(
             organizationDAOFactory, creditDAOFactory, vertx);
 
-    return new OrganizationReportController(organizationCreateReportService, delegationService);
+    OrganizationReportHandler organizationReportHandler =
+        new OrganizationReportHandler(organizationCreateReportService);
+
+    return new OrganizationReportController(organizationReportHandler);
   }
 }

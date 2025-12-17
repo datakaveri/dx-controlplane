@@ -20,12 +20,12 @@ public class CreditControllerFactory {
 
   private CreditControllerFactory() {}
 
-  public static CreditController create(CreditService creditService, EmailComposer emailCompose, UserService userService, URNGenerator urnGenerator) {
+  public static CreditController create(CreditService creditService, EmailComposer emailCompose, UserService userService, URNGenerator urnGenerator, Boolean isKycRequired) {
 
 
     CreditHandler creditHandler = new CreditHandler(creditService,emailCompose,userService, urnGenerator);
 
-    return new CreditController(creditHandler);
+    return new CreditController(creditHandler, isKycRequired);
   }
 
   public static CreditService createService(PostgresService pgService, KeycloakUserService keycloakUserService, JsonObject config) {

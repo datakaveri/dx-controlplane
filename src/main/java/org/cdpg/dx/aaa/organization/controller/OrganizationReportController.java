@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.apiserver.ApiController;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.orgReport.service.OrganizationCreateReportService;
+import org.cdpg.dx.aaa.organization.handler.OrganizationReportHandler;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.util.RequestHelper;
@@ -65,16 +66,10 @@ public class OrganizationReportController implements ApiController {
    * Dependencies
    * ========================= */
 
-  private final OrganizationCreateReportService organizationCreateReportService;
+  private final OrganizationReportHandler organizationReportHandler;
 
-  // Will be used later for delegated access enforcement & audit
-  private final DelegationService delegationService;
-
-  public OrganizationReportController(
-      OrganizationCreateReportService organizationCreateReportService,
-      DelegationService delegationService) {
-    this.organizationCreateReportService = organizationCreateReportService;
-    this.delegationService = delegationService;
+  public OrganizationReportController(OrganizationReportHandler organizationReportHandler) {
+    this.organizationReportHandler = organizationReportHandler;
   }
 
   /* =========================
@@ -84,255 +79,26 @@ public class OrganizationReportController implements ApiController {
   @Override
   public void register(RouterBuilder builder) {
 
-    builder.operation(OP_ORG_CREATE_REQUEST_REPORT).handler(this::getOrganizationCreateReport);
+    builder
+        .operation(OP_ORG_CREATE_REQUEST_REPORT)
+        .handler(organizationReportHandler::getOrganizationCreateReport);
 
-    builder.operation(OP_ORG_LIST_REPORT).handler(this::getOrganizationReport);
+    builder.operation(OP_ORG_LIST_REPORT).handler(organizationReportHandler::getOrganizationReport);
 
-    builder.operation(OP_ORG_JOIN_REQUEST_REPORT).handler(this::getOrganizationJoinReport);
+    builder
+        .operation(OP_ORG_JOIN_REQUEST_REPORT)
+        .handler(organizationReportHandler::getOrganizationJoinReport);
 
-    builder.operation(OP_COMPUTE_ROLE_REQUEST_REPORT).handler(this::getComputeRoleReport);
+    builder
+        .operation(OP_COMPUTE_ROLE_REQUEST_REPORT)
+        .handler(organizationReportHandler::getComputeRoleReport);
 
-    builder.operation(OP_PROVIDER_ROLE_REQUEST_REPORT).handler(this::getProviderRequestReport);
+    builder
+        .operation(OP_PROVIDER_ROLE_REQUEST_REPORT)
+        .handler(organizationReportHandler::getProviderRequestReport);
 
-    builder.operation(OP_CREDIT_REQUEST_REPORT).handler(this::getCreditRequestReport);
-  }
-
-  /* =========================
-   * Helpers
-   * ========================= */
-
-  private void prepareCsvResponse(HttpServerResponse response, String filename) {
-    response
-        .putHeader(HEADER_ACAO, "*")
-        .putHeader(HEADER_ACAH, HEADER_ALLOW_HEADERS_VALUE)
-        .putHeader(HEADER_ACAM, HEADER_ALLOW_METHODS_VALUE)
-        .putHeader(HEADER_CONTENT_TYPE, CONTENT_TYPE_CSV)
-        .putHeader(HEADER_CONTENT_DISPOSITION, String.format(CONTENT_DISPOSITION_FMT, filename))
-        .setChunked(true);
-  }
-
-  private PaginatedRequest buildRequest(
-      RoutingContext ctx,
-      Map<String, String> allowedFiltersDbMap,
-      Map<String, String> apiToDbMap,
-      Set<String> allowedTimeFields,
-      String defaultTimeField,
-      Set<String> allowedSortFields,
-      Map<String, Object> additionalFilters) {
-
-    PaginationRequestBuilder builder =
-        PaginationRequestBuilder.from(ctx)
-            .allowedFiltersDbMap(allowedFiltersDbMap)
-            .apiToDbMap(apiToDbMap)
-            .allowedTimeFields(allowedTimeFields)
-            .defaultTimeField(defaultTimeField)
-            .defaultSort(defaultTimeField, DEFAULT_SORTING_ORDER)
-            .allowedSortFields(allowedSortFields);
-
-    if (additionalFilters != null && !additionalFilters.isEmpty()) {
-      builder.additionalFilters(additionalFilters);
-    }
-
-    return builder.build();
-  }
-
-  private void streamCsv(
-      ReadStream<Buffer> csvStream,
-      RoutingContext ctx,
-      HttpServerResponse response,
-      String reportName) {
-
-    if (csvStream == null) {
-      LOGGER.warn("CSV stream is null | report={}", reportName);
-      response.end();
-      return;
-    }
-
-    csvStream
-        .exceptionHandler(
-            err -> {
-              LOGGER.error("CSV streaming failed | report={}", reportName, err);
-              ctx.fail(err);
-            })
-        .handler(response::write)
-        .endHandler(
-            v -> {
-              LOGGER.info("CSV streaming completed | report={}", reportName);
-              response.end();
-            });
-  }
-
-  /* =========================
-   * Endpoint Handlers
-   * ========================= */
-
-  public void getOrganizationCreateReport(RoutingContext ctx) {
-
-    LOGGER.info("Org create request report initiated");
-
-    PaginatedRequest request =
-        buildRequest(
-            ctx,
-            ALLOWED_FILTER_MAP_FOR_ORG_CREATE_REQUEST,
-            API_TO_DB_ORG_CREATE_REQUEST,
-            Set.of(CREATED_AT),
-            CREATED_AT,
-            API_TO_DB_ORG_CREATE_REQUEST.keySet(),
-            null);
-
-    organizationCreateReportService
-        .streamAdminCsvBatchedCreateRequest(request)
-        .onSuccess(
-            csvStream -> {
-              prepareCsvResponse(ctx.response(), FILE_ORG_CREATE_REQUEST_REPORT);
-              streamCsv(csvStream, ctx, ctx.response(), "ORG_CREATE_REQUEST_REPORT");
-            })
-        .onFailure(
-            err -> {
-              LOGGER.error("Failed to generate org create request report", err);
-              ctx.fail(err);
-            });
-  }
-
-  public void getOrganizationJoinReport(RoutingContext ctx) {
-
-    UUID orgId = RequestHelper.getPathParamAsUUID(ctx, PATH_PARAM_ORGANIZATION_ID);
-
-    LOGGER.info("Org join request report initiated | orgId={}", orgId);
-
-    PaginatedRequest request =
-        buildRequest(
-            ctx,
-            ALLOWED_FILTER_MAP_FOR_ORG_JOIN_REQUEST,
-            API_TO_DB_ORG_JOIN_REQUEST,
-            Set.of(REQUESTED_AT),
-            REQUESTED_AT,
-            API_TO_DB_ORG_JOIN_REQUEST.keySet(),
-            Map.of(ORGANIZATION_ID, orgId.toString()));
-
-    organizationCreateReportService
-        .streamAdminCsvBatchedJoinRequest(request)
-        .onSuccess(
-            csvStream -> {
-              prepareCsvResponse(ctx.response(), FILE_ORG_JOIN_REQUEST_REPORT);
-              streamCsv(csvStream, ctx, ctx.response(), "ORG_JOIN_REQUEST_REPORT");
-            })
-        .onFailure(
-            err -> {
-              LOGGER.error("Failed to generate org join request report | orgId={}", orgId, err);
-              ctx.fail(err);
-            });
-  }
-
-  public void getOrganizationReport(RoutingContext ctx) {
-
-    LOGGER.info("Org list report initiated");
-
-    PaginatedRequest request =
-        buildRequest(
-            ctx,
-            ALLOWED_FILTER_MAP_FOR_ORG,
-            API_TO_DB_ORG_USERS,
-            Set.of(CREATED_AT),
-            CREATED_AT,
-            API_TO_DB_ORG_USERS.keySet(),
-            null);
-
-    organizationCreateReportService
-        .streamAdminCsvBatchedOrganization(request)
-        .onSuccess(
-            csvStream -> {
-              prepareCsvResponse(ctx.response(), FILE_ORG_LIST_REPORT);
-              streamCsv(csvStream, ctx, ctx.response(), "ORG_LIST_REPORT");
-            })
-        .onFailure(
-            err -> {
-              LOGGER.error("Failed to generate org list report", err);
-              ctx.fail(err);
-            });
-  }
-
-  public void getProviderRequestReport(RoutingContext ctx) {
-
-    LOGGER.info("Provider role request report initiated");
-
-    PaginatedRequest request =
-        buildRequest(
-            ctx,
-            ALLOWED_FILTER_MAP_FOR_PROVIDER_ROLE_REQUEST,
-            API_TO_DB_PROVIDER_ROLE_REQUEST,
-            Set.of(CREATED_AT),
-            CREATED_AT,
-            API_TO_DB_PROVIDER_ROLE_REQUEST.keySet(),
-            null);
-
-    organizationCreateReportService
-        .streamAdminCsvBatchedProviderRequest(request)
-        .onSuccess(
-            csvStream -> {
-              prepareCsvResponse(ctx.response(), FILE_PROVIDER_ROLE_REQUEST_REPORT);
-              streamCsv(csvStream, ctx, ctx.response(), "PROVIDER_ROLE_REQUEST_REPORT");
-            })
-        .onFailure(
-            err -> {
-              LOGGER.error("Failed to generate provider role request report", err);
-              ctx.fail(err);
-            });
-  }
-
-  public void getComputeRoleReport(RoutingContext ctx) {
-
-    LOGGER.info("Compute role request report initiated");
-
-    PaginatedRequest request =
-        buildRequest(
-            ctx,
-            ALLOWED_FILTER_MAP_FOR_COMPUTE_ROLE,
-            API_TO_DB_COMPUTE_ROLE_REQUEST,
-            Set.of(CREATED_AT),
-            CREATED_AT,
-            API_TO_DB_COMPUTE_ROLE_REQUEST.keySet(),
-            null);
-
-    organizationCreateReportService
-        .streamAdminCsvBatchedComputeRequest(request)
-        .onSuccess(
-            csvStream -> {
-              prepareCsvResponse(ctx.response(), FILE_COMPUTE_ROLE_REQUEST_REPORT);
-              streamCsv(csvStream, ctx, ctx.response(), "COMPUTE_ROLE_REQUEST_REPORT");
-            })
-        .onFailure(
-            err -> {
-              LOGGER.error("Failed to generate compute role request report", err);
-              ctx.fail(err);
-            });
-  }
-
-  public void getCreditRequestReport(RoutingContext ctx) {
-
-    LOGGER.info("Credit request report initiated");
-
-    PaginatedRequest request =
-        buildRequest(
-            ctx,
-            ALLOWED_FILTER_MAP_FOR_CREDIT_REQUEST,
-            API_TO_DB_CREDIT_REQUEST,
-            Set.of(REQUESTED_AT),
-            REQUESTED_AT,
-            API_TO_DB_CREDIT_REQUEST.keySet(),
-            null);
-
-    organizationCreateReportService
-        .streamAdminCsvBatchedCredit(request)
-        .onSuccess(
-            csvStream -> {
-              prepareCsvResponse(ctx.response(), FILE_CREDIT_REQUEST_REPORT);
-              streamCsv(csvStream, ctx, ctx.response(), "CREDIT_REQUEST_REPORT");
-            })
-        .onFailure(
-            err -> {
-              LOGGER.error("Failed to generate credit request report", err);
-              ctx.fail(err);
-            });
+    builder
+        .operation(OP_CREDIT_REQUEST_REPORT)
+        .handler(organizationReportHandler::getCreditRequestReport);
   }
 }

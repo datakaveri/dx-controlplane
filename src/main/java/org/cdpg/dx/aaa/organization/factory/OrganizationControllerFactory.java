@@ -10,10 +10,11 @@ import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.aaa.organization.controller.OrganizationController;
 import org.cdpg.dx.aaa.organization.dao.OrganizationDAOFactory;
-import org.cdpg.dx.aaa.organization.handler.OrganizationHandler;
+import org.cdpg.dx.aaa.organization.handler.*;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.organization.service.OrganizationServiceImpl;
 import org.cdpg.dx.aaa.user.service.UserService;
+import org.cdpg.dx.aaa.user.service.UserServiceImpl;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
@@ -28,13 +29,17 @@ public class OrganizationControllerFactory {
 
   private OrganizationControllerFactory() {}
 
+  /* =========================
+   * todo: UserService to be removed later this is a temporary measure
+   *  because currently user service requires organization service and virce versa so, need to break the cyclic dependency
+   *  possibly with the help of orchestrator
+   * ========================= */
   public static OrganizationController create(
       UserService userService,
       AuditingHandler auditingHandler,
       EmailComposer emailComposer,
       PostgresService pgService,
       ElasticsearchService esService,
-      CreditService creditService,
       KeycloakUserService keycloakUserService,
       URNGenerator urnGenerator,
       DelegationService delegationService,
@@ -43,27 +48,68 @@ public class OrganizationControllerFactory {
       String docIndex,
       String apdURL) {
 
+    /* =========================
+     * Core services
+     * ========================= */
+
+    /* UserServiceImpl userService =
+                new UserServiceImpl(
+                        keycloakUserService, organizationService, creditService, esService, docUserIndex);
+
+    */
     OrganizationDAOFactory organizationDAOFactory = new OrganizationDAOFactory(pgService);
+
     PolicyDao policyDao = new PolicyDaoImpl(pgService);
+
     ItemService itemService =
         new ItemServiceImpl(esService, keycloakUserService, policyDao, webClient, docIndex, apdURL);
+
     OrganizationService organizationService =
         new OrganizationServiceImpl(organizationDAOFactory, keycloakUserService, itemService);
 
-    OrganizationHandler organizationHandler =
-        new OrganizationHandler(
-            organizationService,
-            userService,
-            emailComposer,
-            keycloakUserService,
-            urnGenerator,
-            delegationService);
-    return new OrganizationController(organizationHandler, auditingHandler, kycRequired);
+    /* =========================
+     * Handlers (share service)
+     * ========================= */
+
+    OrganizationCommandHandler commandHandler =
+        new OrganizationCommandHandler(organizationService, urnGenerator);
+
+    OrganizationQueryHandler queryHandler =
+        new OrganizationQueryHandler(organizationService, urnGenerator);
+
+    OrganizationCreateRequestHandler createRequestHandler =
+        new OrganizationCreateRequestHandler(organizationService, emailComposer, urnGenerator);
+
+    OrganizationJoinRequestHandler joinRequestHandler =
+        new OrganizationJoinRequestHandler(
+            organizationService, userService, emailComposer, urnGenerator);
+
+    OrganizationUserHandler userHandler =
+        new OrganizationUserHandler(organizationService, userService, urnGenerator);
+
+    ProviderRoleHandler providerRoleHandler =
+        new ProviderRoleHandler(organizationService, userService, emailComposer, urnGenerator);
+
+    /* =========================
+     * Controller (ONLY wiring)
+     * ========================= */
+
+    return new OrganizationController(
+        commandHandler,
+        queryHandler,
+        createRequestHandler,
+        joinRequestHandler,
+        userHandler,
+        providerRoleHandler,
+        auditingHandler,
+        kycRequired);
   }
 
+  /* =========================
+  todo: this method is to be removed later this is just to help with the migration
+   * ========================= */
   public static OrganizationService createService(
       PostgresService pgService, KeycloakUserService keycloakUserService, ItemService itemService) {
-
     OrganizationDAOFactory organizationDAOFactory = new OrganizationDAOFactory(pgService);
     return new OrganizationServiceImpl(organizationDAOFactory, keycloakUserService, itemService);
   }

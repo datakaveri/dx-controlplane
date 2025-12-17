@@ -5,17 +5,17 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.apiserver.ApiController;
 import org.cdpg.dx.aaa.credit.handler.CreditHandler;
-import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.checkerframework.checker.units.qual.A;
 
 public class CreditController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(CreditController.class);
   private final CreditHandler creditHandler;
+  private final Boolean isKycRequired;
 
-  public CreditController(CreditHandler creditHandler) {
+  public CreditController(CreditHandler creditHandler, Boolean isKycRequired) {
     this.creditHandler = creditHandler;
+    this.isKycRequired = isKycRequired;
   }
 
   @Override
@@ -59,7 +59,7 @@ public class CreditController implements ApiController {
 
     routerBuilder
       .operation("post-auth-v2-compute-role-request")
-      .handler(AuthorizationHandler.requireKycVerified())
+      .handler(AuthorizationHandler.KycVerification(isKycRequired))
       .handler(creditHandler::createComputeRoleRequest);
 
 
@@ -91,7 +91,7 @@ public class CreditController implements ApiController {
     routerBuilder
       .operation("get-auth-v2-user-credit-balance")
       .handler(AuthorizationHandler.forRoles(DxRole.COMPUTE))
-      .handler(AuthorizationHandler.requireKycVerified())
+      .handler(AuthorizationHandler.KycVerification(isKycRequired))
       .handler(creditHandler::getBalance);
   }
 }

@@ -42,6 +42,7 @@ import org.cdpg.dx.aaa.credit.factory.CreditControllerFactory;
 import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.delegation.factory.DelegationControllerFactory;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
+import org.cdpg.dx.aaa.email.factory.EmailComposerFactory;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.ingestion.service.IngestionService;
 import org.cdpg.dx.aaa.ingestion.service.IngestionServiceImpl;
@@ -94,7 +95,7 @@ public class ControllerFactory {
     final String docIndex = config.getString(DOC_INDEX);
     final String docUserIndex = config.getString(DOC_USER_INDEX);
     final String vocContext = config.getString(VOC_CONTEXT);
-    final Boolean kycRequired = config.getBoolean("kycRequired");
+    final Boolean isKycRequired = config.getBoolean("kycRequired", false);
     final String apdURL = config.getString(APD_URL);
     final String verifiedBy = config.getString(VERIFIED_BY);
 
@@ -132,35 +133,34 @@ public class ControllerFactory {
 
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
 
+    EmailComposer emailComposer =
+        EmailComposerFactory.create(
+            emailService, keycloakUserService, pgService, esService, webClient, config);
+
     PolicyDao policyDao = new PolicyDaoImpl(pgService);
     ItemService itemService =
         new ItemServiceImpl(esService, keycloakUserService, policyDao, webClient, docIndex, apdURL);
 
     CreditService creditService =
         CreditControllerFactory.createService(pgService, keycloakUserService, config);
+
     OrganizationService organizationService =
         OrganizationControllerFactory.createService(pgService, keycloakUserService, itemService);
+
     DelegationService delegationService =
         DelegationControllerFactory.createService(
             pgService, keycloakUserService, organizationService, itemService);
     UserService userService =
         UserControllerFactory.createService(
             keycloakUserService, organizationService, creditService, esService, docUserIndex);
-    EmailComposer emailComposer =
-        new EmailComposer(
-            emailService,
-            keycloakUserService,
-            config,
-            organizationService,
-            userService,
-            creditService);
 
     AssetHandler assetHandler =
         AssetFactory.createHandler(pgService, config, emailComposer, urnGenerator);
     ApiController assetController = new AssetController(assetHandler, auditingHandler);
 
     ApiController creditApiController =
-        CreditControllerFactory.create(creditService, emailComposer, userService, urnGenerator);
+        CreditControllerFactory.create(
+            creditService, emailComposer, userService, urnGenerator, isKycRequired);
 
     ApiController delegationApiController =
         DelegationControllerFactory.create(
@@ -179,7 +179,6 @@ public class ControllerFactory {
             emailComposer,
             pgService,
             esService,
-            creditService,
             keycloakUserService,
             urnGenerator,
             delegationService,
@@ -189,7 +188,7 @@ public class ControllerFactory {
             apdURL);
 
     OrganizationReportController organizationReportController =
-        OrganizationReportControllerFactory.create(vertx, pgService, delegationService);
+        OrganizationReportControllerFactory.create(vertx, pgService);
 
     AdminHandler adminHandler =
         new AdminHandler(
