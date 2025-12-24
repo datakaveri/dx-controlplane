@@ -26,7 +26,7 @@ public class TokenClaimsBuilder {
     //**************************************************************************************
 
     JsonObject delegationAccess = new JsonObject();
-    JsonObject scopesObj = dxUser.scopes();
+    JsonArray scopesObj = dxUser.scopes();
 
     LOGGER.info("scopes array :{}",scopesObj.encode());
     delegationAccess.put("roles", scopesObj);

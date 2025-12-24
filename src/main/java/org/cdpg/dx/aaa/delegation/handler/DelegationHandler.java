@@ -97,7 +97,7 @@ public class DelegationHandler {
     delegationService.getAllDelegations(request)
       .onSuccess(res -> {
         AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx), "GET", "Get All Delegation Requests");
+          RoutingContextHelper.getRequestPath(ctx), "GET", "Get All Delegations");
 
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
         ResponseBuilder.sendSuccess(ctx, res.data(), res.paginationInfo(),urnGenerator);
@@ -107,31 +107,68 @@ public class DelegationHandler {
 
   }
 
+  public void getAllDelegationsByUser(RoutingContext ctx)
+  {
+
+    User user = ctx.user();
+    UUID userId = UUID.fromString(user.subject());
+
+    delegationService.getAllDelegationsByUser(userId)
+      .onSuccess(res -> {
+        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+          RoutingContextHelper.getRequestPath(ctx), "GET", "Get All Delegations of a delegator ");
+
+        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        ResponseBuilder.sendSuccess(ctx, res ,urnGenerator);
+
+      })
+      .onFailure(ctx::fail);
+  }
+
+
+  public void deleteDelegationGrant(RoutingContext ctx)
+  {
+
+    User user = ctx.user();
+    UUID userId = UUID.fromString(user.subject());
+
+    UUID delegationId = UUID.fromString(ctx.pathParam("id"));
+
+    delegationService.deleteDelegation(delegationId,userId)
+      .onSuccess(res -> {
+        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+          RoutingContextHelper.getRequestPath(ctx), "DELETE", "Delete delegation");
+
+        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        ResponseBuilder.sendSuccess(ctx, res ,urnGenerator);
+
+      })
+      .onFailure(ctx::fail);
+  }
+
 
   public void createDelegationGrant(RoutingContext ctx) {
     LOGGER.info("Handler: createDelegationGrant");
 
     User user = ctx.user();
-    UUID userId = UUID.fromString(user.subject());
+    UUID delegatorId = UUID.fromString(user.subject());
     JsonObject body = ctx.body().asJsonObject();
 
+    body.put(DELEGATOR_ID,delegatorId.toString());
+
     try {
-      delegationHandlerValidator.validateCreateDelegationGrantBody(userId, body);
+      delegationHandlerValidator.validateCreateDelegationGrantBody(delegatorId, body);
     } catch (DxBadRequestException | DxForbiddenException e) {
       ctx.fail(e);
       return;
     }
 
     DelegationGrant delegationGrant = DelegationGrant.fromJson(body);
-    JsonArray scopes = body.getJsonArray("scopes");
-    List<JsonObject> constraintsJson = delegationHandlerValidator.extractConstraintsforDelegationGrants(body);
-    Set<String> userRoles = delegationHandlerValidator.extractRoles(user);
+    JsonArray rolesConstraints = body.getJsonArray("roles");
 
-    LOGGER.info("constraintsJson:{}",constraintsJson);
-    LOGGER.info("userRoles:{}",userRoles);
+    Set<String> delegatorRoles = delegationHandlerValidator.extractRoles(user);
 
-
-    delegationService.createDelegationGrant(delegationGrant, userRoles, constraintsJson,scopes)
+    delegationService.createDelegationGrant(delegationGrant, delegatorRoles,rolesConstraints)
       .onSuccess(createdGrant -> {
         AuditLog auditLog = AuditingHelper.createAuditLog(
           ctx.user(),
@@ -148,82 +185,82 @@ public class DelegationHandler {
 
 
   public void createUpdateDelegationRequest(RoutingContext ctx) {
-    JsonObject body = ctx.body().asJsonObject();
-    UUID requesterId = UUID.fromString(ctx.user().subject());
-
-    UUID delegationId = UUID.fromString(body.getString("delegation_id"));
-
-    LOGGER.info("Incoming request body: {}", body.encodePrettily());
-
-    try {
-      delegationHandlerValidator.validateCreateUpdateDelegationRequestBody(body);
-    } catch (DxBadRequestException | DxForbiddenException e) {
-      ctx.fail(e);
-      return;
-    }
-
-    List<JsonObject> constraintsJson = delegationHandlerValidator.extractConstraintsforDelegationRequests(body);
-    body.put("delegate_id",requesterId);
-
-
-    // Fetch delegator from existing grant
-    delegationService.getDelegationGrantById(delegationId)
-      .compose(grant -> {
-        UUID delegatorId = grant.delegatorId();
-        DelegationUpdateRequest delegationRequest = DelegationUpdateRequest.fromJson(body);
-
-        return keycloakUserService.getUserById(delegatorId)
-          .compose(delegator -> {
-            Set<String> userRoles = new HashSet<>(delegator.roles());
-            return delegationService.createDelegationRequest(delegationRequest, userRoles, constraintsJson,delegatorId);
-          });
-      })
-      .onSuccess(request -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(
-          ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx),
-          "POST",
-          "Create Delegation Request"
-        );
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, request, urnGenerator);
-      })
-      .onFailure(ctx::fail);
+//    JsonObject body = ctx.body().asJsonObject();
+//    UUID requesterId = UUID.fromString(ctx.user().subject());
+//
+//    UUID delegationId = UUID.fromString(body.getString("delegation_id"));
+//
+//    LOGGER.info("Incoming request body: {}", body.encodePrettily());
+//
+//    try {
+//      delegationHandlerValidator.validateCreateUpdateDelegationRequestBody(body);
+//    } catch (DxBadRequestException | DxForbiddenException e) {
+//      ctx.fail(e);
+//      return;
+//    }
+//
+//    List<JsonObject> constraintsJson = delegationHandlerValidator.extractConstraintsforDelegationRequests(body);
+//    body.put("delegate_id",requesterId);
+//
+//
+//    // Fetch delegator from existing grant
+//    delegationService.getDelegationGrantById(delegationId)
+//      .compose(grant -> {
+//        UUID delegatorId = grant.delegatorId();
+//        DelegationUpdateRequest delegationRequest = DelegationUpdateRequest.fromJson(body);
+//
+//        return keycloakUserService.getUserById(delegatorId)
+//          .compose(delegator -> {
+//            Set<String> userRoles = new HashSet<>(delegator.roles());
+//            return delegationService.createDelegationRequest(delegationRequest, userRoles, constraintsJson,delegatorId);
+//          });
+//      })
+//      .onSuccess(request -> {
+//        AuditLog auditLog = AuditingHelper.createAuditLog(
+//          ctx.user(),
+//          RoutingContextHelper.getRequestPath(ctx),
+//          "POST",
+//          "Create Delegation Request"
+//        );
+//        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+//        ResponseBuilder.sendSuccess(ctx, request, urnGenerator);
+//      })
+//      .onFailure(ctx::fail);
   }
 
   public void updateDelegationRequest(RoutingContext ctx) {
-    LOGGER.info("Handler: createUpdateDelegationRequest");
-
-    JsonObject body = ctx.body().asJsonObject();
-      if (body == null)
-      {   throw new DxBadRequestException("Request body is missing");
-      }
-
-      String status = body.getString("status");
-
-      UUID requestId = UUID.fromString(ctx.pathParam("id"));
-
-      if (status == null || status.isBlank()) {
-      throw new DxBadRequestException("Status is required");
-      }
-
-    // Only delegators should be able to update the status
-    User user = ctx.user();
-    UUID delegatorId = UUID.fromString(user.subject());
-
-    delegationService.updateDelegationRequestStatus(requestId, status, delegatorId)
-      .onSuccess(updatedRequest -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(
-          user,
-          RoutingContextHelper.getRequestPath(ctx),
-          "PUT",
-          "Delegation Request status updated to " + status
-        );
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, updatedRequest.toJson(), urnGenerator);
-        // emailComposer.sendDelegationRequestStatusEmail(requestId, status);
-      })
-      .onFailure(ctx::fail);
+//    LOGGER.info("Handler: createUpdateDelegationRequest");
+//
+//    JsonObject body = ctx.body().asJsonObject();
+//      if (body == null)
+//      {   throw new DxBadRequestException("Request body is missing");
+//      }
+//
+//      String status = body.getString("status");
+//
+//      UUID requestId = UUID.fromString(ctx.pathParam("id"));
+//
+//      if (status == null || status.isBlank()) {
+//      throw new DxBadRequestException("Status is required");
+//      }
+//
+//    // Only delegators should be able to update the status
+//    User user = ctx.user();
+//    UUID delegatorId = UUID.fromString(user.subject());
+//
+//    delegationService.updateDelegationRequestStatus(requestId, status, delegatorId)
+//      .onSuccess(updatedRequest -> {
+//        AuditLog auditLog = AuditingHelper.createAuditLog(
+//          user,
+//          RoutingContextHelper.getRequestPath(ctx),
+//          "PUT",
+//          "Delegation Request status updated to " + status
+//        );
+//        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+//        ResponseBuilder.sendSuccess(ctx, updatedRequest.toJson(), urnGenerator);
+//        // emailComposer.sendDelegationRequestStatusEmail(requestId, status);
+//      })
+//      .onFailure(ctx::fail);
   }
 
 
@@ -236,5 +273,8 @@ public class DelegationHandler {
       })
       .onFailure(ctx::fail);
   }
+
+
+
 
 }

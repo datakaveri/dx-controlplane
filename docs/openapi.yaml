@@ -4096,89 +4096,120 @@ paths:
 
   /iudx/v2/auth/delegation:
     post:
-      summary: Grant Delegation to another User.
+      summary: Grant Delegation to another User
       tags:
         - Delegation APIs
       operationId: post-auth-v2-delegation
       security:
         - authorization: [ ]
       requestBody:
-        description: Create a new delegation grant with scope constraints
+        description: Create a new delegation grant with optional role-based scope constraints
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - delegate_id
+                - justification
+                - expiry_at
               properties:
                 delegate_id:
                   type: string
                   format: uuid
+                  description: UUID of the user receiving the delegation
                 justification:
                   type: string
+                  description: Reason for granting this delegation
                 expiry_at:
                   type: string
                   pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
-                  example: '2025-12-31T23:59:59'
-                scopes:
+                  example: '2026-01-31T23:59:59'
+                  description: When the delegation expires
+                roles:
                   type: array
-                  items:
-                    type: string
-                    example: org_management
-                constraints:
-                  type: array
+                  description: Optional array of roles with constraints. If omitted, delegates all roles of the delegator.
                   items:
                     type: object
+                    required:
+                      - role
                     properties:
-                      scope:
+                      role:
                         type: string
-                      entity_id:
+                        example: org_admin
+                        description: Role being delegated
+                      constraints:
                         type: array
-                        nullable: true
+                        description: Optional scope constraints for this role
                         items:
-                          type: string
-                          format: uuid
-                      expiry_at:
-                        type: string
-                        pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
-                        example: '2025-12-31T23:59:59'
+                          type: object
+                          required:
+                            - scope
+                          properties:
+                            scope:
+                              type: string
+                              example: org_management
+                              description: Scope name for this constraint
+                            entity_id:
+                              type: array
+                              nullable: true
+                              description: Optional specific entity UUIDs
+                              items:
+                                type: string
+                            entity_type:
+                              type: string
+                              nullable: true
+                              example: data_bank
+                              description: Optional type of entity
+                            expiry_at:
+                              type: string
+                              pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
+                              example: '2026-01-31T23:59:59'
+                              description: When the delegation expires
+            examples:
+              minimal:
+                summary: Minimal - Delegate all roles
+                value:
+                  delegate_id: "ba6a3947-0080-4cbf-bdde-0578bc817d42"
+                  justification: "Granting user cos admin role access while the owner is on leave"
+                  expiry_at: "2026-01-31T23:59:59"
+
+              role_with_simple_scope:
+                summary: Role with simple scope constraint
+                value:
+                  delegate_id: "ba6a3947-0080-4cbf-bdde-0578bc817d42"
+                  justification: "Granting user cos admin role access while the owner is on leave"
+                  expiry_at: "2026-01-31T23:59:59"
+                  roles:
+                    - role: org_admin
+                      constraints:
+                        - scope: org_management
+                        - expiry_at: "2026-01-31T23:59:59"
+
+              role_with_entity_constraints:
+                summary: Role with entity-specific constraints
+                value:
+                  delegate_id: "ba6a3947-0080-4cbf-bdde-0578bc817d42"
+                  justification: "Granting user cos admin role access while the owner is on leave"
+                  expiry_at: "2026-01-31T23:59:59"
+                  roles:
+                    - role: org_admin
+                      constraints:
+                        - scope: org_management
+                        - scope: data_access
+                          entity_id:
+                            - "xyz-uuid-123"
+                          entity_type: data_bank
+                          expiry_at: "2026-01-31T23:59:59"
       responses:
         '201':
-          description: Delegation grant created successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                    example: success
-                  title:
-                    type: string
-                    example: Delegation grant created
-                  result:
-                    type: object
-      x-codeSamples:
-        - lang: cURL
-          label: create delegation grant cURL
-          source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/auth/delegation' \
-            --header 'Content-Type: application/json' \
-            --header 'Authorization: Bearer <keycloak_token>' \
-            --data '{
-              "delegate_id": "data_access",
-              "justification": "Granting item id access while the owner is on leave",
-              "expiry_at": "2025-12-31T23:59:59",
-              "scopes": [
-                "data_access"
-              ],
-              "constraints": [
-                {
-                  "scope": "data_access",
-                  "entity_id": ["74436122-e6f6-45bf-be53-7ee2c257826b"],
-                  "expiry_at": "2025-12-31T23:59:59"
-                }
-              ]
-            }'
+          description: Delegation created successfully
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Delegate user not found
 
     get:
       summary: Get All Delegations

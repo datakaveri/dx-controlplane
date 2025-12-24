@@ -11,7 +11,11 @@ import java.util.stream.Collectors;
 public enum DxScope {
   ORG_MANAGEMENT("org_management"),
   DATA_ACCESS("data_access"),
-  COS_ADMIN("cos_admin_access");
+  COS_ADMIN("cos_admin_access"),
+  COMPUTE_MANAGEMENT("compute_management"),
+  USER_MANAGEMENT("user_management"),
+  ASSET_MANAGEMENT("asset_management"),
+  WILDCARD("*");
 
   private final String scope;
 

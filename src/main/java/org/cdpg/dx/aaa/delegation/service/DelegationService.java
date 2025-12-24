@@ -19,7 +19,7 @@ import java.util.UUID;
 
 
 public interface DelegationService {
-  Future<DelegationGrant> createDelegationGrant(DelegationGrant delegationGrant, Set<String> UserRoles, List<JsonObject>constraints, JsonArray scopes);
+  Future<DelegationGrant> createDelegationGrant(DelegationGrant delegationGrant, Set<String> UserRoles,JsonArray roleConstraints);
 
   Future<DelegationGrant> getDelegationGrantById(UUID delegationId);
 
@@ -27,11 +27,15 @@ public interface DelegationService {
 
   Future<List<DelegationScopeConstraint>> getDelegationScopeByEntityId(UUID entity);
 
-  Future<DelegationUpdateRequest> createDelegationRequest(DelegationUpdateRequest delegationRequest,Set<String> UserRoles,List<JsonObject> constraintsJson,UUID delegatorId);
-
-  Future<DelegationUpdateRequest> updateDelegationRequestStatus(UUID requestId, String status,UUID delegatorId);
+//  Future<DelegationUpdateRequest> createDelegationRequest(DelegationUpdateRequest delegationRequest,Set<String> UserRoles,List<JsonObject> constraintsJson,UUID delegatorId);
+//
+//  Future<DelegationUpdateRequest> updateDelegationRequestStatus(UUID requestId, String status,UUID delegatorId);
 
   Future<List<DelegationUpdateRequest>> getDelegationRequestsByUser(UUID userId);
+
+  Future<List<DelegationGrant>> getAllDelegationsByUser(UUID userId);
+
+  Future<Boolean> deleteDelegation(UUID delegationId,UUID userId);
 
   Future<List<DelegationUpdateRequest>> getDelegationRequestsByDelegationId(UUID delegationId);
 

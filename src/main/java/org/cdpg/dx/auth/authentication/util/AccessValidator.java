@@ -6,50 +6,69 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.exception.DxForbiddenException;
+
 import java.util.List;
 
 public class AccessValidator {
+
   private static final Logger LOGGER = LogManager.getLogger(AccessValidator.class);
 
   /**
-   * Access Rule: ✔ Primary roles → allowed directly ✔ Delegate → must match required scope(s) ✔
-   * Others → forbidden
+   * Rules:
+   * 1. Primary roles → always allowed
+   * 2. Delegate:
+   *    - delegation_scope contains "*" → allowed
+   *    - OR contains required scope → allowed
+   * 3. Otherwise → forbidden
    */
   public static void validate(
-    JsonObject userJson, List<String> primaryRoles, List<String> requiredScopes) {
-
-    LOGGER.error("userJosn {} ", userJson);
+    JsonObject userJson,
+    List<String> primaryRoles,
+    List<String> requiredScopes
+  ) {
 
     JsonArray userRoles =
       userJson
         .getJsonObject("realm_access", new JsonObject())
         .getJsonArray("roles", new JsonArray());
 
-    // ---- Primary users → Always allowed ----
+    // ---------------- PRIMARY USER ----------------
+    boolean isPrimaryUser =
+      primaryRoles.stream().anyMatch(userRoles::contains);
 
-    boolean isPrimaryUser = primaryRoles.stream().anyMatch(userRoles::contains);
-    LOGGER.debug("isPrimary : {} ", isPrimaryUser);
     if (isPrimaryUser) {
+      LOGGER.debug("Primary role access granted");
       return;
     }
 
-    // ---- Delegate user → Must have required scopes ----
+    // ---------------- DELEGATE USER ----------------
     boolean isDelegate = userRoles.contains(DxRole.DELEGATE.getRole());
-    LOGGER.debug("isDelegte : {}", isDelegate);
 
     if (isDelegate) {
-      JsonArray scopes = userJson.getJsonArray("delegation_scope", new JsonArray());
+      JsonArray delegationScopes =
+        userJson.getJsonArray("delegation_scope", new JsonArray());
 
-      boolean hasRequiredScope = requiredScopes.stream().anyMatch(scopes::contains);
-      LOGGER.debug("hasRequiredScope : {} ", hasRequiredScope);
+      // Wildcard delegation
+      if (delegationScopes.contains("*")) {
+        LOGGER.debug("Wildcard delegation access granted");
+        return;
+      }
+
+      // Scope-based delegation
+      boolean hasRequiredScope =
+        requiredScopes.stream().anyMatch(delegationScopes::contains);
 
       if (!hasRequiredScope) {
-        throw new DxForbiddenException("Missing required scope(s): " + requiredScopes);
+        throw new DxForbiddenException(
+          "Missing required delegation scope(s): " + requiredScopes
+        );
       }
+
+      LOGGER.debug("Scoped delegation access granted");
       return;
     }
 
-    // ---- Neither primary nor delegate → Forbidden ----
+    // ---------------- FORBIDDEN ----------------
     throw new DxForbiddenException("User is not allowed to access this API.");
   }
 }

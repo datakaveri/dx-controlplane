@@ -166,36 +166,84 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
         });
     }
 
-
   @Override
-  public Future<Boolean> setDelegationScopes(UUID userId, DxScope scope,UUID delegatorId) {
+  public Future<Boolean> setDelegationScopes(
+    UUID userId,
+    List<String> scopes,
+    UUID delegatorId
+  ) {
 
     UserRepresentation user = usersResource().get(userId.toString()).toRepresentation();
+
     Map<String, List<String>> attrs = Optional.ofNullable(user.getAttributes())
       .orElse(new HashMap<>());
 
-    String existing = attrs.getOrDefault(KeycloakConstants.SCOPES,
-        List.of("[]"))      // default to empty array
-      .get(0);
+    // Get existing scopes, default to empty array
+    String existing = attrs.getOrDefault(KeycloakConstants.SCOPES, List.of("[]")).get(0);
 
-//    String did = attrs.getOrDefault(KeycloakConstants.DID,List.of("[]")).get(0);
+    // Set delegator ID
+    attrs.put(KeycloakConstants.DID, List.of(delegatorId.toString()));
 
-      String did = delegatorId.toString();
+    // Create clean scopes set to avoid duplicates
+    Set<String> cleanScopes = new LinkedHashSet<>();
 
-      attrs.put(KeycloakConstants.DID,List.of(did));
+    // Parse existing and flatten any nested structures
+    try {
+      JsonArray existingArray = new JsonArray(existing);
 
-    JsonArray scopesArray = new JsonArray(existing);
+      for (int i = 0; i < existingArray.size(); i++) {
+        Object item = existingArray.getValue(i);
 
-    if (!scopesArray.contains(scope.getScope())) {
-      scopesArray.add(scope.getScope());
+        if (item instanceof String) {
+          String itemStr = ((String) item).trim();
+
+          // Check if this string is itself a JSON array
+          if (itemStr.startsWith("[")) {
+            try {
+              // It's a nested JSON array, parse and extract
+              JsonArray nested = new JsonArray(itemStr);
+              for (int j = 0; j < nested.size(); j++) {
+                Object nestedItem = nested.getValue(j);
+                if (nestedItem instanceof String) {
+                  cleanScopes.add((String) nestedItem);
+                }
+              }
+            } catch (Exception e) {
+              // If parsing fails, skip this corrupted item
+              LOGGER.warn("Skipping corrupted nested array: {}", itemStr);
+            }
+          } else if (!itemStr.startsWith("{")) {
+            // It's a plain string scope, add it
+            cleanScopes.add(itemStr);
+          }
+        }
+
+      }
+    } catch (Exception e) {
+      LOGGER.warn("Error parsing existing scopes for user {}, starting fresh: {}", userId, e.getMessage());
+      cleanScopes.clear();
     }
+
+    // Add new scopes
+    cleanScopes.addAll(scopes);
+
+    // Build final clean array
+    JsonArray scopesArray = new JsonArray();
+    cleanScopes.forEach(scopesArray::add);
 
     LOGGER.info("Saving scopes: {}", scopesArray.encode());
 
+    // Save back to attributes
     attrs.put(KeycloakConstants.SCOPES, List.of(scopesArray.encode()));
 
     user.setAttributes(attrs);
     usersResource().get(userId.toString()).update(user);
+
+    LOGGER.info(
+      "Final delegation scopes saved for user {} → {}",
+      userId,
+      scopesArray.encode()
+    );
 
     return Future.succeededFuture(true);
   }

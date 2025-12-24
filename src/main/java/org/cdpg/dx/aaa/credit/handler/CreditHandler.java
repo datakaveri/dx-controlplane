@@ -20,6 +20,9 @@ import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.models.ProviderRoleRequest;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.AuditLog;
+import org.cdpg.dx.auth.authentication.util.AccessValidator;
+import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.HttpStatusCode;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.*;
@@ -59,6 +62,10 @@ public class CreditHandler {
 
 
   public void createCreditRequest(RoutingContext ctx) {
+
+
+
+
     JsonObject creditRequestJson = Optional.ofNullable(ctx.body().asJsonObject())
       .orElse(new JsonObject());
 
@@ -85,6 +92,17 @@ public class CreditHandler {
   }
 
   public void getCreditRequests(RoutingContext ctx) {
+
+
+    User dxUser = ctx.user();
+    JsonObject userJson = dxUser.principal();
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.COS_ADMIN.getRole()),
+      List.of(DxScope.COMPUTE_MANAGEMENT.getScope())
+    );
 
     PaginatedRequest request = PaginationRequestBuilder.from(ctx)
       .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_CREDIT_REQUEST)
@@ -159,6 +177,17 @@ public class CreditHandler {
   }
 
   public void getBalanceofUser(RoutingContext ctx) {
+
+    User dxUser = ctx.user();
+    JsonObject userJson = dxUser.principal();
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.COS_ADMIN.getRole()),
+      List.of(DxScope.COMPUTE_MANAGEMENT.getScope())
+    );
+
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "id");
     creditService.getBalance(userId)
       .onSuccess(res -> {
@@ -169,6 +198,17 @@ public class CreditHandler {
 
 
   public void updateCreditRequestStatus(RoutingContext ctx) {
+
+
+    User dxUser = ctx.user();
+    JsonObject userJson = dxUser.principal();
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.COS_ADMIN.getRole()),
+      List.of(DxScope.COMPUTE_MANAGEMENT.getScope())
+    );
 
     JsonObject creditRequestJson = ctx.body().asJsonObject();
 
@@ -222,6 +262,18 @@ public class CreditHandler {
 
 
   public void deductCredits(RoutingContext ctx) {
+
+
+    User dxUser = ctx.user();
+    JsonObject userJson = dxUser.principal();
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.COS_ADMIN.getRole()),
+      List.of(DxScope.COMPUTE_MANAGEMENT.getScope())
+    );
+
     JsonObject creditDeductionJson = ctx.body().asJsonObject();
 
     User user = ctx.user();
@@ -243,6 +295,17 @@ public class CreditHandler {
   }
 
   public void addCredits(RoutingContext ctx) {
+
+    User dxUser = ctx.user();
+    JsonObject userJson = dxUser.principal();
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.COS_ADMIN.getRole()),
+      List.of(DxScope.COMPUTE_MANAGEMENT.getScope())
+    );
+
     JsonObject creditAdditionJson = ctx.body().asJsonObject();
 
     User user = ctx.user();
@@ -326,6 +389,17 @@ public class CreditHandler {
 
   public void getAllComputeRequests(RoutingContext ctx) {
 
+
+    User dxUser = ctx.user();
+    JsonObject userJson = dxUser.principal();
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.COS_ADMIN.getRole()),
+      List.of(DxScope.COMPUTE_MANAGEMENT.getScope())
+    );
+
     PaginatedRequest request = PaginationRequestBuilder.from(ctx)
       .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_COMPUTE_ROLE)
       .apiToDbMap(ALLOWED_FILTER_MAP_FOR_COMPUTE_ROLE)
@@ -359,6 +433,17 @@ public class CreditHandler {
   }
 
   public void updateComputeRoleStatus(RoutingContext ctx) {
+
+
+    User dxUser = ctx.user();
+    JsonObject userJson = dxUser.principal();
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.COS_ADMIN.getRole()),
+      List.of(DxScope.COMPUTE_MANAGEMENT.getScope())
+    );
 
     JsonObject creditRequestJson = ctx.body().asJsonObject();
 

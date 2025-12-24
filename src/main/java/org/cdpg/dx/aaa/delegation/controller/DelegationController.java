@@ -38,6 +38,17 @@ public class DelegationController implements ApiController {
       .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))   //both delegate and delegator can view the requests
       .handler(delegationHandler::getAllDelegations);
 
+//    routerBuilder
+//      .operation("get-auth-v2-user-delegation")
+//      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))   //both delegate and delegator can view the requests
+//      .handler(delegationHandler::getAllDelegationsByUser);
+//
+//
+//    routerBuilder
+//      .operation("delete-auth-v2-delegation")
+//      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))   //both delegate and delegator can view the requests
+//      .handler(delegationHandler::deleteDelegationGrant);
+
 
     routerBuilder
       .operation("post-auth-v2-delegation-request")
