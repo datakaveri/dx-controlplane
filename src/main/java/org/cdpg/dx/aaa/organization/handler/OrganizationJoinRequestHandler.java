@@ -35,11 +35,14 @@ import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.util.RoutingContextHelper;
+import org.cdpg.dx.keycloak.config.KeycloakConstants;
 
 import static org.cdpg.dx.aaa.organization.config.Constants.*;
 import static org.cdpg.dx.aaa.organization.config.Constants.API_TO_DB_ORG_JOIN_REQUEST;
 import static org.cdpg.dx.aaa.organization.config.Constants.REQUESTED_AT;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
+import static org.cdpg.dx.keycloak.config.KeycloakConstants.ORGANISATION_ID;
+import static org.cdpg.dx.keycloak.config.KeycloakConstants.ORGANISATION_NAME;
 
 public class OrganizationJoinRequestHandler {
   private static final Logger LOGGER = LogManager.getLogger(OrganizationJoinRequestHandler.class);
@@ -108,7 +111,10 @@ public class OrganizationJoinRequestHandler {
                       createdRequest -> {
                         ActivityAuditLogBuilder auditLog =
                             OrganizationAuditHelper.buildJoinOrgRequestAudit(
-                                ctx, createdRequest.id(), createdRequest.organizationId(), null);
+                                ctx,
+                                createdRequest.id(),
+                                createdRequest.organizationId(),
+                                "member");
                         RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
 
                         ResponseBuilder.sendSuccess(ctx, "Created Join request", urnGenerator);
@@ -120,45 +126,80 @@ public class OrganizationJoinRequestHandler {
         .onFailure(ctx::fail);
   }
 
-  public void approveJoinOrganisationRequests(RoutingContext ctx) {
+  public void getJoinOrganisationRequests(RoutingContext ctx) {
 
+    UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     User user = ctx.user();
     JsonObject userJson = user.principal();
-// deleagatoin requirement: scope - org_management and delegator is org_admin
+
     AccessValidator.validate(
         userJson,
         List.of( // primary roles (no scope check)
             DxRole.ORG_ADMIN.getRole()),
         List.of(DxScope.ORG_MANAGEMENT.getScope()));
 
-    JsonObject OrgRequestJson = ctx.body().asJsonObject();
-
-    UUID requestId = RequestHelper.getPathParamAsUUID(ctx, "req_id");
-
-    Status status = Status.fromString(OrgRequestJson.getString("status"));
+    PaginatedRequest request =
+        PaginationRequestBuilder.from(ctx)
+            .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_ORG_JOIN_REQUEST)
+            .apiToDbMap(API_TO_DB_ORG_JOIN_REQUEST)
+            .additionalFilters(Map.of(ORGANIZATION_ID, orgId.toString()))
+            .allowedTimeFields(Set.of(REQUESTED_AT))
+            .defaultTimeField(REQUESTED_AT)
+            .defaultSort(REQUESTED_AT, DEFAULT_SORTING_ORDER)
+            .allowedSortFields(API_TO_DB_ORG_JOIN_REQUEST.keySet())
+            .build();
 
     organizationService
-        .updateOrganizationJoinRequestStatus(requestId, status)
+        .getOrganizationPendingJoinRequests(request)
+        .compose(
+            result ->
+                userService
+                    .enrichWithUserRoles(
+                        result.data(),
+                        OrganizationJoinRequest::userId,
+                        OrganizationJoinRequest::toJson)
+                    .map(enrichedList -> Map.entry(enrichedList, result.paginationInfo())))
         .onSuccess(
-            approved -> {
-              if (approved) {
+            entry -> {
+              ActivityAuditLogBuilder audit =
+                  OrganizationAuditHelper.buildViewJoinOrgRequestsAudit(ctx, orgId);
+              RoutingContextHelper.setAuditingLogNew(ctx, audit);
 
-                AuditLog auditLog =
-                    AuditingHelper.createAuditLog(
-                        ctx.user(),
-                        RoutingContextHelper.getRequestPath(ctx),
-                        "PUT",
-                        "Approved Join Request");
-                RoutingContextHelper.setAuditingLog(ctx, auditLog);
-                ResponseBuilder.sendSuccess(ctx, "Updated Organisation Join Request", urnGenerator);
-                Future<Void> future =
-                    emailComposer.sendUserEmailForOrgJoinRequestApproval(requestId, status);
-
-              } else {
-                ctx.fail(new DxNotFoundException("Request Not Found"));
-              }
+              ResponseBuilder.sendSuccess(ctx, entry.getKey(), entry.getValue(), urnGenerator);
             })
         .onFailure(ctx::fail);
+  }
+
+  public void getUserJoinOrganisationRequests(RoutingContext ctx) {
+    User user = ctx.user();
+    UUID userId = UUID.fromString(user.subject());
+
+    organizationService
+        .getOrganizationJoinRequestsByUser(userId)
+        .compose(
+            requests -> {
+              List<JsonObject> result =
+                  requests.stream()
+                      .map(OrganizationJoinRequest::toJson)
+                      .collect(Collectors.toList());
+              return Future.succeededFuture(result);
+            })
+        .onSuccess(
+            result -> {
+              ActivityAuditLogBuilder audit =
+                  OrganizationAuditHelper.buildViewUserJoinOrgRequestsAudit(ctx, userId);
+              RoutingContextHelper.setAuditingLogNew(ctx, audit);
+
+              ResponseBuilder.sendSuccess(ctx, result, urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error(
+                  "Failed to fetch join organisation requests for user {}: {}",
+                  userId,
+                  err.getMessage());
+              ctx.fail(err);
+            });
   }
 
   public void deleteUserJoinOrganisationRequests(RoutingContext ctx) {
@@ -198,13 +239,12 @@ public class OrganizationJoinRequestHandler {
                                   "Failed to delete join organisation request with ID: "
                                       + requestId));
                         }
-                        AuditLog auditLog =
-                            AuditingHelper.createAuditLog(
-                                ctx.user(),
-                                RoutingContextHelper.getRequestPath(ctx),
-                                "DELETE",
-                                "Deleted Join Organisation Request");
-                        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+                        ActivityAuditLogBuilder audit =
+                            OrganizationAuditHelper.buildWithdrawJoinOrgRequestAudit(
+                                ctx, requestId, request.organizationId());
+
+                        RoutingContextHelper.setAuditingLogNew(ctx, audit);
+
                         ResponseBuilder.sendSuccess(
                             ctx, "Join organisation request deleted successfully", urnGenerator);
                         return Future.succeededFuture(true);
@@ -213,87 +253,55 @@ public class OrganizationJoinRequestHandler {
         .onFailure(ctx::fail);
   }
 
-  public void getUserJoinOrganisationRequests(RoutingContext ctx) {
-    User user = ctx.user();
-    UUID userId = UUID.fromString(user.subject());
+  public void approveJoinOrganisationRequests(RoutingContext ctx) {
 
-    AuditLog auditLog =
-        AuditingHelper.createAuditLog(
-            ctx.user(),
-            RoutingContextHelper.getRequestPath(ctx),
-            "GET",
-            "Get User Join Organisation Requests");
-
-    organizationService
-        .getOrganizationJoinRequestsByUser(userId)
-        .compose(
-            requests -> {
-              List<JsonObject> result =
-                  requests.stream()
-                      .map(OrganizationJoinRequest::toJson)
-                      .collect(Collectors.toList());
-              return Future.succeededFuture(result);
-            })
-        .onSuccess(
-            result -> {
-              RoutingContextHelper.setAuditingLog(ctx, auditLog);
-              ResponseBuilder.sendSuccess(ctx, result, urnGenerator);
-            })
-        .onFailure(
-            err -> {
-              LOGGER.error(
-                  "Failed to fetch join organisation requests for user {}: {}",
-                  userId,
-                  err.getMessage());
-              ctx.fail(err);
-            });
-  }
-
-  public void getJoinOrganisationRequests(RoutingContext ctx) {
-
-    UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     User user = ctx.user();
     JsonObject userJson = user.principal();
-
+    // deleagatoin requirement: scope - org_management and delegator is org_admin
     AccessValidator.validate(
         userJson,
         List.of( // primary roles (no scope check)
             DxRole.ORG_ADMIN.getRole()),
         List.of(DxScope.ORG_MANAGEMENT.getScope()));
 
-    PaginatedRequest request =
-        PaginationRequestBuilder.from(ctx)
-            .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_ORG_JOIN_REQUEST)
-            .apiToDbMap(API_TO_DB_ORG_JOIN_REQUEST)
-            .additionalFilters(Map.of(ORGANIZATION_ID, orgId.toString()))
-            .allowedTimeFields(Set.of(REQUESTED_AT))
-            .defaultTimeField(REQUESTED_AT)
-            .defaultSort(REQUESTED_AT, DEFAULT_SORTING_ORDER)
-            .allowedSortFields(API_TO_DB_ORG_JOIN_REQUEST.keySet())
-            .build();
+    JsonObject OrgRequestJson = ctx.body().asJsonObject();
+
+    UUID requestId = RequestHelper.getPathParamAsUUID(ctx, "req_id");
+
+    Status status = Status.fromString(OrgRequestJson.getString("status"));
 
     organizationService
-        .getOrganizationPendingJoinRequests(request)
-        .compose(
-            result ->
-                userService
-                    .enrichWithUserRoles(
-                        result.data(),
-                        OrganizationJoinRequest::userId,
-                        OrganizationJoinRequest::toJson)
-                    .map(enrichedList -> Map.entry(enrichedList, result.paginationInfo())))
+        .updateOrganizationJoinRequestStatus(requestId, status)
         .onSuccess(
-            entry -> {
+            approved -> {
+              if (approved) {
 
-              AuditLog auditLog =
-                  AuditingHelper.createAuditLog(
-                      ctx.user(),
-                      RoutingContextHelper.getRequestPath(ctx),
-                      "GET",
-                      "Get Pending Join Requests");
-              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+                ActivityAuditLogBuilder audit;
+                if (status == Status.GRANTED) {
+                  audit =
+                      OrganizationAuditHelper.buildJoinOrgApproveAudit(
+                          ctx,
+                          requestId,
+                          UUID.fromString(userJson.getString("organization_id")),
+                          userJson.getString("organization_name"));
+                } else {
+                  audit =
+                      OrganizationAuditHelper.buildJoinOrgRejectAudit(
+                          ctx,
+                          requestId,
+                          UUID.fromString(userJson.getString(KeycloakConstants.ORGANISATION_ID)),
+                          (userJson.getString(ORGANISATION_NAME)),
+                          "Rejected by org admin");
+                }
+                RoutingContextHelper.setAuditingLogNew(ctx, audit);
 
-              ResponseBuilder.sendSuccess(ctx, entry.getKey(), entry.getValue(), urnGenerator);
+                ResponseBuilder.sendSuccess(ctx, "Updated Organisation Join Request", urnGenerator);
+                Future<Void> future =
+                    emailComposer.sendUserEmailForOrgJoinRequestApproval(requestId, status);
+
+              } else {
+                ctx.fail(new DxNotFoundException("Request Not Found"));
+              }
             })
         .onFailure(ctx::fail);
   }

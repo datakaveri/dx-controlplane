@@ -20,11 +20,13 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.audit.util.AuditingHelper;
+import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
 import org.cdpg.dx.aaa.organization.models.OrganizationCreateRequest;
 import org.cdpg.dx.aaa.organization.models.OrganizationUser;
 import org.cdpg.dx.aaa.organization.models.Role;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
+import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
 import org.cdpg.dx.auditing.model.AuditLog;
 import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.model.DxRole;
@@ -76,13 +78,11 @@ public class OrganizationUserHandler {
         .getUserInfoByID(userId)
         .onSuccess(
             users -> {
-              AuditLog auditLog =
-                  AuditingHelper.createAuditLog(
-                      ctx.user(),
-                      RoutingContextHelper.getRequestPath(ctx),
-                      "GET",
-                      "Get User Info By ID");
-              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              ActivityAuditLogBuilder audit =
+                  OrganizationAuditHelper.buildViewOrganizationUserInfoAudit(ctx, orgId, userId);
+
+              RoutingContextHelper.setAuditingLogNew(ctx, audit);
+
               ResponseBuilder.sendSuccess(ctx, users, urnGenerator);
             })
         .onFailure(ctx::fail);
@@ -114,14 +114,6 @@ public class OrganizationUserHandler {
             .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
             .allowedSortFields(API_TO_DB_ORG_USERS.keySet())
             .build();
-
-    AuditLog auditLog =
-        AuditingHelper.createAuditLog(
-            ctx.user(),
-            RoutingContextHelper.getRequestPath(ctx),
-            "GET",
-            "Get Organisation Users by OrgID");
-
     organizationService
         .getOrganizationUsers(request)
         .compose(
@@ -132,7 +124,10 @@ public class OrganizationUserHandler {
                     .map(enriched -> Map.entry(enriched, res.paginationInfo())))
         .onSuccess(
             entry -> {
-              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              ActivityAuditLogBuilder audit =
+                  OrganizationAuditHelper.buildViewOrganizationUsersAudit(ctx, orgId);
+              RoutingContextHelper.setAuditingLogNew(ctx, audit);
+
               ResponseBuilder.sendSuccess(ctx, entry.getKey(), entry.getValue(), urnGenerator);
             })
         .onFailure(ctx::fail);
@@ -157,9 +152,11 @@ public class OrganizationUserHandler {
         .onSuccess(
             updated -> {
               if (updated) {
-                /* AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-                  RoutingContextHelper.getRequestPath(ctx), "PUT", "Update Organisation User Role");
-                RoutingContextHelper.setAuditingLog(ctx, auditLog);*/
+                ActivityAuditLogBuilder audit =
+                    OrganizationAuditHelper.buildUpdateOrganizationUserRoleAudit(
+                        ctx, orgId, userId, role.getRoleName());
+
+                RoutingContextHelper.setAuditingLogNew(ctx, audit);
                 ResponseBuilder.sendSuccess(ctx, "Updated Organisation User Role", urnGenerator);
 
               } else {
@@ -234,13 +231,13 @@ public class OrganizationUserHandler {
                             v -> {
                               LOGGER.info(
                                   "User {} deleted completely from Organization {}", userId, orgId);
-                              AuditLog auditLog =
-                                  AuditingHelper.createAuditLog(
-                                      ctx.user(),
-                                      RoutingContextHelper.getRequestPath(ctx),
-                                      "DELETE",
-                                      "Deleted User with Cleanup");
-                              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+
+                              ActivityAuditLogBuilder audit =
+                                  OrganizationAuditHelper.buildRemoveOrganizationUserAudit(
+                                      ctx, orgId, userId);
+
+                              RoutingContextHelper.setAuditingLogNew(ctx, audit);
+
                               ResponseBuilder.sendSuccess(
                                   ctx,
                                   "User deleted successfully from DB and Keycloak",

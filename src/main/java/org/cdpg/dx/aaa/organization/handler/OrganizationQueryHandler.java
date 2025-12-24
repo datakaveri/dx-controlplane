@@ -7,8 +7,10 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.cdpg.dx.aaa.audit.util.AuditingHelper;
+import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
 import org.cdpg.dx.aaa.organization.models.Organization;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
+import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
 import org.cdpg.dx.auditing.model.AuditLog;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.request.PaginatedRequest;
@@ -50,13 +52,6 @@ public class OrganizationQueryHandler {
         .getOrganizations(request)
         .onSuccess(
             orgs -> {
-              AuditLog auditLog =
-                  AuditingHelper.createAuditLog(
-                      ctx.user(),
-                      RoutingContextHelper.getRequestPath(ctx),
-                      "GET",
-                      "List All Organisations");
-              RoutingContextHelper.setAuditingLog(ctx, auditLog);
               ResponseBuilder.sendSuccess(
                   ctx,
                   orgs.data().stream()
@@ -75,9 +70,10 @@ public class OrganizationQueryHandler {
         .getOrganizationById(orgId)
         .onSuccess(
             org -> {
-              /* AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-                RoutingContextHelper.getRequestPath(ctx), "GET", "Get Organization By ID");
-              RoutingContextHelper.setAuditingLog(ctx, auditLog);*/
+              ActivityAuditLogBuilder audit =
+                  OrganizationAuditHelper.buildViewOrganizationAudit(ctx, orgId, org.orgName());
+
+              RoutingContextHelper.setAuditingLogNew(ctx, audit);
               ResponseBuilder.sendSuccess(ctx, org.toJson(), urnGenerator);
             })
         .onFailure(

@@ -234,7 +234,7 @@ public class OrganizationHandler {
         .onSuccess(
             updatedOrg -> {
               ActivityAuditLogBuilder auditLog =
-                  OrganizationAuditHelper.buildOrganizationDeleteAudit(ctx, orgId, null, null);
+                  OrganizationAuditHelper.buildOrganizationDeleteAudit(ctx, orgId,  null);
               RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
               ResponseBuilder.sendSuccess(ctx, updatedOrg, urnGenerator);
               ResponseBuilder.sendSuccess(ctx, "Organisation deleted Successfully!", urnGenerator);
@@ -412,7 +412,10 @@ public class OrganizationHandler {
                       createdRequest -> {
                         ActivityAuditLogBuilder auditLog =
                             OrganizationAuditHelper.buildJoinOrgRequestAudit(
-                                ctx, createdRequest.id(), createdRequest.organizationId(), null);
+                                ctx,
+                                createdRequest.id(),
+                                createdRequest.organizationId(),
+                                "member");
                         RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
 
                         ResponseBuilder.sendSuccess(ctx, "Created Join request", urnGenerator);

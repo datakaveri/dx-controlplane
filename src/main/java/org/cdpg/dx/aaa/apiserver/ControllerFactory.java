@@ -183,7 +183,7 @@ public class ControllerFactory {
             urnGenerator,
             delegationService,
             webClient,
-            kycRequired,
+            isKycRequired,
             docIndex,
             apdURL);
 

@@ -78,7 +78,7 @@ public class OrganizationCommandHandler {
         .onSuccess(
             updatedOrg -> {
               ActivityAuditLogBuilder auditLog =
-                  OrganizationAuditHelper.buildOrganizationDeleteAudit(ctx, orgId, null, null);
+                  OrganizationAuditHelper.buildOrganizationDeleteAudit(ctx, orgId, null);
               RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
               ResponseBuilder.sendSuccess(ctx, updatedOrg, urnGenerator);
               ResponseBuilder.sendSuccess(ctx, "Organisation deleted Successfully!", urnGenerator);

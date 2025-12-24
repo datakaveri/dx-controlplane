@@ -11,14 +11,12 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.audit.util.AuditingHelper;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
 import org.cdpg.dx.aaa.organization.models.OrganizationCreateRequest;
 import org.cdpg.dx.aaa.organization.models.Status;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
-import org.cdpg.dx.auditing.model.AuditLog;
 import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
@@ -191,13 +189,10 @@ public class OrganizationCreateRequestHandler {
                               new DxNotFoundException(
                                   "Failed to delete organization request with ID: " + requestId));
                         }
-                        AuditLog auditLog =
-                            AuditingHelper.createAuditLog(
-                                ctx.user(),
-                                RoutingContextHelper.getRequestPath(ctx),
-                                "DELETE",
-                                "Deleted Organization Request");
-                        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+                        ActivityAuditLogBuilder auditLog =
+                            OrganizationAuditHelper.buildOrgCreateDeleteAudit(ctx, requestId, null);
+                        RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
+
                         ResponseBuilder.sendSuccess(
                             ctx, "Organization request deleted successfully", urnGenerator);
                         return Future.succeededFuture(true);
@@ -209,13 +204,6 @@ public class OrganizationCreateRequestHandler {
   public void getUserOrganisationRequest(RoutingContext ctx) {
     User user = ctx.user();
     UUID userId = UUID.fromString(user.subject());
-
-    AuditLog auditLog =
-        AuditingHelper.createAuditLog(
-            ctx.user(),
-            RoutingContextHelper.getRequestPath(ctx),
-            "GET",
-            "Get User Organization Requests");
 
     organizationService
         .getOrganizationCreateRequestsByUserId(userId)
@@ -229,7 +217,12 @@ public class OrganizationCreateRequestHandler {
             })
         .onSuccess(
             result -> {
-              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              // todo : check if audit log is needed for this and also need verify the audit log
+              // content
+              ActivityAuditLogBuilder auditLog =
+                  OrganizationAuditHelper.buildGetOrgCreateListAudit(ctx);
+              RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
+
               ResponseBuilder.sendSuccess(ctx, result, urnGenerator);
             })
         .onFailure(
@@ -267,14 +260,9 @@ public class OrganizationCreateRequestHandler {
         .getAllOrganizationCreateRequests(request)
         .onSuccess(
             res -> {
-              AuditLog auditLog =
-                  AuditingHelper.createAuditLog(
-                      ctx.user(),
-                      RoutingContextHelper.getRequestPath(ctx),
-                      "GET",
-                      "Get All Organisation Requests");
-
-              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              ActivityAuditLogBuilder auditLog =
+                  OrganizationAuditHelper.buildGetOrgCreateListAudit(ctx);
+              RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
               ResponseBuilder.sendSuccess(ctx, res.data(), res.paginationInfo(), urnGenerator);
             })
         .onFailure(ctx::fail);

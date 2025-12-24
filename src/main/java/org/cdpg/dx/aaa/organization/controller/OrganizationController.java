@@ -53,31 +53,31 @@ public class OrganizationController implements ApiController {
 
     routerBuilder
         .operation(OP_GET_ORG_CREATE_REQUESTS)
-       // .handler(auditingHandler::handleApiAudit)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN, DxRole.DELEGATE))
         .handler(createRequestHandler::getAllOrganisationRequest);
 
     routerBuilder
         .operation(OP_GET_USER_ORG_CREATE_REQUESTS)
-        .handler(auditingHandler::handleApiAudit)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
         .handler(createRequestHandler::getUserOrganisationRequest);
 
     routerBuilder
         .operation(OP_DELETE_USER_ORG_CREATE_REQUEST)
-        .handler(auditingHandler::handleApiAudit)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
         .handler(createRequestHandler::deleteOrganizationCreateRequest);
 
     routerBuilder
         .operation(OP_CREATE_ORG_REQUEST)
-        .handler(auditingHandler::handleApiAudit)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.KycVerification(isKycRequired))
         .handler(createRequestHandler::createOrganisationRequest);
 
     routerBuilder
         .operation(OP_APPROVE_ORG_CREATE_REQUEST)
-        .handler(auditingHandler::handleApiAudit)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN, DxRole.DELEGATE))
         .handler(createRequestHandler::updateOrganisationRequest);
 
@@ -87,31 +87,31 @@ public class OrganizationController implements ApiController {
 
     routerBuilder
         .operation(OP_CREATE_ORG_JOIN_REQUEST)
-        .handler(auditingHandler::handleApiAudit)
+        .handler(auditingHandler::handleApiAudit) // Done
         .handler(AuthorizationHandler.KycVerification(isKycRequired))
         .handler(joinRequestHandler::joinOrganisationRequest);
 
     routerBuilder
         .operation(OP_GET_ORG_JOIN_REQUESTS)
-        .handler(auditingHandler::handleApiAudit)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN, DxRole.DELEGATE))
         .handler(joinRequestHandler::getJoinOrganisationRequests);
 
     routerBuilder
         .operation(OP_GET_USER_ORG_JOIN_REQUESTS)
-        .handler(auditingHandler::handleApiAudit)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
         .handler(joinRequestHandler::getUserJoinOrganisationRequests);
 
     routerBuilder
         .operation(OP_DELETE_USER_ORG_JOIN_REQUEST)
-        .handler(auditingHandler::handleApiAudit)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
         .handler(joinRequestHandler::deleteUserJoinOrganisationRequests);
 
     routerBuilder
         .operation(OP_APPROVE_ORG_JOIN_REQUEST)
-        .handler(auditingHandler::handleApiAudit)
+        .handler(auditingHandler::handleApiAudit) // Done
         .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN, DxRole.DELEGATE))
         .handler(joinRequestHandler::approveJoinOrganisationRequests);
 
@@ -121,23 +121,23 @@ public class OrganizationController implements ApiController {
 
     routerBuilder
         .operation(OP_LIST_ORGANISATIONS)
-        .handler(auditingHandler::handleApiAudit)
+        .handler(auditingHandler::handleApiAudit) // not required
         .handler(queryHandler::listAllOrganisations);
 
     routerBuilder
         .operation(OP_GET_ORGANISATION_BY_ID)
-        .handler(auditingHandler::handleApiAudit)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(queryHandler::getOrganizationById);
 
     routerBuilder
         .operation(OP_UPDATE_ORGANISATION_BY_ID)
-        .handler(auditingHandler::handleApiAudit)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN, DxRole.DELEGATE))
         .handler(commandHandler::updateOrganisationById);
 
     routerBuilder
         .operation(OP_DELETE_ORGANISATION_BY_ID)
-        .handler(auditingHandler::handleApiAudit)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN, DxRole.ORG_ADMIN, DxRole.DELEGATE))
         .handler(commandHandler::deleteOrganisationById);
 
@@ -147,25 +147,25 @@ public class OrganizationController implements ApiController {
 
     routerBuilder
         .operation(OP_GET_ORG_USERS)
-        .handler(auditingHandler::handleApiAudit)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN, DxRole.DELEGATE))
         .handler(userHandler::getOrganisationUsers);
 
     routerBuilder
         .operation(OP_GET_ORG_USER_INFO)
-        .handler(auditingHandler::handleApiAudit)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN, DxRole.DELEGATE))
         .handler(userHandler::getOrganisationUserInfo);
 
     routerBuilder
         .operation(OP_DELETE_ORG_USER)
-        .handler(auditingHandler::handleApiAudit)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
         .handler(userHandler::deleteOrganisationUserById);
 
     routerBuilder
         .operation(OP_UPDATE_ORG_USER_ROLE)
-        .handler(auditingHandler::handleApiAudit)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
         .handler(userHandler::updateOrganisationUserRole);
 
@@ -175,7 +175,7 @@ public class OrganizationController implements ApiController {
 
     routerBuilder
         .operation(OP_CREATE_PROVIDER_REQUEST)
-        .handler(auditingHandler::handleApiAudit)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(providerRoleHandler::createProviderRequest);
 
     routerBuilder
@@ -186,7 +186,7 @@ public class OrganizationController implements ApiController {
 
     routerBuilder
         .operation(OP_UPDATE_PROVIDER_REQUEST)
-        .handler(auditingHandler::handleApiAudit)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN, DxRole.DELEGATE))
         .handler(providerRoleHandler::updateProviderRequest);
 
@@ -198,12 +198,13 @@ public class OrganizationController implements ApiController {
 
     routerBuilder
         .operation(OP_DELETE_USER_PROVIDER_REQUEST)
-        .handler(auditingHandler::handleApiAudit)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
         .handler(providerRoleHandler::deleteUserProviderRoleRequest);
 
     routerBuilder
         .operation(OP_CREATE_PROVIDER_ROLE)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
         .handler(providerRoleHandler::createProviderRole);
   }

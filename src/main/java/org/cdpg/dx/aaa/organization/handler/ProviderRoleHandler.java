@@ -14,10 +14,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.audit.util.AuditingHelper;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
+import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
 import org.cdpg.dx.aaa.organization.models.ProviderRoleRequest;
 import org.cdpg.dx.aaa.organization.models.Status;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
+import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
 import org.cdpg.dx.auditing.model.AuditLog;
 import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.model.DxRole;
@@ -31,11 +33,14 @@ import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.util.RoutingContextHelper;
+import org.cdpg.dx.keycloak.config.KeycloakConstants;
 
 import static org.cdpg.dx.aaa.organization.config.Constants.*;
 import static org.cdpg.dx.aaa.organization.config.Constants.API_TO_DB_PROVIDER_ROLE_REQUEST;
 import static org.cdpg.dx.aaa.organization.config.Constants.CREATED_AT;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
+import static org.cdpg.dx.keycloak.config.KeycloakConstants.ORGANISATION_ID;
+import static org.cdpg.dx.keycloak.config.KeycloakConstants.ORGANISATION_NAME;
 
 public class ProviderRoleHandler {
   private static final Logger LOGGER = LogManager.getLogger(ProviderRoleHandler.class);
@@ -86,9 +91,12 @@ public class ProviderRoleHandler {
         .createProviderRequest(providerRoleRequest)
         .onSuccess(
             requests -> {
-              /*   AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-                RoutingContextHelper.getRequestPath(ctx), "POST", "Create Provider Role Request");
-              RoutingContextHelper.setAuditingLog(ctx, auditLog);*/
+              ActivityAuditLogBuilder audit =
+                  OrganizationAuditHelper.buildProviderRoleRequestSubmitAudit(
+                      ctx, requests.id(), UUID.fromString(orgID));
+
+              RoutingContextHelper.setAuditingLogNew(ctx, audit);
+
               ResponseBuilder.sendSuccess(ctx, "Created Request", urnGenerator);
               Future<Void> future =
                   emailComposer.sendEmailForProviderRole(providerRoleRequest, user);
@@ -115,11 +123,25 @@ public class ProviderRoleHandler {
         .updateProviderRequestStatus(reqId, status)
         .onSuccess(
             requests -> {
-              /*AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-                        RoutingContextHelper.getRequestPath(ctx), "PUT", "Update Provider Role Request");
-                      RoutingContextHelper.setAuditingLog(ctx, auditLog);
-              */ ResponseBuilder.sendSuccess(
-                  ctx, "Provider role updated", urnGenerator);
+              ActivityAuditLogBuilder audit;
+
+              if (status == Status.GRANTED) {
+                audit =
+                    OrganizationAuditHelper.buildProviderRoleApproveAudit(
+                        ctx, reqId, UUID.fromString(userJson.getString(ORGANISATION_ID)));
+
+              } else {
+                audit =
+                    OrganizationAuditHelper.buildProviderRoleRejectAudit(
+                        ctx,
+                        reqId,
+                        UUID.fromString(userJson.getString(ORGANISATION_ID)),
+                        "Rejected by admin");
+              }
+
+              RoutingContextHelper.setAuditingLogNew(ctx, audit);
+
+              ResponseBuilder.sendSuccess(ctx, "Provider role updated", urnGenerator);
               Future<Void> future =
                   emailComposer.sendUserEmailForProviderRoleApproval(reqId, status);
             })
@@ -134,9 +156,14 @@ public class ProviderRoleHandler {
     organizationService
         .createProviderRole(providerRoleRequest)
         .onSuccess(
-            org ->
-                ResponseBuilder.sendSuccess(
-                    ctx, "Provider role granted successfully", urnGenerator))
+            org -> {
+              ActivityAuditLogBuilder audit =
+                  OrganizationAuditHelper.buildProviderRoleGrantedAudit(
+                      ctx, providerRoleRequest.id(), providerRoleRequest.orgId());
+              RoutingContextHelper.setAuditingLogNew(ctx, audit);
+
+              ResponseBuilder.sendSuccess(ctx, "Provider role granted successfully", urnGenerator);
+            })
         .onFailure(
             err -> {
               if (err instanceof DxForbiddenException) {
@@ -213,19 +240,13 @@ public class ProviderRoleHandler {
                     .map(enrichedList -> Map.entry(enrichedList, requests.paginationInfo())))
         .onSuccess(
             entry -> {
-              AuditLog auditLog =
-                  AuditingHelper.createAuditLog(
-                      ctx.user(),
-                      RoutingContextHelper.getRequestPath(ctx),
-                      "GET",
-                      "Get Provider Role Requests");
-              RoutingContextHelper.setAuditingLog(ctx, auditLog);
               ResponseBuilder.sendSuccess(ctx, entry.getKey(), entry.getValue(), urnGenerator);
             })
         .onFailure(ctx::fail);
   }
 
   public void deleteUserProviderRoleRequest(RoutingContext ctx) {
+
     UUID userId = UUID.fromString(ctx.user().subject());
 
     organizationService
@@ -243,25 +264,27 @@ public class ProviderRoleHandler {
                     new DxBadRequestException(
                         "Only pending provider role requests can be deleted"));
               }
-
-              return organizationService.deleteProviderRoleRequestById(request.id());
+              return organizationService
+                  .deleteProviderRoleRequestById(request.id())
+                  .compose(
+                      deleted -> {
+                        if (!deleted) {
+                          return Future.failedFuture(
+                              new DxNotFoundException("Failed to delete provider role request"));
+                        }
+                        return Future.succeededFuture(request); // <-- keep request
+                      });
             })
         .onSuccess(
-            deleted -> {
-              if (deleted) {
-                /* AuditLog auditLog = AuditingHelper.createAuditLog(
-                            ctx.user(),
-                            RoutingContextHelper.getRequestPath(ctx),
-                            "DELETE",
-                            "Deleted Provider Role Request"
-                          );
-                          RoutingContextHelper.setAuditingLog(ctx, auditLog);
-                */
-                ResponseBuilder.sendSuccess(
-                    ctx, "Provider Role Request deleted successfully", this.urnGenerator);
-              } else {
-                ctx.fail(new DxNotFoundException("Failed to delete provider role request"));
-              }
+            request -> {
+              ActivityAuditLogBuilder audit =
+                  OrganizationAuditHelper.buildProviderRoleWithdrawAudit(
+                      ctx, request.id(), request.orgId());
+
+              RoutingContextHelper.setAuditingLogNew(ctx, audit);
+
+              ResponseBuilder.sendSuccess(
+                  ctx, "Provider Role Request deleted successfully", urnGenerator);
             })
         .onFailure(
             err -> {
@@ -272,48 +295,40 @@ public class ProviderRoleHandler {
               ctx.fail(err);
             });
   }
-    public void getProviderRoleRequest(RoutingContext ctx) {
-        AuditLog auditLog =
-                AuditingHelper.createAuditLog(
-                        ctx.user(),
-                        RoutingContextHelper.getRequestPath(ctx),
-                        "GET",
-                        "Get Provider Role Request by User");
 
-        UUID userId = UUID.fromString(ctx.user().subject());
+  public void getProviderRoleRequest(RoutingContext ctx) {
+    UUID userId = UUID.fromString(ctx.user().subject());
 
-        organizationService
-                .getProviderRoleRequestByUserId(userId) // Future<ProviderRoleRequest>
-                .compose(
-                        request -> {
-                            if (request == null) {
-                                return Future.failedFuture(
-                                        new DxNotFoundException(
-                                                "No provider role request found for userId: " + userId));
-                            }
+    organizationService
+        .getProviderRoleRequestByUserId(userId) // Future<ProviderRoleRequest>
+        .compose(
+            request -> {
+              if (request == null) {
+                return Future.failedFuture(
+                    new DxNotFoundException(
+                        "No provider role request found for userId: " + userId));
+              }
 
-                            return userService
-                                    .enrichWithUserRoles(
-                                            List.of(request), ProviderRoleRequest::userId, ProviderRoleRequest::toJson)
-                                    .map(list -> list.isEmpty() ? null : list.get(0));
-                        })
-                .onSuccess(
-                        enriched -> {
-                            // RoutingContextHelper.setAuditingLog(ctx, auditLog);
-
-                            if (enriched == null) {
-                                ResponseBuilder.sendSuccess(ctx, new JsonObject(), this.urnGenerator);
-                            } else {
-                                ResponseBuilder.sendSuccess(ctx, enriched, this.urnGenerator);
-                            }
-                        })
-                .onFailure(
-                        err -> {
-                            LOGGER.error(
-                                    "Failed to fetch provider role request for user {}: {}",
-                                    userId,
-                                    err.getMessage());
-                            ctx.fail(err);
-                        });
-    }
+              return userService
+                  .enrichWithUserRoles(
+                      List.of(request), ProviderRoleRequest::userId, ProviderRoleRequest::toJson)
+                  .map(list -> list.isEmpty() ? null : list.get(0));
+            })
+        .onSuccess(
+            enriched -> {
+              if (enriched == null) {
+                ResponseBuilder.sendSuccess(ctx, new JsonObject(), this.urnGenerator);
+              } else {
+                ResponseBuilder.sendSuccess(ctx, enriched, this.urnGenerator);
+              }
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error(
+                  "Failed to fetch provider role request for user {}: {}",
+                  userId,
+                  err.getMessage());
+              ctx.fail(err);
+            });
+  }
 }
