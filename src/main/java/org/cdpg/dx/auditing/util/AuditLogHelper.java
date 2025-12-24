@@ -70,7 +70,7 @@ public final class AuditLogHelper {
     // Status default – can be overridden by handler
     builder.withStatus("SUCCESS");
     builder.withStatusMessage("SUCCESS");
-    builder.withMyActivityEnabled(true);
+    builder.withMyActivityEnabled(false);
 
     return builder;
   }

@@ -1,27 +1,27 @@
 package org.cdpg.dx.aaa.organization.factory;
 
-import io.vertx.core.Vertx;
+import io.vertx.ext.web.client.WebClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import org.cdpg.dx.aaa.credit.dao.CreditDAOFactory;
 import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.item.service.ItemService;
+import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.aaa.organization.controller.OrganizationController;
 import org.cdpg.dx.aaa.organization.dao.OrganizationDAOFactory;
-import org.cdpg.dx.aaa.organization.handler.OrganizationHandler;
+import org.cdpg.dx.aaa.organization.handler.*;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.organization.service.OrganizationServiceImpl;
-import org.cdpg.dx.aaa.orgReport.service.OrganizationCreateReportService;
-import org.cdpg.dx.aaa.orgReport.service.impl.OrganizationCreateRequestReportServiceImpl;
 import org.cdpg.dx.aaa.user.service.UserService;
+import org.cdpg.dx.aaa.user.service.UserServiceImpl;
+import org.cdpg.dx.acl.policy.dao.PolicyDao;
+import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.common.URNGenerator;
+import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
-
 
 public class OrganizationControllerFactory {
 
@@ -29,19 +29,88 @@ public class OrganizationControllerFactory {
 
   private OrganizationControllerFactory() {}
 
-  public static OrganizationController create(OrganizationService organizationService, UserService userService, AuditingHandler auditingHandler, EmailComposer emailComposer, Vertx vertx, PostgresService pgService, CreditService creditService, KeycloakUserService keycloakUserService, URNGenerator urnGenerator, Boolean kycRequired, DelegationService delegationService) {
+  /* =========================
+   * todo: UserService to be removed later this is a temporary measure
+   *  because currently user service requires organization service and virce versa so, need to break the cyclic dependency
+   *  possibly with the help of orchestrator
+   * ========================= */
+  public static OrganizationController create(
+      UserService userService,
+      AuditingHandler auditingHandler,
+      EmailComposer emailComposer,
+      PostgresService pgService,
+      ElasticsearchService esService,
+      KeycloakUserService keycloakUserService,
+      URNGenerator urnGenerator,
+      DelegationService delegationService,
+      WebClient webClient,
+      Boolean kycRequired,
+      String docIndex,
+      String apdURL) {
 
+    /* =========================
+     * Core services
+     * ========================= */
+
+    /* UserServiceImpl userService =
+                new UserServiceImpl(
+                        keycloakUserService, organizationService, creditService, esService, docUserIndex);
+
+    */
     OrganizationDAOFactory organizationDAOFactory = new OrganizationDAOFactory(pgService);
-    CreditDAOFactory creditDAOFactory = new CreditDAOFactory(pgService);
-    OrganizationCreateReportService organizationCreateReportService = new OrganizationCreateRequestReportServiceImpl(organizationDAOFactory, creditDAOFactory, vertx);
-    OrganizationHandler  organizationHandler = new OrganizationHandler(organizationService, userService,emailComposer, organizationCreateReportService,creditService,keycloakUserService,urnGenerator,delegationService);
-    return new OrganizationController(organizationHandler, auditingHandler,kycRequired);
+
+    PolicyDao policyDao = new PolicyDaoImpl(pgService);
+
+    ItemService itemService =
+        new ItemServiceImpl(esService, keycloakUserService, policyDao, webClient, docIndex, apdURL);
+
+    OrganizationService organizationService =
+        new OrganizationServiceImpl(organizationDAOFactory, keycloakUserService, itemService);
+
+    /* =========================
+     * Handlers (share service)
+     * ========================= */
+
+    OrganizationCommandHandler commandHandler =
+        new OrganizationCommandHandler(organizationService, urnGenerator);
+
+    OrganizationQueryHandler queryHandler =
+        new OrganizationQueryHandler(organizationService, urnGenerator);
+
+    OrganizationCreateRequestHandler createRequestHandler =
+        new OrganizationCreateRequestHandler(organizationService, emailComposer, urnGenerator);
+
+    OrganizationJoinRequestHandler joinRequestHandler =
+        new OrganizationJoinRequestHandler(
+            organizationService, userService, emailComposer, urnGenerator);
+
+    OrganizationUserHandler userHandler =
+        new OrganizationUserHandler(organizationService, userService, urnGenerator);
+
+    ProviderRoleHandler providerRoleHandler =
+        new ProviderRoleHandler(organizationService, userService, emailComposer, urnGenerator);
+
+    /* =========================
+     * Controller (ONLY wiring)
+     * ========================= */
+
+    return new OrganizationController(
+        commandHandler,
+        queryHandler,
+        createRequestHandler,
+        joinRequestHandler,
+        userHandler,
+        providerRoleHandler,
+        auditingHandler,
+        kycRequired);
   }
 
-  public static OrganizationService createService(PostgresService pgService, KeycloakUserService keycloakUserService, ItemService itemService) {
-
+  /* =========================
+  todo: this method is to be removed later this is just to help with the migration
+   * ========================= */
+  public static OrganizationService createService(
+      PostgresService pgService, KeycloakUserService keycloakUserService, ItemService itemService) {
     OrganizationDAOFactory organizationDAOFactory = new OrganizationDAOFactory(pgService);
-    return new  OrganizationServiceImpl(organizationDAOFactory, keycloakUserService,itemService);
-
+    return new OrganizationServiceImpl(organizationDAOFactory, keycloakUserService, itemService);
   }
 }
