@@ -9,6 +9,7 @@ import org.cdpg.dx.common.model.DxUser;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public interface KeycloakUserService {
@@ -28,6 +29,9 @@ public interface KeycloakUserService {
     Future<Boolean> setKycVerifiedFalse(UUID userId);
     Future<Boolean> updateUserPassword(UUID userId, String password);
     Future<Boolean> setDelegationScopes(UUID userId , List<String> scope,UUID delegatorId);
+    Future<Boolean> clearDelegationScopes(    UUID userId,
+                                              UUID delegatorId,
+                                              Set<String> scopesToRemove);
 //    Future<Boolean> addScopesToUser(UUID userId, List<String> scopes);
 }
 

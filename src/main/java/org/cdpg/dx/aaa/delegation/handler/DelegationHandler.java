@@ -140,7 +140,13 @@ public class DelegationHandler {
           RoutingContextHelper.getRequestPath(ctx), "DELETE", "Delete delegation");
 
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, res ,urnGenerator);
+
+        JsonObject response = new JsonObject()
+          .put("delegation_id", delegationId.toString())
+          .put("status", "deleted");
+
+
+        ResponseBuilder.sendSuccess(ctx, response ,urnGenerator);
 
       })
       .onFailure(ctx::fail);

@@ -383,5 +383,58 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
         });
     }
 
+  @Override
+  public Future<Boolean> clearDelegationScopes(
+    UUID userId,
+    UUID delegatorId,
+    Set<String> scopesToRemove
+  ) {
+
+    UserRepresentation user =
+      usersResource().get(userId.toString()).toRepresentation();
+
+    Map<String, List<String>> attrs =
+      Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>());
+
+    // ---------------- READ EXISTING SCOPES ----------------
+    JsonArray existingScopes = new JsonArray();
+
+    if (attrs.containsKey(KeycloakConstants.SCOPES)
+      && !attrs.get(KeycloakConstants.SCOPES).isEmpty()) {
+
+      String raw = attrs.get(KeycloakConstants.SCOPES).get(0);
+      if (raw != null && !raw.isBlank()) {
+        existingScopes = new JsonArray(raw);
+      }
+    }
+
+    LOGGER.info("Existing scopes before deletion: {}", existingScopes.encode());
+
+    // ---------------- REMOVE ONLY DELEGATION SCOPES ----------------
+    JsonArray updatedScopes = new JsonArray();
+
+    for (Object scope : existingScopes) {
+      if (!scopesToRemove.contains(scope.toString())) {
+        updatedScopes.add(scope);
+      }
+    }
+
+    LOGGER.info("Scopes after deletion: {}", updatedScopes.encode());
+
+    // ---------------- UPDATE ATTRIBUTES ----------------
+    attrs.put(KeycloakConstants.SCOPES, List.of(updatedScopes.encode()));
+
+    // Remove DID only if no scopes remain
+    if (updatedScopes.isEmpty()) {
+      attrs.remove(KeycloakConstants.DID);
+    }
+
+    user.setAttributes(attrs);
+    usersResource().get(userId.toString()).update(user);
+
+    return Future.succeededFuture(true);
+  }
+
+
 
 }

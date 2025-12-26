@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.cdpg.dx.aaa.delegation.util.Constants.*;
 import static org.cdpg.dx.common.util.DateTimeHelper.parseDateTime;
@@ -281,19 +282,62 @@ public class DelegationServiceImpl implements DelegationService{
   }
 
   @Override
-  public Future<Boolean> deleteDelegation(UUID delegationId,UUID userId)
-  {
+  public Future<Boolean> deleteDelegation(UUID delegationId, UUID userId) {
 
-    return  delegationGrantDAO.get(delegationId).compose(v->{
-      if(!v.delegatorId().equals(userId))
-      {
-        return Future.failedFuture(new DxForbiddenException("This user cannot delete the delegation as it is not the delegator"));
+    return delegationGrantDAO.get(delegationId).compose(delegationGrant -> {
+
+      if (!delegationGrant.delegatorId().equals(userId)) {
+        return Future.failedFuture(
+          new DxForbiddenException(
+            "This user cannot delete the delegation as it is not the delegator"
+          )
+        );
       }
 
-      return delegationGrantDAO.delete(delegationId);
-    });
+      Map<String, Object> filter =
+        Map.of(DELEGATION_ID, delegationId.toString());
 
+      return delegationScopeConstraintDAO.getAllWithFilters(filter)
+        .compose(constraints -> {
+
+          Set<String> scopesToRemove = new HashSet<>();
+
+          for (DelegationScopeConstraint c : constraints) {
+            if (c.scope() != null && !c.scope().isBlank()) {
+              if ("*".equals(c.scope())) {
+                RoleScopeMapping mapping =
+                  RoleScopeMapping.fromString(c.role().toString());
+                scopesToRemove.addAll(mapping.getAllowedScopes());
+              } else {
+                scopesToRemove.add(c.scope());
+              }
+            }
+          }
+
+          LOGGER.info(
+            "Removing scopes {} for delegation {}",
+            scopesToRemove,
+            delegationId
+          );
+
+          return keycloakUserService.clearDelegationScopes(
+            delegationGrant.delegateId(),
+            delegationGrant.delegatorId(),
+            scopesToRemove
+          );
+        })
+        .compose(v -> delegationGrantDAO.delete(delegationId))
+        .onSuccess(v ->
+          LOGGER.info(
+            "Delegation {} deleted successfully by user {}",
+            delegationId,
+            userId
+          )
+        )
+        .map(v -> true);
+    });
   }
+
 
 
   @Override

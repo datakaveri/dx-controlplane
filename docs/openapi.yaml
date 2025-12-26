@@ -4184,7 +4184,7 @@ paths:
                     - role: org_admin
                       constraints:
                         - scope: org_management
-                        - expiry_at: "2026-01-31T23:59:59"
+                          expiry_at: "2026-01-31T23:59:59"
 
               role_with_entity_constraints:
                 summary: Role with entity-specific constraints
@@ -4209,7 +4209,7 @@ paths:
         '401':
           description: Unauthorized
         '404':
-          description: Delegate user not found
+          description: Delegate user not foun
 
     get:
       summary: Get All Delegations
@@ -4364,6 +4364,132 @@ paths:
 
 
 
+
+
+
+    delete:
+      summary: Delete a Delegation Grant
+      description: Revoke a delegation grant. Only the delegator (user who granted the delegation) can delete it. This will remove all associated scopes from the delegate user in Keycloak.
+      tags:
+        - Delegation APIs
+      operationId: delete-auth-v2-delegation-id
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the delegation grant to delete
+          schema:
+            type: string
+            format: uuid
+          example: "292b8526-29f1-4893-a0aa-f72cec65c6fc"
+      responses:
+        '200':
+          description: Delegation deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: "urn:dx:auth:Success"
+                  title:
+                    type: string
+                    example: "Success"
+                  detail:
+                    type: string
+                    example: "Delegation deleted successfully"
+              example:
+                type: "urn:dx:auth:Success"
+                title: "Success"
+                detail: "Delegation deleted successfully"
+        '400':
+          description: Invalid delegation ID format
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              example:
+                type: "urn:dx:auth:BadRequest"
+                title: "Bad Request"
+                detail: "Invalid delegation ID format"
+        '401':
+          description: Unauthorized - Missing or invalid authentication token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              example:
+                type: "urn:dx:auth:Unauthorized"
+                title: "Unauthorized"
+                detail: "Authentication token required"
+        '403':
+          description: Forbidden - User is not the delegator of this delegation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              example:
+                type: "urn:dx:auth:Forbidden"
+                title: "Forbidden"
+                detail: "This user cannot delete the delegation as it is not the delegator"
+        '404':
+          description: Delegation grant not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              example:
+                type: "urn:dx:auth:NotFound"
+                title: "Not Found"
+                detail: "Delegation grant not found"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              example:
+                type: "urn:dx:auth:InternalServerError"
+                title: "Internal Server Error"
+                detail: "An error occurred while deleting the delegation"
 
 
   /iudx/v2/auth/delegations/grant-requests/{id}:

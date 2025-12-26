@@ -27,6 +27,10 @@ public class DelegationController implements ApiController {
     .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))  //anyone can create the delegation grant.
     .handler(delegationHandler::createDelegationGrant);
 
+    routerBuilder
+      .operation("delete-auth-v2-delegation-id")
+      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))  //anyone can create the delegation grant.
+      .handler(delegationHandler::deleteDelegationGrant);
 
     routerBuilder
       .operation("get-auth-v2-delegation-id")
