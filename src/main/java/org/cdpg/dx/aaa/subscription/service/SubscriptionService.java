@@ -22,5 +22,5 @@ public interface SubscriptionService {
       String subscriptionName,
       String entitiesId,
       LocalDateTime expiryAt,
-      String providerId);
+      String providerId, String did);
 }

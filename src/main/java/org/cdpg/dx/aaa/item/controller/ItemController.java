@@ -437,6 +437,7 @@ public class ItemController implements ApiController {
 
                 ResponseBuilder.sendSuccess(
                     ctx,
+                    "Success: Item fetched successfully",
                     responseModel.getResponse().getJsonArray(RESULTS),
                     responseModel.getPaginationInfo(),
                     this.urnGenerator);
@@ -496,6 +497,7 @@ public class ItemController implements ApiController {
                 LOGGER.debug("Item retrieved successfully for ID '{}'", itemId);
                 ResponseBuilder.sendSuccess(
                     routingContext,
+                    "Success: Item fetched successfully",
                     responseModel.getResponse().getJsonArray(RESULTS),
                     responseModel.getPaginationInfo(),
                     this.urnGenerator);

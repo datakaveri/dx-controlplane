@@ -76,10 +76,29 @@ public class PostSearchRequestBuilder {
     JsonObject requestBody = routingContext.getBodyAsJson();
     MultiMap params = routingContext.queryParams();
 
+    int size = getSize(params);
+    int page = getPage(params);
+    // ---------------------------
+    // Pagination validation
+    // ---------------------------
+    int offset = (page - 1) * size;
+    int limitWindow = offset + size;
+
+    // Allow only first 10,000 records
+    if (limitWindow > 10000) {
+      throw new DxBadRequestException(
+          "Invalid pagination. The value of (page * size) must be between 1 and 10,000");
+    }
+
+    if (size <= 0 || page <= 0) {
+      throw new DxBadRequestException("'page' and 'size' must be positive integers");
+    }
+
+
     QueryDecoderRequestDTO dto = new QueryDecoderRequestDTO(
         buildSearchType(requestBody),
-        getSize(params),
-        getPage(params),
+        size,
+        page,
         getId(requestBody),
         getFilters(requestBody),
         getTextSearchRequest(requestBody),

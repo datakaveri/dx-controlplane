@@ -66,6 +66,11 @@ public class ResponseBuilder {
     send(ctx, HttpStatusCode.SUCCESS, null, result, pageInfo, urnGenerator);
   }
 
+  public static <T> void sendSuccess(RoutingContext ctx, String detail, T result,
+                                     PaginationInfo pageInfo, URNGenerator urnGenerator) {
+    send(ctx, HttpStatusCode.SUCCESS, detail, result, pageInfo, urnGenerator);
+  }
+
   public static <T> void sendSuccess(RoutingContext ctx, String detail, T result, URNGenerator urnGenerator) {
     send(ctx, HttpStatusCode.SUCCESS, detail, result, null, urnGenerator);
   }

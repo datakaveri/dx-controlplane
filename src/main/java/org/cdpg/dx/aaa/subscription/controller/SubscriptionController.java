@@ -9,6 +9,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -17,6 +18,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.apiserver.ApiController;
 import org.cdpg.dx.aaa.subscription.service.SubscriptionService;
+import org.cdpg.dx.aaa.subscription.util.GetDid;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.URNGenerator;
@@ -29,7 +31,7 @@ public class SubscriptionController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(SubscriptionController.class);
   private final SubscriptionService subscriptionService;
   Handler<RoutingContext> roleAllowed =
-      AuthorizationHandler.forRoles(DxRole.CONSUMER_DELEGATE, DxRole.CONSUMER);
+      AuthorizationHandler.forRoles(DxRole.DELEGATE, DxRole.CONSUMER);
   SubscriptionAuthorizationHandler subscriptionAuthorizationHandler;
 
   public SubscriptionController(
@@ -113,63 +115,57 @@ public class SubscriptionController implements ApiController {
 
   private static LocalDateTime parseAndValidateFutureTimeWithPolicy2(
       String expiryAt, String policyExpiry) {
-    ZonedDateTime now = ZonedDateTime.now();
-    if (policyExpiry == null || policyExpiry.isBlank()) {
 
-      if (expiryAt == null || expiryAt.isBlank()) {
-        // both null → default expiry = now + 1 year
-        return now.plusYears(1).toLocalDateTime();
-      }
-      ZonedDateTime userExpiry;
+    // Local system time (same reference as policyExpiry)
+    LocalDateTime now = LocalDateTime.now();
+    ZoneId systemZone = ZoneId.of("Asia/Kolkata");
+    ;
+
+    // ---- Parse policyExpiry (LOCAL time) ----
+    LocalDateTime policyTime = null;
+    if (policyExpiry != null && !policyExpiry.isBlank()) {
       try {
-        userExpiry = ZonedDateTime.parse(expiryAt);
+        policyTime = LocalDateTime.parse(policyExpiry);
       } catch (DateTimeParseException e) {
-        throw new DxValidationException("expiryAt has invalid format, expected ISO8601 format");
+        throw new DxValidationException(
+            "policyExpiry has invalid format, expected local ISO datetime");
       }
 
-      if (userExpiry.isAfter(now)) {
-        return userExpiry.toLocalDateTime();
-      } else {
-        throw new DxValidationException("expiryAt must be a future time");
+      if (!policyTime.isAfter(now)) {
+        throw new DxValidationException("policyExpiry must be a future time");
       }
     }
 
-    LocalDateTime policyTime;
-    try {
-      policyTime = LocalDateTime.parse(policyExpiry);
-    } catch (DateTimeParseException e) {
-      throw new DxValidationException("policyExpiry has invalid format, expected format");
-    }
-
-    // policy must be in the future too
-    if (!policyTime.isAfter(now.toLocalDateTime())) {
-      throw new DxValidationException("policyExpiry must be a future time");
-    }
-
-    // expiryAt is NULL → expiryAt = policyExpiry
+    // ---- expiryAt NOT provided ----
     if (expiryAt == null || expiryAt.isBlank()) {
-      return policyTime;
+      if (policyTime != null) {
+        return policyTime;
+      }
+      // default: now + 1 year (LOCAL)
+      return now.plusYears(1);
     }
 
-    // expiryAt is provided → parse & compare
-    ZonedDateTime userExpiry;
+    // ---- Parse expiryAt (ISO with zone) and convert to LOCAL ----
+    ZonedDateTime zonedExpiry;
     try {
-      userExpiry = ZonedDateTime.parse(expiryAt);
+      zonedExpiry = ZonedDateTime.parse(expiryAt);
     } catch (DateTimeParseException e) {
-      throw new DxValidationException("expiryAt has invalid format, expected ISO format");
+      throw new DxValidationException("expiryAt has invalid format, expected ISO-8601 datetime");
     }
 
-    // must be in future
-    if (!userExpiry.isAfter(now)) {
+    // Convert to LOCAL time
+    LocalDateTime userExpiryLocal = zonedExpiry.withZoneSameInstant(systemZone).toLocalDateTime();
+
+    // ---- Validations (LOCAL vs LOCAL) ----
+    if (!userExpiryLocal.isAfter(now)) {
       throw new DxValidationException("expiryAt must be a future time");
     }
 
-    // must NOT exceed policy
-    if (userExpiry.toLocalDateTime().isAfter(policyTime)) {
+    if (policyTime != null && userExpiryLocal.isAfter(policyTime)) {
       throw new DxValidationException("expiryAt cannot be greater than policyExpiry");
     }
 
-    return userExpiry.toLocalDateTime();
+    return userExpiryLocal;
   }
 
   @Override
@@ -209,6 +205,7 @@ public class SubscriptionController implements ApiController {
         parseAndValidateFutureTimeWithPolicy2(requestBody.getString("expiryAt"), policyAt);
     LOGGER.debug("expiryAt {}", expiryAt);
     String providerId = RoutingContextHelper.getProviderId(routingContext);
+    String did = String.valueOf(GetDid.getDid(routingContext.user().principal(), userId));
     subscriptionService
         .createSubscription(
             userId,
@@ -216,7 +213,8 @@ public class SubscriptionController implements ApiController {
             subscriptionName,
             entitiesId,
             expiryAt,
-            providerId)
+            providerId,
+            did)
         .onSuccess(
             v ->
                 routingContext

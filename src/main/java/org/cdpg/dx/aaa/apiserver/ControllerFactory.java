@@ -42,6 +42,7 @@ import org.cdpg.dx.aaa.credit.factory.CreditControllerFactory;
 import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.delegation.factory.DelegationControllerFactory;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
+import org.cdpg.dx.aaa.email.factory.EmailComposerFactory;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.ingestion.service.IngestionService;
 import org.cdpg.dx.aaa.ingestion.service.IngestionServiceImpl;
@@ -54,7 +55,9 @@ import org.cdpg.dx.aaa.kyc.factory.KYCFactory;
 import org.cdpg.dx.aaa.kyc.handler.KYCHandler;
 import org.cdpg.dx.aaa.list.controller.ListController;
 import org.cdpg.dx.aaa.list.factory.ListControllerFactory;
+import org.cdpg.dx.aaa.organization.controller.OrganizationReportController;
 import org.cdpg.dx.aaa.organization.factory.OrganizationControllerFactory;
+import org.cdpg.dx.aaa.organization.factory.OrganizationReportControllerFactory;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.publicKey.controller.PublicController;
 import org.cdpg.dx.aaa.publicKey.factory.PublicKeycontrllerFactory;
@@ -92,7 +95,7 @@ public class ControllerFactory {
     final String docIndex = config.getString(DOC_INDEX);
     final String docUserIndex = config.getString(DOC_USER_INDEX);
     final String vocContext = config.getString(VOC_CONTEXT);
-    final Boolean kycRequired = config.getBoolean("kycRequired");
+    final Boolean isKycRequired = config.getBoolean("kycRequired", false);
     final String apdURL = config.getString(APD_URL);
     final String verifiedBy = config.getString(VERIFIED_BY);
 
@@ -130,6 +133,10 @@ public class ControllerFactory {
 
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
 
+    EmailComposer emailComposer =
+        EmailComposerFactory.create(
+            emailService, keycloakUserService, pgService, esService, webClient, config);
+
     PolicyDao policyDao = new PolicyDaoImpl(pgService);
     ItemService itemService =
         new ItemServiceImpl(esService, keycloakUserService, policyDao, webClient, docIndex, apdURL);
@@ -143,25 +150,17 @@ public class ControllerFactory {
     DelegationService delegationService =
         DelegationControllerFactory.createService(
             pgService, keycloakUserService, organizationService, itemService);
-
     UserService userService =
         UserControllerFactory.createService(
             keycloakUserService, organizationService, creditService, esService, docUserIndex);
-    EmailComposer emailComposer =
-        new EmailComposer(
-            emailService,
-            keycloakUserService,
-            config,
-            organizationService,
-            userService,
-            creditService);
 
     AssetHandler assetHandler =
         AssetFactory.createHandler(pgService, config, emailComposer, urnGenerator);
     ApiController assetController = new AssetController(assetHandler, auditingHandler);
 
     ApiController creditApiController =
-        CreditControllerFactory.create(creditService, emailComposer, userService, urnGenerator);
+        CreditControllerFactory.create(
+            creditService, emailComposer, userService, urnGenerator, isKycRequired);
 
     ApiController delegationApiController =
         DelegationControllerFactory.create(
@@ -172,19 +171,24 @@ public class ControllerFactory {
     KYCHandler kycHandler =
         KYCFactory.createHandler(vertx, config, creditService, pgService, urnGenerator);
     ApiController kycController = new KYCController(kycHandler);
+
     ApiController organizationController =
         OrganizationControllerFactory.create(
-            organizationService,
             userService,
             auditingHandler,
             emailComposer,
-            vertx,
             pgService,
-            creditService,
+            esService,
             keycloakUserService,
             urnGenerator,
-            kycRequired,
-            delegationService);
+            delegationService,
+            webClient,
+            isKycRequired,
+            docIndex,
+            apdURL);
+
+    OrganizationReportController organizationReportController =
+        OrganizationReportControllerFactory.create(vertx, pgService);
 
     AdminHandler adminHandler =
         new AdminHandler(
@@ -257,6 +261,7 @@ public class ControllerFactory {
             dataBrokerService, pgService, urnGenerator, controlPlaneDomain);
     return List.of(
         organizationController,
+        organizationReportController,
         creditApiController,
         kycController,
         adminController,

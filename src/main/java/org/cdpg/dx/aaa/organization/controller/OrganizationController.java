@@ -1,205 +1,211 @@
 package org.cdpg.dx.aaa.organization.controller;
 
+import static org.cdpg.dx.aaa.apiserver.OperationIds.*;
 
 import io.vertx.ext.web.openapi.RouterBuilder;
-import org.cdpg.dx.aaa.apiserver.ApiController;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.organization.handler.OrganizationHandler;
+import org.cdpg.dx.aaa.apiserver.ApiController;
+import org.cdpg.dx.aaa.organization.handler.*;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 
 public class OrganizationController implements ApiController {
-    private static final Logger LOGGER = LogManager.getLogger(OrganizationController.class);
-    private final OrganizationHandler organizationHandler;
-    private final AuditingHandler auditingHandler;
-    private final Boolean kycRequired;
 
-    public OrganizationController(OrganizationHandler organizationHandler, AuditingHandler auditingHandler,Boolean kycRequired) {
-        this.organizationHandler = organizationHandler;
-        this.auditingHandler = auditingHandler;
-        this.kycRequired = kycRequired;
-    }
+  private static final Logger LOGGER = LogManager.getLogger(OrganizationController.class);
 
-    @Override
-    public void register(RouterBuilder routerBuilder) {
+  private final OrganizationCommandHandler commandHandler;
+  private final OrganizationQueryHandler queryHandler;
+  private final OrganizationCreateRequestHandler createRequestHandler;
+  private final OrganizationJoinRequestHandler joinRequestHandler;
+  private final OrganizationUserHandler userHandler;
+  private final ProviderRoleHandler providerRoleHandler;
+  private final AuditingHandler auditingHandler;
+  private final Boolean isKycRequired;
 
-        routerBuilder
-                .operation("get-auth-v2-organisations-request")
-                .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
-                .handler(organizationHandler::getOrganisationRequest);
+  public OrganizationController(
+      OrganizationCommandHandler commandHandler,
+      OrganizationQueryHandler queryHandler,
+      OrganizationCreateRequestHandler createRequestHandler,
+      OrganizationJoinRequestHandler joinRequestHandler,
+      OrganizationUserHandler userHandler,
+      ProviderRoleHandler providerRoleHandler,
+      AuditingHandler auditingHandler,
+      Boolean isKycRequired) {
 
-         routerBuilder
-              .operation("get-auth-v2-user-organisations-request")
-              .handler(auditingHandler::handleApiAudit)
-              .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
-              .handler(organizationHandler::getUserOrganisationRequest);
+    this.commandHandler = commandHandler;
+    this.queryHandler = queryHandler;
+    this.createRequestHandler = createRequestHandler;
+    this.joinRequestHandler = joinRequestHandler;
+    this.userHandler = userHandler;
+    this.providerRoleHandler = providerRoleHandler;
+    this.auditingHandler = auditingHandler;
+    this.isKycRequired = isKycRequired;
+  }
 
-          routerBuilder
-              .operation("delete-auth-v2-user-organisations-request")
-              .handler(auditingHandler::handleApiAudit)
-              .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
-              .handler(organizationHandler::deleteOrganizationCreateRequest);
+  @Override
+  public void register(RouterBuilder routerBuilder) {
 
+    /* =========================
+     * Organization create request
+     * ========================= */
 
-      routerBuilder
-                .operation("post-auth-v2-organisations-request")
-                .handler(auditingHandler::handleApiAudit)
-//                .handler(AuthorizationHandler.requireKycVerified())
-                .handler(kycRequired ? AuthorizationHandler.requireKycVerified() : ctx -> ctx.next())
-                .handler(organizationHandler::createOrganisationRequest);
+    routerBuilder
+        .operation(OP_GET_ORG_CREATE_REQUESTS)
+        .handler(auditingHandler::handleApiAudit) // done
+        .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN, DxRole.DELEGATE))
+        .handler(createRequestHandler::getAllOrganisationRequest);
 
-        routerBuilder
-                .operation("post-auth-v2-approve-create_org")
-                .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
-                .handler(organizationHandler::approveOrganisationRequest);
-
-        routerBuilder
-                .operation("post-auth-v2-organisations-join-requests")
-                .handler(auditingHandler::handleApiAudit)
-                //.handler(AuthorizationHandler.requireKycVerified())
-                .handler(kycRequired ? AuthorizationHandler.requireKycVerified() : ctx -> ctx.next())
-                .handler(organizationHandler::joinOrganisationRequest);
-
-        routerBuilder
-                .operation("get-auth-v2-organisations-join-requests")
-                .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN,DxRole.DELEGATE))
-                .handler(organizationHandler::getJoinOrganisationRequests);
-
-         routerBuilder
-                .operation("get-auth-v2-user-organisations-join-requests")
-                .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
-                .handler(organizationHandler::getUserJoinOrganisationRequests);
-
-         routerBuilder
-              .operation("delete-auth-v2-user-organisations-join-requests")
-              .handler(auditingHandler::handleApiAudit)
-              .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
-              .handler(organizationHandler::deleteUserJoinOrganisationRequests);
-
-
-        routerBuilder
-                .operation("put-auth-v2-organisations-join-requests")
-                .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN,DxRole.DELEGATE))
-                .handler(organizationHandler::approveJoinOrganisationRequests);
-
-        routerBuilder
-                .operation("get-auth-v2-org")
-                .handler(auditingHandler::handleApiAudit)
-                .handler(organizationHandler::listAllOrganisations);
-
-        routerBuilder
-                .operation("delete-auth-v2-organisations-id")
-                .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN, DxRole.ORG_ADMIN,DxRole.DELEGATE))
-                .handler(organizationHandler::deleteOrganisationById);
-
-        routerBuilder
-                .operation("put-auth-v2-organisations-id")
-                .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
-                .handler(organizationHandler::updateOrganisationById);
-
-        //Organization User
-        routerBuilder
-                .operation("get-auth-v2-org-users")
-                .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN,DxRole.DELEGATE))
-                .handler(organizationHandler::getOrganisationUsers);
-        routerBuilder
-                .operation("get-auth-v2-organisations-id-users-user_id")
-                .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN,DxRole.DELEGATE))
-                .handler(organizationHandler::getOrganisationUserInfo);
-
-        routerBuilder
-                .operation("delete-auth-v2-organisations-users-id")
-                .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
-                .handler(organizationHandler::deleteOrganisationUserById);
-
-        routerBuilder
-                .operation("put-auth-v2-organization-users-role")
-                .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
-                .handler(organizationHandler::updateOrganisationUserRole);
-
-        routerBuilder
-                .operation("post-auth-v2-user-roles")
-                .handler(auditingHandler::handleApiAudit)
-                .handler(organizationHandler::createProviderRequest);
-
-        routerBuilder
-                .operation("get-auth-v2-orgid-provider-requests")
-                .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN,DxRole.DELEGATE,DxRole.COS_ADMIN))
-                .handler(organizationHandler::getProviderRequest);
-
-        routerBuilder
-                .operation("put-auth-v2-user-roles")
-                .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN,DxRole.DELEGATE,DxRole.COS_ADMIN))
-                .handler(organizationHandler::updateProviderRequest);
-
-
-      routerBuilder
-        .operation("get-auth-v2-user-provider-requests")
-        .handler(auditingHandler::handleApiAudit)
+    routerBuilder
+        .operation(OP_GET_USER_ORG_CREATE_REQUESTS)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
-        .handler(organizationHandler::getProviderRoleRequest);
+        .handler(createRequestHandler::getUserOrganisationRequest);
 
-      routerBuilder
-        .operation("delete-auth-v2-user-provider-requests")
-        .handler(auditingHandler::handleApiAudit)
+    routerBuilder
+        .operation(OP_DELETE_USER_ORG_CREATE_REQUEST)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
-        .handler(organizationHandler::deleteUserProviderRoleRequest);
+        .handler(createRequestHandler::deleteOrganizationCreateRequest);
 
+    routerBuilder
+        .operation(OP_CREATE_ORG_REQUEST)
+        .handler(auditingHandler::handleApiAudit) // done
+        .handler(AuthorizationHandler.KycVerification(isKycRequired))
+        .handler(createRequestHandler::createOrganisationRequest);
 
-      routerBuilder
-        .operation("post-auth-v2-organization-user-provider")
+    routerBuilder
+        .operation(OP_APPROVE_ORG_CREATE_REQUEST)
+        .handler(auditingHandler::handleApiAudit) // done
+        .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN, DxRole.DELEGATE))
+        .handler(createRequestHandler::updateOrganisationRequest);
+
+    /* =========================
+     * Organization join requests
+     * ========================= */
+
+    routerBuilder
+        .operation(OP_CREATE_ORG_JOIN_REQUEST)
+        .handler(auditingHandler::handleApiAudit) // Done
+        .handler(AuthorizationHandler.KycVerification(isKycRequired))
+        .handler(joinRequestHandler::joinOrganisationRequest);
+
+    routerBuilder
+        .operation(OP_GET_ORG_JOIN_REQUESTS)
+        .handler(auditingHandler::handleApiAudit) // done
+        .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN, DxRole.DELEGATE))
+        .handler(joinRequestHandler::getJoinOrganisationRequests);
+
+    routerBuilder
+        .operation(OP_GET_USER_ORG_JOIN_REQUESTS)
+        .handler(auditingHandler::handleApiAudit) // done
+        .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+        .handler(joinRequestHandler::getUserJoinOrganisationRequests);
+
+    routerBuilder
+        .operation(OP_DELETE_USER_ORG_JOIN_REQUEST)
+        .handler(auditingHandler::handleApiAudit) // done
+        .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+        .handler(joinRequestHandler::deleteUserJoinOrganisationRequests);
+
+    routerBuilder
+        .operation(OP_APPROVE_ORG_JOIN_REQUEST)
+        .handler(auditingHandler::handleApiAudit) // Done
+        .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN, DxRole.DELEGATE))
+        .handler(joinRequestHandler::approveJoinOrganisationRequests);
+
+    /* =========================
+     * Organization core
+     * ========================= */
+
+    routerBuilder
+        .operation(OP_LIST_ORGANISATIONS)
+        .handler(auditingHandler::handleApiAudit) // not required
+        .handler(queryHandler::listAllOrganisations);
+
+    routerBuilder
+        .operation(OP_GET_ORGANISATION_BY_ID)
+        .handler(auditingHandler::handleApiAudit) // done
+        .handler(queryHandler::getOrganizationById);
+
+    routerBuilder
+        .operation(OP_UPDATE_ORGANISATION_BY_ID)
+        .handler(auditingHandler::handleApiAudit) // done
+        .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN, DxRole.DELEGATE))
+        .handler(commandHandler::updateOrganisationById);
+
+    routerBuilder
+        .operation(OP_DELETE_ORGANISATION_BY_ID)
+        .handler(auditingHandler::handleApiAudit) // done
+        .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN, DxRole.ORG_ADMIN, DxRole.DELEGATE))
+        .handler(commandHandler::deleteOrganisationById);
+
+    /* =========================
+     * Organization users
+     * ========================= */
+
+    routerBuilder
+        .operation(OP_GET_ORG_USERS)
+        .handler(auditingHandler::handleApiAudit) // done
+        .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN, DxRole.DELEGATE))
+        .handler(userHandler::getOrganisationUsers);
+
+    routerBuilder
+        .operation(OP_GET_ORG_USER_INFO)
+        .handler(auditingHandler::handleApiAudit) // done
+        .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN, DxRole.DELEGATE))
+        .handler(userHandler::getOrganisationUserInfo);
+
+    routerBuilder
+        .operation(OP_DELETE_ORG_USER)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
-        .handler(organizationHandler::createProviderRole);
+        .handler(userHandler::deleteOrganisationUserById);
 
-        routerBuilder
-                .operation("get-auth-v2-organisations-id")
-                .handler(auditingHandler::handleApiAudit)
-                .handler(organizationHandler::getOrganizationById);
+    routerBuilder
+        .operation(OP_UPDATE_ORG_USER_ROLE)
+        .handler(auditingHandler::handleApiAudit) // done
+        .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
+        .handler(userHandler::updateOrganisationUserRole);
 
-        routerBuilder
-                .operation("get-auth-v2-organisations-requests-report")
-                .handler(organizationHandler::getOrganizationCreateReport);
+    /* =========================
+     * Provider roles
+     * ========================= */
 
-        routerBuilder
-                .operation("get-auth-v2-organisations-report")
-                .handler(organizationHandler::getOrganizationReport);
+    routerBuilder
+        .operation(OP_CREATE_PROVIDER_REQUEST)
+        .handler(auditingHandler::handleApiAudit) // done
+        .handler(providerRoleHandler::createProviderRequest);
 
-        routerBuilder
-                .operation("get-auth-v2-organisations-join_requests-report")
-                .handler(organizationHandler::getOrganizationJoinReport);
+    routerBuilder
+        .operation(OP_GET_PROVIDER_REQUEST)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN, DxRole.DELEGATE,DxRole.COS_ADMIN))
+        .handler(providerRoleHandler::getProviderRequest);
 
-        routerBuilder
-                .operation("get-auth-v2-compute-requests-report")
-                .handler(organizationHandler::getComputeRoleReport);
+    routerBuilder
+        .operation(OP_UPDATE_PROVIDER_REQUEST)
+        .handler(auditingHandler::handleApiAudit) // done
+        .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN, DxRole.DELEGATE,DxRole.COS_ADMIN))
+        .handler(providerRoleHandler::updateProviderRequest);
 
-        routerBuilder
-                .operation("get-auth-v2-organization-user-provider_role-requests-report")
-                .handler(organizationHandler::getProviderRequestReport);
+    routerBuilder
+        .operation(OP_GET_USER_PROVIDER_REQUESTS)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+        .handler(providerRoleHandler::getProviderRoleRequest);
 
-        routerBuilder
-                .operation("get-auth-v2-credit-request-report")
-                .handler(organizationHandler::getCreditRequestReport);
+    routerBuilder
+        .operation(OP_DELETE_USER_PROVIDER_REQUEST)
+        .handler(auditingHandler::handleApiAudit) // done
+        .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+        .handler(providerRoleHandler::deleteUserProviderRoleRequest);
 
-
-
-
-    }
-
-
+    routerBuilder
+        .operation(OP_CREATE_PROVIDER_ROLE)
+        .handler(auditingHandler::handleApiAudit) // done
+        .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
+        .handler(providerRoleHandler::createProviderRole);
+  }
 }
