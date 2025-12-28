@@ -3191,6 +3191,7 @@ paths:
   /iudx/v2/auth/organization/user/provider_requests:
     get:
       summary: 'User: Get All pending provider role requests'
+      operationId: get-auth-v2-user-provider-requests
       description: >
         This API allows a user to retrieve its pending provider role requests.
         A successful response returns a list of pending
@@ -3226,10 +3227,9 @@ paths:
                       totalPages: 1
                       hasNext: false
                       hasPrevious: false
-      operationId: get-auth-v2-user-provider-requests
       security:
         - authorization: [ ]
-  /iudx/v2/auth/organization/user/provider_requests/{id}:
+  /iudx/v2/auth/organization/user/provider-requests/{id}:
     delete:
       tags:
         - Organisation APIs
@@ -3263,12 +3263,12 @@ paths:
                 $ref: '#/components/schemas/Unauthorized'
       security:
         - authorization: [ ]
-  /iudx/v2/auth/organization/user/provider_role/requests:
+  /iudx/v2/auth/organization/{id}/provider/requests:
     get:
-      summary: 'AAA-014-PFAdmin: Get All pending provider role requests'
+      summary: 'AAA-014-OrgAdmin: Get All pending provider role requests'
       description: >
-        This API allows a platform administrator to retrieve all pending provider role requests
-        from users across various organizations. A successful response returns a list of pending
+        This API allows a org admin to retrieve all pending provider role requests
+        from users in its organization. A successful response returns a list of pending
         requests with details such as user ID, user name, organization ID, organization name,
         status, and timestamps.
       tags:
@@ -3301,9 +3301,19 @@ paths:
                       totalPages: 1
                       hasNext: false
                       hasPrevious: false
-      operationId: get-auth-v2-user-roles
+      operationId: get-auth-v2-orgid-provider-requests
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the organization
+          schema:
+            type: string
+            format: uuid
       security:
         - authorization: [ ]
+
+  /iudx/v2/auth/organization/provider/requests:
     post:
       summary: 'AAA-015-Any User:Create a Provider Role Request'
       description: >

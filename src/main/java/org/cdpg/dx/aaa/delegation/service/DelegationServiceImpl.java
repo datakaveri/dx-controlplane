@@ -231,6 +231,7 @@ public class DelegationServiceImpl implements DelegationService{
 //      });
 //  }
 
+
   @Override
   public Future<List<DelegationScopeConstraint>> getAllDelegationScopeConstraints(UUID itemId) {
 
@@ -266,7 +267,7 @@ public class DelegationServiceImpl implements DelegationService{
   }
 
   @Override
-  public Future<List<DelegationGrant>> getAllDelegationsByUser(UUID userId) {
+  public Future<List<DelegationGrant>> getAllDelegationsByDelegator(UUID userId) {
 
     Map<String,Object> conditionMap = Map.of("delegator_id",userId.toString());
 
@@ -280,6 +281,23 @@ public class DelegationServiceImpl implements DelegationService{
       });
 
   }
+
+  @Override
+  public Future<List<DelegationGrant>> getAllDelegationsByDelegate(UUID userId) {
+
+    Map<String,Object> conditionMap = Map.of(DELEGATE_ID, userId.toString());
+
+    return delegationGrantDAO.getAllWithFilters(conditionMap)
+      .recover(err -> {
+        BaseDxException dxEx = BaseDxException.from(err);
+        if (dxEx instanceof DxNotFoundException) {
+          return Future.failedFuture(new DxNotFoundException("No delegation found with userId as delegate " + userId, dxEx));
+        }
+        return Future.failedFuture(dxEx);
+      });
+
+  }
+
 
   @Override
   public Future<Boolean> deleteDelegation(UUID delegationId, UUID userId) {

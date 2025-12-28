@@ -11,5 +11,6 @@ public class KeycloakConstants {
     public static final String ORG_ADMIN_ROLE = "org_admin";
     public static final String PF_ADMIN_ROLE = "cos_admin";
     public static final String PROVIDER_ROLE = "provider";
+  public static final String DELEGATE_ROLE = "delegate";
     public static final String SCOPES = "delegation_scope";
 }

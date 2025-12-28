@@ -396,7 +396,7 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
     Map<String, List<String>> attrs =
       Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>());
 
-    // ---------------- READ EXISTING SCOPES ----------------
+    // ---------- READ EXISTING SCOPES ----------
     JsonArray existingScopes = new JsonArray();
 
     if (attrs.containsKey(KeycloakConstants.SCOPES)
@@ -410,21 +410,21 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
 
     LOGGER.info("Existing scopes before deletion: {}", existingScopes.encode());
 
-    // ---------------- REMOVE ONLY DELEGATION SCOPES ----------------
+    // ---------- FILTER SCOPES ----------
     JsonArray updatedScopes = new JsonArray();
 
-    for (Object scope : existingScopes) {
-      if (!scopesToRemove.contains(scope.toString())) {
+    for (Object s : existingScopes) {
+      String scope = s.toString();
+      if (!scopesToRemove.contains(scope)) {
         updatedScopes.add(scope);
       }
     }
 
     LOGGER.info("Scopes after deletion: {}", updatedScopes.encode());
 
-    // ---------------- UPDATE ATTRIBUTES ----------------
+    // ---------- UPDATE ATTRIBUTES ----------
     attrs.put(KeycloakConstants.SCOPES, List.of(updatedScopes.encode()));
 
-    // Remove DID only if no scopes remain
     if (updatedScopes.isEmpty()) {
       attrs.remove(KeycloakConstants.DID);
     }
@@ -432,8 +432,37 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
     user.setAttributes(attrs);
     usersResource().get(userId.toString()).update(user);
 
+    // ---------- REMOVE DELEGATE ROLE ----------
+    if (updatedScopes.isEmpty()) {
+      return removeDelegateRole(userId).map(true);
+    }
+
     return Future.succeededFuture(true);
   }
+
+
+  private Future<Boolean> removeDelegateRole(UUID userId) {
+
+    return BlockingExecutionUtil.runBlocking(() -> {
+
+      RealmResource realmResource = keycloak.realm(realm);
+
+      RoleRepresentation delegateRole =
+        realmResource.roles()
+          .get(DxRole.DELEGATE.getRole()) // "delegate"
+          .toRepresentation();
+
+      realmResource.users()
+        .get(userId.toString())
+        .roles()
+        .realmLevel()
+        .remove(List.of(delegateRole));
+
+      LOGGER.info("Removed delegate role from user {}", userId);
+      return true;
+    });
+  }
+
 
 
 

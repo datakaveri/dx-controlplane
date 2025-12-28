@@ -13,6 +13,7 @@ import org.cdpg.dx.aaa.clientSecret.dao.ClientcredetialDao;
 import org.cdpg.dx.aaa.clientSecret.dao.impl.ClientcredetialDaoImpl;
 import org.cdpg.dx.aaa.clientSecret.service.ClientcredetialService;
 import org.cdpg.dx.aaa.clientSecret.service.ClientcredetialServiceImpl;
+import org.cdpg.dx.aaa.delegation.DelegationAccessEvaluator;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
@@ -59,6 +60,8 @@ public class TokenControllerFactory {
             config.getString(DOC_INDEX),
             config.getString(APD_URL));
 
+    DelegationAccessEvaluator delegationAccessEvaluator = new DelegationAccessEvaluator(delegationService,itemService,keycloakUserService);
+
     TokenService tokenService =
         new TokenServiceImpl(
             provider,
@@ -68,6 +71,7 @@ public class TokenControllerFactory {
             isssuer,
             tokenExpirationMinutes,
             delegationService,
+            delegationAccessEvaluator,
             vertx);
 
     return new TokenController(tokenService, urnGenerator);

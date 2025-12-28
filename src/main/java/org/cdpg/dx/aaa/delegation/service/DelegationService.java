@@ -33,7 +33,10 @@ public interface DelegationService {
 
   Future<List<DelegationUpdateRequest>> getDelegationRequestsByUser(UUID userId);
 
-  Future<List<DelegationGrant>> getAllDelegationsByUser(UUID userId);
+  Future<List<DelegationGrant>> getAllDelegationsByDelegator(UUID userId);
+
+  Future<List<DelegationGrant>> getAllDelegationsByDelegate(UUID userId);
+
 
   Future<Boolean> deleteDelegation(UUID delegationId,UUID userId);
 

@@ -137,15 +137,15 @@ public class OrganizationController implements ApiController {
                 .handler(organizationHandler::createProviderRequest);
 
         routerBuilder
-                .operation("get-auth-v2-user-roles")
+                .operation("get-auth-v2-orgid-provider-requests")
                 .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN,DxRole.DELEGATE))
+                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN,DxRole.DELEGATE,DxRole.COS_ADMIN))
                 .handler(organizationHandler::getProviderRequest);
 
         routerBuilder
                 .operation("put-auth-v2-user-roles")
                 .handler(auditingHandler::handleApiAudit)
-                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN,DxRole.DELEGATE))
+                .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN,DxRole.DELEGATE,DxRole.COS_ADMIN))
                 .handler(organizationHandler::updateProviderRequest);
 
 

@@ -113,7 +113,7 @@ public class DelegationHandler {
     User user = ctx.user();
     UUID userId = UUID.fromString(user.subject());
 
-    delegationService.getAllDelegationsByUser(userId)
+    delegationService.getAllDelegationsByDelegator(userId)
       .onSuccess(res -> {
         AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
           RoutingContextHelper.getRequestPath(ctx), "GET", "Get All Delegations of a delegator ");
