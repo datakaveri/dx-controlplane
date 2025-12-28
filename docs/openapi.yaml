@@ -59,10 +59,10 @@ paths:
         - authorization: [ ]
       description: |
         Retrieves a list of resource servers.
-        
+
         **Access Control**
         - Accessible only to users with `cos_admin` or `org_admin` roles.
-        
+
         **Role-based behavior**
         - `cos_admin`: Returns all resource servers available in the system.
         - `org_admin`: Returns only the resource servers created by the requesting organization administrator.
@@ -152,10 +152,10 @@ paths:
         - authorization: [ ]
       description: |
         Creates a new resource server configuration.
-        
+
         **Access Control**
         - Accessible only to users with `cos_admin` or `org_admin` roles.
-        
+
         **Notes**
         - The created resource server will initially be in `PENDING` status.
         - Ownership is automatically assigned to the requesting user’s organization.
@@ -235,10 +235,10 @@ paths:
         - authorization: [ ]
       description: |
         Retrieves the details of a specific resource server using its unique identifier.
-        
+
         **Access Control**
         - Accessible only to users with `cos_admin` or `org_admin` roles.
-        
+
         **Role-based behavior**
         - `cos_admin`: Can fetch details of any resource server.
         - `org_admin`: Can fetch details only for resource servers they own.
@@ -304,14 +304,14 @@ paths:
         - Resource Servers
       description: |
         Deletes an existing resource server.
-        
+
         **Access Control**
         - Accessible only to users with `cos_admin` or `org_admin` roles.
-        
+
         **Role-based behavior**
         - `cos_admin`: Can delete any resource server.
         - `org_admin`: Can delete only resource servers owned by their organization.
-        
+
         **Note**
         - Once deleted, the resource server configuration cannot be recovered.
       parameters:
@@ -4412,6 +4412,7 @@ paths:
                     - role: org_admin
                       constraints:
                         - scope: org_management
+                          expiry_at: "2026-01-31T23:59:59"
                         - scope: data_access
                           entity_id:
                             - "xyz-uuid-123"
@@ -5809,18 +5810,18 @@ paths:
       tags:
         - CAT Entity
       description: |
-        Update an existing catalogue item. The request body must contain a fully valid item 
+        Update an existing catalogue item. The request body must contain a fully valid item
         payload including the `id`.
 
         ### Update constraints
         - Relationship and identity fields **cannot be modified**.
         - `itemStatus` is managed by the backend and cannot be updated by clients.
         - `publishStatus` and `dataUploadStatus` cannot be updated via this API.
-        
+
         To change `publishStatus` or `dataUploadStatus`, use the `/organisation/asset` PATCH API.
-  
+
         #### Non-updateable fields
-        If updates to any of the following fields are required, the item must be deleted and 
+        If updates to any of the following fields are required, the item must be deleted and
         re-created.
 
         1. adex:DataBank
@@ -6599,7 +6600,7 @@ paths:
         - Platform Assets Management
       description: >
         Get all the assets belonging to the platform.
-        
+
         **Role-based behavior:**
         - Only users with the `cos_admin` role can access this endpoint.
       operationId: get platform assets
@@ -6721,7 +6722,7 @@ paths:
       description: >
         Fetch all assets belonging to the platform using filters.
         Supports property-based, temporal, numeric range, and full-text search filters.
-        
+
         **Role-based behavior:**
         - Only users with the `cos_admin` role can access this endpoint.
       operationId: get platform assets with filters
@@ -7114,7 +7115,7 @@ paths:
         Unified catalogue search query for discovering entities that meet complex criteria. The
         `/search` endpoint supports a rich combination of property-based (`term`, `flattenedTerm`),
         range-based, and temporal-based searches using a common `searchCriteria` array format.
-        
+
         ### 📌 Visibility of Entities in Discovery
         The `/search` API returns only entities that are fully published and available for
         discovery. An entity is included in results when:
