@@ -4805,7 +4805,7 @@ paths:
                     example: "React"
       responses:
         '201':
-          description:  User information created successfully
+          description: User information created successfully
           content:
             application/json:
               schema:
@@ -5651,7 +5651,7 @@ paths:
         - `publishStatus` and `dataUploadStatus` cannot be updated via this API.
         
         To change `publishStatus` or `dataUploadStatus`, use the `/organisation/asset` PATCH API.
-  
+        
         #### Non-updateable fields
         If updates to any of the following fields are required, the item must be deleted and 
         re-created.
@@ -6479,30 +6479,30 @@ paths:
                     type: "dx:controlPlane:success"
                     title: "Success"
                     result:
-                      -  description: "Support Vector Machine (SVM) is a powerful supervised learning algorithm that creates a hyperplane or set of hyperplanes in a high-dimensional space for classification, regression, or outlier detection tasks. SVMs are effective in high-dimensional spaces, memory efficient, and versatile through different kernel functions (linear, polynomial, RBF, sigmoid). They work by finding the optimal hyperplane that maximizes the margin between different classes in the training data. SVMs are particularly effective for classification problems where the boundary between classes is complex, and they handle both linear and non-linear classification tasks through the kernel trick."
-                         industry: "Sector Agnostic"
-                         type: [ "adex:AiModel" ]
-                         organizationId: "5519beed-53e1-4f81-a863-9aa07bd98b1d"
-                         lastUpdated: "01 June, 2025 - 06:28 PM"
-                         itemStatus: "ACTIVE"
-                         id: "ebfd8b9c-d1f2-4113-84b7-85e49fdaaf77"
-                         department: "NA"
-                         uploadedBy: "NA"
-                         publishStatus: "ACTIVE"
-                         mediaURL: "https://github.com/scikit-learn/scikit-learn"
-                         shortDescription: "A supervised learning algorithm used for classification, regression, and outlier detection"
-                         label: "Support Vector Machine (SVM)"
-                         modelType: "Classical Machine Learning"
-                         '@context': "https://voc.iudx.org.in/"
-                         tags: [ "classical-ml", "traditional-ml", "baseline-models", "machine-learning", "algorithms" ]
-                         organizationType: "Public"
-                         itemCreatedAt: "2025-06-01T18:28:00+0530"
-                         license: "BSD-3-Clause"
-                         fileSize: "-"
-                         name: "SupportVectorMachine"
-                         ownerUserId: "96dd9006-7193-49ed-ad8b-37592525d119"
-                         accessPolicy: "OPEN"
-                         fileFormat: "Python pickle file"
+                      - description: "Support Vector Machine (SVM) is a powerful supervised learning algorithm that creates a hyperplane or set of hyperplanes in a high-dimensional space for classification, regression, or outlier detection tasks. SVMs are effective in high-dimensional spaces, memory efficient, and versatile through different kernel functions (linear, polynomial, RBF, sigmoid). They work by finding the optimal hyperplane that maximizes the margin between different classes in the training data. SVMs are particularly effective for classification problems where the boundary between classes is complex, and they handle both linear and non-linear classification tasks through the kernel trick."
+                        industry: "Sector Agnostic"
+                        type: [ "adex:AiModel" ]
+                        organizationId: "5519beed-53e1-4f81-a863-9aa07bd98b1d"
+                        lastUpdated: "01 June, 2025 - 06:28 PM"
+                        itemStatus: "ACTIVE"
+                        id: "ebfd8b9c-d1f2-4113-84b7-85e49fdaaf77"
+                        department: "NA"
+                        uploadedBy: "NA"
+                        publishStatus: "ACTIVE"
+                        mediaURL: "https://github.com/scikit-learn/scikit-learn"
+                        shortDescription: "A supervised learning algorithm used for classification, regression, and outlier detection"
+                        label: "Support Vector Machine (SVM)"
+                        modelType: "Classical Machine Learning"
+                        '@context': "https://voc.iudx.org.in/"
+                        tags: [ "classical-ml", "traditional-ml", "baseline-models", "machine-learning", "algorithms" ]
+                        organizationType: "Public"
+                        itemCreatedAt: "2025-06-01T18:28:00+0530"
+                        license: "BSD-3-Clause"
+                        fileSize: "-"
+                        name: "SupportVectorMachine"
+                        ownerUserId: "96dd9006-7193-49ed-ad8b-37592525d119"
+                        accessPolicy: "OPEN"
+                        fileFormat: "Python pickle file"
                     paginationInfo:
                       page: 1
                       size: 1
@@ -8103,7 +8103,7 @@ paths:
           content:
             application/json:
               schema:
-                  $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse500'
+                $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse500'
 
       description: |
         This API could be used by a consumer to get the list of all the data subscription under the given user. The API could be used by the subscriber by providing the user access token.
@@ -8165,8 +8165,6 @@ paths:
 
         #### Retrieve Subscription Details
         To retrieve subscriber list, the provider must present the `subscriptionId` and `token`.
-
-
     patch:
       tags:
         - Subscriptions
@@ -8278,6 +8276,174 @@ paths:
 
       deprecated: false
 
+  /iudx/v2/bookmarks:
+    post:
+      tags:
+        - Bookmarks
+      summary: Create a bookmark
+      operationId: post-bookmark
+      security:
+        - authorization: [ ]
+      description: >
+            Creates a bookmark for a supported entity.
+            The operation is idempotent.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostBookmarkRequest'
+
+      responses:
+        '200':
+          description: Bookmark created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookmarkResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Create Bookmark
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/bookmarks' \
+            --header 'Authorization: Bearer <token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "entityId": "7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9",
+              "entityType": "DATABANK"
+            }'
+    
+    get:
+      tags:
+        - Bookmarks
+      summary: Get user bookmarks
+      operationId: get-bookmarks
+      security:
+        - authorization: [ ]
+      description: >
+        Retrieve all bookmarks created by the authenticated user.
+        The user is identified from the access token.
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        "200":
+          description: Successfully retrieved bookmarks for the authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetBookmarksSuccessResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Get Bookmarks
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/bookmarks' \
+            --header 'Authorization: Bearer <token>'
+  /iudx/v2/bookmarks/{entityId}:
+    delete:
+      tags:
+        - Bookmarks
+      summary: Delete a bookmark
+      operationId: delete-bookmark
+      security:
+        - authorization: [ ]
+      description: >
+        Remove a bookmark for the authenticated user.
+        If the bookmark does not exist, the operation still succeeds.
+      parameters:
+        - name: entityId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique identifier of the bookmarked entity
+      responses:
+        "204":
+          description: Bookmark deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Delete Bookmark
+          source: |
+            curl --location --request DELETE \
+            'https://${HOSTNAME}/iudx/v2/bookmarks/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9' \
+            --header 'Authorization: Bearer <token>'
+
+
+
+
 tags:
   - name: Activity Logs
     x-displayName: "Activity Logs"
@@ -8330,6 +8496,13 @@ tags:
       NGSI-LD subscriptions apis.
       These apis are intended to be for the streaming purpose.
     x-displayName: Subscriptions
+
+  - name: Bookmarks
+    description: >
+      APIs for managing user bookmarks on `DATABANK`, `AI_MODEL`, `USECASE` and ,
+      `APP`.
+    x-displayName: Bookmarks
+
 
 components:
   securitySchemes:
@@ -8517,6 +8690,171 @@ components:
       schema:
         type: string
   schemas:
+    PostBookmarkRequest:
+      type: object
+      required:
+        - entityId
+        - entityType
+      properties:
+        entityId:
+          type: string
+          format: uuid
+          description: Unique identifier of the entity to be bookmarked
+          example: 7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9
+
+        entityType:
+          type: string
+          description: Type of the entity being bookmarked
+          enum:
+            - DATABANK
+            - AI_MODEL
+            - USECASE
+            - APP
+
+          example: DATABANK
+    BookmarkResponse:
+      type: object
+      required:
+        - type
+        - title
+        - result
+      properties:
+        type:
+          type: string
+          description: URN identifying the response category
+          example: urn:dx:ControlPlane:success
+
+        title:
+          type: string
+          description: Short response title
+          example: Success
+
+        result:
+          $ref: '#/components/schemas/BookmarkResult'
+
+    BookmarkResult:
+      type: object
+      required:
+        - id
+        - userId
+        - entityId
+        - entityType
+        - createdAt
+        - tableName
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Internal bookmark identifier
+          example: 210e92ee-ab93-4593-a035-60e2620a8eb8
+
+        userId:
+          type: string
+          format: uuid
+          description: Identifier of the user who created the bookmark
+          example: 6effed2b-999c-44da-987a-f56a3aba96c2
+
+        entityId:
+          type: string
+          format: uuid
+          description: Identifier of the bookmarked entity
+          example: 7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9
+
+        entityType:
+          type: string
+          description: Type of the bookmarked entity
+          enum:
+            - DATABANK
+            - AI_MODEL
+            - USECASE
+            - APP
+          example: DATABANK
+
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the bookmark was created
+          example: "2025-12-28T19:01:36.450176"
+
+    GenericBadRequestResponse:
+      type: object
+      required:
+        - type
+        - title
+        - detail
+      properties:
+        type:
+          type: string
+          description: URN identifying the error category
+          example: urn:dx:ControlPlane:badRequest
+
+        title:
+          type: string
+          description: Short error title
+          example: Bad Request
+
+        detail:
+          type: string
+          description: Detailed explanation of the error
+          example: Missing or malformed request
+    GetBookmarksSuccessResponse:
+      type: object
+      required:
+        - type
+        - title
+        - result
+        - paginationInfo
+      properties:
+        type:
+          type: string
+          example: urn:dx:ControlPlane:success
+        title:
+          type: string
+          example: Success
+        result:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookmarkSuccessResult'
+        paginationInfo:
+          $ref: '#/components/schemas/PaginationInfoResponse'
+
+    BookmarkSuccessResult:
+      type: object
+      required:
+        - id
+        - userId
+        - entityId
+        - entityType
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        entityId:
+          type: string
+          format: uuid
+        entityType:
+          type: string
+          enum: [ DATABANK, AI_MODEL, USECASE, APP ]
+        createdAt:
+          type: string
+          format: date-time
+        tableName:
+          type: string
+          example: bookmarks
+      example:
+        id: db2428e8-ee93-42c4-97c8-7b747cce6521
+        userId: 6effed2b-999c-44da-987a-f56a3aba96c2
+        entityId: 7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9
+        entityType: DATABANK
+        createdAt: "2025-12-29T09:50:21.718568"
+
+
+
+
     PaginationInfo:
       type: object
       description: Pagination metadata for paged responses
@@ -8546,6 +8884,46 @@ components:
         - totalPages
         - hasNext
         - hasPrevious
+    PaginationInfoResponse:
+      type: object
+      description: Pagination metadata for paged responses
+      required:
+        - page
+        - size
+        - totalCount
+        - totalPages
+        - hasNext
+        - hasPrevious
+      properties:
+        page:
+          type: integer
+          description: Current page number (1-based)
+          example: 1
+
+        size:
+          type: integer
+          description: Number of items per page
+          example: 10
+
+        totalCount:
+          type: integer
+          description: Total number of items across all pages
+          example: 1
+
+        totalPages:
+          type: integer
+          description: Total number of pages available
+          example: 1
+
+        hasNext:
+          type: boolean
+          description: Indicates whether a next page exists
+          example: false
+
+        hasPrevious:
+          type: boolean
+          description: Indicates whether a previous page exists
+          example: fals
     createastreamingsubscriptionrequest:
       title: createastreamingsubscriptionrequest with subscriptionName
       required:
@@ -8666,18 +9044,18 @@ components:
         name:
           type: string
           example: Data Kaveri
-          enum: [NGSI-LD,GATEWAY, OGC, FILE]
+          enum: [ NGSI-LD,GATEWAY, OGC, FILE ]
         url:
           type: string
           example: datakaveri.org
         visibility:
           type: string
-          enum: [PUBLIC, PRIVATE]
+          enum: [ PUBLIC, PRIVATE ]
         query_type:
           type: array
           items:
             type: string
-          example: ["ATTR"]
+          example: [ "ATTR" ]
         injection_type:
           type: string
           example: api
@@ -8899,16 +9277,16 @@ components:
           }
         ]
     NgsiLdSubscriptionErrorResponse400:
-        title: NgsiLdSubscriptionErrorResponse400
-        properties:
-          type:
-            type: string
-          title:
-            type: string
-          detail:
-            type: string
-          instance:
-            type: string
+      title: NgsiLdSubscriptionErrorResponse400
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+        instance:
+          type: string
     NgsiLdSubscriptionErrorResponse404:
       title: NgsiLdSubscriptionErrorResponse404
       properties:
@@ -8966,7 +9344,7 @@ components:
           items:
             type: object
       example:
-       [
+        [
           {
             "id": "04XX5967-addf-4e96-XXXX-dcfa16c3e83b",
             "queue_name": "50e82XXb-7b2b-494a-XXXX-7fbed559965a/sub-deced3d5",
@@ -14872,7 +15250,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:auditing:notAuthorized
+          example: urn:dx:ControlPlane:notAuthorized
         title:
           type: string
           example: Not Authorized
@@ -14884,7 +15262,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:auditing:forbidden
+          example: urn:dx:ControlPlane:forbidden
         title:
           type: string
           example: Forbidden
@@ -14896,7 +15274,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:auditing:badRequest
+          example: urn:dx:ControlPlane:badRequest
         title:
           type: string
           example: Bad Request
@@ -14908,7 +15286,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:auditing:internalServerError
+          example: urn:dx:ControlPlane:internalServerError
         title:
           type: string
           example: Internal Server Error

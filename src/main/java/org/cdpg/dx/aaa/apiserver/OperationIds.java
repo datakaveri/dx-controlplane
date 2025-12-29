@@ -97,4 +97,11 @@ public final class OperationIds {
       "get-auth-v2-organization-user-provider_role-requests-report";
 
   public static final String OP_CREDIT_REQUEST_REPORT = "get-auth-v2-credit-request-report";
+
+  /* =====================================================
+   * Bookmarks
+   * ===================================================== */
+  public static final String OP_POST_BOOKMARK = "post-bookmark";
+  public static final String OP_GET_BOOKMARKS = "get-bookmarks";
+  public static final String OP_DELETE_BOOKMARK = "delete-bookmark";
 }
