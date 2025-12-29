@@ -99,23 +99,31 @@ public class UpsertQuery implements Query {
   // Generate SQL string
   @Override
   public String toSQL() {
+
     String placeholders =
         IntStream.rangeClosed(1, columns.size())
             .mapToObj(i -> "$" + i)
             .collect(Collectors.joining(", "));
 
-    String updates =
-        updateColumns.stream()
-            .map(col -> col + " = EXCLUDED." + col)
-            .collect(Collectors.joining(", "));
+    String conflictAction;
+
+    if (updateColumns == null || updateColumns.isEmpty()) {
+      conflictAction = "DO NOTHING";
+    } else {
+      String updates =
+          updateColumns.stream()
+              .map(col -> col + " = EXCLUDED." + col)
+              .collect(Collectors.joining(", "));
+      conflictAction = "DO UPDATE SET " + updates;
+    }
 
     return String.format(
-        "INSERT INTO %s (%s) VALUES (%s) ON CONFLICT (%s) DO UPDATE SET %s RETURNING *",
+        "INSERT INTO %s (%s) VALUES (%s) ON CONFLICT (%s) %s RETURNING *",
         table,
         String.join(", ", columns),
         placeholders,
         String.join(", ", conflictColumns),
-        updates);
+        conflictAction);
   }
 
   @Override

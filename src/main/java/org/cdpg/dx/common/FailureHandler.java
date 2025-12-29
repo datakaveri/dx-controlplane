@@ -50,6 +50,7 @@ public class FailureHandler implements Handler<RoutingContext> {
         || failure instanceof BodyProcessorException
         || failure instanceof RequestPredicateException
         || failure instanceof ParameterProcessorException) {
+      LOGGER.error("Validation error: {}", failure.getMessage(), failure);
       context
           .response()
           .putHeader(CONTENT_TYPE, APPLICATION_JSON)
