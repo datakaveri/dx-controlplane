@@ -284,4 +284,57 @@ public abstract class AbstractBaseDAO<T extends BaseEntity<T>> implements BaseDA
 
     return new PaginatedResult<>(paginationInfo, entities);
   }
+
+  public Future<UpsertResult<T>> upsertNew(
+      T entity, List<String> conflictColumns, List<String> updateColumns) {
+
+    var dataMap = entity.toNonEmptyFieldsMap();
+
+    UpsertQuery query =
+        new UpsertQuery(
+            tableName,
+            List.copyOf(dataMap.keySet()),
+            List.copyOf(dataMap.values()),
+            conflictColumns,
+            updateColumns);
+
+    return postgresService
+        .upsert(query)
+        .compose(
+            result -> {
+
+              // Case 1: INSERT happened → row returned
+              if (!result.getRows().isEmpty()) {
+                T createdEntity = fromJson.apply(result.getRows().getJsonObject(0));
+                return Future.succeededFuture(new UpsertResult<>(createdEntity, true));
+              }
+
+              // Case 2: Conflict + DO NOTHING → fetch existing row
+              return getExistingByConflict(entity, conflictColumns)
+                  .map(existing -> new UpsertResult<>(existing, false));
+            })
+        .recover(
+            err -> {
+              LOGGER.error("Error upserting into {}: {}", tableName, err.getMessage(), err);
+              return Future.failedFuture(BaseDxException.from(err));
+            });
+  }
+
+  private Future<T> getExistingByConflict(T entity, List<String> conflictColumns) {
+
+    Map<String, Object> filters =
+        entity.toNonEmptyFieldsMap().entrySet().stream()
+            .filter(e -> conflictColumns.contains(e.getKey()))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+    return getAllWithFilters(filters)
+        .compose(
+            list -> {
+              if (list.isEmpty()) {
+                return Future.failedFuture(
+                    new NoRowFoundException("Upsert conflict row not found"));
+              }
+              return Future.succeededFuture(list.get(0));
+            });
+  }
 }

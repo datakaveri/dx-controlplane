@@ -34,6 +34,7 @@ import org.cdpg.dx.aaa.admin.handler.AdminHandler;
 import org.cdpg.dx.aaa.asset.controller.AssetController;
 import org.cdpg.dx.aaa.asset.factory.AssetFactory;
 import org.cdpg.dx.aaa.asset.handler.AssetHandler;
+import org.cdpg.dx.aaa.bookmarks.factory.BookmarksControllerFactory;
 import org.cdpg.dx.aaa.clientSecret.controller.ClientController;
 import org.cdpg.dx.aaa.clientSecret.factory.ClientControllerFactory;
 import org.cdpg.dx.aaa.connector.service.ConnectorService;
@@ -259,6 +260,8 @@ public class ControllerFactory {
     SubscriptionController subscriptionController =
         SubscriptionControllerFactory.create(
             dataBrokerService, pgService, urnGenerator, controlPlaneDomain);
+    ApiController bookmarksController = BookmarksControllerFactory.create(pgService, urnGenerator);
+
     return List.of(
         organizationController,
         organizationReportController,
@@ -277,6 +280,7 @@ public class ControllerFactory {
         delegationApiController,
         activityController,
         activityReportController,
-        subscriptionController);
+        subscriptionController,
+        bookmarksController);
   }
 }
