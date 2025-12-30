@@ -11,6 +11,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import java.nio.file.Files;
@@ -35,8 +36,10 @@ import org.cdpg.dx.aaa.item.util.PatchItemRequest;
 import org.cdpg.dx.auditing.enums.Operation;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
+import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
@@ -124,6 +127,17 @@ public class ItemController implements ApiController {
 
   private void handleCreateOrUpdateItem(RoutingContext ctx) {
     LOGGER.debug("Handling create/update item");
+
+    User user = ctx.user();
+    JsonObject userJson = user.principal();
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.PROVIDER.getRole(),DxRole.COS_ADMIN.getRole()),
+      List.of(DxScope.ASSET_MANAGEMENT.getScope())
+    );
+
 
     JsonObject body = ctx.body().asJsonObject();
 

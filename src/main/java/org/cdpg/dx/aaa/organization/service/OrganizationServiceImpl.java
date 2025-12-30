@@ -1,12 +1,15 @@
 package org.cdpg.dx.aaa.organization.service;
 
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.aaa.credit.models.CreditRequest;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.organization.dao.*;
 import org.cdpg.dx.aaa.organization.models.*;
 import org.cdpg.dx.aaa.organization.config.Constants;
+import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
@@ -20,6 +23,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.Map;
 
+import static org.cdpg.dx.keycloak.config.KeycloakConstants.*;
 import static org.cdpg.dx.aaa.organization.config.Constants.USER_ID;
 import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
 
@@ -467,6 +471,7 @@ public class OrganizationServiceImpl implements OrganizationService {
       });
   }
 
+
   @Override
   public Future<Boolean> updateProviderRequestStatus(UUID requestId, Status status) {
     Map<String, Object> conditionMap = Map.of(
@@ -856,6 +861,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         return Future.succeededFuture(users.get(0));
       });
   }
+
 
 
 

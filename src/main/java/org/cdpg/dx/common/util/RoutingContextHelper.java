@@ -3,6 +3,7 @@ package org.cdpg.dx.common.util;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.*;
 import static org.cdpg.dx.common.ResponseUrn.INVALID_TOKEN_URN;
 
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
@@ -199,6 +200,6 @@ public class RoutingContextHelper {
         null,
         principal.getString("did", null),
         principal.getString("aud", null),
-        new JsonObject());
+        new JsonArray());
   }
 }

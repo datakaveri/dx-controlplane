@@ -3,6 +3,9 @@ package org.cdpg.dx.aaa.delegation;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.delegation.handler.DelegationHandler;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.model.DxUser;
@@ -18,9 +21,13 @@ import java.util.UUID;
 public class DelegationHandlerValidator {
 
   private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+  private static final Logger LOGGER = LogManager.getLogger(DelegationHandlerValidator.class);
+
 
   public void validateCreateDelegationGrantBody(UUID userId, JsonObject body) {
     body.put("delegator_id", userId);
+
+    //*****************************************************************************************************************
 
     String expirationDate = body.getString("expiry_at");
     if (expirationDate == null || expirationDate.isBlank()) {
@@ -38,14 +45,70 @@ public class DelegationHandlerValidator {
       throw new DxBadRequestException("Expiration date must be in the future");
     }
 
-    JsonArray constraintsArray = body.getJsonArray("constraints", new JsonArray());
-    for (int i = 0; i < constraintsArray.size(); i++) {
-      JsonObject constraint = constraintsArray.getJsonObject(i);
-      String scope = constraint.getString("scope");
-      if (scope == null || scope.isBlank()) {
-        throw new DxBadRequestException("Scope is required in constraint at index " + i);
-      }
+    //*****************************************************************************************************************
+
+    JsonArray rolesArray = body.getJsonArray("roles");
+
+    // Full delegation (wildcard for all roles & scopes)
+    if (rolesArray == null || rolesArray.isEmpty()) {
+      LOGGER.info("Delegation gives full access to all roles and scopes of delegator");
+      return;
     }
+
+    for (int i = 0; i < rolesArray.size(); i++) {
+      JsonObject roleObj = rolesArray.getJsonObject(i);
+      String role = roleObj.getString("role");
+
+      if (role == null || role.isBlank()) {
+        throw new DxBadRequestException("Role is required in roles array");
+      }
+
+      JsonArray constraints = roleObj.getJsonArray("constraints");
+      if (constraints == null || constraints.isEmpty()) {
+        throw new DxBadRequestException(
+          "Constraints must be provided when role is specified: " + role
+        );
+      }
+
+      for (int j = 0; j < constraints.size(); j++) {
+
+        JsonObject constraint = constraints.getJsonObject(j);
+
+        String scope = constraint.getString("scope");
+        String entityId = constraint.getString("entity_id");
+        String entityType = constraint.getString("entity_type");
+
+        if (scope == null || scope.isBlank()) {
+          throw new DxBadRequestException("Scope is required in constraints");
+        }
+
+
+        // ---------- Entity pairing validation ----------
+        boolean entityIdPresent = entityId != null;
+        boolean entityTypePresent = entityType != null;
+
+        if (entityIdPresent != entityTypePresent) {
+          throw new DxBadRequestException(
+            "Both entity_id and entity_type must be provided together for scope: "
+              + scope
+          );
+        }
+
+        // entity_id & entity_type both absent → implicit wildcard
+        if (!entityIdPresent) {
+          LOGGER.info(
+            "Scope {} granted for role {} on all entities (implicit wildcard)",
+            scope, role
+          );
+        } else {
+          LOGGER.info(
+            "Scope {} granted for role {} on entity {} ({})",
+            scope, role, entityId, entityType
+          );
+        }
+       }
+    }
+
   }
 
   public void validateCreateUpdateDelegationRequestBody(JsonObject body) {
@@ -97,21 +160,6 @@ public class DelegationHandlerValidator {
     return roles;
   }
 
-  public List<JsonObject> extractConstraintsforDelegationGrants(JsonObject body) {
-    return body.getJsonArray("constraints", new JsonArray())
-      .stream()
-      .map(o -> (JsonObject) o)
-      .toList();
-
-  }
-
-  public List<JsonObject> extractConstraintsforDelegationRequests(JsonObject body) {
-    return body.getJsonArray("requested_scopes", new JsonArray())
-      .stream()
-      .map(o -> (JsonObject) o)
-      .toList();
-
-  }
 
   private LocalDateTime parseDateTime(String str) {
     try {

@@ -59,10 +59,10 @@ paths:
         - authorization: [ ]
       description: |
         Retrieves a list of resource servers.
-        
+
         **Access Control**
         - Accessible only to users with `cos_admin` or `org_admin` roles.
-        
+
         **Role-based behavior**
         - `cos_admin`: Returns all resource servers available in the system.
         - `org_admin`: Returns only the resource servers created by the requesting organization administrator.
@@ -152,10 +152,10 @@ paths:
         - authorization: [ ]
       description: |
         Creates a new resource server configuration.
-        
+
         **Access Control**
         - Accessible only to users with `cos_admin` or `org_admin` roles.
-        
+
         **Notes**
         - The created resource server will initially be in `PENDING` status.
         - Ownership is automatically assigned to the requesting user’s organization.
@@ -235,10 +235,10 @@ paths:
         - authorization: [ ]
       description: |
         Retrieves the details of a specific resource server using its unique identifier.
-        
+
         **Access Control**
         - Accessible only to users with `cos_admin` or `org_admin` roles.
-        
+
         **Role-based behavior**
         - `cos_admin`: Can fetch details of any resource server.
         - `org_admin`: Can fetch details only for resource servers they own.
@@ -304,14 +304,14 @@ paths:
         - Resource Servers
       description: |
         Deletes an existing resource server.
-        
+
         **Access Control**
         - Accessible only to users with `cos_admin` or `org_admin` roles.
-        
+
         **Role-based behavior**
         - `cos_admin`: Can delete any resource server.
         - `org_admin`: Can delete only resource servers owned by their organization.
-        
+
         **Note**
         - Once deleted, the resource server configuration cannot be recovered.
       parameters:
@@ -3397,6 +3397,7 @@ paths:
   /iudx/v2/auth/organization/user/provider_requests:
     get:
       summary: 'User: Get All pending provider role requests'
+      operationId: get-auth-v2-user-provider-requests
       description: >
         This API allows a user to retrieve its pending provider role requests.
         A successful response returns a list of pending
@@ -3432,10 +3433,9 @@ paths:
                       totalPages: 1
                       hasNext: false
                       hasPrevious: false
-      operationId: get-auth-v2-user-provider-requests
       security:
         - authorization: [ ]
-  /iudx/v2/auth/organization/user/provider_requests/{id}:
+  /iudx/v2/auth/organization/user/provider-requests/{id}:
     delete:
       tags:
         - Organisation APIs
@@ -3469,12 +3469,12 @@ paths:
                 $ref: '#/components/schemas/Unauthorized'
       security:
         - authorization: [ ]
-  /iudx/v2/auth/organization/user/provider_role/requests:
+  /iudx/v2/auth/organization/{id}/provider/requests:
     get:
-      summary: 'AAA-014-PFAdmin: Get All pending provider role requests'
+      summary: 'AAA-014-OrgAdmin: Get All pending provider role requests'
       description: >
-        This API allows a platform administrator to retrieve all pending provider role requests
-        from users across various organizations. A successful response returns a list of pending
+        This API allows a org admin to retrieve all pending provider role requests
+        from users in its organization. A successful response returns a list of pending
         requests with details such as user ID, user name, organization ID, organization name,
         status, and timestamps.
       tags:
@@ -3507,9 +3507,19 @@ paths:
                       totalPages: 1
                       hasNext: false
                       hasPrevious: false
-      operationId: get-auth-v2-user-roles
+      operationId: get-auth-v2-orgid-provider-requests
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the organization
+          schema:
+            type: string
+            format: uuid
       security:
         - authorization: [ ]
+
+  /iudx/v2/auth/organization/provider/requests:
     post:
       summary: 'AAA-015-Any User:Create a Provider Role Request'
       description: >
@@ -4302,89 +4312,121 @@ paths:
 
   /iudx/v2/auth/delegation:
     post:
-      summary: Grant Delegation to another User.
+      summary: Grant Delegation to another User
       tags:
         - Delegation APIs
       operationId: post-auth-v2-delegation
       security:
         - authorization: [ ]
       requestBody:
-        description: Create a new delegation grant with scope constraints
+        description: Create a new delegation grant with optional role-based scope constraints
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - delegate_id
+                - justification
+                - expiry_at
               properties:
                 delegate_id:
                   type: string
                   format: uuid
+                  description: UUID of the user receiving the delegation
                 justification:
                   type: string
+                  description: Reason for granting this delegation
                 expiry_at:
                   type: string
                   pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
-                  example: '2025-12-31T23:59:59'
-                scopes:
+                  example: '2026-01-31T23:59:59'
+                  description: When the delegation expires
+                roles:
                   type: array
-                  items:
-                    type: string
-                    example: org_management
-                constraints:
-                  type: array
+                  description: Optional array of roles with constraints. If omitted, delegates all roles of the delegator.
                   items:
                     type: object
+                    required:
+                      - role
                     properties:
-                      scope:
+                      role:
                         type: string
-                      entity_id:
+                        example: org_admin
+                        description: Role being delegated
+                      constraints:
                         type: array
-                        nullable: true
+                        description: Optional scope constraints for this role
                         items:
-                          type: string
-                          format: uuid
-                      expiry_at:
-                        type: string
-                        pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
-                        example: '2025-12-31T23:59:59'
+                          type: object
+                          required:
+                            - scope
+                          properties:
+                            scope:
+                              type: string
+                              example: org_management
+                              description: Scope name for this constraint
+                            entity_id:
+                              type: array
+                              nullable: true
+                              description: Optional specific entity UUIDs
+                              items:
+                                type: string
+                            entity_type:
+                              type: string
+                              nullable: true
+                              example: data_bank
+                              description: Optional type of entity
+                            expiry_at:
+                              type: string
+                              pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
+                              example: '2026-01-31T23:59:59'
+                              description: When the delegation expires
+            examples:
+              minimal:
+                summary: Minimal - Delegate all roles
+                value:
+                  delegate_id: "ba6a3947-0080-4cbf-bdde-0578bc817d42"
+                  justification: "Granting user cos admin role access while the owner is on leave"
+                  expiry_at: "2026-01-31T23:59:59"
+
+              role_with_simple_scope:
+                summary: Role with simple scope constraint
+                value:
+                  delegate_id: "ba6a3947-0080-4cbf-bdde-0578bc817d42"
+                  justification: "Granting user cos admin role access while the owner is on leave"
+                  expiry_at: "2026-01-31T23:59:59"
+                  roles:
+                    - role: org_admin
+                      constraints:
+                        - scope: org_management
+                          expiry_at: "2026-01-31T23:59:59"
+
+              role_with_entity_constraints:
+                summary: Role with entity-specific constraints
+                value:
+                  delegate_id: "ba6a3947-0080-4cbf-bdde-0578bc817d42"
+                  justification: "Granting user cos admin role access while the owner is on leave"
+                  expiry_at: "2026-01-31T23:59:59"
+                  roles:
+                    - role: org_admin
+                      constraints:
+                        - scope: org_management
+                          expiry_at: "2026-01-31T23:59:59"
+                        - scope: data_access
+                          entity_id:
+                            - "xyz-uuid-123"
+                          entity_type: data_bank
+                          expiry_at: "2026-01-31T23:59:59"
       responses:
         '201':
-          description: Delegation grant created successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                    example: success
-                  title:
-                    type: string
-                    example: Delegation grant created
-                  result:
-                    type: object
-      x-codeSamples:
-        - lang: cURL
-          label: create delegation grant cURL
-          source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/auth/delegation' \
-            --header 'Content-Type: application/json' \
-            --header 'Authorization: Bearer <keycloak_token>' \
-            --data '{
-              "delegate_id": "data_access",
-              "justification": "Granting item id access while the owner is on leave",
-              "expiry_at": "2025-12-31T23:59:59",
-              "scopes": [
-                "data_access"
-              ],
-              "constraints": [
-                {
-                  "scope": "data_access",
-                  "entity_id": ["74436122-e6f6-45bf-be53-7ee2c257826b"],
-                  "expiry_at": "2025-12-31T23:59:59"
-                }
-              ]
-            }'
+          description: Delegation created successfully
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Delegate user not foun
 
     get:
       summary: Get All Delegations
@@ -4539,6 +4581,132 @@ paths:
 
 
 
+
+
+
+    delete:
+      summary: Delete a Delegation Grant
+      description: Revoke a delegation grant. Only the delegator (user who granted the delegation) can delete it. This will remove all associated scopes from the delegate user in Keycloak.
+      tags:
+        - Delegation APIs
+      operationId: delete-auth-v2-delegation-id
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the delegation grant to delete
+          schema:
+            type: string
+            format: uuid
+          example: "292b8526-29f1-4893-a0aa-f72cec65c6fc"
+      responses:
+        '200':
+          description: Delegation deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: "urn:dx:auth:Success"
+                  title:
+                    type: string
+                    example: "Success"
+                  detail:
+                    type: string
+                    example: "Delegation deleted successfully"
+              example:
+                type: "urn:dx:auth:Success"
+                title: "Success"
+                detail: "Delegation deleted successfully"
+        '400':
+          description: Invalid delegation ID format
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              example:
+                type: "urn:dx:auth:BadRequest"
+                title: "Bad Request"
+                detail: "Invalid delegation ID format"
+        '401':
+          description: Unauthorized - Missing or invalid authentication token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              example:
+                type: "urn:dx:auth:Unauthorized"
+                title: "Unauthorized"
+                detail: "Authentication token required"
+        '403':
+          description: Forbidden - User is not the delegator of this delegation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              example:
+                type: "urn:dx:auth:Forbidden"
+                title: "Forbidden"
+                detail: "This user cannot delete the delegation as it is not the delegator"
+        '404':
+          description: Delegation grant not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              example:
+                type: "urn:dx:auth:NotFound"
+                title: "Not Found"
+                detail: "Delegation grant not found"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              example:
+                type: "urn:dx:auth:InternalServerError"
+                title: "Internal Server Error"
+                detail: "An error occurred while deleting the delegation"
 
 
   /iudx/v2/auth/delegations/grant-requests/{id}:
@@ -5642,18 +5810,18 @@ paths:
       tags:
         - CAT Entity
       description: |
-        Update an existing catalogue item. The request body must contain a fully valid item 
+        Update an existing catalogue item. The request body must contain a fully valid item
         payload including the `id`.
 
         ### Update constraints
         - Relationship and identity fields **cannot be modified**.
         - `itemStatus` is managed by the backend and cannot be updated by clients.
         - `publishStatus` and `dataUploadStatus` cannot be updated via this API.
-        
+
         To change `publishStatus` or `dataUploadStatus`, use the `/organisation/asset` PATCH API.
-        
+
         #### Non-updateable fields
-        If updates to any of the following fields are required, the item must be deleted and 
+        If updates to any of the following fields are required, the item must be deleted and
         re-created.
 
         1. adex:DataBank
@@ -6432,7 +6600,7 @@ paths:
         - Platform Assets Management
       description: >
         Get all the assets belonging to the platform.
-        
+
         **Role-based behavior:**
         - Only users with the `cos_admin` role can access this endpoint.
       operationId: get platform assets
@@ -6554,7 +6722,7 @@ paths:
       description: >
         Fetch all assets belonging to the platform using filters.
         Supports property-based, temporal, numeric range, and full-text search filters.
-        
+
         **Role-based behavior:**
         - Only users with the `cos_admin` role can access this endpoint.
       operationId: get platform assets with filters
@@ -6947,7 +7115,7 @@ paths:
         Unified catalogue search query for discovering entities that meet complex criteria. The
         `/search` endpoint supports a rich combination of property-based (`term`, `flattenedTerm`),
         range-based, and temporal-based searches using a common `searchCriteria` array format.
-        
+
         ### 📌 Visibility of Entities in Discovery
         The `/search` API returns only entities that are fully published and available for
         discovery. An entity is included in results when:
@@ -8336,7 +8504,7 @@ paths:
               "entityId": "7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9",
               "entityType": "DATABANK"
             }'
-    
+
     get:
       tags:
         - Bookmarks
@@ -15250,7 +15418,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:ControlPlane:notAuthorized
+          example: urn:dx:auditing:notAuthorized
         title:
           type: string
           example: Not Authorized
@@ -15262,7 +15430,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:ControlPlane:forbidden
+          example: urn:dx:auditing:forbidden
         title:
           type: string
           example: Forbidden
@@ -15274,7 +15442,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:ControlPlane:badRequest
+          example: urn:dx:auditing:badRequest
         title:
           type: string
           example: Bad Request
@@ -15286,7 +15454,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:ControlPlane:internalServerError
+          example: urn:dx:auditing:internalServerError
         title:
           type: string
           example: Internal Server Error

@@ -29,7 +29,7 @@ public record DxUser(
         Boolean account_enabled,// newly added field
         String did,
         String aud,
-        JsonObject scopes) {
+        JsonArray scopes) {
     public JsonObject toJson() {
         String isoCreatedAt = createdAt != null
                 ? createdAt.toString()
@@ -118,7 +118,7 @@ public record DxUser(
     }
 
   @Override
-  public JsonObject scopes() {
+  public JsonArray scopes() {
     return scopes;
   }
 

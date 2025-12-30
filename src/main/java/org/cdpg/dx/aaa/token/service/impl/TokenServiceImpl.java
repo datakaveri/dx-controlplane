@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.token.service.impl;
 
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
@@ -10,6 +11,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.clientSecret.service.ClientcredetialService;
+import org.cdpg.dx.aaa.delegation.DelegationAccessEvaluator;
 import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
 import org.cdpg.dx.aaa.delegation.models.DelegationScopeConstraint;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
@@ -43,6 +45,7 @@ public class TokenServiceImpl implements TokenService {
   private final int tokenExpirationMinutes;
   private final Vertx vertx;
   private final DelegationService delegationService;
+  private final DelegationAccessEvaluator delegationAccessEvaluator;
 
   public TokenServiceImpl(
       JWTAuth provider,
@@ -52,6 +55,7 @@ public class TokenServiceImpl implements TokenService {
       String issuer,
       int expirationMinutes,
       DelegationService delegationService,
+      DelegationAccessEvaluator delegationAccessEvaluator,
       Vertx vertx) {
     this.provider = provider;
     this.keycloakUserService = keycloakUserService;
@@ -60,6 +64,7 @@ public class TokenServiceImpl implements TokenService {
     this.issuer = issuer;
     this.tokenExpirationMinutes = expirationMinutes;
     this.vertx = vertx;
+    this.delegationAccessEvaluator = delegationAccessEvaluator;
     this.delegationService = delegationService;
     this.options = new JWTOptions().setAlgorithm(JWT_ALGORITHM).setIssuer(issuer);
   }
@@ -278,102 +283,118 @@ public class TokenServiceImpl implements TokenService {
       });
   }
 
-
-  private Future<DelegationValidationResult> checkDelegationForItem(DxUser user, String itemIdStr) {
-    LOGGER.info("Inside check Delegator Access for item!");
-    UUID userId = user.sub();
-    UUID itemId = UUID.fromString(itemIdStr);
-    LocalDateTime now = LocalDateTime.now();
-
-    return delegationService.getAllDelegationScopeConstraints(itemId)
-      .compose(ar -> {
-        if (ar == null)
-          return Future.failedFuture("No delegation exists for this itemId");
-
-        DelegationScopeConstraint ds = ar.getFirst();
-
-        UUID resDelegationId = ds.delegationId();
-
-        return delegationService.getDelegationGrantById(resDelegationId).compose(
-            grant -> {
-              if (grant == null)
-                return Future.failedFuture("delegation id does not exists in delegation grant table !");
-
-                UUID delegateId = grant.delegateId();
-                UUID delegatorId = grant.delegatorId();
-
-                if (!delegateId.equals(userId)) {
-                  return Future.failedFuture("This user does not have access to the item ID!");
-                }
-
-                if (grant.expiryAt() != null && grant.expiryAt().isBefore(now)) {
-                  return Future.failedFuture("Delegation for this item has expired");
-                }
-
-                LOGGER.info("Valid delegation found for delegate {} (delegator {}) for item {}",
-                  delegateId, delegatorId, itemId);
-
-                return keycloakUserService.getUserById(delegatorId)
-                  .compose(delegatorUser -> {
-                    List<String> delegatorRoles = delegatorUser.roles();
-                    LOGGER.info("Fetched delegator {} roles: {}", delegatorId, delegatorRoles);
-
-                    GetItemRequest itemRequest = new GetItemRequest(itemIdStr, delegatorId.toString());
-                    itemRequest.setRoles(delegatorRoles);
-
-                    return itemService.getItemWithAccessChecks(itemRequest)
-                      .compose(response -> {
-                        if (response == null || response.getResponse() == null) {
-                          return Future.failedFuture("Delegator does not have access to the item");
-                        }
-
-                        LOGGER.info("Delegator {} has access to item {}", delegatorId, itemId);
-
-                        JsonArray resultArray = response.getResponse().getJsonArray("results");
-                        JsonObject item = resultArray.getJsonObject(0);
+//  private Future<DelegationValidationResult> checkDelegationForItem(DxUser user, String itemIdStr) {
+//    LOGGER.info("Inside check Delegator Access for item!");
+//    UUID userId = user.sub();
+//    UUID itemId = UUID.fromString(itemIdStr);
+//    LocalDateTime now = LocalDateTime.now();
+//
+//    return delegationService.getAllDelegationScopeConstraints(itemId)
+//      .compose(ar -> {
+//        if (ar == null)
+//          return Future.failedFuture("No delegation exists for this itemId");
+//
+//        DelegationScopeConstraint ds = ar.getFirst();
+//
+//        UUID resDelegationId = ds.delegationId();
+//
+//        return delegationService.getDelegationGrantById(resDelegationId).compose(
+//            grant -> {
+//              if (grant == null)
+//                return Future.failedFuture("delegation id does not exists in delegation grant table !");
+//
+//                UUID delegateId = grant.delegateId();
+//                UUID delegatorId = grant.delegatorId();
+//
+//                if (!delegateId.equals(userId)) {
+//                  return Future.failedFuture("This user does not have access to the item ID!");
+//                }
+//
+//                if (grant.expiryAt() != null && grant.expiryAt().isBefore(now)) {
+//                  return Future.failedFuture("Delegation for this item has expired");
+//                }
+//
+//                LOGGER.info("Valid delegation found for delegate {} (delegator {}) for item {}",
+//                  delegateId, delegatorId, itemId);
+//
+//                return keycloakUserService.getUserById(delegatorId)
+//                  .compose(delegatorUser -> {
+//                    List<String> delegatorRoles = delegatorUser.roles();
+//                    LOGGER.info("Fetched delegator {} roles: {}", delegatorId, delegatorRoles);
+//
+//                    GetItemRequest itemRequest = new GetItemRequest(itemIdStr, delegatorId.toString());
+//                    itemRequest.setRoles(delegatorRoles);
+//
+//                    return itemService.getItemWithAccessChecks(itemRequest)
+//                      .compose(response -> {
+//                        if (response == null || response.getResponse() == null) {
+//                          return Future.failedFuture("Delegator does not have access to the item");
+//                        }
+//
+//                        LOGGER.info("Delegator {} has access to item {}", delegatorId, itemId);
+//
+//                        JsonArray resultArray = response.getResponse().getJsonArray("results");
+//                        JsonObject item = resultArray.getJsonObject(0);
+////                        ItemInfo info = ItemInfo.fromJson(item);
+//
 //                        ItemInfo info = ItemInfo.fromJson(item);
-
-                        ItemInfo info = ItemInfo.fromJson(item);
-                        return Future.succeededFuture(
-                          new DelegationValidationResult(resDelegationId, delegatorId, delegateId, info)
-                        );
-                      });
-                  });
-              });
-            })
-          .recover(err -> {
-            LOGGER.error("Error while checking delegation for item {}: {}", itemIdStr, err.getMessage());
-            return Future.failedFuture(err);
-          });
-  }
+//                        return Future.succeededFuture(
+//                          new DelegationValidationResult(resDelegationId, delegatorId, delegateId, info)
+//                        );
+//                      });
+//                  });
+//              });
+//            })
+//          .recover(err -> {
+//            LOGGER.error("Error while checking delegation for item {}: {}", itemIdStr, err.getMessage());
+//            return Future.failedFuture(err);
+//          });
+//  }
 
   private Future<JsonObject> handleDelegationAccess(DxUser user, String itemId) {
+
     LOGGER.info("Inside handle Delegation Access!");
-    return checkDelegationForItem(user, itemId)
+
+    return delegationAccessEvaluator
+      .validateItemAccess(user, itemId)
       .compose(res -> {
-        LOGGER.info("Delegation verified for user {} on item {}. Generating delegation token...", user.sub(), itemId);
+
+        LOGGER.info(
+          "Delegation verified for user {} on item {}. Generating delegation token...",
+          user.sub(), itemId
+        );
 
         ItemInfo info = res.itemInfo();
         JsonObject extraClaims = info.toJson();
+
         UUID delegatorId = res.delegatorId();
         UUID delegateId = res.delegateId();
 
-        return keycloakUserService.getUserById(delegatorId).compose(userInfo -> {
-          List<String> delegatorRoles = userInfo.roles();
+        return keycloakUserService.getUserById(delegatorId)
+          .map(delegatorUser -> {
 
-          extraClaims.put("did", delegatorId.toString());
-          extraClaims.put("drl", new JsonArray(delegatorRoles));  // Delegator roles as JSON array
+            extraClaims.put("did", delegatorId.toString());
+            extraClaims.put("drl", new JsonArray(delegatorUser.roles()));
 
-          LOGGER.info("Final extraClaims created: {}", extraClaims.encodePrettily());
+            LOGGER.info(
+              "Delegation token claims built successfully: {}",
+              extraClaims.encodePrettily()
+            );
 
-          return Future.succeededFuture(extraClaims);
-        });
+            return extraClaims;
+          });
       })
       .recover(err -> {
-        LOGGER.error("Delegation access check failed for user {} on item {}: {}",
-          user.sub(), itemId, err.getMessage());
+
+        LOGGER.error(
+          "Delegation access check failed for user {} on item {}: {}",
+          user.sub(), itemId, err.getMessage()
+        );
+
         return Future.failedFuture(
-          new DxForbiddenException("No access found in delegation and in direct access!")
+          new DxForbiddenException(
+            "No access found via delegation or direct access"
+          )
         );
       });
   }

@@ -14,6 +14,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import static org.cdpg.dx.aaa.delegation.util.Constants.DELEGATOR_ID;
+
 
 import static io.vertx.core.Future.succeededFuture;
 
@@ -32,104 +35,163 @@ public class DelegationValidator {
   /**
    * Validate all constraints against the delegator’s roles.
    */
-  public Future<Void> validateAllConstraints(Set<String> delegatorRoles, List<JsonObject> constraintsJson) {
-    LOGGER.info("Validating constraints: {}", constraintsJson);
+  public Future<Void> validateAllConstraints(
+    JsonObject delegationGrant,Set<String> delegatorRoles
+  ) {
 
+    LOGGER.info("Validating delegation constraints");
+
+    // cos_admin bypass
     if (delegatorRoles.contains("cos_admin")) {
-      return succeededFuture();
+      return Future.succeededFuture();
+    }
+
+    JsonArray rolesArray = delegationGrant.getJsonArray("roles");
+
+    // Full delegation → nothing to validate
+    if (rolesArray == null || rolesArray.isEmpty()) {
+      LOGGER.info("Full delegation detected — skipping scope validation");
+      return Future.succeededFuture();
     }
 
     String delegatorRole = getHighestRole(delegatorRoles);
+    RoleScopeMapping delegatorMapping =
+      RoleScopeMapping.fromString(delegatorRole);
 
-    List<String> requestedScopes = constraintsJson.stream()
-      .map(c -> c.getString("scope"))
-      .map(String::toLowerCase)
-      .toList();
+    Set<String> allowedScopes =
+      delegatorMapping.getAllowedScopes()
+        .stream()
+        .map(String::toLowerCase)
+        .collect(Collectors.toSet());
 
-    RoleScopeMapping delegatorMapping = RoleScopeMapping.fromString(delegatorRole);
-    List<String> allowedScopes = delegatorMapping.getAllowedScopes();
+    for (int i = 0; i < rolesArray.size(); i++) {
+      JsonObject roleObj = rolesArray.getJsonObject(i);
+      JsonArray constraints = roleObj.getJsonArray("constraints");
 
-    for (String scope : requestedScopes) {
-      if (!allowedScopes.contains(scope)) {
-        return Future.failedFuture(
-          new DxForbiddenException(
-            String.format("Delegator with role '%s' cannot delegate unauthorized or higher scope '%s'",
-              delegatorRole, scope)
-          )
-        );
+      if (constraints.isEmpty()) {
+        throw new DxBadRequestException("Constraints cannot be empty for role: " + delegatorRole);
+      }
+
+      for (int j = 0; j < constraints.size(); j++) {
+        String scope =
+          constraints.getJsonObject(j).getString("scope");
+
+        if (!allowedScopes.contains(scope.toLowerCase())) {
+          return Future.failedFuture(
+            new DxForbiddenException(
+              "Delegator with role '" + delegatorRole +
+                "' cannot delegate scope '" + scope + "'"
+            )
+          );
+        }
       }
     }
 
-    LOGGER.info("Scope validation successful!");
-    return succeededFuture();
+    LOGGER.info("Scope validation successful");
+    return Future.succeededFuture();
   }
+
 
   /**
    * Validate ownership of entities based on delegator’s role.
    */
   public Future<Void> validateEntityOwnership(
-    UUID delegatorId,
-    Set<String> delegatorRoles,
-    List<JsonObject> constraintsJson) {
+    JsonObject delegationGrant, Set<String> delegatorRoles
+  ) {
 
+    UUID delegatorId = UUID.fromString(delegationGrant.getString(DELEGATOR_ID));
+
+    //  cos_admin bypass
     if (delegatorRoles.contains("cos_admin")) {
-      LOGGER.info("Delegator is cos_admin — skipping entity ownership validation");
-      return succeededFuture();
+      LOGGER.info("cos_admin detected — skipping entity ownership validation");
+      return Future.succeededFuture();
+    }
+
+    JsonArray rolesArray = delegationGrant.getJsonArray("roles");
+
+    //  Full delegation → skip
+    if (rolesArray == null || rolesArray.isEmpty()) {
+      LOGGER.info("Full delegation — skipping entity ownership validation");
+      return Future.succeededFuture();
     }
 
     String delegatorRole = getHighestRole(delegatorRoles);
-    LOGGER.info("Entity ownership validation started for role: {}", delegatorRole);
+    List<Future> validations = new ArrayList<>();
 
-    List<Future> validationFutures = new ArrayList<>();
+    for (int i = 0; i < rolesArray.size(); i++) {
+      JsonArray constraints =
+        rolesArray.getJsonObject(i).getJsonArray("constraints");
 
-    for (JsonObject constraint : constraintsJson) {
-      String scope = constraint.getString("scope");
-      List<String> entityIds = constraint.getJsonArray("entity_id")
-        .stream()
-        .map(Object::toString)
-        .toList();
+      for (int j = 0; j < constraints.size(); j++) {
 
-       if (scope.equalsIgnoreCase("credit_management")) {
-        continue;
-      }
+        JsonObject constraint = constraints.getJsonObject(j);
+        String scope = constraint.getString("scope");
 
-      switch (delegatorRole.toLowerCase()) {
-        case "org_admin" -> {
-          if (scope.equalsIgnoreCase("org_management")) {
-            validationFutures.add(validateOrgOwnership(delegatorId, entityIds));
-          }
-//          else if (scope.equalsIgnoreCase("provider_management")) {
-//            validationFutures.add(validateProviderRequestOwnership(delegatorId, entityIds));
-//          }
-          else if(scope.equalsIgnoreCase("asset_management"))
-          {
-            validationFutures.add(validateAssetRequestOwnership(delegatorId,entityIds));
-          }
-          else if(scope.equalsIgnoreCase("data_access"))
-          {
-            validationFutures.add(validateItemIdOwnership(delegatorId,entityIds));
-          }
+        String entityId = constraint.getString("entity_id");
+        String entityType = constraint.getString("entity_type");
+
+        // 🔹 Wildcard entity → skip ownership check
+        if (entityId == null && entityType == null) {
+          continue;
         }
-        case "consumer" -> {
-          if (scope.equalsIgnoreCase("data_access")) {
-            validationFutures.add(validateItemIdOwnership(delegatorId, entityIds));
+
+        switch (delegatorRole) {
+
+          case "org_admin" -> {
+            if ("org_management".equalsIgnoreCase(scope)) {
+              validations.add(
+                validateOrgOwnership(delegatorId, List.of(entityId))
+              );
+            } else if ("asset_management".equalsIgnoreCase(scope)) {
+              validations.add(
+                validateAssetRequestOwnership(delegatorId, List.of(entityId))
+              );
+            } else if ("data_access".equalsIgnoreCase(scope)) {
+              validations.add(
+                validateItemIdOwnership(delegatorId, List.of(entityId))
+              );
+            }
           }
-        }
-        default -> {
-          return Future.failedFuture(
-            new DxForbiddenException("Delegator role '" + delegatorRole +
-              "' not authorized to delegate scope '" + scope + "'"));
+
+          case "provider" -> {
+            if ("asset_management".equalsIgnoreCase(scope)) {
+              validations.add(
+                validateAssetRequestOwnership(delegatorId, List.of(entityId))
+              );
+            } else if ("data_access".equalsIgnoreCase(scope)) {
+              validations.add(
+                validateItemIdOwnership(delegatorId, List.of(entityId))
+              );
+            }
+          }
+
+          case "consumer" -> {
+            if ("data_access".equalsIgnoreCase(scope)) {
+              validations.add(
+                validateItemIdOwnership(delegatorId, List.of(entityId))
+              );
+            }
+          }
+
+          default -> {
+            return Future.failedFuture(
+              new DxForbiddenException(
+                "Delegator role '" + delegatorRole +
+                  "' cannot delegate scope '" + scope + "'"
+              )
+            );
+          }
         }
       }
     }
 
-    if (validationFutures.isEmpty()) {
-      LOGGER.info("No validations required — all scopes bypassed or validated");
-      return succeededFuture();
+    if (validations.isEmpty()) {
+      return Future.succeededFuture();
     }
 
-    return CompositeFuture.all(validationFutures).mapEmpty();
+    return CompositeFuture.all(validations).mapEmpty();
   }
+
 
 
   private Future<Void> validateAssetRequestOwnership(UUID delegatorId, List<String> itemIds) {
@@ -174,7 +236,7 @@ public class DelegationValidator {
           if(ownerId.equalsIgnoreCase(delegatorIdStr))
             return Future.succeededFuture();
 
-          // org id of the user doesnt match org id fetched from item info
+          // org id of the user doesn't match org id fetched from item info
           if(!orgDelIdStr.equalsIgnoreCase(itemOrgId))
             return Future.failedFuture(new DxBadRequestException(
               "User " + delegatorId + " is not authorized to delegate the item " + itemId
@@ -252,60 +314,6 @@ public class DelegationValidator {
       });
   }
 
-//  /**
-//   * Validate ownership of provider requests made to same organization as delegator’s.
-//   */
-//  private Future<Void> validateProviderRequestOwnership(UUID delegatorId, List<String> providerReqIds) {
-//    if (providerReqIds == null || providerReqIds.isEmpty()) {
-//      return Future.failedFuture(new DxBadRequestException("No provider request IDs provided"));
-//    }
-//
-//    return organizationService.getOrganizationUserInfo(delegatorId)
-//      .compose(userInfo -> {
-//        if (userInfo == null || userInfo.organizationId() == null) {
-//          return Future.failedFuture(new DxForbiddenException("Delegator is not associated with any organization"));
-//        }
-//
-//        UUID delegatorOrgId = userInfo.organizationId();
-//        LOGGER.info("Delegator {} belongs to org {}", delegatorId, delegatorOrgId);
-//
-//        List<Future<Void>> futures = new ArrayList<>();
-//
-//        for (String reqId : providerReqIds) {
-//          UUID prId;
-//          try {
-//            prId = UUID.fromString(reqId);
-//          } catch (IllegalArgumentException e) {
-//            LOGGER.error("Invalid provider request ID format: {}", reqId);
-//            futures.add(Future.failedFuture(new DxBadRequestException("Invalid provider request ID: " + reqId)));
-//            continue;
-//          }
-//
-//          Future<Void> validationFuture = organizationService.getProviderRequestById(prId)
-//            .compose(pr -> {
-//
-//              if (pr == null) {
-//                return Future.failedFuture(
-//                  new DxNotFoundException("Provider request not found: " + reqId)
-//                );
-//              }
-//
-//              UUID requestOrgId = pr.orgId();
-//              if (!delegatorOrgId.equals(requestOrgId)) {
-//                LOGGER.error("Delegator org {} does not own provider request {}", delegatorOrgId, reqId);
-//                return Future.failedFuture(
-//                  new DxForbiddenException("Delegator not authorized for provider request " + reqId)
-//                );
-//              }
-//              return succeededFuture();
-//            });
-//
-//          futures.add(validationFuture);
-//        }
-//
-//        return CompositeFuture.all(new ArrayList<>(futures)).mapEmpty();
-//      });
-//  }
 
   /**
    * Helper: Determine highest role from a role set.

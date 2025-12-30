@@ -71,6 +71,7 @@ public class VerifyItemTypeAndRole implements Handler<RoutingContext> {
   private void createMap() {
     List<ItemType> providerItemTypes = new ArrayList<>();
     List<ItemType> cosAdminItemTypes = new ArrayList<>();
+    List<ItemType> delegateItemTypes = new ArrayList<>();
 
     providerItemTypes.add(AI_MODEL);
     providerItemTypes.add(DATA_BANK);
@@ -79,7 +80,13 @@ public class VerifyItemTypeAndRole implements Handler<RoutingContext> {
     cosAdminItemTypes.add(AI_MODEL);
     cosAdminItemTypes.add(DATA_BANK);
 
+    delegateItemTypes.add(APPS);
+    delegateItemTypes.add(AI_MODEL);
+    delegateItemTypes.add(DATA_BANK);
+
+
     this.roleItemTypeMap.put(DxRole.PROVIDER, providerItemTypes);
     this.roleItemTypeMap.put(DxRole.COS_ADMIN, cosAdminItemTypes);
+    this.roleItemTypeMap.put(DxRole.DELEGATE , delegateItemTypes);
   }
 }

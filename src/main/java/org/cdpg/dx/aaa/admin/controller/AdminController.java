@@ -25,12 +25,12 @@ public class AdminController implements ApiController {
 
         routerBuilder
                 .operation("get-auth-v2-user-id-admin")
-                .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
+                .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
                 .handler(adminHandler::getDxUserFromKeycloak);
 
         routerBuilder
                 .operation("get-auth-v2-admin-user")
-                .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
+                .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
                 .handler(adminHandler::getAllDxUsersKeycloak);
 
         routerBuilder
@@ -50,7 +50,7 @@ public class AdminController implements ApiController {
 
       routerBuilder
         .operation("post-auth-v2-admin-id-update")
-        .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
+        .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
         .handler(adminHandler::updateDxUserStatusById);
 
     }

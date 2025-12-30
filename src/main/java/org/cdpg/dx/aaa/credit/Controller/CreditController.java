@@ -28,7 +28,7 @@ public class CreditController implements ApiController {
 
     routerBuilder
       .operation("get-auth-v2-credit")
-      .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
+      .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
       .handler(creditHandler::getCreditRequests);
 
     routerBuilder
@@ -44,17 +44,17 @@ public class CreditController implements ApiController {
 
     routerBuilder
       .operation("put-auth-v2-credit-request")
-      .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
+      .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
       .handler(creditHandler::updateCreditRequestStatus);
 
     routerBuilder
       .operation("put-auth-v2-user-credit")
-      .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
+      .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
       .handler(creditHandler::deductCredits);
 
     routerBuilder
       .operation("put-auth-v2-user-credit-add")
-      .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
+      .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
       .handler(creditHandler::addCredits);
 
     routerBuilder
@@ -65,7 +65,7 @@ public class CreditController implements ApiController {
 
     routerBuilder
       .operation("get-auth-v2-compute-role-request")
-      .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
+      .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
       .handler(creditHandler::getAllComputeRequests);
 
     routerBuilder
@@ -80,12 +80,12 @@ public class CreditController implements ApiController {
 
     routerBuilder
       .operation("put-auth-v2-compute-role-request")
-      .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
+      .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
       .handler(creditHandler::updateComputeRoleStatus);
 
     routerBuilder
       .operation("get-auth-v2-admin-user-credit-balance")
-      .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
+      .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
       .handler(creditHandler::getBalanceofUser);
 
     routerBuilder
