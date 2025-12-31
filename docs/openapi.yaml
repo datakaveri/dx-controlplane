@@ -9023,6 +9023,25 @@ components:
       schema:
         type: string
   schemas:
+    AppTokenRequest:
+      type: object
+      required:
+        - appId
+        - appSecret
+      additionalProperties: false
+      properties:
+        appId:
+          type: string
+          format: uuid
+          description: >
+            Unique identifier of the app (client_id).
+
+        appSecret:
+          type: string
+          minLength: 16
+          description: >
+            Plaintext app secret issued during app creation.
+
     PostBookmarkRequest:
       type: object
       required:
