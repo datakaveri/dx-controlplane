@@ -20,17 +20,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.ActivityReport.controller.ActivityReportController;
 import org.cdpg.dx.aaa.ActivityReport.factory.ActivityReportControllerFactory;
-// import org.cdpg.dx.aaa.accessReport.controller.AccessReportController;
-// import org.cdpg.dx.aaa.accessReport.factory.AccessReportFactory;
-// import org.cdpg.dx.aaa.accessRequest.controller.AccessRequestController;
-// import org.cdpg.dx.aaa.accessRequest.factory.AccessRequestFactory;
 import org.cdpg.dx.aaa.activity.controller.ActivityController;
 import org.cdpg.dx.aaa.activity.factory.ActivityControllerFactory;
 import org.cdpg.dx.aaa.activity.factory.ActivityFactory;
 import org.cdpg.dx.aaa.activity.service.ActivityLogService;
-import org.cdpg.dx.aaa.activity.service.ActivityService;
 import org.cdpg.dx.aaa.admin.controller.AdminController;
 import org.cdpg.dx.aaa.admin.handler.AdminHandler;
+import org.cdpg.dx.aaa.appCredentials.factory.AppCredentialsControllerFactory;
 import org.cdpg.dx.aaa.asset.controller.AssetController;
 import org.cdpg.dx.aaa.asset.factory.AssetFactory;
 import org.cdpg.dx.aaa.asset.handler.AssetHandler;
@@ -261,6 +257,7 @@ public class ControllerFactory {
         SubscriptionControllerFactory.create(
             dataBrokerService, pgService, urnGenerator, controlPlaneDomain);
     ApiController bookmarksController = BookmarksControllerFactory.create(pgService, urnGenerator);
+    ApiController appCredentialsController = AppCredentialsControllerFactory.create(pgService,urnGenerator);
 
     return List.of(
         organizationController,
@@ -281,6 +278,7 @@ public class ControllerFactory {
         activityController,
         activityReportController,
         subscriptionController,
-        bookmarksController);
+        bookmarksController,
+        appCredentialsController);
   }
 }

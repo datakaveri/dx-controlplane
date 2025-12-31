@@ -8612,6 +8612,171 @@ paths:
 
 
 
+
+  /iudx/v2/auth/app:
+    post:
+      tags:
+        - App
+      summary: Create an appId
+      operationId: post-appId
+      security:
+        - authorization: [ ]
+      description: >
+        Creates an appId for the authenticated user.
+        The operation is idempotent.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostAppIdRequest'
+      responses:
+        '200':
+          description: AppId created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppIdResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Create AppId
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/app' \
+            --header 'Authorization: Bearer <token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "expiryAt": "2026-12-31T23:59:59Z"
+            }'
+
+
+    get:
+      tags:
+        - App
+      summary: Get user's appIds
+      operationId: get-appId
+      security:
+        - authorization: [ ]
+      description: >
+        Retrieve all appIds created by the authenticated user.
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Successfully retrieved apps
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetAppsSuccessResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Get AppIds
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/app' \
+            --header 'Authorization: Bearer <token>'
+
+  /iudx/v2/auth/app/{appId}:
+    delete:
+      tags:
+        - App
+      summary: Delete an appId
+      operationId: delete-appId
+      security:
+        - authorization: [ ]
+      description: >
+        Remove an appId owned by the authenticated user.
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique identifier of the appId
+      responses:
+        '204':
+          description: AppId deleted successfully
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Delete AppId
+          source: |
+            curl --location --request DELETE \
+            'https://${HOSTNAME}/iudx/v2/app/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9' \
+            --header 'Authorization: Bearer <token>'
+
+
 tags:
   - name: Activity Logs
     x-displayName: "Activity Logs"
@@ -9019,6 +9184,114 @@ components:
         entityId: 7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9
         entityType: DATABANK
         createdAt: "2025-12-29T09:50:21.718568"
+
+    PostAppIdRequest:
+      type: object
+      required:
+        - expiry_at
+      properties:
+        expiryAt:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
+          example: '2026-01-31T23:59:59'
+          description: Expiry timestamp for the appId
+
+    AppIdResponse:
+      type: object
+      required:
+        - type
+        - title
+        - result
+      properties:
+        type:
+          type: string
+          example: urn:dx:ControlPlane:success
+
+        title:
+          type: string
+          example: Success
+
+        result:
+          $ref: '#/components/schemas/AppIdResult'
+
+    AppIdResult:
+      type: object
+      required:
+        - appId
+        - userId
+        - expiryAt
+        - status
+        - createdAt
+        - tableName
+      properties:
+        appId:
+          type: string
+          format: uuid
+          description: Unique identifier of the app
+          example: 210e92ee-ab93-4593-a035-60e2620a8eb8
+
+        userId:
+          type: string
+          format: uuid
+          description: Owner of the app
+          example: 6effed2b-999c-44da-987a-f56a3aba96c2
+
+        expiryAt:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
+          example: '2026-01-31T23:59:59'
+          description: Expiry timestamp for the appId
+
+        modifiedAt:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
+          example: '2026-01-31T23:59:59'
+          description: Modified timestamp for the appId
+
+        revokedAt:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
+          example: '2026-01-31T23:59:59'
+          description: Revoked timestamp for the appId
+
+        status:
+          type: string
+          enum: [ active, revoked, expired ]
+          example: active
+
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-12-29T09:50:21.718568"
+
+        tableName:
+          type: string
+          example: apps
+
+    GetAppsSuccessResponse:
+      type: object
+      required:
+        - type
+        - title
+        - result
+        - paginationInfo
+      properties:
+        type:
+          type: string
+          example: urn:dx:ControlPlane:success
+
+        title:
+          type: string
+          example: Success
+
+        result:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppIdResult'
+
+        paginationInfo:
+          $ref: '#/components/schemas/PaginationInfoResponse'
+
 
 
 

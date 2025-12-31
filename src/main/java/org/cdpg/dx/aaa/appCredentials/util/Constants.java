@@ -1,0 +1,28 @@
+package org.cdpg.dx.aaa.appCredentials.util;
+
+import java.util.Map;
+
+public class Constants {
+
+  public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_APP_CREDENTIALS =
+      Map.of(
+          "userId",
+          "user_id",
+          "app_id",
+          "appId",
+        "app_secret",
+          "appSecret",
+          "status",
+          "entity_type",
+          "createdAt",
+          "created_at");
+
+  public static final String APP_ID = "app_id";
+  public static final String USER_ID = "user_id";
+  public static final String APP_SECRET = "app_secret_hash";
+  public static final String EXPIRY_AT = "expiry_at";
+  public static final String STATUS = "status";
+  public static final String CREATED_AT = "created_at";
+  public static final String MODIFIED_AT = "modified_at";
+  public static final String REVOKED_AT = "revoked_at";
+}

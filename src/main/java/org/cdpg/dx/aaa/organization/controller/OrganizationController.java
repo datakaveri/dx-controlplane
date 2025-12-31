@@ -181,13 +181,13 @@ public class OrganizationController implements ApiController {
     routerBuilder
         .operation(OP_GET_PROVIDER_REQUEST)
         .handler(auditingHandler::handleApiAudit)
-        .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN, DxRole.DELEGATE,DxRole.COS_ADMIN))
+        .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN, DxRole.DELEGATE))
         .handler(providerRoleHandler::getProviderRequest);
 
     routerBuilder
         .operation(OP_UPDATE_PROVIDER_REQUEST)
         .handler(auditingHandler::handleApiAudit) // done
-        .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN, DxRole.DELEGATE,DxRole.COS_ADMIN))
+        .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN, DxRole.DELEGATE))
         .handler(providerRoleHandler::updateProviderRequest);
 
     routerBuilder

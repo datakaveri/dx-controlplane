@@ -104,4 +104,11 @@ public final class OperationIds {
   public static final String OP_POST_BOOKMARK = "post-bookmark";
   public static final String OP_GET_BOOKMARKS = "get-bookmarks";
   public static final String OP_DELETE_BOOKMARK = "delete-bookmark";
+
+    /* ===================================================== */
+  public static final String OP_POST_APPID = "post-appId";
+  public static final String OP_GET_APPID = "get-appId";
+  public static final String OP_DELETE_APPID = "delete-appId";
 }
+
+
