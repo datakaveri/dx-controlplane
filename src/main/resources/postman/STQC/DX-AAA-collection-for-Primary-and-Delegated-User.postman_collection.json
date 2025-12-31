@@ -1,0 +1,4779 @@
+{
+  "info": {
+    "_postman_id": "7bcbb2f2-367a-40e8-976a-40acf5c1b267",
+    "name": "DX AAA collection for Primary and Delegated User",
+    "description": "Generated from OpenAPI spec with full params, example request bodies (including oneOf variants) and role-specific tokens.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "37566804",
+    "_collection_link": "https://backend-team-8806.postman.co/workspace/Testing-APIs-~663ddc84-8c92-4f31-90ba-16cf29574133/collection/37566804-7bcbb2f2-367a-40e8-976a-40acf5c1b267?action=share&source=collection_link&creator=37566804"
+  },
+  "item": [
+    {
+      "name": "Token",
+      "item": [
+        {
+          "name": "Get Cos admin Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json = pm.response.json();",
+                  "pm.environment.set(\"cosAdminToken\", json.access_token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "frontend-client",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "admin.cos.tgdex@datakaveri.org",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "pass",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "staging.keycloak.update.iudx.io/auth/realms/tgdex-pilot/protocol/openid-connect/token",
+              "host": [
+                "staging",
+                "keycloak",
+                "update",
+                "iudx",
+                "io"
+              ],
+              "path": [
+                "auth",
+                "realms",
+                "tgdex-pilot",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Provider Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json = pm.response.json();",
+                  "pm.environment.set(\"providerToken\", json.access_token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "frontend-client",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "orgmember_testapi@gmail.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "pass",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "staging.keycloak.update.iudx.io/auth/realms/tgdex-pilot/protocol/openid-connect/token",
+              "host": [
+                "staging",
+                "keycloak",
+                "update",
+                "iudx",
+                "io"
+              ],
+              "path": [
+                "auth",
+                "realms",
+                "tgdex-pilot",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Provider Token 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json = pm.response.json();",
+                  "pm.environment.set(\"providerToken2\", json.access_token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "frontend-client",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "orgmem_testapi2@gmail.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "pass",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "staging.keycloak.update.iudx.io/auth/realms/tgdex-pilot/protocol/openid-connect/token",
+              "host": [
+                "staging",
+                "keycloak",
+                "update",
+                "iudx",
+                "io"
+              ],
+              "path": [
+                "auth",
+                "realms",
+                "tgdex-pilot",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Provider Token 3",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json = pm.response.json();",
+                  "pm.environment.set(\"providerToken\", json.access_token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "frontend-client",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "orgmember_testapi@gmail.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "pass",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "staging.keycloak.update.iudx.io/auth/realms/tgdex-pilot/protocol/openid-connect/token",
+              "host": [
+                "staging",
+                "keycloak",
+                "update",
+                "iudx",
+                "io"
+              ],
+              "path": [
+                "auth",
+                "realms",
+                "tgdex-pilot",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Org admin Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json = pm.response.json();",
+                  "pm.environment.set(\"orgAdminToken\", json.access_token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "frontend-client",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "user4@gmail.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "pass",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "staging.keycloak.update.iudx.io/auth/realms/tgdex-pilot/protocol/openid-connect/token",
+              "host": [
+                "staging",
+                "keycloak",
+                "update",
+                "iudx",
+                "io"
+              ],
+              "path": [
+                "auth",
+                "realms",
+                "tgdex-pilot",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Cos Admin Delegate token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json = pm.response.json();",
+                  "pm.environment.set(\"cos_admin_delegate_token\", json.access_token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "frontend-client",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "user1@gmail.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "pass",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "staging.keycloak.update.iudx.io/auth/realms/tgdex-pilot/protocol/openid-connect/token",
+              "host": [
+                "staging",
+                "keycloak",
+                "update",
+                "iudx",
+                "io"
+              ],
+              "path": [
+                "auth",
+                "realms",
+                "tgdex-pilot",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Entity",
+      "item": [
+        {
+          "name": "create item (Success - AI Model)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cos_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{providerToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"@context\": \"https://agrijson.org\",\n  \"id\": \"337545aa-1fa5-4ca0-bf3d-072144dec5b7\",\n  \"type\": [\n    \"adex:AiModel\"\n  ],\n  \"name\": \"ai-model-crop1\",\n  \"label\": \"Test-Crop Disease Detection Model\",\n  \"shortDescription\": \"Detects diseases in crop leaves using image classification.\",\n  \"description\": \"A test AI model for detecting crop disease with the help of infected leaf images.\",\n  \"tags\": [\n    \"ai\",\n    \"ml\",\n    \"model\",\n    \"ai-model\",\n    \"ml-model\",\n    \"machine\",\n    \"learning\",\n    \"machine learning\",\n    \"training\",\n    \"algorithm\"\n  ],\n  \"accessPolicy\": \"RESTRICTED\",\n  \"organizationType\": \"Private\",\n  \"department\": \"Agriculture and Co-operation\",\n  \"modelType\": \"ImageClassifier\",\n  \"fileFormat\": \"ipynb\",\n  \"industry\": \"Agriculture\",\n  \"license\": \"MIT\",\n  \"fileSize\": \"15MB\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create item (Success - Data Bank)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"subdistrict-weather-info\",\n  \"type\": [\n    \"adex:DataBank\"\n  ],\n  \"label\": \"Weather insights for subdistricts\",\n  \"shortDescription\": \"A short description about the dataset\",\n  \"description\": \"Dataset providing weather information such as temperature and rainfall for subdistricts across a state.\",\n  \"tags\": [\n    \"environment\",\n    \"weather\",\n    \"rainfall\",\n    \"temperature\"\n  ],\n  \"accessPolicy\": \"RESTRICTED\",\n  \"organizationType\": \"Private\",\n  \"fileFormat\": \"xlsx\",\n  \"dataReadiness\": 85,\n  \"department\": \"Department of IT, Electronics and Communication\",\n  \"resourceType\": \"DATASET\",\n  \"industry\": \"Climate Research\",\n  \"geoCoverage\": \"Karnataka\",\n  \"yearRange\": \"2015-2023\",\n  \"verifiedBy\": \"Ministry of Earth Sciences\",\n  \"uploadFrequency\": \"Weekly\",\n  \"license\": \"CC-BY 4.0\",\n  \"resourceServer\": [\n    {\n      \"name\": \"OGC\"\n    },\n    {\n      \"name\": \"NGSI-LD\"\n    },\n    {\n      \"name\": \"FILE\"\n    },\n    {\n      \"name\": \"GATEWAY\"\n    }\n  ],\n  \"dataSample\": {\n    \"id\": 10293847,\n    \"name\": \"Ficus religiosa\",\n    \"observed_on\": \"2023-04-12\",\n    \"lat\": 26.9124,\n    \"lon\": 75.7873,\n    \"quality_grade\": \"research\"\n  },\n  \"dataDescriptor\": {\n    \"@context\": \"https://voc.forest-stack.iudx.io/\",\n    \"dataDescriptorLabel\": \"Data Descriptor for Plantae Observations in Rajasthan\",\n    \"description\": \"Schema and attribute definitions for Plantae observations collected via iNaturalist within Rajasthan, including taxonomic, spatial, temporal, quality-grade, and attribution fields.\",\n    \"type\": [\n      \"iudx:DataDescriptor\"\n    ],\n    \"id\": {\n      \"dataSchema\": \"iudx:Number\",\n      \"description\": \"Unique observation identifier from iNaturalist.\",\n      \"type\": [\n        \"ValueDescriptor\"\n      ]\n    },\n    \"name\": {\n      \"dataSchema\": \"iudx:Text\",\n      \"description\": \"Scientific name of the observed organism.\",\n      \"type\": [\n        \"ValueDescriptor\"\n      ]\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create item (Success - AI Use Case)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"@context\": \"https://agrijson.org\",\n  \"id\": \"f2c6a437-8109-4a2c-8923-efc2a9e6df1d\",\n  \"type\": [\n    \"adex:Apps\"\n  ],\n  \"name\": \"crop-disease-detector-app\",\n  \"industry\": \"Agriculture\",\n  \"label\": \"Crop Disease Detection Application\",\n  \"shortDescription\": \"An AI-powered application to detect crop diseases early using leaf imagery.\",\n  \"description\": \"A potential application designed to detect crop diseases from infected leaf images using AI/ML models. It supports early intervention and yield optimization by analyzing input data and recommending treatments.\",\n  \"tags\": [\n    \"ai\",\n    \"ml\",\n    \"model\",\n    \"ai-model\",\n    \"ml-model\",\n    \"machine\",\n    \"learning\",\n    \"machine learning\",\n    \"training\",\n    \"algorithm\"\n  ],\n  \"organizationType\": \"Private\",\n  \"sections\": [\n    {\n      \"title\": \"Problem Statement\",\n      \"content\": \"Farmers often struggle with late-stage identification of crop diseases, leading to reduced yields and delayed treatments.\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "400 (Invalid document) create item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "401 (Unauthorized access) create item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid_or_missing_token",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"@context\": \"https://agrijson.org\",\n  \"id\": \"337545aa-1fa5-4ca0-bf3d-072144dec5b6\",\n  \"type\": [\n    \"adex:AiModel\"\n  ],\n  \"name\": \"ai-model-crop\",\n  \"label\": \"Test-Crop Disease Detection Model\",\n  \"shortDescription\": \"Detects diseases in crop leaves using image classification.\",\n  \"description\": \"A test AI model for detecting crop disease with the help of infected leaf images.\",\n  \"tags\": [\n    \"ai\",\n    \"ml\",\n    \"model\",\n    \"ai-model\",\n    \"ml-model\",\n    \"machine\",\n    \"learning\",\n    \"machine learning\",\n    \"training\",\n    \"algorithm\"\n  ],\n  \"accessPolicy\": \"RESTRICTED\",\n  \"organizationType\": \"Private\",\n  \"department\": \"Agriculture and Co-operation\",\n  \"modelType\": \"ImageClassifier\",\n  \"fileFormat\": \"ipynb\",\n  \"industry\": \"Agriculture\",\n  \"license\": \"MIT\",\n  \"fileSize\": \"15MB\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update item (Success - AI Model)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"@context\": \"https://agrijson.org\",\n  \"id\": \"337545aa-1fa5-4ca0-bf3d-072144dec5b6\",\n  \"type\": [\n    \"adex:AiModel\"\n  ],\n  \"name\": \"ai-model-crop\",\n  \"label\": \"Test-Crop Disease Detection Model\",\n  \"shortDescription\": \"Detects diseases in crop leaves using image classification.\",\n  \"description\": \"A test AI model for detecting crop disease with the help of infected leaf images.\",\n  \"tags\": [\n    \"ai\",\n    \"ml\",\n    \"model\",\n    \"ai-model\",\n    \"ml-model\",\n    \"machine\",\n    \"learning\",\n    \"machine learning\",\n    \"training\",\n    \"algorithm\"\n  ],\n  \"accessPolicy\": \"RESTRICTED\",\n  \"organizationType\": \"Private\",\n  \"department\": \"Agriculture and Co-operation\",\n  \"modelType\": \"ImageClassifier\",\n  \"fileFormat\": \"ipynb\",\n  \"industry\": \"Agriculture\",\n  \"license\": \"MIT\",\n  \"fileSize\": \"15MB\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update item (Success - Data Bank)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"subdistrict-weather-info\",\n  \"type\": [\n    \"adex:DataBank\"\n  ],\n  \"label\": \"Weather insights for subdistricts\",\n  \"shortDescription\": \"A short description about the dataset\",\n  \"description\": \"Dataset providing weather information such as temperature and rainfall for subdistricts across a state.\",\n  \"tags\": [\n    \"environment\",\n    \"weather\",\n    \"rainfall\",\n    \"temperature\"\n  ],\n  \"accessPolicy\": \"RESTRICTED\",\n  \"organizationType\": \"Private\",\n  \"fileFormat\": \"xlsx\",\n  \"dataReadiness\": 85,\n  \"department\": \"Department of IT, Electronics and Communication\",\n  \"resourceType\": \"DATASET\",\n  \"industry\": \"Climate Research\",\n  \"geoCoverage\": \"Karnataka\",\n  \"yearRange\": \"2015-2023\",\n  \"verifiedBy\": \"Ministry of Earth Sciences\",\n  \"uploadFrequency\": \"Weekly\",\n  \"license\": \"CC-BY 4.0\",\n  \"resourceServer\": [\n    {\n      \"name\": \"OGC\"\n    },\n    {\n      \"name\": \"NGSI-LD\"\n    },\n    {\n      \"name\": \"FILE\"\n    },\n    {\n      \"name\": \"GATEWAY\"\n    }\n  ],\n  \"dataSample\": {\n    \"id\": 10293847,\n    \"name\": \"Ficus religiosa\",\n    \"observed_on\": \"2023-04-12\",\n    \"lat\": 26.9124,\n    \"lon\": 75.7873,\n    \"quality_grade\": \"research\"\n  },\n  \"dataDescriptor\": {\n    \"@context\": \"https://voc.forest-stack.iudx.io/\",\n    \"dataDescriptorLabel\": \"Data Descriptor for Plantae Observations in Rajasthan\",\n    \"description\": \"Schema and attribute definitions for Plantae observations collected via iNaturalist within Rajasthan, including taxonomic, spatial, temporal, quality-grade, and attribution fields.\",\n    \"type\": [\n      \"iudx:DataDescriptor\"\n    ],\n    \"id\": {\n      \"dataSchema\": \"iudx:Number\",\n      \"description\": \"Unique observation identifier from iNaturalist.\",\n      \"type\": [\n        \"ValueDescriptor\"\n      ]\n    },\n    \"name\": {\n      \"dataSchema\": \"iudx:Text\",\n      \"description\": \"Scientific name of the observed organism.\",\n      \"type\": [\n        \"ValueDescriptor\"\n      ]\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update item (Success - AI Use Case)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"@context\": \"https://agrijson.org\",\n  \"id\": \"f2c6a437-8109-4a2c-8923-efc2a9e6df1d\",\n  \"type\": [\n    \"adex:Apps\"\n  ],\n  \"name\": \"crop-disease-detector-app\",\n  \"industry\": \"Agriculture\",\n  \"label\": \"Crop Disease Detection Application\",\n  \"shortDescription\": \"An AI-powered application to detect crop diseases early using leaf imagery.\",\n  \"description\": \"A potential application designed to detect crop diseases from infected leaf images using AI/ML models. It supports early intervention and yield optimization by analyzing input data and recommending treatments.\",\n  \"tags\": [\n    \"ai\",\n    \"ml\",\n    \"model\",\n    \"ai-model\",\n    \"ml-model\",\n    \"machine\",\n    \"learning\",\n    \"machine learning\",\n    \"training\",\n    \"algorithm\"\n  ],\n  \"organizationType\": \"Private\",\n  \"sections\": [\n    {\n      \"title\": \"Problem Statement\",\n      \"content\": \"Farmers often struggle with late-stage identification of crop diseases, leading to reduced yields and delayed treatments.\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "400 (Bad Request) update item",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "401 (Unauthorized access) update item",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid_or_missing_token",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"@context\": \"https://agrijson.org\",\n  \"id\": \"337545aa-1fa5-4ca0-bf3d-072144dec5b6\",\n  \"type\": [\n    \"adex:AiModel\"\n  ],\n  \"name\": \"ai-model-crop\",\n  \"label\": \"Test-Crop Disease Detection Model\",\n  \"shortDescription\": \"Detects diseases in crop leaves using image classification.\",\n  \"description\": \"A test AI model for detecting crop disease with the help of infected leaf images.\",\n  \"tags\": [\n    \"ai\",\n    \"ml\",\n    \"model\",\n    \"ai-model\",\n    \"ml-model\",\n    \"machine\",\n    \"learning\",\n    \"machine learning\",\n    \"training\",\n    \"algorithm\"\n  ],\n  \"accessPolicy\": \"RESTRICTED\",\n  \"organizationType\": \"Private\",\n  \"department\": \"Agriculture and Co-operation\",\n  \"modelType\": \"ImageClassifier\",\n  \"fileFormat\": \"ipynb\",\n  \"industry\": \"Agriculture\",\n  \"license\": \"MIT\",\n  \"fileSize\": \"15MB\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "404 (Document doesn't exist to update it) update item",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"@context\": \"https://agrijson.org\",\n  \"id\": \"337545aa-1fa5-4ca0-bf3d-072144dec5b6\",\n  \"type\": [\n    \"adex:AiModel\"\n  ],\n  \"name\": \"ai-model-crop\",\n  \"label\": \"Test-Crop Disease Detection Model\",\n  \"shortDescription\": \"Detects diseases in crop leaves using image classification.\",\n  \"description\": \"A test AI model for detecting crop disease with the help of infected leaf images.\",\n  \"tags\": [\n    \"ai\",\n    \"ml\",\n    \"model\",\n    \"ai-model\",\n    \"ml-model\",\n    \"machine\",\n    \"learning\",\n    \"machine learning\",\n    \"training\",\n    \"algorithm\"\n  ],\n  \"accessPolicy\": \"RESTRICTED\",\n  \"organizationType\": \"Private\",\n  \"department\": \"Agriculture and Co-operation\",\n  \"modelType\": \"ImageClassifier\",\n  \"fileFormat\": \"ipynb\",\n  \"industry\": \"Agriculture\",\n  \"license\": \"MIT\",\n  \"fileSize\": \"15MB\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item?id=non-existing-id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "non-existing-id",
+                  "description": "Use an ID that does not exist to trigger 404"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get item (Success)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item?id=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "ID of the DX Entity (required)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "400 (Invalid ID.) get item",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "ID of the DX Entity (required)",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "404 (Didn't find the item.) get item",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item?id=&id=non-existing-id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "ID of the DX Entity (required)"
+                },
+                {
+                  "key": "id",
+                  "value": "non-existing-id",
+                  "description": "Use an ID that does not exist to trigger 404"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete item (Success)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item?id=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "ID of the DX Entity (required)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "400 (Invalid uuid format) delete item",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "ID of the DX Entity (required)",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "401 (Unauthorized access) delete item",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid_or_missing_token",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item?id=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "ID of the DX Entity (required)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "404 (Didn't find the item) delete item",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item?id=&id=non-existing-id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "ID of the DX Entity (required)"
+                },
+                {
+                  "key": "id",
+                  "value": "non-existing-id",
+                  "description": "Use an ID that does not exist to trigger 404"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get item with accessPolicy (Success)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item/access?id=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item",
+                "access"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "ID of the DX Entity (required)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "400 (Invalid ID.) get item with accessPolicy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item/access",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item",
+                "access"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "ID of the DX Entity (required)",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "401 (Unauthorized – missing or invalid token for `restricted` or `private` items.) get item with accessPolicy",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid_or_missing_token",
+                "description": "Intentionally invalid token to trigger 401",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item/access?id=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item",
+                "access"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "ID of the DX Entity (required)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "403 (Forbidden – user does not have access based on `accessPolicy`.) get item with accessPolicy",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{forbiddenAuthToken}}",
+                "description": "Token lacking required roles to trigger 403",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item/access?id=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item",
+                "access"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "ID of the DX Entity (required)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "404 (Didn't find the item.) get item with accessPolicy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/item/access?id=&id=non-existing-id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "item",
+                "access"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "ID of the DX Entity (required)"
+                },
+                {
+                  "key": "id",
+                  "value": "non-existing-id",
+                  "description": "Use an ID that does not exist to trigger 404"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "List",
+      "item": [
+        {
+          "name": "listAvailableFilters (Success)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"term\",\n      \"field\": \"type\",\n      \"values\": [\n        \"adex:DataBank\"\n      ]\n    }\n  ],\n  \"filter\": [\n    \"tags\",\n    \"department\",\n    \"fileFormat\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/list",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "list"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "400 (Bad Request – Malformed request or unsupported filters.) listAvailableFilters",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/cat/list",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "cat",
+                "list"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Organisation APIs",
+      "item": [
+        {
+          "name": "cos admin - generate a delegate",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cosAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"delegate_id\": \"4bc8c4cb-40db-4814-b52c-bc1d87e868aa\",\n  \"justification\": \"Granting whole cos admin access while the owner is on leave\",\n  \"expiry_at\": \"2026-01-31T23:59:59\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/delegation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "delegation"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete-auth-v2-delegation (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cosAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/delegation/{{delegationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "delegation",
+                "{{delegationId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "cos admin - generate a delegate",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cosAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"delegate_id\": \"e4b06fe8-7cb6-40cb-9fe6-29d02b22b261\",\n  \"justification\": \"Granting whole cos admin access while the owner is on leave\",\n  \"expiry_at\": \"2026-01-31T23:59:59\",\n  \"roles\":\n    [\n        {\n            \"role\":\"cos_admin\",\n            \"constraints\": \n            [\n                {\n            \"scope\":\"org_management\",\n            \"expiry_at\": \"2026-01-31T23:59:59\"\n                },\n            {\n                \"scope\": \"asset_management\",\n                \"expiry_at\": \"2026-01-31T23:59:59\"\n            }\n            ]\n        }\n    ]\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/delegation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "delegation"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Cos Admin Delegate token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json = pm.response.json();",
+                  "pm.environment.set(\"cos_admin_delegate_token\", json.access_token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "frontend-client",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "user1@gmail.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "pass",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "staging.keycloak.update.iudx.io/auth/realms/tgdex-pilot/protocol/openid-connect/token",
+              "host": [
+                "staging",
+                "keycloak",
+                "update",
+                "iudx",
+                "io"
+              ],
+              "path": [
+                "auth",
+                "realms",
+                "tgdex-pilot",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "1. User 'A': Request to create an organization  (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cos_admin_delegate_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{orgName}}\",\n  \"logo_path\": \"/uploads/logos/technova_logo.png\",\n  \"entity_type\": \"Public\",\n  \"org_sector\": \"Information Technology\",\n  \"website_link\": \"https://www.technova.io\",\n  \"address\": \"5th Floor, Orbit IT Park, Whitefield, Bengaluru, Karnataka, 560066\",\n  \"certificate_path\": \"/uploads/certificates/technova_certificate.pdf\",\n  \"pancard_path\": \"/uploads/documents/pan_card_technova.png\",\n  \"emp_id\": \"EMP45231\",\n  \"job_title\": \"Backend Engineer\",\n  \"phone_no\": \"+91-9988776655\",\n  \"organisation_documents\": \"/uploads/org_docs/technova_registration.pdf\",\n  \"manager_email\": \"{{orgManagerEmailId}}\",\n  \"relevant_doc_path\": \"/uploads/relevant_docs/technova_supporting_doc.pdf\"\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/organisations/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "organisations",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2. PF Admin: Get All Organization Create Requests (Success)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\", \"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response body and extract org_create_req_id",
+                  "pm.test(\"Check response body and extract org_create_req_id\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "",
+                  "    const orgName = pm.environment.get(\"orgName\");",
+                  "    console.log(orgName);",
+                  "    const match = body.result.find(org => org.name === orgName);",
+                  "",
+                  "    pm.expect(match).to.not.be.undefined;",
+                  "    pm.environment.set(\"org_create_req_id\", match.id);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cos_admin_delegate_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/organisations/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "organisations",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2. (optional) User 'A' : Get the organization request made by User A (success)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\", \"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response body and extract org_create_req_id",
+                  "pm.test(\"Check response body and extract org_create_req_id\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "",
+                  "    const orgName = pm.environment.get(\"org_name\");",
+                  "    const match = body.result.find(org => org.name === orgName);",
+                  "",
+                  "    pm.expect(match).to.not.be.undefined;",
+                  "    pm.environment.set(\"org_create_req_id\", match.id);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{orgAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/user/organisations/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "user",
+                "organisations",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2. (optional) User 'A' : Get the organization request made by User A 401 (Unauthorized – Token invalid/expired or user not authorized)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid_or_missing_token",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/user/organisations/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "user",
+                "organisations",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3. PF Admin: Grant organization request (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cos_admin_delegate_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"req_id\": \"{{org_create_req_id}}\",\n  \"status\": \"granted\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/organisations/requests/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "organisations",
+                "requests",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3. PF Admin: Reject organization request (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cos_admin_delegate_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"req_id\": \"{{org_create_req_id}}\",\n  \"status\": \"rejected\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/organisations/requests/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "organisations",
+                "requests",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4. Any User: Get All Organizations (Success)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\", \"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response body and extract organizationId",
+                  "pm.test(\"Check response body and extract organizationId\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "",
+                  "    const orgName = pm.environment.get(\"org_name\");",
+                  "    const match = body.result.find(org => org.orgName === orgName);",
+                  "",
+                  "    pm.expect(match).to.not.be.undefined;",
+                  "    pm.environment.set(\"organizationId\", match.id);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\", \"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response body and extract organizationId",
+                  "pm.test(\"Check response body and extract organizationId\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "",
+                  "    const orgName = pm.environment.get(\"orgName\");",
+                  "    const match = body.result.find(org => org.orgName === orgName);",
+                  "",
+                  "    pm.expect(match).to.not.be.undefined;",
+                  "    pm.environment.set(\"organizationId\", match.id);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{core_host}}/iudx/v2/auth//organisations",
+              "host": [
+                "{{core_host}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "",
+                "organisations"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5. Update User 'A' Token - NOW org_admin_token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json = pm.response.json();",
+                  "pm.environment.set(\"orgAdminToken\", json.access_token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "frontend-client",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "user2@gmail.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "pass",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "staging.keycloak.update.iudx.io/auth/realms/tgdex-pilot/protocol/openid-connect/token",
+              "host": [
+                "staging",
+                "keycloak",
+                "update",
+                "iudx",
+                "io"
+              ],
+              "path": [
+                "auth",
+                "realms",
+                "tgdex-pilot",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "org admin - generate a delegate",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"delegate_id\": \"420af1fa-ea85-48bb-ae9e-248b64eeb77a\",\n  \"justification\": \"Granting whole org admin1 access while the owner is on leave\",\n  \"expiry_at\": \"2026-01-31T23:59:59\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/delegation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "delegation"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "org admin - delete a delegate",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{orgAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/delegation/{{delegationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "delegation",
+                "{{delegationId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Org Admin Delegate token Copy",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json = pm.response.json();",
+                  "pm.environment.set(\"org_admin_delegate_token\", json.access_token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "frontend-client",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "user5@gmail.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "pass",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "staging.keycloak.update.iudx.io/auth/realms/tgdex-pilot/protocol/openid-connect/token",
+              "host": [
+                "staging",
+                "keycloak",
+                "update",
+                "iudx",
+                "io"
+              ],
+              "path": [
+                "auth",
+                "realms",
+                "tgdex-pilot",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6. Get new User 'B' token (providerToken)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json = pm.response.json();",
+                  "pm.environment.set(\"providerToken\", json.access_token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "frontend-client",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "user2@gmail.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "pass",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "staging.keycloak.update.iudx.io/auth/realms/tgdex-pilot/protocol/openid-connect/token",
+              "host": [
+                "staging",
+                "keycloak",
+                "update",
+                "iudx",
+                "io"
+              ],
+              "path": [
+                "auth",
+                "realms",
+                "tgdex-pilot",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7. Create request to join the organization (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"job_title\": \"Senior Software Engineer\",\n  \"emp_id\": \"P00456\",\n  \"official_email\": \"vikram1@gmail.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/organisations/{{organizationId}}/join_requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "organisations",
+                "{{organizationId}}",
+                "join_requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "8. Org Admin: Get All organization join requests (Success)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\", \"application/json\");",
+                  "});",
+                  "",
+                  "// Extract org_join_reqId where organizationId matches and status is pending",
+                  "pm.test(\"Extract org_join_reqId with status pending\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "",
+                  "    const organizationId = pm.environment.get(\"organizationId\");",
+                  "    const match = body.result.find(item => ",
+                  "        item.organization_id === organizationId && item.status === \"pending\"",
+                  "    );",
+                  "",
+                  "    pm.expect(match).to.not.be.undefined; // Check if match is found",
+                  "    if (match) {",
+                  "        pm.environment.set(\"userId\", match.user_id);",
+                  "        console.log(\"userid: \",pm.environment.get(\"userId\"));",
+                  "        pm.environment.set(\"org_join_reqId\", match.id);",
+                  "    }",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{org_admin_delegate_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/organisations/{{organizationId}}/join_requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "organisations",
+                "{{organizationId}}",
+                "join_requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "8. User B: Get the join request made by it  (Success)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\", \"application/json\");",
+                  "});",
+                  "",
+                  "// Extract org_join_reqId where organizationId matches and status is pending",
+                  "pm.test(\"Extract org_join_reqId with status pending\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "",
+                  "    const organizationId = pm.environment.get(\"organizationId\");",
+                  "    const match = body.result.find(item => ",
+                  "        item.organization_id === organizationId && item.status === \"pending\"",
+                  "    );",
+                  "",
+                  "    pm.expect(match).to.not.be.undefined; // Check if match is found",
+                  "    if (match) {",
+                  "        pm.environment.set(\"userId\", match.user_id);",
+                  "        console.log(\"userid: \",pm.environment.get(\"userId\"));",
+                  "        pm.environment.set(\"org_join_reqId\", match.id);",
+                  "    }",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/user/organisations/join_requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "user",
+                "organisations",
+                "join_requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "9. Org Admin: Update organization join request (Success)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"granted\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/organisations/{{organizationId}}/join_requests/{{org_join_reqId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "organisations",
+                "{{organizationId}}",
+                "join_requests",
+                "{{org_join_reqId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10. PF Admin: Update org details (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cosAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"NextWave2\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/organisations/{{organizationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "organisations",
+                "{{organizationId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11. PF Admin: Get organization by id(Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cosAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/organisations/{{organizationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "organisations",
+                "{{organizationId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12. OrgAdmin: Get all users in the organization(Success)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test response code",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Response header content-type is JSON\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\", \"application/json\");",
+                  "});",
+                  "",
+                  "// Extract user_id of the member role",
+                  "pm.test(\"Extract user_id of user with member role\", function () {",
+                  "    const body = pm.response.json();",
+                  "",
+                  "    pm.expect(body).to.have.property(\"type\", \"dx:controlPlane:success\");",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "    pm.expect(body).to.have.property(\"result\");",
+                  "",
+                  "    // Find user whose role = \"member\"",
+                  "    const memberUser = body.result.find(user => user.role === \"member\");",
+                  "",
+                  "    pm.expect(memberUser, \"Member user not found\").to.not.be.undefined;",
+                  "",
+                  "    // Save user_id to environment",
+                  "    pm.environment.set(\"member_user_id\", memberUser.user_id);",
+                  "",
+                  "    console.log(\"Member User ID:\", memberUser.user_id);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{orgAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/organisations/{{organizationId}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "organisations",
+                "{{organizationId}}",
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "13. OrgAdmin: (optional) Update organization members role (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{orgAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/organisations/7134cfc9-b40b-490c-a7da-3ee9e2ea6a1c/users/dcb5a87b-5001-470b-90dd-cffc9a502a47",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "organisations",
+                "7134cfc9-b40b-490c-a7da-3ee9e2ea6a1c",
+                "users",
+                "dcb5a87b-5001-470b-90dd-cffc9a502a47"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "14. Update org Member Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json = pm.response.json();",
+                  "pm.environment.set(\"providerToken\", json.access_token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "frontend-client",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "user4@gmail.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "pass",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "staging.keycloak.update.iudx.io/auth/realms/tgdex-pilot/protocol/openid-connect/token",
+              "host": [
+                "staging",
+                "keycloak",
+                "update",
+                "iudx",
+                "io"
+              ],
+              "path": [
+                "auth",
+                "realms",
+                "tgdex-pilot",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15. OrgMember (User 'B') request to get provider role (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text",
+                "disabled": true
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/organization/user/provider_role/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "organization",
+                "user",
+                "provider_role",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "16. OrgAdmin: Get all provider requests (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{core_host}}{{auth_base}}/organization/{{organizationId}}/provider/requests",
+              "host": [
+                "{{core_host}}{{auth_base}}"
+              ],
+              "path": [
+                "organization",
+                "{{organizationId}}",
+                "provider",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "18. OrgAdmin : Update provider requests status(Success)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"granted\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/organization/user/provider_role/requests/{{provider_role_reqId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "organization",
+                "user",
+                "provider_role",
+                "requests",
+                "{{provider_role_reqId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "19. Get Provider Requests Report (Success)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/organization/user/provider_role/requests/report",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "organization",
+                "user",
+                "provider_role",
+                "requests",
+                "report"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "20. Delete organization create request made by user 'A' (Success)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/user/organisations/requests/{{org_create_req_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "user",
+                "organisations",
+                "requests",
+                "{{org_create_req_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "21. Delete organization join request made by user 'B' (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/user/organisations/join_requests/{{org_join_reqId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "user",
+                "organisations",
+                "join_requests",
+                "{{org_join_reqId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "22. OrgAdmin: Delete user from organization(Success)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/organisations/{{organizationId}}/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "organisations",
+                "{{organizationId}}",
+                "users",
+                "{{userId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "23. Delete Provider Request made by User  (Success)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/organization/user/provider_requests/{{provider_role_reqId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "organization",
+                "user",
+                "provider_requests",
+                "{{provider_role_reqId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "24. Get Organization Request Report (Success)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/organisations/requests/report",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "organisations",
+                "requests",
+                "report"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "25. Get Organizaion Report (Success)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/organisations/report",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "organisations",
+                "report"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "26. Get Organization Join Report (Success)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/organisations/{{organizationId}}/join_requests/report",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "organisations",
+                "{{organizationId}}",
+                "join_requests",
+                "report"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Role APIs",
+      "item": [
+        {
+          "name": "1. OrgAdmin : Get all organization users  (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{orgAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cosAdmin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/organisations/{{organizationId}}/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "organisations",
+                "{{organizationId}}",
+                "users",
+                "{{userId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2. Any user : Get User info (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{orgAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cosAdmin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/user",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "user"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3. Any User : Update user info details (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{orgAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cosAdmin}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"orgadmin_testapi2\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/user",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "user"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4. Any User : Update user password (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{orgAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cosAdmin}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"new_password\": \"pass2\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/user/password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "user",
+                "password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5. PF Admin :  Get User Information(Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cosAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cosAdmin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/admin/user/{{userId}}?id=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "admin",
+                "user",
+                "{{userId}}"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "UUID of userId"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6. Get All user info details  (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cosAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cosAdmin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/admin/user",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "admin",
+                "user"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7. Update user status - activate/deactivate (Success)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cosAdmin}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"activate\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/user/update",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "user",
+                "update"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "8. PF Admin: Update user in keycloak - activate/deactivate (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cosAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cosAdmin}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"activate\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/admin/{{userId}}/update",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "admin",
+                "{{userId}}",
+                "update"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "9. Any user: Delete the user (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerToken2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cosAdmin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/user/delete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "user",
+                "delete"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10. (optional) Post user with description (adarv)(Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cosAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cosAdmin}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"about\": \"Lorem ipsum, dolor sit amet consectetur adipisicing elit...\",\n  \"experience\": [\n    {\n      \"role\": \"ICMR Researcher\",\n      \"time\": \"Jan 2020\\u2013present (4yrs)\",\n      \"location\": \"Delhi\"\n    }\n  ],\n  \"education\": [\n    {\n      \"institute\": \"IIT Delhi\",\n      \"time\": \"2016\\u20132020\",\n      \"location\": \"Delhi\"\n    }\n  ],\n  \"projects\": [\n    {\n      \"institute\": \"ICMR\",\n      \"time\": \"2021\",\n      \"location\": \"Delhi\",\n      \"about\": \"Developed a system for secure data sharing\"\n    }\n  ],\n  \"publications\": [\n    {\n      \"institute\": \"ICMR\",\n      \"time\": \"2021\",\n      \"location\": \"Delhi\",\n      \"about\": \"Paper on privacy-preserving IoT data sharing\"\n    }\n  ],\n  \"skills\": [\n    \"React\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/user/description/info",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "user",
+                "description",
+                "info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11. (optional) Update user with description (adarv)(Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cosAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cosAdmin}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"about\": \"Updated description about the user\",\n  \"experience\": [\n    {\n      \"role\": \"Senior ICMR Researcher\",\n      \"time\": \"Jan 2020\\u2013present (5yrs)\",\n      \"location\": \"Delhi\"\n    }\n  ],\n  \"education\": [\n    {\n      \"institute\": \"IIT Delhi\",\n      \"time\": \"2016\\u20132020\",\n      \"location\": \"Delhi\"\n    }\n  ],\n  \"projects\": [\n    {\n      \"institute\": \"ICMR\",\n      \"time\": \"2021\",\n      \"location\": \"Delhi\",\n      \"about\": \"Improved secure data sharing system\"\n    }\n  ],\n  \"publications\": [\n    {\n      \"institute\": \"ICMR\",\n      \"time\": \"2021\",\n      \"location\": \"Delhi\",\n      \"about\": \"Paper on privacy-preserving IoT data sharing\"\n    }\n  ],\n  \"skills\": [\n    \"React\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/user/description/info",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "user",
+                "description",
+                "info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12. (optional)  Get user with description (adarv)(Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cosAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cosAdmin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/user/description/info",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "user",
+                "description",
+                "info"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Compute APIs",
+      "item": [
+        {
+          "name": "1. Any user: Request for compute role (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"additional_info\":\n    {\"applicantName\":\"Publisher Test\",\"isOrgMember\":true,\"orgName\":\"CDPG Tech\",\"orgType\":\"Private\",\"orgLocation\":\"India\",\"orgWebsite\":\"https://staging.catalogue.tgdex.iudx.io\",\"jobTitle\":\"Tester\",\"businessEmail\":\"publisher.sterilize253@aleeas.com\",\"projectTitle\":\"ddf \",\"projectDescription\":\"vdfvd\",\"projectSector\":\"hospitality\",\"problemStatement\":\"vdv\",\"tgdexDataset\":\"fgrg\",\"endUsers\":\"government\",\"projectStage\":\"poc\",\"modelType\":\"cnn\",\"trainingType\":\"pretrained\",\"inputDataType\":\"image\",\"trainingDataVolume\":\"less1GB\",\"gpuHours\":5,\"computeJustification\":\"ffef\",\"hasPreviousUsage\":true,\"previousUsageDetails\":\"frege\",\"confirmAccuracy\":true,\"confirmUnderstanding\":true\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/compute/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "compute",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2. User : Get compute requests  made by them (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/user/compute/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "user",
+                "compute",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3. PF Admin: Get all compute requests (Success)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\", \"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response body and extract org_create_req_id",
+                  "pm.test(\"Check response body and extract compute_request_id\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "",
+                  "    const userId = pm.environment.get(\"userId\");",
+                  "    const match = body.result.find(compute =>compute.user_id === userId);",
+                  "",
+                  "    pm.expect(match).to.not.be.undefined;",
+                  "    pm.environment.set(\"compute_req_id\", match.id);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cos_admin_delegate_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/compute/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "compute",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4. PF Admin: Update compute requests(Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cosAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"granted\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/compute/requests/{{compute_req_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "compute",
+                "requests",
+                "{{compute_req_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6. Get compute role request report(Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cosAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{consumerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/compute/requests/report",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "compute",
+                "requests",
+                "report"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5. Update token to get compute_role",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json = pm.response.json();",
+                  "pm.environment.set(\"providerToken\", json.access_token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "frontend-client",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "orgmember_testapi@gmail.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "pass",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "staging.keycloak.update.iudx.io/auth/realms/tgdex-pilot/protocol/openid-connect/token",
+              "host": [
+                "staging",
+                "keycloak",
+                "update",
+                "iudx",
+                "io"
+              ],
+              "path": [
+                "auth",
+                "realms",
+                "tgdex-pilot",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7. Delete compute role request report  (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/user/compute/requests/{{compute_req_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "user",
+                "compute",
+                "requests",
+                "{{compute_req_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7. 401 (Unauthorized – Token invalid or expired, or caller lacks permission)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid_or_missing_token",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/user/compute/requests/{{compute_req_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "user",
+                "compute",
+                "requests",
+                "{{compute_req_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Credit APIs",
+      "item": [
+        {
+          "name": "8. Compute_role : Request for credit  (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"additional_info\": {}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/credit/request",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "credit",
+                "request"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "9. PF Admin: Get credit requests (Success)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test the response code",
+                  "pm.test(\"response is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test the response header",
+                  "pm.test(\"Check response header\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\", \"application/json\");",
+                  "});",
+                  "",
+                  "// Test the response body and extract org_create_req_id",
+                  "pm.test(\"Check response body and extract credit_req_id\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"type\", pm.environment.get(\"urn_type\"));",
+                  "    pm.expect(body).to.have.property(\"title\", \"Success\");",
+                  "",
+                  "    const userId = pm.environment.get(\"userId\");",
+                  "    const match = body.result.find(credit =>credit.userId === userId);",
+                  "",
+                  "    pm.expect(match).to.not.be.undefined;",
+                  "    pm.environment.set(\"credit_req_id\", match.id);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{orgAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/credit/request",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "credit",
+                "request"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10. PF Admin: Update credit request status (Success)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI5ajdoMFVkUENrNS1reDRPejhMNGtzeVRSV09vNEFZLUV2ZXhpYl9SRHFnIn0.eyJleHAiOjE3NjU1NDU1NjgsImlhdCI6MTc2NTU0NTI2OCwianRpIjoib25ydHJvOjA1NDMxODIxLTEzYzctNDVkOS05NDE2LTc1MWViMzE4YmQ2YiIsImlzcyI6Imh0dHBzOi8vc3RhZ2luZy5rZXljbG9hay51cGRhdGUuaXVkeC5pby9hdXRoL3JlYWxtcy90Z2RleC1waWxvdCIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiIxZGMyOGNjNi1kNjE0LTQ2MWEtOWI4Zi1kNjExMGZlYjNlMmYiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJmcm9udGVuZC1jbGllbnQiLCJzaWQiOiJkY2JiYjE2Mi1kMjNlLTRjYTQtOWMzNC1kYjQzYTJiMWI5NGQiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly9sb2NhbGhvc3Q6NDAwNyIsIioiLCJodHRwOi8vbG9jYWxob3N0OjMwMDAiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIm9mZmxpbmVfYWNjZXNzIiwiZGVmYXVsdC1yb2xlcy10Z2RleC1waWxvdCIsImNvbnN1bWVyIiwiY29zX2FkbWluIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJwcm9maWxlIGVtYWlsIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJBbmFuamF5IEt1bWFyIiwicHJlZmVycmVkX3VzZXJuYW1lIjoiYW5hbmpheS5rdW1hckBkYXRha2F2ZXJpLm9yZyIsImdpdmVuX25hbWUiOiJBbmFuamF5IiwiZmFtaWx5X25hbWUiOiJLdW1hciIsImVtYWlsIjoiYW5hbmpheS5rdW1hckBkYXRha2F2ZXJpLm9yZyJ9.kc5A-nIzuoLiyp746vaDFVvJx6UMHyADOa-8ro43LnEYfKSOUPOqoaJy3yTXwAWIk9mQb_hnu4s0W7hSVxJEGGBude38A16C9kR8Xr9hSF3nDA43egHpo2rA8XPpuvzruUf8Jz6Ku38xK0wz-aJF_i2H9zRiSaQjqDcDUYMkb8k71X7vlHXT0P_V1dAS3lQPWYNq4yoWXLFzQxAgXGJ-Qy5fdUIScB9SjC-qJ5lxYdOJ5prU4HX5dM9tXmdULn_SGkSmPmFY8pa0xMuc6HXhG4vRdoCa2sawGvGf3XLNINGArrcChpl1vp60_XsFpX8mgfwLMgquxxR1w4MjrSZE-g"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\":\"granted\",\"amount\":10000.0,\"expiration_date\":\"2025-12-31T23:59:59\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "localhost:8443/iudx/v2/auth/credit/request/{{credit_req_id}}",
+              "host": [
+                "localhost"
+              ],
+              "port": "8443",
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "credit",
+                "request",
+                "{{credit_req_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11. User : Get balance of user (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/user/credit/balance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "user",
+                "credit",
+                "balance"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12. PF Admin: Get balance of other user (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cosAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/admin/user/credit/balance/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "admin",
+                "user",
+                "credit",
+                "balance",
+                "{{userId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "13. Get user credit request (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/user/credit/request",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "user",
+                "credit",
+                "request"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "14. User: Delete credit request made by them(Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/user/credit/request/{{credit_req_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "user",
+                "credit",
+                "request",
+                "{{credit_req_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15. PF Admin: Add Credit Request (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cosAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 300.0,\n  \"requested_at\": \"2025-12-15T19:09:00\",\n  \"user_id\": \"{{userId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/admin/user/credit/add",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "admin",
+                "user",
+                "credit",
+                "add"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "16. PF Admin: Deduct Credit Request (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cosAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"amount\":100.0,\n    \"user_id\":\"{{userId}}\",\n    \"requested_at\":\"2025-05-29T19:09:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/admin/user/credit/deduct",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "admin",
+                "user",
+                "credit",
+                "deduct"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "17. Get Credit Request Report (Success)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/credit/request/report",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "credit",
+                "request",
+                "report"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Client APIs",
+      "item": [
+        {
+          "name": "Get-ClientId-ClientSecret (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cosAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cosAdmin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/client",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "client"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Access Token for Item Id",
+      "item": [
+        {
+          "name": "Get Access Token for Item( Data Access)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "clientId",
+                "value": "{{client_id}}"
+              },
+              {
+                "key": "clientSecret",
+                "value": "{{client_secret}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"itemId\":\"3d03fa65-978b-41eb-976f-b3f46bee4de5\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{auth_base}}/iudx/v2/auth/token",
+              "host": [
+                "{{auth_base}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://v2.dev.controlplane.iudx.io"
+    },
+    {
+      "key": "providerToken",
+      "value": "<provider_token>"
+    },
+    {
+      "key": "consumerToken",
+      "value": "<consumer_token>"
+    },
+    {
+      "key": "orgAdminToken",
+      "value": "<org_admin_token>"
+    },
+    {
+      "key": "cosAdmin",
+      "value": "<cos_admin_token>"
+    },
+    {
+      "key": "forbiddenAuthToken",
+      "value": "<forbidden_token_without_required_roles>"
+    }
+  ]
+}
