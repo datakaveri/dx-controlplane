@@ -8409,7 +8409,7 @@ paths:
             type: string
 
       responses:
-        200:
+        204:
           description: 'Successful deletion of streaming subscription'
         400:
           description: Bad Request
