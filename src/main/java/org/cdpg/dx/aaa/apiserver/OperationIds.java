@@ -105,10 +105,13 @@ public final class OperationIds {
   public static final String OP_GET_BOOKMARKS = "get-bookmarks";
   public static final String OP_DELETE_BOOKMARK = "delete-bookmark";
 
-    /* ===================================================== */
+  /* ===================================================== */
   public static final String OP_POST_APPID = "post-appId";
   public static final String OP_GET_APPID = "get-appId";
   public static final String OP_DELETE_APPID = "delete-appId";
+  /* =====================================================
+   * Toekens
+   * ===================================================== */
+  public static final String OP_POST_APP_TOKEN = "post-auth-v2-app-token";
+  public static final String OP_POST_ClIENT_TOKEN = "post-auth-v2-token";
 }
-
-

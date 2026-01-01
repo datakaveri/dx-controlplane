@@ -12,6 +12,8 @@ import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.response.ResponseBuilder;
 
+import static org.cdpg.dx.aaa.apiserver.OperationIds.OP_POST_ClIENT_TOKEN;
+
 public class TokenController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(TokenController.class);
   private final TokenService tokenService;
@@ -24,7 +26,7 @@ public class TokenController implements ApiController {
 
   @Override
   public void register(RouterBuilder builder) {
-    builder.operation("post-auth-v2-token").handler(this::handleCreateToken);
+    builder.operation(OP_POST_ClIENT_TOKEN).handler(this::handleCreateToken);
   }
 
   private void handleCreateToken(RoutingContext ctx) {

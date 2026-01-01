@@ -2,114 +2,144 @@ package org.cdpg.dx.aaa.token.service.impl;
 
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.JWTOptions;
 import io.vertx.ext.auth.jwt.JWTAuth;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.clientSecret.service.ClientcredetialService;
-import org.cdpg.dx.aaa.item.service.ItemService;
+import org.cdpg.dx.aaa.appCredentials.model.AppCredentials;
+import org.cdpg.dx.aaa.appCredentials.service.AppCredentialsService;
 import org.cdpg.dx.aaa.token.model.AppTokenRequest;
 import org.cdpg.dx.aaa.token.service.AppTokenService;
 import org.cdpg.dx.aaa.token.util.TokenClaimsBuilder;
+import org.cdpg.dx.common.exception.DxForbiddenException;
+import org.cdpg.dx.common.exception.DxUnauthorizedException;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
-import java.time.Instant;
+import java.time.*;
 import java.util.UUID;
 
 public class AppTokenServiceImpl implements AppTokenService {
 
+  private static final Logger LOGGER = LogManager.getLogger(AppTokenServiceImpl.class);
   private static final String JWT_ALGORITHM = "ES256";
-  private final Logger LOGGER = LogManager.getLogger(AppTokenServiceImpl.class);
 
-  private final JWTAuth provider;
+  private final JWTAuth jwtAuth;
+  private final AppCredentialsService appCredentialsService;
   private final KeycloakUserService keycloakUserService;
-  private final ClientcredetialService clientcredetialService;
-  private final ItemService itemService;
+  private final JWTOptions jwtOptions;
   private final String issuer;
-  private final JWTOptions options;
   private final int tokenExpirationMinutes;
-  private final Vertx vertx;
 
   public AppTokenServiceImpl(
-      JWTAuth provider,
+      JWTAuth jwtAuth,
       KeycloakUserService keycloakUserService,
-      ClientcredetialService clientcredetialService,
-      ItemService itemService,
+      AppCredentialsService appCredentialsService,
       String issuer,
-      int expirationMinutes,
+      int tokenExpirationMinutes,
       Vertx vertx) {
-    this.provider = provider;
+
+    this.jwtAuth = jwtAuth;
     this.keycloakUserService = keycloakUserService;
-    this.clientcredetialService = clientcredetialService;
-    this.itemService = itemService;
+    this.appCredentialsService = appCredentialsService;
     this.issuer = issuer;
-    this.tokenExpirationMinutes = expirationMinutes;
-    this.vertx = vertx;
-    this.options = new JWTOptions().setAlgorithm(JWT_ALGORITHM).setIssuer(issuer);
+    this.tokenExpirationMinutes = tokenExpirationMinutes;
+    this.jwtOptions = new JWTOptions().setAlgorithm(JWT_ALGORITHM).setIssuer(issuer);
   }
 
   @Override
   public Future<JsonObject> createToken(AppTokenRequest request) {
-    if (request.appId() == null || request.appSecret() == null) {
-      return Future.failedFuture("Missing appId or appSecret");
+
+    if (request == null || request.appId() == null || request.appSecret() == null) {
+      return Future.failedFuture("invalid_app_credentials");
     }
 
-    return null;
+    UUID appId = request.appId();
+    String inputSecret = request.appSecret().trim();
+
+    return appCredentialsService
+        .getAppById(appId)
+        .compose(app -> validateApp(app, inputSecret))
+        .compose(this::issueAppToken);
   }
 
-  private Future<DxUser> getDxUser(String clientId, String clientSecret) {
-    String hashedClientId = hash(clientId);
-    String hashedClientSecret = hash(clientSecret);
-    return clientcredetialService
-        .getUserIdByClientIdAndSecret(hashedClientId, hashedClientSecret)
-        .compose(keycloakUserService::getUserById);
+  /* -------------------------------------------------
+   * Validation
+   * ------------------------------------------------- */
+
+  private Future<AppCredentials> validateApp(AppCredentials app, String inputSecret) {
+
+    if (app == null) {
+      return Future.failedFuture(new DxUnauthorizedException("invalid app credentials"));
+    }
+
+    if (app.revokedAt() != null) {
+      return Future.failedFuture(new DxForbiddenException("App has been revoked"));
+    }
+
+    if (!"active".equalsIgnoreCase(app.status())) {
+      return Future.failedFuture(new DxForbiddenException("App is not active"));
+    }
+
+    Instant expiryInstant =
+        LocalDateTime.parse(app.expiryAt()).atZone(ZoneId.of("Asia/Kolkata")).toInstant();
+
+    if (expiryInstant.isBefore(Instant.now())) {
+      return Future.failedFuture(new DxUnauthorizedException("App has been expired"));
+    }
+
+    String hashedInputSecret = hash(inputSecret);
+    if (!hashedInputSecret.equals(app.appSecret())) {
+      return Future.failedFuture(new DxUnauthorizedException("invalid credentials"));
+    }
+
+    return Future.succeededFuture(app);
+  }
+
+  /* -------------------------------------------------
+   * Token issuance
+   * ------------------------------------------------- */
+
+  private Future<JsonObject> issueAppToken(AppCredentials app) {
+
+    return keycloakUserService
+        .getUserById(app.userId())
+        .compose(
+            user -> {
+              JsonObject extraClaims = new JsonObject().put("appId", app.appId().toString());
+
+              return generateJwtToken(user, extraClaims);
+            });
   }
 
   private Future<JsonObject> generateJwtToken(DxUser user, JsonObject extraClaims) {
-    LOGGER.debug("Inside generation of tokens : {}", extraClaims);
-    JsonObject claims =
-            TokenClaimsBuilder.buildClaims(user, issuer, "CLAIM_AUDIENCE", tokenExpirationMinutes);
-    if (extraClaims != null ) {
-      claims.mergeIn(extraClaims);
-    }
 
-    LOGGER.info("claims2 :{}",claims);
-    String token = provider.generateToken(claims, options);
+    JsonObject claims =
+        TokenClaimsBuilder.buildClaims(user, issuer, "CLAIM_AUDIENCE", tokenExpirationMinutes);
+
+    claims.mergeIn(extraClaims);
+    JsonObject realmAccess = new JsonObject();
+    JsonArray rolesArray = new JsonArray().add("consumer");
+    realmAccess.put("roles", rolesArray);
+    claims.put("realm_access", realmAccess);
+
+    String token = jwtAuth.generateToken(claims, jwtOptions);
+
     return Future.succeededFuture(
-            new JsonObject()
-                    .put("access_token", token)
-                    .put("token_type", "jwt")
-                    .put("expires_in_minutes", tokenExpirationMinutes));
+        new JsonObject()
+            .put("access_token", token)
+            .put("token_type", "Bearer")
+            .put("expires_in_minutes", tokenExpirationMinutes));
   }
 
-  /*public Future<AppRecord> validateApp(UUID appId, String inputSecret) {
-    return appDao.fetchByAppId(appId)
-            .compose(app -> {
-              if (app == null) {
-                return Future.failedFuture(AuthError.INVALID_CREDENTIALS);
-              }
-
-              if (!"active".equals(app.status())) {
-                return Future.failedFuture(AuthError.APP_NOT_ACTIVE);
-              }
-
-              if (app.expiryAt().isBefore(Instant.now())) {
-                return Future.failedFuture(AuthError.APP_EXPIRED);
-              }
-
-              if (!passwordEncoder.matches(inputSecret, app.secretHash())) {
-                return Future.failedFuture(AuthError.INVALID_CREDENTIALS);
-              }
-
-              return Future.succeededFuture(app);
-            });
-  }*/
-
+  /* -------------------------------------------------
+   * Utilities
+   * ------------------------------------------------- */
 
   private String hash(String input) {
-    return DigestUtils.sha512Hex(input.trim());
+    return DigestUtils.sha512Hex(input);
   }
 }
