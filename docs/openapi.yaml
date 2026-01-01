@@ -8609,10 +8609,6 @@ paths:
             'https://${HOSTNAME}/iudx/v2/bookmarks/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9' \
             --header 'Authorization: Bearer <token>'
 
-
-
-
-
   /iudx/v2/auth/app:
     post:
       tags:
@@ -8775,6 +8771,72 @@ paths:
             curl --location --request DELETE \
             'https://${HOSTNAME}/iudx/v2/app/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9' \
             --header 'Authorization: Bearer <token>'
+
+
+  
+  
+
+
+
+  /iudx/auth/v2/app/token:
+    post:
+      tags:
+        - token
+      summary: Generate App Token
+      description: >
+        Generate an application token for a registered resource servers.
+      operationId: post-auth-v2-app-token
+      requestBody:
+        description: Request body containing appId and appSecret
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppTokenRequest'
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: "urn:dx:controlPanel:success"
+                  title:
+                    type: string
+                    example: "Success"
+                  result:
+                    type: object
+                    properties:
+                      access_token:
+                        type: string
+                        description: The issued JWT access token
+                        example: "eyJ0eXAiOiJKv2QiLCJhbGciOiJFUzI1NiJ9..."
+                      token_type:
+                        type: string
+                        example: "jwt"
+                      expires_in_minutes:
+                        type: integer
+                        example: 60
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Generate App Token
+          source: |
+            curl --location --request POST 'https://${HOSTNAME}/iudx/auth/v2/app/token' \
+            --header 'Authorization: Bearer <your-admin-token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+                    "appId": "550e8400-e29b-41d4-a716-446655440000",
+                      "appSecret": "u7YkKq9vZxP1"
+                    }'
 
 
 tags:
@@ -9023,6 +9085,25 @@ components:
       schema:
         type: string
   schemas:
+    AppTokenRequest:
+      type: object
+      required:
+        - appId
+        - appSecret
+      additionalProperties: false
+      properties:
+        appId:
+          type: string
+          format: uuid
+          description: >
+            Unique identifier of the app (client_id).
+
+        appSecret:
+          type: string
+          minLength: 16
+          description: >
+            Plaintext app secret issued during app creation.
+
     PostBookmarkRequest:
       type: object
       required:

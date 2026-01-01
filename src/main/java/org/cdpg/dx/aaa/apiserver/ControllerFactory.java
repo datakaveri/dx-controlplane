@@ -64,6 +64,7 @@ import org.cdpg.dx.aaa.search.factory.SearchControllerFactory;
 import org.cdpg.dx.aaa.subscription.controller.SubscriptionController;
 import org.cdpg.dx.aaa.subscription.factory.SubscriptionControllerFactory;
 import org.cdpg.dx.aaa.token.controller.TokenController;
+import org.cdpg.dx.aaa.token.factory.AppTokenControllerFactory;
 import org.cdpg.dx.aaa.token.factory.TokenControllerFactory;
 import org.cdpg.dx.aaa.user.factory.UserControllerFactory;
 import org.cdpg.dx.aaa.user.service.UserService;
@@ -257,7 +258,12 @@ public class ControllerFactory {
         SubscriptionControllerFactory.create(
             dataBrokerService, pgService, urnGenerator, controlPlaneDomain);
     ApiController bookmarksController = BookmarksControllerFactory.create(pgService, urnGenerator);
-    ApiController appCredentialsController = AppCredentialsControllerFactory.create(pgService,urnGenerator);
+    ApiController appCredentialsController =
+        AppCredentialsControllerFactory.create(pgService, urnGenerator);
+
+    ApiController appTokenController =
+        AppTokenControllerFactory.create(
+            pgService, keycloakUserService, urnGenerator, config, vertx);
 
     return List.of(
         organizationController,
@@ -279,6 +285,7 @@ public class ControllerFactory {
         activityReportController,
         subscriptionController,
         bookmarksController,
-        appCredentialsController);
+        appCredentialsController,
+        appTokenController);
   }
 }
