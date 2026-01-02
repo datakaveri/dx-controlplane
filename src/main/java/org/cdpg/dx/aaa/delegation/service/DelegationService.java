@@ -23,20 +23,15 @@ public interface DelegationService {
 
   Future<DelegationGrant> getDelegationGrantById(UUID delegationId);
 
-  Future<PaginatedResult<DelegationGrant>> getAllDelegations(PaginatedRequest request);
-
   Future<List<DelegationScopeConstraint>> getDelegationScopeByEntityId(UUID entity);
 
 //  Future<DelegationUpdateRequest> createDelegationRequest(DelegationUpdateRequest delegationRequest,Set<String> UserRoles,List<JsonObject> constraintsJson,UUID delegatorId);
 //
 //  Future<DelegationUpdateRequest> updateDelegationRequestStatus(UUID requestId, String status,UUID delegatorId);
 
-  Future<List<DelegationUpdateRequest>> getDelegationRequestsByUser(UUID userId);
+  Future<List<DelegationGrant>> getAllDelegationsOfDelegate(UUID userId);
 
   Future<List<DelegationGrant>> getAllDelegationsByDelegator(UUID userId);
-
-  Future<List<DelegationGrant>> getAllDelegationsByDelegate(UUID userId);
-
 
   Future<Boolean> deleteDelegation(UUID delegationId,UUID userId);
 

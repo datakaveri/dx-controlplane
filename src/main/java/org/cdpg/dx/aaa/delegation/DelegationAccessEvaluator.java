@@ -39,7 +39,6 @@ public class DelegationAccessEvaluator {
     this.keycloakUserService = keycloakUserService;
   }
 
-  // 🔑 SINGLE ENTRY POINT
   public Future<DelegationValidationResult> validateItemAccess(
     DxUser user,
     String itemIdStr
@@ -47,11 +46,11 @@ public class DelegationAccessEvaluator {
 
     LOGGER.info("Inside validateItemAccess");
 
-    UUID delegateId = user.sub();
+    UUID userId = user.sub();
     UUID itemId = UUID.fromString(itemIdStr);
     LocalDateTime now = LocalDateTime.now();
 
-    return delegationService.getAllDelegationsByDelegate(delegateId)
+    return delegationService.getAllDelegationsOfDelegate(userId)
       .compose(grants -> {
 
         if (grants.isEmpty()) {
@@ -63,7 +62,7 @@ public class DelegationAccessEvaluator {
 
         for (DelegationGrant grant : grants) {
           chain = chain.recover(err ->
-            validateGrant(grant, delegateId, itemId, now)
+            validateGrant(grant, userId, itemId, now)
           );
         }
 

@@ -9,11 +9,13 @@ import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.KeycloakServiceException;
+import org.cdpg.dx.common.model.UserInfo;
 import org.cdpg.dx.common.util.BlockingExecutionUtil;
 import org.cdpg.dx.keycloak.client.KeycloakClientProvider;
 import org.cdpg.dx.keycloak.config.KeycloakConstants;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.keycloak.util.DxUserMapper;
+import org.cdpg.dx.keycloak.util.UserInfoMapper;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -126,6 +128,30 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
             }
         });
     }
+
+  @Override
+  public Future<List<UserInfo>> getUsersInfo(int page, int size, String name) {
+    LOGGER.info("page and size,{},{}",page,size);
+    return BlockingExecutionUtil.runBlocking(() -> {
+      try {
+        //System.out.println("Fetching users from Keycloak: page=" + page + ", size=" + size + ", enabled=" + enabled);
+
+        List<UserRepresentation> reps = usersResource().search(
+          name,          // search string
+          (page-1) * size,   // first (offset)
+          size,          // max
+          true// filter by enabled/disabled
+        );
+        return reps.stream()
+          .map(user -> {
+            UserRepresentation user_with_attr = usersResource().get(user.getId()).toRepresentation();
+            return UserInfoMapper.fromUserRepresentation(user_with_attr);
+          }).collect(Collectors.toList());
+      } catch (Exception e) {
+        throw new KeycloakServiceException("Failed to retrieve users from Keycloak", e);
+      }
+    });
+  }
 
     @Override
     public Future<DxUser> getUserById(UUID userId) {

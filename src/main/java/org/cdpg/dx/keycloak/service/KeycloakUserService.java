@@ -6,6 +6,7 @@ import org.cdpg.dx.aaa.delegation.util.RoleScopeMapping;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.common.model.UserInfo;
 
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,7 @@ public interface KeycloakUserService {
     Future<Integer> getTotalCount();
     Future<Integer> getTotalCount(String searchTerm);
     Future<List<DxUser>> getUsers(int page, int size, String name);
+    Future<List<UserInfo>> getUsersInfo(int page, int size, String name);
     Future<DxUser> getUserById(UUID userId);
     Future<Boolean> updateUserAttributes(UUID userId, Map<String, String> attributes);
     Future<Boolean> updateUserAttributes(UUID userId, Map<String, String> attributes, String firstName, String lastName);
