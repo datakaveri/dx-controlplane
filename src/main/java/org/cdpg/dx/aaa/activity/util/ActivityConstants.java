@@ -3,6 +3,8 @@ package org.cdpg.dx.aaa.activity.util;
 import java.util.Map;
 import java.util.Set;
 
+import static org.cdpg.dx.auditing.schema.ActivityAuditSchema.*;
+
 public final class ActivityConstants {
   // Table names
   public static final String ACTIVITY_LOG_TABLE_NAME = "user_activity_log";
@@ -29,7 +31,7 @@ public final class ActivityConstants {
   public static final String ORGANIZATION_ID = "org_id";
   public static final String ORGANIZATION_NAME = "org_name";
 
-  public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_ADMIN =
+  public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_ADMIN_OLD =
       Map.of(
           "userId",
           USER_ID,
@@ -48,7 +50,26 @@ public final class ActivityConstants {
           "api",
           API);
 
-  public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_USER =
+  public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_ADMIN =
+      Map.ofEntries(
+          Map.entry("userId", USER_ID),
+          Map.entry("orgId", ORG_ID),
+          Map.entry("providerId", PROVIDER_ID),
+          Map.entry("role", ROLE),
+          Map.entry("isDelegate", IS_DELEGATE),
+          Map.entry("delegatorId", DELEGATOR_ID),
+          Map.entry("entityType", ENTITY_TYPE),
+          Map.entry("entityId", ENTITY_ID),
+          Map.entry("entityName", ENTITY_NAME),
+          Map.entry("operation", ACTION),
+          Map.entry("api", API),
+          Map.entry("method", METHOD),
+          Map.entry("originServer", ORIGIN_SERVER),
+          Map.entry("issuer", ISSUER),
+          Map.entry("status", STATUS),
+          Map.entry("createdAt", CREATED_AT));
+
+  public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_USER_OLD =
       Map.of(
           "assetType", ASSET_TYPE,
           "operation", OPERATION,
@@ -58,7 +79,17 @@ public final class ActivityConstants {
           "role", ROLE,
           "api", API);
 
-  public static final Set<String> ALLOWED_SORT_FEILDS =
+  public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_USER =
+      Map.ofEntries(
+          Map.entry("entityType", ENTITY_TYPE),
+          Map.entry("entityId", ENTITY_ID),
+          Map.entry("entityName", ENTITY_NAME),
+          Map.entry("operation", ACTION),
+          Map.entry("api", API),
+          Map.entry("createdAt", CREATED_AT));
+  public static final Set<String> ALLOWED_SORT_FIELDS =
+      Set.of("createdAt", "entityName", "entityType", "operation");
+  public static final Set<String> ALLOWED_SORT_FIELDS_OLD =
       Set.of("createdAt", "assetName", "assetType", "operation");
 
   private ActivityConstants() {
