@@ -97,10 +97,24 @@ public class SubscriptionAuthorizationHandler implements Handler<RoutingContext>
       getApplicableFilter(itemId, bearerToken)
           .compose(
               result -> {
-                RoutingContextHelper.setItemMetaData(context, result);
-                RoutingContextHelper.setPolicyExpiryAt(context, result.getString("expiryAt", null));
-                RoutingContextHelper.setProviderId(context, result.getString("ownerUserId", null));
-                return hasAccess(result, "sub");
+                if (result.containsKey("accessPolicy")
+                    && result.getString("accessPolicy").equalsIgnoreCase("Open")) {
+                  LOGGER.debug("Public access policy, skipping subscription check");
+                  RoutingContextHelper.setItemMetaData(context, result);
+                  RoutingContextHelper.setPolicyExpiryAt(
+                      context, result.getString("expiryAt", null));
+                  RoutingContextHelper.setProviderId(
+                      context, result.getString("ownerUserId", null));
+                  context.next();
+                  return Future.succeededFuture(true);
+                } else {
+                  RoutingContextHelper.setItemMetaData(context, result);
+                  RoutingContextHelper.setPolicyExpiryAt(
+                      context, result.getString("expiryAt", null));
+                  RoutingContextHelper.setProviderId(
+                      context, result.getString("ownerUserId", null));
+                  return hasAccess(result, "sub");
+                }
               })
           .onSuccess(
               sucesss -> {

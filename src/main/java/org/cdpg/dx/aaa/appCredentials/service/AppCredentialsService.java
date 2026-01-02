@@ -15,4 +15,6 @@ public interface AppCredentialsService {
   Future<PaginatedResult<AppCredentials>> getApp(PaginatedRequest paginatedRequest);
 
   Future<Boolean> deleteApp(UUID userId, UUID appId);
+
+  Future<AppCredentials> getAppById(UUID appId);
 }
