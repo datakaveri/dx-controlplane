@@ -14,6 +14,7 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.ActivityReport.service.ActivityReportService;
+import org.cdpg.dx.aaa.activity.util.ActivityConstants;
 import org.cdpg.dx.aaa.activity.util.Util;
 import org.cdpg.dx.aaa.apiserver.ApiController;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
@@ -69,7 +70,7 @@ public class ActivityReportController implements ApiController {
             .allowedTimeFields(Set.of(CREATED_AT))
             .defaultTimeField(CREATED_AT)
             .defaultSort(DEFAULT_SORTING_FIELD, DEFAULT_SORTING_ORDER)
-            .allowedSortFields(ALLOWED_SORT_FEILDS)
+            .allowedSortFields(ActivityConstants.ALLOWED_SORT_FIELDS)
             .build();
 
     LOGGER.info("PaginatedRequest created for handleGetAllActivityLogsForAdmin:  {}", request);
@@ -118,7 +119,7 @@ public class ActivityReportController implements ApiController {
             .allowedTimeFields(Set.of(CREATED_AT))
             .defaultTimeField(CREATED_AT)
             .defaultSort(DEFAULT_SORTING_FIELD, DEFAULT_SORTING_ORDER)
-            .allowedSortFields(ALLOWED_SORT_FEILDS)
+            .allowedSortFields(ActivityConstants.ALLOWED_SORT_FIELDS)
             .build();
 
     reportService

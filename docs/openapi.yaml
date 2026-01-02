@@ -9044,7 +9044,7 @@ components:
         pattern: '^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$'
 
     AssetTypeParam:
-      name: assetType
+      name: entityType
       in: query
       description: >
         The type of asset to filter the activity logs.
@@ -9092,7 +9092,7 @@ components:
         type: string
 
     OrganizationIdParam:
-      name: organizationId
+      name: orgId
       in: query
       description: >
         The unique identifier (UUID) of the organization for which to fetch activity logs.

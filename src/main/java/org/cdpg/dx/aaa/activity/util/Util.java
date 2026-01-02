@@ -31,7 +31,8 @@ public class Util {
     Map<String, String> allowedFilter = new HashMap<>(ALLOWED_FILTER_MAP_FOR_ADMIN);
 
     if (roles.contains(DxRole.COS_ADMIN.getRole())) {
-      allowedFilter.put("organizationId", ORGANIZATION_ID);
+      // allowedFilter.put("organizationId", ORGANIZATION_ID); // old key
+      allowedFilter.put("orgId", ORGANIZATION_ID);
     }
     return allowedFilter;
   }
