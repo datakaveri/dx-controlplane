@@ -22,6 +22,7 @@ import org.cdpg.dx.database.elastic.model.QueryModel;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.elastic.util.QueryType;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
+import org.keycloak.jose.jwk.JWK;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,7 +72,7 @@ public class UserServiceImpl implements UserService {
     return orgJson;
   }
 
-  @Override
+    @Override
   public Future<DxUser> getUserInfo(DxUser dxUser) {
 
     Future<Boolean> pendingProvider = Future.succeededFuture(false);

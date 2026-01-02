@@ -41,9 +41,7 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
     this.appCredentialsDAO = appCredentialsDAO;
   }
 
-  @Override
-  public Future<AppCredentials> createApp(
-      AppCredentials appCredentials) {
+  public Future<AppCredentials> createApp(AppCredentials appCredentials) {
 
     String clientSecret = randomSecretSupplier.get();
     String hashedClientSecret = DigestUtils.sha512Hex(clientSecret);
@@ -51,17 +49,25 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
     JsonObject appCredentialsJson = appCredentials.toJson();
     String userId = appCredentialsJson.getString(USER_ID);
 
-    appCredentialsJson.put(APP_SECRET,hashedClientSecret);
+    appCredentialsJson.put(APP_SECRET, hashedClientSecret);
 
-    AppCredentials updated_appCredentials = AppCredentials.fromJson(appCredentialsJson);
+    JsonObject responseAppCred = appCredentialsJson.copy();
+    responseAppCred.put(APP_SECRET, clientSecret);
+
+    AppCredentials dbEntity = AppCredentials.fromJson(appCredentialsJson);
 
     return appCredentialsDAO
-      .create(updated_appCredentials)
-      .onSuccess(
-        savedCredentials ->
-          LOGGER.info("App credentials saved successfully for userId: {}", userId))
-      .onFailure(throwable -> LOGGER.error("Failed to save app credentials", throwable));
+      .create(dbEntity)
+      .map(
+        saved -> {
+          LOGGER.info(
+            "App credentials saved successfully for userId: {}, appId: {}",
+            userId,
+            saved.appId());
 
+          return AppCredentials.fromJson(saved.toJson().put(APP_SECRET, clientSecret));
+        })
+      .onFailure(err -> LOGGER.error("Failed to save app credentials", err));
   }
 
   @Override

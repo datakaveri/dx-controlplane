@@ -30,8 +30,13 @@ public class AdminController implements ApiController {
 
         routerBuilder
                 .operation("get-auth-v2-admin-user")
-                .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+                .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
                 .handler(adminHandler::getAllDxUsersKeycloak);
+
+        routerBuilder
+          .operation("get-auth-v2-user-search")
+          .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+          .handler(adminHandler::getAllUsersInfoKeycloak);
 
         routerBuilder
                 .operation("put-auth-v2-user")

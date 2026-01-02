@@ -20,6 +20,7 @@ import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxBadRequestException;
+import org.cdpg.dx.common.model.UserInfo;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
@@ -134,6 +135,64 @@ public class AdminHandler {
       ResponseBuilder.sendSuccess(ctx, response.get("result"), (PaginationInfo) response.get("paginationInfo"),urnGenerator);
     }).onFailure(ctx::fail);
   }
+
+  public void getAllUsersInfoKeycloak(RoutingContext ctx) {
+
+    PaginatedRequest request = PaginationRequestBuilder.from(ctx).build();
+    String name = ctx.queryParam("search_term").stream().findFirst().orElse(null);
+
+    keycloakUserService.getTotalCount(name)
+      .compose(totalCount ->
+        keycloakUserService
+          .getUsersInfo(request.page(), request.size(), name) // returns List<UserInfo>
+          .map(users -> {
+
+            JsonArray array = new JsonArray();
+            for (UserInfo user : users) {
+              array.add(user.toJson());
+            }
+
+            int totalPages = (int) Math.ceil((double) totalCount / request.size());
+            boolean hasNext = request.page() < totalPages;
+            boolean hasPrevious = request.page() > 1;
+
+            PaginationInfo paginationInfo = new PaginationInfo(
+              request.page(),
+              request.size(),
+              totalCount,
+              totalPages,
+              hasNext,
+              hasPrevious
+            );
+
+            Map<String, Object> resultMap = new HashMap<>();
+            resultMap.put("result", array);
+            resultMap.put("paginationInfo", paginationInfo);
+
+            return resultMap;
+          })
+      )
+      .onSuccess(response -> {
+
+        AuditLog auditLog = AuditingHelper.createAuditLog(
+          ctx.user(),
+          RoutingContextHelper.getRequestPath(ctx),
+          "GET",
+          "Get User Info"
+        );
+
+        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+
+        ResponseBuilder.sendSuccess(
+          ctx,
+          response.get("result"),
+          (PaginationInfo) response.get("paginationInfo"),
+          urnGenerator
+        );
+      })
+      .onFailure(ctx::fail);
+  }
+
 
 
 

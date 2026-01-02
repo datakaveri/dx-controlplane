@@ -83,32 +83,30 @@ public class DelegationHandler {
       .onFailure(ctx::fail);
   }
 
-  public void getAllDelegations(RoutingContext ctx) {
+  public void getAllDelegationsOfDelegate(RoutingContext ctx) {
 
-    PaginatedRequest request = PaginationRequestBuilder.from(ctx)
-      .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_DELEGATION_GRANT)
-      .apiToDbMap(API_TO_DB_DELEGATION_GRANT)
-      .allowedTimeFields(Set.of(CREATED_AT))
-      .defaultTimeField(CREATED_AT)
-      .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
-      .allowedSortFields(API_TO_DB_DELEGATION_GRANT.keySet())
-      .build();
+    User user = ctx.user();
+    UUID userId = UUID.fromString(user.subject());
 
-    delegationService.getAllDelegations(request)
+    delegationService.getAllDelegationsOfDelegate(userId)
       .onSuccess(res -> {
         AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx), "GET", "Get All Delegations");
+          RoutingContextHelper.getRequestPath(ctx), "GET", "Get All Delegations of the delegate");
 
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, res.data(), res.paginationInfo(),urnGenerator);
+        if(res.isEmpty() || res==null)
+        {
+          ResponseBuilder.sendSuccess(ctx,"No delegation found for this user" ,urnGenerator);
+        }
+
+        ResponseBuilder.sendSuccess(ctx, res ,urnGenerator);
 
       })
       .onFailure(ctx::fail);
 
   }
 
-  public void getAllDelegationsByUser(RoutingContext ctx)
-  {
+  public void getAllDelegationsByDelegator(RoutingContext ctx) {
 
     User user = ctx.user();
     UUID userId = UUID.fromString(user.subject());
@@ -116,14 +114,22 @@ public class DelegationHandler {
     delegationService.getAllDelegationsByDelegator(userId)
       .onSuccess(res -> {
         AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx), "GET", "Get All Delegations of a delegator ");
+          RoutingContextHelper.getRequestPath(ctx), "GET", "Get All Delegations made by the user who is the delegator");
 
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        if(res.isEmpty() || res==null)
+        {
+          ResponseBuilder.sendSuccess(ctx,"No delegation found for this user" ,urnGenerator);
+        }
+
         ResponseBuilder.sendSuccess(ctx, res ,urnGenerator);
+
 
       })
       .onFailure(ctx::fail);
+
   }
+
 
 
   public void deleteDelegationGrant(RoutingContext ctx)

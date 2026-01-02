@@ -28,6 +28,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.cdpg.dx.aaa.appCredentials.util.Constants.*;
 import static org.cdpg.dx.aaa.delegation.util.Constants.*;
 import static org.cdpg.dx.common.util.DateTimeHelper.parseDateTime;
 
@@ -148,12 +149,6 @@ public class DelegationServiceImpl implements DelegationService{
   }
 
   @Override
-  public Future<PaginatedResult<DelegationGrant>> getAllDelegations(PaginatedRequest request) {
-    return delegationGrantDAO.getAllWithFilters(request);
-  }
-
-
-  @Override
   public Future<List<DelegationScopeConstraint>>getDelegationScopeByEntityId(UUID entityId) {
 
     Map<String,Object> filter = Map.of(ENTITY_ID,entityId.toString());
@@ -249,27 +244,10 @@ public class DelegationServiceImpl implements DelegationService{
   }
 
 
-
-  @Override
-  public Future<List<DelegationUpdateRequest>> getDelegationRequestsByUser(UUID userId) {
-
-    Map<String,Object> conditionMap = Map.of("delegator_id",userId.toString());
-
-    return delegationRequestDAO.getAllWithFilters(conditionMap)
-      .recover(err -> {
-        BaseDxException dxEx = BaseDxException.from(err);
-        if (dxEx instanceof DxNotFoundException) {
-          return Future.failedFuture(new DxNotFoundException("No delegation request found with userId as reviewer " + userId, dxEx));
-        }
-        return Future.failedFuture(dxEx);
-      });
-
-  }
-
   @Override
   public Future<List<DelegationGrant>> getAllDelegationsByDelegator(UUID userId) {
 
-    Map<String,Object> conditionMap = Map.of("delegator_id",userId.toString());
+    Map<String,Object> conditionMap = Map.of(DELEGATOR_ID,userId.toString());
 
     return delegationGrantDAO.getAllWithFilters(conditionMap)
       .recover(err -> {
@@ -283,7 +261,7 @@ public class DelegationServiceImpl implements DelegationService{
   }
 
   @Override
-  public Future<List<DelegationGrant>> getAllDelegationsByDelegate(UUID userId) {
+  public Future<List<DelegationGrant>> getAllDelegationsOfDelegate(UUID userId) {
 
     Map<String,Object> conditionMap = Map.of(DELEGATE_ID, userId.toString());
 

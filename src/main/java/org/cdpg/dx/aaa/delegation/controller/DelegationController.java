@@ -38,9 +38,14 @@ public class DelegationController implements ApiController {
       .handler(delegationHandler::getDelegationGrant);
 
     routerBuilder
-      .operation("get-auth-v2-delegation")
+      .operation("get-auth-v2-delegation-delegate")
+      .handler(AuthorizationHandler.forRoles(DxRole.DELEGATE))   //both delegate and delegator can view the requests
+      .handler(delegationHandler::getAllDelegationsOfDelegate);
+
+    routerBuilder
+      .operation("get-auth-v2-delegation-delegator")
       .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))   //both delegate and delegator can view the requests
-      .handler(delegationHandler::getAllDelegations);
+      .handler(delegationHandler::getAllDelegationsByDelegator);
 
 //    routerBuilder
 //      .operation("get-auth-v2-user-delegation")
