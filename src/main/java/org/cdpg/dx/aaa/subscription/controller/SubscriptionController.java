@@ -205,7 +205,7 @@ public class SubscriptionController implements ApiController {
         parseAndValidateFutureTimeWithPolicy2(requestBody.getString("expiryAt"), policyAt);
     LOGGER.debug("expiryAt {}", expiryAt);
     String providerId = RoutingContextHelper.getProviderId(routingContext);
-    String did = String.valueOf(GetDid.getDid(routingContext.user().principal(), userId));
+    String did = String.valueOf(GetDid.getDid(routingContext.user().principal(), userId).get());
     subscriptionService
         .createSubscription(
             userId,
