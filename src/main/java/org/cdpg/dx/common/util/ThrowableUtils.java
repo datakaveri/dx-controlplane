@@ -21,7 +21,6 @@ public final class ThrowableUtils {
           DxSubscriptionException.class,
           ExchangeNotFoundException.class,
           QueueNotFoundException.class,
-          QueueBindingFailedException.class,
           QueueDeletionException.class,
           QueueRegistrationFailedException.class,
           DxConflictException.class,

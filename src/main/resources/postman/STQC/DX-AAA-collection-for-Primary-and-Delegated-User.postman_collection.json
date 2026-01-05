@@ -50,29 +50,25 @@
                 },
                 {
                   "key": "username",
-                  "value": "admin.cos.tgdex@datakaveri.org",
+                  "value": "ananjay.kumar@datakaveri.org",
                   "type": "text"
                 },
                 {
                   "key": "password",
-                  "value": "pass",
+                  "value": "abc",
                   "type": "text"
                 }
               ]
             },
             "url": {
-              "raw": "staging.keycloak.update.iudx.io/auth/realms/tgdex-pilot/protocol/openid-connect/token",
+              "raw": "{{kc_host}}/auth/realms/{{realm}}/protocol/openid-connect/token",
               "host": [
-                "staging",
-                "keycloak",
-                "update",
-                "iudx",
-                "io"
+                "{{kc_host}}"
               ],
               "path": [
                 "auth",
                 "realms",
-                "tgdex-pilot",
+                "{{realm}}",
                 "protocol",
                 "openid-connect",
                 "token"
@@ -82,14 +78,14 @@
           "response": []
         },
         {
-          "name": "Get Provider Token",
+          "name": "Get Cos Admin Delegate token",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
                   "let json = pm.response.json();",
-                  "pm.environment.set(\"providerToken\", json.access_token);"
+                  "pm.environment.set(\"cos_admin_delegate_token\", json.access_token);"
                 ],
                 "type": "text/javascript",
                 "packages": {},
@@ -120,12 +116,210 @@
                 },
                 {
                   "key": "username",
-                  "value": "orgmember_testapi@gmail.com",
+                  "value": "rohihat645@cameltok.com",
                   "type": "text"
                 },
                 {
                   "key": "password",
-                  "value": "pass",
+                  "value": "111",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{kc_host}}/auth/realms/{{realm}}/protocol/openid-connect/token",
+              "host": [
+                "{{kc_host}}"
+              ],
+              "path": [
+                "auth",
+                "realms",
+                "{{realm}}",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Org admin Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json = pm.response.json();",
+                  "pm.environment.set(\"orgAdminToken\", json.access_token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "frontend-client",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "lopoh90477@cameltok.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "111",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{kc_host}}/auth/realms/{{realm}}/protocol/openid-connect/token",
+              "host": [
+                "{{kc_host}}"
+              ],
+              "path": [
+                "auth",
+                "realms",
+                "{{realm}}",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Org Admin Delegate token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json = pm.response.json();",
+                  "pm.environment.set(\"org_admin_delegate_token\", json.access_token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "frontend-client",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "geteh11278@24faw.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "111",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{kc_host}}/auth/realms/{{realm}}/protocol/openid-connect/token",
+              "host": [
+                "{{kc_host}}"
+              ],
+              "path": [
+                "auth",
+                "realms",
+                "{{realm}}",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Provider Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json = pm.response.json();",
+                  "pm.environment.set(\"orgAdminToken_demo\", json.access_token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "frontend-client",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "xarige9786@24faw.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "111",
                   "type": "text"
                 }
               ]
@@ -261,146 +455,6 @@
                 {
                   "key": "username",
                   "value": "orgmember_testapi@gmail.com",
-                  "type": "text"
-                },
-                {
-                  "key": "password",
-                  "value": "pass",
-                  "type": "text"
-                }
-              ]
-            },
-            "url": {
-              "raw": "staging.keycloak.update.iudx.io/auth/realms/tgdex-pilot/protocol/openid-connect/token",
-              "host": [
-                "staging",
-                "keycloak",
-                "update",
-                "iudx",
-                "io"
-              ],
-              "path": [
-                "auth",
-                "realms",
-                "tgdex-pilot",
-                "protocol",
-                "openid-connect",
-                "token"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Org admin Token",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "let json = pm.response.json();",
-                  "pm.environment.set(\"orgAdminToken\", json.access_token);"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/x-www-form-urlencoded"
-              }
-            ],
-            "body": {
-              "mode": "urlencoded",
-              "urlencoded": [
-                {
-                  "key": "grant_type",
-                  "value": "password",
-                  "type": "text"
-                },
-                {
-                  "key": "client_id",
-                  "value": "frontend-client",
-                  "type": "text"
-                },
-                {
-                  "key": "username",
-                  "value": "user4@gmail.com",
-                  "type": "text"
-                },
-                {
-                  "key": "password",
-                  "value": "pass",
-                  "type": "text"
-                }
-              ]
-            },
-            "url": {
-              "raw": "staging.keycloak.update.iudx.io/auth/realms/tgdex-pilot/protocol/openid-connect/token",
-              "host": [
-                "staging",
-                "keycloak",
-                "update",
-                "iudx",
-                "io"
-              ],
-              "path": [
-                "auth",
-                "realms",
-                "tgdex-pilot",
-                "protocol",
-                "openid-connect",
-                "token"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Cos Admin Delegate token",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "let json = pm.response.json();",
-                  "pm.environment.set(\"cos_admin_delegate_token\", json.access_token);"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/x-www-form-urlencoded"
-              }
-            ],
-            "body": {
-              "mode": "urlencoded",
-              "urlencoded": [
-                {
-                  "key": "grant_type",
-                  "value": "password",
-                  "type": "text"
-                },
-                {
-                  "key": "client_id",
-                  "value": "frontend-client",
-                  "type": "text"
-                },
-                {
-                  "key": "username",
-                  "value": "user1@gmail.com",
                   "type": "text"
                 },
                 {
@@ -1359,7 +1413,44 @@
       "name": "Organisation APIs",
       "item": [
         {
-          "name": "cos admin - generate a delegate",
+          "name": "6. Get All user info details  (Success)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cosAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cosAdmin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/user/basic",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "user",
+                "basic"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "cos admin - generate a delegate (1st method)",
           "request": {
             "auth": {
               "type": "bearer",
@@ -1386,7 +1477,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"delegate_id\": \"4bc8c4cb-40db-4814-b52c-bc1d87e868aa\",\n  \"justification\": \"Granting whole cos admin access while the owner is on leave\",\n  \"expiry_at\": \"2026-01-31T23:59:59\"\n}",
+              "raw": "{\n  \"delegate_id\": \"fbd0287b-5960-470a-bbc1-6deca69b9885\",\n  \"justification\": \"Granting whole cos admin access while the owner is on leave\",\n  \"expiry_at\": \"2026-01-31T23:59:59\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1403,6 +1494,114 @@
                 "v2",
                 "auth",
                 "delegation"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "cos admin - get all delegations of delegator user",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cosAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"delegate_id\": \"4bc8c4cb-40db-4814-b52c-bc1d87e868aa\",\n  \"justification\": \"Granting whole cos admin access while the owner is on leave\",\n  \"expiry_at\": \"2026-01-31T23:59:59\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/delegation/delegator",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "delegation",
+                "delegator"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "cos admin - get all delegations of a delegate",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cos_admin_delegate_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/delegation/delegate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "delegation",
+                "delegate"
               ]
             }
           },
@@ -1460,7 +1659,7 @@
           "response": []
         },
         {
-          "name": "cos admin - generate a delegate",
+          "name": "cos admin - generate a delegate (2nd method)",
           "request": {
             "auth": {
               "type": "bearer",
@@ -2042,6 +2241,16 @@
             }
           ],
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cos_admin_delegate_token}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "POST",
             "header": [
               {
@@ -2064,12 +2273,12 @@
                 },
                 {
                   "key": "username",
-                  "value": "user2@gmail.com",
+                  "value": "lopoh90477@cameltok.com",
                   "type": "text"
                 },
                 {
                   "key": "password",
-                  "value": "pass",
+                  "value": "111",
                   "type": "text"
                 }
               ]
@@ -2103,7 +2312,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{providerToken}}",
+                  "value": "{{orgAdminToken}}",
                   "type": "string"
                 }
               ]
@@ -2123,7 +2332,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"delegate_id\": \"420af1fa-ea85-48bb-ae9e-248b64eeb77a\",\n  \"justification\": \"Granting whole org admin1 access while the owner is on leave\",\n  \"expiry_at\": \"2026-01-31T23:59:59\"\n}",
+              "raw": "{\n  \"delegate_id\": \"0bcd7488-2c38-494a-b65a-da09abdee93c\",\n  \"justification\": \"Granting whole org admin access while the owner is on leave\",\n  \"expiry_at\": \"2026-01-31T23:59:59\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2140,6 +2349,114 @@
                 "v2",
                 "auth",
                 "delegation"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "org admin - get all delegations of delegator user",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{orgAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"delegate_id\": \"4bc8c4cb-40db-4814-b52c-bc1d87e868aa\",\n  \"justification\": \"Granting whole cos admin access while the owner is on leave\",\n  \"expiry_at\": \"2026-01-31T23:59:59\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/delegation/delegator",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "delegation",
+                "delegator"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "org admin - get all delegations of a delegate",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{org_admin_delegate_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{orgAdminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"delegate_id\": \"4bc8c4cb-40db-4814-b52c-bc1d87e868aa\",\n  \"justification\": \"Granting whole cos admin access while the owner is on leave\",\n  \"expiry_at\": \"2026-01-31T23:59:59\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/delegation/delegate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "delegation",
+                "delegate"
               ]
             }
           },
@@ -2235,29 +2552,25 @@
                 },
                 {
                   "key": "username",
-                  "value": "user5@gmail.com",
+                  "value": "geteh11278@24faw.com",
                   "type": "text"
                 },
                 {
                   "key": "password",
-                  "value": "pass",
+                  "value": "111",
                   "type": "text"
                 }
               ]
             },
             "url": {
-              "raw": "staging.keycloak.update.iudx.io/auth/realms/tgdex-pilot/protocol/openid-connect/token",
+              "raw": "{{kc_host}}/auth/realms/{{realm}}/protocol/openid-connect/token",
               "host": [
-                "staging",
-                "keycloak",
-                "update",
-                "iudx",
-                "io"
+                "{{kc_host}}"
               ],
               "path": [
                 "auth",
                 "realms",
-                "tgdex-pilot",
+                "{{realm}}",
                 "protocol",
                 "openid-connect",
                 "token"
@@ -2305,29 +2618,25 @@
                 },
                 {
                   "key": "username",
-                  "value": "user2@gmail.com",
+                  "value": "selagob167@cameltok.com",
                   "type": "text"
                 },
                 {
                   "key": "password",
-                  "value": "pass",
+                  "value": "111",
                   "type": "text"
                 }
               ]
             },
             "url": {
-              "raw": "staging.keycloak.update.iudx.io/auth/realms/tgdex-pilot/protocol/openid-connect/token",
+              "raw": "{{kc_host}}/auth/realms/realm/protocol/openid-connect/token",
               "host": [
-                "staging",
-                "keycloak",
-                "update",
-                "iudx",
-                "io"
+                "{{kc_host}}"
               ],
               "path": [
                 "auth",
                 "realms",
-                "tgdex-pilot",
+                "realm",
                 "protocol",
                 "openid-connect",
                 "token"
@@ -2364,7 +2673,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"job_title\": \"Senior Software Engineer\",\n  \"emp_id\": \"P00456\",\n  \"official_email\": \"vikram1@gmail.com\"\n}",
+              "raw": "{\n  \"job_title\": \"Senior Software Engineer\",\n  \"emp_id\": \"P00456\",\n  \"official_email\": \"selagob167@cameltok.com\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2859,12 +3168,12 @@
                 },
                 {
                   "key": "username",
-                  "value": "user4@gmail.com",
+                  "value": "selagob167@cameltok.com",
                   "type": "text"
                 },
                 {
                   "key": "password",
-                  "value": "pass",
+                  "value": "111",
                   "type": "text"
                 }
               ]
@@ -3280,7 +3589,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{orgAdminToken}}",
+                  "value": "{{org_admin_delegate_token}}",
                   "type": "string"
                 }
               ]
@@ -3971,7 +4280,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{cosAdminToken}}",
+                  "value": "{{cos_admin_delegate_token}}",
                   "type": "string"
                 }
               ]
@@ -4300,7 +4609,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{orgAdminToken}}",
+                  "value": "{{cos_admin_delegate_token}}",
                   "type": "string"
                 }
               ]
@@ -4336,7 +4645,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI5ajdoMFVkUENrNS1reDRPejhMNGtzeVRSV09vNEFZLUV2ZXhpYl9SRHFnIn0.eyJleHAiOjE3NjU1NDU1NjgsImlhdCI6MTc2NTU0NTI2OCwianRpIjoib25ydHJvOjA1NDMxODIxLTEzYzctNDVkOS05NDE2LTc1MWViMzE4YmQ2YiIsImlzcyI6Imh0dHBzOi8vc3RhZ2luZy5rZXljbG9hay51cGRhdGUuaXVkeC5pby9hdXRoL3JlYWxtcy90Z2RleC1waWxvdCIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiIxZGMyOGNjNi1kNjE0LTQ2MWEtOWI4Zi1kNjExMGZlYjNlMmYiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJmcm9udGVuZC1jbGllbnQiLCJzaWQiOiJkY2JiYjE2Mi1kMjNlLTRjYTQtOWMzNC1kYjQzYTJiMWI5NGQiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly9sb2NhbGhvc3Q6NDAwNyIsIioiLCJodHRwOi8vbG9jYWxob3N0OjMwMDAiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIm9mZmxpbmVfYWNjZXNzIiwiZGVmYXVsdC1yb2xlcy10Z2RleC1waWxvdCIsImNvbnN1bWVyIiwiY29zX2FkbWluIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJwcm9maWxlIGVtYWlsIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJBbmFuamF5IEt1bWFyIiwicHJlZmVycmVkX3VzZXJuYW1lIjoiYW5hbmpheS5rdW1hckBkYXRha2F2ZXJpLm9yZyIsImdpdmVuX25hbWUiOiJBbmFuamF5IiwiZmFtaWx5X25hbWUiOiJLdW1hciIsImVtYWlsIjoiYW5hbmpheS5rdW1hckBkYXRha2F2ZXJpLm9yZyJ9.kc5A-nIzuoLiyp746vaDFVvJx6UMHyADOa-8ro43LnEYfKSOUPOqoaJy3yTXwAWIk9mQb_hnu4s0W7hSVxJEGGBude38A16C9kR8Xr9hSF3nDA43egHpo2rA8XPpuvzruUf8Jz6Ku38xK0wz-aJF_i2H9zRiSaQjqDcDUYMkb8k71X7vlHXT0P_V1dAS3lQPWYNq4yoWXLFzQxAgXGJ-Qy5fdUIScB9SjC-qJ5lxYdOJ5prU4HX5dM9tXmdULn_SGkSmPmFY8pa0xMuc6HXhG4vRdoCa2sawGvGf3XLNINGArrcChpl1vp60_XsFpX8mgfwLMgquxxR1w4MjrSZE-g"
+                "value": "Bearer {{cos_admin_delegate_token}}"
               },
               {
                 "key": "Content-Type",
@@ -4345,7 +4654,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"status\":\"granted\",\"amount\":10000.0,\"expiration_date\":\"2025-12-31T23:59:59\"}",
+              "raw": "{\"status\":\"granted\",\"amount\":10000.0,\"expiration_date\":\"2026-12-31T23:59:59\"}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -4353,11 +4662,11 @@
               }
             },
             "url": {
-              "raw": "localhost:8443/iudx/v2/auth/credit/request/{{credit_req_id}}",
+              "raw": "localhost:8080/iudx/v2/auth/credit/request/{{credit_req_id}}",
               "host": [
                 "localhost"
               ],
-              "port": "8443",
+              "port": "8080",
               "path": [
                 "iudx",
                 "v2",
@@ -4416,7 +4725,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{cosAdminToken}}",
+                  "value": "{{cos_admin_delegate_token}}",
                   "type": "string"
                 }
               ]
@@ -4533,7 +4842,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{cosAdminToken}}",
+                  "value": "{{cos_admin_delegate_token}}",
                   "type": "string"
                 }
               ]
@@ -4672,7 +4981,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{cosAdminToken}}",
+                  "value": "{{org_admin_delegate_token}}",
                   "type": "string"
                 }
               ]
@@ -4712,11 +5021,11 @@
             "header": [
               {
                 "key": "clientId",
-                "value": "{{client_id}}"
+                "value": "1caf02b8-e7f9-4e23-9dfb-2e407d51a7f6"
               },
               {
                 "key": "clientSecret",
-                "value": "{{client_secret}}"
+                "value": "f19885f5b3b568b096e1407a67b6fdebcf351232"
               },
               {
                 "key": "Content-Type",
@@ -4725,7 +5034,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"itemId\":\"3d03fa65-978b-41eb-976f-b3f46bee4de5\"\n}",
+              "raw": "{\n    \"itemId\":\"{{itemId}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -4733,15 +5042,161 @@
               }
             },
             "url": {
-              "raw": "{{auth_base}}/iudx/v2/auth/token",
+              "raw": "{{core_host}}/iudx/v2/auth/token",
               "host": [
-                "{{auth_base}}"
+                "{{core_host}}"
               ],
               "path": [
                 "iudx",
                 "v2",
                 "auth",
                 "token"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "App APIs",
+      "item": [
+        {
+          "name": "Create an AppId",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{orgAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cosAdmin}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"expiry_at\":\"2026-01-31T23:59:59\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/app",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "app"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get all AppIds",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cosAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cosAdmin}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"expiry_at\":\"2026-01-31T23:59:59\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/app",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "app"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get all AppIds Copy",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{cosAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cosAdmin}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"expiry_at\":\"2026-01-31T23:59:59\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/iudx/v2/auth/app",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iudx",
+                "v2",
+                "auth",
+                "app"
               ]
             }
           },

@@ -82,12 +82,12 @@ public class DelegationAccessEvaluator {
     LOGGER.info("Inside validateGrant");
 
 
-    // 🔹 Delegate check
+    // Delegate check
     if (!grant.delegateId().equals(delegateId)) {
       return Future.failedFuture("Delegate mismatch");
     }
 
-    // 🔹 Expiry check
+    // Expiry check
     if (grant.expiryAt() != null && grant.expiryAt().isBefore(now)) {
       return Future.failedFuture("Delegation expired");
     }
@@ -130,12 +130,12 @@ public class DelegationAccessEvaluator {
     UUID delegationId = grant.delegationId();
     LocalDateTime now = LocalDateTime.now();
 
-    // 🔹 Expiry check
+    //  Expiry check
     if (grant.expiryAt() != null && grant.expiryAt().isBefore(now)) {
       return Future.failedFuture("Delegation has expired");
     }
 
-    // 🔹 CASE 1: Entity-specific delegation
+    // CASE 1: Entity-specific delegation
     if (constraint.entityId() != null) {
 
       if (!constraint.entityId().equals(itemId)) {
@@ -149,7 +149,7 @@ public class DelegationAccessEvaluator {
       );
     }
 
-    // 🔹 CASE 2: Wildcard or scope-only delegation
+    // CASE 2: Wildcard or scope-only delegation
     if ("*".equals(constraint.scope())
       || "asset_management".equals(constraint.scope())) {
 

@@ -28,7 +28,6 @@ public class ExceptionHttpStatusMapper {
       case ExchangeRegistrationException e -> HttpStatusCode.CONFLICT;
       case ExchangeNotFoundException e -> HttpStatusCode.NOT_FOUND;
       case QueueAlreadyExistsException e -> HttpStatusCode.CONFLICT;
-      case QueueBindingFailedException e -> HttpStatusCode.INTERNAL_SERVER_ERROR;
       case QueueDeletionException e -> HttpStatusCode.BAD_REQUEST;
       case QueueNotFoundException e -> HttpStatusCode.NOT_FOUND;
       case QueueRegistrationFailedException e -> HttpStatusCode.INTERNAL_SERVER_ERROR;
