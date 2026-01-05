@@ -215,7 +215,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         })*/
         .onFailure(
             failureHandler -> {
-              failureHandler.printStackTrace();
               LOGGER.error(
                   "Failed to create subscription {}", failureHandler.getLocalizedMessage());
               promise.fail(failureHandler);
