@@ -8299,12 +8299,12 @@ paths:
 
 
   ##NGSI-LD apis
-  /ngsi-ld/v1/subscriptions:
+  /iudx/v2/subscriptions:
     post:
       tags:
         - Subscriptions
       summary: Create subscription
-      description: Create a new NGSI-LD subscription to do streaming, used as consumer api's.
+      description: Create a new subscription to do streaming, used as consumer api's.
       operationId: postSubscriptions
       security:
         - authorization: [ ]
@@ -8399,7 +8399,7 @@ paths:
         This API could be used by a consumer to get the list of all the data subscription under the given user. The API could be used by the subscriber by providing the user access token.
 
 
-  /ngsi-ld/v1/subscriptions/{subscriptionId}:
+  /iudx/v2/subscriptions/{subscriptionId}:
     get:
       tags:
         - Subscriptions
