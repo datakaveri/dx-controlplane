@@ -105,7 +105,6 @@ public class SubscriptionAuthorizationHandler implements Handler<RoutingContext>
                       context, result.getString("expiryAt", null));
                   RoutingContextHelper.setProviderId(
                       context, result.getString("ownerUserId", null));
-                  context.next();
                   return Future.succeededFuture(true);
                 } else {
                   RoutingContextHelper.setItemMetaData(context, result);
