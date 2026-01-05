@@ -1,5 +1,6 @@
 package org.cdpg.dx.email.verticle;
 
+import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DATA_BROKER_SERVICE_ADDRESS;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.EMAIL_SERVICE_ADDRESS;
 
 import io.vertx.core.AbstractVerticle;
@@ -14,15 +15,19 @@ import io.vertx.serviceproxy.ServiceBinder;
 import io.vertx.sqlclient.Pool;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.email.service.EmailService;
 import org.cdpg.dx.email.service.EmailServiceImpl;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
+import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
 
 public class EmailVerticle extends AbstractVerticle {
   private static final Logger LOGGER = LogManager.getLogger(EmailVerticle.class);
   private MessageConsumer<JsonObject> consumer;
   private ServiceBinder binder;
+  private DataBrokerService dataBrokerService;
+  private KeycloakUserService keycloakUserService;
   private Pool pool;
-
 
   @Override
   public void start(Promise<Void> startPromise) {
@@ -32,6 +37,8 @@ public class EmailVerticle extends AbstractVerticle {
     String emailUserName = config().getString("emailUserName");
     String emailPassword = config().getString("emailPassword");
     boolean notifyByEmail = config().getBoolean("notifyByEmail", true);
+    dataBrokerService = DataBrokerService.createProxy(vertx, DATA_BROKER_SERVICE_ADDRESS);
+    keycloakUserService = new KeycloakUserServiceImpl(config());
 
     MailConfig config = new MailConfig();
     config.setHostname(emailHostname);
@@ -45,7 +52,7 @@ public class EmailVerticle extends AbstractVerticle {
 
     MailClient mailClient = MailClient.create(vertx, config);
 
-    EmailService service = new EmailServiceImpl(mailClient, notifyByEmail);
+    EmailService service = new EmailServiceImpl(mailClient, notifyByEmail, dataBrokerService, keycloakUserService);
     binder = new ServiceBinder(vertx);
     consumer = binder.setAddress(EMAIL_SERVICE_ADDRESS).register(EmailService.class, service);
     startPromise.complete();

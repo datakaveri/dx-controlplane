@@ -6,15 +6,25 @@ import io.vertx.ext.mail.MailClient;
 import io.vertx.ext.mail.MailMessage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.databroker.service.DataBrokerService;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class EmailServiceImpl implements EmailService {
-  private final static Logger LOGGER = LogManager.getLogger(EmailServiceImpl.class);
+  private static final Logger LOGGER = LogManager.getLogger(EmailServiceImpl.class);
   private final MailClient mailClient;
   private final boolean notifyByEmail;
+  private final DataBrokerService dataBrokerService;
+  private final KeycloakUserService keycloakUserService;
 
-  public EmailServiceImpl(MailClient mailClient, boolean notifyByEmail) {
+  public EmailServiceImpl(
+      MailClient mailClient,
+      boolean notifyByEmail,
+      DataBrokerService dataBrokerService,
+      KeycloakUserService keycloakUserService) {
     this.mailClient = mailClient;
     this.notifyByEmail = notifyByEmail;
+    this.dataBrokerService = dataBrokerService;
+    this.keycloakUserService = keycloakUserService;
   }
 
   /**
@@ -31,17 +41,18 @@ public class EmailServiceImpl implements EmailService {
       promise.complete();
       return promise.future();
     }
-    mailClient.sendMail(message, res -> {
-      if (res.succeeded()) {
-        LOGGER.info("Email sent: {}", res.result());
-        promise.complete();
-      } else {
-        LOGGER.error("Failed to send email", res.cause());
-        promise.fail(res.cause());
-      }
-    });
+    mailClient.sendMail(
+        message,
+        res -> {
+          if (res.succeeded()) {
+            LOGGER.info("Email sent: {}", res.result());
+            promise.complete();
+          } else {
+            LOGGER.error("Failed to send email", res.cause());
+            promise.fail(res.cause());
+          }
+        });
 
     return promise.future();
   }
-
 }
