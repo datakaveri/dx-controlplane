@@ -383,7 +383,8 @@ public class RabbitClient {
                     if (status == HttpStatus.SC_CREATED) {
                       promise.complete();
                     } else if (status == HttpStatus.SC_NOT_FOUND) {
-                      promise.fail(new QueueBindingFailedException(QUEUE_EXCHANGE_NOT_FOUND));
+                        LOGGER.error(QUEUE_EXCHANGE_NOT_FOUND);
+                      promise.fail(new DxSubscriptionException(QUEUE_EXCHANGE_NOT_FOUND));
                     }
                   }
                 } else {
