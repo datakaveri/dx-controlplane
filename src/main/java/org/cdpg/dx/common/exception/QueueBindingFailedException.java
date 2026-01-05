@@ -1,3 +1,4 @@
+/*
 package org.cdpg.dx.common.exception;
 
 import org.apache.logging.log4j.LogManager;
@@ -15,4 +16,4 @@ public class QueueBindingFailedException extends DxRabbitMqException {
         super(DxErrorCodes.SUBS_QUEUE_BINDING_FAILED, message, cause);
         LOGGER.debug("QueueBindingFailedException initiated");
     }
-}
+}*/
