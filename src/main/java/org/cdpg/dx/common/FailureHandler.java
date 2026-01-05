@@ -29,7 +29,7 @@ public class FailureHandler implements Handler<RoutingContext> {
     String path = context.request().path();
     LOGGER.error("path : {} ", path);
 
-    if (path.contains("/ngsi-ld/v1")) {
+    if (path.contains("iudx/v2/subscriptions") || path.contains("iudx/v2/subscriptions/")) {
       ngsildErrorResponse(context);
     } else {
       nonNgsildErrorResponse(context);
