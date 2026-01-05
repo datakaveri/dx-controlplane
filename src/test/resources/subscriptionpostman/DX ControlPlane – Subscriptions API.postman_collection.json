@@ -62,7 +62,7 @@
 							]
 						},
 						"url": {
-							"raw": "https://{{keycloak-url}}/auth/realms/tgdex-pilot/protocol/openid-connect/token",
+							"raw": "https://{{keycloak-url}}/auth/realms/iudx-v2/protocol/openid-connect/token",
 							"protocol": "https",
 							"host": [
 								"{{keycloak-url}}"
@@ -116,7 +116,7 @@
 							"raw": "{\n  \"type\": \"Subscription\",\n  \"entities\": [\n    \"74436122-e6f6-45bf-be53-7ee2c257826b\"\n  ]\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions",
+							"raw": "{{baseUrl}}/iudx/v2/subscriptions",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -161,7 +161,7 @@
 							"raw": "{\n  \"type\": \"Subscription\",\n  \"entities\": [\n    \"74436122-e6f6-45bf-be53-7ee2c257826b\"\n  ],\n  \"expiryAt\": \"2026-12-31T23:59:59Z\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions",
+							"raw": "{{baseUrl}}/iudx/v2/subscriptions",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -206,7 +206,7 @@
 							"raw": "{\n  \"type\": \"Subscription\",\n  \"entities\": [\n    \"74436122-e6f6-45bf-be53-7ee2c257826b\"\n  ],\n  \"subscriptionName\": \"mine-sub\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions",
+							"raw": "{{baseUrl}}/iudx/v2/subscriptions",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -251,7 +251,7 @@
 							"raw": "{\n  \"type\": \"Subscription\",\n  \"entities\": [\n    \"74436122-e6f6-45bf-be53-7ee2c257826b\"\n  ],\n  \"expiryAt\": \"2026-12-31T23:59:59Z\",\n  \"subscriptionName\": \"mine-sub2\",\n  \"id\": \"74336122-e6f6-45bf-be53-7ee2c257826b\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions",
+							"raw": "{{baseUrl}}/iudx/v2/subscriptions",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -296,7 +296,7 @@
 							"raw": "{\n  \"type\": \"Subscription\",\n  \"entities\": [\n    \"74436122-e6f6-45bf-be53-7ee2c257826b\"\n  ],\n  \"expiryAt\": \"2026-12-31T23:59:59Z\",\n  \"subscriptionName\": \"mine-sub2\",\n  \"id\": \"74336122-e6f6-45bf-be53-7ee2c257826b\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions",
+							"raw": "{{baseUrl}}/iudx/v2/subscriptions",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -341,7 +341,7 @@
 							"raw": "{\n  \"type\": \"Subscription\",\n  \"entities\": [\n    \"74436122-e6f6-45bf-be53-7ee2c257826b\"\n  ],\n  \"expiryAt\": \"31-12-2026\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions",
+							"raw": "{{baseUrl}}/iudx/v2/subscriptions",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -387,7 +387,7 @@
 							"raw": "{\n  \"type\": \"Subscription\",\n  \"entities\": [\n    \"74436122-e6f6-45bf-be53-7ee2c257826b\"\n  ],\n  \"expiryAt\": \"31-12-2026\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions",
+							"raw": "{{baseUrl}}/iudx/v2/subscriptions",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -427,7 +427,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions?limit=100&offset=0",
+							"raw": "{{baseUrl}}/iudx/v2/subscriptions?limit=100&offset=0",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -472,7 +472,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions/{{subscriptionId}}",
+							"raw": "{{baseUrl}}/iudx/v2/subscriptions/{{subscriptionId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -508,7 +508,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions/{{subscriptionId}}",
+							"raw": "{{baseUrl}}/iudx/v2/subscriptions/{{subscriptionId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -545,7 +545,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions/{{subscriptionId}}",
+							"raw": "{{baseUrl}}/iudx/v2/subscriptions/{{subscriptionId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -581,7 +581,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions/290dd141-3f82-4778-8d8f-5753dc9346101",
+							"raw": "{{baseUrl}}/iudx/v2/subscriptions/290dd141-3f82-4778-8d8f-5753dc9346101",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -630,7 +630,7 @@
 							"raw": "{\n  \"type\": \"Subscription\",\n  \"entities\": [\n    \"74436122-e6f6-45bf-be53-7ee2c257826b\"\n  ],\n  \"expiryAt\": \"2027-12-31T23:59:59Z\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions/{{subscriptionId}}",
+							"raw": "{{baseUrl}}/iudx/v2/subscriptions/{{subscriptionId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -674,7 +674,7 @@
 							"raw": "{\n  \"type\": \"Subscription\",\n  \"entities\": [\n    \"74436122-e6f6-45bf-be53-7ee2c257826b\"\n  ],\n  \"expiryAt\": \"2027-12-31T23:59:59Z\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions/a5c85d7f-4d3d-457b-ab49-da4ce3c8d314",
+							"raw": "{{baseUrl}}/iudx/v2/subscriptions/a5c85d7f-4d3d-457b-ab49-da4ce3c8d314",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -718,7 +718,7 @@
 							"raw": "{\n  \"type\": \"subscription\",\n  \"entities\": [\n    \"74436122-e6f6-45bf-be53-7ee2c257826b\"\n  ],\n  \"expiryAt\": \"2027-12-31T23:59:59Z\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions/{{subscriptionId}}",
+							"raw": "{{baseUrl}}/iudx/v2/subscriptions/{{subscriptionId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -763,7 +763,7 @@
 							"raw": "{\n  \"type\": \"Subscription\",\n  \"entities\": [\n    \"74436122-e6f6-45bf-be53-7ee2c257826b\"\n  ],\n  \"expiryAt\": \"2027-12-31T23:59:59Z\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions/{{subscriptionId}}",
+							"raw": "{{baseUrl}}/iudx/v2/subscriptions/{{subscriptionId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -804,7 +804,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions/{{subscriptionId}}",
+							"raw": "{{baseUrl}}/iudx/v2/subscriptions/{{subscriptionId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -841,7 +841,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions/{{subscriptionId}}",
+							"raw": "{{baseUrl}}/iudx/v2/subscriptions/{{subscriptionId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -877,7 +877,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/ngsi-ld/v1/subscriptions/460a2f7f-f8ef-4f53-b31e-f6872425066d",
+							"raw": "{{baseUrl}}/iudx/v2/subscriptions/460a2f7f-f8ef-4f53-b31e-f6872425066d",
 							"host": [
 								"{{baseUrl}}"
 							],
