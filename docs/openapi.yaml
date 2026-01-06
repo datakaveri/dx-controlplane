@@ -4193,7 +4193,7 @@ paths:
         - authorization: [ ]
 
 
-  /iudx/v2/auth/user/name:
+  /iudx/v2/auth/user/basic:
     get:
       summary: (All Users) Get basic user information
       description: Returns paginated list of users with UUID, name, username, and email.
@@ -4831,174 +4831,174 @@ paths:
                 detail: "An error occurred while deleting the delegation"
 
 
-  /iudx/v2/auth/delegations/grant-requests/{id}:
-    get:
-      summary: Get Delegation Requests for Logged-in User
-      description: >
-        Fetches all delegation update requests where the authenticated user is the reviewer.
-      operationId: get-auth-v2-delegation-request
-      tags:
-        - Delegation APIs
-      security:
-        - authorization: [ ]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: UUID of the request made by the delegate
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Delegation requests fetched successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                    example: "success"
-                  title:
-                    type: string
-                    example: "Delegation requests retrieved"
-                  result:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        request_id:
-                          type: string
-                          format: uuid
-                        delegation_id:
-                          type: string
-                          format: uuid
-                        requester_id:
-                          type: string
-                          format: uuid
-                        requested_scopes:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              scope:
-                                type: string
-                              entity_id:
-                                type: array
-                                items:
-                                  type: string
-                                  format: uuid
-                        expiry_at:
-                          type: string
-                        requested_expiry:
-                          type: string
-                        justification:
-                          type: string
-                        status:
-                          type: string
-                        created_at:
-                          type: string
-
-    put:
-      summary: Update Delegation Request Status
-      description: >
-        Allows the delegator to approve or reject the delegation update request.
-      tags:
-        - Delegation APIs
-      operationId: put-auth-v2-delegation-request
-      security:
-        - authorization: [ ]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID of the delegation update request
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - status
-              properties:
-                status:
-                  type: string
-      responses:
-        '200':
-          description: Delegation request status updated successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  result:
-                    type: object
-                    properties:
-                      request_id:
-                        type: string
-                      delegation_id:
-                        type: string
-                      requester_id:
-                        type: string
-                      requested_scopes:
-                        type: array
-                        items:
-                          type: object
-                      requested_expiry:
-                        type: string
-                      justification:
-                        type: string
-                      status:
-                        type: string
-                      created_at:
-                        type: string
-                      reviewed_at:
-                        type: string
-                        nullable: true
-                      reviewer_id:
-                        type: string
-
-  /iudx/v2/auth/delegations/grant-requests:
-    post:
-      summary: Create a Delegation Update Request
-      description: >
-        Allows a delegate to request an update to an existing delegation.
-      tags:
-        - Delegation APIs
-      operationId: post-auth-v2-delegation-request
-      security:
-        - authorization: [ ]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - delegation_id
-                - requested_scopes
-                - justification
-              properties:
-                delegation_id:
-                  type: string
-                requested_scopes:
-                  type: array
-                  items:
-                    type: object
-                requested_expiry:
-                  type: string
-                justification:
-                  type: string
-      responses:
-        '201':
-          description: Delegation update request created successfully
+#  /iudx/v2/auth/delegations/grant-requests/{id}:
+#    get:
+#      summary: Get Delegation Requests for Logged-in User
+#      description: >
+#        Fetches all delegation update requests where the authenticated user is the reviewer.
+#      operationId: get-auth-v2-delegation-request
+#      tags:
+#        - Delegation APIs
+#      security:
+#        - authorization: [ ]
+#      parameters:
+#        - name: id
+#          in: path
+#          required: true
+#          description: UUID of the request made by the delegate
+#          schema:
+#            type: string
+#      responses:
+#        '200':
+#          description: Delegation requests fetched successfully
+#          content:
+#            application/json:
+#              schema:
+#                type: object
+#                properties:
+#                  type:
+#                    type: string
+#                    example: "success"
+#                  title:
+#                    type: string
+#                    example: "Delegation requests retrieved"
+#                  result:
+#                    type: array
+#                    items:
+#                      type: object
+#                      properties:
+#                        request_id:
+#                          type: string
+#                          format: uuid
+#                        delegation_id:
+#                          type: string
+#                          format: uuid
+#                        requester_id:
+#                          type: string
+#                          format: uuid
+#                        requested_scopes:
+#                          type: array
+#                          items:
+#                            type: object
+#                            properties:
+#                              scope:
+#                                type: string
+#                              entity_id:
+#                                type: array
+#                                items:
+#                                  type: string
+#                                  format: uuid
+#                        expiry_at:
+#                          type: string
+#                        requested_expiry:
+#                          type: string
+#                        justification:
+#                          type: string
+#                        status:
+#                          type: string
+#                        created_at:
+#                          type: string
+#
+#    put:
+#      summary: Update Delegation Request Status
+#      description: >
+#        Allows the delegator to approve or reject the delegation update request.
+#      tags:
+#        - Delegation APIs
+#      operationId: put-auth-v2-delegation-request
+#      security:
+#        - authorization: [ ]
+#      parameters:
+#        - name: id
+#          in: path
+#          required: true
+#          description: ID of the delegation update request
+#          schema:
+#            type: string
+#      requestBody:
+#        required: true
+#        content:
+#          application/json:
+#            schema:
+#              type: object
+#              required:
+#                - status
+#              properties:
+#                status:
+#                  type: string
+#      responses:
+#        '200':
+#          description: Delegation request status updated successfully
+#          content:
+#            application/json:
+#              schema:
+#                type: object
+#                properties:
+#                  type:
+#                    type: string
+#                  title:
+#                    type: string
+#                  result:
+#                    type: object
+#                    properties:
+#                      request_id:
+#                        type: string
+#                      delegation_id:
+#                        type: string
+#                      requester_id:
+#                        type: string
+#                      requested_scopes:
+#                        type: array
+#                        items:
+#                          type: object
+#                      requested_expiry:
+#                        type: string
+#                      justification:
+#                        type: string
+#                      status:
+#                        type: string
+#                      created_at:
+#                        type: string
+#                      reviewed_at:
+#                        type: string
+#                        nullable: true
+#                      reviewer_id:
+#                        type: string
+#
+#  /iudx/v2/auth/delegations/grant-requests:
+#    post:
+#      summary: Create a Delegation Update Request
+#      description: >
+#        Allows a delegate to request an update to an existing delegation.
+#      tags:
+#        - Delegation APIs
+#      operationId: post-auth-v2-delegation-request
+#      security:
+#        - authorization: [ ]
+#      requestBody:
+#        required: true
+#        content:
+#          application/json:
+#            schema:
+#              type: object
+#              required:
+#                - delegation_id
+#                - requested_scopes
+#                - justification
+#              properties:
+#                delegation_id:
+#                  type: string
+#                requested_scopes:
+#                  type: array
+#                  items:
+#                    type: object
+#                requested_expiry:
+#                  type: string
+#                justification:
+#                  type: string
+#      responses:
+#        '201':
+#          description: Delegation update request created successfully
 
 
   /iudx/v2/auth/user/description/info:
@@ -8895,8 +8895,8 @@ paths:
             --header 'Authorization: Bearer <token>'
 
 
-  
-  
+
+
 
 
 

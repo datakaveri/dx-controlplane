@@ -148,102 +148,142 @@ public class ProviderRoleHandler {
         .onFailure(ctx::fail);
   }
 
-  public void createProviderRole(RoutingContext ctx) {
-    JsonObject providerRequestJson = ctx.body().asJsonObject();
 
-    ProviderRoleRequest providerRoleRequest = ProviderRoleRequest.fromJson(providerRequestJson);
-
-    organizationService
-        .createProviderRole(providerRoleRequest)
-        .onSuccess(
-            org -> {
-              ActivityAuditLogBuilder audit =
-                  OrganizationAuditHelper.buildProviderRoleGrantedAudit(
-                      ctx, providerRoleRequest.id(), providerRoleRequest.orgId());
-              RoutingContextHelper.setAuditingLogNew(ctx, audit);
-
-              ResponseBuilder.sendSuccess(ctx, "Provider role granted successfully", urnGenerator);
-            })
-        .onFailure(
-            err -> {
-              if (err instanceof DxForbiddenException) {
-                ctx.fail(
-                    new DxForbiddenException(
-                        "User is not part of any organisation or does not have permission to grant provider role"));
-              } else if (err instanceof DxNotFoundException) {
-                ctx.fail(
-                    new DxNotFoundException(
-                        "User not found or does not have a pending provider role request"));
-              } else {
-                ctx.fail(err);
-              }
-            });
-  }
 
   public void getProviderRequest(RoutingContext ctx) {
 
     User user = ctx.user();
     JsonObject userJson = user.principal();
 
-    AccessValidator.validate(
-        userJson,
-        List.of( // primary roles (no scope check)
-            DxRole.ORG_ADMIN.getRole()),
-        List.of(DxScope.ORG_MANAGEMENT.getScope()));
+    LOGGER.info("userInfo: {}",userJson);
 
-    LOGGER.debug("User: {}", user);
-    if (user == null || user.subject() == null || user.principal() == null) {
-      ctx.fail(new DxForbiddenException("User not found"));
+    UUID userId = UUID.fromString(user.subject());
+
+    String orgIdStr = ctx.pathParam("id");
+    if (orgIdStr == null || orgIdStr.isBlank()) {
+      ctx.fail(new DxForbiddenException("Organization ID is required"));
       return;
     }
 
-    String userId = user.subject();
-    String orgID = user.principal().getString("organisation_id");
+    UUID requestedOrgId = UUID.fromString(orgIdStr);
 
-    if (userId == null || userId.isEmpty()) {
-      ctx.fail(new DxForbiddenException("User not found"));
-      return;
+    UUID delegatorId = null;
+    if (userJson.containsKey("did")) {
+      delegatorId = UUID.fromString(userJson.getString("did"));
     }
 
-    if (orgID == null || orgID.isEmpty()) {
-      ctx.fail(new DxForbiddenException("User is not part any organisation"));
-      return;
-    }
+    LOGGER.info("Fetching provider requests for org {} by user {}", requestedOrgId, userId);
 
-    organizationService
-        .getOrganizationUserInfo(UUID.fromString(user.subject()))
-        .compose(
-            orgUser -> {
-              //        if (orgUser == null || orgUser.role() != Role.ADMIN) {
-              //          return Future.failedFuture(new DxForbiddenException("User not found or not
-              // a admin"));
-              //        }
-              UUID orgId = orgUser.organizationId();
-              PaginatedRequest request =
-                  PaginationRequestBuilder.from(ctx)
-                      .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_PROVIDER_ROLE_REQUEST)
-                      .apiToDbMap(API_TO_DB_PROVIDER_ROLE_REQUEST)
-                      .additionalFilters(Map.of(ORGANIZATION_ID, orgId.toString()))
-                      .allowedTimeFields(Set.of(CREATED_AT))
-                      .defaultTimeField(CREATED_AT)
-                      .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
-                      .allowedSortFields(API_TO_DB_PROVIDER_ROLE_REQUEST.keySet())
-                      .build();
+     //Resolve effective owner
 
-              return organizationService.getAllPendingProviderRoleRequests(request);
-            })
-        .compose(
-            requests ->
-                userService
-                    .enrichWithUserRoles(
-                        requests.data(), ProviderRoleRequest::userId, ProviderRoleRequest::toJson)
-                    .map(enrichedList -> Map.entry(enrichedList, requests.paginationInfo())))
-        .onSuccess(
-            entry -> {
-              ResponseBuilder.sendSuccess(ctx, entry.getKey(), entry.getValue(), urnGenerator);
-            })
-        .onFailure(ctx::fail);
+    resolveEffectiveOwner(userId, delegatorId, requestedOrgId, userJson)
+      .compose(effectiveOwnerId -> {
+
+        // Build paginated request FOR REQUESTED ORG ONLY
+
+        PaginatedRequest request = PaginationRequestBuilder.from(ctx)
+          .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_PROVIDER_ROLE_REQUEST)
+          .apiToDbMap(API_TO_DB_PROVIDER_ROLE_REQUEST)
+          .additionalFilters(Map.of(ORGANIZATION_ID, requestedOrgId.toString()))
+          .allowedTimeFields(Set.of(CREATED_AT))
+          .defaultTimeField(CREATED_AT)
+          .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
+          .allowedSortFields(API_TO_DB_PROVIDER_ROLE_REQUEST.keySet())
+          .build();
+
+        return organizationService.getAllPendingProviderRoleRequests(request);
+      })
+      .compose(requests ->
+        userService.enrichWithUserRoles(
+          requests.data(),
+          ProviderRoleRequest::userId,
+          ProviderRoleRequest::toJson
+        ).map(enriched ->
+          Map.entry(enriched, requests.paginationInfo())
+        )
+      )
+      .onSuccess(entry -> {
+        ResponseBuilder.sendSuccess(
+          ctx,
+          entry.getKey(),
+          entry.getValue(),
+          urnGenerator
+        );
+      })
+      .onFailure(ctx::fail);
   }
+
+  private Future<UUID> resolveEffectiveOwner(
+    UUID userId,
+    UUID delegatorId,
+    UUID requestedOrgId,
+    JsonObject userJson
+  ) {
+
+    LOGGER.info("requestedOrgId: {}",requestedOrgId);
+    LOGGER.info("delegatorId: {}",delegatorId);
+    LOGGER.info("delegateId: {}",userId);
+
+
+    // Case 1: User is direct org admin
+    return userService.getUserInfoByID(userId)
+      .compose(orgUser -> {
+        if (orgUser != null && requestedOrgId.toString().equals(orgUser.organisationId())) {
+          LOGGER.info("User {} is direct owner of org {}", userId, requestedOrgId);
+          return Future.succeededFuture(userId);
+        }
+
+        // Case 2: Delegated access
+        if (delegatorId == null) {
+          return Future.failedFuture(
+            new DxForbiddenException("User is neither owner nor delegate")
+          );
+        }
+
+        // Scope check for delegated access
+        AccessValidator.validate(
+          userJson,
+          List.of(DxRole.ORG_ADMIN.getRole()),
+          List.of(DxScope.ORG_MANAGEMENT.getScope())
+        );
+
+        return userService.getUserInfoByID(delegatorId)
+          .compose(delegatorOrgUser -> {
+
+            // Case 2a: Delegator is COS admin (global authority)
+            if (delegatorOrgUser != null
+              && delegatorOrgUser.roles().contains(DxRole.COS_ADMIN.toString())) {
+
+              LOGGER.info(
+                "User {} acting as delegate for COS admin {} on org {}",
+                userId, delegatorId, requestedOrgId
+              );
+
+              return Future.succeededFuture(delegatorId);
+            }
+
+            // Case 2b: Delegator owns requested org
+            if (delegatorOrgUser != null
+              && requestedOrgId.toString().equals(delegatorOrgUser.organisationId())) {
+
+              LOGGER.info(
+                "User {} acting as delegate for org owner {} on org {}",
+                userId, delegatorId, requestedOrgId
+              );
+
+              return Future.succeededFuture(delegatorId);
+            }
+
+            // Not allowed
+            return Future.failedFuture(
+              new DxForbiddenException(
+                "Delegator does not have authority over requested organization"
+              )
+            );
+          });
+      });
+  }
+
 
   public void deleteUserProviderRoleRequest(RoutingContext ctx) {
 
@@ -330,5 +370,37 @@ public class ProviderRoleHandler {
                   err.getMessage());
               ctx.fail(err);
             });
+  }
+
+  public void createProviderRole(RoutingContext ctx) {
+    JsonObject providerRequestJson = ctx.body().asJsonObject();
+
+    ProviderRoleRequest providerRoleRequest = ProviderRoleRequest.fromJson(providerRequestJson);
+
+    organizationService
+      .createProviderRole(providerRoleRequest)
+      .onSuccess(
+        org -> {
+          ActivityAuditLogBuilder audit =
+            OrganizationAuditHelper.buildProviderRoleGrantedAudit(
+              ctx, providerRoleRequest.id(), providerRoleRequest.orgId());
+          RoutingContextHelper.setAuditingLogNew(ctx, audit);
+
+          ResponseBuilder.sendSuccess(ctx, "Provider role granted successfully", urnGenerator);
+        })
+      .onFailure(
+        err -> {
+          if (err instanceof DxForbiddenException) {
+            ctx.fail(
+              new DxForbiddenException(
+                "User is not part of any organisation or does not have permission to grant provider role"));
+          } else if (err instanceof DxNotFoundException) {
+            ctx.fail(
+              new DxNotFoundException(
+                "User not found or does not have a pending provider role request"));
+          } else {
+            ctx.fail(err);
+          }
+        });
   }
 }

@@ -51,28 +51,23 @@ public class DelegationController implements ApiController {
 //      .operation("get-auth-v2-user-delegation")
 //      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))   //both delegate and delegator can view the requests
 //      .handler(delegationHandler::getAllDelegationsByUser);
-//
+
+
+
+//    routerBuilder
+//      .operation("post-auth-v2-delegation-request")
+//      .handler(AuthorizationHandler.forRoles(DxRole.DELEGATE))   //delegate
+//      .handler(delegationHandler::createUpdateDelegationRequest);
 //
 //    routerBuilder
-//      .operation("delete-auth-v2-delegation")
-//      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))   //both delegate and delegator can view the requests
-//      .handler(delegationHandler::deleteDelegationGrant);
-
-
-    routerBuilder
-      .operation("post-auth-v2-delegation-request")
-      .handler(AuthorizationHandler.forRoles(DxRole.DELEGATE))   //delegate
-      .handler(delegationHandler::createUpdateDelegationRequest);
-
-    routerBuilder
-      .operation("get-auth-v2-delegation-request")
-      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))  // delegator
-      .handler(delegationHandler::getDelegationRequest);
-
-    routerBuilder
-      .operation("put-auth-v2-delegation-request")
-      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))  //delegator
-      .handler(delegationHandler::updateDelegationRequest);
+//      .operation("get-auth-v2-delegation-request")
+//      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))  // delegator
+//      .handler(delegationHandler::getDelegationRequest);
+//
+//    routerBuilder
+//      .operation("put-auth-v2-delegation-request")
+//      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))  //delegator
+//      .handler(delegationHandler::updateDelegationRequest);
 
 
   }

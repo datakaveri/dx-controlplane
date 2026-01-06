@@ -257,6 +257,8 @@ public class OrganizationJoinRequestHandler {
 
     User user = ctx.user();
     JsonObject userJson = user.principal();
+
+     UUID orgId = UUID.fromString(ctx.pathParam("id"));
     // deleagatoin requirement: scope - org_management and delegator is org_admin
     AccessValidator.validate(
         userJson,
@@ -270,6 +272,8 @@ public class OrganizationJoinRequestHandler {
 
     Status status = Status.fromString(OrgRequestJson.getString("status"));
 
+
+
     organizationService
         .updateOrganizationJoinRequestStatus(requestId, status)
         .onSuccess(
@@ -282,14 +286,14 @@ public class OrganizationJoinRequestHandler {
                       OrganizationAuditHelper.buildJoinOrgApproveAudit(
                           ctx,
                           requestId,
-                          UUID.fromString(userJson.getString("organization_id")),
+                          orgId,
                           userJson.getString("organization_name"));
                 } else {
                   audit =
                       OrganizationAuditHelper.buildJoinOrgRejectAudit(
                           ctx,
                           requestId,
-                          UUID.fromString(userJson.getString(KeycloakConstants.ORGANISATION_ID)),
+                          orgId,
                           (userJson.getString(ORGANISATION_NAME)),
                           "Rejected by org admin");
                 }
