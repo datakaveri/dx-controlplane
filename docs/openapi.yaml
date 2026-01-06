@@ -4377,7 +4377,6 @@ paths:
       security:
         - authorization: [ ]
       requestBody:
-        description: Create a new delegation grant with optional role-based scope constraints
         required: true
         content:
           application/json:
@@ -4391,55 +4390,49 @@ paths:
                 delegate_id:
                   type: string
                   format: uuid
-                  description: UUID of the user receiving the delegation
+
                 justification:
                   type: string
-                  description: Reason for granting this delegation
+
                 expiry_at:
                   type: string
                   pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
-                  example: '2026-01-31T23:59:59'
-                  description: When the delegation expires
+
                 roles:
                   type: array
-                  description: Optional array of roles with constraints. If omitted, delegates all roles of the delegator.
                   items:
                     type: object
                     required:
                       - role
                     properties:
                       role:
-                        type: string
-                        example: org_admin
-                        description: Role being delegated
+                        $ref: '#/components/schemas/DelegationRole'
+
                       constraints:
                         type: array
-                        description: Optional scope constraints for this role
                         items:
                           type: object
                           required:
                             - scope
                           properties:
                             scope:
-                              type: string
-                              example: org_management
-                              description: Scope name for this constraint
+                              $ref: '#/components/schemas/DelegationScope'
+
                             entity_id:
                               type: array
                               nullable: true
-                              description: Optional specific entity UUIDs
                               items:
                                 type: string
+                                format: uuid
+
                             entity_type:
-                              type: string
+                              allOf:
+                                - $ref: '#/components/schemas/DelegationEntityType'
                               nullable: true
-                              example: data_bank
-                              description: Optional type of entity
+
                             expiry_at:
                               type: string
                               pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
-                              example: '2026-01-31T23:59:59'
-                              description: When the delegation expires
             examples:
               minimal:
                 summary: Minimal - Delegate all roles
@@ -4484,7 +4477,8 @@ paths:
         '401':
           description: Unauthorized
         '404':
-          description: Delegate user not foun
+          description: Delegate user not found
+
 
   /iudx/v2/auth/delegation/delegate:
     get:
@@ -15937,3 +15931,35 @@ components:
         detail:
           type: string
           example: An unexpected error occurred
+
+
+    DelegationRole:
+      type: string
+      enum:
+        - cos_admin
+        - org_admin
+        - provider
+        - consumer
+      description: Delegation role
+
+    DelegationScope:
+      type: string
+      enum:
+        - cos_admin_access
+        - org_management
+        - asset_management
+        - compute_management
+        - user_management
+        - data_access
+        - api
+        - subs
+      description: Allowed scope values across all roles
+
+    DelegationEntityType:
+      type: string
+      enum:
+        - org
+        - provider
+        - databank
+        - aimodel
+      description: Entity type for scoped delegation
