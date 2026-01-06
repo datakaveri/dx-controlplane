@@ -203,15 +203,6 @@ public class ProviderRoleHandler {
         )
       )
       .onSuccess(entry -> {
-
-        AuditLog auditLog = AuditingHelper.createAuditLog(
-          ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx),
-          "GET",
-          "Get Provider Role Requests"
-        );
-
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
         ResponseBuilder.sendSuccess(
           ctx,
           entry.getKey(),
@@ -259,7 +250,7 @@ public class ProviderRoleHandler {
         return userService.getUserInfoByID(delegatorId)
           .compose(delegatorOrgUser -> {
 
-            // ✅ Case 2a: Delegator is COS admin (global authority)
+            // Case 2a: Delegator is COS admin (global authority)
             if (delegatorOrgUser != null
               && delegatorOrgUser.roles().contains(DxRole.COS_ADMIN.toString())) {
 
@@ -271,7 +262,7 @@ public class ProviderRoleHandler {
               return Future.succeededFuture(delegatorId);
             }
 
-            // ✅ Case 2b: Delegator owns requested org
+            // Case 2b: Delegator owns requested org
             if (delegatorOrgUser != null
               && requestedOrgId.toString().equals(delegatorOrgUser.organisationId())) {
 
@@ -283,7 +274,7 @@ public class ProviderRoleHandler {
               return Future.succeededFuture(delegatorId);
             }
 
-            // ❌ Not allowed
+            // Not allowed
             return Future.failedFuture(
               new DxForbiddenException(
                 "Delegator does not have authority over requested organization"
@@ -389,9 +380,14 @@ public class ProviderRoleHandler {
     organizationService
       .createProviderRole(providerRoleRequest)
       .onSuccess(
-        org ->
-          ResponseBuilder.sendSuccess(
-            ctx, "Provider role granted successfully", urnGenerator))
+        org -> {
+          ActivityAuditLogBuilder audit =
+            OrganizationAuditHelper.buildProviderRoleGrantedAudit(
+              ctx, providerRoleRequest.id(), providerRoleRequest.orgId());
+          RoutingContextHelper.setAuditingLogNew(ctx, audit);
+
+          ResponseBuilder.sendSuccess(ctx, "Provider role granted successfully", urnGenerator);
+        })
       .onFailure(
         err -> {
           if (err instanceof DxForbiddenException) {
