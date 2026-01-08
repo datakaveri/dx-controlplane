@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.delegation.models;
 
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.aaa.delegation.util.DelegationEntityType;
 import org.cdpg.dx.aaa.delegation.util.DelegationRole;
@@ -8,6 +9,7 @@ import org.cdpg.dx.database.postgres.base.entity.BaseEntity;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -29,6 +31,8 @@ public record DelegationScopeConstraint(
   // FROM JSON (API → DOMAIN)
   // -------------------------------------------------------------------------
   public static DelegationScopeConstraint fromJson(JsonObject json) {
+    System.out.print("json body: "+json);
+
     try {
       UUID delegationId = requireNonNull(
         json.getString("delegation_id") != null
@@ -47,8 +51,8 @@ public record DelegationScopeConstraint(
         "expiry_at"
       );
 
-      UUID entityId =
-        json.getString("entity_id") != null
+
+      UUID entityId = json.getString("entity_id")!=null
           ? UUID.fromString(json.getString("entity_id"))
           : null;
 
@@ -57,12 +61,6 @@ public record DelegationScopeConstraint(
           ? DelegationEntityType.fromString(json.getString("entity_type"))
           : null;
 
-      // ---- Domain validation ----
-      if (entityId != null ^ entityType != null) {
-        throw new DxValidationException(
-          "entity_id and entity_type must be provided together"
-        );
-      }
 
       return new DelegationScopeConstraint(
         json.getString("id") != null
@@ -79,6 +77,7 @@ public record DelegationScopeConstraint(
     } catch (DxValidationException e) {
       throw e;
     } catch (Exception e) {
+      e.printStackTrace();
       throw new DxValidationException(
         "Invalid delegation scope constraint: " + e.getMessage()
       );

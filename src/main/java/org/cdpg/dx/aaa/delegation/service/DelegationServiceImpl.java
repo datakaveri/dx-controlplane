@@ -1,3 +1,5 @@
+
+
 package org.cdpg.dx.aaa.delegation.service;
 
 import io.vertx.core.CompositeFuture;
@@ -30,6 +32,7 @@ import java.util.stream.Collectors;
 
 import static org.cdpg.dx.aaa.appCredentials.util.Constants.*;
 import static org.cdpg.dx.aaa.delegation.util.Constants.*;
+import static org.cdpg.dx.aaa.delegation.util.Constants.ENTITY_ID;
 import static org.cdpg.dx.common.util.DateTimeHelper.parseDateTime;
 
 
@@ -75,6 +78,7 @@ public class DelegationServiceImpl implements DelegationService{
 
 
     boolean isWildcardDelegation = (roleConstraints == null || roleConstraints.isEmpty());
+
     LOGGER.info("roles is {}",roleConstraints);
     String highestRole = getHighestRole(delegatorRoles);
 
@@ -90,8 +94,8 @@ public class DelegationServiceImpl implements DelegationService{
 
     } else {
       flow =
-        delegationValidator.validateAllConstraints(body, delegatorRoles)
-          .compose(v -> delegationValidator.validateEntityOwnership(body, delegatorRoles))
+        delegationValidator.validateAllConstraints(body, delegatorRoles,roleConstraints)
+          .compose(v -> delegationValidator.validateEntityOwnership(body, delegatorRoles,roleConstraints))
           .compose(v -> delegationGrantDAO.create(delegationGrant))
           .compose(created ->
             insertScopeConstraints(created.delegationId(),roleConstraints).map(v -> created)
@@ -120,8 +124,8 @@ public class DelegationServiceImpl implements DelegationService{
       .put("delegation_id", delegationId.toString())
       .put("role", role)
       .put("scope", "*")
-      .put("entity_id", null)
-      .put("entity_type", null)
+      .put("entity_id", "*")
+      .put("entity_type", "*")
       .put("expiry_at", expiry);
 
     DelegationScopeConstraint constraint =
@@ -388,30 +392,36 @@ public class DelegationServiceImpl implements DelegationService{
       for (Object constraintObj : constraints) {
         JsonObject constraint = (JsonObject) constraintObj;
 
-        JsonObject dbRow = new JsonObject()
-          .put("delegation_id", delegationId.toString())
-          .put("role", role)                         // ✅ correct key
-          .put("scope", constraint.getString("scope"))
-          .put("expiry_at", constraint.getString("expiry_at"))
-          .put(
-            "entity_id",
-            constraint.getString("entity_id") != null
-              ? constraint.getString("entity_id")
-              : null
-          )
-          .put( "entity_type",
-            constraint.getString("entity_type") != null
-              ? constraint.getString("entity_type")
-              : null
-          );
+        LOGGER.info("constraints in delseviceImpl: {}" ,constraints.encode());
 
-        DelegationScopeConstraint delegationScopeConstraint =
-          DelegationScopeConstraint.fromJson(dbRow);
+        JsonArray entityIds = constraint.getJsonArray("entity_id");
 
-        insertFutures.add(
-          delegationScopeConstraintDAO.create(delegationScopeConstraint)
-        );
-      }
+        for(Object entity: entityIds)
+        {
+              LOGGER.info("entity in delServiceImpl: {}",entity);
+              JsonObject dbRow = new JsonObject()
+                .put("delegation_id", delegationId.toString())
+                .put("role", role)                         // ✅ correct key
+                .put("scope", constraint.getString("scope"))
+                .put("expiry_at", constraint.getString("expiry_at"))
+                .put(
+                  "entity_id",
+                  entity.toString()
+                )
+                .put( "entity_type",
+                  constraint.getString("entity_type") != null
+                    ? constraint.getString("entity_type")
+                    : null
+                );
+
+                DelegationScopeConstraint delegationScopeConstraint =
+                  DelegationScopeConstraint.fromJson(dbRow);
+
+                insertFutures.add(
+                  delegationScopeConstraintDAO.create(delegationScopeConstraint)
+                );
+          }
+        }
     }
 
     return CompositeFuture.all(insertFutures).mapEmpty();
