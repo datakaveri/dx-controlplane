@@ -123,17 +123,24 @@ public class DelegationValidator {
         JsonObject constraint = constraints.getJsonObject(j);
         String scope = constraint.getString("scope");
 
-        JsonArray entityId = constraint.getJsonArray("entity_id");
+        JsonArray entityId =
+          constraint.containsKey("entity_id")
+            ? constraint.getJsonArray("entity_id")
+            : null;
+
+        String entityType =
+          constraint.containsKey("entity_type")
+            ? constraint.getString("entity_type")
+            : null;
+
+        // Wildcard entity → skip ownership check
+        if (entityId == null && entityType==null) {
+          continue;
+        }
+
         List<String> entityIdList = entityId.getList();
         LOGGER.info("entityid: {}",entityId);
         LOGGER.info("entityidList: {}",entityIdList);
-
-        String entityType = constraint.getString("entity_type");
-
-        // Wildcard entity → skip ownership check
-        if (entityId == null && entityType == null) {
-          continue;
-        }
 
         switch (delegatorRole) {
 
@@ -297,6 +304,9 @@ public class DelegationValidator {
   }
 
   private Future<Void> validateOrgOwnership(UUID delegatorId, List<String> orgIds) {
+    LOGGER.info("Validating org Ids ownership");
+    LOGGER.info("orgids: {}",orgIds);
+
     if (orgIds == null || orgIds.isEmpty()) {
       return Future.failedFuture(new DxForbiddenException("No organization ID provided"));
     }
@@ -305,7 +315,9 @@ public class DelegationValidator {
 
     return organizationService.getOrganisationAdminId(orgId)
       .compose(res -> {
-        UUID adminId = res.get(0).userId();
+        UUID adminId = res.getFirst().userId();
+        LOGGER.info("admin: {}",adminId);
+        LOGGER.info("delegator: {}",delegatorId);
         if (adminId.equals(delegatorId)) {
           return succeededFuture();
         } else {

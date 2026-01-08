@@ -394,51 +394,68 @@ public class DelegationServiceImpl implements DelegationService{
 
         LOGGER.info("constraints in delseviceImpl: {}" ,constraints.encode());
 
-        JsonArray entityIds = constraint.getJsonArray("entity_id");
+        JsonArray entityIds =
+          constraint.containsKey("entity_id")
+            ? constraint.getJsonArray("entity_id")
+            : null;
 
-        for(Object entity: entityIds)
-        {
-              LOGGER.info("entity in delServiceImpl: {}",entity);
-              JsonObject dbRow = new JsonObject()
-                .put("delegation_id", delegationId.toString())
-                .put("role", role)                         // ✅ correct key
-                .put("scope", constraint.getString("scope"))
-                .put("expiry_at", constraint.getString("expiry_at"))
-                .put(
-                  "entity_id",
-                  entity.toString()
-                )
-                .put( "entity_type",
-                  constraint.getString("entity_type") != null
-                    ? constraint.getString("entity_type")
-                    : null
-                );
-
-                DelegationScopeConstraint delegationScopeConstraint =
-                  DelegationScopeConstraint.fromJson(dbRow);
-
-                insertFutures.add(
-                  delegationScopeConstraintDAO.create(delegationScopeConstraint)
-                );
+        if (entityIds != null && !entityIds.isEmpty()) {
+          for (Object entity : entityIds) {
+            insertFutures.add(
+              createScopeConstraint(
+                delegationId,
+                role,
+                constraint,
+                entity.toString()
+              )
+            );
           }
+        } else {
+          // entity_id == null ⇒ entity_type is already null (validated)
+          insertFutures.add(
+            createScopeConstraint(
+              delegationId,
+              role,
+              constraint,
+              null
+            )
+          );
         }
+
+      }
     }
 
     return CompositeFuture.all(insertFutures).mapEmpty();
   }
 
+  private Future<Void> createScopeConstraint(
+    UUID delegationId,
+    String role,
+    JsonObject constraint,
+    String entityId
+  ) {
 
-//  public Set<String> extractRoles(User user) {
-//    Set<String> roles = new HashSet<>();
-//    JsonObject principal = user.principal();
-//    if (principal.containsKey("realm_access")) {
-//      JsonObject realmAccess = principal.getJsonObject("realm_access");
-//      if (realmAccess.containsKey("roles")) {
-//        roles.addAll(realmAccess.getJsonArray("roles").getList());
-//      }
-//    }
-//    return roles;
-//  }
+    JsonObject dbRow = new JsonObject()
+      .put("delegation_id", delegationId.toString())
+      .put("role", role)
+      .put("scope", constraint.getString("scope"))
+      .put("expiry_at", constraint.getString("expiry_at"))
+      .put("entity_id", entityId)
+      .put(
+        "entity_type",
+        constraint.getString("entity_type") != null
+          ? constraint.getString("entity_type")
+          : null
+      );
+
+    DelegationScopeConstraint delegationScopeConstraint =
+      DelegationScopeConstraint.fromJson(dbRow);
+
+    return delegationScopeConstraintDAO
+      .create(delegationScopeConstraint)
+      .mapEmpty();
+  }
+
 
   private String getHighestRole(Set<String> roles) {
     if (roles.contains("cos_admin")) return "cos_admin";
