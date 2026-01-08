@@ -36,7 +36,7 @@ public class DelegationValidator {
    * Validate all constraints against the delegator’s roles.
    */
   public Future<Void> validateAllConstraints(
-    JsonObject delegationGrant,Set<String> delegatorRoles
+    JsonObject delegationGrant,Set<String> delegatorRoles,JsonArray rolesArray
   ) {
 
     LOGGER.info("Validating delegation constraints");
@@ -45,8 +45,6 @@ public class DelegationValidator {
     if (delegatorRoles.contains("cos_admin")) {
       return Future.succeededFuture();
     }
-
-    JsonArray rolesArray = delegationGrant.getJsonArray("roles");
 
     // Full delegation → nothing to validate
     if (rolesArray == null || rolesArray.isEmpty()) {
@@ -96,7 +94,7 @@ public class DelegationValidator {
    * Validate ownership of entities based on delegator’s role.
    */
   public Future<Void> validateEntityOwnership(
-    JsonObject delegationGrant, Set<String> delegatorRoles
+    JsonObject delegationGrant, Set<String> delegatorRoles , JsonArray rolesArray
   ) {
 
     UUID delegatorId = UUID.fromString(delegationGrant.getString(DELEGATOR_ID));
@@ -106,8 +104,6 @@ public class DelegationValidator {
       LOGGER.info("cos_admin detected — skipping entity ownership validation");
       return Future.succeededFuture();
     }
-
-    JsonArray rolesArray = delegationGrant.getJsonArray("roles");
 
     //  Full delegation → skip
     if (rolesArray == null || rolesArray.isEmpty()) {
@@ -127,28 +123,39 @@ public class DelegationValidator {
         JsonObject constraint = constraints.getJsonObject(j);
         String scope = constraint.getString("scope");
 
-        String entityId = constraint.getString("entity_id");
-        String entityType = constraint.getString("entity_type");
+        JsonArray entityId =
+          constraint.containsKey("entity_id")
+            ? constraint.getJsonArray("entity_id")
+            : null;
 
-        // 🔹 Wildcard entity → skip ownership check
-        if (entityId == null && entityType == null) {
+        String entityType =
+          constraint.containsKey("entity_type")
+            ? constraint.getString("entity_type")
+            : null;
+
+        // Wildcard entity → skip ownership check
+        if (entityId == null && entityType==null) {
           continue;
         }
+
+        List<String> entityIdList = entityId.getList();
+        LOGGER.info("entityid: {}",entityId);
+        LOGGER.info("entityidList: {}",entityIdList);
 
         switch (delegatorRole) {
 
           case "org_admin" -> {
             if ("org_management".equalsIgnoreCase(scope)) {
               validations.add(
-                validateOrgOwnership(delegatorId, List.of(entityId))
+                validateOrgOwnership(delegatorId, entityIdList)
               );
             } else if ("asset_management".equalsIgnoreCase(scope)) {
               validations.add(
-                validateAssetRequestOwnership(delegatorId, List.of(entityId))
+                validateAssetRequestOwnership(delegatorId, entityIdList)
               );
             } else if ("data_access".equalsIgnoreCase(scope)) {
               validations.add(
-                validateItemIdOwnership(delegatorId, List.of(entityId))
+                validateItemIdOwnership(delegatorId, entityIdList)
               );
             }
           }
@@ -156,11 +163,11 @@ public class DelegationValidator {
           case "provider" -> {
             if ("asset_management".equalsIgnoreCase(scope)) {
               validations.add(
-                validateAssetRequestOwnership(delegatorId, List.of(entityId))
+                validateAssetRequestOwnership(delegatorId, entityIdList)
               );
             } else if ("data_access".equalsIgnoreCase(scope)) {
               validations.add(
-                validateItemIdOwnership(delegatorId, List.of(entityId))
+                validateItemIdOwnership(delegatorId, entityIdList)
               );
             }
           }
@@ -168,7 +175,7 @@ public class DelegationValidator {
           case "consumer" -> {
             if ("data_access".equalsIgnoreCase(scope)) {
               validations.add(
-                validateItemIdOwnership(delegatorId, List.of(entityId))
+                validateItemIdOwnership(delegatorId, entityIdList)
               );
             }
           }
@@ -266,25 +273,25 @@ public class DelegationValidator {
       for (String itemId : itemIds) {
         GetItemRequest itemRequest = new GetItemRequest(itemId, delegatorIdStr);
 
-        Future<Void> validationFuture = itemService.getItem(itemRequest).compose(response -> {
+        Future<Void> validationFuture = itemService.getItemWithAccessChecks(itemRequest).compose(response -> {
 
           if (response == null) {
             return Future.failedFuture(new DxBadRequestException("Response is empty for item: " + itemId));
           }
 
-          List<JsonObject> validResponses = response.getElasticsearchResponses()
-            .stream()
-            .filter(Objects::nonNull)
-            .toList();
-
-          LOGGER.info("List of valid responses: {}",validResponses);
-
-          JsonObject res = validResponses.getFirst();
-
-          String ownerId = res.getString("ownerUserId");
-
-          if(ownerId.equalsIgnoreCase(delegatorIdStr))
-            return Future.succeededFuture();
+//          List<JsonObject> validResponses = response.getElasticsearchResponses()
+//            .stream()
+//            .filter(Objects::nonNull)
+//            .toList();
+//
+//          LOGGER.info("List of valid responses: {}",validResponses);
+//
+//          JsonObject res = validResponses.getFirst();
+//
+//          String ownerId = res.getString("ownerUserId");
+//
+//          if(ownerId.equalsIgnoreCase(delegatorIdStr))
+//            return Future.succeededFuture();
 
           return Future.succeededFuture();
         });
@@ -297,6 +304,9 @@ public class DelegationValidator {
   }
 
   private Future<Void> validateOrgOwnership(UUID delegatorId, List<String> orgIds) {
+    LOGGER.info("Validating org Ids ownership");
+    LOGGER.info("orgids: {}",orgIds);
+
     if (orgIds == null || orgIds.isEmpty()) {
       return Future.failedFuture(new DxForbiddenException("No organization ID provided"));
     }
@@ -305,7 +315,9 @@ public class DelegationValidator {
 
     return organizationService.getOrganisationAdminId(orgId)
       .compose(res -> {
-        UUID adminId = res.get(0).userId();
+        UUID adminId = res.getFirst().userId();
+        LOGGER.info("admin: {}",adminId);
+        LOGGER.info("delegator: {}",delegatorId);
         if (adminId.equals(delegatorId)) {
           return succeededFuture();
         } else {
