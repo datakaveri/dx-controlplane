@@ -320,9 +320,9 @@ public class ItemController implements ApiController {
                 res -> {
                   LOGGER.debug("Item updated successfully: {}", item);
 
-                  ActivityAuditLogBuilder auditLog =
-                      CatalogueAuditHelper.buildItemAudit(ctx, Operation.UPDATE, item.toJson());
-                  RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
+//                  ActivityAuditLogBuilder auditLog =
+//                      CatalogueAuditHelper.buildItemAudit(ctx, Operation.UPDATE, item.toJson());
+//                  RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
 
                   ResponseBuilder.sendSuccess(ctx, item.toJson(), this.urnGenerator);
                 })

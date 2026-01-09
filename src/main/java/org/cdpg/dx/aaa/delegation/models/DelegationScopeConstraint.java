@@ -21,9 +21,9 @@ public record DelegationScopeConstraint(
   UUID id,
   UUID delegationId,                    // NOT NULL
   DelegationRole role,                  // NOT NULL
-  String scope,                         // nullable ('*' allowed)
-  UUID entityId,                        // nullable
-  DelegationEntityType entityType,      // nullable
+  String scope,                         // NOT NULL ('*' allowed)
+  String entityId,                        // NOT NULL ('*' allowed)
+  String entityType,      // NOT NULL ('*' allowed)
   LocalDateTime expiryAt                // NOT NULL
 ) implements BaseEntity<DelegationScopeConstraint> {
 
@@ -52,13 +52,13 @@ public record DelegationScopeConstraint(
       );
 
 
-      UUID entityId = json.getString("entity_id")!=null
-          ? UUID.fromString(json.getString("entity_id"))
+      String entityId = json.getString("entity_id")!=null
+          ? json.getString("entity_id")
           : null;
 
-      DelegationEntityType entityType =
+      String entityType =
         json.getString("entity_type") != null
-          ? DelegationEntityType.fromString(json.getString("entity_type"))
+          ? json.getString("entity_type")
           : null;
 
 
@@ -95,8 +95,8 @@ public record DelegationScopeConstraint(
     if (delegationId != null) json.put("delegation_id", delegationId.toString());
     if (role != null) json.put("role", role.getRole());
     if (scope != null) json.put("scope", scope);
-    if (entityId != null) json.put("entity_id", entityId.toString());
-    if (entityType != null) json.put("entity_type", entityType.getType());
+    if (entityId != null) json.put("entity_id", entityId);
+    if (entityType != null) json.put("entity_type", entityType);
     if (expiryAt != null) json.put("expiry_at", expiryAt.format(FORMATTER));
 
     return json;
@@ -113,8 +113,8 @@ public record DelegationScopeConstraint(
     if (delegationId != null) map.put("delegation_id", delegationId.toString());
     if (role != null) map.put("role", role.getRole());
     if (scope != null) map.put("scope", scope);
-    if (entityId != null) map.put("entity_id", entityId.toString());
-    if (entityType != null) map.put("entity_type", entityType.getType());
+    if (entityId != null) map.put("entity_id", entityId);
+    if (entityType != null) map.put("entity_type", entityType);
     if (expiryAt != null) map.put("expiry_at", expiryAt.format(FORMATTER));
 
     return map;

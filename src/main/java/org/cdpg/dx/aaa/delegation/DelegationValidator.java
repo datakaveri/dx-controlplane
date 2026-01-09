@@ -100,10 +100,10 @@ public class DelegationValidator {
     UUID delegatorId = UUID.fromString(delegationGrant.getString(DELEGATOR_ID));
 
     //  cos_admin bypass
-    if (delegatorRoles.contains("cos_admin")) {
-      LOGGER.info("cos_admin detected — skipping entity ownership validation");
-      return Future.succeededFuture();
-    }
+//    if (delegatorRoles.contains("cos_admin")) {
+//      LOGGER.info("cos_admin detected — skipping entity ownership validation");
+//      return Future.succeededFuture();
+//    }
 
     //  Full delegation → skip
     if (rolesArray == null || rolesArray.isEmpty()) {
@@ -122,6 +122,7 @@ public class DelegationValidator {
 
         JsonObject constraint = constraints.getJsonObject(j);
         String scope = constraint.getString("scope");
+        String normalizedScope = scope.toLowerCase();
 
         JsonArray entityId =
           constraint.containsKey("entity_id")
@@ -134,7 +135,7 @@ public class DelegationValidator {
             : null;
 
         // Wildcard entity → skip ownership check
-        if (entityId == null && entityType==null) {
+        if ((entityId == null || entityId.isEmpty()) && entityType == null) {
           continue;
         }
 
@@ -142,55 +143,38 @@ public class DelegationValidator {
         LOGGER.info("entityid: {}",entityId);
         LOGGER.info("entityidList: {}",entityIdList);
 
-        switch (delegatorRole) {
-
-          case "org_admin" -> {
-            if ("org_management".equalsIgnoreCase(scope)) {
+        switch (normalizedScope) {
+          case "org_management" ->
               validations.add(
                 validateOrgOwnership(delegatorId, entityIdList)
               );
-            } else if ("asset_management".equalsIgnoreCase(scope)) {
-              validations.add(
-                validateAssetRequestOwnership(delegatorId, entityIdList)
-              );
-            } else if ("data_access".equalsIgnoreCase(scope)) {
-              validations.add(
-                validateItemIdOwnership(delegatorId, entityIdList)
-              );
-            }
-          }
+          case "data_access" ->
+            validations.add(
+              validateItemIdOwnership(delegatorId, entityIdList)
+            );
 
-          case "provider" -> {
-            if ("asset_management".equalsIgnoreCase(scope)) {
-              validations.add(
-                validateAssetRequestOwnership(delegatorId, entityIdList)
-              );
-            } else if ("data_access".equalsIgnoreCase(scope)) {
-              validations.add(
-                validateItemIdOwnership(delegatorId, entityIdList)
-              );
-            }
+          case "asset_management" ->
+            validations.add(
+              validateAssetRequestOwnership(delegatorId, entityIdList)
+            );
+          case "cos_admin_access" ->
+          {
+            LOGGER.debug("Skipping ownership validation for cos_admin_access");
           }
-
-          case "consumer" -> {
-            if ("data_access".equalsIgnoreCase(scope)) {
-              validations.add(
-                validateItemIdOwnership(delegatorId, entityIdList)
-              );
-            }
+          case "compute_management" ->
+          {
+            LOGGER.debug("Skipping ownership validation for compute_management access");
           }
-
           default -> {
             return Future.failedFuture(
-              new DxForbiddenException(
-                "Delegator role '" + delegatorRole +
-                  "' cannot delegate scope '" + scope + "'"
-              )
+              new DxForbiddenException("Unsupported scope: " + scope)
             );
           }
+
+          }
+
         }
       }
-    }
 
     if (validations.isEmpty()) {
       return Future.succeededFuture();
@@ -209,45 +193,45 @@ public class DelegationValidator {
     }
 
     //  get organization info for delegator
-    return organizationService.getOrganizationUserInfo(delegatorId).compose(orgInfo -> {
-      UUID orgDelId = orgInfo.organizationId();
-      String orgDelIdStr = orgDelId.toString();
-      if (orgDelId == null) {
-        return Future.failedFuture(new DxForbiddenException("User does not belong to any organization!"));
-      }
-
+//    return organizationService.getOrganizationUserInfo(delegatorId).compose(orgInfo -> {
+//      UUID orgDelId = orgInfo.organizationId();
+//      String orgDelIdStr = orgDelId.toString();
+//      if (orgDelId == null) {
+//        return Future.failedFuture(new DxForbiddenException("User does not belong to any organization!"));
+//      }
+//
       String delegatorIdStr = delegatorId.toString();
       List<Future> validations = new ArrayList<>();
 
       for (String itemId : itemIds) {
         GetItemRequest itemRequest = new GetItemRequest(itemId, delegatorIdStr);
-        Future<Void> validationFuture = itemService.getItem(itemRequest).compose(response -> {
+        Future<Void> validationFuture = itemService.getItemWithAccessChecks(itemRequest).compose(response -> {
 
           if (response == null) {
             return Future.failedFuture(new DxBadRequestException("Response is empty for item: " + itemId));
           }
 
-          List<JsonObject> validResponses = response.getElasticsearchResponses()
-            .stream()
-            .filter(Objects::nonNull)
-            .toList();
-
-          LOGGER.info("List of valid responses: {}",validResponses);
-
-          JsonObject res = validResponses.getFirst();
-
-          String ownerId = res.getString("ownerUserId");
-          String itemOrgId = res.getString("organizationId");
-
-          //checking if the delegator is the owner of the item id
-          if(ownerId.equalsIgnoreCase(delegatorIdStr))
-            return Future.succeededFuture();
-
-          // org id of the user doesn't match org id fetched from item info
-          if(!orgDelIdStr.equalsIgnoreCase(itemOrgId))
-            return Future.failedFuture(new DxBadRequestException(
-              "User " + delegatorId + " is not authorized to delegate the item " + itemId
-            ));
+//          List<JsonObject> validResponses = response.getElasticsearchResponses()
+//            .stream()
+//            .filter(Objects::nonNull)
+//            .toList();
+//
+//          LOGGER.info("List of valid responses: {}",validResponses);
+//
+//          JsonObject res = validResponses.getFirst();
+//
+//          String ownerId = res.getString("ownerUserId");
+//          String itemOrgId = res.getString("organizationId");
+//
+//          //checking if the delegator is the owner of the item id
+//          if(ownerId.equalsIgnoreCase(delegatorIdStr))
+//            return Future.succeededFuture();
+//
+//          // org id of the user doesn't match org id fetched from item info
+//          if(!orgDelIdStr.equalsIgnoreCase(itemOrgId))
+//            return Future.failedFuture(new DxBadRequestException(
+//              "User " + delegatorId + " is not authorized to delegate the item " + itemId
+//            ));
 
           return Future.succeededFuture();
         });
@@ -256,7 +240,7 @@ public class DelegationValidator {
       }
 
       return CompositeFuture.all(validations).mapEmpty();
-    });
+
   }
 
   private Future<Void> validateItemIdOwnership(UUID delegatorId, List<String> itemIds) {
