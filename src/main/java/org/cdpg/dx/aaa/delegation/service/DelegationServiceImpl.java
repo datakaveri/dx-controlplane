@@ -391,14 +391,12 @@ public class DelegationServiceImpl implements DelegationService{
 
       for (Object constraintObj : constraints) {
         JsonObject constraint = (JsonObject) constraintObj;
-
+        String scope = constraint.getString("scope");
         LOGGER.info("constraints in delseviceImpl: {}" ,constraints.encode());
 
-        JsonArray entityIds =
-          constraint.containsKey("entity_id")
-            ? constraint.getJsonArray("entity_id")
-            : null;
+        JsonArray entityIds = constraint.getJsonArray("entity_id");
 
+        //skipping cos_admin_access and compute_management because no entity check is needed for them
         if (entityIds != null && !entityIds.isEmpty()) {
           for (Object entity : entityIds) {
             insertFutures.add(
@@ -406,7 +404,7 @@ public class DelegationServiceImpl implements DelegationService{
                 delegationId,
                 role,
                 constraint,
-                entity.toString()
+                entity
               )
             );
           }
@@ -432,20 +430,24 @@ public class DelegationServiceImpl implements DelegationService{
     UUID delegationId,
     String role,
     JsonObject constraint,
-    String entityId
+    Object entityId
   ) {
 
     JsonObject dbRow = new JsonObject()
       .put("delegation_id", delegationId.toString())
       .put("role", role)
-      .put("scope", constraint.getString("scope"))
+      .put("scope", constraint.getString("scope")!=null
+        ?constraint.getString("scope"):"*")
       .put("expiry_at", constraint.getString("expiry_at"))
-      .put("entity_id", entityId)
+      .put(
+        "entity_id", entityId !=null ?
+           entityId
+          : "*")
       .put(
         "entity_type",
         constraint.getString("entity_type") != null
           ? constraint.getString("entity_type")
-          : null
+          : "*"
       );
 
     DelegationScopeConstraint delegationScopeConstraint =
