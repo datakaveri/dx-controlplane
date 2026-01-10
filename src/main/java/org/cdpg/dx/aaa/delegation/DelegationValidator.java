@@ -33,69 +33,13 @@ public class DelegationValidator {
   }
 
   /**
-   * Validate all constraints against the delegator’s roles.
-   */
-  public Future<Void> validateAllConstraints(
-    JsonObject delegationGrant,Set<String> delegatorRoles,JsonArray rolesArray
-  ) {
-
-    LOGGER.info("Validating delegation constraints");
-
-    // cos_admin bypass
-    if (delegatorRoles.contains("cos_admin")) {
-      return Future.succeededFuture();
-    }
-
-    // Full delegation → nothing to validate
-    if (rolesArray == null || rolesArray.isEmpty()) {
-      LOGGER.info("Full delegation detected — skipping scope validation");
-      return Future.succeededFuture();
-    }
-
-    String delegatorRole = getHighestRole(delegatorRoles);
-    RoleScopeMapping delegatorMapping =
-      RoleScopeMapping.fromString(delegatorRole);
-
-    Set<String> allowedScopes =
-      delegatorMapping.getAllowedScopes()
-        .stream()
-        .map(String::toLowerCase)
-        .collect(Collectors.toSet());
-
-    for (int i = 0; i < rolesArray.size(); i++) {
-      JsonObject roleObj = rolesArray.getJsonObject(i);
-      JsonArray constraints = roleObj.getJsonArray("constraints");
-
-      if (constraints.isEmpty()) {
-        throw new DxBadRequestException("Constraints cannot be empty for role: " + delegatorRole);
-      }
-
-      for (int j = 0; j < constraints.size(); j++) {
-        String scope =
-          constraints.getJsonObject(j).getString("scope");
-
-        if (!allowedScopes.contains(scope.toLowerCase())) {
-          return Future.failedFuture(
-            new DxForbiddenException(
-              "Delegator with role '" + delegatorRole +
-                "' cannot delegate scope '" + scope + "'"
-            )
-          );
-        }
-      }
-    }
-
-    LOGGER.info("Scope validation successful");
-    return Future.succeededFuture();
-  }
-
-
-  /**
    * Validate ownership of entities based on delegator’s role.
    */
   public Future<Void> validateEntityOwnership(
     JsonObject delegationGrant, Set<String> delegatorRoles , JsonArray rolesArray
   ) {
+
+    LOGGER.info("Inside the validateEntityOwnership");
 
     UUID delegatorId = UUID.fromString(delegationGrant.getString(DELEGATOR_ID));
 
@@ -117,6 +61,14 @@ public class DelegationValidator {
     for (int i = 0; i < rolesArray.size(); i++) {
       JsonArray constraints =
         rolesArray.getJsonObject(i).getJsonArray("constraints");
+
+//      String role = rolesArray.getJsonObject(i).getString("role");
+//
+//      RoleScopeMapping allowedScopes = RoleScopeMapping.fromString(role);
+      if(constraints==null)
+      {
+        continue;
+      }
 
       for (int j = 0; j < constraints.size(); j++) {
 
@@ -157,10 +109,10 @@ public class DelegationValidator {
             validations.add(
               validateAssetRequestOwnership(delegatorId, entityIdList)
             );
-          case "cos_admin_access" ->
-          {
-            LOGGER.debug("Skipping ownership validation for cos_admin_access");
-          }
+//          case "cos_admin_access" ->
+//          {
+//            LOGGER.debug("Skipping ownership validation for cos_admin_access");
+//          }
           case "compute_management" ->
           {
             LOGGER.debug("Skipping ownership validation for compute_management access");

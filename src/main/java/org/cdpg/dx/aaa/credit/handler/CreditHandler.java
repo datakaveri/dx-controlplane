@@ -101,7 +101,7 @@ public class CreditHandler {
       userJson,
       List.of( // primary roles (no scope check)
         DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.COMPUTE_MANAGEMENT.getScope())
+      List.of(DxScope.COMPUTE_MANAGEMENT.getScope(),DxScope.COS_ADMIN.getScope())
     );
 
     PaginatedRequest request = PaginationRequestBuilder.from(ctx)
@@ -185,7 +185,7 @@ public class CreditHandler {
       userJson,
       List.of( // primary roles (no scope check)
         DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.COMPUTE_MANAGEMENT.getScope())
+      List.of(DxScope.COMPUTE_MANAGEMENT.getScope(),DxScope.COS_ADMIN.getScope())
     );
 
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "id");
@@ -207,7 +207,7 @@ public class CreditHandler {
       userJson,
       List.of( // primary roles (no scope check)
         DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.COMPUTE_MANAGEMENT.getScope())
+      List.of(DxScope.COMPUTE_MANAGEMENT.getScope(),DxScope.COS_ADMIN.getScope())
     );
 
     JsonObject creditRequestJson = ctx.body().asJsonObject();
@@ -271,7 +271,7 @@ public class CreditHandler {
       userJson,
       List.of( // primary roles (no scope check)
         DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.COMPUTE_MANAGEMENT.getScope())
+      List.of(DxScope.COMPUTE_MANAGEMENT.getScope(),DxScope.COS_ADMIN.getScope())
     );
 
     JsonObject creditDeductionJson = ctx.body().asJsonObject();
@@ -303,7 +303,7 @@ public class CreditHandler {
       userJson,
       List.of( // primary roles (no scope check)
         DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.COMPUTE_MANAGEMENT.getScope())
+      List.of(DxScope.COMPUTE_MANAGEMENT.getScope(),DxScope.COS_ADMIN.getScope())
     );
 
     JsonObject creditAdditionJson = ctx.body().asJsonObject();
@@ -397,7 +397,7 @@ public class CreditHandler {
       userJson,
       List.of( // primary roles (no scope check)
         DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.COMPUTE_MANAGEMENT.getScope())
+      List.of(DxScope.COMPUTE_MANAGEMENT.getScope(),DxScope.COS_ADMIN.getScope())
     );
 
     PaginatedRequest request = PaginationRequestBuilder.from(ctx)
@@ -442,7 +442,7 @@ public class CreditHandler {
       userJson,
       List.of( // primary roles (no scope check)
         DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.COMPUTE_MANAGEMENT.getScope())
+      List.of(DxScope.COMPUTE_MANAGEMENT.getScope(),DxScope.COS_ADMIN.getScope())
     );
 
     JsonObject creditRequestJson = ctx.body().asJsonObject();

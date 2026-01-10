@@ -6,6 +6,7 @@ import io.vertx.ext.auth.User;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.delegation.handler.DelegationHandler;
+import org.cdpg.dx.aaa.delegation.util.RoleScopeMapping;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.model.DxUser;
@@ -24,7 +25,7 @@ public class DelegationHandlerValidator {
   private static final Logger LOGGER = LogManager.getLogger(DelegationHandlerValidator.class);
 
 
-  public void validateCreateDelegationGrantBody(UUID userId, JsonObject body) {
+  public void validateCreateDelegationGrantBody(UUID userId, Set<String> delegatorRoles, JsonObject body) {
     body.put("delegator_id", userId);
 
     //*****************************************************************************************************************
@@ -63,17 +64,23 @@ public class DelegationHandlerValidator {
         throw new DxBadRequestException("Role is required in roles array");
       }
 
+      if(delegatorRoles.contains("cos_admin"))
+      {
+        LOGGER.info("This user can have roles provider, org_admin and compute - no need to check the role provided in roles constraint ");
+      }
+      else if(!delegatorRoles.contains(role))
+      {
+        throw new DxBadRequestException("The delegator doesnot have the role "+ role);
+      }
+
       JsonArray constraints = roleObj.getJsonArray("constraints");
       if (constraints == null || constraints.isEmpty()) {
-        throw new DxBadRequestException(
-          "Constraints must be provided when role is specified: " + role
-        );
+        LOGGER.info("Delegate has full access to the given role");
+        return;
       }
 
       for (int j = 0; j < constraints.size(); j++) {
-
         JsonObject constraint = constraints.getJsonObject(j);
-
         String scope = constraint.getString("scope");
         String entityId = constraint.getString("entity_id");
         String entityType = constraint.getString("entity_type");
@@ -82,6 +89,23 @@ public class DelegationHandlerValidator {
           throw new DxBadRequestException("Scope is required in constraints");
         }
 
+        RoleScopeMapping obj = RoleScopeMapping.fromString(role);
+        if(!obj.getAllowedScopes().contains(scope))
+        {
+          throw new DxBadRequestException("The role that the user is giving doesnt allow the scope "+ scope);
+        }
+
+        if(scope.equals("cos_admin_access"))
+        {
+          if(entityId!=null && entityType!=null)
+          {
+            throw new DxBadRequestException("No entity required for cos_admin_access scope");
+          }
+          else
+          {
+            return;
+          }
+        }
 
         // ---------- Entity pairing validation ----------
         boolean entityIdPresent = entityId != null;

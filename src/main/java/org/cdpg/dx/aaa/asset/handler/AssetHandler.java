@@ -14,6 +14,9 @@ import org.cdpg.dx.aaa.credit.handler.CreditHandler;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.models.ProviderRoleRequest;
 import org.cdpg.dx.auditing.model.AuditLog;
+import org.cdpg.dx.auth.authentication.util.AccessValidator;
+import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.request.PaginatedRequest;
@@ -23,6 +26,7 @@ import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.email.service.EmailService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -115,6 +119,17 @@ public class AssetHandler {
   }
 
   public void getAllAssetRequests(RoutingContext ctx) {
+
+    User dxUser = ctx.user();
+    JsonObject userJson = dxUser.principal();
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.COS_ADMIN.getRole()),
+      List.of(DxScope.COS_ADMIN.getScope())
+    );
+
     PaginatedRequest request = PaginationRequestBuilder.from(ctx)
       .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_ASSET_REQUEST)
       .apiToDbMap(ALLOWED_FILTER_MAP_FOR_ASSET_REQUEST)
@@ -141,6 +156,16 @@ public class AssetHandler {
 
     User user = ctx.user();
     UUID userId = UUID.fromString(user.subject());
+
+    JsonObject userJson = user.principal();
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.COS_ADMIN.getRole()),
+      List.of(DxScope.COS_ADMIN.getScope())
+    );
+
 
     Status status;
     try {

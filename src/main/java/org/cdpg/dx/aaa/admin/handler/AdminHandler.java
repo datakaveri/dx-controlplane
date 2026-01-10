@@ -81,7 +81,7 @@ public class AdminHandler {
       userJson,
       List.of( // primary roles (no scope check)
         DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.USER_MANAGEMENT.getScope())
+      List.of(DxScope.COS_ADMIN.getScope())
     );
 
     userService.getUserInfoByID(userId)
@@ -100,6 +100,16 @@ public class AdminHandler {
 
 
   public void getAllDxUsersKeycloak(RoutingContext ctx) {
+
+    User user1 = ctx.user();
+    JsonObject userJson = user1.principal();
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.COS_ADMIN.getRole()),
+      List.of(DxScope.COS_ADMIN.getScope())
+    );
 
     PaginatedRequest request = PaginationRequestBuilder.from(ctx).build();
     String name = ctx.queryParam("search_term").stream().findFirst().orElse(null);
@@ -389,7 +399,7 @@ public class AdminHandler {
       userJson,
       List.of( // primary roles (no scope check)
         DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.USER_MANAGEMENT.getScope())
+      List.of(DxScope.COS_ADMIN.getScope())
     );
 
     JsonObject status = ctx.body().asJsonObject();

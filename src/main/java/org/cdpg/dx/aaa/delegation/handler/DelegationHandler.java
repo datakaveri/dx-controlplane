@@ -168,8 +168,10 @@ public class DelegationHandler {
 
     body.put(DELEGATOR_ID,delegatorId.toString());
 
+    Set<String> delegatorRoles = delegationHandlerValidator.extractRoles(user);
+
     try {
-      delegationHandlerValidator.validateCreateDelegationGrantBody(delegatorId, body);
+      delegationHandlerValidator.validateCreateDelegationGrantBody(delegatorId, delegatorRoles,body);
     } catch (DxBadRequestException | DxForbiddenException e) {
       ctx.fail(e);
       return;
@@ -178,7 +180,6 @@ public class DelegationHandler {
     DelegationGrant delegationGrant = DelegationGrant.fromJson(body);
     JsonArray rolesConstraints = body.getJsonArray("roles");
 
-    Set<String> delegatorRoles = delegationHandlerValidator.extractRoles(user);
 
     delegationService.createDelegationGrant(delegationGrant, delegatorRoles,rolesConstraints)
       .onSuccess(createdGrant -> {
