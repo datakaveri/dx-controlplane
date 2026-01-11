@@ -4,6 +4,7 @@ import io.vertx.codegen.annotations.ProxyGen;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mail.MailMessage;
 
 @VertxGen
@@ -15,4 +16,6 @@ public interface EmailService {
 
   // TODO: worker vertice
   Future<Void> sendEmail(MailMessage message);
+
+  Future<Void> sendEmailService(JsonObject jsonObject);
 }

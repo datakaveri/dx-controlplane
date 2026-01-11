@@ -1,18 +1,21 @@
 package org.cdpg.dx.acl.apiserver;
 
+import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
+import static org.cdpg.dx.aaa.common.Constants.VOC_CONTEXT;
+import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.*;
+
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
+import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import org.cdpg.dx.aaa.ActivityReport.controller.ActivityReportController;
 import org.cdpg.dx.aaa.ActivityReport.factory.ActivityReportControllerFactory;
 import org.cdpg.dx.aaa.activity.controller.ActivityController;
 import org.cdpg.dx.aaa.activity.factory.ActivityControllerFactory;
 import org.cdpg.dx.aaa.activity.factory.ActivityFactory;
 import org.cdpg.dx.aaa.activity.service.ActivityLogService;
-import org.cdpg.dx.aaa.activity.service.ActivityService;
 import org.cdpg.dx.acl.accessReport.controller.AccessReportController;
 import org.cdpg.dx.acl.accessReport.factory.AccessReportFactory;
 import org.cdpg.dx.acl.accessRequest.controller.AccessRequestController;
@@ -25,15 +28,8 @@ import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.email.service.EmailService;
-import org.cdpg.dx.acl.aclEmailHelper.EmailComposer;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
-
-import java.util.List;
-
-import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
-import static org.cdpg.dx.aaa.common.Constants.VOC_CONTEXT;
-import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.*;
 
 public class ControllerFactory {
   private static final Logger LOGGER = LogManager.getLogger(ControllerFactory.class);
@@ -58,6 +54,8 @@ public class ControllerFactory {
     String auditingExchange = config.getString("auditingExchange");
     String routingKey = config.getString("auditingRoutingKey");
     boolean isRemoteAudit = config.getBoolean("isRemoteAudit", false);
+    String emailExchange = config.getString("emailExchange", "Email");
+    String emailRoutingKey = config.getString("emailRoutingKey", "##");
     // Activity Controller
     ActivityController activityController =
         ActivityControllerFactory.create(pgService, urnGenerator);
@@ -70,18 +68,19 @@ public class ControllerFactory {
             dataBrokerService, activityLogService, auditingExchange, routingKey, isRemoteAudit);
 
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
-    EmailComposer emailComposer = new EmailComposer(emailService, keycloakUserService, config);
 
     AccessRequestController accessRequestController =
         AccessRequestFactory.createAccessRequestController(
             pgService,
             esService,
-            emailService,
+            dataBrokerService,
             keycloakUserService,
             auditingHandler,
             config,
             urnGenerator,
-            webClient);
+            webClient,
+            emailExchange,
+            emailRoutingKey);
 
     AccessReportController accessReportController = AccessReportFactory.create(pgService, vertx);
     PolicyController policyController =

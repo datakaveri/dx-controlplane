@@ -4,6 +4,7 @@ import static org.cdpg.dx.acl.accessRequest.config.Constants.*;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.*;
 import static org.cdpg.dx.acl.accessRequest.util.Constants.API_TO_DB_MAP;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
+import static org.cdpg.dx.email.util.Constants.*;
 
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -23,7 +24,6 @@ import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
 import org.cdpg.dx.acl.accessRequest.dao.model.Status;
 import org.cdpg.dx.acl.accessRequest.service.AccessRequestService;
 import org.cdpg.dx.acl.accessRequest.util.AuditingHelper;
-import org.cdpg.dx.acl.aclEmailHelper.EmailComposer;
 import org.cdpg.dx.acl.apiserver.ApdApiController;
 import org.cdpg.dx.acl.policy.util.UserAccessHandler;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
@@ -31,6 +31,7 @@ import org.cdpg.dx.auditing.model.AuditLog;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.URNGenerator;
+import org.cdpg.dx.common.email.SendEmail;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxForbiddenNoAccessException;
 import org.cdpg.dx.common.exception.DxValidationException;
@@ -42,6 +43,7 @@ import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.database.postgres.service.PostgresService;
+import org.cdpg.dx.databroker.service.DataBrokerService;
 
 public class AccessRequestController implements ApdApiController {
   private static final Logger LOGGER = LogManager.getLogger(AccessRequestController.class);
@@ -49,20 +51,26 @@ public class AccessRequestController implements ApdApiController {
   private final AccessRequestService accessRequestService;
   private final PostgresService postgresService;
   private final AuditingHandler auditingHandler;
-  private final EmailComposer emailComposer;
+  private final DataBrokerService dataBrokerService;
   private final URNGenerator urnGenerator;
+  private final String emailExchange;
+  private final String emailRoutingKey;
 
   public AccessRequestController(
       AccessRequestService accessRequestService,
       AuditingHandler auditingHandler,
-      EmailComposer emailComposer,
+      DataBrokerService dataBrokerService,
       URNGenerator urnGenerator,
-      PostgresService postgresService) {
+      PostgresService postgresService,
+      String emailExchange,
+      String emailRoutingKey) {
     this.accessRequestService = accessRequestService;
     this.auditingHandler = auditingHandler;
-    this.emailComposer = emailComposer;
+    this.dataBrokerService = dataBrokerService;
     this.urnGenerator = urnGenerator;
     this.postgresService = postgresService;
+    this.emailExchange = emailExchange;
+    this.emailRoutingKey = emailRoutingKey;
   }
 
   private static LocalDateTime parseAndValidateFutureTime(String timeString) {
@@ -314,8 +322,14 @@ public class AccessRequestController implements ApdApiController {
 
       accessRequestService
           .approveAccessRequest(
-              providerId, requestId, expiryAt, providerOrganizationId, isUserOrgAdmin, constraints,
-              providerComment, feedbackToConsumer)
+              providerId,
+              requestId,
+              expiryAt,
+              providerOrganizationId,
+              isUserOrgAdmin,
+              constraints,
+              providerComment,
+              feedbackToConsumer)
           .onSuccess(
               accessRequestDto -> {
                 AuditLog auditLog =
@@ -329,8 +343,22 @@ public class AccessRequestController implements ApdApiController {
                         providerOrganizationName);
                 RoutingContextHelper.setAuditingLog(ctx, auditLog);
                 ResponseBuilder.sendSuccess(ctx, "Request updated successfully", urnGenerator);
+                JsonObject jsonObject =
+                    new SendEmail(
+                            accessRequestDto.getConsumerId(),
+                            "PATH",
+                            "templates/AssetRequestApprovedEmailTemplate.html",
+                            null,
+                            accessRequestDto.getAssetType(),
+                            accessRequestDto.getItemId(),
+                            accessRequestDto.getShortDescription(),
+                            false,
+                            status.getStatus(),
+                            accessRequestDto.getAssetName())
+                        .toJson();
                 Future<Void> future =
-                    emailComposer.sendEmailForUpdateAccessRequest(accessRequestDto, status);
+                    dataBrokerService.publishMessageInternal(
+                        jsonObject, emailExchange, emailRoutingKey);
               })
           .onFailure(
               err -> {
@@ -340,8 +368,13 @@ public class AccessRequestController implements ApdApiController {
     } else {
       // pass providerComment and feedbackToConsumer to be stored
       accessRequestService
-          .rejectAccessRequest(providerId, requestId, providerOrganizationId, isUserOrgAdmin,
-              providerComment, feedbackToConsumer)
+          .rejectAccessRequest(
+              providerId,
+              requestId,
+              providerOrganizationId,
+              isUserOrgAdmin,
+              providerComment,
+              feedbackToConsumer)
           .onSuccess(
               accessRequestDto -> {
                 AuditLog auditLog =
@@ -355,8 +388,22 @@ public class AccessRequestController implements ApdApiController {
                         providerOrganizationName);
                 RoutingContextHelper.setAuditingLog(ctx, auditLog);
                 ResponseBuilder.sendSuccess(ctx, "Request updated successfully", urnGenerator);
+                JsonObject jsonObject =
+                    new SendEmail(
+                            accessRequestDto.getConsumerId(),
+                            "PATH",
+                            "templates/AssetRequestApprovedEmailTemplate.html",
+                            null,
+                            accessRequestDto.getAssetType(),
+                            accessRequestDto.getItemId(),
+                            accessRequestDto.getShortDescription(),
+                            false,
+                            status.getStatus(),
+                            accessRequestDto.getAssetName())
+                        .toJson();
                 Future<Void> future =
-                    emailComposer.sendEmailForUpdateAccessRequest(accessRequestDto, status);
+                    dataBrokerService.publishMessageInternal(
+                        jsonObject, emailExchange, emailRoutingKey);
               })
           .onFailure(
               err -> {
@@ -399,7 +446,22 @@ public class AccessRequestController implements ApdApiController {
                       consumerOrganizationName);
               RoutingContextHelper.setAuditingLog(ctx, auditLog);
               ResponseBuilder.sendSuccess(ctx, "Request inserted successfully!", urnGenerator);
-              Future<Void> future = emailComposer.sendEmailForCreateAccessRequest(accessRequestDto);
+              JsonObject jsonObject =
+                  new SendEmail(
+                          accessRequestDto.getConsumerId(),
+                          "PATH",
+                          "templates/AssetRequestEmailTemplate.html",
+                          accessRequestDto.getProviderId(),
+                          accessRequestDto.getAssetType(),
+                          accessRequestDto.getItemId(),
+                          accessRequestDto.getShortDescription(),
+                          false,
+                          null,
+                          accessRequestDto.getAssetName())
+                      .toJson();
+              Future<Void> future =
+                  dataBrokerService.publishMessageInternal(
+                      jsonObject, emailExchange, emailRoutingKey);
             })
         .onFailure(
             err -> {

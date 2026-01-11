@@ -18,7 +18,7 @@ import org.cdpg.dx.acl.accessRequest.dao.model.AssetType;
 import org.cdpg.dx.acl.accessRequest.dao.model.Status;
 import org.cdpg.dx.email.service.EmailService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
-
+@Deprecated
 public class EmailComposer {
   private static final Logger LOGGER = LogManager.getLogger(EmailComposer.class);
   private final EmailService emailService;
