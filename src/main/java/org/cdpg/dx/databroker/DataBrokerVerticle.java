@@ -1,7 +1,6 @@
 package org.cdpg.dx.databroker;
 
-import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DATA_BROKER_SERVICE_ADDRESS;
-import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.POSTGRES_SERVICE_ADDRESS;
+import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.*;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -19,11 +18,13 @@ import org.cdpg.dx.aaa.activity.service.ActivityService;
 import org.cdpg.dx.aaa.activity.service.impl.ActivityServiceImpl;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.client.RabbitClient;
-import org.cdpg.dx.databroker.listeners.AuditMessageConsumer;
 import org.cdpg.dx.databroker.client.RabbitWebClient;
+import org.cdpg.dx.databroker.listeners.AuditMessageConsumer;
+import org.cdpg.dx.databroker.listeners.EmailMessageConsumer;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.databroker.service.DataBrokerServiceImpl;
 import org.cdpg.dx.databroker.util.Vhosts;
+import org.cdpg.dx.email.service.EmailService;
 
 public class DataBrokerVerticle extends AbstractVerticle {
 
@@ -50,6 +51,7 @@ public class DataBrokerVerticle extends AbstractVerticle {
   private int amqpPort;
   private String amqpUrl;
   private AuditMessageConsumer auditConsumer;
+  private EmailMessageConsumer emailMessageConsumer;
 
   @Override
   public void start() throws Exception {
@@ -130,12 +132,16 @@ public class DataBrokerVerticle extends AbstractVerticle {
         new AuditMessageConsumer(iudxInternalRabbitMqClient, auditQueue, activityService);
     /*immudbConsumer = new ImmudbConsumer(iudxInternalRabbitMqClient, immudbActivityService);*/
     auditConsumer.start();
+    EmailService emailService = EmailService.createProxy(vertx, EMAIL_SERVICE_ADDRESS);
+    String emailQueue = config().getString("emailQueue", "email-notification");
+    emailMessageConsumer =
+        new EmailMessageConsumer(iudxInternalRabbitMqClient, emailQueue, emailService);
+    emailMessageConsumer.start();
     /*immudbConsumer.start();*/
 
     dataBrokerService =
         new DataBrokerServiceImpl(
             rabbitClient, amqpUrl, amqpPort, iudxInternalVhost, prodVhost, externalVhost);
-
 
     /* Publish the Data Broker service with the Event Bus against an address. */
 

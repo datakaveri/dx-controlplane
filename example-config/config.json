@@ -47,6 +47,11 @@
     "publisherPanelUrl": "<dashboard-url>",
     "senderName": "<Email-Sender-Name>"
   },
+  "emailNotification": {
+    "emailQueue": "email-notification",
+    "emailExchange": "Email",
+    "emailRoutingKey": "##"
+  },
   "keycloakOptions":{
     "keycloakRealm": "<keycloak-realm>",
     "keycloakUrl": "<keycloak-url>",

@@ -2,11 +2,14 @@ package org.cdpg.dx.email.service;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mail.MailClient;
 import io.vertx.ext.mail.MailMessage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.databroker.service.DataBrokerService;
+import org.cdpg.dx.email.model.EmailRequest;
+import org.cdpg.dx.email.util.EmailComposer;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class EmailServiceImpl implements EmailService {
@@ -15,16 +18,19 @@ public class EmailServiceImpl implements EmailService {
   private final boolean notifyByEmail;
   private final DataBrokerService dataBrokerService;
   private final KeycloakUserService keycloakUserService;
+  private final EmailComposer emailComposer;
 
   public EmailServiceImpl(
       MailClient mailClient,
       boolean notifyByEmail,
       DataBrokerService dataBrokerService,
-      KeycloakUserService keycloakUserService) {
+      KeycloakUserService keycloakUserService,
+      EmailComposer emailComposer) {
     this.mailClient = mailClient;
     this.notifyByEmail = notifyByEmail;
     this.dataBrokerService = dataBrokerService;
     this.keycloakUserService = keycloakUserService;
+    this.emailComposer = emailComposer;
   }
 
   /**
@@ -53,6 +59,34 @@ public class EmailServiceImpl implements EmailService {
           }
         });
 
+    return promise.future();
+  }
+
+  @Override
+  public Future<Void> sendEmailService(JsonObject jsonObject) {
+    EmailRequest emailRequest = EmailRequest.fromJson(jsonObject);
+    Promise<Void> promise = Promise.promise();
+    if (emailRequest.isCreated()) {
+      emailComposer
+          .sendEmailForCreateAccessRequest(emailRequest)
+          .compose(v -> sendEmail(v))
+          .onSuccess(
+              success -> {
+                LOGGER.debug("Email sent successfully for access request creation.");
+                promise.complete();
+              })
+          .onFailure(promise::fail);
+    } else {
+      emailComposer
+          .sendEmailForUpdateAccessRequest(emailRequest)
+          .compose(this::sendEmail)
+          .onSuccess(
+              success -> {
+                LOGGER.debug("Email sent successfully for access request update.");
+                promise.complete();
+              })
+          .onFailure(promise::fail);
+    }
     return promise.future();
   }
 }

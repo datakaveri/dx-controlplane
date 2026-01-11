@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.email.service.EmailService;
 import org.cdpg.dx.email.service.EmailServiceImpl;
+import org.cdpg.dx.email.util.EmailComposer;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
 
@@ -51,8 +52,10 @@ public class EmailVerticle extends AbstractVerticle {
     config.setPassword(emailPassword);
 
     MailClient mailClient = MailClient.create(vertx, config);
-
-    EmailService service = new EmailServiceImpl(mailClient, notifyByEmail, dataBrokerService, keycloakUserService);
+    EmailComposer emailComposer = new EmailComposer(config(), keycloakUserService);
+    EmailService service =
+        new EmailServiceImpl(
+            mailClient, notifyByEmail, dataBrokerService, keycloakUserService, emailComposer);
     binder = new ServiceBinder(vertx);
     consumer = binder.setAddress(EMAIL_SERVICE_ADDRESS).register(EmailService.class, service);
     startPromise.complete();
