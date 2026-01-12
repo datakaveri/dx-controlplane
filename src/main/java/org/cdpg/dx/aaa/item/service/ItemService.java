@@ -23,4 +23,5 @@ public interface ItemService {
     Future<ResponseModel> getItemWithAccessChecks(GetItemRequest request);
 
     Future<ElasticsearchResponse> patchItem(PatchItemRequest patchItemRequest);
+    Future<Boolean> exists(String itemId);
 }

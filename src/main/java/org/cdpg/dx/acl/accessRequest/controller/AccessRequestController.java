@@ -341,7 +341,7 @@ public class AccessRequestController implements ApdApiController {
                         "Download Access Granted",
                         organizationId,
                         providerOrganizationName);
-                RoutingContextHelper.setAuditingLog(ctx, auditLog);
+                //RoutingContextHelper.setAuditingLog(ctx, auditLog);
                 ResponseBuilder.sendSuccess(ctx, "Request updated successfully", urnGenerator);
                 JsonObject jsonObject =
                     new SendEmail(
@@ -386,7 +386,7 @@ public class AccessRequestController implements ApdApiController {
                         "Download Access Rejected",
                         organizationId,
                         providerOrganizationName);
-                RoutingContextHelper.setAuditingLog(ctx, auditLog);
+                //RoutingContextHelper.setAuditingLog(ctx, auditLog);
                 ResponseBuilder.sendSuccess(ctx, "Request updated successfully", urnGenerator);
                 JsonObject jsonObject =
                     new SendEmail(
@@ -444,7 +444,7 @@ public class AccessRequestController implements ApdApiController {
                       "Download Access Requested",
                       organizationId,
                       consumerOrganizationName);
-              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              //RoutingContextHelper.setAuditingLog(ctx, auditLog);
               ResponseBuilder.sendSuccess(ctx, "Request inserted successfully!", urnGenerator);
               JsonObject jsonObject =
                   new SendEmail(
@@ -455,7 +455,7 @@ public class AccessRequestController implements ApdApiController {
                           accessRequestDto.getAssetType(),
                           accessRequestDto.getItemId(),
                           accessRequestDto.getShortDescription(),
-                          false,
+                          true,
                           null,
                           accessRequestDto.getAssetName())
                       .toJson();

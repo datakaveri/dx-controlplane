@@ -69,6 +69,11 @@ public class ApiConstants {
   public static final String GET_ASSET_SEARCH = "get myAssetsSearch";
 
 
+  public static final String LIST_AVAILABLE_CENTRAL_CAT_FILTERS = "listAvailableCentralCatFilters";
+  public static final String CENTRAL_POST_SEARCH = "centralSearch";
+  public static final String CENTRAL_POST_COUNT_SEARCH = "count-across-central-catalogue";
+
+
   public static final String CONTEXT = "@context";
 
   public static final Set<String> ALLOWED_HEADERS =
