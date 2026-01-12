@@ -444,7 +444,7 @@ public class AccessRequestController implements ApdApiController {
                       "Download Access Requested",
                       organizationId,
                       consumerOrganizationName);
-              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              //RoutingContextHelper.setAuditingLog(ctx, auditLog);
               ResponseBuilder.sendSuccess(ctx, "Request inserted successfully!", urnGenerator);
               JsonObject jsonObject =
                   new SendEmail(
