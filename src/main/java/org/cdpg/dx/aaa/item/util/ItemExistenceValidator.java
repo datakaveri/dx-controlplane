@@ -147,11 +147,9 @@ public class ItemExistenceValidator {
 
   private void setPublishStatus(JsonObject request) {
     JsonArray roles = request.getJsonArray("roles", new JsonArray());
-    LOGGER.debug("roles: " + roles.getList().toString());
     request.put(PUBLISH_STATUS,
         (roles.contains(ORG_ADMIN) || roles.contains(COS_ADMIN)) ? ACTIVE : PENDING
     );
-    LOGGER.debug("publishStatus: " + request.getString(PUBLISH_STATUS));
   }
 
   public void validateAiModel(JsonObject request, String method, Promise<JsonObject> promise) {
