@@ -1,8 +1,6 @@
 package org.cdpg.dx.aaa.organization.handler;
 
-import static org.cdpg.dx.aaa.organization.config.Constants.*;
 import static org.cdpg.dx.aaa.organization.config.Constants.ALLOWED_FILTER_MAP_FOR_ORG_USERS;
-import static org.cdpg.dx.aaa.organization.config.Constants.API_TO_DB_ORG_CREATE_REQUEST;
 import static org.cdpg.dx.aaa.organization.config.Constants.API_TO_DB_ORG_USERS;
 import static org.cdpg.dx.aaa.organization.config.Constants.CREATED_AT;
 import static org.cdpg.dx.aaa.organization.config.Constants.ORGANIZATION_ID;
@@ -16,18 +14,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.audit.util.AuditingHelper;
 import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
-import org.cdpg.dx.aaa.organization.models.OrganizationCreateRequest;
 import org.cdpg.dx.aaa.organization.models.OrganizationUser;
 import org.cdpg.dx.aaa.organization.models.Role;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
-import org.cdpg.dx.auditing.model.AuditLog;
 import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
@@ -67,7 +62,7 @@ public class OrganizationUserHandler {
         userJson,
         List.of( // primary roles (no scope check)
             DxRole.ORG_ADMIN.getRole()),
-        List.of(DxScope.ORG_MANAGEMENT.getScope()));
+        List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope()));
 
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
@@ -100,7 +95,7 @@ public class OrganizationUserHandler {
         userJson,
         List.of( // primary roles (no scope check)
             DxRole.ORG_ADMIN.getRole()),
-        List.of(DxScope.ORG_MANAGEMENT.getScope()));
+        List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope()));
 
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
 

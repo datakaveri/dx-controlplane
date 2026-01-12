@@ -11,7 +11,6 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.audit.util.AuditingHelper;
 import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
-import org.cdpg.dx.aaa.organization.models.ProviderRoleRequest;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.AuditLog;
@@ -81,7 +80,7 @@ public class AdminHandler {
       userJson,
       List.of( // primary roles (no scope check)
         DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.USER_MANAGEMENT.getScope())
+      List.of(DxScope.COS_ADMIN_ACCESS.getScope())
     );
 
     userService.getUserInfoByID(userId)
@@ -100,6 +99,16 @@ public class AdminHandler {
 
 
   public void getAllDxUsersKeycloak(RoutingContext ctx) {
+
+    User user1 = ctx.user();
+    JsonObject userJson = user1.principal();
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.COS_ADMIN.getRole()),
+      List.of(DxScope.COS_ADMIN_ACCESS.getScope())
+    );
 
     PaginatedRequest request = PaginationRequestBuilder.from(ctx).build();
     String name = ctx.queryParam("search_term").stream().findFirst().orElse(null);
@@ -389,7 +398,7 @@ public class AdminHandler {
       userJson,
       List.of( // primary roles (no scope check)
         DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.USER_MANAGEMENT.getScope())
+      List.of(DxScope.COS_ADMIN_ACCESS.getScope())
     );
 
     JsonObject status = ctx.body().asJsonObject();

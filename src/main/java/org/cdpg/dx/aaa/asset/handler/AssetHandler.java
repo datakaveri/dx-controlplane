@@ -10,26 +10,25 @@ import org.cdpg.dx.aaa.asset.models.AssetRequest;
 import org.cdpg.dx.aaa.asset.models.Status;
 import org.cdpg.dx.aaa.asset.service.AssetService;
 import org.cdpg.dx.aaa.audit.util.AuditingHelper;
-import org.cdpg.dx.aaa.credit.handler.CreditHandler;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
-import org.cdpg.dx.aaa.organization.models.ProviderRoleRequest;
 import org.cdpg.dx.auditing.model.AuditLog;
+import org.cdpg.dx.auth.authentication.util.AccessValidator;
+import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RoutingContextHelper;
-import org.cdpg.dx.email.service.EmailService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 import static org.cdpg.dx.aaa.asset.util.Constants.ALLOWED_FILTER_MAP_FOR_ASSET_REQUEST;
-import static org.cdpg.dx.aaa.asset.util.Constants.ASSET_REQUEST_ID;
 import static org.cdpg.dx.aaa.credit.util.Constants.*;
-import static org.cdpg.dx.aaa.credit.util.Constants.ALLOWED_FILTER_MAP_FOR_CREDIT_REQUEST;
 import static org.cdpg.dx.aaa.credit.util.Constants.REQUESTED_AT;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
@@ -115,6 +114,17 @@ public class AssetHandler {
   }
 
   public void getAllAssetRequests(RoutingContext ctx) {
+
+    User dxUser = ctx.user();
+    JsonObject userJson = dxUser.principal();
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.COS_ADMIN.getRole()),
+      List.of(DxScope.COS_ADMIN_ACCESS.getScope())
+    );
+
     PaginatedRequest request = PaginationRequestBuilder.from(ctx)
       .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_ASSET_REQUEST)
       .apiToDbMap(ALLOWED_FILTER_MAP_FOR_ASSET_REQUEST)
@@ -141,6 +151,16 @@ public class AssetHandler {
 
     User user = ctx.user();
     UUID userId = UUID.fromString(user.subject());
+
+    JsonObject userJson = user.principal();
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.COS_ADMIN.getRole()),
+      List.of(DxScope.COS_ADMIN_ACCESS.getScope())
+    );
+
 
     Status status;
     try {

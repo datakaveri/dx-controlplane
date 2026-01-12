@@ -3,8 +3,12 @@ package org.cdpg.dx.aaa.item.controller;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.*;
 import static org.cdpg.dx.aaa.common.Constants.*;
 import static org.cdpg.dx.aaa.common.Constants.ID;
+import static org.cdpg.dx.aaa.common.Constants.ORGANISATION_ID;
+import static org.cdpg.dx.auth.authorization.model.DxScope.COS_ADMIN_ACCESS;
+import static org.cdpg.dx.auth.authorization.model.DxScope.ORG_ADMIN_ACCESS;
 import static org.cdpg.dx.database.elastic.util.Constants.DATA_UPLOAD_STATUS;
 import static org.cdpg.dx.database.elastic.util.Constants.VERIFIED_BY;
+import static org.cdpg.dx.keycloak.config.KeycloakConstants.*;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -109,6 +113,7 @@ public class ItemController implements ApiController {
     builder
         .operation(PATCH_ITEM)
         .handler(auditingHandler::handleApiAudit)
+        .handler(verifyItemTypeAndRole)
         .handler(patchItemAccessHandler)
         .handler(this::handlePatchItem);
 
@@ -135,7 +140,7 @@ public class ItemController implements ApiController {
       userJson,
       List.of( // primary roles (no scope check)
         DxRole.PROVIDER.getRole(),DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.ASSET_MANAGEMENT.getScope())
+      List.of(DxScope.ASSET_MANAGEMENT.getScope(), COS_ADMIN_ACCESS.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope())
     );
 
 
@@ -179,6 +184,18 @@ public class ItemController implements ApiController {
       ctx.fail(new DxBadRequestException(DETAIL_ID_NOT_FOUND));
       return;
     }
+
+    User user1 = ctx.user();
+    JsonObject userJson = user1.principal();
+    JsonArray scopes= userJson.getJsonArray(SCOPES);
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.PROVIDER.getRole(),DxRole.COS_ADMIN.getRole()),
+      List.of(DxScope.ASSET_MANAGEMENT.getScope(), COS_ADMIN_ACCESS.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope())
+    );
+
     DxUser user = RoutingContextHelper.fromPrincipal(ctx);
     String orgId = "";
     orgId = user.organisationId();
@@ -192,7 +209,8 @@ public class ItemController implements ApiController {
 
     if (!allowedRoles.contains(DxRole.ORG_ADMIN.getRole())
         && !allowedRoles.contains(DxRole.COS_ADMIN.getRole())
-        && allowedRoles.contains(DxRole.PROVIDER.getRole())) {
+         && !(allowedRoles.contains(DxRole.DELEGATE.getRole()) && (scopes.contains(COS_ADMIN_ACCESS) || scopes.contains(ORG_ADMIN_ACCESS)))
+        && (allowedRoles.contains(DxRole.PROVIDER.getRole()) || allowedRoles.contains(DxRole.DELEGATE.getRole()))) {
       if (body.size() != 1 || !body.containsKey(DATA_UPLOAD_STATUS)) {
         ctx.fail(new DxForbiddenException("Providers can only patch dataUploadStatus field"));
         return;

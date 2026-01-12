@@ -79,6 +79,7 @@ public class DelegationServiceImpl implements DelegationService{
 
     boolean isWildcardDelegation = (roleConstraints == null || roleConstraints.isEmpty());
 
+
     LOGGER.info("roles is {}",roleConstraints);
     String highestRole = getHighestRole(delegatorRoles);
 
@@ -94,11 +95,11 @@ public class DelegationServiceImpl implements DelegationService{
 
     } else {
       flow =
-        delegationValidator.validateAllConstraints(body, delegatorRoles,roleConstraints)
-          .compose(v -> delegationValidator.validateEntityOwnership(body, delegatorRoles,roleConstraints))
+//        delegationValidator.validateAllConstraints(body, delegatorRoles,roleConstraints)
+           delegationValidator.validateEntityOwnership(body, delegatorRoles,roleConstraints)
           .compose(v -> delegationGrantDAO.create(delegationGrant))
           .compose(created ->
-            insertScopeConstraints(created.delegationId(),roleConstraints).map(v -> created)
+            insertScopeConstraints(created.delegationId(),roleConstraints,delegationGrant.expiryAt()).map(v -> created)
           );
     }
 
@@ -373,7 +374,8 @@ public class DelegationServiceImpl implements DelegationService{
 
   private Future<Void> insertScopeConstraints(
     UUID delegationId,
-    JsonArray roles
+    JsonArray roles,
+    LocalDateTime expiryAt
   ) {
 
     if (roles == null || roles.isEmpty()) {
@@ -387,7 +389,13 @@ public class DelegationServiceImpl implements DelegationService{
 
       String role = roleJson.getString("role");
       JsonArray constraints =
-        roleJson.getJsonArray("constraints", new JsonArray());
+        roleJson.getJsonArray("constraints",new JsonArray());
+
+      if(constraints.isEmpty())
+      {
+        insertFutures.add(createScopes(delegationId, role,expiryAt));
+        continue;
+      }
 
       for (Object constraintObj : constraints) {
         JsonObject constraint = (JsonObject) constraintObj;
@@ -399,27 +407,14 @@ public class DelegationServiceImpl implements DelegationService{
         //skipping cos_admin_access and compute_management because no entity check is needed for them
         if (entityIds != null && !entityIds.isEmpty()) {
           for (Object entity : entityIds) {
-            insertFutures.add(
-              createScopeConstraint(
-                delegationId,
-                role,
-                constraint,
-                entity
-              )
+            insertFutures.add(createScopeConstraint(delegationId, role, constraint, entity)
             );
           }
-        } else {
-          // entity_id == null ⇒ entity_type is already null (validated)
-          insertFutures.add(
-            createScopeConstraint(
-              delegationId,
-              role,
-              constraint,
-              null
-            )
+        } else{
+          // entity_id == null means entity_type is already null (validated)
+          insertFutures.add(createScopeConstraint(delegationId, role, constraint, null)
           );
         }
-
       }
     }
 
@@ -458,6 +453,30 @@ public class DelegationServiceImpl implements DelegationService{
       .mapEmpty();
   }
 
+  private Future<Void> createScopes(
+    UUID delegationId,
+    String role,
+    LocalDateTime expiry
+  ) {
+
+    JsonObject dbRow = new JsonObject()
+      .put("delegation_id", delegationId.toString())
+      .put("role", role)
+      .put("scope", "*")
+      .put("expiry_at", expiry)
+      .put(
+        "entity_id", "*")
+      .put(
+        "entity_type", "*"
+      );
+
+    DelegationScopeConstraint delegationScopeConstraint =
+      DelegationScopeConstraint.fromJson(dbRow);
+
+    return delegationScopeConstraintDAO
+      .create(delegationScopeConstraint)
+      .mapEmpty();
+  }
 
   private String getHighestRole(Set<String> roles) {
     if (roles.contains("cos_admin")) return "cos_admin";
@@ -503,13 +522,35 @@ public class DelegationServiceImpl implements DelegationService{
 
     for (Object r : roles) {
       JsonObject roleObj = (JsonObject) r;
-      JsonArray constraints =
-        roleObj.getJsonArray("constraints", new JsonArray());
+      String role = roleObj.getString("role");
 
+      JsonArray constraints =
+        roleObj.getJsonArray("constraints");
+
+      if(constraints!=null)
+      {
       for (Object c : constraints) {
         String scope = ((JsonObject) c).getString("scope");
         scopes.add(scope);
       }
+      }
+      else
+        {
+          RoleScopeMapping roleMapping =
+            RoleScopeMapping.fromString(role);
+
+         LOGGER.info(
+            "No subset constraint found, expanding scopes for role: {} and scopes: {}",
+            roleMapping.getRole(),
+            roleMapping.getAllowedScopes()
+          );
+
+         scopes =
+            roleMapping.getAllowedScopes()
+              .stream()
+              .toList();
+
+        }
     }
 
     return keycloakUserService
