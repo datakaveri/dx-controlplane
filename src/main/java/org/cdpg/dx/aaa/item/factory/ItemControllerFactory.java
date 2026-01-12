@@ -46,9 +46,10 @@ public class ItemControllerFactory {
         keycloakUserService, policyDao, webClient, centralDocIndex, apdURL);
 
     ItemRegistryService orchestrationService =
-        new ItemRegistryServiceImpl(itemService, ingestionService, connectorService, webClient,
-            dataPlaneUrl,controlPlaneUrl,ogcDataPlaneUrl);
-    return new ItemController(auditingHandler, itemService, vocContext, verifiedBy, urnGenerator,
-        orchestrationService);
+        new ItemRegistryServiceImpl(itemService, centralItemService, ingestionService,
+            connectorService, webClient,
+            dataPlaneUrl,controlPlaneUrl,ogcDataPlaneUrl, isCentralCatEnabled);
+    return new ItemController(auditingHandler, itemService, centralItemService, vocContext,
+        verifiedBy, isCentralCatEnabled, urnGenerator, orchestrationService);
   }
 }

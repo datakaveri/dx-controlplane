@@ -50,6 +50,7 @@ import org.cdpg.dx.catalogueService.models.ItemType;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
+import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.DxUnauthorizedException;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.database.elastic.central.service.CentralElasticsearchService;
@@ -99,7 +100,7 @@ public class CentralItemServiceImpl implements ItemService {
             existingDoc -> {
               if (existingDoc != null && ElasticsearchResponse.getTotalHits() > 0) {
                 LOGGER.warn("Item with ID {} already exists", id);
-                promise.fail("Item with ID already exists");
+                promise.fail(new DxConflictException("Item with ID already exists"));
               } else {
                 QueryModel queryModel = new QueryModel();
                 queryModel.createQueryModelFromDocument(item.toJson());
@@ -449,8 +450,8 @@ public class CentralItemServiceImpl implements ItemService {
                 promise.fail(
                     new DxConflictException("Item has associated entities and cannot be deleted"));
               } else if (ElasticsearchResponse.getTotalHits() < 1) {
-                LOGGER.debug("Item with ID {} not found for deletion", id);
-                promise.fail("Item not found for deletion");
+                LOGGER.debug("Item with ID {} not found for deletion in central cat", id);
+                promise.fail(new DxNotFoundException("Item not found for deletion in central catalogue"));
               } else {
                 LOGGER.debug("Deleting item with ID: {}", id);
                 String docId = result.getDocId();
@@ -545,6 +546,25 @@ public class CentralItemServiceImpl implements ItemService {
     return promise.future();
   }
 
+  public Future<Boolean> exists(String itemId) {
+    if (itemId == null || itemId.isBlank()) {
+      return Future.failedFuture("Item ID cannot be null or empty");
+    }
+
+    QueryModel termQuery = new QueryModel(QueryType.TERM);
+    termQuery.setQueryParameters(Map.of(
+        FIELD, ID_KEYWORD,
+        VALUE, itemId
+    ));
+
+    return centralElasticsearchService
+        .getSingleDocument(docIndex, termQuery)
+        .map(res -> ElasticsearchResponse.getTotalHits() > 0)
+        .recover(err -> {
+          LOGGER.error("Central existence check failed for ID {}: {}", itemId, err.getMessage());
+          return Future.failedFuture("Failed to check central catalogue existence");
+        });
+  }
   @Override
   public Future<Void> ownerShipTransfer(String oldOwnerId, String newOwnerId,
                                         String organizationId) {

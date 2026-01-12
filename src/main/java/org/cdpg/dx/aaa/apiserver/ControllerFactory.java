@@ -289,30 +289,6 @@ public class ControllerFactory {
         AppTokenControllerFactory.create(
             pgService, keycloakUserService, urnGenerator, config, vertx);
 
-<<<<<<< HEAD
-    return List.of(
-        organizationController,
-        organizationReportController,
-        creditApiController,
-        kycController,
-        adminController,
-        assetController,
-        listController,
-        searchController,
-        itemController,
-        resourceServerController,
-        clientController,
-        tokenController,
-        publicController,
-        userController,
-        delegationApiController,
-        activityController,
-        activityReportController,
-        subscriptionController,
-        bookmarksController,
-        appCredentialsController,
-        appTokenController);
-=======
     List<ApiController> controllers = new ArrayList<>();
 
     controllers.add(organizationController);
@@ -335,6 +311,7 @@ public class ControllerFactory {
     controllers.add(subscriptionController);
     controllers.add(bookmarksController);
     controllers.add(appCredentialsController);
+    controllers.add(appTokenController);
 
     // Add central controllers only if enabled
     if (isCentralCatEnabled) {
@@ -343,6 +320,5 @@ public class ControllerFactory {
     }
 
     return controllers;
->>>>>>> 9d0d96c (fix: resolve conflicts from central catalogue stashes)
   }
 }

@@ -82,6 +82,8 @@ public class Constants {
     public static final String ID = "id";
     public static final String ITEM = "item";
     public static final String SUB = "sub";
+    public static final String REALM_ACCESS = "realm_access";
+    public static final String ROLES = "roles";
 
     public static final String RESOURCE_ID = "resourceId";
 

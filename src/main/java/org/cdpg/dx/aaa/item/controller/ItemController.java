@@ -10,6 +10,7 @@ import static org.cdpg.dx.database.elastic.util.Constants.DATA_UPLOAD_STATUS;
 import static org.cdpg.dx.database.elastic.util.Constants.VERIFIED_BY;
 import static org.cdpg.dx.keycloak.config.KeycloakConstants.*;
 
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServerResponse;
@@ -21,7 +22,12 @@ import io.vertx.ext.web.openapi.RouterBuilder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,6 +35,7 @@ import org.cdpg.dx.aaa.apiserver.ApiController;
 import org.cdpg.dx.aaa.common.CatalogueAuditHelper;
 import org.cdpg.dx.aaa.common.VerifyItemTypeAndRole;
 import org.cdpg.dx.aaa.item.model.Item;
+import org.cdpg.dx.aaa.item.service.ItemFetchService;
 import org.cdpg.dx.aaa.item.service.ItemRegistryService;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ScriptGenerationService;
@@ -46,6 +53,7 @@ import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxBadRequestException;
+import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxInternalServerErrorException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
@@ -58,8 +66,11 @@ public class ItemController implements ApiController {
 
   private final AuditingHandler auditingHandler;
   private final ItemService itemService;
+  private final ItemService centralItemService;
+  private final ItemFetchService itemFetchService;
   private final String vocContext;
   private final String verifiedBy;
+  private final boolean isCentralCatEnabled;
   private final URNGenerator urnGenerator;
 
   private final ItemExistenceValidator itemExistenceValidator;
@@ -72,18 +83,24 @@ public class ItemController implements ApiController {
   public ItemController(
       AuditingHandler auditingHandler,
       ItemService itemService,
+      ItemService centralItemService,
       String vocContext,
       String verifiedBy,
+      boolean isCentralCatEnabled,
       URNGenerator urnGenerator,
       ItemRegistryService itemRegistryService) {
     this.auditingHandler = auditingHandler;
     this.itemService = itemService;
+    this.centralItemService = centralItemService;
     this.vocContext = vocContext;
     this.verifiedBy = verifiedBy;
+    this.isCentralCatEnabled = isCentralCatEnabled;
     this.urnGenerator = urnGenerator;
-    this.itemExistenceValidator = new ItemExistenceValidator(itemService);
+    this.itemExistenceValidator = new ItemExistenceValidator(itemService, centralItemService, isCentralCatEnabled);
     this.itemRegistryService = itemRegistryService;
     this.scriptGenerationService = new ScriptGenerationService();
+    this.itemFetchService = new ItemFetchService(itemService, centralItemService,
+        isCentralCatEnabled);
   }
 
   @Override
@@ -178,7 +195,7 @@ public class ItemController implements ApiController {
 
   private void handlePatchItem(RoutingContext ctx) {
     LOGGER.debug("Handling patch item");
-    String id = ctx.queryParams().get("id");
+    String id = ctx.queryParams().get(ID);
 
     if (id == null || id.isBlank()) {
       ctx.fail(new DxBadRequestException(DETAIL_ID_NOT_FOUND));
@@ -230,7 +247,7 @@ public class ItemController implements ApiController {
               ResponseBuilder.sendSuccess(
                   ctx,
                   "Success: Item patched successfully",
-                  new JsonArray().add(new JsonObject().put("id", id)),
+                  new JsonArray().add(new JsonObject().put(ID, id)),
                   this.urnGenerator);
             })
         .onFailure(
@@ -281,7 +298,7 @@ public class ItemController implements ApiController {
       if (!body.containsKey(VERIFIED_BY) || body.getString(VERIFIED_BY).isBlank()) {
         body.put(VERIFIED_BY, verifiedBy);
       }
-      body.put("roles", ctx.user().principal().getJsonObject("realm_access").getJsonArray("roles"));
+      body.put(ROLES, ctx.user().principal().getJsonObject(REALM_ACCESS).getJsonArray(ROLES));
     }
     return body;
   }
@@ -303,6 +320,11 @@ public class ItemController implements ApiController {
   private void handleValidationFailure(RoutingContext ctx, Throwable cause) {
     String msg = cause.getMessage();
     LOGGER.error("Item validation failed: {}", msg);
+    if (cause instanceof DxConflictException || cause instanceof DxNotFoundException) {
+      ctx.fail(cause);
+      return;
+    }
+
     if ("validation failed. Incorrect id".equalsIgnoreCase(msg)) {
       ctx.fail(new DxBadRequestException("Syntax of the UUID is incorrect"));
     } else {
@@ -312,39 +334,79 @@ public class ItemController implements ApiController {
 
   private void processItemCreationOrUpdate(RoutingContext ctx, String method, JsonObject body) {
     try {
-      body.remove("roles");
+      body.remove(ROLES);
       Item item = ItemFactory.parse(body);
       if (REQUEST_POST.equalsIgnoreCase(method)) {
         if (ITEM_TYPE_DATA_BANK.equals(ctx.get(ITEM_TYPE))) {
           handleDataBankCreate(ctx, item, body);
         } else {
-          itemService
-              .createItem(item)
-              .onSuccess(
-                  res -> {
-                    ActivityAuditLogBuilder auditLog =
-                        CatalogueAuditHelper.buildItemAudit(ctx, Operation.CREATE, item.toJson());
-                    RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
+          executeWithCentralCatalogue(
+              isCentralCatEnabled,
 
-                    ResponseBuilder.sendCreated(
-                        ctx, "Success: Item created", item.toJson(), this.urnGenerator);
-                  })
-              .onFailure(err -> handleOperationError(ctx, err));
+              // Central create
+              () -> centralItemService.createItem(item),
+
+              // Local create
+              () -> itemService.createItem(item),
+
+              // Central rollback
+              () -> centralItemService.deleteItem(item.getId()),
+
+              ctx,
+
+              res -> {
+                ActivityAuditLogBuilder auditLog =
+                    CatalogueAuditHelper.buildItemAudit(ctx, Operation.CREATE, item.toJson());
+                RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
+
+                ResponseBuilder.sendCreated(
+                    ctx, "Success: Item created", item.toJson(), this.urnGenerator);
+              });
         }
       } else {
-        itemService
-            .updateItem(item)
-            .onSuccess(
-                res -> {
-                  LOGGER.debug("Item updated successfully: {}", item);
+        String subId = "";
+        List<String> roles = new ArrayList<>();
+        if (ctx.user() != null) {
+          subId = ctx.user().principal().getString(SUB);
 
-//                  ActivityAuditLogBuilder auditLog =
-//                      CatalogueAuditHelper.buildItemAudit(ctx, Operation.UPDATE, item.toJson());
-//                  RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
+          JsonObject realmAccess = ctx.user().principal().getJsonObject(REALM_ACCESS);
+          if (realmAccess != null && realmAccess.containsKey(ROLES)) {
+            JsonArray rolesJson = realmAccess.getJsonArray(ROLES);
+            roles = rolesJson.stream().map(Object::toString).collect(Collectors.toList());
+          }
+        }
 
-                  ResponseBuilder.sendSuccess(ctx, item.toJson(), this.urnGenerator);
-                })
-            .onFailure(err -> handleOperationError(ctx, err));
+        GetItemRequest request = new GetItemRequest(item.getId(), subId);
+        request.setRoles(roles);
+
+        itemFetchService.fetchForWrite(request)
+            .onSuccess(existingItemSnapshot -> {
+
+              executeWithCentralCatalogue(
+                  isCentralCatEnabled,
+
+                  // Central update
+                  () -> centralItemService.updateItem(item),
+
+                  // Local update
+                  () -> itemService.updateItem(item),
+
+                  // rollback
+                  () -> centralItemService.updateItem(existingItemSnapshot),
+
+                  ctx,
+
+                  res -> {
+                    ActivityAuditLogBuilder auditLog =
+                        CatalogueAuditHelper.buildItemAudit(
+                            ctx, Operation.UPDATE, item.toJson());
+
+                    RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
+
+                    ResponseBuilder.sendSuccess(ctx, item.toJson(), urnGenerator);
+                  });
+            })
+            .onFailure(ctx::fail);
       }
     } catch (Exception e) {
       LOGGER.error("Failed to parse item into model", e);
@@ -380,41 +442,141 @@ public class ItemController implements ApiController {
         .onFailure(err -> ctx.fail(err));
   }
 
-  private void handleOperationError(RoutingContext ctx, Throwable err) {
-    LOGGER.error("Item operation failed", err);
-    ctx.fail(new DxBadRequestException(err.getMessage()));
+  private <T> void executeWithCentralCatalogue(
+      boolean isCentralCatEnabled,
+      Supplier<Future<T>> centralOp,
+      Supplier<Future<T>> localOp,
+      Runnable centralRollback,
+      RoutingContext ctx,
+      Handler<T> onSuccess
+  ) {
+    if (!isCentralCatEnabled) {
+      localOp.get()
+          .onSuccess(onSuccess)
+          .onFailure(err -> handleOperationError(ctx, err));
+      return;
+    }
+
+    // Central (with one retry)
+    centralOp.get()
+        .recover(err -> {
+          LOGGER.warn("Central catalogue failed, retrying once", err);
+          return centralOp.get();
+        })
+        .onFailure(err -> {
+          LOGGER.error("Central catalogue failed after retry");
+          handleOperationError(ctx, err);
+        })
+        .onSuccess(
+            centralRes -> {
+              // Local
+              localOp.get()
+                  .onSuccess(onSuccess)
+                  .onFailure(
+                      localErr -> {
+                        LOGGER.error(
+                            "Local operation failed, rolling back central catalogue",
+                            localErr);
+
+                        // Rollback central
+                        try {
+                          centralRollback.run();
+                        } catch (Exception rollbackErr) {
+                          LOGGER.error("Central rollback failed", rollbackErr);
+                        }
+
+                        handleOperationError(ctx, localErr);
+                      });
+            });
+  }
+
+  private void handleOperationError(RoutingContext ctx, Throwable cause) {
+    LOGGER.error("Item operation failed", cause);
+    String msg = cause.getMessage();
+    if (cause instanceof DxConflictException
+        || cause instanceof DxNotFoundException
+        || cause instanceof DxForbiddenException) {
+      ctx.fail(cause);
+      return;
+    }
+    ctx.fail(new DxBadRequestException(msg));
   }
 
   private void handleDeleteItem(RoutingContext ctx) {
-    String id = ctx.queryParams().get("id");
+    String id = ctx.queryParams().get(ID);
 
     if (id == null || id.isBlank()) {
       ctx.fail(new DxBadRequestException("Item ID is required"));
       return;
     }
 
+    String subId = "";
+    List<String> roles = new ArrayList<>();
+    if (ctx.user() != null) {
+      subId = ctx.user().principal().getString(SUB);
+
+      JsonObject realmAccess = ctx.user().principal().getJsonObject(REALM_ACCESS);
+      if (realmAccess != null && realmAccess.containsKey(ROLES)) {
+        JsonArray rolesJson = realmAccess.getJsonArray(ROLES);
+        roles = rolesJson.stream().map(Object::toString).collect(Collectors.toList());
+      }
+    }
+
+    GetItemRequest request = new GetItemRequest(id, subId);
+    request.setRoles(roles);
+    // Fetch item once(for audit and rollback)
     itemService
-        .deleteItem(id)
-        .onSuccess(
-            elasticsearchResponse -> {
-              JsonObject itemJson = elasticsearchResponse.getSource();
-
-              ActivityAuditLogBuilder auditLog =
-                  CatalogueAuditHelper.buildItemAudit(ctx, Operation.DELETE, itemJson);
-              RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
-
-              ResponseBuilder.sendSuccess(
-                  ctx, "Success: Item deleted successfully", this.urnGenerator);
-            })
+        .getItem(request)
         .onFailure(
             err -> {
               LOGGER.error("Delete item failed", err);
               ctx.fail(err);
+            })
+        .onSuccess(
+            getRes -> {
+              // handle local not found
+              if (getRes.getElasticsearchResponses() == null
+                  || getRes.getElasticsearchResponses().isEmpty()
+                  || getRes.getElasticsearchResponses().getFirst() == null
+                  || getRes.getElasticsearchResponses().getFirst().isEmpty()) {
+
+                ctx.fail(new DxNotFoundException("Item not found for deletion"));
+                return;
+              }
+              JsonObject itemJson = getRes.getElasticsearchResponses().getFirst();
+              Item itemSnapshot = ItemFactory.parse(itemJson);
+
+              executeWithCentralCatalogue(
+                  isCentralCatEnabled,
+
+                  // Central delete
+                  () -> centralItemService.deleteItem(id),
+
+                  // Local delete
+                  () -> itemService.deleteItem(id),
+
+                  // Central rollback → re-create item
+                  () -> centralItemService.createItem(itemSnapshot),
+
+                  ctx,
+
+                  res -> {
+                    ActivityAuditLogBuilder auditLog =
+                        CatalogueAuditHelper.buildItemAudit(
+                            ctx, Operation.DELETE, itemJson);
+
+                    RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
+
+                    ResponseBuilder.sendSuccess(
+                        ctx,
+                        "Success: Item deleted successfully",
+                        this.urnGenerator);
+                  });
             });
   }
 
   private void handleGetItem(RoutingContext ctx) {
-    String itemId = ctx.queryParams().get("id");
+    String itemId = ctx.queryParams().get(ID);
     LOGGER.debug("Received GET request for item with ID '{}'", itemId);
 
     if (itemId == null || itemId.isBlank()) {
@@ -425,11 +587,11 @@ public class ItemController implements ApiController {
     String subId = "";
     List<String> roles = new ArrayList<>();
     if (ctx.user() != null) {
-      subId = ctx.user().principal().getString("sub");
+      subId = ctx.user().principal().getString(SUB);
 
-      JsonObject realmAccess = ctx.user().principal().getJsonObject("realm_access");
-      if (realmAccess != null && realmAccess.containsKey("roles")) {
-        JsonArray rolesJson = realmAccess.getJsonArray("roles");
+      JsonObject realmAccess = ctx.user().principal().getJsonObject(REALM_ACCESS);
+      if (realmAccess != null && realmAccess.containsKey(ROLES)) {
+        JsonArray rolesJson = realmAccess.getJsonArray(ROLES);
         roles = rolesJson.stream().map(Object::toString).collect(Collectors.toList());
       }
     }
