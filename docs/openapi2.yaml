@@ -531,6 +531,7 @@ paths:
               - PENDING
               - GRANTED
               - REJECTED
+              - WITHDRAWN
         - name: assetType
           in: query
           description: Type of the asset for which the access request is made. Displays
@@ -671,6 +672,7 @@ paths:
               - PENDING
               - GRANTED
               - REJECTED
+              - WITHDRAWN
         - name: assetType
           in: query
           description: Type of the asset for which the access request is made. Displays
@@ -790,6 +792,7 @@ paths:
               - PENDING
               - GRANTED
               - REJECTED
+              - WITHDRAWN
         - name: assetType
           in: query
           description: Type of the asset for which the access request is made. Displays
@@ -920,6 +923,7 @@ paths:
               - PENDING
               - GRANTED
               - REJECTED
+              - WITHDRAWN
         - name: assetType
           in: query
           description: Type of the asset for which the access request is made. Displays
@@ -1060,6 +1064,7 @@ paths:
               - PENDING
               - GRANTED
               - REJECTED
+              - WITHDRAWN
         - name: assetType
           in: query
           description: Type of the asset for which the access request is made. Displays
