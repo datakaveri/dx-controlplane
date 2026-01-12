@@ -21,6 +21,8 @@ public class Constants {
     public static final String DATABASE_PORT = "databasePort";
     public static final String DATABASE_UNAME = "databaseUser";
     public static final String DOC_INDEX = "docIndex";
+    public static final String CENTRAL_CAT_DOC_INDEX = "centralCatDocIndex";
+    public static final String IS_CENTRAL_CATALOGUE_ENABLED = "isCentralCatEnabled";
     public static final String DOC_USER_INDEX = "docUserIndex";
     public static final String VOC_CONTEXT = "vocContext";
 
@@ -80,6 +82,8 @@ public class Constants {
     public static final String ID = "id";
     public static final String ITEM = "item";
     public static final String SUB = "sub";
+    public static final String REALM_ACCESS = "realm_access";
+    public static final String ROLES = "roles";
 
     public static final String RESOURCE_ID = "resourceId";
 

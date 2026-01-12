@@ -1,6 +1,7 @@
 package org.cdpg.dx.aaa.apiserver;
 
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.*;
+import static org.cdpg.dx.aaa.common.Constants.IS_CENTRAL_CATALOGUE_ENABLED;
 import static org.cdpg.dx.common.config.CorsUtil.allowedOrigins;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -77,9 +78,13 @@ public class ApiServerVerticle extends AbstractVerticle {
     String baseUrl = config().getString("baseUrl", "example.com");
     String supportEmail = config().getString("supportEmail", "support@datakaveri.org");
 
+    boolean centralCatalogueEnabled = config().getBoolean(IS_CENTRAL_CATALOGUE_ENABLED, false);
+
     /* Initialize api spec buffer - since configured hostname support_email needs to be in it */
-    String yamlContent = vertx.fileSystem().readFileBlocking("docs/openapi.yaml").toString(
-        StandardCharsets.UTF_8);
+    String yamlContent =
+        vertx.fileSystem().readFileBlocking(
+            centralCatalogueEnabled ? "docs/central-openapi.yaml" : "docs/openapi.yaml"
+        ).toString(StandardCharsets.UTF_8);
 
     // Replace placeholders
     String updatedYaml = yamlContent

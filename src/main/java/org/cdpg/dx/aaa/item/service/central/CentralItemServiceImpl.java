@@ -1,4 +1,4 @@
-package org.cdpg.dx.aaa.item.service;
+package org.cdpg.dx.aaa.item.service.central;
 
 import static org.cdpg.dx.aaa.common.Constants.COS;
 import static org.cdpg.dx.aaa.common.Constants.FIELD;
@@ -36,6 +36,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.common.ResponseModel;
 import org.cdpg.dx.aaa.item.model.Item;
+import org.cdpg.dx.aaa.item.service.ItemService;
+import org.cdpg.dx.aaa.item.service.PolicyVerifyService;
+import org.cdpg.dx.aaa.item.service.PolicyVerifyServiceImpl;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.item.util.ItemFactory;
 import org.cdpg.dx.aaa.item.util.PatchItemRequest;
@@ -50,29 +53,30 @@ import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.DxUnauthorizedException;
 import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.database.elastic.central.service.CentralElasticsearchService;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.database.elastic.model.QueryDecoder;
 import org.cdpg.dx.database.elastic.model.QueryModel;
-import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.elastic.util.QueryType;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
-public class ItemServiceImpl implements ItemService {
-  private static final Logger LOGGER = LogManager.getLogger(ItemServiceImpl.class);
+public class CentralItemServiceImpl implements ItemService {
+  private static final Logger LOGGER = LogManager.getLogger(CentralItemServiceImpl.class);
   private final String docIndex;
   private final PolicyVerifyService policyVerifyService;
   private final KeycloakUserService keycloakUserService;
   private final WebClient client;
-  ElasticsearchService elasticsearchService;
+  CentralElasticsearchService centralElasticsearchService;
   QueryDecoder queryDecoder = new QueryDecoder();
 
-  public ItemServiceImpl(ElasticsearchService elasticsearchService,
+  public CentralItemServiceImpl(CentralElasticsearchService centralElasticsearchService,
                          KeycloakUserService keycloakUserService,
                          PolicyDao policyDao,
                          WebClient webClient, String docIndex, String apdURL) {
-    this.elasticsearchService = elasticsearchService;
+    this.centralElasticsearchService = centralElasticsearchService;
     PolicyService policyService = new PolicyServiceImpl(this, policyDao, apdURL);
-    this.policyVerifyService = new PolicyVerifyServiceImpl(policyService, webClient, apdURL);
+    this.policyVerifyService = new PolicyVerifyServiceImpl(policyService, webClient,
+        apdURL);
     this.keycloakUserService = keycloakUserService;
     this.client = webClient;
     this.docIndex = docIndex;
@@ -90,7 +94,7 @@ public class ItemServiceImpl implements ItemService {
     QueryModel termQuery = new QueryModel(QueryType.TERM);
     termQuery.setQueryParameters(Map.of(FIELD, ID_KEYWORD, VALUE, id));
 
-    elasticsearchService
+    centralElasticsearchService
         .getSingleDocument(docIndex, termQuery)
         .onSuccess(
             existingDoc -> {
@@ -100,7 +104,7 @@ public class ItemServiceImpl implements ItemService {
               } else {
                 QueryModel queryModel = new QueryModel();
                 queryModel.createQueryModelFromDocument(item.toJson());
-                elasticsearchService
+                centralElasticsearchService
                     .createDocuments(docIndex, Collections.singletonList(queryModel))
                     .onSuccess(v -> promise.complete())
                     .onFailure(promise::fail);
@@ -118,7 +122,7 @@ public class ItemServiceImpl implements ItemService {
 
     LOGGER.debug("Retrieving item with ID: {}", queryModel.toJson());
 
-    Future<ElasticsearchResponse> elResponse = elasticsearchService
+    Future<ElasticsearchResponse> elResponse = centralElasticsearchService
         .getSingleDocument(docIndex, queryModel.getQueries());
 
     return elResponse.compose(elasticResponse -> {
@@ -147,7 +151,7 @@ public class ItemServiceImpl implements ItemService {
 
     LOGGER.debug("Retrieving item with ID: {}", queryModel.toJson());
 
-    Future<ElasticsearchResponse> elResponse = elasticsearchService
+    Future<ElasticsearchResponse> elResponse = centralElasticsearchService
         .getSingleDocument(docIndex, queryModel.getQueries());
 
     return elResponse.compose(elasticResponse -> {
@@ -358,7 +362,7 @@ public class ItemServiceImpl implements ItemService {
     }
     LOGGER.debug("query: " + queryModel.getQueries().toElasticsearchQuery());
     String id = patchItemRequest.getItemId();
-    elasticsearchService
+    centralElasticsearchService
         .getSingleDocument(docIndex, queryModel.getQueries())
         .onSuccess(
             result -> {
@@ -384,7 +388,7 @@ public class ItemServiceImpl implements ItemService {
                 LOGGER.debug("Result {}", result.getSource());
                 QueryModel patchQueryModel = new QueryModel();
                 patchQueryModel.createQueryModelFromDocument(patchItemRequest.getRequestBody());
-                elasticsearchService.updateDocument(docIndex, docId, patchQueryModel)
+                centralElasticsearchService.updateDocument(docIndex, docId, patchQueryModel)
                     .onSuccess(
                         v -> {
                           LOGGER.debug("Item with ID {} updated successfully", id);
@@ -436,7 +440,7 @@ public class ItemServiceImpl implements ItemService {
             resourceSvrTermQuery,
             cosTermQuery));
 
-    elasticsearchService
+    centralElasticsearchService
         .getSingleDocument(docIndex, boolQuery)
         .onSuccess(
             result -> {
@@ -446,12 +450,12 @@ public class ItemServiceImpl implements ItemService {
                 promise.fail(
                     new DxConflictException("Item has associated entities and cannot be deleted"));
               } else if (ElasticsearchResponse.getTotalHits() < 1) {
-                LOGGER.debug("Item with ID {} not found for deletion", id);
-                promise.fail(new DxNotFoundException("Item not found for deletion in local catalogue"));
+                LOGGER.debug("Item with ID {} not found for deletion in central cat", id);
+                promise.fail(new DxNotFoundException("Item not found for deletion in central catalogue"));
               } else {
                 LOGGER.debug("Deleting item with ID: {}", id);
                 String docId = result.getDocId();
-                elasticsearchService
+                centralElasticsearchService
                     .deleteDocument(docIndex, docId)
                     .onSuccess(
                         v -> {
@@ -490,7 +494,7 @@ public class ItemServiceImpl implements ItemService {
 
     boolQuery.setMustQueries(List.of(termQuery, matchQuery));
 
-    elasticsearchService
+    centralElasticsearchService
         .getSingleDocument(docIndex, boolQuery)
         .onSuccess(
             getRes -> {
@@ -499,7 +503,7 @@ public class ItemServiceImpl implements ItemService {
               } else {
                 QueryModel queryModel = new QueryModel();
                 queryModel.createQueryModelFromDocument(item.toJson());
-                elasticsearchService
+                centralElasticsearchService
                     .updateDocument(docIndex, id, queryModel)
                     .onSuccess(v -> promise.complete())
                     .onFailure(promise::fail);
@@ -515,7 +519,7 @@ public class ItemServiceImpl implements ItemService {
     Promise<Item> promise = Promise.promise();
     QueryModel queryModel = queryDecoder.buildGetItemWithNameExistsQuery(type, name);
 
-    elasticsearchService
+    centralElasticsearchService
         .getSingleDocument(docIndex, queryModel)
         .onSuccess(
             result -> {
@@ -553,16 +557,14 @@ public class ItemServiceImpl implements ItemService {
         VALUE, itemId
     ));
 
-    return elasticsearchService
+    return centralElasticsearchService
         .getSingleDocument(docIndex, termQuery)
         .map(res -> ElasticsearchResponse.getTotalHits() > 0)
         .recover(err -> {
-          LOGGER.error("Local existence check failed for ID {}: {}", itemId, err.getMessage());
-          return Future.failedFuture("Failed to check local catalogue existence");
+          LOGGER.error("Central existence check failed for ID {}: {}", itemId, err.getMessage());
+          return Future.failedFuture("Failed to check central catalogue existence");
         });
   }
-
-
   @Override
   public Future<Void> ownerShipTransfer(String oldOwnerId, String newOwnerId,
                                         String organizationId) {
@@ -598,7 +600,7 @@ public class ItemServiceImpl implements ItemService {
           queryDecoder.ownerShipTransferQuery(oldOwnerId, newOwnerId, organizationId);
       LOGGER.debug("Query for ownership transfer: {}",
           ownerShipTransferQuery.getQueries().toJson());
-      return elasticsearchService.updateDocumentsByQuery(ownerShipTransferQuery.getQueries(),
+      return centralElasticsearchService.updateDocumentsByQuery(ownerShipTransferQuery.getQueries(),
               docIndex)
           .onSuccess(
               result -> LOGGER.debug("Ownership transfer from {} to {} completed successfully",
