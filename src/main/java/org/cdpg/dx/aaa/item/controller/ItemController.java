@@ -214,8 +214,6 @@ public class ItemController implements ApiController {
       List.of(DxScope.ASSET_MANAGEMENT.getScope(), COS_ADMIN_ACCESS.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope())
     );
 
-    UUID delegator = UUID.fromString(userJson.getString(DID));
-
     DxUser user = RoutingContextHelper.fromPrincipal(ctx);
     String orgId = "";
     orgId = user.organisationId();
