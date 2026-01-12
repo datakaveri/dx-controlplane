@@ -1,6 +1,7 @@
 package org.cdpg.dx.aaa.item.controller;
 
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.*;
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.DID;
 import static org.cdpg.dx.aaa.common.Constants.*;
 import static org.cdpg.dx.aaa.common.Constants.ID;
 import static org.cdpg.dx.aaa.common.Constants.ORGANISATION_ID;
@@ -28,6 +29,8 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.apiserver.ApiController;
 import org.cdpg.dx.aaa.common.CatalogueAuditHelper;
 import org.cdpg.dx.aaa.common.VerifyItemTypeAndRole;
+import org.cdpg.dx.aaa.delegation.DelegationValidator;
+import org.cdpg.dx.aaa.delegation.ItemOwnershipValidator;
 import org.cdpg.dx.aaa.item.model.Item;
 import org.cdpg.dx.aaa.item.service.ItemRegistryService;
 import org.cdpg.dx.aaa.item.service.ItemService;
@@ -65,6 +68,7 @@ public class ItemController implements ApiController {
   private final ItemExistenceValidator itemExistenceValidator;
   private final ItemRegistryService itemRegistryService;
   private final ScriptGenerationService scriptGenerationService;
+  private final ItemOwnershipValidator itemOwnershipValidator;
   private final VerifyItemTypeAndRole verifyItemTypeAndRole = new VerifyItemTypeAndRole();
   Handler<RoutingContext> patchItemAccessHandler =
       AuthorizationHandler.forRoles(DxRole.COS_ADMIN, DxRole.ORG_ADMIN, DxRole.PROVIDER);
@@ -72,6 +76,7 @@ public class ItemController implements ApiController {
   public ItemController(
       AuditingHandler auditingHandler,
       ItemService itemService,
+      ItemOwnershipValidator itemOwnershipValidator,
       String vocContext,
       String verifiedBy,
       URNGenerator urnGenerator,
@@ -79,6 +84,7 @@ public class ItemController implements ApiController {
     this.auditingHandler = auditingHandler;
     this.itemService = itemService;
     this.vocContext = vocContext;
+    this.itemOwnershipValidator = itemOwnershipValidator;
     this.verifiedBy = verifiedBy;
     this.urnGenerator = urnGenerator;
     this.itemExistenceValidator = new ItemExistenceValidator(itemService);
@@ -143,7 +149,6 @@ public class ItemController implements ApiController {
       List.of(DxScope.ASSET_MANAGEMENT.getScope(), COS_ADMIN_ACCESS.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope())
     );
 
-
     JsonObject body = ctx.body().asJsonObject();
 
     String itemType = extractAndValidateItemType(ctx, body);
@@ -196,7 +201,15 @@ public class ItemController implements ApiController {
       List.of(DxScope.ASSET_MANAGEMENT.getScope(), COS_ADMIN_ACCESS.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope())
     );
 
-    DxUser user = RoutingContextHelper.fromPrincipal(ctx);
+    UUID delegator =UUID.fromString(userJson.getString(DID));
+
+    itemOwnershipValidator.validateItemOwnership(delegator,UUID.fromString(user1.subject()),List.of(id))
+      .onFailure(err -> {
+        LOGGER.error("Ownership validation failed", err);
+        ctx.fail(err);
+      })
+      .onSuccess(v -> {
+        DxUser user = RoutingContextHelper.fromPrincipal(ctx);
     String orgId = "";
     orgId = user.organisationId();
     String userId = "";
@@ -233,11 +246,11 @@ public class ItemController implements ApiController {
                   new JsonArray().add(new JsonObject().put("id", id)),
                   this.urnGenerator);
             })
-        .onFailure(
-            err -> {
-              LOGGER.error("Patch item failed", err);
-              ctx.fail(err);
-            });
+      .onFailure(err -> {
+        LOGGER.error("Patch item failed", err);
+        ctx.fail(err);
+        });
+      });
   }
 
   private String extractAndValidateItemType(RoutingContext ctx, JsonObject body) {

@@ -2,6 +2,7 @@ package org.cdpg.dx.aaa.item.factory;
 
 import io.vertx.ext.web.client.WebClient;
 import org.cdpg.dx.aaa.connector.service.ConnectorService;
+import org.cdpg.dx.aaa.delegation.ItemOwnershipValidator;
 import org.cdpg.dx.aaa.ingestion.service.IngestionService;
 import org.cdpg.dx.aaa.item.controller.ItemController;
 import org.cdpg.dx.aaa.item.service.ItemRegistryService;
@@ -31,6 +32,7 @@ public class ItemControllerFactory {
       WebClient webClient,
       IngestionService ingestionService,
       ConnectorService connectorService,
+      ItemOwnershipValidator itemOwnershipValidator,
       String dataPlaneUrl,String controlPlaneUrl,String ogcDataPlaneUrl) {
       PolicyDao policyDao = new PolicyDaoImpl(pgService);
     ItemService crudService = new ItemServiceImpl(elasticsearchService, keycloakUserService,
@@ -39,7 +41,7 @@ public class ItemControllerFactory {
     ItemRegistryService orchestrationService =
         new ItemRegistryServiceImpl(crudService, ingestionService, connectorService, webClient,
             dataPlaneUrl,controlPlaneUrl,ogcDataPlaneUrl);
-    return new ItemController(auditingHandler, crudService, vocContext, verifiedBy, urnGenerator,
+    return new ItemController(auditingHandler, crudService, itemOwnershipValidator,vocContext, verifiedBy, urnGenerator,
         orchestrationService);
   }
 }
