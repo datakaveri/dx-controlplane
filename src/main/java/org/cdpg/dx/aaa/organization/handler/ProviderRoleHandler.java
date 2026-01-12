@@ -12,7 +12,6 @@ import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.audit.util.AuditingHelper;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
 import org.cdpg.dx.aaa.organization.models.ProviderRoleRequest;
@@ -20,7 +19,6 @@ import org.cdpg.dx.aaa.organization.models.Status;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
-import org.cdpg.dx.auditing.model.AuditLog;
 import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
@@ -33,14 +31,12 @@ import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.util.RoutingContextHelper;
-import org.cdpg.dx.keycloak.config.KeycloakConstants;
 
 import static org.cdpg.dx.aaa.organization.config.Constants.*;
 import static org.cdpg.dx.aaa.organization.config.Constants.API_TO_DB_PROVIDER_ROLE_REQUEST;
 import static org.cdpg.dx.aaa.organization.config.Constants.CREATED_AT;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 import static org.cdpg.dx.keycloak.config.KeycloakConstants.ORGANISATION_ID;
-import static org.cdpg.dx.keycloak.config.KeycloakConstants.ORGANISATION_NAME;
 
 public class ProviderRoleHandler {
   private static final Logger LOGGER = LogManager.getLogger(ProviderRoleHandler.class);
@@ -113,7 +109,7 @@ public class ProviderRoleHandler {
         userJson,
         List.of( // primary roles (no scope check)
             DxRole.ORG_ADMIN.getRole()),
-        List.of(DxScope.ORG_MANAGEMENT.getScope()));
+        List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope()));
 
     JsonObject OrgRequestJson = ctx.body().asJsonObject();
     UUID reqId = RequestHelper.getPathParamAsUUID(ctx, "id");
@@ -244,7 +240,7 @@ public class ProviderRoleHandler {
         AccessValidator.validate(
           userJson,
           List.of(DxRole.ORG_ADMIN.getRole()),
-          List.of(DxScope.ORG_MANAGEMENT.getScope())
+          List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope())
         );
 
         return userService.getUserInfoByID(delegatorId)

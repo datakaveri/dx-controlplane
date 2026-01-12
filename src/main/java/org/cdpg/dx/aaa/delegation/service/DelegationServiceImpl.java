@@ -522,13 +522,35 @@ public class DelegationServiceImpl implements DelegationService{
 
     for (Object r : roles) {
       JsonObject roleObj = (JsonObject) r;
-      JsonArray constraints =
-        roleObj.getJsonArray("constraints", new JsonArray());
+      String role = roleObj.getString("role");
 
+      JsonArray constraints =
+        roleObj.getJsonArray("constraints");
+
+      if(constraints!=null)
+      {
       for (Object c : constraints) {
         String scope = ((JsonObject) c).getString("scope");
         scopes.add(scope);
       }
+      }
+      else
+        {
+          RoleScopeMapping roleMapping =
+            RoleScopeMapping.fromString(role);
+
+         LOGGER.info(
+            "No subset constraint found, expanding scopes for role: {} and scopes: {}",
+            roleMapping.getRole(),
+            roleMapping.getAllowedScopes()
+          );
+
+         scopes =
+            roleMapping.getAllowedScopes()
+              .stream()
+              .toList();
+
+        }
     }
 
     return keycloakUserService

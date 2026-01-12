@@ -96,7 +96,7 @@ public class DelegationValidator {
         LOGGER.info("entityidList: {}",entityIdList);
 
         switch (normalizedScope) {
-          case "org_management" ->
+          case "user_management" ->
               validations.add(
                 validateOrgOwnership(delegatorId, entityIdList)
               );
@@ -116,6 +116,10 @@ public class DelegationValidator {
           case "compute_management" ->
           {
             LOGGER.debug("Skipping ownership validation for compute_management access");
+          }
+          case "credit_management" ->
+          {
+            LOGGER.debug("Skipping ownership validation for credit_management access");
           }
           default -> {
             return Future.failedFuture(

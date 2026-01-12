@@ -11,7 +11,6 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.audit.util.AuditingHelper;
 import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
-import org.cdpg.dx.aaa.organization.models.ProviderRoleRequest;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.AuditLog;
@@ -81,7 +80,7 @@ public class AdminHandler {
       userJson,
       List.of( // primary roles (no scope check)
         DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.COS_ADMIN.getScope())
+      List.of(DxScope.COS_ADMIN_ACCESS.getScope())
     );
 
     userService.getUserInfoByID(userId)
@@ -108,7 +107,7 @@ public class AdminHandler {
       userJson,
       List.of( // primary roles (no scope check)
         DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.COS_ADMIN.getScope())
+      List.of(DxScope.COS_ADMIN_ACCESS.getScope())
     );
 
     PaginatedRequest request = PaginationRequestBuilder.from(ctx).build();
@@ -399,7 +398,7 @@ public class AdminHandler {
       userJson,
       List.of( // primary roles (no scope check)
         DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.COS_ADMIN.getScope())
+      List.of(DxScope.COS_ADMIN_ACCESS.getScope())
     );
 
     JsonObject status = ctx.body().asJsonObject();

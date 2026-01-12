@@ -4,6 +4,8 @@ import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.*;
 import static org.cdpg.dx.aaa.common.Constants.*;
 import static org.cdpg.dx.aaa.common.Constants.ID;
 import static org.cdpg.dx.aaa.common.Constants.ORGANISATION_ID;
+import static org.cdpg.dx.auth.authorization.model.DxScope.COS_ADMIN_ACCESS;
+import static org.cdpg.dx.auth.authorization.model.DxScope.ORG_ADMIN_ACCESS;
 import static org.cdpg.dx.database.elastic.util.Constants.DATA_UPLOAD_STATUS;
 import static org.cdpg.dx.database.elastic.util.Constants.VERIFIED_BY;
 import static org.cdpg.dx.keycloak.config.KeycloakConstants.*;
@@ -138,7 +140,7 @@ public class ItemController implements ApiController {
       userJson,
       List.of( // primary roles (no scope check)
         DxRole.PROVIDER.getRole(),DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.ASSET_MANAGEMENT.getScope(),DxScope.COS_ADMIN.getScope())
+      List.of(DxScope.ASSET_MANAGEMENT.getScope(), COS_ADMIN_ACCESS.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope())
     );
 
 
@@ -191,7 +193,7 @@ public class ItemController implements ApiController {
       userJson,
       List.of( // primary roles (no scope check)
         DxRole.PROVIDER.getRole(),DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.ASSET_MANAGEMENT.getScope(),DxScope.COS_ADMIN.getScope())
+      List.of(DxScope.ASSET_MANAGEMENT.getScope(), COS_ADMIN_ACCESS.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope())
     );
 
     DxUser user = RoutingContextHelper.fromPrincipal(ctx);
@@ -207,7 +209,7 @@ public class ItemController implements ApiController {
 
     if (!allowedRoles.contains(DxRole.ORG_ADMIN.getRole())
         && !allowedRoles.contains(DxRole.COS_ADMIN.getRole())
-         && !(allowedRoles.contains(DxRole.DELEGATE.getRole()) && (scopes.contains("cos_admin_access") || scopes.contains("org_admin_access")))
+         && !(allowedRoles.contains(DxRole.DELEGATE.getRole()) && (scopes.contains(COS_ADMIN_ACCESS) || scopes.contains(ORG_ADMIN_ACCESS)))
         && (allowedRoles.contains(DxRole.PROVIDER.getRole()) || allowedRoles.contains(DxRole.DELEGATE.getRole()))) {
       if (body.size() != 1 || !body.containsKey(DATA_UPLOAD_STATUS)) {
         ctx.fail(new DxForbiddenException("Providers can only patch dataUploadStatus field"));

@@ -4450,8 +4450,9 @@ paths:
                   roles:
                     - role: org_admin
                       constraints:
-                        - scope: org_management
+                        - scope: org_admin_access
                           expiry_at: "2026-01-31T23:59:59"
+
 
               role_with_entity_constraints:
                 summary: Role with entity-specific constraints
@@ -4462,7 +4463,7 @@ paths:
                   roles:
                     - role: org_admin
                       constraints:
-                        - scope: org_management
+                        - scope: user_management
                           expiry_at: "2026-01-31T23:59:59"
                         - scope: data_access
                           entity_id:
@@ -15946,7 +15947,7 @@ components:
       type: string
       enum:
         - cos_admin_access
-        - org_management
+        - org_admin_access
         - asset_management
         - compute_management
         - user_management

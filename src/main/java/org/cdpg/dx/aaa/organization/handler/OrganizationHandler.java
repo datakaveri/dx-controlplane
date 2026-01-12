@@ -4,7 +4,6 @@ import static org.cdpg.dx.aaa.organization.config.Constants.*;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
 import io.vertx.core.Future;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
@@ -19,7 +18,6 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.audit.util.AuditingHelper;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
-import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
 import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
 import org.cdpg.dx.aaa.organization.models.*;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
@@ -126,7 +124,7 @@ public class OrganizationHandler {
         userJson,
         List.of( // primary roles (no scope check)
             DxRole.COS_ADMIN.getRole()),
-        List.of(DxScope.ORG_MANAGEMENT.getScope(), DxScope.COS_ADMIN.getScope()));
+        List.of(DxScope.USER_MANAGEMENT.getScope(), DxScope.COS_ADMIN_ACCESS.getScope()));
 
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     UpdateOrgDTO updateOrgDTO = RequestHelper.parseBody(ctx, UpdateOrgDTO::fromJson);
@@ -210,7 +208,7 @@ public class OrganizationHandler {
         userJson,
         List.of( // primary roles (no scope check)
             DxRole.ORG_ADMIN.getRole()),
-        List.of(DxScope.ORG_MANAGEMENT.getScope()));
+        List.of(DxScope.USER_MANAGEMENT.getScope()));
 
     JsonObject OrgRequestJson = ctx.body().asJsonObject();
 
@@ -252,7 +250,7 @@ public class OrganizationHandler {
         userJson,
         List.of( // primary roles (no scope check)
             DxRole.ORG_ADMIN.getRole()),
-        List.of(DxScope.ORG_MANAGEMENT.getScope()));
+        List.of(DxScope.USER_MANAGEMENT.getScope()));
 
     PaginatedRequest request =
         PaginationRequestBuilder.from(ctx)
@@ -363,7 +361,7 @@ public class OrganizationHandler {
         userJson,
         List.of( // primary roles (no scope check)
             DxRole.COS_ADMIN.getRole()),
-        List.of(DxScope.COS_ADMIN.getScope()));
+        List.of(DxScope.COS_ADMIN_ACCESS.getScope()));
 
     UUID requestId = UUID.fromString(OrgRequestJson.getString("req_id"));
     Status status = Status.fromString(OrgRequestJson.getString("status"));
@@ -396,7 +394,7 @@ public class OrganizationHandler {
         userJson,
         List.of( // primary roles (no scope check)
             DxRole.COS_ADMIN.getRole()),
-        List.of(DxScope.COS_ADMIN.getScope()));
+        List.of(DxScope.COS_ADMIN_ACCESS.getScope()));
 
     PaginatedRequest request =
         PaginationRequestBuilder.from(ctx)
@@ -588,7 +586,7 @@ public class OrganizationHandler {
         userJson,
         List.of( // primary roles (no scope check)
             DxRole.ORG_ADMIN.getRole()),
-        List.of(DxScope.ORG_MANAGEMENT.getScope()));
+        List.of(DxScope.USER_MANAGEMENT.getScope()));
 
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
@@ -623,7 +621,7 @@ public class OrganizationHandler {
         userJson,
         List.of( // primary roles (no scope check)
             DxRole.ORG_ADMIN.getRole()),
-        List.of(DxScope.ORG_MANAGEMENT.getScope()));
+        List.of(DxScope.USER_MANAGEMENT.getScope()));
 
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
 
@@ -743,7 +741,7 @@ public class OrganizationHandler {
         userJson,
         List.of( // primary roles (no scope check)
             DxRole.ORG_ADMIN.getRole()),
-        List.of(DxScope.ORG_MANAGEMENT.getScope()));
+        List.of(DxScope.USER_MANAGEMENT.getScope()));
 
     JsonObject OrgRequestJson = ctx.body().asJsonObject();
     UUID reqId = RequestHelper.getPathParamAsUUID(ctx, "id");
@@ -869,7 +867,7 @@ public class OrganizationHandler {
         AccessValidator.validate(
           userJson,
           List.of(DxRole.ORG_ADMIN.getRole()),
-          List.of(DxScope.ORG_MANAGEMENT.getScope())
+          List.of(DxScope.USER_MANAGEMENT.getScope())
         );
 
         return userService.getUserInfoByID(delegatorId)

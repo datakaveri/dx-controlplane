@@ -44,7 +44,7 @@ public class OrganizationCommandHandler {
         userJson,
         List.of( // primary roles (no scope check)
             DxRole.COS_ADMIN.getRole()),
-        List.of(DxScope.ORG_MANAGEMENT.getScope(), DxScope.COS_ADMIN.getScope()));
+        List.of(DxScope.USER_MANAGEMENT.getScope(), DxScope.COS_ADMIN_ACCESS.getScope()));
 
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     UpdateOrgDTO updateOrgDTO = RequestHelper.parseBody(ctx, UpdateOrgDTO::fromJson);

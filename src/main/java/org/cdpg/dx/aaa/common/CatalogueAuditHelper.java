@@ -26,10 +26,13 @@ public final class CatalogueAuditHelper {
   public static ActivityAuditLogBuilder buildItemAudit(
       RoutingContext ctx, Operation operation, JsonObject itemJson) {
 
+    String orgIdStr = itemJson.getString("organizationId");
+    UUID orgId = orgIdStr != null ? UUID.fromString(orgIdStr) : null;
+
     UUID entityId = UUID.fromString(itemJson.getString("id"));
 
     return AuditLogHelper.createBaseAudit(ctx)
-        .withOrgId(UUID.fromString(itemJson.getString("organizationId")))
+        .withOrgId(orgId)
         .withOrgName(itemJson.getString("organization", itemJson.getString("department")))
         .withProviderId(UUID.fromString(itemJson.getString("ownerUserId")))
         .withOrigin(OriginServer.CATALOGUE)

@@ -7,14 +7,14 @@ public enum RoleScopeMapping {
 
   COS_ADMIN("cos_admin", List.of(
     "cos_admin_access",
-    "org_management",
     "asset_management",
     "compute_management",
-    "user_management"
+    "user_management",
+    "data_access"
   )),
 
   ORG_ADMIN("org_admin", List.of(
-    "org_management",
+    "org_admin_access",
     "asset_management",
     "data_access",
     "user_management"
@@ -26,9 +26,7 @@ public enum RoleScopeMapping {
   )),
 
   CONSUMER("consumer", List.of(
-    "data_access",
-    "api",
-    "subs"
+    "data_access"
   ));
 
   private final String role;

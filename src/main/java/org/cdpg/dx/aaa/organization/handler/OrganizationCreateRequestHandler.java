@@ -129,7 +129,7 @@ public class OrganizationCreateRequestHandler {
         userJson,
         List.of( // primary roles (no scope check)
             DxRole.COS_ADMIN.getRole()),
-        List.of(DxScope.COS_ADMIN.getScope()));
+        List.of(DxScope.COS_ADMIN_ACCESS.getScope()));
 
     UUID requestId = UUID.fromString(OrgRequestJson.getString("req_id"));
     Status status = Status.fromString(OrgRequestJson.getString("status"));
@@ -244,7 +244,7 @@ public class OrganizationCreateRequestHandler {
         userJson,
         List.of( // primary roles (no scope check)
             DxRole.COS_ADMIN.getRole()),
-        List.of(DxScope.COS_ADMIN.getScope()));
+        List.of(DxScope.COS_ADMIN_ACCESS.getScope()));
 
     PaginatedRequest request =
         PaginationRequestBuilder.from(ctx)
