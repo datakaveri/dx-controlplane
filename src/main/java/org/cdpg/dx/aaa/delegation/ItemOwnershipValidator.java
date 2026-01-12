@@ -33,11 +33,18 @@ public class ItemOwnershipValidator {
         new DxForbiddenException("No asset IDs provided"));
     }
 
-    String delegatorIdStr = delegatorId.toString();
+    String delegatorIdStr=null;
+    if(delegatorId!=null)
+    {
+      delegatorIdStr = delegatorId.toString();
+    }
     String userIdStr = userId.toString();
 
     List<Future> validations = new ArrayList<>();
 
+    if(delegatorIdStr!=null)
+    {
+      LOGGER.info("checking ownership of item and delegator/primary user");
     for (String itemId : itemIds) {
 
       GetItemRequest delegatorRequest =
@@ -61,10 +68,12 @@ public class ItemOwnershipValidator {
           });
 
       validations.add(validationFuture);
+      }
     }
 
     return CompositeFuture.all(validations).mapEmpty();
   }
+
 
 
 }

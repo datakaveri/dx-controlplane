@@ -132,7 +132,6 @@ public class ItemController implements ApiController {
     builder
         .operation(PATCH_ITEM)
         .handler(auditingHandler::handleApiAudit)
-        .handler(verifyItemTypeAndRole)
         .handler(patchItemAccessHandler)
         .handler(this::handlePatchItem);
 
@@ -217,13 +216,7 @@ public class ItemController implements ApiController {
 
     UUID delegator = UUID.fromString(userJson.getString(DID));
 
-    itemOwnershipValidator.validateItemOwnership(delegator,UUID.fromString(user1.subject()),List.of(id))
-      .onFailure(err -> {
-        LOGGER.error("Ownership validation failed", err);
-        ctx.fail(err);
-      })
-      .onSuccess(v -> {
-        DxUser user = RoutingContextHelper.fromPrincipal(ctx);
+    DxUser user = RoutingContextHelper.fromPrincipal(ctx);
     String orgId = "";
     orgId = user.organisationId();
     String userId = "";
@@ -264,7 +257,6 @@ public class ItemController implements ApiController {
         LOGGER.error("Patch item failed", err);
         ctx.fail(err);
         });
-      });
   }
 
   private String extractAndValidateItemType(RoutingContext ctx, JsonObject body) {
