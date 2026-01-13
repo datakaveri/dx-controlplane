@@ -1,6 +1,7 @@
 package org.cdpg.dx.aaa.item.controller;
 
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.*;
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.DID;
 import static org.cdpg.dx.aaa.common.Constants.*;
 import static org.cdpg.dx.aaa.common.Constants.ID;
 import static org.cdpg.dx.aaa.common.Constants.ORGANISATION_ID;
@@ -22,11 +23,7 @@ import io.vertx.ext.web.openapi.RouterBuilder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -34,6 +31,8 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.apiserver.ApiController;
 import org.cdpg.dx.aaa.common.CatalogueAuditHelper;
 import org.cdpg.dx.aaa.common.VerifyItemTypeAndRole;
+import org.cdpg.dx.aaa.delegation.DelegationValidator;
+import org.cdpg.dx.aaa.delegation.ItemOwnershipValidator;
 import org.cdpg.dx.aaa.item.model.Item;
 import org.cdpg.dx.aaa.item.service.ItemFetchService;
 import org.cdpg.dx.aaa.item.service.ItemRegistryService;
@@ -76,6 +75,7 @@ public class ItemController implements ApiController {
   private final ItemExistenceValidator itemExistenceValidator;
   private final ItemRegistryService itemRegistryService;
   private final ScriptGenerationService scriptGenerationService;
+  private final ItemOwnershipValidator itemOwnershipValidator;
   private final VerifyItemTypeAndRole verifyItemTypeAndRole = new VerifyItemTypeAndRole();
   Handler<RoutingContext> patchItemAccessHandler =
       AuthorizationHandler.forRoles(DxRole.COS_ADMIN, DxRole.ORG_ADMIN, DxRole.PROVIDER);
@@ -83,6 +83,7 @@ public class ItemController implements ApiController {
   public ItemController(
       AuditingHandler auditingHandler,
       ItemService itemService,
+      ItemOwnershipValidator itemOwnershipValidator,
       ItemService centralItemService,
       String vocContext,
       String verifiedBy,
@@ -93,6 +94,7 @@ public class ItemController implements ApiController {
     this.itemService = itemService;
     this.centralItemService = centralItemService;
     this.vocContext = vocContext;
+    this.itemOwnershipValidator = itemOwnershipValidator;
     this.verifiedBy = verifiedBy;
     this.isCentralCatEnabled = isCentralCatEnabled;
     this.urnGenerator = urnGenerator;
@@ -130,7 +132,6 @@ public class ItemController implements ApiController {
     builder
         .operation(PATCH_ITEM)
         .handler(auditingHandler::handleApiAudit)
-        .handler(verifyItemTypeAndRole)
         .handler(patchItemAccessHandler)
         .handler(this::handlePatchItem);
 
@@ -250,11 +251,10 @@ public class ItemController implements ApiController {
                   new JsonArray().add(new JsonObject().put(ID, id)),
                   this.urnGenerator);
             })
-        .onFailure(
-            err -> {
-              LOGGER.error("Patch item failed", err);
-              ctx.fail(err);
-            });
+      .onFailure(err -> {
+        LOGGER.error("Patch item failed", err);
+        ctx.fail(err);
+        });
   }
 
   private String extractAndValidateItemType(RoutingContext ctx, JsonObject body) {
@@ -576,7 +576,7 @@ public class ItemController implements ApiController {
   }
 
   private void handleGetItem(RoutingContext ctx) {
-    String itemId = ctx.queryParams().get(ID);
+    String itemId = ctx.queryParams().get("id");
     LOGGER.debug("Received GET request for item with ID '{}'", itemId);
 
     if (itemId == null || itemId.isBlank()) {

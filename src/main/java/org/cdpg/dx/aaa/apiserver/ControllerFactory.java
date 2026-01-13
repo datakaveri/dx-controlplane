@@ -43,6 +43,7 @@ import org.cdpg.dx.aaa.connector.service.ConnectorService;
 import org.cdpg.dx.aaa.connector.service.ConnectorServiceImpl;
 import org.cdpg.dx.aaa.credit.factory.CreditControllerFactory;
 import org.cdpg.dx.aaa.credit.service.CreditService;
+import org.cdpg.dx.aaa.delegation.ItemOwnershipValidator;
 import org.cdpg.dx.aaa.delegation.factory.DelegationControllerFactory;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.email.factory.EmailComposerFactory;
@@ -143,6 +144,8 @@ public class ControllerFactory {
     ItemService itemService =
         new ItemServiceImpl(esService, keycloakUserService, policyDao, webClient, docIndex, apdURL);
 
+    ItemOwnershipValidator itemOwnershipValidator = new ItemOwnershipValidator(itemService);
+
     CreditService creditService =
         CreditControllerFactory.createService(pgService, keycloakUserService, config);
 
@@ -242,6 +245,7 @@ public class ControllerFactory {
             centralEsService,
             pgService,
             keycloakUserService,
+            itemOwnershipValidator,
             centralCatDocIndex,
             docIndex,
             vocContext,

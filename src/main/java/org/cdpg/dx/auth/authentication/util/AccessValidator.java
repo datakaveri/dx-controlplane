@@ -1,9 +1,11 @@
 package org.cdpg.dx.auth.authentication.util;
 
+import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 
@@ -63,7 +65,6 @@ public class AccessValidator {
           "Missing required delegation scope(s): " + requiredScopes
         );
       }
-
       LOGGER.debug("Scoped delegation access granted");
       return;
     }

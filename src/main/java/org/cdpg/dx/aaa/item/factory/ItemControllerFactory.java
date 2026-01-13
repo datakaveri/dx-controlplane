@@ -2,6 +2,7 @@ package org.cdpg.dx.aaa.item.factory;
 
 import io.vertx.ext.web.client.WebClient;
 import org.cdpg.dx.aaa.connector.service.ConnectorService;
+import org.cdpg.dx.aaa.delegation.ItemOwnershipValidator;
 import org.cdpg.dx.aaa.ingestion.service.IngestionService;
 import org.cdpg.dx.aaa.item.controller.ItemController;
 import org.cdpg.dx.aaa.item.service.ItemRegistryService;
@@ -26,6 +27,7 @@ public class ItemControllerFactory {
       CentralElasticsearchService centralElasticsearchService,
       PostgresService pgService,
       KeycloakUserService keycloakUserService,
+      ItemOwnershipValidator itemOwnershipValidator,
       String centralDocIndex,
       String docIndex,
       String vocContext,
@@ -49,7 +51,7 @@ public class ItemControllerFactory {
         new ItemRegistryServiceImpl(itemService, centralItemService, ingestionService,
             connectorService, webClient,
             dataPlaneUrl,controlPlaneUrl,ogcDataPlaneUrl, isCentralCatEnabled);
-    return new ItemController(auditingHandler, itemService, centralItemService, vocContext,
+    return new ItemController(auditingHandler, itemService, itemOwnershipValidator, centralItemService, vocContext,
         verifiedBy, isCentralCatEnabled, urnGenerator, orchestrationService);
   }
 }
