@@ -8059,7 +8059,7 @@ paths:
       description: Returns aggregated usage metrics (count and size) for different time windows used by the main dashboard.
       operationId: get-dashboard-usage-summary
       tags:
-       - summary
+       - Summary
       responses:
         '200':
           description: List of admin activity logs
@@ -8804,8 +8804,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
 
-
-
+      x-codeSamples:
+          - lang: cURL
+            label: Cast Vote
+            source: |
+              curl --location 'https://${HOSTNAME}/iudx/v2/user/vote' \
+              --header 'Authorization: <token>' \
+              --header 'Content-Type: application/json' \
+              --data '{
+                        "entityId": "e74112d5-b58b-401e-a799-712b473279ea",
+                        "entityType": "DATABANK",
+                        "voteType": "DISLIKE"
+                        }'
 
   /iudx/v2/auth/app:
     post:
@@ -9095,6 +9105,24 @@ tags:
       APIs for managing user bookmarks on `DATABANK`, `AI_MODEL`, `USECASE` and ,
       `APP`.
     x-displayName: Bookmarks
+
+  - name: Vote
+    description: >
+      APIs for casting votes on entities such as `DATABANK`, `AI_MODEL`, `USECASE`, and `APP`.
+      Users can express their preferences by voting `LIKE`, `DISLIKE`, or setting their vote to `NEUTRAL` to remove any existing vote.
+    x-displayName: Vote
+  - name: Summary
+    description: |
+      APIs for retrieving summary datasets for dashboard visualizations.
+      These endpoints provide aggregated data insights for various dashboard components,
+      enabling users to gain quick insights into platform usage and trends.
+    x-displayName: Summary
+  - name: App
+    description: >
+      APIs for managing application identifiers (appIds) for authenticated users.
+      These endpoints allow users to create, retrieve, and delete appIds, which can be used
+      for application-level authentication and authorization within the platform.
+    x-displayName: App
 
 
 components:
@@ -16085,7 +16113,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:auditing:notAuthorized
+          example: urn:dx:ControlPlane:notAuthorized
         title:
           type: string
           example: Not Authorized
@@ -16097,7 +16125,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:auditing:forbidden
+          example: urn:dx:ControlPlane:forbidden
         title:
           type: string
           example: Forbidden
@@ -16109,7 +16137,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:auditing:badRequest
+          example: urn:dx:ControlPlane:badRequest
         title:
           type: string
           example: Bad Request
@@ -16121,7 +16149,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:auditing:internalServerError
+          example: urn:dx:ControlPlane:internalServerError
         title:
           type: string
           example: Internal Server Error
