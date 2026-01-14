@@ -114,4 +114,7 @@ public final class OperationIds {
    * ===================================================== */
   public static final String OP_POST_APP_TOKEN = "post-auth-v2-app-token";
   public static final String OP_POST_ClIENT_TOKEN = "post-auth-v2-token";
+
+  public static final String OP_GET_DASHBOARD_USAGE_SUMMARY = "get-dashboard-usage-summary";
+  public static final String OP_POST_ITEM_VOTE = "post-item-vote";
 }
