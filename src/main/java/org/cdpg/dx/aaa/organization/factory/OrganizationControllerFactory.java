@@ -4,6 +4,7 @@ import io.vertx.ext.web.client.WebClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.credit.service.CreditService;
+import org.cdpg.dx.aaa.delegation.OrgOwnershipValidator;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.item.service.ItemService;
@@ -43,6 +44,7 @@ public class OrganizationControllerFactory {
       KeycloakUserService keycloakUserService,
       URNGenerator urnGenerator,
       DelegationService delegationService,
+      OrgOwnershipValidator orgOwnershipValidator,
       WebClient webClient,
       Boolean kycRequired,
       String docIndex,
@@ -78,17 +80,17 @@ public class OrganizationControllerFactory {
         new OrganizationQueryHandler(organizationService, urnGenerator);
 
     OrganizationCreateRequestHandler createRequestHandler =
-        new OrganizationCreateRequestHandler(organizationService, emailComposer, urnGenerator);
+        new OrganizationCreateRequestHandler(organizationService,emailComposer, urnGenerator);
 
     OrganizationJoinRequestHandler joinRequestHandler =
         new OrganizationJoinRequestHandler(
-            organizationService, userService, emailComposer, urnGenerator);
+            organizationService, orgOwnershipValidator,userService, emailComposer, urnGenerator);
 
     OrganizationUserHandler userHandler =
         new OrganizationUserHandler(organizationService, userService, urnGenerator);
 
     ProviderRoleHandler providerRoleHandler =
-        new ProviderRoleHandler(organizationService, userService, emailComposer, urnGenerator);
+        new ProviderRoleHandler(organizationService, userService,orgOwnershipValidator, emailComposer, urnGenerator);
 
     /* =========================
      * Controller (ONLY wiring)

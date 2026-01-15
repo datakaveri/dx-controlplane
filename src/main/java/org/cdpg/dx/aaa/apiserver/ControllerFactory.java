@@ -44,6 +44,7 @@ import org.cdpg.dx.aaa.connector.service.ConnectorServiceImpl;
 import org.cdpg.dx.aaa.credit.factory.CreditControllerFactory;
 import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.delegation.ItemOwnershipValidator;
+import org.cdpg.dx.aaa.delegation.OrgOwnershipValidator;
 import org.cdpg.dx.aaa.delegation.factory.DelegationControllerFactory;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.email.factory.EmailComposerFactory;
@@ -177,6 +178,8 @@ public class ControllerFactory {
         KYCFactory.createHandler(vertx, config, creditService, pgService, urnGenerator);
     ApiController kycController = new KYCController(kycHandler);
 
+    OrgOwnershipValidator orgOwnershipValidator = new OrgOwnershipValidator(organizationService);
+
     ApiController organizationController =
         OrganizationControllerFactory.create(
             userService,
@@ -187,6 +190,7 @@ public class ControllerFactory {
             keycloakUserService,
             urnGenerator,
             delegationService,
+            orgOwnershipValidator,
             webClient,
             isKycRequired,
             docIndex,

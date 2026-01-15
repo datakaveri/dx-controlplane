@@ -1,6 +1,7 @@
 package org.cdpg.dx.aaa.organization.handler;
 
 import io.vertx.core.Future;
+import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
@@ -13,6 +14,7 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.delegation.OrgOwnershipValidator;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
 import org.cdpg.dx.aaa.organization.models.OrganizationJoinRequest;
@@ -47,13 +49,16 @@ public class OrganizationJoinRequestHandler {
   private final UserService userService;
   private final EmailComposer emailComposer;
   private final URNGenerator urnGenerator;
+  private final OrgOwnershipValidator orgOwnershipValidator;
 
   public OrganizationJoinRequestHandler(
       OrganizationService organizationService,
+      OrgOwnershipValidator orgOwnershipValidator,
       UserService userService,
       EmailComposer emailComposer,
       URNGenerator urnGenerator) {
     this.organizationService = organizationService;
+    this.orgOwnershipValidator = orgOwnershipValidator;
     this.userService = userService;
     this.emailComposer = emailComposer;
     this.urnGenerator = urnGenerator;
@@ -128,6 +133,9 @@ public class OrganizationJoinRequestHandler {
     User user = ctx.user();
     JsonObject userJson = user.principal();
 
+    String delegatorStr = ctx.queryParams().get("delegatorId");
+    UUID delegatorId = delegatorStr!=null? UUID.fromString(delegatorStr):null;
+
     AccessValidator.validate(
         userJson,
         List.of( // primary roles (no scope check)
@@ -136,6 +144,7 @@ public class OrganizationJoinRequestHandler {
 
     PaginatedRequest request =
         PaginationRequestBuilder.from(ctx)
+            .ignoreDelegator(true)
             .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_ORG_JOIN_REQUEST)
             .apiToDbMap(API_TO_DB_ORG_JOIN_REQUEST)
             .additionalFilters(Map.of(ORGANIZATION_ID, orgId.toString()))
@@ -145,25 +154,40 @@ public class OrganizationJoinRequestHandler {
             .allowedSortFields(API_TO_DB_ORG_JOIN_REQUEST.keySet())
             .build();
 
-    organizationService
-        .getOrganizationPendingJoinRequests(request)
-        .compose(
-            result ->
-                userService
-                    .enrichWithUserRoles(
-                        result.data(),
-                        OrganizationJoinRequest::userId,
-                        OrganizationJoinRequest::toJson)
-                    .map(enrichedList -> Map.entry(enrichedList, result.paginationInfo())))
-        .onSuccess(
-            entry -> {
-              ActivityAuditLogBuilder audit =
-                  OrganizationAuditHelper.buildViewJoinOrgRequestsAudit(ctx, orgId);
-              RoutingContextHelper.setAuditingLogNew(ctx, audit);
+    Future<PaginatedRequest> requestFuture;
+    if(delegatorId!=null)
+    {
+      LOGGER.info("Checking the organisation ownership for delegator");
+      requestFuture = orgOwnershipValidator.validateOrgOwnership(delegatorId,List.of(orgId.toString()))
+        .map(v->request);
+    }
+    else
+    {
+      requestFuture = Future.succeededFuture(request);
+    }
 
-              ResponseBuilder.sendSuccess(ctx, entry.getKey(), entry.getValue(), urnGenerator);
-            })
-        .onFailure(ctx::fail);
+
+    requestFuture
+      .compose(req ->
+        organizationService
+          .getOrganizationPendingJoinRequests(req)
+          .compose(
+            result ->
+              userService
+                .enrichWithUserRoles(
+                  result.data(),
+                  OrganizationJoinRequest::userId,
+                  OrganizationJoinRequest::toJson)
+                .map(enrichedList -> Map.entry(enrichedList, result.paginationInfo()))))
+      .onSuccess(
+        entry -> {
+          ActivityAuditLogBuilder audit =
+            OrganizationAuditHelper.buildViewJoinOrgRequestsAudit(ctx, orgId);
+          RoutingContextHelper.setAuditingLogNew(ctx, audit);
+
+          ResponseBuilder.sendSuccess(ctx, entry.getKey(), entry.getValue(), urnGenerator);
+        })
+      .onFailure(ctx::fail);
   }
 
   public void getUserJoinOrganisationRequests(RoutingContext ctx) {
@@ -254,55 +278,86 @@ public class OrganizationJoinRequestHandler {
     User user = ctx.user();
     JsonObject userJson = user.principal();
 
-     UUID orgId = UUID.fromString(ctx.pathParam("id"));
-    // deleagatoin requirement: scope - org_management and delegator is org_admin
+    String delegatorStr = ctx.queryParams().get("delegatorId");
+    UUID delegatorId = delegatorStr != null ? UUID.fromString(delegatorStr) : null;
+
+    // delegation requirement
     AccessValidator.validate(
-        userJson,
-        List.of( // primary roles (no scope check)
-            DxRole.ORG_ADMIN.getRole()),
-        List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope()));
+      userJson,
+      List.of(DxRole.ORG_ADMIN.getRole()),
+      List.of(
+        DxScope.USER_MANAGEMENT.getScope(),
+        DxScope.ORG_ADMIN_ACCESS.getScope()
+      )
+    );
 
-    JsonObject OrgRequestJson = ctx.body().asJsonObject();
-
+    JsonObject orgRequestJson = ctx.body().asJsonObject();
     UUID requestId = RequestHelper.getPathParamAsUUID(ctx, "req_id");
+    Status status = Status.fromString(orgRequestJson.getString("status"));
 
-    Status status = Status.fromString(OrgRequestJson.getString("status"));
+    Future<UUID> orgIdFuture;
 
+    if (delegatorId == null) {
+      LOGGER.info("Getting orgId from user json");
+      String orgStr = userJson.getString("organisation_id");
+      if(orgStr==null)
+      {
+        throw new DxBadRequestException("The user is acting as a delegate. Please specify the delegatorId in the request");
+      }
+      UUID orgId = UUID.fromString(orgStr);
+      orgIdFuture = Future.succeededFuture(orgId);
+    } else {
+      LOGGER.info("Getting orgId from delegator");
+      orgIdFuture =
+        userService
+          .getUserInfoByID(delegatorId)
+          .map(res -> UUID.fromString(res.organisationId()));
+    }
 
-
-    organizationService
-        .updateOrganizationJoinRequestStatus(requestId, status)
-        .onSuccess(
-            approved -> {
-              if (approved) {
+    orgIdFuture
+      .compose(
+        orgId ->
+          organizationService
+            .updateOrganizationJoinRequestStatus(requestId, status)
+            .onSuccess(
+              approved -> {
+                if (!approved) {
+                  ctx.fail(new DxNotFoundException("Request Not Found"));
+                  return;
+                }
 
                 ActivityAuditLogBuilder audit;
                 if (status == Status.GRANTED) {
                   audit =
-                      OrganizationAuditHelper.buildJoinOrgApproveAudit(
-                          ctx,
-                          requestId,
-                          orgId,
-                          userJson.getString("organization_name"));
+                    OrganizationAuditHelper.buildJoinOrgApproveAudit(
+                      ctx,
+                      requestId,
+                      orgId,
+                      userJson.getString("organization_name"));
                 } else {
                   audit =
-                      OrganizationAuditHelper.buildJoinOrgRejectAudit(
-                          ctx,
-                          requestId,
-                          orgId,
-                          (userJson.getString(ORGANISATION_NAME)),
-                          "Rejected by org admin");
+                    OrganizationAuditHelper.buildJoinOrgRejectAudit(
+                      ctx,
+                      requestId,
+                      orgId,
+                      userJson.getString(ORGANISATION_NAME),
+                      "Rejected by org admin");
                 }
+
                 RoutingContextHelper.setAuditingLogNew(ctx, audit);
 
-                ResponseBuilder.sendSuccess(ctx, "Updated Organisation Join Request", urnGenerator);
-                Future<Void> future =
-                    emailComposer.sendUserEmailForOrgJoinRequestApproval(requestId, status);
+                emailComposer
+                  .sendUserEmailForOrgJoinRequestApproval(requestId, status)
+                  .onFailure(err -> LOGGER.error("Email send failed", err));
 
-              } else {
-                ctx.fail(new DxNotFoundException("Request Not Found"));
+                ResponseBuilder.sendSuccess(
+                  ctx,
+                  "Updated Organisation Join Request",
+                  urnGenerator);
               }
-            })
-        .onFailure(ctx::fail);
+            )
+      )
+      .onFailure(ctx::fail);
   }
+
 }

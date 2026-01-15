@@ -135,12 +135,19 @@ public class OrganizationUserHandler {
     // delegation table has org_id
 
     JsonObject OrgRequestJson = ctx.body().asJsonObject();
+    JsonObject userJson = ctx.user().principal();
 
     Role role;
     role = Role.fromString(OrgRequestJson.getString("role"));
 
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.ORG_ADMIN.getRole()),
+      List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope()));
 
     organizationService
         .updateUserRole(orgId, userId, role)
@@ -171,6 +178,7 @@ public class OrganizationUserHandler {
 
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
+    JsonObject userJson = ctx.user().principal();
 
     if (orgId == null || userId == null) {
       ctx.fail(new DxNotFoundException("Organization ID or User ID is missing"));
@@ -178,6 +186,12 @@ public class OrganizationUserHandler {
     }
 
     UUID orgAdminId = UUID.fromString(ctx.user().subject());
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.ORG_ADMIN.getRole()),
+      List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope()));
 
     userService
         .getUserInfoByID(userId)
