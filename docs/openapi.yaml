@@ -3476,14 +3476,18 @@ paths:
       security:
         - authorization: [ ]
 
-  /iudx/v2/auth/organization/provider/requests:
+  /iudx/v2/auth/organization/user/provider_role/requests:
     post:
       summary: 'AAA-015-Any User:Create a Provider Role Request'
       description: >
-        This API allows a user to create a provider role request within their organization.
-        A successful response indicates that the provider role request has been created.
+        This API allows a user to submit a role upgrade request from Consumer to Provider within their organization.
+        Once the organization administrator(`org_admin`) approves the request, the user will be granted the Provider role for the respective organization.
+        A successful response indicates that the request has been successfully submitted.
       tags:
         - Organisation APIs
+      operationId: post-auth-v2-user-roles
+      security:
+        - authorization: [ ]
       responses:
         '200':
           description: OK
@@ -3509,9 +3513,6 @@ paths:
                     type: 'urn:dx:controlPanel:success'
                     title: Success
                     detail: Created request
-      operationId: post-auth-v2-user-roles
-      security:
-        - authorization: [ ]
 
     get:
       summary: 'AAA-014-OrgAdmin: Get All pending provider role requests'
