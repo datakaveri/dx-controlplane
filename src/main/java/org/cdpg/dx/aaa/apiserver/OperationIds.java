@@ -68,7 +68,7 @@ public final class OperationIds {
 
   public static final String OP_CREATE_PROVIDER_REQUEST = "post-auth-v2-user-roles";
 
-  public static final String OP_GET_PROVIDER_REQUEST = "get-auth-v2-orgid-provider-requests";
+  public static final String OP_GET_PROVIDER_REQUEST = "get-auth-v2-provider-requests";
 
   public static final String OP_UPDATE_PROVIDER_REQUEST = "put-auth-v2-user-roles";
 

@@ -117,7 +117,8 @@ public final class Constants {
   );
 
   public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_ORG_JOIN_REQUEST = Map.of(
-    "status", STATUS
+    "status", STATUS,
+    "delegatorId" , "delegatorId"
   );
 
   public static final Map<String, String> API_TO_DB_ORG_JOIN_REQUEST = Map.ofEntries(
@@ -128,7 +129,8 @@ public final class Constants {
     Map.entry("jobTitle", JOB_TITLE),
     Map.entry("empId", EMP_ID),
     Map.entry("requestedAt", REQUESTED_AT),
-    Map.entry("processedAt", PROCESSED_AT)
+    Map.entry("processedAt", PROCESSED_AT),
+    Map.entry("delegatorId","delegatorId")
   );
 
   public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_ORG_USERS = Map.of(
@@ -154,7 +156,8 @@ public final class Constants {
     "orgName", ORG_NAME,
     "entityType", ENTITY_TYPE,
     "orgSector", ORG_SECTOR,
-    "status", STATUS);
+    "status", STATUS,
+    "delegatorId","delegatorId");
 
   public static final Map<String, String> API_TO_DB_ORG_CREATE_REQUEST = Map.ofEntries(
           Map.entry("orgName", ORG_NAME),
@@ -180,7 +183,8 @@ public final class Constants {
   public static final Set<String> ALLOWED_SORT_FEILDS_ORG = Set.of("createdAt", "orgName", "entityType", "orgSector");
 
   public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_PROVIDER_ROLE_REQUEST = Map.of(
-          "status", STATUS
+    "status", STATUS,
+    "delegatorId", "delegatorId"
   );
     public static final Map<String, String> API_TO_DB_PROVIDER_ROLE_REQUEST = Map.ofEntries(
             Map.entry("userId", USER_ID),

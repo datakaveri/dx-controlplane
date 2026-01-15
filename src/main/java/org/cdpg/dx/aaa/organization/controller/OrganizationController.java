@@ -160,13 +160,13 @@ public class OrganizationController implements ApiController {
     routerBuilder
         .operation(OP_DELETE_ORG_USER)
         .handler(auditingHandler::handleApiAudit) // done
-        .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
+        .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN , DxRole.DELEGATE))
         .handler(userHandler::deleteOrganisationUserById);
 
     routerBuilder
         .operation(OP_UPDATE_ORG_USER_ROLE)
         .handler(auditingHandler::handleApiAudit) // done
-        .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN))
+        .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN , DxRole.DELEGATE))
         .handler(userHandler::updateOrganisationUserRole);
 
     /* =========================

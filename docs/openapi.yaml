@@ -565,7 +565,6 @@ paths:
                 - pancard_path
                 - emp_id
                 - job_title
-                - phone_no
                 - organisation_documents
                 - manager_email
               properties:
@@ -1173,6 +1172,13 @@ paths:
         schema:
           type: string
           format: uuid
+      - name: delegatorId
+        in: query
+        description: Unique ID of the delegator
+        schema:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
     get:
       summary: 'AAA-004-Org Admin: Get all Join requests for an organisation'
       description: >
@@ -1453,15 +1459,8 @@ paths:
       operationId: post-auth-v2-organisations-join-requests
       security:
         - authorization: [ ]
-  /iudx/v2/auth/organisations/{id}/join_requests/{req_id}:
+  /iudx/v2/auth/organisations/join_requests/{req_id}:
     parameters:
-      - name: id
-        in: path
-        required: true
-        description: UUID of the organization to which the join request belongs.
-        schema:
-          type: string
-          format: uuid
       - name: req_id
         in: path
         required: true
@@ -1469,6 +1468,13 @@ paths:
           type: string
           format: uuid
         description: Request ID of the join request to update.
+      - name: delegatorId
+        in: query
+        description: Unique ID of the delegator
+        schema:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
     put:
       summary: 'AAA-006-OrgAdmin: Approve or update status of a join request'
       description: >
@@ -3469,55 +3475,6 @@ paths:
                 $ref: '#/components/schemas/Unauthorized'
       security:
         - authorization: [ ]
-  /iudx/v2/auth/organization/{id}/provider/requests:
-    get:
-      summary: 'AAA-014-OrgAdmin: Get All pending provider role requests'
-      description: >
-        This API allows a org admin to retrieve all pending provider role requests
-        from users in its organization. A successful response returns a list of pending
-        requests with details such as user ID, user name, organization ID, organization name,
-        status, and timestamps.
-      tags:
-        - Organisation APIs
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-              examples:
-                Example 1:
-                  value:
-                    type: urn:dx:controlPanel:success
-                    title: Success
-                    result:
-                      - id: e970320f-ffed-4946-ae68-cb13a9f7d7d2
-                        user_id: 719b5e7c-3a20-4f77-91f9-1f43ac4ef6a7
-                        organization_id: 0706147d-2c77-4165-8550-812804d114be
-                        status: granted
-                        created_at: 2025-08-25T05:28:20.356043
-                        updated_at: 2025-08-25T05:30:14.607398
-                        roles: [ consumer, compute, provider ]
-                        account_enabled: true
-                    paginationInfo:
-                      page: 1
-                      size: 10
-                      totalCount: 2
-                      totalPages: 1
-                      hasNext: false
-                      hasPrevious: false
-      operationId: get-auth-v2-orgid-provider-requests
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: UUID of the organization
-          schema:
-            type: string
-            format: uuid
-      security:
-        - authorization: [ ]
 
   /iudx/v2/auth/organization/provider/requests:
     post:
@@ -3555,15 +3512,56 @@ paths:
       operationId: post-auth-v2-user-roles
       security:
         - authorization: [ ]
+
+    get:
+      summary: 'AAA-014-OrgAdmin: Get All pending provider role requests'
+      description: >
+        This API allows a org admin to retrieve all pending provider role requests
+        from users in its organization. A successful response returns a list of pending
+        requests with details such as user ID, user name, organization ID, organization name,
+        status, and timestamps.
+      tags:
+        - Organisation APIs
+      parameters:
+        - name: delegatorId
+          in: query
+          description: Unique ID of the delegator
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                Example 1:
+                  value:
+                    type: urn:dx:controlPanel:success
+                    title: Success
+                    result:
+                      - id: e970320f-ffed-4946-ae68-cb13a9f7d7d2
+                        user_id: 719b5e7c-3a20-4f77-91f9-1f43ac4ef6a7
+                        organization_id: 0706147d-2c77-4165-8550-812804d114be
+                        status: granted
+                        created_at: 2025-08-25T05:28:20.356043
+                        updated_at: 2025-08-25T05:30:14.607398
+                        roles: [ consumer, compute, provider ]
+                        account_enabled: true
+                    paginationInfo:
+                      page: 1
+                      size: 10
+                      totalCount: 2
+                      totalPages: 1
+                      hasNext: false
+                      hasPrevious: false
+      operationId: get-auth-v2-provider-requests
+      security:
+        - authorization: [ ]
   /iudx/v2/auth/organization/user/provider_role/requests/{id}:
-    parameters:
-      - name: id
-        in: path
-        required: true
-        description: UUID of the request
-        schema:
-          type: string
-          format: uuid
     put:
       summary: 'AAA-016-OrgAdmin: Update a Provider Role Request'
       description: >
@@ -3573,6 +3571,21 @@ paths:
         has been updated.
       tags:
         - Organisation APIs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the request
+          schema:
+            type: string
+            format: uuid
+        - name: delegatorId
+          in: query
+          description: Unique ID of the delegator
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       responses:
         '200':
           description: OK
@@ -4270,12 +4283,17 @@ paths:
                   type: string
                   description: UUID of the user to be granted provider role
                   example: 436cb796-5826-458b-a914-a54721f70997
+                organization_id:
+                  type: string
+                  description: UUID of the organization
+                  example: 436cb796-5826-458b-a914-a54721f70997
                 status:
                   type: string
                   description: Status of the provider role request
                   example: granted
               required:
                 - status
+                - organization_id
                 - user_id
       responses:
         '200':
