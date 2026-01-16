@@ -1,6 +1,7 @@
 package org.cdpg.dx.aaa.organization.handler;
 
 import io.vertx.core.Future;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
@@ -16,6 +17,7 @@ import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
 import org.cdpg.dx.aaa.organization.models.OrganizationCreateRequest;
 import org.cdpg.dx.aaa.organization.models.Status;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
+import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
 import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.model.DxRole;
@@ -25,11 +27,13 @@ import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
+import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 
+import static org.cdpg.dx.aaa.delegation.util.Constants.DELEGATOR_ID;
 import static org.cdpg.dx.aaa.organization.config.Constants.*;
 import static org.cdpg.dx.aaa.organization.config.Constants.API_TO_DB_ORG_CREATE_REQUEST;
 import static org.cdpg.dx.aaa.organization.config.Constants.CREATED_AT;
@@ -158,6 +162,14 @@ public class OrganizationCreateRequestHandler {
     User user = ctx.user();
     UUID userId = UUID.fromString(user.subject());
 
+    String delegatorIdStr = ctx.queryParams().get("delegatorId");
+    UUID delegatorId = delegatorIdStr!=null?UUID.fromString(delegatorIdStr):null;
+
+    if(delegatorId!=null)
+      userId = delegatorId;
+
+    UUID finalUserId = userId;
+
     organizationService
         .getOrganizationCreateRequestById(requestId)
         .compose(
@@ -174,7 +186,7 @@ public class OrganizationCreateRequestHandler {
                     new DxBadRequestException("Only pending requests can be deleted"));
               }
 
-              if (!request.requestedBy().equals(userId)) {
+              if (!request.requestedBy().equals(finalUserId)) {
                 ctx.fail(new DxForbiddenException("User is not authorized to delete this request"));
                 return Future.failedFuture(
                     new DxForbiddenException("User is not authorized to delete this request"));
@@ -205,6 +217,13 @@ public class OrganizationCreateRequestHandler {
     User user = ctx.user();
     UUID userId = UUID.fromString(user.subject());
 
+    String delegatorIdStr = ctx.queryParams().get("delegatorId");
+    UUID delegatorId = delegatorIdStr!=null?UUID.fromString(delegatorIdStr):null;
+
+    if(delegatorId!=null)
+      userId = delegatorId;
+
+    UUID finalUserId = userId;
     organizationService
         .getOrganizationCreateRequestsByUserId(userId)
         .compose(
@@ -229,7 +248,7 @@ public class OrganizationCreateRequestHandler {
             err -> {
               LOGGER.error(
                   "Failed to fetch organization requests for user {}: {}",
-                  userId,
+                  finalUserId,
                   err.getMessage());
               ctx.fail(err);
             });

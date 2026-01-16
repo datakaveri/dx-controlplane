@@ -176,6 +176,9 @@ public class OrganizationUserHandler {
     // delegation table has the org_id
     // get actual org admin id from the delegation table
 
+    String delegatorIdStr = ctx.queryParams().get("delegatorId");
+    UUID delegatorId = delegatorIdStr!=null? UUID.fromString(delegatorIdStr):null;
+
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
     JsonObject userJson = ctx.user().principal();
@@ -186,6 +189,12 @@ public class OrganizationUserHandler {
     }
 
     UUID orgAdminId = UUID.fromString(ctx.user().subject());
+    if(delegatorId!=null)
+    {
+       orgAdminId = delegatorId;
+    }
+
+   UUID finalorgAdminId = orgAdminId;
 
     AccessValidator.validate(
       userJson,
@@ -207,7 +216,7 @@ public class OrganizationUserHandler {
 
               Future<Boolean> deletionFuture;
               if (user.roles().contains("provider")) {
-                deletionFuture = organizationService.deleteProviderUser(userId, orgAdminId, orgId);
+                deletionFuture = organizationService.deleteProviderUser(userId, finalorgAdminId, orgId);
               } else {
                 deletionFuture = organizationService.deleteOrganizationUser(orgId, userId);
               }
