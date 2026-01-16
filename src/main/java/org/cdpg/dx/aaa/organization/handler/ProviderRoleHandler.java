@@ -63,44 +63,67 @@ public class ProviderRoleHandler {
 
     User user = ctx.user();
     LOGGER.debug("User: {}", user);
+
     if (user == null || user.subject() == null || user.principal() == null) {
       ctx.fail(new DxForbiddenException("User not found"));
       return;
     }
 
-    String userId = user.subject();
-    String orgID = user.principal().getString("organisation_id");
+    UUID userId = UUID.fromString(user.subject());
 
-    if (userId == null || userId.isEmpty()) {
-      ctx.fail(new DxForbiddenException("User not found"));
-      return;
-    }
+    // Resolve orgId asynchronously
+    Future<UUID> orgIdFuture =
+      userService
+        .getUserInfoByID(userId)
+        .compose(res -> {
 
-    if (orgID == null || orgID.isEmpty()) {
-      ctx.fail(new DxForbiddenException("User is not part any organisation"));
-      return;
-    }
+          String orgIdStr = res.organisationId();
 
-    JsonObject req = new JsonObject().put("user_id", user.subject()).put("organization_id", orgID);
+          if (orgIdStr == null || orgIdStr.trim().isEmpty()) {
+            ctx.fail(
+              new DxForbiddenException("User is not part any organisation")
+            );
+            return Future.failedFuture("Missing organisationId");
+          }
 
-    ProviderRoleRequest providerRoleRequest = ProviderRoleRequest.fromJson(req);
+          LOGGER.info("Resolved orgId: {}", orgIdStr);
+          return Future.succeededFuture(UUID.fromString(orgIdStr));
+        });
 
-    organizationService
-        .createProviderRequest(providerRoleRequest)
-        .onSuccess(
+    orgIdFuture
+      .compose(orgId -> {
+
+        JsonObject req =
+          new JsonObject()
+            .put("user_id", user.subject())
+            .put("organization_id", orgId.toString());
+
+        ProviderRoleRequest providerRoleRequest =
+          ProviderRoleRequest.fromJson(req);
+
+        return organizationService
+          .createProviderRequest(providerRoleRequest)
+          .onSuccess(
             requests -> {
+
               ActivityAuditLogBuilder audit =
-                  OrganizationAuditHelper.buildProviderRoleRequestSubmitAudit(
-                      ctx, requests.id(), UUID.fromString(orgID));
+                OrganizationAuditHelper
+                  .buildProviderRoleRequestSubmitAudit(
+                    ctx, requests.id(), orgId);
 
               RoutingContextHelper.setAuditingLogNew(ctx, audit);
 
-              ResponseBuilder.sendSuccess(ctx, "Created Request", urnGenerator);
-              Future<Void> future =
-                  emailComposer.sendEmailForProviderRole(providerRoleRequest, user);
-            })
-        .onFailure(ctx::fail);
+              ResponseBuilder.sendSuccess(
+                ctx, "Created Request", urnGenerator);
+
+              emailComposer
+                .sendEmailForProviderRole(providerRoleRequest, user);
+            }
+          );
+      })
+      .onFailure(ctx::fail);
   }
+
 
   public void updateProviderRequest(RoutingContext ctx) {
 
