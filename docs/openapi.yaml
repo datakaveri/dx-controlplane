@@ -534,14 +534,6 @@ paths:
       tags:
         - Organisation APIs
       operationId: post-auth-v2-organisations-request
-      parameters:
-        - name: delegatorId
-          in: query
-          description: Unique ID of the delegator
-          schema:
-            type: string
-            format: uuid
-            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       requestBody:
         description: |
           - `name` : Name of the organization
@@ -1188,6 +1180,7 @@ paths:
         schema:
           type: string
           format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       - name: delegatorId
         in: query
         description: Unique ID of the delegator
@@ -1347,14 +1340,6 @@ paths:
         The organization administrator will then review and process this join request.
       tags:
         - Organisation APIs
-      parameters:
-        - name: delegatorId
-          in: query
-          description: Unique ID of the delegator
-          schema:
-            type: string
-            format: uuid
-            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       requestBody:
         description: >
           The request body contains details about the user's role within the organization they wish to join.
@@ -3548,14 +3533,6 @@ paths:
       operationId: post-auth-v2-user-roles
       security:
         - authorization: [ ]
-      parameters:
-        - name: delegatorId
-          in: query
-          description: Unique ID of the delegator
-          schema:
-            type: string
-            format: uuid
-            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       responses:
         '200':
           description: OK

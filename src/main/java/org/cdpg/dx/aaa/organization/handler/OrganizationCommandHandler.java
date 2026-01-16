@@ -72,6 +72,14 @@ public class OrganizationCommandHandler {
 
   public void deleteOrganisationById(RoutingContext ctx) {
 
+    JsonObject userJson = ctx.user().principal();
+
+    AccessValidator.validate(
+      userJson,
+      List.of( // primary roles (no scope check)
+        DxRole.COS_ADMIN.getRole(),DxRole.ORG_ADMIN.getRole()),
+      List.of(DxScope.USER_MANAGEMENT.getScope(), DxScope.ORG_ADMIN_ACCESS.getScope(), DxScope.COS_ADMIN_ACCESS.getScope()));
+
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     organizationService
         .deleteOrganization(orgId)

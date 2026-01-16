@@ -151,7 +151,7 @@ public class DelegationAccessEvaluator {
 
     // CASE 2: Wildcard or scope-only delegation
     if ("*".equals(constraint.scope())
-      || "asset_management".equals(constraint.scope())) {
+      || "data_access".equals(constraint.scope())) {
 
       return fetchItemAsDelegator(
         delegatorId,
