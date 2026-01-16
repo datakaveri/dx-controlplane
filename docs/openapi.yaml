@@ -534,6 +534,14 @@ paths:
       tags:
         - Organisation APIs
       operationId: post-auth-v2-organisations-request
+      parameters:
+        - name: delegatorId
+          in: query
+          description: Unique ID of the delegator
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       requestBody:
         description: |
           - `name` : Name of the organization
@@ -862,6 +870,14 @@ paths:
       tags:
         - Organisation APIs
       operationId: get-auth-v2-user-organisations-request
+      parameters:
+        - name: delegatorId
+          in: query
+          description: Unique ID of the delegator
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       responses:
         '200':
           description: OK
@@ -992,6 +1008,13 @@ paths:
         delete the pending organization requests made by the user calling the API.
       operationId: delete-auth-v2-user-organisations-request
       parameters:
+        - name: delegatorId
+          in: query
+          description: Unique ID of the delegator
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
         - name: id
           in: path
           required: true
@@ -1026,6 +1049,14 @@ paths:
         This API allows a user to view all its organization join requests made by it.
       tags:
         - Organisation APIs
+      parameters:
+        - name: delegatorId
+          in: query
+          description: Unique ID of the delegator
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       responses:
         '200':
           description: OK
@@ -1331,6 +1362,14 @@ paths:
         The organization administrator will then review and process this join request.
       tags:
         - Organisation APIs
+      parameters:
+        - name: delegatorId
+          in: query
+          description: Unique ID of the delegator
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       requestBody:
         description: >
           The request body contains details about the user's role within the organization they wish to join.
@@ -1459,7 +1498,7 @@ paths:
       operationId: post-auth-v2-organisations-join-requests
       security:
         - authorization: [ ]
-  /iudx/v2/auth/organisations/join_requests/{req_id}:
+  /iudx/v2/auth/organisations/{org_id}/join_requests/{req_id}:
     parameters:
       - name: req_id
         in: path
@@ -1475,6 +1514,13 @@ paths:
           type: string
           format: uuid
           pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+      - name: org_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: UUID of the organization
     put:
       summary: 'AAA-006-OrgAdmin: Approve or update status of a join request'
       description: >
@@ -1698,6 +1744,13 @@ paths:
         in: path
         required: true
         description: UUID of organization
+      - name: delegatorId
+        in: query
+        description: Unique ID of the delegator
+        schema:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
     delete:
       summary: 'AAA-008-PFAdmin: Delete organisation by ID'
       description: >
@@ -2174,6 +2227,13 @@ paths:
         schema:
           type: string
           format: uuid
+      - name: delegatorId
+        in: query
+        description: Unique ID of the delegator
+        schema:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
     delete:
       summary: 'AAA-012-OrgAdmin: Delete User by ID'
       description: >
@@ -3411,6 +3471,14 @@ paths:
         status, and timestamps.
       tags:
         - Organisation APIs
+      parameters:
+        - name: delegatorId
+          in: query
+          description: Unique ID of the delegator
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       responses:
         '200':
           description: OK
@@ -3458,6 +3526,13 @@ paths:
             type: string
             format: uuid
             pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+        - name: delegatorId
+          in: query
+          description: Unique ID of the delegator
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       responses:
         '200':
           description: OK - Successfully deleted provider request.
@@ -3484,6 +3559,14 @@ paths:
         A successful response indicates that the provider role request has been created.
       tags:
         - Organisation APIs
+      parameters:
+        - name: delegatorId
+          in: query
+          description: Unique ID of the delegator
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       responses:
         '200':
           description: OK
