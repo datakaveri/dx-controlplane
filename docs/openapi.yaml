@@ -870,14 +870,6 @@ paths:
       tags:
         - Organisation APIs
       operationId: get-auth-v2-user-organisations-request
-      parameters:
-        - name: delegatorId
-          in: query
-          description: Unique ID of the delegator
-          schema:
-            type: string
-            format: uuid
-            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       responses:
         '200':
           description: OK
@@ -1008,13 +1000,6 @@ paths:
         delete the pending organization requests made by the user calling the API.
       operationId: delete-auth-v2-user-organisations-request
       parameters:
-        - name: delegatorId
-          in: query
-          description: Unique ID of the delegator
-          schema:
-            type: string
-            format: uuid
-            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
         - name: id
           in: path
           required: true
@@ -3551,14 +3536,18 @@ paths:
       security:
         - authorization: [ ]
 
-  /iudx/v2/auth/organization/provider/requests:
+  /iudx/v2/auth/organization/user/provider_role/requests:
     post:
       summary: 'AAA-015-Any User:Create a Provider Role Request'
       description: >
-        This API allows a user to create a provider role request within their organization.
-        A successful response indicates that the provider role request has been created.
+        This API allows a user to submit a role upgrade request from Consumer to Provider within their organization.
+        Once the organization administrator(`org_admin`) approves the request, the user will be granted the Provider role for the respective organization.
+        A successful response indicates that the request has been successfully submitted.
       tags:
         - Organisation APIs
+      operationId: post-auth-v2-user-roles
+      security:
+        - authorization: [ ]
       parameters:
         - name: delegatorId
           in: query
@@ -3592,9 +3581,6 @@ paths:
                     type: 'urn:dx:controlPanel:success'
                     title: Success
                     detail: Created request
-      operationId: post-auth-v2-user-roles
-      security:
-        - authorization: [ ]
 
     get:
       summary: 'AAA-014-OrgAdmin: Get All pending provider role requests'
@@ -8154,6 +8140,32 @@ paths:
               "filter": ["id", "type", "department", "itemCreatedAt", "dataReadiness", "ownerUserId"]
             }'
 
+  /iudx/v2/dashboard/usage-summary:
+    get:
+      summary: Get usage summary for dashboard
+      description: Returns aggregated usage metrics (count and size) for different time windows used by the main dashboard.
+      operationId: get-dashboard-usage-summary
+      tags:
+       - Summary
+      responses:
+        '200':
+          description: List of admin activity logs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/dashboardUsageSummarySuccessResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Fetch Dashboard Usage Summary
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/dashboard/usage-summary'
+
   ##Auditing apis
   /iudx/v2/auditing/consumer/activity:
     get:
@@ -8827,6 +8839,71 @@ paths:
             'https://${HOSTNAME}/iudx/v2/bookmarks/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9' \
             --header 'Authorization: Bearer <token>'
 
+  /iudx/v2/user/vote:
+    post:
+      tags:
+        - Vote
+      operationId: post-item-vote
+      summary: Cast or update a vote on an entity
+      description: >
+        Allows an authenticated user to vote on an entity.
+         `LIKE`
+         `DISLIKE`
+         `NEUTRAL` (Remove existing vote)
+        The user identity is derived from the authentication token.
+      security:
+        - authorization: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostItemVoteRequest'
+      responses:
+        '200':
+          description: Vote recorded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemVoteResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+      x-codeSamples:
+          - lang: cURL
+            label: Cast Vote
+            source: |
+              curl --location 'https://${HOSTNAME}/iudx/v2/user/vote' \
+              --header 'Authorization: <token>' \
+              --header 'Content-Type: application/json' \
+              --data '{
+                        "entityId": "e74112d5-b58b-401e-a799-712b473279ea",
+                        "entityType": "DATABANK",
+                        "voteType": "DISLIKE"
+                        }'
+
   /iudx/v2/auth/app:
     post:
       tags:
@@ -9116,6 +9193,24 @@ tags:
       `APP`.
     x-displayName: Bookmarks
 
+  - name: Vote
+    description: >
+      APIs for casting votes on entities such as `DATABANK`, `AI_MODEL`, `USECASE`, and `APP`.
+      Users can express their preferences by voting `LIKE`, `DISLIKE`, or setting their vote to `NEUTRAL` to remove any existing vote.
+    x-displayName: Vote
+  - name: Summary
+    description: |
+      APIs for retrieving summary datasets for dashboard visualizations.
+      These endpoints provide aggregated data insights for various dashboard components,
+      enabling users to gain quick insights into platform usage and trends.
+    x-displayName: Summary
+  - name: App
+    description: >
+      APIs for managing application identifiers (appIds) for authenticated users.
+      These endpoints allow users to create, retrieve, and delete appIds, which can be used
+      for application-level authentication and authorization within the platform.
+    x-displayName: App
+
 
 components:
   securitySchemes:
@@ -9303,6 +9398,121 @@ components:
       schema:
         type: string
   schemas:
+    dashboardUsageSummarySuccessResponse:
+        type: object
+        title: Response for internal datasets .
+        description: Example success response for getting internal datasets
+        properties:
+          type:
+            type: string
+            description: |
+              URN type of the response indicating if the query was successful or if any errors have
+              been triggered.
+          title:
+            description: A human readable title to the message response.
+          results:
+            type: array
+            description: Results which matched the query. This is an array of objects.
+            items:
+              type: object
+        required:
+          - type
+        example:
+          type: 'dx:controlPlane:success'
+          title: Success
+          results: [
+            {
+              "description": "Total usage since the beginning",
+              "count": "1550856",
+              "size": "9124560508"
+            },
+            {
+              "description": "Total usage for the last 1 Year",
+              "count": "1145750",
+              "size": "6375184440"
+            },
+            {
+              "description": "Total usage for the last 6 months",
+              "count": "884251",
+              "size": "1091784668"
+            },
+            {
+              "description": "Total usage for the last 1 month",
+              "count": "863228",
+              "size": "625708328"
+            },
+            {
+              "description": "Total usage for the last 1 week",
+              "count": "287767",
+              "size": "189002738"
+            },
+            {
+              "description": "Total usage of Yesterday",
+              "count": "83404",
+              "size": "34228471"
+            }
+          ]
+    PostItemVoteRequest:
+      type: object
+      required:
+        - entityId
+        - entityType
+        - voteType
+      properties:
+        entityId:
+          type: string
+          format: uuid
+          description: ID of the entity being voted on
+          example: 7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9
+        entityType:
+          type: string
+          description: Type of entity being vote on
+          enum:
+            - DATABANK
+            - AI_MODEL
+            - USECASE
+            - APP
+
+          example: DATABANK
+        voteType:
+          type: string
+          description: Type of vote
+          enum:
+            - LIKE
+            - DISLIKE
+            - NEUTRAL
+    ItemVoteResponse:
+      type: object
+      title: Vote API Response
+      description: Success response for casting or updating a vote
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have
+            been triggered.
+        title:
+          description: A human readable title to the message response.
+        results:
+          type: array
+          description: Results which matched the query. This is an array of objects.
+          items:
+            type: object
+      required:
+        - type
+        - title
+        - results
+      example:
+        type: 'dx:controlPlane:success'
+        title: Success
+        results: [
+          {
+            "entityId": "e74112d5-b58b-401e-a799-712b473279ed",
+            "entityType": "DATABANK",
+            "voteType": "LIKE"
+          }
+
+        ]
     AppTokenRequest:
       type: object
       required:
@@ -15990,7 +16200,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:auditing:notAuthorized
+          example: urn:dx:ControlPlane:notAuthorized
         title:
           type: string
           example: Not Authorized
@@ -16002,7 +16212,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:auditing:forbidden
+          example: urn:dx:ControlPlane:forbidden
         title:
           type: string
           example: Forbidden
@@ -16014,7 +16224,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:auditing:badRequest
+          example: urn:dx:ControlPlane:badRequest
         title:
           type: string
           example: Bad Request
@@ -16026,7 +16236,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:auditing:internalServerError
+          example: urn:dx:ControlPlane:internalServerError
         title:
           type: string
           example: Internal Server Error

@@ -4,8 +4,10 @@ import io.vertx.codegen.annotations.ProxyGen;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
 import org.cdpg.dx.database.postgres.models.*;
 
+import java.util.List;
 import java.util.function.Function;
 
 @VertxGen
@@ -26,5 +28,7 @@ public interface PostgresService {
 
   Future<Boolean> ping();
 
-    Future<QueryResult> upsert(UpsertQuery query);
+  Future<QueryResult> upsert(UpsertQuery query);
+
+ Future<QueryResult> executeQuery(String sql, JsonArray params);
 }

@@ -1,5 +1,7 @@
 package org.cdpg.dx.auditing.enums;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 public enum EntityType {
   AI_MODEL,
   DATABANK,
@@ -15,5 +17,10 @@ public enum EntityType {
   POLICY,
   RESOURCE_SERVER,
   ACCESS_REQUEST,
-  KYC
+  KYC;
+
+  @JsonCreator
+  public static EntityType from(String value) {
+    return EntityType.valueOf(value.toUpperCase());
+  }
 }

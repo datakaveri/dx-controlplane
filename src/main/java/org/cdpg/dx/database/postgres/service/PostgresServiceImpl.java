@@ -190,4 +190,21 @@ public class PostgresServiceImpl implements PostgresService {
   public Future<QueryResult> upsert(UpsertQuery query) {
     return executeQuery(query.toSQL(), query.getQueryParams());
   }
+
+  @Override
+  public Future<QueryResult> executeQuery(String sql, JsonArray params) {
+
+    Tuple tuple = Tuple.tuple();
+    for (Object value : params) {
+      tuple.addValue(value);
+    }
+
+    LOG.info("Executing raw SQL: {} | With parameters: {}", sql, params.encodePrettily());
+
+    return client
+        .preparedQuery(sql)
+        .execute(tuple)
+        .map(this::convertToQueryResult)
+        .recover(err -> Future.failedFuture(DxPgExceptionMapper.from(err)));
+  }
 }

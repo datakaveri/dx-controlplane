@@ -71,11 +71,16 @@ import org.cdpg.dx.aaa.search.controller.SearchController;
 import org.cdpg.dx.aaa.search.factory.SearchControllerFactory;
 import org.cdpg.dx.aaa.subscription.controller.SubscriptionController;
 import org.cdpg.dx.aaa.subscription.factory.SubscriptionControllerFactory;
+import org.cdpg.dx.aaa.summary.controller.SummaryController;
+import org.cdpg.dx.aaa.summary.factroy.SummaryControllerFactory;
 import org.cdpg.dx.aaa.token.controller.TokenController;
 import org.cdpg.dx.aaa.token.factory.AppTokenControllerFactory;
 import org.cdpg.dx.aaa.token.factory.TokenControllerFactory;
 import org.cdpg.dx.aaa.user.factory.UserControllerFactory;
 import org.cdpg.dx.aaa.user.service.UserService;
+
+import org.cdpg.dx.aaa.vote.factory.VoteControllerFactory;
+
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
@@ -297,6 +302,11 @@ public class ControllerFactory {
         AppTokenControllerFactory.create(
             pgService, keycloakUserService, urnGenerator, config, vertx);
 
+      SummaryController dashboardSummaryController =
+              SummaryControllerFactory.create(pgService, urnGenerator);
+
+      ApiController voteController = VoteControllerFactory.create(pgService, urnGenerator);
+
     List<ApiController> controllers = new ArrayList<>();
 
     controllers.add(organizationController);
@@ -326,7 +336,10 @@ public class ControllerFactory {
       controllers.add(centralListController);
       controllers.add(centralSearchController);
     }
+    controllers.add(dashboardSummaryController);
+    controllers.add(voteController);
 
     return controllers;
+
   }
 }
