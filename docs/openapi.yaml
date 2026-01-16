@@ -9158,6 +9158,213 @@ paths:
                     }'
 
 
+
+## Leaderboard apis
+  /iudx/v2/leaderboard/asset:
+    get:
+      tags:
+        - Leaderboard
+      summary: Get leaderboard for assets
+      description: >
+        Retrieve the leaderboard for assets based on various criteria such as most viewed, most downloaded, highest rated, etc.
+      operationId: get-asset-leaderboard
+      parameters:
+        - name: assetType
+          in: query
+          description: Filter by asset types (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [ databank, AI_model, usecase ]
+        - name: accessPolicy
+          in: query
+          description: Filter by access policy (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [Open, restricted, private]
+        - $ref: '#/components/parameters/TimeParam'
+        - $ref: '#/components/parameters/EndTimeParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+      responses:
+        '200':
+          description: Successfully retrieved asset leaderboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookmarkResponse'     
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Get Asset Leaderboard
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/asset?startDate=2025-12-15&endDate=2026-01-15&assetType=databank&assetType=AI_model&accessPolicy=Open&sort=downloads_desc&page=1&size=12'
+
+  /iudx/v2/leaderboard/provider:
+    get:
+        tags:
+            - Leaderboard
+        summary: Get leaderboard for providers
+        description: >
+            Retrieve the leaderboard for data providers based on various criteria such as most viewed, most downloaded, highest rated, etc.
+        operationId: get-provider-leaderboard
+        parameters:
+          - name: organizationType
+            in: query
+            description: Filter by organization types (repeatable)
+            required: false
+            style: form
+            explode: true
+            schema:
+              type: array
+              items:
+                type: string
+          - name: sector
+            in: query
+            description: Filter by sector (repeatable)
+            required: false
+            style: form
+            explode: true
+            schema:
+              type: array
+              items:
+                type: string
+          - name: assetType
+            in: query
+            description: Filter asset type (repeatable)
+            required: false
+            style: form
+            explode: true
+            schema:
+              type: array
+              items:
+                type: string
+                enum: [ databank, AI_model, usecase ]
+          - $ref: '#/components/parameters/TimeParam'
+          - $ref: '#/components/parameters/EndTimeParam'
+          - $ref: '#/components/parameters/PageParam'
+          - $ref: '#/components/parameters/SizeParam'
+          - $ref: '#/components/parameters/SortingParam'
+
+        responses:
+            '200':
+                description: Successfully retrieved provider leaderboard
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/BookmarkResponse'
+            '400':
+                description: Bad Request
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/GenericBadRequestResponse'
+            '500':
+              description: Internal Server Error
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/InternalServerErrorResponse'
+        x-codeSamples:
+          - lang: cURL
+            label: Get Provider Leaderboard
+            source: |
+              curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/provider?startDate=2026-01-08&endDate=2026-01-15&organizationType=Public&sector=agriculture&artifactType=databank&page=1&size=12'
+
+
+  /iudx/v2/leaderboard/organisation:
+    get:
+      tags:
+        - Leaderboard
+      summary: Get leaderboard for organisations
+      description: >
+        Retrieve the leaderboard for data providers based on various criteria such as most viewed, most downloaded, highest rated, etc.
+      operationId: get-organisation-leaderboard
+      parameters:
+        - name: organizationType
+          in: query
+          description: Filter by organization types (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - name: sector
+          in: query
+          description: Filter by sector (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - name: assetType
+          in: query
+          description: Filter asset type (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [ databank, AI_model, usecase ]
+        - $ref: '#/components/parameters/TimeParam'
+        - $ref: '#/components/parameters/EndTimeParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+
+      responses:
+        '200':
+          description: Successfully retrieved provider leaderboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookmarkResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Get organisation Leaderboard
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/organisation?startDate=2026-01-08&endDate=2026-01-15&organizationType=Public&sector=agriculture&artifactType=databank&page=1&size=12'
+
+
 tags:
   - name: Activity Logs
     x-displayName: "Activity Logs"
@@ -9234,6 +9441,12 @@ tags:
       These endpoints allow users to create, retrieve, and delete appIds, which can be used
       for application-level authentication and authorization within the platform.
     x-displayName: App
+  - name: Leaderboard
+    description: >
+      APIs under this tag provide leaderboard and ranking data for `Organization`,`Provider` and `Asset` such as `DATABANK`, `AI_MODEL`, and `USECASE`. 
+      These endpoints support filtering, sorting, pagination,
+      and time-based queries to retrieve ranked results based on engagement metrics like
+      downloads, views, and likes.
 
 
 components:
