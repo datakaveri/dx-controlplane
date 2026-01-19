@@ -1,17 +1,21 @@
 package org.cdpg.dx.aaa.organization.handler;
 
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.delegation.OrgOwnershipValidator;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
+import org.cdpg.dx.aaa.organization.models.OrganizationJoinRequest;
 import org.cdpg.dx.aaa.organization.models.ProviderRoleRequest;
 import org.cdpg.dx.aaa.organization.models.Status;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
@@ -30,6 +34,7 @@ import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.util.RoutingContextHelper;
+import org.cdpg.dx.database.postgres.models.PaginatedResult;
 
 import static org.cdpg.dx.aaa.organization.config.Constants.*;
 import static org.cdpg.dx.aaa.organization.config.Constants.API_TO_DB_PROVIDER_ROLE_REQUEST;
@@ -306,55 +311,79 @@ public class ProviderRoleHandler {
     }
 
     orgIdFuture
-      .compose(
-        orgId -> {
-          if (delegatorId != null) {
-            return orgOwnershipValidator
-              .validateOrgOwnership(delegatorId, List.of(orgId.toString()))
-              .map(v -> orgId);
-          }
-          return Future.succeededFuture(orgId);
-        })
-      .compose(
-        resOrgId -> {
+      .compose(resOrgId -> {
 
-          PaginatedRequest request =
-            PaginationRequestBuilder.from(ctx)
-              .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_PROVIDER_ROLE_REQUEST)
-//              .ignoreDelegator(true)
-              .apiToDbMap(API_TO_DB_PROVIDER_ROLE_REQUEST)
-              .additionalFilters(
-                Map.of(ORGANIZATION_ID, resOrgId.toString()))
-              .allowedTimeFields(Set.of(CREATED_AT))
-              .defaultTimeField(CREATED_AT)
-              .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
-              .allowedSortFields(API_TO_DB_PROVIDER_ROLE_REQUEST.keySet())
-              .build();
+        PaginatedRequest request =
+          PaginationRequestBuilder.from(ctx)
+            .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_PROVIDER_ROLE_REQUEST)
+            .apiToDbMap(API_TO_DB_PROVIDER_ROLE_REQUEST)
+            .additionalFilters(Map.of(ORGANIZATION_ID, resOrgId.toString()))
+            .allowedTimeFields(Set.of(CREATED_AT))
+            .defaultTimeField(CREATED_AT)
+            .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
+            .allowedSortFields(API_TO_DB_PROVIDER_ROLE_REQUEST.keySet())
+            .build();
 
-          return organizationService.getAllPendingProviderRoleRequests(request);
-        })
-      .compose(
-        requests ->
-          userService
-            .enrichWithUserRoles(
-              requests.data(),
-              ProviderRoleRequest::userId,
-              ProviderRoleRequest::toJson)
-            .map(enriched ->
-              Map.entry(enriched, requests.paginationInfo())))
-      .onSuccess(
-        entry ->
-          ResponseBuilder.sendSuccess(
-            ctx,
-            entry.getKey(),
-            entry.getValue(),
-            urnGenerator))
+        return organizationService.getAllPendingProviderRoleRequests(request)
+          .map(providerResult -> Map.entry(providerResult, resOrgId));
+      })
+      .compose(entry -> {
+
+        PaginatedResult<ProviderRoleRequest> providerResult = entry.getKey();
+        UUID orgId = entry.getValue();
+
+        return organizationService.getOrganizationJoinRequestsByOrgId(orgId)
+          .map(joinRequests -> Map.entry(providerResult, joinRequests));
+      })
+      .compose(entry -> {
+
+        PaginatedResult<ProviderRoleRequest> providerResult = entry.getKey();
+        List<OrganizationJoinRequest> joinRequests = entry.getValue();
+
+        Map<UUID, OrganizationJoinRequest> joinRequestMap =
+          joinRequests.stream()
+            .collect(Collectors.toMap(
+              OrganizationJoinRequest::userId,
+              Function.identity()
+            ));
+
+        return userService.enrichWithUserRoles(
+          providerResult.data(),
+          ProviderRoleRequest::userId,
+          ProviderRoleRequest::toJson
+        ).map(enriched -> {
+
+          List<JsonObject> finalResponse = enriched.stream()
+            .map(json -> {
+              LOGGER.info("The json is : {}",json);
+              UUID uid = UUID.fromString(json.getString("user_id"));
+              OrganizationJoinRequest joinReq = joinRequestMap.get(uid);
+
+              if (joinReq != null) {
+                json.put("userName", joinReq.userName());
+                json.put("jobTitle", joinReq.jobTitle());
+                json.put("empId", joinReq.empId());
+              }
+
+              return json;
+            })
+            .toList();
+
+          return Map.entry(finalResponse, providerResult.paginationInfo());
+        });
+      })
+      .onSuccess(entry ->
+        ResponseBuilder.sendSuccess(
+          ctx,
+          entry.getKey(),
+          entry.getValue(),
+          urnGenerator
+        )
+      )
       .onFailure(ctx::fail);
-  }
+}
 
-
-
-  public void deleteUserProviderRoleRequest(RoutingContext ctx) {
+    public void deleteUserProviderRoleRequest(RoutingContext ctx) {
 
     UUID userId = UUID.fromString(ctx.user().subject());
     String delegatorStr = ctx.queryParams().get("delegatorId");
