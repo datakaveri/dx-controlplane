@@ -21,7 +21,7 @@ public class PaginationRequestBuilder {
   private String defaultSortBy = null;
   private String defaultOrder = "desc";
   private Map<String, String> apiToDbMap = Collections.emptyMap();
-  private Boolean ignoreDelegatorId = true;
+  private Boolean ignoreDelegatorId = false;
 
   private PaginationRequestBuilder(RoutingContext ctx) {
     this.ctx = ctx;
@@ -79,11 +79,11 @@ public class PaginationRequestBuilder {
     return this;
   }
 
-  public PaginationRequestBuilder ignoreDelegator(Boolean ignoreDelegatorId)
-  {
-    this.ignoreDelegatorId = ignoreDelegatorId;
-    return this;
-  }
+//  public PaginationRequestBuilder ignoreDelegator(Boolean ignoreDelegatorId)
+//  {
+//    this.ignoreDelegatorId = ignoreDelegatorId;
+//    return this;
+//  }
 
   public PaginatedRequest build() {
     Set<String> allowedKeys = getAllowedQueryParams();
@@ -102,8 +102,11 @@ public class PaginationRequestBuilder {
 
     allowedFiltersDbMap.forEach(
         (apiParam, dbField) -> {
+          if ("delegatorId".equals(apiParam)) {
+            return;
+          }
           List<String> value = getQueryParamList(apiParam);
-          if (value != null && !ignoreDelegatorId) {
+          if (value != null && !value.isEmpty()) {
             mappedFilters.put(dbField, value);
           }
         });
