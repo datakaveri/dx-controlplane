@@ -9293,7 +9293,7 @@ paths:
               curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/provider?startDate=2026-01-08&endDate=2026-01-15&organizationType=Public&sector=agriculture&artifactType=databank&page=1&size=12'
 
 
-  /iudx/v2/leaderboard/organisation:
+  /iudx/v2/leaderboard/organization:
     get:
       tags:
         - Leaderboard

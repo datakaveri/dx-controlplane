@@ -1,13 +1,13 @@
 package org.cdpg.dx.aaa.leaderboard.dao;
 
 import io.vertx.core.Future;
+
 import java.util.*;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.leaderboard.controller.LeaderboardController;
 import org.cdpg.dx.aaa.leaderboard.model.*;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.TemporalRequest;
@@ -32,9 +32,175 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
 
   @Override
   public Future<LeaderboardResponse<ProviderLeaderboardEntry>> fetchProviderLeaderboard(
-      PaginatedRequest request) {
-    // TODO: Replace with actual DB query
-    return Future.succeededFuture(null);
+          PaginatedRequest request) {
+
+    Map<String, Object> filters = request.filters();
+
+    // -------------------------
+    // 1. assetType (optional, default all)
+    // -------------------------
+    List<String> assetTypes = getList(filters, "assetType");
+    if (assetTypes.isEmpty()) {
+      assetTypes = List.of("DATABANK", "AI_MODEL", "USECASE");
+    }
+
+    // -------------------------
+    // 2. Optional time
+    // -------------------------
+    String startTime = null;
+    String endTime = null;
+
+    if (request.temporalRequests() != null && !request.temporalRequests().isEmpty()) {
+      TemporalRequest t = request.temporalRequests().getFirst();
+      startTime = t.time();
+      endTime = t.endtime();
+    }
+
+    // -------------------------
+    // 3. Pagination
+    // -------------------------
+    int limit = request.size();
+    int offset = (request.page() - 1) * request.size();
+
+    // -------------------------
+    // 4. SQL (JSON-safe array binding)
+    // -------------------------
+    String sql =
+            """
+      WITH provider_stats AS (
+        SELECT
+            a.provider_id,
+            a.org_id,
+            a.org_name,
+      
+            COUNT(*) FILTER (
+              WHERE a.operation = 'CREATE' AND a.entity_type = 'DATABANK'
+            ) AS published_datasets,
+      
+            COUNT(*) FILTER (
+              WHERE a.operation = 'CREATE' AND a.entity_type = 'AI_MODEL'
+            ) AS published_models,
+      
+            COUNT(*) FILTER (
+              WHERE a.operation = 'CREATE' AND a.entity_type = 'USECASE'
+            ) AS published_usecases,
+      
+            COUNT(*) FILTER (
+              WHERE a.operation = 'CREATE'
+            ) AS total_published,
+      
+            COUNT(*) FILTER (
+              WHERE a.operation = 'DOWNLOAD'
+            ) AS downloads
+      
+        FROM test.activity_audit_log a
+        WHERE a.provider_id IS NOT NULL
+          AND a.entity_type::text = ANY (
+            SELECT jsonb_array_elements_text($1::jsonb)
+          )
+          AND (
+            $2 IS NULL
+            OR a.created_at BETWEEN $2::timestamp AND $3::timestamp
+          )
+      
+        GROUP BY
+            a.provider_id,
+            a.org_id,
+            a.org_name
+      ),
+      
+      votes AS (
+        SELECT
+            a.provider_id,
+            COUNT(*) FILTER (WHERE v.vote_type = 'LIKE')    AS likes,
+            COUNT(*) FILTER (WHERE v.vote_type = 'DISLIKE') AS dislikes
+        FROM test.item_votes v
+        JOIN test.activity_audit_log a
+          ON v.entity_id = a.entity_id
+         AND v.entity_type = a.entity_type
+        WHERE a.provider_id IS NOT NULL
+        GROUP BY a.provider_id
+      )
+      
+      SELECT
+          p.*,
+          COALESCE(v.likes, 0)    AS likes,
+          COALESCE(v.dislikes, 0) AS dislikes,
+      
+          ROW_NUMBER() OVER (
+            ORDER BY total_published DESC,
+                     downloads DESC,
+                     org_name ASC
+          ) AS rank,
+      
+          COUNT(*) OVER() AS total_count
+      
+      FROM provider_stats p
+      LEFT JOIN votes v ON p.provider_id = v.provider_id
+      ORDER BY total_published DESC, downloads DESC, org_name ASC
+      LIMIT $4 OFFSET $5
+      """;
+
+    // -------------------------
+    // 5. Params (JSON-safe)
+    // -------------------------
+    JsonArray params = new JsonArray()
+            .add(new JsonArray(assetTypes))  // $1
+            .add(startTime)                  // $2
+            .add(endTime)                    // $3
+            .add(limit)                      // $4
+            .add(offset);                    // $5
+
+    // -------------------------
+    // 6. Execute & map
+    // -------------------------
+    return postgresService.executeQuery(sql, params)
+            .map(result -> {
+
+              List<ProviderLeaderboardEntry> data =
+                      result.getRows().stream()
+                              .map(obj -> {
+                                JsonObject row = (JsonObject) obj;
+
+                                return new ProviderLeaderboardEntry(
+                                        row.getInteger("rank"),
+                                        row.getString("provider_id"),
+                                        row.getString("org_id"),
+                                        row.getString("org_name"),
+                                        "provider",
+                                        new ProviderLeaderboardEntry.Organization(
+                                                row.getString("org_id"),
+                                                row.getString("org_name"),
+                                                null
+                                        ),
+                                        row.getInteger("published_datasets", 0),
+                                        row.getInteger("published_models", 0),
+                                        row.getInteger("published_usecases", 0),
+                                        row.getInteger("total_published", 0),
+                                        row.getInteger("downloads", 0),
+                                        row.getInteger("likes", 0),
+                                        row.getInteger("dislikes", 0)
+                                );
+                              })
+                              .toList();
+
+              long total =
+                      data.isEmpty() ? 0 : result.getRows().getJsonObject(0).getLong("total_count");
+
+              int totalPages = (int) Math.ceil((double) total / request.size());
+
+              PaginationInfo page =
+                      new PaginationInfo(
+                              request.page(),
+                              request.size(),
+                              total,
+                              totalPages,
+                              request.page() < totalPages,
+                              request.page() > 1
+                      );
+
+              return new LeaderboardResponse<>(data, page);
+            });
   }
 
   @Override
@@ -80,7 +246,6 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
     String accessPolicy = toCsv(filters, "accessPolicy");
     String orgType = toCsv(filters, "organizationType"); // only apply if column exists
     String sector = toCsv(filters, "sector"); // only apply if column exists
-
 
     // ----------------------------
     // 3. Optional time filter
@@ -142,11 +307,15 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
 
     // Optional time filter
     if (startTime != null && endTime != null) {
-      sql.append(" AND a.created_at BETWEEN $")
+      sql.append(" AND a.created_at BETWEEN ")
+          .append("to_timestamp($")
           .append(idx)
-          .append("::timestamp AND $")
+          .append(", 'YYYY-MM-DD\"T\"HH24:MI:SS')")
+          .append(" AND ")
+          .append("to_timestamp($")
           .append(idx + 1)
-          .append("::timestamp");
+          .append(", 'YYYY-MM-DD\"T\"HH24:MI:SS')");
+
       params.add(startTime);
       params.add(endTime);
       idx += 2;
@@ -159,31 +328,23 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
     params.add(assetType);
     idx++;
 
-    // Optional accessPolicy → maps to visibility
     if (accessPolicy != null) {
-      sql.append(" AND a.visibility = ANY(string_to_array($").append(idx).append(", ','))");
+      sql.append(" AND a.access_policy = ANY(string_to_array($").append(idx).append(", ','))");
       params.add(accessPolicy);
       idx++;
     }
 
-    // These two columns DON'T exist yet → do NOT add
-    // Uncomment later when schema is updated
-
-
     if (orgType != null) {
-      sql.append(" AND a.org_type = ANY(string_to_array($")
-         .append(idx).append("::text, ','))");
+      sql.append(" AND a.org_type = ANY(string_to_array($").append(idx).append("::text, ','))");
       params.add(orgType);
       idx++;
     }
 
     if (sector != null) {
-      sql.append(" AND a.sector = ANY(string_to_array($")
-         .append(idx).append("::text, ','))");
+      sql.append(" AND a.sector = ANY(string_to_array($").append(idx).append("::text, ','))");
       params.add(sector);
       idx++;
     }
-
 
     // Finish SQL
     sql.append(
@@ -281,19 +442,15 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
     return list.isEmpty() ? null : String.join(",", list);
   }
 
-  @SuppressWarnings("unchecked")
-  private List<String> getStringListFilter(Map<String, Object> filters, String key) {
+  private List<String> getList(Map<String, Object> filters, String key) {
     Object value = filters.get(key);
+    if (value == null) return List.of();
 
-    if (value == null) return null;
-
-    if (value instanceof JsonArray jsonArray) {
-      if (jsonArray.isEmpty()) return null;
-      return jsonArray.stream().map(Object::toString).toList();
+    if (value instanceof JsonArray arr) {
+      return arr.stream().map(Object::toString).toList();
     }
 
     if (value instanceof List<?> list) {
-      if (list.isEmpty()) return null;
       return list.stream().map(Object::toString).toList();
     }
 

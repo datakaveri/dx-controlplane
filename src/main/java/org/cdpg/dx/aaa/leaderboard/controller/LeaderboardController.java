@@ -43,31 +43,40 @@ public class LeaderboardController implements ApiController {
 
   private void getOrgLeaderboardHandler(RoutingContext ctx) {
     LOGGER.debug("Handling getOrgLeaderboard request");
-
     Map<String, String> allowedFiltersDbMap =
         Map.of(
+            "sector", "sector", "assetType", "assetType", "organizationType", "organizationType");
+    Map<String, String> apiToDbmap =
+        Map.of(
             "assetType",
-            "asset_type",
+            "assetType",
             "organizationType",
-            "organization_type",
-            "timeAt",
-            "created_at",
-            "endTimeAt",
-            "created_at",
-            "page",
-            "page",
-            "size",
-            "size",
-            "sort",
-            "sort");
-
+            "organizationType",
+            "sector",
+            "sector",
+            "downloads",
+            "downloads",
+            "likes",
+            "likes",
+            "dislikes",
+            "dislikes",
+            "views",
+            "views",
+            "contribution",
+            "contribution");
+    Set<String> allowedSortFields = Set.of("downloads", "likes", "dislikes", "contribution");
     try {
       PaginatedRequest paginatedRequest =
           PaginationRequestBuilder.from(ctx)
-              .allowedFiltersDbMap(allowedFiltersDbMap)
-              // .allowedSortFields(...)   // configure as needed
-              // .apiToDbMap(...)          // configure as needed
+              .allowedFiltersDbMap(allowedFiltersDbMap) // configure as needed
+              .apiToDbMap(apiToDbmap)
+              .allowedSortFields(allowedSortFields)
+              .allowedTimeFields(Set.of(CREATED_AT))
+              .defaultTimeField(CREATED_AT)
+              .allowedSortFields(allowedSortFields)
+              .defaultSort("contribution", DEFAULT_SORTING_ORDER)
               .build();
+
       leaderboardService
           .getOrgLeaderboard(paginatedRequest)
           .onSuccess(
@@ -92,28 +101,36 @@ public class LeaderboardController implements ApiController {
     LOGGER.debug("Handling getProviderLeaderboard request");
     Map<String, String> allowedFiltersDbMap =
         Map.of(
-            "accessPolicy",
-            "access_policy",
+            "sector", "sector", "assetType", "assetType", "organizationType", "organizationType");
+    Map<String, String> apiToDbmap =
+        Map.of(
             "assetType",
-            "asset_type",
+            "assetType",
             "organizationType",
-            "organization_type",
-            "timeAt",
-            "created_at",
-            "endTimeAt",
-            "created_at",
-            "page",
-            "page",
-            "size",
-            "size",
-            "sort",
-            "sort");
+            "organizationType",
+            "sector",
+            "sector",
+            "downloads",
+            "downloads",
+            "likes",
+            "likes",
+            "dislikes",
+            "dislikes",
+            "views",
+            "views",
+            "contribution",
+            "contribution");
+    Set<String> allowedSortFields = Set.of("downloads", "likes", "dislikes", "contribution");
     try {
       PaginatedRequest paginatedRequest =
           PaginationRequestBuilder.from(ctx)
               .allowedFiltersDbMap(allowedFiltersDbMap) // configure as needed
-              // .allowedSortFields(...)   // configure as needed
-              // .apiToDbMap(...)          // configure as needed
+              .apiToDbMap(apiToDbmap)
+              .allowedSortFields(allowedSortFields)
+              .allowedTimeFields(Set.of(CREATED_AT))
+              .defaultTimeField(CREATED_AT)
+              .allowedSortFields(allowedSortFields)
+              .defaultSort("contribution", DEFAULT_SORTING_ORDER)
               .build();
       leaderboardService
           .getProviderLeaderboard(paginatedRequest)
