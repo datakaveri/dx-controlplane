@@ -58,6 +58,7 @@ import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.aaa.kyc.controller.KYCController;
 import org.cdpg.dx.aaa.kyc.factory.KYCFactory;
 import org.cdpg.dx.aaa.kyc.handler.KYCHandler;
+import org.cdpg.dx.aaa.leaderboard.factory.LeaderboardControllerFactory;
 import org.cdpg.dx.aaa.list.controller.ListController;
 import org.cdpg.dx.aaa.list.factory.ListControllerFactory;
 import org.cdpg.dx.aaa.organization.controller.OrganizationReportController;
@@ -96,8 +97,7 @@ import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
 public class ControllerFactory {
   private static final Logger LOGGER = LogManager.getLogger(ControllerFactory.class);
 
-  private ControllerFactory() {
-  }
+  private ControllerFactory() {}
 
   public static List<ApiController> createControllers(
       Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
@@ -236,15 +236,18 @@ public class ControllerFactory {
 
     // Initialize central ES service
     if (isCentralCatEnabled) {
-      LOGGER.debug("Central catalogue mode enabled. Initializing CentralElasticsearchService and central controllers.");
-      centralEsService = CentralElasticsearchService.createProxy(
-          vertx, CENTRAL_ELASTIC_SERVICE_ADDRESS);
+      LOGGER.debug(
+          "Central catalogue mode enabled. Initializing CentralElasticsearchService and central controllers.");
+      centralEsService =
+          CentralElasticsearchService.createProxy(vertx, CENTRAL_ELASTIC_SERVICE_ADDRESS);
 
-      centralSearchController = CentralSearchControllerFactory.createSearchController(
-          centralEsService, auditingHandler, centralCatDocIndex, urnGenerator);
+      centralSearchController =
+          CentralSearchControllerFactory.createSearchController(
+              centralEsService, auditingHandler, centralCatDocIndex, urnGenerator);
 
-      centralListController = CentralListControllerFactory.createListController(
-          centralEsService, auditingHandler, centralCatDocIndex, urnGenerator);
+      centralListController =
+          CentralListControllerFactory.createListController(
+              centralEsService, auditingHandler, centralCatDocIndex, urnGenerator);
     }
 
     final ItemController itemController =
@@ -302,10 +305,10 @@ public class ControllerFactory {
         AppTokenControllerFactory.create(
             pgService, keycloakUserService, urnGenerator, config, vertx);
 
-      SummaryController dashboardSummaryController =
-              SummaryControllerFactory.create(pgService, urnGenerator);
+    SummaryController dashboardSummaryController =
+        SummaryControllerFactory.create(pgService, urnGenerator);
 
-      ApiController voteController = VoteControllerFactory.create(pgService, urnGenerator);
+    ApiController voteController = VoteControllerFactory.create(pgService, urnGenerator);
 
     List<ApiController> controllers = new ArrayList<>();
 
@@ -338,8 +341,10 @@ public class ControllerFactory {
     }
     controllers.add(dashboardSummaryController);
     controllers.add(voteController);
+    ApiController leaderboardController =
+        LeaderboardControllerFactory.create(pgService, urnGenerator);
+    controllers.add(leaderboardController);
 
     return controllers;
-
   }
 }
