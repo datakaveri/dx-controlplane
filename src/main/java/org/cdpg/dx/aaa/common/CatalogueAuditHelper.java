@@ -4,8 +4,8 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import java.util.UUID;
-import org.cdpg.dx.auditing.enums.Operation;
 import org.cdpg.dx.auditing.enums.EntityType;
+import org.cdpg.dx.auditing.enums.Operation;
 import org.cdpg.dx.auditing.enums.OriginServer;
 import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
 import org.cdpg.dx.auditing.util.AuditLogHelper;
@@ -41,6 +41,7 @@ public final class CatalogueAuditHelper {
         .withEntityId(entityId)
         .withEntityName(itemJson.getString("name"))
         .withShortDescription(itemJson.getString("shortDescription"))
+        .withMyActivityEnabled(true)
         .build();
   }
 
