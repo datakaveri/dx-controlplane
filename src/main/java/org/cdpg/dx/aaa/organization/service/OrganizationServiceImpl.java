@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.Map;
 
+import static org.cdpg.dx.aaa.organization.config.Constants.*;
 import static org.cdpg.dx.keycloak.config.KeycloakConstants.*;
-import static org.cdpg.dx.aaa.organization.config.Constants.USER_ID;
 import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
 
 public class OrganizationServiceImpl implements OrganizationService {
@@ -569,6 +569,34 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     Map<String, Object> rejectedFilter = Map.of(
       USER_ID, userId.toString(),
+      Constants.STATUS, Status.REJECTED.getStatus()
+    );
+
+    Future<List<OrganizationJoinRequest>> pendingFuture = joinRequestDAO.getAllWithFilters(pendingFilter);
+    Future<List<OrganizationJoinRequest>> grantedFuture = joinRequestDAO.getAllWithFilters(grantedFilter);
+    Future<List<OrganizationJoinRequest>> rejectedFuture = joinRequestDAO.getAllWithFilters(rejectedFilter);
+
+    return Future.all(pendingFuture, grantedFuture,rejectedFuture)
+      .map(cf -> {
+        List<OrganizationJoinRequest> merged = new java.util.ArrayList<>();
+        merged.addAll(cf.resultAt(0));
+        merged.addAll(cf.resultAt(1));
+        return merged;
+      });
+  }
+
+  public Future<List<OrganizationJoinRequest>> getOrganizationJoinRequestsByOrgId(UUID orgId){
+    Map<String, Object> pendingFilter = Map.of(
+      ORGANIZATION_ID, orgId.toString(),
+      Constants.STATUS, Status.PENDING.getStatus()
+    );
+    Map<String, Object> grantedFilter = Map.of(
+      ORGANIZATION_ID, orgId.toString(),
+      Constants.STATUS, Status.GRANTED.getStatus()
+    );
+
+    Map<String, Object> rejectedFilter = Map.of(
+      ORGANIZATION_ID, orgId.toString(),
       Constants.STATUS, Status.REJECTED.getStatus()
     );
 
