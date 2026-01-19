@@ -223,7 +223,6 @@ public class OrganizationJoinRequestHandler {
 
         PaginatedRequest request =
           PaginationRequestBuilder.from(ctx)
-            .ignoreDelegator(true)
             .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_ORG_JOIN_REQUEST)
             .apiToDbMap(API_TO_DB_ORG_JOIN_REQUEST)
             .additionalFilters(

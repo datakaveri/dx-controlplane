@@ -69,6 +69,10 @@ public class ProviderRoleHandler {
       return;
     }
 
+    String org = ctx.user().principal().getString("organisation_id");
+    LOGGER.info("org : {}",org);
+    LOGGER.info("principle : {}",ctx.user().principal());
+
     UUID userId = UUID.fromString(user.subject());
 
     // Resolve orgId asynchronously
@@ -317,7 +321,7 @@ public class ProviderRoleHandler {
           PaginatedRequest request =
             PaginationRequestBuilder.from(ctx)
               .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_PROVIDER_ROLE_REQUEST)
-              .ignoreDelegator(true)
+//              .ignoreDelegator(true)
               .apiToDbMap(API_TO_DB_PROVIDER_ROLE_REQUEST)
               .additionalFilters(
                 Map.of(ORGANIZATION_ID, resOrgId.toString()))
