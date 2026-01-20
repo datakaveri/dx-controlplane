@@ -9,12 +9,9 @@ public record AssetLeaderboardEntry(
     String accessPolicy,
     String providerId,
     String providerName,
+    String organizationId,
+    String organizationName,
     int downloads,
     int likes,
     int dislikes,
-    int views,
-    int sector,
-    Organization organization) {
-
-  public record Organization(String id, String name, String type) {}
-}
+    int views) {}
