@@ -6274,6 +6274,51 @@ paths:
           source: |
             curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/cat/item?id=uuid' \
             --header 'token: <token>'
+  /items/scripts/download/{filename}:
+    get:
+      tags:
+        - CAT Entity
+      summary: Download generated ingestion script
+      description: |
+        Download a generated Python script for onboarding OGC vector or STAC raster data.
+
+        The `filename` path parameter must match the filename returned by the script
+        generation APIs (e.g., `/items/scripts/download/<filename>.py`).
+      operationId: download script
+      parameters:
+        - in: path
+          name: filename
+          required: true
+          schema:
+            type: string
+            example: 123e4567-e89b-12d3-a456-426614174000_vector_20250120_120000.py
+          description: Name of the generated script file to download (must end with `.py`).
+      responses:
+        '200':
+          description: Python script file
+          content:
+            text/x-python:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Invalid filename
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Script file not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error while reading the script file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /iudx/v2/cat/item/access:
     get:
       tags:
