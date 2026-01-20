@@ -2706,7 +2706,6 @@ paths:
       security:
         - authorization: [ ]
 
-  /iudx/v2/auth/credit/request/{id}:
     put:
       summary: Update Credit Request Status (COS ADMIN)
       tags:
@@ -2778,14 +2777,6 @@ paths:
                       updatedBalance: 20000
                       tableName: credit_transactions
       operationId: put-auth-v2-credit-request
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: UUID of the credit request
-          schema:
-            type: string
-            format: uuid
       security:
         - authorization: [ ]
       requestBody:
@@ -2796,6 +2787,10 @@ paths:
               oneOf:
                 - type: object
                   properties:
+                    id:
+                      type: string
+                      format: uuid
+                      description: ID of the credit request to be updated.
                     status:
                       type: string
                       enum: [ granted ]
@@ -2810,6 +2805,7 @@ paths:
                     - status
                     - amount
                     - expiration_date
+                    - id
                   additionalProperties: false
 
                 - type: object
@@ -2823,9 +2819,10 @@ paths:
             examples:
               Example 1:
                 value:
-                  status: granted
+                  id: "ac1e0e2d-c4cc-4008-951f-62916f0d06e7"
+                  status: "granted"
                   amount: 10000.0
-                  expiration_date: '2025-12-31T23:59:59'
+                  expiration_date: "2025-12-31T23:59:59"
   /iudx/v2/auth/admin/user/credit/deduct:
     put:
       summary: Deduct User Credit (COS ADMIN)

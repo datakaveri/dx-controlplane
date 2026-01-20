@@ -213,7 +213,7 @@ public class CreditHandler {
     User user = ctx.user();
     UUID transactedBy = UUID.fromString(user.subject());
     Status status = Status.fromString(creditRequestJson.getString("status"));
-    UUID requestId = UUID.fromString(ctx.pathParam("id"));
+    UUID requestId = UUID.fromString(creditRequestJson.getString("id"));
 
     if (status == Status.GRANTED && creditRequestJson.getValue("amount") == null) {
       throw new DxBadRequestException("Amount is required for GRANTED status");
@@ -348,7 +348,6 @@ public class CreditHandler {
         return Future.failedFuture(err);
       })
       .compose(existingComputeRole -> {
-        System.out.println("here in compose block");
         if (existingComputeRole != null && existingComputeRole.status().equalsIgnoreCase(Status.REJECTED.getStatus())) {
           return creditService.updateComputeRoleStatus(existingComputeRole.id(), Status.PENDING, existingComputeRole.approvedBy())
             .map(updated -> true);
@@ -362,6 +361,7 @@ public class CreditHandler {
         if (!updated) {
           return creditService.createComputeRoleRequest(computeRoleRequest)
             .onSuccess(requests -> {
+              LOGGER.info("Requests in compute : {}",requests.toJson());
               ResponseBuilder.sendSuccess(ctx, requests, this.urnGenerator);
               emailComposer.sendEmailForComputeRole(computeRoleRequest, user);
             })
