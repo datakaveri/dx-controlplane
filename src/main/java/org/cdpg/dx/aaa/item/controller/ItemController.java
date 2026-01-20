@@ -140,10 +140,10 @@ public class ItemController implements ApiController {
         .handler(auditingHandler::handleApiAudit)
         .handler(this::handleGetItemWithAccess);
 
-    //    builder
-    //        .operation(DOWNLOAD_SCRIPT)
-    //        .handler(auditingHandler::handleApiAudit)
-    //        .handler(this::handleDownloadScript);
+        builder
+            .operation(DOWNLOAD_SCRIPT)
+            .handler(auditingHandler::handleApiAudit)
+            .handler(this::handleDownloadScript);
 
     LOGGER.debug("Item Controller registered");
   }
@@ -722,25 +722,26 @@ public class ItemController implements ApiController {
       return;
     }
 
-    try {
-      byte[] fileContent = Files.readAllBytes(filePath);
+    HttpServerResponse response = ctx.response();
+    prepareScriptDownloadResponse(response, filename);
 
-      HttpServerResponse response = ctx.response();
-      response
-          .putHeader("Access-Control-Allow-Origin", "*")
-          .putHeader("Access-Control-Allow-Headers", "Content-Type, Authorization")
-          .putHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-          .putHeader("Content-Type", "text/x-python")
-          .putHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"")
-          .putHeader("Content-Length", String.valueOf(fileContent.length));
+    response
+        .sendFile(filePath.toString())
+        .onSuccess(
+            v -> LOGGER.info("Script file downloaded successfully: {}", filename))
+        .onFailure(
+            err -> {
+              LOGGER.error("Error reading script file: {}", filename, err);
+              ctx.fail(new DxInternalServerErrorException("Error reading script file"));
+            });
+  }
 
-      response.end(io.vertx.core.buffer.Buffer.buffer(fileContent));
-
-      LOGGER.info("Script file downloaded successfully: {}", filename);
-
-    } catch (Exception e) {
-      LOGGER.error("Error reading script file: {}", filename, e);
-      ctx.fail(new DxInternalServerErrorException("Error reading script file"));
-    }
+  private void prepareScriptDownloadResponse(HttpServerResponse response, String filename) {
+    response
+        .putHeader("Access-Control-Allow-Origin", "*")
+        .putHeader("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        .putHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        .putHeader("Content-Type", "text/x-python")
+        .putHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
   }
 }
