@@ -213,7 +213,7 @@ public class CreditHandler {
     User user = ctx.user();
     UUID transactedBy = UUID.fromString(user.subject());
     Status status = Status.fromString(creditRequestJson.getString("status"));
-    UUID requestId = UUID.fromString(creditRequestJson.getString("idq"));
+    UUID requestId = UUID.fromString(creditRequestJson.getString("id"));
 
     if (status == Status.GRANTED && creditRequestJson.getValue("amount") == null) {
       throw new DxBadRequestException("Amount is required for GRANTED status");
