@@ -150,6 +150,21 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  public Future<DxUser> updateUserInfo(UUID userId, Boolean accountEnabled) {
+    return keycloakUserService.getUserById(userId)
+      .compose(existingUser ->
+        keycloakUserService
+          .updateUserAttributes(
+            userId,
+            Map.of("account_enabled", String.valueOf(accountEnabled))
+          )
+          .map(v -> existingUser)
+      );
+  }
+
+
+
+  @Override
   public Future<UserInfo> getUserInfo(String userId) {
     LOGGER.info("Inside getUserInfo");
 

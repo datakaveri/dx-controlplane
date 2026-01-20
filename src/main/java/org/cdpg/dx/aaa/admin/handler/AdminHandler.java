@@ -272,7 +272,9 @@ public class AdminHandler {
 
     if (statusValue.equalsIgnoreCase("deactivate")) {
       keycloakUserService.disableUser(userId)
+        .compose(v->(userService.updateUserInfo(userId,false)))
         .onSuccess(response -> {
+          LOGGER.info("DxUser {}",response);
           LOGGER.info("User {} deactivated successfully in Keycloak", user.subject());
           AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
             RoutingContextHelper.getRequestPath(ctx), "POST", "Deactivate User");
@@ -286,7 +288,9 @@ public class AdminHandler {
         });
     } else {
       keycloakUserService.enableUser(userId)
+        .compose(v->(userService.updateUserInfo(userId,true)))
         .onSuccess(response -> {
+          LOGGER.info("DxUser {}",response);
           LOGGER.info("User {} activated successfully in Keycloak", user.subject());
           AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
             RoutingContextHelper.getRequestPath(ctx), "POST", "Activate User");
@@ -413,8 +417,10 @@ public class AdminHandler {
 
     if (statusValue.equalsIgnoreCase("activate")) {
       keycloakUserService.enableUser(userId)
+        .compose(v->(userService.updateUserInfo(userId,true)))
         .onSuccess(response -> {
           LOGGER.info("User {} activated successfully by PF Admin in Keycloak", userId);
+          LOGGER.info("DxUser {}",response);
           AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
             RoutingContextHelper.getRequestPath(ctx), "POST", "Activate User");
           RoutingContextHelper.setAuditingLog(ctx, auditLog);
@@ -427,8 +433,10 @@ public class AdminHandler {
         });
     } else {
       keycloakUserService.disableUser(userId)
+        .compose(v->(userService.updateUserInfo(userId,false)))
         .onSuccess(response -> {
           LOGGER.info("User {} deactivated successfully by PF Admin in Keycloak", userId);
+          LOGGER.info("DxUser {}",response);
           AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
             RoutingContextHelper.getRequestPath(ctx), "POST", "Deactivate User");
           RoutingContextHelper.setAuditingLog(ctx, auditLog);
