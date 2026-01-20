@@ -21,6 +21,7 @@ public interface UserService {
     Future<Void> createUserInfo(UserInfo userInfo);
     Future<UserInfo> getUserInfo(String userId);
     Future<UserInfo> patchUserInfo(String userId, JsonObject updates);
+    Future<DxUser> updateUserInfo(UUID userId,Boolean status);
 
     default <T> Future<List<JsonObject>> enrichWithUserRoles(
             List<T> items,

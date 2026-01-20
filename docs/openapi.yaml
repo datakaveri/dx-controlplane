@@ -2813,8 +2813,13 @@ paths:
                     status:
                       type: string
                       enum: [ rejected ]
+                    id:
+                      type: string
+                      format: uuid
+                      description: ID of the credit request to be updated
                   required:
                     - status
+                    - id
                   additionalProperties: false
             examples:
               Example 1:
