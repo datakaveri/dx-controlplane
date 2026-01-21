@@ -59,7 +59,16 @@ DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'entity_type') THEN
         CREATE TYPE entity_type AS ENUM (
-            'DATABANK',
+            'DATABA- name: sector
+          in: query
+          description: Filter by sector (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: stringNK',
             'AI_MODEL',
             'USECASE',
             'APPS'
