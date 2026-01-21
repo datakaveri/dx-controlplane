@@ -2,7 +2,7 @@ package org.cdpg.dx.aaa.leaderboard.model;
 
 public record ProviderLeaderboardEntry(
     int rank,
-    String userId,
+    String id,
     String username,
     String organizationId,
     String organizationName,
