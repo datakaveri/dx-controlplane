@@ -9358,6 +9358,109 @@ paths:
             curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/organization?organizationType=Public&assetType=DATABANK&time=2026-01-10T12%3A30%3A00&timerel=between&endtime=2026-01-20T12%3A30%3A00&page=1&size=2&sort=contribution%3Adesc'
 
 
+  
+  /iudx/v2/user/interactions:
+    post:
+      tags:
+        - User Interactions
+      operationId: post-user-intraction
+      summary: Create or update user interaction (like, dislike, bookmark)
+      description: >
+        Allows a user to like, dislike, bookmark, or remove an interaction on an entity.
+        Uses a single unified endpoint for all interaction types.
+      security:
+        - authorization: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserInteractionRequest'
+            examples:
+              like:
+                summary: Like an entity
+                value:
+                  entityId: "e74112d5-b58b-401e-a799-712b473279ea"
+                  entityType: "DATABANK"
+                  actionType: "VOTE"
+                  value: "LIKE"
+              dislike:
+                summary: Dislike an entity
+                value:
+                  entityId: "e74112d5-b58b-401e-a799-712b473279ea"
+                  entityType: "DATABANK"
+                  actionType: "VOTE"
+                  value: "DISLIKE"
+              bookmark:
+                summary: Bookmark an entity
+                value:
+                  entityId: "e74112d5-b58b-401e-a799-712b473279ea"
+                  entityType: "DATABANK"
+                  actionType: "BOOKMARK"
+                  value: "ADD"
+              removeVote:
+                summary: Remove vote (neutral)
+                value:
+                  entityId: "e74112d5-b58b-401e-a799-712b473279ea"
+                  entityType: "DATABANK"
+                  actionType: "VOTE"
+                  value: "REMOVE"
+              removeBookmark:
+                summary: Remove bookmark
+                value:
+                  entityId: "e74112d5-b58b-401e-a799-712b473279ea"
+                  entityType: "DATABANK"
+                  actionType: "BOOKMARK"
+                  value: "REMOVE"
+      
+      responses:
+        '200':
+          description: Vote recorded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InteractionResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+      x-codeSamples:
+        - lang: cURL
+          label: Cast Vote
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/vote' \
+            --header 'Authorization: <token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+                      "entityId": "e74112d5-b58b-401e-a799-712b473279ea",
+                      "entityType": "DATABANK",
+                      "voteType": "DISLIKE"
+                      }'
+
+
+
+
 tags:
   - name: Activity Logs
     x-displayName: "Activity Logs"
@@ -9441,6 +9544,15 @@ tags:
       and time-based queries to retrieve ranked results based on engagement metrics like
       downloads, views, and likes.
 
+
+  - name: User Interactions
+    description: >
+        APIs under this tag allow users to manage their interactions with platform entities such as
+        `DATABANK`, `AI_MODEL`, and `USECASE`. These endpoints support actions like `like`, `dislike`,
+        and `bookmark`, as well as retrieval of a user's interaction state for a specific entity.
+        The APIs are designed to support user-centric engagement features and provide a consistent
+        interaction model across different entity types.
+    x-displayName: User Engagement (Like, Dislike & Bookmark)
 
 components:
   securitySchemes:
@@ -9628,6 +9740,49 @@ components:
       schema:
         type: string
   schemas:
+    UserInteractionRequest:
+      type: object
+      required:
+        - entityId
+        - entityType
+        - actionType
+        - value
+      properties:
+        entityId:
+          type: string
+          format: uuid
+          description: ID of the entity being voted on
+          example: 7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9
+        entityType:
+          type: string
+          description: Type of entity being vote on
+          enum:
+            - DATABANK
+            - AI_MODEL
+            - USECASE
+          example: DATABANK
+        actionType:
+          type: string
+          description: Type of vote
+          enum:
+            - VOTE
+            - BOOKMARK
+        value:
+          type: string
+          description: Value of the action
+          enum:
+            - LIKE
+            - DISLIKE
+            - ADD
+            - REMOVE
+            
+    InteractionResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Interaction updated successfully"
+
     dashboardUsageSummarySuccessResponse:
         type: object
         title: Response for internal datasets .
