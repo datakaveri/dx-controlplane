@@ -9230,7 +9230,7 @@ paths:
         - lang: cURL
           label: Get Asset Leaderboard
           source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/asset?startDate=2025-12-15&endDate=2026-01-15&assetType=DATATBANK&assetType=AI_MODEL&accessPolicy=OPEN&sort=downloads:desc&page=1&size=12'
+            curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/asset?time=2026-01-15T12%3A30%3A00&timerel=between&endtime=2026-01-20T12%3A30%3A00&assetType=DATABANK&assetType=AI_MODEL&page=1&size=2&sort=downloads%3Adesc'
 
   /iudx/v2/leaderboard/provider:
     get:
@@ -9292,7 +9292,7 @@ paths:
           - lang: cURL
             label: Get Provider Leaderboard
             source: |
-              curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/provider?organizationType=Public&assetType=DATABANK&time=2026-01-10T12%3A30%3A00&timerel=between&endtime=2026-01-20T12%3A30%3A00&sort=likes%3Adesc&page=1&size=1'
+              curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/provider?organizationType=Public&assetType=DATABANK&time=2026-01-10T12%3A30%3A00&timerel=between&endtime=2026-01-20T12%3A30%3A00&page=1&sort=likes%3Adesc&size=1'
 
 
   /iudx/v2/leaderboard/organization:
@@ -9355,7 +9355,7 @@ paths:
         - lang: cURL
           label: Get organisation Leaderboard
           source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/organization?organizationType=Public&assetType=DATABANK&page=1&size=1&sort=contribution%3Adesc'
+            curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/organization?organizationType=Public&assetType=DATABANK&time=2026-01-10T12%3A30%3A00&timerel=between&endtime=2026-01-20T12%3A30%3A00&page=1&size=2&sort=contribution%3Adesc'
 
 
 tags:
