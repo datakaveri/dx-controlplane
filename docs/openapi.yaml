@@ -9179,7 +9179,7 @@ paths:
             type: array
             items:
               type: string
-              enum: [ databank, AI_model, usecase ]
+              enum: [ DATABANK, AI_MODEL, USECASE ]
         - name: accessPolicy
           in: query
           description: Filter by access policy (repeatable)
@@ -9190,7 +9190,18 @@ paths:
             type: array
             items:
               type: string
-              enum: [Open, restricted, private]
+              enum: [RESTRICTED,OPEN,PRIVATE,PII]
+        - name: organizationType
+          in: query
+          description: Filter by aorganizationType (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [Private, Public, Academic, Institution, NGO/Non-profit", "NA"]
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
         - $ref: '#/components/parameters/PageParam'
@@ -9230,29 +9241,9 @@ paths:
             Retrieve the leaderboard for data providers based on various criteria such as most viewed, most downloaded, highest rated, etc.
         operationId: get-provider-leaderboard
         parameters:
-          - name: organizationType
-            in: query
-            description: Filter by organization types (repeatable)
-            required: false
-            style: form
-            explode: true
-            schema:
-              type: array
-              items:
-                type: string
-          - name: sector
-            in: query
-            description: Filter by sector (repeatable)
-            required: false
-            style: form
-            explode: true
-            schema:
-              type: array
-              items:
-                type: string
           - name: assetType
             in: query
-            description: Filter asset type (repeatable)
+            description: Filter by asset types (repeatable)
             required: false
             style: form
             explode: true
@@ -9260,7 +9251,18 @@ paths:
               type: array
               items:
                 type: string
-                enum: [ databank, AI_model, usecase ]
+                enum: [ DATABANK, AI_MODEL, USECASE ]
+          - name: organizationType
+            in: query
+            description: Filter by aorganizationType (repeatable)
+            required: false
+            style: form
+            explode: true
+            schema:
+              type: array
+              items:
+                type: string
+                enum: [ Private, Public, Academic, Institution, NGO/Non-profit", "NA" ]
           - $ref: '#/components/parameters/TimeParam'
           - $ref: '#/components/parameters/EndTimeParam'
           - $ref: '#/components/parameters/PageParam'
@@ -9304,7 +9306,7 @@ paths:
       parameters:
         - name: organizationType
           in: query
-          description: Filter by organization types (repeatable)
+          description: Filter by aorganizationType (repeatable)
           required: false
           style: form
           explode: true
@@ -9312,16 +9314,7 @@ paths:
             type: array
             items:
               type: string
-        - name: sector
-          in: query
-          description: Filter by sector (repeatable)
-          required: false
-          style: form
-          explode: true
-          schema:
-            type: array
-            items:
-              type: string
+              enum: [ Private, Public, Academic, Institution, NGO/Non-profit", "NA" ]
         - name: assetType
           in: query
           description: Filter asset type (repeatable)
@@ -9332,7 +9325,7 @@ paths:
             type: array
             items:
               type: string
-              enum: [ databank, AI_model, usecase ]
+              enum: [ DATABANK, AI_MODEL, USECASE ]
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
         - $ref: '#/components/parameters/PageParam'

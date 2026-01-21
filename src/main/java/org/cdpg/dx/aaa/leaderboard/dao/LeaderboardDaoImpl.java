@@ -29,6 +29,9 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
 
     Map<String, Object> filters = request.filters();
 
+    OrderBy orderBy = request.orderByList().getFirst();
+    LOGGER.debug("Fetching org leaderboard with orderBy: {}", orderBy.toJson());
+
     // -----------------------
     // 1. assetType (optional)
     // -----------------------
@@ -52,6 +55,13 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
       startTime = t.time();
       endTime = t.endtime();
     }
+    String dbColumn =
+        switch (orderBy.getColumn().toLowerCase()) {
+          case "downloads" -> "o.downloads";
+          case "likes" -> "COALESCE(v.likes,0)";
+          default -> "o.total_published";
+        };
+    String orderClause = "ORDER BY " + dbColumn + " " + orderBy.getDirection() + ", o.org_name ASC";
 
     // -----------------------
     // 3. Pagination
@@ -153,20 +163,19 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
                 COALESCE(v.dislikes, 0)            AS dislikes,
 
                 ROW_NUMBER() OVER (
-                    ORDER BY o.total_published DESC,
-                             o.downloads DESC,
-                             o.org_name ASC
+                   %s
                 ) AS rank,
 
                 COUNT(*) OVER() AS total_count
 
             FROM org_stats o
-            LEFT JOIN votes v   ON o.org_id = v.org_id
-            LEFT JOIN members m ON o.org_id = m.org_id
-            WHERE o.total_published > 0
-            ORDER BY o.total_published DESC, o.downloads DESC, o.org_name ASC
-            LIMIT $4 OFFSET $5
-            """;
+        LEFT JOIN votes v   ON o.org_id = v.org_id
+        LEFT JOIN members m ON o.org_id = m.org_id
+        WHERE o.total_published > 0
+        %s
+        LIMIT $4 OFFSET $5
+        """
+            .formatted(orderClause, orderClause);
 
     // -----------------------
     // 5. Params
@@ -250,6 +259,18 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
       endTime = t.endtime();
     }
 
+    OrderBy orderBy = request.orderByList().getFirst();
+
+    String dbColumn =
+        switch (orderBy.getColumn().toLowerCase()) {
+          case "downloads" -> "p.total_downloads";
+          case "likes" -> "COALESCE(v.total_likes,0)";
+          case "views" -> "p.total_views";
+          default -> "p.total_published_count";
+        };
+
+    String orderClause = "ORDER BY " + dbColumn + " " + orderBy.getDirection() + ", p.org_name ASC";
+
     // 3. Pagination
     int limit = request.size();
     int offset = (request.page() - 1) * request.size();
@@ -324,16 +345,16 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
           COALESCE(v.total_likes, 0)    AS total_likes,
           COALESCE(v.total_dislikes, 0) AS total_dislikes,
           ROW_NUMBER() OVER (
-              ORDER BY total_published_count DESC, total_downloads DESC, org_name ASC
+              %s
           ) AS rank,
           COUNT(*) OVER() AS total_count
       FROM provider_stats p
       LEFT JOIN votes v ON p.provider_id = v.provider_id
       WHERE p.total_published_count > 0
-      ORDER BY total_published_count DESC, total_downloads DESC, org_name ASC
+      %s
       LIMIT $4 OFFSET $5
-      """;
-
+      """
+            .formatted(orderClause, orderClause);
     // 5. Params (JSON-safe)
     JsonArray params =
         new JsonArray()

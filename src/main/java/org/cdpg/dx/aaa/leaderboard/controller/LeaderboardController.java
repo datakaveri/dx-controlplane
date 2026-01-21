@@ -52,8 +52,6 @@ public class LeaderboardController implements ApiController {
             "assetType",
             "organizationType",
             "organizationType",
-            "sector",
-            "sector",
             "downloads",
             "downloads",
             "likes",
@@ -63,7 +61,7 @@ public class LeaderboardController implements ApiController {
             "views",
             "views",
             "contribution",
-            "contribution");
+            "total_published");
     Set<String> allowedSortFields = Set.of("downloads", "likes", "dislikes", "contribution");
     try {
       PaginatedRequest paginatedRequest =
@@ -100,16 +98,13 @@ public class LeaderboardController implements ApiController {
   private void getProviderLeaderboardHandler(RoutingContext ctx) {
     LOGGER.debug("Handling getProviderLeaderboard request");
     Map<String, String> allowedFiltersDbMap =
-        Map.of(
-            "sector", "sector", "assetType", "assetType", "organizationType", "organizationType");
+        Map.of("assetType", "assetType", "organizationType", "organizationType");
     Map<String, String> apiToDbmap =
         Map.of(
             "assetType",
             "assetType",
             "organizationType",
             "organizationType",
-            "sector",
-            "sector",
             "downloads",
             "downloads",
             "likes",
@@ -119,7 +114,7 @@ public class LeaderboardController implements ApiController {
             "views",
             "views",
             "contribution",
-            "contribution");
+            "total_published");
     Set<String> allowedSortFields = Set.of("downloads", "likes", "dislikes", "contribution");
     try {
       PaginatedRequest paginatedRequest =
