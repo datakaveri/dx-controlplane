@@ -9857,26 +9857,25 @@ components:
         type: urn:dx:ControlPlane:success
         title: Success
         result:
-          items:
-            - rank: 1
-              id: ddddddd2-dddd-dddd-dddd-dddddddddddd
-              name: AI Model 2
-              type: AI_MODEL
-              shortDescription: AI Model entity 2
-              providerId: ccccccc1-cccc-cccc-cccc-ccccccccccc1
-              organizationId: bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbb1
-              organizationName: Org One
-              downloads: 1
-              likes: 0
-              dislikes: 4
-              views: 0
-          paginationInfo:
-            page: 1
-            size: 1
-            totalCount: 1
-            totalPages: 1
-            hasNext: false
-            hasPrevious: false
+          - rank: 1
+            id: 'ddddddd2-dddd-dddd-dddd-dddddddddddd'
+            name: 'AI Model 2'
+            type: 'AI_MODEL'
+            shortDescription: 'AI Model entity 2'
+            providerId: 'ccccccc1-cccc-cccc-cccc-ccccccccccc1'
+            organizationId: 'bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbb1'
+            organizationName: 'Org One'
+            downloads: 1
+            likes: 0
+            dislikes: 4
+            views: 0
+        paginationInfo:
+          page: 1
+          size: 1
+          totalCount: 1
+          totalPages: 1
+          hasNext: false
+          hasPrevious: false
 
     LeaderBoardProvider:
       type: object
