@@ -9230,7 +9230,7 @@ paths:
         - lang: cURL
           label: Get Asset Leaderboard
           source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/asset?startDate=2025-12-15&endDate=2026-01-15&assetType=databank&assetType=AI_model&accessPolicy=Open&sort=downloads_desc&page=1&size=12'
+            curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/asset?startDate=2025-12-15&endDate=2026-01-15&assetType=DATATBANK&assetType=AI_MODEL&accessPolicy=OPEN&sort=downloads:desc&page=1&size=12'
 
   /iudx/v2/leaderboard/provider:
     get:
@@ -9262,7 +9262,7 @@ paths:
               type: array
               items:
                 type: string
-                enum: [ Private, Public, Academic, Institution, NGO/Non-profit", "NA" ]
+                enum: [ Private, Public, Academic, Institution, NGO/Non-profit", NA ]
           - $ref: '#/components/parameters/TimeParam'
           - $ref: '#/components/parameters/EndTimeParam'
           - $ref: '#/components/parameters/PageParam'
@@ -9292,7 +9292,7 @@ paths:
           - lang: cURL
             label: Get Provider Leaderboard
             source: |
-              curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/provider?startDate=2026-01-08&endDate=2026-01-15&organizationType=Public&sector=agriculture&artifactType=databank&page=1&size=12'
+              curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/provider?organizationType=Public&assetType=DATABANK&time=2026-01-10T12%3A30%3A00&timerel=between&endtime=2026-01-20T12%3A30%3A00&sort=likes%3Adesc&page=1&size=1'
 
 
   /iudx/v2/leaderboard/organization:
@@ -9355,7 +9355,7 @@ paths:
         - lang: cURL
           label: Get organisation Leaderboard
           source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/organisation?startDate=2026-01-08&endDate=2026-01-15&organizationType=Public&sector=agriculture&artifactType=databank&page=1&size=12'
+            curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/organization?organizationType=Public&assetType=DATABANK&page=1&size=1&sort=contribution%3Adesc'
 
 
 tags:
