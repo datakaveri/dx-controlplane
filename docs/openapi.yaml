@@ -9382,37 +9382,31 @@ paths:
                 value:
                   entityId: "e74112d5-b58b-401e-a799-712b473279ea"
                   entityType: "DATABANK"
-                  actionType: "VOTE"
-                  value: "LIKE"
+                  actionType: "LIKE"
               dislike:
                 summary: Dislike an entity
                 value:
                   entityId: "e74112d5-b58b-401e-a799-712b473279ea"
                   entityType: "DATABANK"
-                  actionType: "VOTE"
-                  value: "DISLIKE"
+                  actionType: "DISLIKE"
               bookmark:
                 summary: Bookmark an entity
                 value:
                   entityId: "e74112d5-b58b-401e-a799-712b473279ea"
                   entityType: "DATABANK"
                   actionType: "BOOKMARK"
-                  value: "ADD"
               removeVote:
                 summary: Remove vote (neutral)
                 value:
                   entityId: "e74112d5-b58b-401e-a799-712b473279ea"
                   entityType: "DATABANK"
-                  actionType: "VOTE"
-                  value: "REMOVE"
+                  actionType: "NEUTRAL"
               removeBookmark:
                 summary: Remove bookmark
                 value:
                   entityId: "e74112d5-b58b-401e-a799-712b473279ea"
                   entityType: "DATABANK"
-                  actionType: "BOOKMARK"
-                  value: "REMOVE"
-      
+                  actionType: "UNBOOKMARK"
       responses:
         '200':
           description: Vote recorded successfully
@@ -9455,8 +9449,7 @@ paths:
             --data '{
             "entityId": "e74112d5-b58b-401e-a799-712b473279ea",
             "entityType": "DATABANK",
-            "actionType": "VOTE",
-            "value": "LIKE"
+            "actionType": "LIKE"
             }'
 
     get:
@@ -9483,7 +9476,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [ DATABANK, AI_MODEL, USECASE, APP ]
+            enum: [ DATABANK, AI_MODEL, USECASE ]
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
       responses:
@@ -9810,7 +9803,6 @@ components:
         - entityId
         - entityType
         - actionType
-        - value
       properties:
         entityId:
           type: string
@@ -9829,16 +9821,12 @@ components:
           type: string
           description: Type of vote
           enum:
-            - VOTE
             - BOOKMARK
-        value:
-          type: string
-          description: Value of the action
-          enum:
+            - UNBOOKMARK
             - LIKE
             - DISLIKE
-            - ADD
-            - REMOVE
+            - NEUTRAL
+          example: LIKE
     InteractionResponse:
       type: object
       title: Response for internal datasets .
