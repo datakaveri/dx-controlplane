@@ -10,6 +10,7 @@ import org.cdpg.dx.aaa.credit.handler.CreditHandler;
 import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.credit.service.CreditServiceImpl;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
+import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.postgres.service.PostgresService;
@@ -20,10 +21,10 @@ public class CreditControllerFactory {
 
   private CreditControllerFactory() {}
 
-  public static CreditController create(CreditService creditService, EmailComposer emailCompose, UserService userService, URNGenerator urnGenerator, Boolean isKycRequired) {
+  public static CreditController create(CreditService creditService, EmailComposer emailCompose, UserService userService, OrganizationService organizationService, URNGenerator urnGenerator, Boolean isKycRequired) {
 
 
-    CreditHandler creditHandler = new CreditHandler(creditService,emailCompose,userService, urnGenerator);
+    CreditHandler creditHandler = new CreditHandler(creditService,emailCompose,userService, organizationService, urnGenerator);
 
     return new CreditController(creditHandler, isKycRequired);
   }

@@ -15,6 +15,7 @@ import org.cdpg.dx.aaa.delegation.models.DelegationUpdateRequest;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @VertxGen
 @ProxyGen
@@ -46,4 +47,5 @@ public interface DelegationService {
 
   Future<List<JsonObject>> getAllDelegationScopeConstraints(String itemId);
 
+  Future<JsonObject> checkItemAccess(String delegatorId, String delegateId);
 }
