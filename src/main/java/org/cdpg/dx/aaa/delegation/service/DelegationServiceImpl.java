@@ -13,6 +13,7 @@ import org.cdpg.dx.aaa.delegation.dao.*;
 import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
 import org.cdpg.dx.aaa.delegation.models.DelegationScopeConstraint;
 import org.cdpg.dx.aaa.delegation.models.DelegationUpdateRequest;
+import org.cdpg.dx.aaa.delegation.util.DelegationRole;
 import org.cdpg.dx.aaa.delegation.util.RoleScopeMapping;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.organization.models.Role;
@@ -575,8 +576,75 @@ public class DelegationServiceImpl implements DelegationService{
       .map(v -> created);
   }
 
+  @Override
+  public Future<JsonObject> checkItemAccess(String delegatorId, String delegateId) {
+
+    Map<String, Object> filters = Map.of(
+      DELEGATOR_ID, delegatorId,
+      DELEGATE_ID, delegateId
+    );
+
+    return delegationGrantDAO.getAllWithFilters(filters)
+      .compose(grants -> {
+
+        if (grants.isEmpty()) {
+          return Future.failedFuture(
+            "Delegation doesn't exist for delegator and delegate"
+          );
+        }
+
+        List<Future<List<DelegationScopeConstraint>>> scopeFutures =
+          grants.stream()
+            .map(grant -> {
+              Map<String, Object> scopeFilter = Map.of(
+                DELEGATION_ID, grant.delegationId().toString()
+              );
+              return delegationScopeConstraintDAO.getAllWithFilters(scopeFilter);
+            })
+            .toList();
+
+        return CompositeFuture.all(new ArrayList<>(scopeFutures))
+          .map(cf -> {
+
+            Set<String> allowedItems = new HashSet<>();
+
+            for (int i = 0; i < cf.size(); i++) {
+              List<DelegationScopeConstraint> scopes =
+                cf.resultAt(i);
+
+              for (DelegationScopeConstraint scope : scopes) {
+
+                if ("*".equals(scope.scope())) {
+                  return fullAccessResponse();
+                }
+
+                if ("data_access".equals(scope.scope())) {
+
+                  if ("*".equals(scope.entityId())) {
+                    return fullAccessResponse();
+                  }
+
+                  if ("item".equals(scope.entityType())) {
+                    allowedItems.add(scope.entityId());
+                  }
+                }
+              }
+            }
+
+            JsonObject response = new JsonObject();
+            response.put("title", "Success");
+            response.put("result", new ArrayList<>(allowedItems));
+            return response;
+          });
+      });
+  }
 
 
+  private JsonObject fullAccessResponse() {
+    return new JsonObject()
+      .put("title", "Success")
+      .put("result", List.of("*"));
+  }
 
 
 }
