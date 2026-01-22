@@ -9158,6 +9158,206 @@ paths:
                     }'
 
 
+
+## Leaderboard apis
+  /iudx/v2/leaderboard/asset:
+    get:
+      tags:
+        - Leaderboard
+      summary: Get leaderboard for assets
+      description: >
+        Retrieve the leaderboard for assets based on various criteria such as most viewed, most downloaded, highest rated, etc.
+      operationId: get-asset-leaderboard
+      parameters:
+        - name: assetType
+          in: query
+          description: Filter by asset types (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [ DATABANK, AI_MODEL, USECASE ]
+        - name: accessPolicy
+          in: query
+          description: Filter by access policy (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [RESTRICTED,OPEN,PRIVATE,PII]
+        - name: organizationType
+          in: query
+          description: Filter by aorganizationType (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [Private, Public, Academic, Institution, NGO/Non-profit", "NA"]
+        - $ref: '#/components/parameters/TimeParam'
+        - $ref: '#/components/parameters/EndTimeParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+      responses:
+        '200':
+          description: Successfully retrieved asset leaderboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaderBoardResponseAsset'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Get Asset Leaderboard
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/asset?time=2026-01-15T12%3A30%3A00&timerel=between&endtime=2026-01-20T12%3A30%3A00&assetType=DATABANK&assetType=AI_MODEL&page=1&size=2&sort=downloads%3Adesc'
+
+  /iudx/v2/leaderboard/provider:
+    get:
+        tags:
+            - Leaderboard
+        summary: Get leaderboard for providers
+        description: >
+            Retrieve the leaderboard for data providers based on various criteria such as most viewed, most downloaded, highest rated, etc.
+        operationId: get-provider-leaderboard
+        parameters:
+          - name: assetType
+            in: query
+            description: Filter by asset types (repeatable)
+            required: false
+            style: form
+            explode: true
+            schema:
+              type: array
+              items:
+                type: string
+                enum: [ DATABANK, AI_MODEL, USECASE ]
+          - name: organizationType
+            in: query
+            description: Filter by aorganizationType (repeatable)
+            required: false
+            style: form
+            explode: true
+            schema:
+              type: array
+              items:
+                type: string
+                enum: [ Private, Public, Academic, Institution, NGO/Non-profit", NA ]
+          - $ref: '#/components/parameters/TimeParam'
+          - $ref: '#/components/parameters/EndTimeParam'
+          - $ref: '#/components/parameters/PageParam'
+          - $ref: '#/components/parameters/SizeParam'
+          - $ref: '#/components/parameters/SortingParam'
+
+        responses:
+            '200':
+                description: Successfully retrieved provider leaderboard
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/LeaderBoardProvider'
+            '400':
+                description: Bad Request
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/GenericBadRequestResponse'
+            '500':
+              description: Internal Server Error
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/InternalServerErrorResponse'
+        x-codeSamples:
+          - lang: cURL
+            label: Get Provider Leaderboard
+            source: |
+              curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/provider?organizationType=Public&assetType=DATABANK&time=2026-01-10T12%3A30%3A00&timerel=between&endtime=2026-01-20T12%3A30%3A00&page=1&sort=likes%3Adesc&size=1'
+
+
+  /iudx/v2/leaderboard/organization:
+    get:
+      tags:
+        - Leaderboard
+      summary: Get leaderboard for organisations
+      description: >
+        Retrieve the leaderboard for data providers based on various criteria such as most viewed, most downloaded, highest rated, etc.
+      operationId: get-organisation-leaderboard
+      parameters:
+        - name: organizationType
+          in: query
+          description: Filter by aorganizationType (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [ Private, Public, Academic, Institution, NGO/Non-profit", "NA" ]
+        - name: assetType
+          in: query
+          description: Filter asset type (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [ DATABANK, AI_MODEL, USECASE ]
+        - $ref: '#/components/parameters/TimeParam'
+        - $ref: '#/components/parameters/EndTimeParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+
+      responses:
+        '200':
+          description: Successfully retrieved provider leaderboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaderBoardOrg'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Get organisation Leaderboard
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/organization?organizationType=Public&assetType=DATABANK&time=2026-01-10T12%3A30%3A00&timerel=between&endtime=2026-01-20T12%3A30%3A00&page=1&size=2&sort=contribution%3Adesc'
+
+
 tags:
   - name: Activity Logs
     x-displayName: "Activity Logs"
@@ -9234,6 +9434,12 @@ tags:
       These endpoints allow users to create, retrieve, and delete appIds, which can be used
       for application-level authentication and authorization within the platform.
     x-displayName: App
+  - name: Leaderboard
+    description: >
+      APIs under this tag provide leaderboard and ranking data for `Organization`,`Provider` and `Asset` such as `DATABANK`, `AI_MODEL`, and `USECASE`. 
+      These endpoints support filtering, sorting, pagination,
+      and time-based queries to retrieve ranked results based on engagement metrics like
+      downloads, views, and likes.
 
 
 components:
@@ -9578,6 +9784,274 @@ components:
             - APP
 
           example: DATABANK
+    LeaderBoardResponseAsset:
+      type: object
+      required:
+        - type
+        - title
+        - result
+      properties:
+        type:
+          type: string
+          description: URN identifying the response category
+          example: urn:dx:ControlPlane:success
+        title:
+          type: string
+          description: Short response title
+          example: Success
+        result:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                type: object
+                properties:
+                  rank:
+                    type: integer
+                  id:
+                    type: string
+                    format: uuid
+                  name:
+                    type: string
+                  type:
+                    type: string
+                  shortDescription:
+                    type: string
+                  providerId:
+                    type: string
+                    format: uuid
+                  organizationId:
+                    type: string
+                    format: uuid
+                  organizationName:
+                    type: string
+                  downloads:
+                    type: integer
+                  likes:
+                    type: integer
+                  dislikes:
+                    type: integer
+                  views:
+                    type: integer
+                required:
+                  - rank
+                  - id
+                  - name
+            paginationInfo:
+              type: object
+              properties:
+                page:
+                  type: integer
+                size:
+                  type: integer
+                totalCount:
+                  type: integer
+                totalPages:
+                  type: integer
+                hasNext:
+                  type: boolean
+                hasPrevious:
+                  type: boolean
+      example:
+        type: urn:dx:ControlPlane:success
+        title: Success
+        result:
+          - rank: 1
+            id: 'ddddddd2-dddd-dddd-dddd-dddddddddddd'
+            name: 'AI Model 2'
+            type: 'AI_MODEL'
+            shortDescription: 'AI Model entity 2'
+            providerId: 'ccccccc1-cccc-cccc-cccc-ccccccccccc1'
+            organizationId: 'bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbb1'
+            organizationName: 'Org One'
+            downloads: 1
+            likes: 0
+            dislikes: 4
+            views: 0
+        paginationInfo:
+          page: 1
+          size: 1
+          totalCount: 1
+          totalPages: 1
+          hasNext: false
+          hasPrevious: false
+
+    LeaderBoardProvider:
+      type: object
+      required:
+        - type
+        - title
+        - result
+      properties:
+        type:
+          type: string
+          description: URN identifying the response category
+          example: 'dx:controlPlane:success'
+        title:
+          type: string
+          description: Short response title
+          example: 'Success'
+        result:
+          type: array
+          items:
+            type: object
+            properties:
+              rank:
+                type: integer
+              id:
+                type: string
+                format: uuid
+              username:
+                type: string
+              organizationId:
+                type: string
+                format: uuid
+              organizationName:
+                type: string
+              publishedDatabank:
+                type: integer
+              publishedAiModels:
+                type: integer
+              publishedUsecases:
+                type: integer
+              totalPublished:
+                type: integer
+              downloads:
+                type: integer
+              likes:
+                type: integer
+              dislikes:
+                type: integer
+            required:
+              - rank
+              - id
+              - username
+        paginationInfo:
+          type: object
+          properties:
+            page:
+              type: integer
+            size:
+              type: integer
+            totalCount:
+              type: integer
+            totalPages:
+              type: integer
+            hasNext:
+              type: boolean
+            hasPrevious:
+              type: boolean
+      example:
+        type: 'dx:controlPlane:success'
+        title: 'Success'
+        result:
+          - rank: 1
+            id: 'ccccccc1-cccc-cccc-cccc-ccccccccccc1'
+            username: 'provider name'
+            organizationId: 'bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbb1'
+            organizationName: 'Org One'
+            publishedDatabank: 1
+            publishedAiModels: 1
+            publishedUsecases: 0
+            totalPublished: 2
+            downloads: 2
+            likes: 8
+            dislikes: 4
+        paginationInfo:
+          page: 1
+          size: 1
+          totalCount: 3
+          totalPages: 3
+          hasNext: true
+          hasPrevious: false
+
+    LeaderBoardOrg:
+      type: object
+      required:
+        - type
+        - title
+        - result
+      properties:
+        type:
+          type: string
+          description: URN identifying the response category
+          example: 'dx:controlPlane:success'
+        title:
+          type: string
+          description: Short response title
+          example: 'Success'
+        result:
+          type: array
+          items:
+            type: object
+            properties:
+              rank:
+                type: integer
+              id:
+                type: string
+                format: uuid
+                description: Organization ID
+              organizationName:
+                type: string
+              members:
+                type: integer
+              publishedDatabanks:
+                type: integer
+              publishedAiModels:
+                type: integer
+              publishedUsecases:
+                type: integer
+              totalPublished:
+                type: integer
+              downloads:
+                type: integer
+              likes:
+                type: integer
+              dislikes:
+                type: integer
+            required:
+              - rank
+              - id
+              - organizationName
+        paginationInfo:
+          type: object
+          properties:
+            page:
+              type: integer
+            size:
+              type: integer
+            totalCount:
+              type: integer
+            totalPages:
+              type: integer
+            hasNext:
+              type: boolean
+            hasPrevious:
+              type: boolean
+      example:
+        type: 'dx:controlPlane:success'
+        title: 'Success'
+        result:
+          - rank: 1
+            id: 'bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbb1'
+            organizationName: 'Org One'
+            members: 0
+            publishedDatabanks: 1
+            publishedAiModels: 2
+            publishedUsecases: 0
+            totalPublished: 3
+            downloads: 2
+            likes: 8
+            dislikes: 4
+        paginationInfo:
+          page: 1
+          size: 1
+          totalCount: 2
+          totalPages: 2
+          hasNext: true
+          hasPrevious: false
+
     BookmarkResponse:
       type: object
       required:

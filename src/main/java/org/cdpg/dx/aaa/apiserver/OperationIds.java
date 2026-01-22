@@ -117,4 +117,11 @@ public final class OperationIds {
 
   public static final String OP_GET_DASHBOARD_USAGE_SUMMARY = "get-dashboard-usage-summary";
   public static final String OP_POST_ITEM_VOTE = "post-item-vote";
+
+  /* =====================================================
+   * Leaderboard
+   * ===================================================== */
+  public static final String OP_GET_ORG_LEADERBOARD = "get-organisation-leaderboard";
+  public static final String OP_GET_PROVIDER_LEADERBOARD = "get-provider-leaderboard";
+  public static final String OP_GET_ASSET_LEADERBOARD = "get-asset-leaderboard";
 }
