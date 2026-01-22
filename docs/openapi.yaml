@@ -9358,6 +9358,166 @@ paths:
             curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/organization?organizationType=Public&assetType=DATABANK&time=2026-01-10T12%3A30%3A00&timerel=between&endtime=2026-01-20T12%3A30%3A00&page=1&size=2&sort=contribution%3Adesc'
 
 
+  
+  /iudx/v2/user/interactions:
+    post:
+      tags:
+        - User Interactions
+      operationId: post-user-intraction
+      summary: Create or update user interaction (like, dislike, bookmark)
+      description: >
+        Allows a user to like, dislike, bookmark, or remove an interaction on an entity.
+        Uses a single unified endpoint for all interaction types.
+      security:
+        - authorization: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserInteractionRequest'
+            examples:
+              like:
+                summary: Like an entity
+                value:
+                  entityId: "e74112d5-b58b-401e-a799-712b473279ea"
+                  entityType: "DATABANK"
+                  actionType: "LIKE"
+              dislike:
+                summary: Dislike an entity
+                value:
+                  entityId: "e74112d5-b58b-401e-a799-712b473279ea"
+                  entityType: "DATABANK"
+                  actionType: "DISLIKE"
+              bookmark:
+                summary: Bookmark an entity
+                value:
+                  entityId: "e74112d5-b58b-401e-a799-712b473279ea"
+                  entityType: "DATABANK"
+                  actionType: "BOOKMARK"
+              removeVote:
+                summary: Remove vote (neutral)
+                value:
+                  entityId: "e74112d5-b58b-401e-a799-712b473279ea"
+                  entityType: "DATABANK"
+                  actionType: "NEUTRAL"
+              removeBookmark:
+                summary: Remove bookmark
+                value:
+                  entityId: "e74112d5-b58b-401e-a799-712b473279ea"
+                  entityType: "DATABANK"
+                  actionType: "UNBOOKMARK"
+      responses:
+        '200':
+          description: Vote recorded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InteractionResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+      x-codeSamples:
+        - lang: cURL
+          label: submit interaction
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/interactions' \
+            --header 'Authorization: Bearer <jwt token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+            "entityId": "e74112d5-b58b-401e-a799-712b473279ea",
+            "entityType": "DATABANK",
+            "actionType": "LIKE"
+            }'
+
+    get:
+      tags:
+        - User Interactions
+      operationId: get-user-interaction
+      summary: Get user interaction status for an entity
+      description: >
+                Returns a paginated list of entities the authenticated user has interacted with
+                (liked, disliked, bookmarked), including the interaction state per entity.
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: entityId
+          in: query
+          description: Unique identifier of the entity
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: entityType
+          in: query
+          description: Type of the entity
+          required: false
+          schema:
+            type: string
+            enum: [ DATABANK, AI_MODEL, USECASE ]
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Successfully retrieved user interaction status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInteractiomResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+      x-codeSamples:
+        - lang: cURL
+          label: Get User Interaction Status
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/interactions' \
+            --header 'Content-Type: application/json' \
+            --header 'Authorization: Bearer <jwt token>'
 tags:
   - name: Activity Logs
     x-displayName: "Activity Logs"
@@ -9441,6 +9601,15 @@ tags:
       and time-based queries to retrieve ranked results based on engagement metrics like
       downloads, views, and likes.
 
+
+  - name: User Interactions
+    description: >
+        APIs under this tag allow users to manage their interactions with platform entities such as
+        `DATABANK`, `AI_MODEL`, and `USECASE`. These endpoints support actions like `like`, `dislike`,
+        and `bookmark`, as well as retrieval of a user's interaction state for a specific entity.
+        The APIs are designed to support user-centric engagement features and provide a consistent
+        interaction model across different entity types.
+    x-displayName: User Engagement (Like, Dislike & Bookmark)
 
 components:
   securitySchemes:
@@ -9628,6 +9797,58 @@ components:
       schema:
         type: string
   schemas:
+    UserInteractionRequest:
+      type: object
+      required:
+        - entityId
+        - entityType
+        - actionType
+      properties:
+        entityId:
+          type: string
+          format: uuid
+          description: ID of the entity being voted on
+          example: 7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9
+        entityType:
+          type: string
+          description: Type of entity being vote on
+          enum:
+            - DATABANK
+            - AI_MODEL
+            - USECASE
+          example: DATABANK
+        actionType:
+          type: string
+          description: Type of vote
+          enum:
+            - BOOKMARK
+            - UNBOOKMARK
+            - LIKE
+            - DISLIKE
+            - NEUTRAL
+          example: LIKE
+    InteractionResponse:
+      type: object
+      title: Response for internal datasets .
+      description: Example success response for getting internal datasets
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have
+            been triggered.
+        title:
+          description: A human readable title to the message response.
+        detail:
+          type: string
+      required:
+        - type
+      example:
+        type: 'dx:controlPlane:success'
+        title: 'Success'
+        detail: 'Interaction updated successfully'
+
+
     dashboardUsageSummarySuccessResponse:
         type: object
         title: Response for internal datasets .
@@ -10071,6 +10292,54 @@ components:
 
         result:
           $ref: '#/components/schemas/BookmarkResult'
+    UserInteractiomResponse:
+      type: object
+      required:
+        - type
+        - title
+        - result
+      properties:
+        type:
+          type: string
+          description: URN identifying the response category
+          example: urn:dx:ControlPlane:success
+
+        title:
+          type: string
+          description: Short response title
+          example: Success
+        result:
+          type: array
+          items:
+            type: object
+            required:
+              - entityId
+              - entityType
+              - isBookmarked
+              - isLiked
+              - isDisliked
+            properties:
+              entityId:
+                type: string
+                format: uuid
+              entityType:
+                type: string
+                example: DATABANK
+              isBookmarked:
+                type: boolean
+              isLiked:
+                type: boolean
+              isDisliked:
+                type: boolean
+          example:
+            - entityId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1"
+              entityType: "DATABANK"
+              isBookmarked: true
+              isLiked: false
+              isDisliked: false
+        paginationInfo:
+          $ref: '#/components/schemas/PaginationInfoResponse'
+
 
     BookmarkResult:
       type: object

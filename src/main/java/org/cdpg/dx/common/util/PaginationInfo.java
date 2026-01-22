@@ -18,6 +18,19 @@ public class PaginationInfo {
     this.hasPrevious = hasPrevious;
   }
 
+  public static PaginationInfo from(int page, int size, long totalCount) {
+
+    if (size <= 0) size = 10; // safety default
+    if (page <= 0) page = 1; // safety default
+
+    int totalPages = (int) Math.ceil((double) totalCount / size);
+
+    boolean hasPrevious = page > 1;
+    boolean hasNext = page < totalPages;
+
+    return new PaginationInfo(page, size, totalCount, totalPages, hasNext, hasPrevious);
+  }
+
   public int getPage() {
     return page;
   }

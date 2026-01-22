@@ -124,4 +124,7 @@ public final class OperationIds {
   public static final String OP_GET_ORG_LEADERBOARD = "get-organisation-leaderboard";
   public static final String OP_GET_PROVIDER_LEADERBOARD = "get-provider-leaderboard";
   public static final String OP_GET_ASSET_LEADERBOARD = "get-asset-leaderboard";
+
+  public static final String OP_POST_USER_INTERACTION = "post-user-intraction";
+  public static final String OP_GET_USER_INTERACTIONS = "get-user-interaction";
 }
