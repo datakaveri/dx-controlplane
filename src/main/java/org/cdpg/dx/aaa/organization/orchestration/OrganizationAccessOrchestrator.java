@@ -9,6 +9,7 @@ import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 import java.time.LocalDateTime;
+import java.time.chrono.ChronoLocalDateTime;
 import java.util.UUID;
 
 // todo:  need to refactor this class according to new delegation model this is just a stub for now
@@ -49,16 +50,16 @@ public class OrganizationAccessOrchestrator {
               UUID delegatorId = UUID.fromString(dxUser.did());
 
               return delegationService
-                  .getDelegationScopeByEntityId(orgId)
+                  .getDelegationScopeByEntityId(orgId.toString())
                   .compose(
                       scopes -> {
                         boolean allowed =
                             scopes.stream()
                                 .anyMatch(
                                     s ->
-                                        s.scope().equalsIgnoreCase(requiredScope.getScope())
-                                            && s.entityId().equals(orgId)
-                                            && LocalDateTime.now().isBefore(s.expiryAt()));
+                                        s.getString("scope").equalsIgnoreCase(requiredScope.getScope())
+                                            && s.getString("entity_id").equals(orgId)
+                                            && LocalDateTime.now().isBefore((ChronoLocalDateTime<?>) s.getValue("expiry_at")));
 
                         if (!allowed) {
                           return Future.failedFuture(

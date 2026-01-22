@@ -1,160 +1,186 @@
 {
   "version": "1.0",
   "zookeepers": [
-    "0.0.0.0:2181"
+    "<ZOOKEEPER_HOSTNAME_OR_SERVICE_NAME>"
   ],
-  "clusterId": "tgdex-control-panel-cluster",
+  "clusterId": "<CLUSTER_ID_STRING>",
+
   "postgresOptions": {
-    "databaseIP": "<database-ip>",
-    "databasePort": 5433,
-    "databaseName": "<db-name>",
-    "databaseSchema": "<schema-name>",
-    "databaseUserName": "<db-username>",
-    "databasePassword": "<db-password>",
+    "databaseIP": "<POSTGRES_HOST>",
+    "databasePort": 5432,
+    "databaseName": "<POSTGRES_DATABASE_NAME>",
+    "databaseSchema": "<POSTGRES_SCHEMA_NAME>",
+    "databaseUserName": "<POSTGRES_USERNAME>",
+    "databasePassword": "<POSTGRES_PASSWORD>",
     "poolSize": 25
   },
-  "commonOptions":{
-    "controlPlaneDomain": "https://v2.dev.controlplane.iudx.io",
-    "dxApiBasePath": "/dx/apd/acl/v1",
-    "dataPlaneUrl" : "<data-plane-url>",
-    "ogcDataPlaneUrl": "<ogc-data-plane-url>",
-    "controlPlaneUrl": "<control-plane-url>",
-    "clientId": "<apd-delegate-client-id>",
-    "clientSecret": "<apd-delegate-client-secret>",
-    "supportEmail": "<support-email>",
-    "baseUrl": "<controlplane-baseUrl>",
-    "apdURL": "<acl-apd-url>",
+
+  "commonOptions": {
+    "controlPlaneDomain": "<CONTROL_PLANE_DOMAIN>",
+    "dxApiBasePath": "<DX_API_BASE_PATH>",
+    "cosDomain": "<COS_DOMAIN>",
+    "dataPlaneUrl": "<DATA_PLANE_URL>",
+    "tokenExpirationMinutes": 60,
+    "clientId": "<OAUTH_CLIENT_ID>",
+    "clientSecret": "<OAUTH_CLIENT_SECRET>",
+    "supportEmail": "<SUPPORT_EMAIL_ADDRESS>",
+    "baseUrl": "<BASE_APPLICATION_URL>",
+    "apdURL": "<APD_SERVICE_URL>",
+    "tenantPrefix": "<TENANT_PREFIX>",
+    "kycRequired": false,
     "jwtIgnoreExpiry": true,
     "routingKey": "##",
-    "cosDomain":"asdasd",
-    "cosAdminUserId": "<cos-admin-user-id>",
+    "cosAdminUserId": "<COS_ADMIN_USER_ID>",
     "initialCreditBalance": 1000,
-    "corsAllowedOrigin": ["*", "http://localhost:4001"],
-    "defaultExpiryDays": 12,
-    "verifiedBy": ""
-  },
-  "emailOptions": {
-    "emailSender": "some@dummy.com",
-    "senderName": "<email-sender-name>",
-    "cosAdminEmailId":"<cos-admin-email-id>",
-    "TGDxUrl": "https://something.com/"
-  },
-  "emailConfig": {
-    "emailSender": "some@dummy.com",
-    "emailSupport": [
-      "dummy@email.com"
+    "verifiedBy": "<VERIFIED_BY_ORGANIZATION_NAME>",
+    "corsAllowedOrigin": [
+      "*",
+      "<FRONTEND_URL_1>",
+      "<FRONTEND_URL_2>"
     ],
-    "publisherPanelUrl": "<dashboard-url>",
-    "senderName": "<Email-Sender-Name>"
+    "publisherPanelUrl": "<PUBLISHER_PANEL_URL>",
+    "docIndex": "<ELASTIC_DOC_INDEX>",
+    "vocContext": "<VOCABULARY_CONTEXT_URL>",
+    "defaultExpiryDays": 12
   },
-  "emailNotification": {
-    "emailQueue": "email-notification",
-    "emailExchange": "Email",
-    "emailRoutingKey": "##"
+
+  "emailOptions": {
+    "emailSender": "<NO_REPLY_EMAIL_ADDRESS>",
+    "platformName": "<PLATFORM_DISPLAY_NAME>",
+    "cosAdminEmailId": "<COS_ADMIN_EMAIL_ADDRESS>",
+    "TGDxUrl": "<TGDX_BASE_URL>"
   },
-  "keycloakOptions":{
-    "keycloakRealm": "<keycloak-realm>",
-    "keycloakUrl": "<keycloak-url>",
-    "keycloakAdminClientId": "<admin-client-id>",
-    "keycloakAdminClientSecret": "<admin-client-secret>",
+
+  "emailConfig": {
+    "emailSender": "<NO_REPLY_EMAIL_ADDRESS>",
+    "emailSupport": [
+      "<SUPPORT_EMAIL_ADDRESS>"
+    ],
+    "publisherPanelUrl": "<PUBLISHER_PANEL_URL>",
+    "emailNotification": {
+      "emailQueue": "<EMAIL_QUEUE_NAME>",
+      "emailExchange": "<EMAIL_EXCHANGE_NAME>",
+      "emailRoutingKey": "##"
+    },
+    "senderName": "<EMAIL_SENDER_NAME>"
+  },
+
+  "keycloakOptions": {
+    "keycloakRealm": "<KEYCLOAK_REALM_NAME>",
+    "keycloakUrl": "<KEYCLOAK_BASE_URL>",
+    "keycloakAdminClientId": "<KEYCLOAK_ADMIN_CLIENT_ID>",
+    "keycloakAdminClientSecret": "<KEYCLOAK_ADMIN_CLIENT_SECRET>",
     "keycloakAdminPoolSize": "25",
-    "keycloakJwtLeeway": 90,
-    "keycloakCertUrl": "<keycloak-cert-url>",
-    "iss": "<keycloak-issuer-url>",
-    "jwksRefreshIntervalMs": 21600000,
-    "adminUsername": "<keycloak-admin-username>",
-    "adminPassword": "<keycloak-admin-password>"
+    "adminUsername": "<KEYCLOAK_ADMIN_USERNAME>",
+    "adminPassword": "<KEYCLOAK_ADMIN_PASSWORD>",
+
+    "authPorvider": [
+      {
+        "certUrl": "<JWT_CERT_URL>",
+        "iss": "<JWT_ISSUER_URL>"
+      },
+      {
+        "name": "<SOCIAL_AUTH_PROVIDER_NAME>",
+        "clientId": "<SOCIAL_CLIENT_ID>",
+        "clientSecret": "<SOCIAL_CLIENT_SECRET>",
+        "redirectUri": "<SOCIAL_REDIRECT_URI>"
+      }
+    ],
+
+    "issuers": {
+      "jwtIgnoreExpiry": true,
+      "leeway": 30,
+      "jwksRefreshIntervalMs": 21600000,
+      "<ISSUER_DOMAIN>": {
+        "type": "internal",
+        "audience": []
+      }
+    }
   },
+
   "KYCOptions": {
-    "digilockerTokenUrl":"<digilocker-token-url>",
-    "digilockerAadhaarUrl":"<digilocker-aadhaar-url>",
-    "clientId" :"<client-id>",
-    "clientSecret": "<client-secret>",
-    "redirectUri":"<redirection-uri>"
+    "digilockerTokenUrl": "<DIGILOCKER_TOKEN_URL>",
+    "digilockerAadhaarUrl": "<DIGILOCKER_AADHAAR_URL>",
+    "clientId": "<KYC_CLIENT_ID>",
+    "clientSecret": "<KYC_CLIENT_SECRET>",
+    "redirectUri": "<KYC_REDIRECT_URI>"
   },
-  "jwtKeystoreOptions":{
-    "keystorePath": "configs/keystore.jks",
-    "keystorePassword": "<keystore-password>"
+
+  "jwtKeystoreOptions": {
+    "keystorePath": "<KEYSTORE_FILE_PATH>",
+    "keystorePassword": "<KEYSTORE_PASSWORD>"
   },
+
+  "databrokerOptions": {
+    "dataBrokerIP": "<RABBITMQ_HOST>",
+    "dataBrokerPort": 24568,
+    "prodVhost": "<PROD_VHOST_NAME>",
+    "internalVhost": "<INTERNAL_VHOST_NAME>",
+    "externalVhost": "<EXTERNAL_VHOST_NAME>",
+    "dataBrokerUserName": "<RABBITMQ_USERNAME>",
+    "dataBrokerPassword": "<RABBITMQ_PASSWORD>",
+    "dataBrokerManagementPort": 28042,
+    "connectionTimeout": 6000,
+    "requestedHeartbeat": 60,
+    "handshakeTimeout": 6000,
+    "requestedChannelMax": 5,
+    "networkRecoveryInterval": 500,
+    "automaticRecoveryEnabled": true,
+    "brokerAmqpIp": "<AMQP_HOST>",
+    "brokerAmqpPort": 24567,
+    "publishExchange": "<AMQP_EXCHANGE_NAME>"
+  },
+
+  "auditOptions": {
+    "auditingExchange": "<AUDIT_EXCHANGE_NAME>",
+    "auditingRoutingKey": "##",
+    "auditingQueue": "<AUDIT_QUEUE_NAME>",
+    "isRemoteAudit": true
+  },
+
   "modules": [
     {
       "id": "org.cdpg.dx.database.postgres.verticle.PostgresVerticle",
       "verticleInstances": 1,
       "isWorkerVerticle": false,
-      "required":["postgresOptions", "commonOptions"]
-    },{
+      "required": [
+        "postgresOptions",
+        "commonOptions"
+      ]
+    },
+    {
       "id": "org.cdpg.dx.email.verticle.EmailVerticle",
       "verticleInstances": 1,
       "isWorkerVerticle": true,
       "threadPoolName": "emailVerticleThreadPool",
       "threadPoolSize": 10,
-      "required":["commonOptions"],
-      "emailHostName": "<email-smtp-host-url>",
+      "required": [
+        "commonOptions",
+        "databrokerOptions",
+        "keycloakOptions",
+        "emailOptions",
+        "emailConfig"
+      ],
+      "emailHostName": "<SMTP_HOST>",
       "emailPort": 587,
-      "emailUserName": "<email-username>",
-      "emailPassword": "<email-password>",
+      "emailUserName": "<SMTP_USERNAME>",
+      "emailPassword": "<SMTP_PASSWORD>",
       "notifyByEmail": true
     },
     {
-      "id": "org.cdpg.dx.catalogueService.CatalogueVerticle",
+      "id": "org.cdpg.dx.database.elastic.ElasticsearchVerticle",
       "isWorkerVerticle": false,
       "verticleInstances": 1,
-      "dxCatalogueBasePath": "/iudx/cat/v1",
-      "catServerHost": "<dx-catalogue-server-url>",
-      "catServerPort": 443,
-      "required": [
-        "commonOptions"
-      ]
+      "tenantPrefix": "<ELASTIC_TENANT_PREFIX>",
+      "databaseIP": "<ELASTICSEARCH_HOST>",
+      "databasePort": 9200,
+      "databaseUser": "<ELASTIC_USERNAME>",
+      "databasePassword": "<ELASTIC_PASSWORD>"
     },
     {
-      "id": "org.cdpg.dx.databroker.DataBrokerVerticle",
+      "id": "org.cdpg.dx.aaa.delegation.DelegationVerticle",
       "isWorkerVerticle": false,
-      "verticleInstances": 1,
-      "required":["commonOptions"],
-      "dataBrokerIP": "<databroker-ip>",
-      "dataBrokerPort": 24568,
-      "prodVhost": "IUDX",
-      "internalVhost": "IUDX-INTERNAL",
-      "externalVhost": "IUDX-EXTERNAL",
-      "dataBrokerUserName": "<databroker-username>",
-      "dataBrokerPassword": "<databroker-password>",
-      "dataBrokerManagementPort": 28042,
-      "connectionTimeout": 6000,
-      "requestedHeartbeat": 60,
-      "handshakeTimeout": 6000,
-      "requestedChannelMax": 5,
-      "networkRecoveryInterval": 500,
-      "automaticRecoveryEnabled": "true",
-      "brokerAmqpIp": "<databroker-ip>",
-      "brokerAmqpPort": 24567,
-      "publishExchange": "<publish-exchange>"
-    },
-    {
-      "id": "org.cdpg.dx.aaa.apiserver.ApiServerVerticle",
-      "verticleInstances": 1,
-      "isWorkerVerticle": false,
-      "httpPort":8443,
-      "required":["postgresOptions", "commonOptions", "keycloakOptions", "KYCOptions","emailOptions", "emailConfig","jwtKeystoreOptions"],
-      "serverTimeoutMs": 30000,
-      "corsRegexString":"^https://.+\\.iudx\\.org\\.in$",
-      "urnPrefix":"dx:controlPlane:"
-    },
-    {
-      "id": "org.cdpg.dx.acl.apiserver.ApdApiServerVerticle",
-      "verticleInstances": 1,
-      "isWorkerVerticle": false,
-      "httpPort":8444,
-      "required":["postgresOptions", "commonOptions", "keycloakOptions", "KYCOptions","emailOptions", "emailConfig","jwtKeystoreOptions"],
-      "serverTimeoutMs": 30000,
-      "corsRegexString":"^https://.+\\.iudx\\.org\\.in$",
-      "urnPrefix2":"dx:aclApdServer:"
-    },
-    {
-      "id": "org.cdpg.dx.scheduler.verticle.SchedulerVerticle",
-      "verticleInstances": 1,
-      "isWorkerVerticle": true,
-      "schedulerTimeIntervalInMinutes": 30,
-      "threadPoolSize": 3
+      "verticleInstances": 1
     }
   ]
 }
