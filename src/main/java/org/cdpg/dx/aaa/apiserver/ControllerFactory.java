@@ -52,6 +52,7 @@ import org.cdpg.dx.aaa.email.factory.EmailComposerFactory;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.ingestion.service.IngestionService;
 import org.cdpg.dx.aaa.ingestion.service.IngestionServiceImpl;
+import org.cdpg.dx.aaa.interaction.factory.UserInteractionControllerFactory;
 import org.cdpg.dx.aaa.item.controller.ItemController;
 import org.cdpg.dx.aaa.item.factory.ItemControllerFactory;
 import org.cdpg.dx.aaa.item.service.ItemService;
@@ -346,6 +347,10 @@ public class ControllerFactory {
     ApiController leaderboardController =
         LeaderboardControllerFactory.create(pgService, urnGenerator);
     controllers.add(leaderboardController);
+
+    ApiController userInteractionController =
+        UserInteractionControllerFactory.create(pgService, urnGenerator);
+    controllers.add(userInteractionController);
 
     return controllers;
   }

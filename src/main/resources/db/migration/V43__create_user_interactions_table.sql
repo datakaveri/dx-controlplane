@@ -38,6 +38,18 @@ CREATE TABLE IF NOT EXISTS user_interactions (
     );
 
 -- =====================================================
+-- Trigger function (must exist before trigger)
+-- =====================================================
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- =====================================================
 -- Trigger (assumes function already exists globally)
 -- =====================================================
 DROP TRIGGER IF EXISTS trg_user_interactions_updated_at ON user_interactions;
