@@ -77,6 +77,8 @@ public interface OrganizationService {
 
   Future<OrganizationUser> getOrganizationUserInfo(UUID userId);
 
+    Future<List<JsonObject>> enrichWithUserInfo(List<JsonObject> computeReqs);
+
   // to check - info about the users
  // Future<OrganizationUser> getOrganizationUserById(UUID userId);
 

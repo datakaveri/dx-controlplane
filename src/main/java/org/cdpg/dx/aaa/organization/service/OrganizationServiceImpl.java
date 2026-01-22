@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.organization.service;
 
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.aaa.credit.models.CreditRequest;
@@ -888,6 +889,43 @@ public class OrganizationServiceImpl implements OrganizationService {
         // Return the first record (should be unique per user)
         return Future.succeededFuture(users.get(0));
       });
+  }
+
+  public Future<List<JsonObject>> enrichWithUserInfo(List<JsonObject> computeReqs)
+  {
+     List<Future> futures = new ArrayList<>();
+
+     for(JsonObject req:computeReqs)
+     {
+        UUID userId = UUID.fromString(req.getString("user_id"));
+
+        Future<Void> enrichmentFuture =
+          getOrganisationUserByUserId(userId)
+            .recover(err -> {
+              LOGGER.warn("The userId {} doesnt exist in org_user table", userId);
+              return Future.succeededFuture(null);
+            })
+            .compose(userRes->{
+            if (userRes == null) {
+              LOGGER.warn("The userId {} doesnt exist in org_user table",userId);
+              return Future.succeededFuture(null);
+            }
+
+            req.put("job_title", userRes.jobTitle());
+            req.put("emp_id", userRes.empId());
+
+            UUID orgId = userRes.organizationId();
+
+            return getOrganizationById(orgId) .map(orgRes -> {
+              req.put("org_name", orgRes.orgName());
+              return null;
+            });
+          });
+
+        futures.add(enrichmentFuture);
+     }
+
+     return CompositeFuture.all(futures).map(v->computeReqs);
   }
 
 

@@ -171,7 +171,7 @@ public class ControllerFactory {
 
     ApiController creditApiController =
         CreditControllerFactory.create(
-            creditService, emailComposer, userService, urnGenerator, isKycRequired);
+            creditService, emailComposer, userService, organizationService, urnGenerator, isKycRequired);
 
     ApiController delegationApiController =
         DelegationControllerFactory.create(

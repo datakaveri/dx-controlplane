@@ -15,6 +15,7 @@ import org.cdpg.dx.aaa.credit.models.CreditTransaction;
 import org.cdpg.dx.aaa.credit.models.Status;
 import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
+import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.AuditLog;
 import org.cdpg.dx.auth.authentication.util.AccessValidator;
@@ -47,11 +48,14 @@ public class CreditHandler {
   private final EmailComposer emailComposer;
   private final UserService userService;
   private final URNGenerator urnGenerator;
+  private final OrganizationService organizationService;
 
-  public CreditHandler(CreditService creditService, EmailComposer emailComposer, UserService userService, URNGenerator urnGenerator) {
+
+  public CreditHandler(CreditService creditService, EmailComposer emailComposer, UserService userService, OrganizationService organizationService, URNGenerator urnGenerator) {
     this.creditService = creditService;
     this.emailComposer = emailComposer;
     this.userService = userService;
+    this.organizationService = organizationService;
     this.urnGenerator = urnGenerator;
   }
 
@@ -412,7 +416,8 @@ public class CreditHandler {
           result.data(),
           ComputeRole::userId,
           ComputeRole::toJson
-        ).map(enrichedList -> Map.entry(enrichedList, result.paginationInfo()))
+        ) .compose(organizationService::enrichWithUserInfo)
+          .map(enrichedList -> Map.entry(enrichedList, result.paginationInfo()))
       )
       .onSuccess(entry -> {
         AuditLog auditLog = AuditingHelper.createAuditLog(
