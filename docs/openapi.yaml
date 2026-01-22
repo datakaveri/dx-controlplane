@@ -9409,7 +9409,7 @@ paths:
                   actionType: "UNBOOKMARK"
       responses:
         '200':
-          description: Vote recorded successfully
+          description: Interaction recorded successfully
           content:
             application/json:
               schema:
@@ -9604,12 +9604,18 @@ tags:
 
   - name: User Interactions
     description: >
-        APIs under this tag allow users to manage their interactions with platform entities such as
-        `DATABANK`, `AI_MODEL`, and `USECASE`. These endpoints support actions like `like`, `dislike`,
-        and `bookmark`, as well as retrieval of a user's interaction state for a specific entity.
-        The APIs are designed to support user-centric engagement features and provide a consistent
-        interaction model across different entity types.
-    x-displayName: User Engagement (Like, Dislike & Bookmark)
+      APIs under this tag allow users to manage their interactions with platform entities such as
+      `DATABANK`, `AI_MODEL`, and `USECASE`. These endpoints support actions including
+      `like`, `dislike`, `bookmark`, and `unbookmark`, and also allow retrieval of a user's interaction
+      state for specific entities. The APIs are designed to support user-centric engagement features
+      and provide a consistent interaction model across all entity types.
+
+      Note:
+        1. Voting and bookmarking functionalities have been consolidated into a single unified interaction endpoint.
+        2. The `NEUTRAL` action removes an existing vote (like/dislike).
+        3. The `UNBOOKMARK` action removes an existing bookmark.
+    x-displayName: User Engagement (Like, Dislike, Bookmark & Unbookmark)
+
 
 components:
   securitySchemes:

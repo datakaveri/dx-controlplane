@@ -52,8 +52,7 @@ public class UserInteractionV2Controller implements ApiController {
               v -> {
                 LOGGER.info("Interaction updated successfully for user {}", userId);
                 LOGGER.debug("Interaction details: {}", v.toJson());
-                ResponseBuilder.sendSuccess(
-                    ctx, "Interaction submitted successfully", urnGenerator);
+                ResponseBuilder.sendSuccess(ctx, "Interaction recorded successfully", urnGenerator);
               })
           .onFailure(ctx::fail);
 
@@ -79,10 +78,6 @@ public class UserInteractionV2Controller implements ApiController {
           .onSuccess(
               result -> {
                 LOGGER.info("Fetched user interactions successfully");
-                if (result.data().isEmpty()) {
-                  ResponseBuilder.sendNoContent(ctx, urnGenerator);
-                  return;
-                }
                 ResponseBuilder.sendSuccess(
                     ctx, result.data(), result.paginationInfo(), urnGenerator);
               })
