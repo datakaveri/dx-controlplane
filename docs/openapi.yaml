@@ -9447,20 +9447,84 @@ paths:
 
       x-codeSamples:
         - lang: cURL
-          label: Cast Vote
+          label: submit interaction
           source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/user/vote' \
-            --header 'Authorization: <token>' \
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/interactions' \
+            --header 'Authorization: Bearer <jwt token>' \
             --header 'Content-Type: application/json' \
             --data '{
-                      "entityId": "e74112d5-b58b-401e-a799-712b473279ea",
-                      "entityType": "DATABANK",
-                      "voteType": "DISLIKE"
-                      }'
+            "entityId": "e74112d5-b58b-401e-a799-712b473279ea",
+            "entityType": "DATABANK",
+            "actionType": "VOTE",
+            "value": "LIKE"
+            }'
 
+    get:
+      tags:
+        - User Interactions
+      operationId: get-user-interaction
+      summary: Get user interaction status for an entity
+      description: >
+                Returns a paginated list of entities the authenticated user has interacted with
+                (liked, disliked, bookmarked), including the interaction state per entity.
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: entityId
+          in: query
+          description: Unique identifier of the entity
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: entityType
+          in: query
+          description: Type of the entity
+          required: false
+          schema:
+            type: string
+            enum: [ DATABANK, AI_MODEL, USECASE, APP ]
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Successfully retrieved user interaction status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInteractiomResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
 
-
-
+      x-codeSamples:
+        - lang: cURL
+          label: Get User Interaction Status
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/interactions' \
+            --header 'Content-Type: application/json' \
+            --header 'Authorization: Bearer <jwt token>'
 tags:
   - name: Activity Logs
     x-displayName: "Activity Logs"
@@ -9775,13 +9839,27 @@ components:
             - DISLIKE
             - ADD
             - REMOVE
-            
     InteractionResponse:
       type: object
+      title: Response for internal datasets .
+      description: Example success response for getting internal datasets
       properties:
-        message:
+        type:
           type: string
-          example: "Interaction updated successfully"
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have
+            been triggered.
+        title:
+          description: A human readable title to the message response.
+        detail:
+          type: string
+      required:
+        - type
+      example:
+        type: 'dx:controlPlane:success'
+        title: 'Success'
+        detail: 'Interaction updated successfully'
+
 
     dashboardUsageSummarySuccessResponse:
         type: object
@@ -10226,6 +10304,54 @@ components:
 
         result:
           $ref: '#/components/schemas/BookmarkResult'
+    UserInteractiomResponse:
+      type: object
+      required:
+        - type
+        - title
+        - result
+      properties:
+        type:
+          type: string
+          description: URN identifying the response category
+          example: urn:dx:ControlPlane:success
+
+        title:
+          type: string
+          description: Short response title
+          example: Success
+        result:
+          type: array
+          items:
+            type: object
+            required:
+              - entityId
+              - entityType
+              - isBookmarked
+              - isLiked
+              - isDisliked
+            properties:
+              entityId:
+                type: string
+                format: uuid
+              entityType:
+                type: string
+                example: DATABANK
+              isBookmarked:
+                type: boolean
+              isLiked:
+                type: boolean
+              isDisliked:
+                type: boolean
+          example:
+            - entityId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1"
+              entityType: "DATABANK"
+              isBookmarked: true
+              isLiked: false
+              isDisliked: false
+        paginationInfo:
+          $ref: '#/components/schemas/PaginationInfoResponse'
+
 
     BookmarkResult:
       type: object
