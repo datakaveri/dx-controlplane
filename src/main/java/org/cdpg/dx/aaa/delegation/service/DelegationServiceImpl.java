@@ -4,6 +4,7 @@ package org.cdpg.dx.aaa.delegation.service;
 
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
@@ -64,17 +65,19 @@ public class DelegationServiceImpl implements DelegationService{
 
 
   @Override
-  public Future<DelegationGrant> createDelegationGrant(
-    DelegationGrant delegationGrant,
+  public Future<JsonObject> createDelegationGrant(
+    JsonObject delegationGrantBody,
     Set<String> delegatorRoles,
     JsonArray roleConstraints
   ) {
     LOGGER.info("ServiceImplementation of createDelegationGrant");
 
-    JsonObject body = delegationGrant.toJson();
-    LOGGER.info("Delegation Grant body is {}",body);
+//    JsonObject body = delegationGrant.toJson();
+    LOGGER.info("Delegation Grant body is {}",delegationGrantBody);
 
-    UUID delegatorId = UUID.fromString(body.getString(DELEGATOR_ID));
+    UUID delegatorId = UUID.fromString(delegationGrantBody.getString(DELEGATOR_ID));
+
+    DelegationGrant delegationGrant = DelegationGrant.fromJson(delegationGrantBody);
 
 
     boolean isWildcardDelegation = (roleConstraints == null || roleConstraints.isEmpty());
@@ -96,7 +99,7 @@ public class DelegationServiceImpl implements DelegationService{
     } else {
       flow =
 //        delegationValidator.validateAllConstraints(body, delegatorRoles,roleConstraints)
-           delegationValidator.validateEntityOwnership(body, delegatorRoles,roleConstraints)
+           delegationValidator.validateEntityOwnership(delegationGrantBody, delegatorRoles,roleConstraints)
           .compose(v -> delegationGrantDAO.create(delegationGrant))
           .compose(created ->
             insertScopeConstraints(created.delegationId(),roleConstraints,delegationGrant.expiryAt()).map(v -> created)
@@ -109,7 +112,7 @@ public class DelegationServiceImpl implements DelegationService{
           .map(v -> created)
       )
       .compose(created ->
-        publishScopesToKeycloak(created, roleConstraints,highestRole)
+        publishScopesToKeycloak(created, roleConstraints,highestRole).map(DelegationGrant::toJson)
       )
       .recover(err -> Future.failedFuture(BaseDxException.from(err)));
   }
@@ -141,9 +144,10 @@ public class DelegationServiceImpl implements DelegationService{
 
 
   @Override
-  public Future<DelegationGrant> getDelegationGrantById(UUID delegationId) {
+  public Future<JsonObject> getDelegationGrantById(String delegationIdStr) {
 
-    return delegationGrantDAO.get(delegationId)
+    UUID delegationId = UUID.fromString(delegationIdStr);
+    return delegationGrantDAO.get(delegationId).map(DelegationGrant::toJson)
       .recover(err -> {
         BaseDxException dxEx = BaseDxException.from(err);
         if (dxEx instanceof DxNotFoundException) {
@@ -154,14 +158,15 @@ public class DelegationServiceImpl implements DelegationService{
   }
 
   @Override
-  public Future<List<DelegationScopeConstraint>>getDelegationScopeByEntityId(UUID entityId) {
+  public Future<List<JsonObject>>getDelegationScopeByEntityId(String entityIdStr) {
 
-    Map<String,Object> filter = Map.of(ENTITY_ID,entityId.toString());
-    return delegationScopeConstraintDAO.getAllWithFilters(filter)
+
+    Map<String,Object> filter = Map.of(ENTITY_ID,entityIdStr);
+    return delegationScopeConstraintDAO.getAllWithFilters(filter).map(v->v.stream().map(DelegationScopeConstraint::toJson).toList())
       .recover(err -> {
         BaseDxException dxEx = BaseDxException.from(err);
         if (dxEx instanceof DxNotFoundException) {
-          return Future.failedFuture(new DxNotFoundException("No delegation grant found with id " + entityId, dxEx));
+          return Future.failedFuture(new DxNotFoundException("No delegation grant found with id " + entityIdStr, dxEx));
         }
         return Future.failedFuture(dxEx);
       });
@@ -233,12 +238,12 @@ public class DelegationServiceImpl implements DelegationService{
 
 
   @Override
-  public Future<List<DelegationScopeConstraint>> getAllDelegationScopeConstraints(UUID itemId) {
+  public Future<List<JsonObject>> getAllDelegationScopeConstraints(String itemIdStr) {
 
-    Map<String,Object> mp = Map.of("entity_id",itemId.toString());
+    Map<String,Object> mp = Map.of("entity_id",itemIdStr);
 
     return delegationScopeConstraintDAO
-      .getAllWithFilters(mp)
+      .getAllWithFilters(mp).map(v->v.stream().map(DelegationScopeConstraint::toJson).toList())
       .compose(all -> {
         if (all == null || all.isEmpty()) {
           LOGGER.warn("No delegation scope constraints found");
@@ -250,15 +255,16 @@ public class DelegationServiceImpl implements DelegationService{
 
 
   @Override
-  public Future<List<DelegationGrant>> getAllDelegationsByDelegator(UUID userId) {
+  public Future<List<JsonObject>> getAllDelegationsByDelegator(String userIdStr) {
 
-    Map<String,Object> conditionMap = Map.of(DELEGATOR_ID,userId.toString());
+    Map<String,Object> conditionMap = Map.of(DELEGATOR_ID,userIdStr);
 
     return delegationGrantDAO.getAllWithFilters(conditionMap)
+      .map(v->v.stream().map(DelegationGrant::toJson).toList())
       .recover(err -> {
         BaseDxException dxEx = BaseDxException.from(err);
         if (dxEx instanceof DxNotFoundException) {
-          return Future.failedFuture(new DxNotFoundException("No delegation found with userId as delegator " + userId, dxEx));
+          return Future.failedFuture(new DxNotFoundException("No delegation found with userId as delegator " + userIdStr, dxEx));
         }
         return Future.failedFuture(dxEx);
       });
@@ -266,15 +272,16 @@ public class DelegationServiceImpl implements DelegationService{
   }
 
   @Override
-  public Future<List<DelegationGrant>> getAllDelegationsOfDelegate(UUID userId) {
+  public Future<List<JsonObject>> getAllDelegationsOfDelegate(String userIdStr) {
 
-    Map<String,Object> conditionMap = Map.of(DELEGATE_ID, userId.toString());
+    Map<String,Object> conditionMap = Map.of(DELEGATE_ID, userIdStr);
 
-    return delegationGrantDAO.getAllWithFilters(conditionMap)
+    return delegationGrantDAO.getAllWithFilters(conditionMap).map(v->v.stream().map(DelegationGrant::toJson).toList())
+
       .recover(err -> {
         BaseDxException dxEx = BaseDxException.from(err);
         if (dxEx instanceof DxNotFoundException) {
-          return Future.failedFuture(new DxNotFoundException("No delegation found with userId as delegate " + userId, dxEx));
+          return Future.failedFuture(new DxNotFoundException("No delegation found with userId as delegate " + userIdStr, dxEx));
         }
         return Future.failedFuture(dxEx);
       });
@@ -283,7 +290,11 @@ public class DelegationServiceImpl implements DelegationService{
 
 
   @Override
-  public Future<Boolean> deleteDelegation(UUID delegationId, UUID userId) {
+  public Future<Boolean> deleteDelegation(String delegationIdStr, String userIdStr) {
+
+  UUID delegationId = UUID.fromString(delegationIdStr);
+  UUID userId = UUID.fromString(userIdStr);
+
 
     return delegationGrantDAO.get(delegationId).compose(delegationGrant -> {
 
@@ -342,15 +353,16 @@ public class DelegationServiceImpl implements DelegationService{
 
 
   @Override
-  public Future<List<DelegationUpdateRequest>> getDelegationRequestsByDelegationId(UUID delegationId) {
+  public Future<List<JsonObject>> getDelegationRequestsByDelegationId(String delegationIdStr) {
 
-    Map<String,Object> conditionMap = Map.of("delegation_id",delegationId.toString());
+    Map<String,Object> conditionMap = Map.of("delegation_id",delegationIdStr);
 
-    return delegationRequestDAO.getAllWithFilters(conditionMap)
+    return delegationRequestDAO.getAllWithFilters(conditionMap).map(v->v.stream().map(DelegationUpdateRequest::toJson).toList())
+
       .recover(err -> {
         BaseDxException dxEx = BaseDxException.from(err);
         if (dxEx instanceof DxNotFoundException) {
-          return Future.failedFuture(new DxNotFoundException("No delegation request found for delegationId" + delegationId, dxEx));
+          return Future.failedFuture(new DxNotFoundException("No delegation request found for delegationId" + delegationIdStr, dxEx));
         }
         return Future.failedFuture(dxEx);
       });
@@ -358,14 +370,15 @@ public class DelegationServiceImpl implements DelegationService{
   }
 
   @Override
-  public Future<List<DelegationScopeConstraint>> getDelegationScopeConstraints(UUID delegationId) {
-    Map<String,Object> conditionMap = Map.of("delegation_id",delegationId.toString());
+  public Future<List<JsonObject>> getDelegationScopeConstraints(String delegationIdStr) {
+    Map<String,Object> conditionMap = Map.of("delegation_id",delegationIdStr);
 
-    return delegationScopeConstraintDAO.getAllWithFilters(conditionMap)
+    return delegationScopeConstraintDAO.getAllWithFilters(conditionMap).map(v->v.stream().map(DelegationScopeConstraint::toJson).toList())
+
       .recover(err -> {
         BaseDxException dxEx = BaseDxException.from(err);
         if (dxEx instanceof DxNotFoundException) {
-          return Future.failedFuture(new DxNotFoundException("No delegation request found for delegationId" + delegationId, dxEx));
+          return Future.failedFuture(new DxNotFoundException("No delegation request found for delegationId" + delegationIdStr, dxEx));
         }
         return Future.failedFuture(dxEx);
       });

@@ -163,7 +163,7 @@ public class TokenServiceImpl implements TokenService {
     UUID delegationUUID = UUID.fromString(delegationId);
     UUID userUUID = UUID.fromString(userId);
 
-    return delegationService.getDelegationScopeConstraints(delegationUUID)
+    return delegationService.getDelegationScopeConstraints(delegationUUID.toString())
       .compose(scopeConstraints -> {
         if (scopeConstraints == null || scopeConstraints.isEmpty()) {
           return Future.failedFuture(
@@ -181,12 +181,12 @@ public class TokenServiceImpl implements TokenService {
         Set<String> scopes = new HashSet<>();
 //        Set<String> entityIds = new HashSet<>();
 
-        for (DelegationScopeConstraint constraint : scopeConstraints) {
+        for (JsonObject constraint : scopeConstraints) {
 //          LOGGER.info("Scope Constraints is {}",constraint.toJson());
-          scopes.add(constraint.scope());
+          scopes.add(constraint.getString("scope"));
 
-          if ("data_access".equalsIgnoreCase(constraint.scope())) {
-            if (constraint.entityId() == null) {
+          if ("data_access".equalsIgnoreCase(constraint.getString("scope"))) {
+            if (constraint.getString("entity_id") == null) {
               return Future.failedFuture(
                 new DxBadRequestException("Entity ID cannot be null for data_access scope")
               );
@@ -196,7 +196,7 @@ public class TokenServiceImpl implements TokenService {
 
         }
 
-        return delegationService.getDelegationGrantById(delegationUUID)
+        return delegationService.getDelegationGrantById(delegationUUID.toString())
           .compose(grant -> {
             if (grant == null) {
               return Future.failedFuture(
@@ -204,22 +204,22 @@ public class TokenServiceImpl implements TokenService {
               );
             }
 
-            if (!"active".equalsIgnoreCase(grant.status())) {
+            if (!"active".equalsIgnoreCase(grant.getString("status"))) {
               return Future.failedFuture(
                 new DxForbiddenException("Delegation " + delegationId + " is not active")
               );
             }
 
-            if (!grant.delegateId().equals(userUUID)) {
+            if (!grant.getValue("delegate_id").equals(userUUID)) {
               return Future.failedFuture(
                 new DxForbiddenException("Delegation does not belong to this delegate")
               );
             }
 
             JsonObject response = new JsonObject()
-              .put("delegationId", grant.delegationId().toString())
-              .put("delegatorId", grant.delegatorId().toString())
-              .put("delegateId", grant.delegateId().toString())
+              .put("delegationId", grant.getValue("delegation_id").toString())
+              .put("delegatorId", grant.getValue("delegator_id").toString())
+              .put("delegateId", grant.getValue("delegate_id").toString())
               .put("scopes", new JsonArray(new ArrayList<>(scopes)));
 
 //            if (!entityIds.isEmpty()) {

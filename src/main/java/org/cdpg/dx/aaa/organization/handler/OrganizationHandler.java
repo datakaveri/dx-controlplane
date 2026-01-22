@@ -68,16 +68,29 @@ public class OrganizationHandler {
   public Future<Boolean> validateEntityId(UUID delegatorId, UUID orgId) {
 
     return delegationService
-        .getDelegationScopeByEntityId(orgId)
+        .getDelegationScopeByEntityId(orgId.toString())
         .compose(
             scopeConstraints -> {
               boolean exists =
                   scopeConstraints.stream()
-                      .anyMatch(
-                          scopeConstraint ->
-                              "org_management".equalsIgnoreCase(scopeConstraint.scope())
-                                  && orgId.equals(scopeConstraint.entityId())
-                                  && LocalDateTime.now().isBefore(scopeConstraint.expiryAt()));
+                    .anyMatch(scopeConstraint -> {
+
+                      if (!"org_management".equalsIgnoreCase(scopeConstraint.getString("scope"))) {
+                        return false;
+                      }
+
+                      if (!orgId.toString().equals(scopeConstraint.getString("entity_id"))) {
+                        return false;
+                      }
+
+                      String expiryStr = scopeConstraint.getString("expiry_at");
+                      if (expiryStr == null) {
+                        return true; // no expiry means valid
+                      }
+
+                      LocalDateTime expiry = LocalDateTime.parse(expiryStr);
+                      return LocalDateTime.now().isBefore(expiry);
+                    });
 
               if (!exists) {
                 return Future.failedFuture(

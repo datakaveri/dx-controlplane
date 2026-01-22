@@ -57,7 +57,8 @@ public class DelegationHandler {
   }
 
   public void getDelegationGrant(RoutingContext ctx) {
-    UUID delegationId = RequestHelper.getPathParamAsUUID(ctx, "id");
+    String delegationId = ctx.pathParam( "id");
+
 
     delegationService.getDelegationGrantById(delegationId)
       .onSuccess(grant -> {
@@ -88,13 +89,13 @@ public class DelegationHandler {
     User user = ctx.user();
     UUID userId = UUID.fromString(user.subject());
 
-    delegationService.getAllDelegationsOfDelegate(userId)
+    delegationService.getAllDelegationsOfDelegate(userId.toString())
       .onSuccess(res -> {
         AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
           RoutingContextHelper.getRequestPath(ctx), "GET", "Get All Delegations of the delegate");
 
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        if(res.isEmpty() || res==null)
+        if(res==null || res.isEmpty())
         {
           ResponseBuilder.sendSuccess(ctx,"No delegation found for this user" ,urnGenerator);
         }
@@ -111,13 +112,13 @@ public class DelegationHandler {
     User user = ctx.user();
     UUID userId = UUID.fromString(user.subject());
 
-    delegationService.getAllDelegationsByDelegator(userId)
+    delegationService.getAllDelegationsByDelegator(userId.toString())
       .onSuccess(res -> {
         AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
           RoutingContextHelper.getRequestPath(ctx), "GET", "Get All Delegations made by the user who is the delegator");
 
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        if(res.isEmpty() || res==null)
+        if(res==null || res.isEmpty())
         {
           ResponseBuilder.sendSuccess(ctx,"No delegation found for this user" ,urnGenerator);
         }
@@ -140,7 +141,7 @@ public class DelegationHandler {
 
     UUID delegationId = UUID.fromString(ctx.pathParam("id"));
 
-    delegationService.deleteDelegation(delegationId,userId)
+    delegationService.deleteDelegation(delegationId.toString(),userId.toString())
       .onSuccess(res -> {
         AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
           RoutingContextHelper.getRequestPath(ctx), "DELETE", "Delete delegation");
@@ -177,11 +178,11 @@ public class DelegationHandler {
       return;
     }
 
-    DelegationGrant delegationGrant = DelegationGrant.fromJson(body);
+//    DelegationGrant delegationGrant = DelegationGrant.fromJson(body);
     JsonArray rolesConstraints = body.getJsonArray("roles");
 
 
-    delegationService.createDelegationGrant(delegationGrant, delegatorRoles,rolesConstraints)
+    delegationService.createDelegationGrant(body, delegatorRoles,rolesConstraints)
       .onSuccess(createdGrant -> {
         AuditLog auditLog = AuditingHelper.createAuditLog(
           ctx.user(),
@@ -280,7 +281,7 @@ public class DelegationHandler {
   public void getDelegationRequest(RoutingContext ctx) {
     UUID delegationId = UUID.fromString(ctx.pathParam("id"));
 
-    delegationService.getDelegationRequestsByDelegationId(delegationId)
+    delegationService.getDelegationRequestsByDelegationId(delegationId.toString())
       .onSuccess(requests -> {
         ResponseBuilder.sendSuccess(ctx, requests, urnGenerator);
       })

@@ -3,6 +3,7 @@ package org.cdpg.dx.common.config;
 public class ServiceProxyAddressConstants {
   public static final String POSTGRES_SERVICE_ADDRESS = "org.cdpg.dx.database.postgres";
   public static final String ELASTIC_SERVICE_ADDRESS = "org.cdpg.dx.database.elastic";
+  public static final String DELEGATION_SERVICE_ADDRESS = "org.cdpg.dx.aaa.delegation.service";
   public static final String CENTRAL_ELASTIC_SERVICE_ADDRESS =
       "org.cdpg.dx.database.elastic.central.service";
 
