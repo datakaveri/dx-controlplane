@@ -6334,6 +6334,16 @@ paths:
 
         ❗ For items with `accessPolicy=restricted` or `accessPolicy=private`, a valid token **must** be provided.
         Otherwise, the request will be rejected with a **401 Unauthorized** error.
+        
+        ### Delegator Access
+        
+        - If `isDelegator=true`, the caller is treated as a delegator accessing
+          the item on behalf of a **delegate**.
+        - In this case, `did` is mandatory.
+        - Delegation scopes are validated to ensure the delegator has access to
+          the requested item.
+        - If delegation does not exist or scope does not permit access,
+          the request will be rejected with **403 Forbidden**.
       operationId: get item with accessPolicy
       security:
         - optionalAuth: [ ]
@@ -6346,6 +6356,23 @@ paths:
             type: string
             format: uuid
             pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
+        - name: isDelegator
+          in: query
+          description: >
+              Indicates whether the caller is accessing the item as a delegator.
+              Defaults to `false` when not provided.
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: did
+          in: query
+          description: >
+              Delegate DID. **Mandatory when `isDelegator=true`**.
+          required: false
+          schema:
+            type: string
+            format: uuid
       responses:
         '200':
           description: Found the item (access granted).
@@ -6397,6 +6424,18 @@ paths:
                     "type": "dx:controlPlane:forbidden"
                     "title": "Forbidden"
                     "detail": "No ACTIVE policy exists for this user/item"
+                NoDelegation:
+                  summary: Delegation does not exist or is invalid
+                  value:
+                    type: "dx:controlPlane:forbidden"
+                    title: "Forbidden"
+                    detail: "Delegation doesn't exist for delegator and delegate"
+                ScopeDenied:
+                  summary: Delegation scope does not allow access
+                  value:
+                    type: "dx:controlPlane:forbidden"
+                    title: "Forbidden"
+                    detail: "Delegator not authorized for this item"
         '404':
           description: Didn't find the item.
           content:
@@ -6413,6 +6452,12 @@ paths:
           label: get item with accessPolicy
           source: |
             curl --location --request GET 'https://${HOSTNAME}/iudx/v2/cat/item/access?id=uuid' \
+            --header 'Authorization: Bearer <token>'
+        - lang: cURL
+          label: get item with accessPolicy (delegator)
+          source: |
+            curl --location --request GET 
+            'https://${HOSTNAME}/iudx/v2/cat/item/access?id=uuid&isDelegator=true&did=delegate-did' \
             --header 'Authorization: Bearer <token>'
   /iudx/v2/cat/organisation/asset:
     get:
