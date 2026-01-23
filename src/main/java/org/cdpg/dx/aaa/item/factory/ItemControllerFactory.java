@@ -3,6 +3,7 @@ package org.cdpg.dx.aaa.item.factory;
 import io.vertx.ext.web.client.WebClient;
 import org.cdpg.dx.aaa.connector.service.ConnectorService;
 import org.cdpg.dx.aaa.delegation.ItemOwnershipValidator;
+import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.ingestion.service.IngestionService;
 import org.cdpg.dx.aaa.item.controller.ItemController;
 import org.cdpg.dx.aaa.item.service.ItemRegistryService;
@@ -32,7 +33,7 @@ public class ItemControllerFactory {
       String docIndex,
       String vocContext,
       String apdURL,
-      String verifiedBy,
+      String uploadedBy,
       URNGenerator urnGenerator,
       WebClient webClient,
       IngestionService ingestionService,
@@ -40,7 +41,8 @@ public class ItemControllerFactory {
       String dataPlaneUrl,String controlPlaneUrl,String ogcDataPlaneUrl,
       boolean isCentralCatEnabled,
       boolean isEdgeCatalogue,
-      boolean isStandalone) {
+      boolean isStandalone,
+      DelegationService delegationService) {
       PolicyDao policyDao = new PolicyDaoImpl(pgService);
     ItemService itemService = new ItemServiceImpl(elasticsearchService, keycloakUserService,
         policyDao, webClient, docIndex, apdURL);
@@ -52,6 +54,6 @@ public class ItemControllerFactory {
             connectorService, webClient,
             dataPlaneUrl,controlPlaneUrl,ogcDataPlaneUrl, isCentralCatEnabled);
     return new ItemController(auditingHandler, itemService, itemOwnershipValidator, centralItemService, vocContext,
-        verifiedBy, isCentralCatEnabled, urnGenerator, orchestrationService);
+        uploadedBy, isCentralCatEnabled, urnGenerator, orchestrationService, delegationService);
   }
 }

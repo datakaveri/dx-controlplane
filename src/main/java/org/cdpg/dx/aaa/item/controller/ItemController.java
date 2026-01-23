@@ -1,15 +1,43 @@
 package org.cdpg.dx.aaa.item.controller;
 
-import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.*;
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.CONTEXT;
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.CREATE_ITEM;
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.DELETE_ITEM;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.DID;
-import static org.cdpg.dx.aaa.common.Constants.*;
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.DOWNLOAD_SCRIPT;
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.GET_ITEM;
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.GET_ITEM_WITH_ACCESS;
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.IS_DELEGATOR;
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.PATCH_ITEM;
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.RESULT;
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.UPDATE_ITEM;
+import static org.cdpg.dx.aaa.common.Constants.DEPARTMENT;
+import static org.cdpg.dx.aaa.common.Constants.DETAIL_ID_NOT_FOUND;
+import static org.cdpg.dx.aaa.common.Constants.HTTP_METHOD;
 import static org.cdpg.dx.aaa.common.Constants.ID;
+import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE;
+import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPES;
+import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_AI_MODEL;
+import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_APPS;
+import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
+import static org.cdpg.dx.aaa.common.Constants.NAME;
 import static org.cdpg.dx.aaa.common.Constants.ORGANISATION_ID;
+import static org.cdpg.dx.aaa.common.Constants.ORGANIZATION;
+import static org.cdpg.dx.aaa.common.Constants.ORGANIZATION_ID;
+import static org.cdpg.dx.aaa.common.Constants.ORG_NAME;
+import static org.cdpg.dx.aaa.common.Constants.PROVIDER_USER_ID;
+import static org.cdpg.dx.aaa.common.Constants.REALM_ACCESS;
+import static org.cdpg.dx.aaa.common.Constants.REQUEST_POST;
+import static org.cdpg.dx.aaa.common.Constants.RESULTS;
+import static org.cdpg.dx.aaa.common.Constants.ROLES;
+import static org.cdpg.dx.aaa.common.Constants.SUB;
+import static org.cdpg.dx.aaa.common.Constants.TYPE;
+import static org.cdpg.dx.aaa.common.Constants.UPLOADED_BY;
 import static org.cdpg.dx.auth.authorization.model.DxScope.COS_ADMIN_ACCESS;
 import static org.cdpg.dx.auth.authorization.model.DxScope.ORG_ADMIN_ACCESS;
 import static org.cdpg.dx.database.elastic.util.Constants.DATA_UPLOAD_STATUS;
 import static org.cdpg.dx.database.elastic.util.Constants.VERIFIED_BY;
-import static org.cdpg.dx.keycloak.config.KeycloakConstants.*;
+import static org.cdpg.dx.keycloak.config.KeycloakConstants.SCOPES;
 
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -23,7 +51,11 @@ import io.vertx.ext.web.openapi.RouterBuilder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -31,8 +63,8 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.apiserver.ApiController;
 import org.cdpg.dx.aaa.common.CatalogueAuditHelper;
 import org.cdpg.dx.aaa.common.VerifyItemTypeAndRole;
-import org.cdpg.dx.aaa.delegation.DelegationValidator;
 import org.cdpg.dx.aaa.delegation.ItemOwnershipValidator;
+import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.item.model.Item;
 import org.cdpg.dx.aaa.item.service.ItemFetchService;
 import org.cdpg.dx.aaa.item.service.ItemRegistryService;
@@ -56,6 +88,7 @@ import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxInternalServerErrorException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
+import org.cdpg.dx.common.exception.DxUnauthorizedException;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RoutingContextHelper;
@@ -67,8 +100,9 @@ public class ItemController implements ApiController {
   private final ItemService itemService;
   private final ItemService centralItemService;
   private final ItemFetchService itemFetchService;
+  private final DelegationService delegationService;
   private final String vocContext;
-  private final String verifiedBy;
+  private final String uploadedBy;
   private final boolean isCentralCatEnabled;
   private final URNGenerator urnGenerator;
 
@@ -86,23 +120,26 @@ public class ItemController implements ApiController {
       ItemOwnershipValidator itemOwnershipValidator,
       ItemService centralItemService,
       String vocContext,
-      String verifiedBy,
+      String uploadedBy,
       boolean isCentralCatEnabled,
       URNGenerator urnGenerator,
-      ItemRegistryService itemRegistryService) {
+      ItemRegistryService itemRegistryService,
+      DelegationService delegationService) {
     this.auditingHandler = auditingHandler;
     this.itemService = itemService;
     this.centralItemService = centralItemService;
     this.vocContext = vocContext;
     this.itemOwnershipValidator = itemOwnershipValidator;
-    this.verifiedBy = verifiedBy;
+    this.uploadedBy = uploadedBy;
     this.isCentralCatEnabled = isCentralCatEnabled;
     this.urnGenerator = urnGenerator;
-    this.itemExistenceValidator = new ItemExistenceValidator(itemService, centralItemService, isCentralCatEnabled);
+    this.itemExistenceValidator =
+        new ItemExistenceValidator(itemService, centralItemService, isCentralCatEnabled);
     this.itemRegistryService = itemRegistryService;
     this.scriptGenerationService = new ScriptGenerationService();
     this.itemFetchService = new ItemFetchService(itemService, centralItemService,
         isCentralCatEnabled);
+    this.delegationService = delegationService;
   }
 
   @Override
@@ -140,10 +177,10 @@ public class ItemController implements ApiController {
         .handler(auditingHandler::handleApiAudit)
         .handler(this::handleGetItemWithAccess);
 
-        builder
-            .operation(DOWNLOAD_SCRIPT)
-            .handler(auditingHandler::handleApiAudit)
-            .handler(this::handleDownloadScript);
+    builder
+        .operation(DOWNLOAD_SCRIPT)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(this::handleDownloadScript);
 
     LOGGER.debug("Item Controller registered");
   }
@@ -155,10 +192,11 @@ public class ItemController implements ApiController {
     JsonObject userJson = user.principal();
 
     AccessValidator.validate(
-      userJson,
-      List.of( // primary roles (no scope check)
-        DxRole.PROVIDER.getRole(),DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.ASSET_MANAGEMENT.getScope(), COS_ADMIN_ACCESS.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope())
+        userJson,
+        List.of( // primary roles (no scope check)
+            DxRole.PROVIDER.getRole(), DxRole.COS_ADMIN.getRole()),
+        List.of(DxScope.ASSET_MANAGEMENT.getScope(), COS_ADMIN_ACCESS.getScope(),
+            DxScope.ORG_ADMIN_ACCESS.getScope())
     );
 
 
@@ -205,13 +243,14 @@ public class ItemController implements ApiController {
 
     User user1 = ctx.user();
     JsonObject userJson = user1.principal();
-    JsonArray scopes= userJson.getJsonArray(SCOPES);
+    JsonArray scopes = userJson.getJsonArray(SCOPES);
 
     AccessValidator.validate(
-      userJson,
-      List.of( // primary roles (no scope check)
-        DxRole.PROVIDER.getRole(),DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.ASSET_MANAGEMENT.getScope(), COS_ADMIN_ACCESS.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope())
+        userJson,
+        List.of( // primary roles (no scope check)
+            DxRole.PROVIDER.getRole(), DxRole.COS_ADMIN.getRole()),
+        List.of(DxScope.ASSET_MANAGEMENT.getScope(), COS_ADMIN_ACCESS.getScope(),
+            DxScope.ORG_ADMIN_ACCESS.getScope())
     );
 
     DxUser user = RoutingContextHelper.fromPrincipal(ctx);
@@ -227,8 +266,10 @@ public class ItemController implements ApiController {
 
     if (!allowedRoles.contains(DxRole.ORG_ADMIN.getRole())
         && !allowedRoles.contains(DxRole.COS_ADMIN.getRole())
-         && !(allowedRoles.contains(DxRole.DELEGATE.getRole()) && (scopes.contains(COS_ADMIN_ACCESS) || scopes.contains(ORG_ADMIN_ACCESS)))
-        && (allowedRoles.contains(DxRole.PROVIDER.getRole()) || allowedRoles.contains(DxRole.DELEGATE.getRole()))) {
+        && !(allowedRoles.contains(DxRole.DELEGATE.getRole()) &&
+        (scopes.contains(COS_ADMIN_ACCESS) || scopes.contains(ORG_ADMIN_ACCESS)))
+        && (allowedRoles.contains(DxRole.PROVIDER.getRole()) ||
+        allowedRoles.contains(DxRole.DELEGATE.getRole()))) {
       if (body.size() != 1 || !body.containsKey(DATA_UPLOAD_STATUS)) {
         ctx.fail(new DxForbiddenException("Providers can only patch dataUploadStatus field"));
         return;
@@ -251,9 +292,9 @@ public class ItemController implements ApiController {
                   new JsonArray().add(new JsonObject().put(ID, id)),
                   this.urnGenerator);
             })
-      .onFailure(err -> {
-        LOGGER.error("Patch item failed", err);
-        ctx.fail(err);
+        .onFailure(err -> {
+          LOGGER.error("Patch item failed", err);
+          ctx.fail(err);
         });
   }
 
@@ -288,15 +329,19 @@ public class ItemController implements ApiController {
 
       String kcId = ctx.user().principal().getString(SUB);
       String orgName = ctx.user().principal().getString(ORG_NAME);
+      String name = ctx.user().principal().getString(NAME);
       String orgId = ctx.user().principal().getString(ORGANISATION_ID);
-      body.put(PROVIDER_USER_ID, kcId).put(DEPARTMENT, orgName).put(UPLOADED_BY, orgName);
+      body.put(PROVIDER_USER_ID, kcId)
+          .put(DEPARTMENT, orgName)
+          .put(ORGANIZATION, orgName)
+          .put(VERIFIED_BY, name);
       // Only set organizationId if it exists in token and not already provided in payload
       if (orgId != null && !orgId.isBlank()) {
         body.put(ORGANIZATION_ID, orgId);
       }
-      // Add verifiedBy only if user hasn't provided one
-      if (!body.containsKey(VERIFIED_BY) || body.getString(VERIFIED_BY).isBlank()) {
-        body.put(VERIFIED_BY, verifiedBy);
+      // Add uploadedBy only if user hasn't provided one
+      if (!body.containsKey(UPLOADED_BY) || body.getString(UPLOADED_BY).isBlank()) {
+        body.put(UPLOADED_BY, uploadedBy);
       }
       body.put(ROLES, ctx.user().principal().getJsonObject(REALM_ACCESS).getJsonArray(ROLES));
     }
@@ -641,9 +686,9 @@ public class ItemController implements ApiController {
     } catch (Exception e) {
       LOGGER.warn("No token present or invalid token, may be anonymous access");
     }
+
     String itemId = routingContext.queryParams().get(ID);
     LOGGER.debug("Received GET request for item with ID '{}'", itemId);
-
     if (itemId == null || itemId.isBlank()) {
       routingContext.fail(new DxBadRequestException("Item ID is required"));
       return;
@@ -654,11 +699,11 @@ public class ItemController implements ApiController {
     List<String> roles = Collections.emptyList();
     String did = null;
 
-    if (token != null) { // only if authenticated request
+    if (token != null) {
       dxUser = RoutingContextHelper.fromPrincipal(routingContext);
       subId = dxUser.sub().toString();
       roles = dxUser.roles();
-      did = dxUser.did();
+      did = dxUser.did(); // default: from token (access-token case)
     }
 
     GetItemRequest request = new GetItemRequest(itemId, subId);
@@ -666,6 +711,62 @@ public class ItemController implements ApiController {
     request.setToken(token);
     request.setDid(did);
 
+    boolean isDelegator = Boolean.parseBoolean(routingContext.queryParams().get(IS_DELEGATOR));
+    String didFromParam = routingContext.queryParams().get(DID);
+
+    // ---------------- Delegator flow ----------------
+    if (isDelegator) {
+      if (didFromParam == null || didFromParam.isBlank()) {
+        routingContext.fail(
+            new DxBadRequestException("did is mandatory when isDelegator is true")
+        );
+        return;
+      }
+
+      if (dxUser == null) {
+        routingContext.fail(
+            new DxUnauthorizedException("Identity token required for delegator access")
+        );
+        return;
+      }
+
+      delegationService
+          .checkItemAccess(subId, didFromParam)
+          .onSuccess(response -> {
+
+            JsonArray result = response.getJsonArray(RESULT);
+
+            // Defensive check
+            if (result == null) {
+              routingContext.fail(
+                  new DxForbiddenException("Invalid delegation response"));
+              return;
+            }
+
+            // "*" means all items allowed
+            if (!result.contains("*") && !result.contains(itemId)) {
+              routingContext.fail(
+                  new DxForbiddenException("Delegator not authorized for this item"));
+              return;
+            }
+
+            // Delegation validated — override did
+            request.setDid(didFromParam);
+            executeGetItem(request, routingContext);
+          })
+          .onFailure(err -> {
+            LOGGER.debug("Delegation access check failed", err);
+            routingContext.fail(new DxForbiddenException(err.getMessage()));
+          });
+      return;
+    }
+    // ---------------- Normal flow ----------------
+    executeGetItem(request, routingContext);
+  }
+
+  private void executeGetItem(GetItemRequest request,
+                              RoutingContext routingContext) {
+    String itemId = routingContext.queryParams().get(ID);
     itemService
         .getItemWithAccessChecks(request)
         .onSuccess(
@@ -688,7 +789,8 @@ public class ItemController implements ApiController {
               if (err instanceof DxForbiddenException) {
                 routingContext.fail(err); // failure handler should map to 403
               } else {
-                LOGGER.error("Error retrieving item with ID '{}': {}", itemId, err.getMessage());
+                LOGGER.error("Error retrieving item with ID '{}': {}", itemId,
+                    err.getMessage());
                 routingContext.fail(err);
               }
             });
