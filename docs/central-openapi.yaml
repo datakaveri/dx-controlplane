@@ -12544,7 +12544,6 @@ components:
         - uploadedBy
         - geoCoverage
         - yearRange
-        - verifiedBy
         - uploadFrequency
         - license
       example:
@@ -16122,7 +16121,6 @@ components:
         - fileFormat
         - industry
         - yearRange
-        - verifiedBy
         - uploadFrequency
         - license
         - resourceServer
