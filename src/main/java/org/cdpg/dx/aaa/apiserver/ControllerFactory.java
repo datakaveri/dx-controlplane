@@ -4,6 +4,7 @@ import static org.cdpg.dx.aaa.common.Constants.CENTRAL_CAT_DOC_INDEX;
 import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
 import static org.cdpg.dx.aaa.common.Constants.DOC_USER_INDEX;
 import static org.cdpg.dx.aaa.common.Constants.IS_CENTRAL_CATALOGUE_ENABLED;
+import static org.cdpg.dx.aaa.common.Constants.UPLOADED_BY;
 import static org.cdpg.dx.aaa.common.Constants.VOC_CONTEXT;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.CENTRAL_ELASTIC_SERVICE_ADDRESS;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DATA_BROKER_SERVICE_ADDRESS;
@@ -110,7 +111,7 @@ public class ControllerFactory {
     final String vocContext = config.getString(VOC_CONTEXT);
     final Boolean isKycRequired = config.getBoolean("kycRequired", false);
     final String apdURL = config.getString(APD_URL);
-    final String verifiedBy = config.getString(VERIFIED_BY);
+    final String uploadedBy = config.getString(UPLOADED_BY);
 
     WebClient webClient = WebClient.create(vertx);
 
@@ -264,7 +265,7 @@ public class ControllerFactory {
             docIndex,
             vocContext,
             apdURL,
-            verifiedBy,
+            uploadedBy,
             urnGenerator,
             webClient,
             ingestionService,
@@ -274,7 +275,8 @@ public class ControllerFactory {
             ogcDataPlaneUrl,
             isCentralCatEnabled,
             isEdgeCatalogue,
-            isStandalone);
+            isStandalone,
+            delegationService);
 
     ApiController resourceServerController =
         ResourceServerControllerFactory.createController(pgService, auditingHandler, urnGenerator);

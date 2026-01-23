@@ -30,7 +30,7 @@
     "routingKey": "##",
     "cosAdminUserId": "cos-admin",
     "initialCreditBalance": 1000,
-    "verifiedBy": "Centre of Data for Public Good (CDPG), IISc",
+    "uploadedBy": "",
     "corsAllowedOrigin": [
       "*",
       "http://localhost:4007",
