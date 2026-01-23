@@ -30,13 +30,11 @@ public class UserInteractionV2DaoImpl extends AbstractBaseDAO<InteractionRow>
       PaginatedRequest paginatedRequest) {
     return getAllWithFilters(paginatedRequest);
   }
+    @Override
+    public Future<InteractionDelta> upsertInteractionWithDelta(
+            UUID userId, UUID entityId, String entityType, String action) {
 
-  @Override
-  public Future<InteractionDelta> upsertInteractionWithDelta(
-      UUID userId, UUID entityId, String entityType, String action) {
-
-    String sql =
-        """
+        String sql = """
     WITH existing AS (
       SELECT is_liked, is_disliked
       FROM user_interactions
@@ -77,6 +75,8 @@ public class UserInteractionV2DaoImpl extends AbstractBaseDAO<InteractionRow>
       RETURNING is_liked, is_disliked
     )
     SELECT
+      $2                                   AS entity_id,
+      $3                                   AS entity_type,
       COALESCE(existing.is_liked, FALSE)    AS old_liked,
       COALESCE(existing.is_disliked, FALSE) AS old_disliked,
       upsert.is_liked                       AS new_liked,
@@ -85,24 +85,31 @@ public class UserInteractionV2DaoImpl extends AbstractBaseDAO<InteractionRow>
     LEFT JOIN existing ON TRUE;
     """;
 
-    JsonArray params =
-        new JsonArray().add(userId.toString()).add(entityId.toString()).add(entityType).add(action);
+        JsonArray params = new JsonArray()
+                .add(userId.toString())
+                .add(entityId.toString())
+                .add(entityType)
+                .add(action);
 
-    return postgresService
-        .executeQuery(sql, params)
-        .map(
-            rows -> {
-              if (rows.getRows().isEmpty()) {
-                throw new IllegalStateException("No rows returned from upsertInteractionWithDelta");
-              }
+        return postgresService
+                .executeQuery(sql, params)
+                .map(rows -> {
 
-              JsonObject r = rows.getRows().getJsonObject(0);
+                    if (rows.getRows().isEmpty()) {
+                        throw new IllegalStateException("No rows returned from upsertInteractionWithDelta");
+                    }
 
-              return new InteractionDelta(
-                  r.getBoolean("old_liked", false),
-                  r.getBoolean("old_disliked", false),
-                  r.getBoolean("new_liked", false),
-                  r.getBoolean("new_disliked", false));
-            });
-  }
+                    JsonObject r = rows.getRows().getJsonObject(0);
+
+                    return new InteractionDelta(
+                            r.getString("entity_id"),
+                            r.getString("entity_type"),
+                            r.getBoolean("old_liked", false),
+                            r.getBoolean("old_disliked", false),
+                            r.getBoolean("new_liked", false),
+                            r.getBoolean("new_disliked", false)
+                    );
+                });
+    }
+
 }
