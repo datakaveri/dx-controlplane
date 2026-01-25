@@ -9522,6 +9522,13 @@ paths:
           schema:
             type: string
             enum: [ DATABANK, AI_MODEL, USECASE ]
+        - name: actionType
+          in: query
+          description: Type of interaction action
+          required: false
+          schema:
+            type: string
+            enum: [ LIKE, DISLIKE, BOOKMARK ]
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
       responses:
@@ -14195,6 +14202,11 @@ components:
             dataUploadStatus: false
             itemCreatedAt: "2025-12-15T05:16:43+0530"
             lastUpdated: "15 December, 2025 - 05:16 PM"
+            metrics:
+              views: 0
+              downloads: 0
+              likes: 0
+              dislikes: 0
         paginationInfo:
           page: 1
           size: 1
@@ -14435,6 +14447,11 @@ components:
             dataUploadStatus: false
             itemCreatedAt: "2024-01-05T02:09:10+0530"
             lastUpdated: "15 December, 2025 - 05:04 PM"
+            metrics:
+               views: 0
+               downloads: 0
+               likes: 0
+               dislikes: 0
         paginationInfo:
           page: 1
           size: 1
@@ -14641,6 +14658,11 @@ components:
             itemCreatedAt: '2024-01-05T02:09:10+0530'
             lastUpdated: '2024-01-10T11:30:00+0530'
             verifiedBy: 'Department of Agriculture'
+            metrics:
+              views: 0
+              downloads: 0
+              likes: 0
+              dislikes: 0
         paginationInfo:
           page: 1
           size: 1

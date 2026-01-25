@@ -347,6 +347,8 @@ public class Constants {
   public static final String DOWNLOADS = "downloads";
   public static final String LIKES = "likes";
   public static final String DISLIKES = "dislikes";
+    public static final String BOOKMARKS = "bookmarks";
+
 }
 
 
