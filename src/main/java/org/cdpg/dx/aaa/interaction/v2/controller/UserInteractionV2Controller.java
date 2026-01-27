@@ -26,7 +26,7 @@ public class UserInteractionV2Controller implements ApiController {
   private final UserInteractionV2Service service;
   private final URNGenerator urnGenerator;
   private static final Map<String, String> FILTER_MAP =
-      Map.of("entityId", "entity_id", "entityType", "entity_type", "actionType", "action_type");
+      Map.of("assetId", "asset_id", "assetType", "asset_type", "actionType", "action_type");
 
   public UserInteractionV2Controller(UserInteractionV2Service service, URNGenerator urnGenerator) {
     this.service = service;
@@ -62,7 +62,7 @@ public class UserInteractionV2Controller implements ApiController {
   }
 
   private void handleGetUserInteractionRequest(RoutingContext ctx) {
-    LOGGER.info("GET /user/interactions called");
+    LOGGER.info("handleGetUserInteractionRequest() method started");
 
     try {
       PaginatedRequest paginatedRequest =

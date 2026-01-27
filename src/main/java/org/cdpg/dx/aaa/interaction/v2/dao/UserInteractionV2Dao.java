@@ -12,5 +12,5 @@ public interface UserInteractionV2Dao {
   Future<PaginatedResult<InteractionRow>> getUserInteractions(PaginatedRequest paginatedRequest);
 
   Future<InteractionDelta> upsertInteractionWithDelta(
-      UUID userId, UUID entityId, String entityType, String action);
+      UUID userId, UUID assetId, String assetType, String action);
 }

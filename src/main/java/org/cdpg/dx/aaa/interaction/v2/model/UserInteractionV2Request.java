@@ -7,4 +7,4 @@ import org.cdpg.dx.auditing.enums.EntityType;
 import java.util.UUID;
 
 public record UserInteractionV2Request(
-    UUID entityId, EntityType entityType, @JsonAlias({"actionType"}) InteractionAction action) {}
+    UUID assetId, EntityType assetType, @JsonAlias({"actionType"}) InteractionAction action) {}

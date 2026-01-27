@@ -27,6 +27,6 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
   @Override
   public Future<InteractionDelta> SaveIteraction(UUID userId, UserInteractionV2Request req) {
     return dao.upsertInteractionWithDelta(
-        userId, req.entityId(), req.entityType().name(), req.action().name());
+        userId, req.assetId(), req.assetType().name(), req.action().name());
   }
 }

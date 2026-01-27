@@ -340,6 +340,15 @@ public class Constants {
     // COMMON KC CONSTANTS
 
     public static final String ORGANISATION_ID="organisation_id";
+
+  // item metrics
+  public static final String METRICS = "metrics";
+  public static final String VIEWS = "views";
+  public static final String DOWNLOADS = "downloads";
+  public static final String LIKES = "likes";
+  public static final String DISLIKES = "dislikes";
+    public static final String BOOKMARKS = "bookmarks";
+
 }
 
 
