@@ -6,17 +6,13 @@ import org.cdpg.dx.auditing.enums.EntityType;
 import org.cdpg.dx.database.postgres.base.entity.BaseEntity;
 
 public record InteractionRow(
-    String entityId,
-    EntityType entityType,
-    boolean isBookmarked,
-    boolean isLiked,
-    boolean isDisliked)
+    String assetId, EntityType assetType, boolean isBookmarked, boolean isLiked, boolean isDisliked)
     implements BaseEntity<InteractionRow> {
 
   public static InteractionRow fromJson(JsonObject json) {
     return new InteractionRow(
-        json.getString("entity_id"),
-        EntityType.valueOf(json.getString("entity_type")),
+        json.getString("asset_id"),
+        EntityType.valueOf(json.getString("asset_type")),
         json.getBoolean("is_bookmarked"),
         json.getBoolean("is_liked"),
         json.getBoolean("is_disliked"));

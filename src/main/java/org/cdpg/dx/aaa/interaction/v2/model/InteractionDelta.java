@@ -26,8 +26,8 @@ public record InteractionDelta(
 
   public JsonObject toJson() {
     return new JsonObject()
-        .put("entityId", entityId)
-        .put("entityType", entityType)
+        .put("assetId", entityId)
+        .put("assetType", entityType)
         .put("oldLiked", oldLiked)
         .put("oldDisliked", oldDisliked)
         .put("newLiked", newLiked)

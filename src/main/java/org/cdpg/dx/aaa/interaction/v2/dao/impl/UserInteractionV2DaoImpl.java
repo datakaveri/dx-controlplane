@@ -62,20 +62,20 @@ public class UserInteractionV2DaoImpl extends AbstractBaseDAO<InteractionRow>
 
   @Override
   public Future<InteractionDelta> upsertInteractionWithDelta(
-      UUID userId, UUID entityId, String entityType, String action) {
+      UUID userId, UUID assetId, String assetType, String action) {
 
     String sql =
         """
     WITH existing AS (
       SELECT is_liked, is_disliked, is_bookmarked
       FROM user_interactions
-      WHERE user_id = $1 AND entity_id = $2
+      WHERE user_id = $1 AND asset_id = $2
     ),
     upsert AS (
       INSERT INTO user_interactions (
         user_id,
-        entity_id,
-        entity_type,
+        asset_id,
+        asset_type,
         is_liked,
         is_disliked,
         is_bookmarked
@@ -86,7 +86,7 @@ public class UserInteractionV2DaoImpl extends AbstractBaseDAO<InteractionRow>
         CASE WHEN $4 = 'DISLIKE' THEN TRUE ELSE FALSE END,
         CASE WHEN $4 = 'BOOKMARK' THEN TRUE ELSE FALSE END
       )
-      ON CONFLICT (user_id, entity_id)
+      ON CONFLICT (user_id, asset_id)
       DO UPDATE SET
         is_liked = CASE
           WHEN $4 = 'LIKE' THEN TRUE
@@ -106,8 +106,8 @@ public class UserInteractionV2DaoImpl extends AbstractBaseDAO<InteractionRow>
       RETURNING is_liked, is_disliked, is_bookmarked
     )
     SELECT
-      $2                                     AS entity_id,
-      $3                                     AS entity_type,
+      $2                                     AS asset_id,
+      $3                                     AS asset_type,
 
       COALESCE(existing.is_liked, FALSE)       AS old_liked,
       COALESCE(existing.is_disliked, FALSE)    AS old_disliked,
@@ -121,11 +121,11 @@ public class UserInteractionV2DaoImpl extends AbstractBaseDAO<InteractionRow>
     """;
 
     JsonArray params =
-        new JsonArray().add(userId.toString()).add(entityId.toString()).add(entityType).add(action);
+        new JsonArray().add(userId.toString()).add(assetId.toString()).add(assetType).add(action);
 
     return postgresService
         .executeQuery(sql, params)
-        .map(
+        .compose(
             rows -> {
               if (rows.getRows().isEmpty()) {
                 throw new IllegalStateException("No rows returned from upsertInteractionWithDelta");
@@ -133,15 +133,31 @@ public class UserInteractionV2DaoImpl extends AbstractBaseDAO<InteractionRow>
 
               JsonObject r = rows.getRows().getJsonObject(0);
 
-              return new InteractionDelta(
-                  r.getString("entity_id"),
-                  r.getString("entity_type"),
-                  r.getBoolean("old_liked", false),
-                  r.getBoolean("old_disliked", false),
-                  r.getBoolean("new_liked", false),
-                  r.getBoolean("new_disliked", false),
-                  r.getBoolean("old_bookmarked", false),
-                  r.getBoolean("new_bookmarked", false));
+              InteractionDelta delta =
+                  new InteractionDelta(
+                      r.getString("asset_id"),
+                      r.getString("asset_type"),
+                      r.getBoolean("old_liked", false),
+                      r.getBoolean("old_disliked", false),
+                      r.getBoolean("new_liked", false),
+                      r.getBoolean("new_disliked", false),
+                      r.getBoolean("old_bookmarked", false),
+                      r.getBoolean("new_bookmarked", false));
+              // Cleanup delete (awaited, safe)
+              String deleteSql =
+                  """
+          DELETE FROM user_interactions
+          WHERE user_id = $1
+            AND asset_id = $2
+            AND is_liked = FALSE
+            AND is_disliked = FALSE
+            AND is_bookmarked = FALSE
+        """;
+
+              JsonArray deleteParams =
+                  new JsonArray().add(userId.toString()).add(assetId.toString());
+
+              return postgresService.executeQuery(deleteSql, deleteParams).map(v -> delta);
             });
   }
 }
