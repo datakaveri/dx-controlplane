@@ -146,31 +146,26 @@ public class OrganizationJoinRequestHandler {
     Future<UUID> orgIdFuture;
 
     if (delegatorId == null) {
-      orgIdFuture =
-        userService
-          .getUserInfoByID(userId)
-          .compose(res -> {
 
-            String orgIdStr = res.organisationId();
+      String orgIdStr = ctx.user()
+        .principal()
+        .getString("organisation_id");
 
-            if (orgIdStr == null || orgIdStr.trim().isEmpty()) {
-              ctx.fail(
-                new DxBadRequestException(
-                  "The user is acting as a delegate. Please specify the delegatorId in the request")
-              );
-              return Future.failedFuture("Missing organisationId");
-            }
-
-            if (!Objects.equals(orgIdStr, orgIdparam)) {
-              ctx.fail(
-                new DxBadRequestException(
-                  "The org id of the user and the query parameter are not same")
-              );
-              return Future.failedFuture("Wrong organisationId");
-            }
-
-            return Future.succeededFuture(UUID.fromString(orgIdStr));
-          });
+      if (orgIdStr == null || orgIdStr.trim().isEmpty()) {
+        ctx.fail(
+          new DxBadRequestException(
+            "The user is acting as a delegate. Please specify the delegatorId in the request")
+        );
+        orgIdFuture = Future.failedFuture("Missing organisationId");
+      } else if (!Objects.equals(orgIdStr, orgIdparam)) {
+        ctx.fail(
+          new DxBadRequestException(
+            "The org id of the user and the query parameter are not same")
+        );
+        orgIdFuture = Future.failedFuture("Wrong organisationId");
+      } else {
+        orgIdFuture = Future.succeededFuture(UUID.fromString(orgIdStr));
+      }
 
     } else {
       orgIdFuture =
@@ -396,35 +391,28 @@ public class OrganizationJoinRequestHandler {
     UUID userId = UUID.fromString(user.subject());
 
     Future<UUID> orgIdFuture;
-
     if (delegatorId == null) {
-      orgIdFuture =
-        userService
-          .getUserInfoByID(userId)
-          .compose(res -> {
 
-            String orgIdStr = res.organisationId();
+      String orgIdStr = ctx.user()
+        .principal()
+        .getString("organisation_id");
 
-            if (orgIdStr == null || orgIdStr.trim().isEmpty()) {
-              ctx.fail(
-                new DxBadRequestException(
-                  "The user is acting as a delegate. Please specify the delegatorId in the request")
-              );
-              return Future.failedFuture("Missing organisationId");
-            }
+      if (orgIdStr == null || orgIdStr.trim().isEmpty()) {
+        ctx.fail(
+          new DxBadRequestException(
+            "The user is acting as a delegate. Please specify the delegatorId in the request")
+        );
+        orgIdFuture = Future.failedFuture("Missing organisationId");
+      } else if (!Objects.equals(orgIdStr, orgIdparam)) {
+        ctx.fail(
+          new DxBadRequestException(
+            "The org id of the user and the query parameter are not same")
+        );
+        orgIdFuture = Future.failedFuture("Wrong organisationId");
+      } else {
+        orgIdFuture = Future.succeededFuture(UUID.fromString(orgIdStr));
+      }
 
-            if (!Objects.equals(orgIdStr, orgIdparam)) {
-              ctx.fail(
-                new DxBadRequestException(
-                  "The org id of the user and the query parameter are not same")
-              );
-              return Future.failedFuture("Wrong organisationId");
-            }
-
-
-            LOGGER.info("Resolved orgId: {}", orgIdStr);
-            return Future.succeededFuture(UUID.fromString(orgIdStr));
-          });
 
     } else {
       orgIdFuture =
