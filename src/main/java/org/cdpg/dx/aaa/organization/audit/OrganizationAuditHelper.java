@@ -183,6 +183,19 @@ public final class OrganizationAuditHelper {
         .build();
   }
 
+  public static ActivityAuditLogBuilder buildJoinOrgWithdrawnAudit(
+    RoutingContext ctx, UUID requestId, UUID orgId, String orgName, String reason) {
+
+    return AuditLogHelper.createBaseAudit(ctx)
+      .withOrigin(OriginServer.AAA)
+      .withOperation(Operation.WITHDRAW)
+      .withEntityType(EntityType.ORG_REQUEST)
+      .withEntityId(requestId)
+      .withEntityName(orgName)
+      .withDetails(new JsonObject().put(ORG_ID, orgId).put(REASON, reason))
+      .build();
+  }
+
   /** User withdraws join request (My Activity) */
   public static ActivityAuditLogBuilder buildWithdrawJoinOrgRequestAudit(
       RoutingContext ctx, UUID requestId, UUID orgId) {

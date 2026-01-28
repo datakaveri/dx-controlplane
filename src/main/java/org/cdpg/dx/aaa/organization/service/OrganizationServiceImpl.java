@@ -25,6 +25,8 @@ import java.util.UUID;
 import java.util.Map;
 
 import static org.cdpg.dx.aaa.organization.config.Constants.*;
+import static org.cdpg.dx.aaa.organization.models.Status.PENDING;
+import static org.cdpg.dx.aaa.organization.models.Status.WITHDRAWN;
 import static org.cdpg.dx.keycloak.config.KeycloakConstants.*;
 import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
 
@@ -291,6 +293,59 @@ public class OrganizationServiceImpl implements OrganizationService {
         return Future.failedFuture(dxEx);
       });
   }
+
+  public Future<OrganizationJoinRequest> withdrawJoinRequest(
+    UUID userId, UUID requestId) {
+
+    Map<String, Object> filterParams = Map.of(
+      USER_ID, userId.toString(),
+      ORG_JOIN_ID, requestId.toString()
+    );
+
+    Map<String, Object> updateMap = Map.of(
+      STATUS, WITHDRAWN.getStatus()
+    );
+
+    return joinRequestDAO
+      .getAllWithFilters(filterParams)
+      .compose(res -> {
+
+        if (res == null) {
+          return Future.failedFuture(
+            new DxNotFoundException("No request found with given ID"));
+        }
+
+        if(!res.getFirst().status().equals(PENDING.getStatus()))
+        {
+          return Future.failedFuture(
+            new DxForbiddenException("Only pending join request can be withhdrawn"));
+        }
+
+        return joinRequestDAO
+          .update(filterParams, updateMap)
+          .compose(updatedReq -> {
+
+            if (!WITHDRAWN.getStatus().equals(updatedReq.status())) {
+              return Future.failedFuture(
+                new DxBadRequestException("Failed to withdraw join request"));
+            }
+
+            return Future.succeededFuture(updatedReq);
+          });
+      })
+      .recover(err -> {
+        BaseDxException dxEx = BaseDxException.from(err);
+
+        if (dxEx instanceof NoRowFoundException) {
+          return Future.failedFuture(
+            new DxNotFoundException("No request found with given ID", dxEx)
+          );
+        }
+
+        return Future.failedFuture(dxEx);
+      });
+  }
+
 
   public Future<Boolean> addUserToOrganizationFromRequest(UUID requestId) {
     return joinRequestDAO.get(requestId)
