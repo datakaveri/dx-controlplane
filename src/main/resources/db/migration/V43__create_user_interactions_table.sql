@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS user_interactions (
    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
     user_id UUID NOT NULL,
-    entity_id UUID NOT NULL,
-    entity_type TEXT NOT NULL,
+    asset_id UUID NOT NULL,
+    asset_type TEXT NOT NULL,
 
     is_liked BOOLEAN NOT NULL DEFAULT FALSE,
     is_disliked BOOLEAN NOT NULL DEFAULT FALSE,
@@ -23,8 +23,8 @@ CREATE TABLE IF NOT EXISTS user_interactions (
     updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
 
     -- One row per user per entity
-    CONSTRAINT uniq_user_entity
-    UNIQUE (user_id, entity_id),
+    CONSTRAINT uniq_user_asset
+    UNIQUE (user_id, asset_id),
 
     -- Like and dislike cannot both be true
     CONSTRAINT chk_like_dislike
@@ -58,7 +58,7 @@ CREATE TRIGGER trg_user_interactions_updated_at
 
 -- Fast lookup for user + entity
 CREATE INDEX IF NOT EXISTS idx_user_interactions_user_entity
-    ON user_interactions(user_id, entity_id);
+    ON user_interactions(user_id, asset_id);
 
 -- Useful for "my bookmarks" tab
 CREATE INDEX IF NOT EXISTS idx_user_interactions_bookmarked
@@ -67,7 +67,7 @@ CREATE INDEX IF NOT EXISTS idx_user_interactions_bookmarked
 
 -- Useful for analytics (optional)
 CREATE INDEX IF NOT EXISTS idx_user_interactions_liked
-    ON user_interactions(entity_id)
+    ON user_interactions(asset_id)
     WHERE is_liked = TRUE;
 
 -- =====================================================

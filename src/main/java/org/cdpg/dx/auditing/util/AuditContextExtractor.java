@@ -3,6 +3,7 @@ package org.cdpg.dx.auditing.util;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
+import io.vertx.ext.web.Route;
 import io.vertx.ext.web.RoutingContext;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 
@@ -120,7 +121,19 @@ public final class AuditContextExtractor {
   }
 
   public static String getApi(RoutingContext ctx) {
-    return ctx.normalizedPath();
+    String mount = ctx.mountPoint() != null ? ctx.mountPoint() : "";
+    Route route = ctx.currentRoute();
+
+    if (route != null && route.getPath() != null) {
+      return normalizeTemplate(mount + route.getPath());
+    }
+
+    // Fallback: at least return actual path
+    return ctx.request().path();
+  }
+
+  private static String normalizeTemplate(String path) {
+    return path.replaceAll(":([A-Za-z0-9_]+)", "\\{$1\\}");
   }
 
   public static String getHttpMethod(RoutingContext ctx) {

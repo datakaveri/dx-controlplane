@@ -9425,32 +9425,32 @@ paths:
               like:
                 summary: Like an entity
                 value:
-                  entityId: "e74112d5-b58b-401e-a799-712b473279ea"
-                  entityType: "DATABANK"
+                  assetId: "e74112d5-b58b-401e-a799-712b473279ea"
+                  assetType: "DATABANK"
                   actionType: "LIKE"
               dislike:
                 summary: Dislike an entity
                 value:
-                  entityId: "e74112d5-b58b-401e-a799-712b473279ea"
-                  entityType: "DATABANK"
+                  assetId: "e74112d5-b58b-401e-a799-712b473279ea"
+                  assetType: "DATABANK"
                   actionType: "DISLIKE"
               bookmark:
                 summary: Bookmark an entity
                 value:
-                  entityId: "e74112d5-b58b-401e-a799-712b473279ea"
-                  entityType: "DATABANK"
+                  assetId: "e74112d5-b58b-401e-a799-712b473279ea"
+                  assetType: "DATABANK"
                   actionType: "BOOKMARK"
               removeVote:
                 summary: Remove vote (neutral)
                 value:
-                  entityId: "e74112d5-b58b-401e-a799-712b473279ea"
-                  entityType: "DATABANK"
+                  assetId: "e74112d5-b58b-401e-a799-712b473279ea"
+                  assetType: "DATABANK"
                   actionType: "NEUTRAL"
               removeBookmark:
                 summary: Remove bookmark
                 value:
-                  entityId: "e74112d5-b58b-401e-a799-712b473279ea"
-                  entityType: "DATABANK"
+                  assetId: "e74112d5-b58b-401e-a799-712b473279ea"
+                  assetType: "DATABANK"
                   actionType: "UNBOOKMARK"
       responses:
         '200':
@@ -9492,8 +9492,8 @@ paths:
             --header 'Authorization: Bearer <jwt token>' \
             --header 'Content-Type: application/json' \
             --data '{
-            "entityId": "e74112d5-b58b-401e-a799-712b473279ea",
-            "entityType": "DATABANK",
+            "assetId": "e74112d5-b58b-401e-a799-712b473279ea",
+            "assetType": "DATABANK",
             "actionType": "LIKE"
             }'
 
@@ -9508,20 +9508,27 @@ paths:
       security:
         - authorization: [ ]
       parameters:
-        - name: entityId
+        - name: assetId
           in: query
-          description: Unique identifier of the entity
+          description: Unique identifier of the asset
           required: false
           schema:
             type: string
             format: uuid
-        - name: entityType
+        - name: assetType
           in: query
-          description: Type of the entity
+          description: Type of the asset
           required: false
           schema:
             type: string
             enum: [ DATABANK, AI_MODEL, USECASE ]
+        - name: actionType
+          in: query
+          description: Type of interaction action
+          required: false
+          schema:
+            type: string
+            enum: [ LIKE, DISLIKE, BOOKMARK ]
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
       responses:
@@ -9851,16 +9858,16 @@ components:
     UserInteractionRequest:
       type: object
       required:
-        - entityId
-        - entityType
+        - assetId
+        - assetType
         - actionType
       properties:
-        entityId:
+        assetId:
           type: string
           format: uuid
           description: ID of the entity being voted on
           example: 7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9
-        entityType:
+        assetType:
           type: string
           description: Type of entity being vote on
           enum:
@@ -10364,16 +10371,16 @@ components:
           items:
             type: object
             required:
-              - entityId
-              - entityType
+              - assetId
+              - assetType
               - isBookmarked
               - isLiked
               - isDisliked
             properties:
-              entityId:
+              assetId:
                 type: string
                 format: uuid
-              entityType:
+              assetType:
                 type: string
                 example: DATABANK
               isBookmarked:
@@ -10383,8 +10390,8 @@ components:
               isDisliked:
                 type: boolean
           example:
-            - entityId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1"
-              entityType: "DATABANK"
+            - assetId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1"
+              assetType: "DATABANK"
               isBookmarked: true
               isLiked: false
               isDisliked: false
@@ -14195,6 +14202,11 @@ components:
             dataUploadStatus: false
             itemCreatedAt: "2025-12-15T05:16:43+0530"
             lastUpdated: "15 December, 2025 - 05:16 PM"
+            metrics:
+              views: 0
+              downloads: 0
+              likes: 0
+              dislikes: 0
         paginationInfo:
           page: 1
           size: 1
@@ -14435,6 +14447,11 @@ components:
             dataUploadStatus: false
             itemCreatedAt: "2024-01-05T02:09:10+0530"
             lastUpdated: "15 December, 2025 - 05:04 PM"
+            metrics:
+               views: 0
+               downloads: 0
+               likes: 0
+               dislikes: 0
         paginationInfo:
           page: 1
           size: 1
@@ -14641,6 +14658,11 @@ components:
             itemCreatedAt: '2024-01-05T02:09:10+0530'
             lastUpdated: '2024-01-10T11:30:00+0530'
             verifiedBy: 'Department of Agriculture'
+            metrics:
+              views: 0
+              downloads: 0
+              likes: 0
+              dislikes: 0
         paginationInfo:
           page: 1
           size: 1

@@ -11,28 +11,7 @@ import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.IS_DELEGATOR;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.PATCH_ITEM;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.RESULT;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.UPDATE_ITEM;
-import static org.cdpg.dx.aaa.common.Constants.DEPARTMENT;
-import static org.cdpg.dx.aaa.common.Constants.DETAIL_ID_NOT_FOUND;
-import static org.cdpg.dx.aaa.common.Constants.HTTP_METHOD;
-import static org.cdpg.dx.aaa.common.Constants.ID;
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE;
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPES;
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_AI_MODEL;
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_APPS;
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
-import static org.cdpg.dx.aaa.common.Constants.NAME;
-import static org.cdpg.dx.aaa.common.Constants.ORGANISATION_ID;
-import static org.cdpg.dx.aaa.common.Constants.ORGANIZATION;
-import static org.cdpg.dx.aaa.common.Constants.ORGANIZATION_ID;
-import static org.cdpg.dx.aaa.common.Constants.ORG_NAME;
-import static org.cdpg.dx.aaa.common.Constants.PROVIDER_USER_ID;
-import static org.cdpg.dx.aaa.common.Constants.REALM_ACCESS;
-import static org.cdpg.dx.aaa.common.Constants.REQUEST_POST;
-import static org.cdpg.dx.aaa.common.Constants.RESULTS;
-import static org.cdpg.dx.aaa.common.Constants.ROLES;
-import static org.cdpg.dx.aaa.common.Constants.SUB;
-import static org.cdpg.dx.aaa.common.Constants.TYPE;
-import static org.cdpg.dx.aaa.common.Constants.UPLOADED_BY;
+import static org.cdpg.dx.aaa.common.Constants.*;
 import static org.cdpg.dx.auth.authorization.model.DxScope.COS_ADMIN_ACCESS;
 import static org.cdpg.dx.auth.authorization.model.DxScope.ORG_ADMIN_ACCESS;
 import static org.cdpg.dx.database.elastic.util.Constants.DATA_UPLOAD_STATUS;
@@ -137,8 +116,8 @@ public class ItemController implements ApiController {
         new ItemExistenceValidator(itemService, centralItemService, isCentralCatEnabled);
     this.itemRegistryService = itemRegistryService;
     this.scriptGenerationService = new ScriptGenerationService();
-    this.itemFetchService = new ItemFetchService(itemService, centralItemService,
-        isCentralCatEnabled);
+    this.itemFetchService =
+        new ItemFetchService(itemService, centralItemService, isCentralCatEnabled);
     this.delegationService = delegationService;
   }
 
@@ -195,10 +174,10 @@ public class ItemController implements ApiController {
         userJson,
         List.of( // primary roles (no scope check)
             DxRole.PROVIDER.getRole(), DxRole.COS_ADMIN.getRole()),
-        List.of(DxScope.ASSET_MANAGEMENT.getScope(), COS_ADMIN_ACCESS.getScope(),
-            DxScope.ORG_ADMIN_ACCESS.getScope())
-    );
-
+        List.of(
+            DxScope.ASSET_MANAGEMENT.getScope(),
+            COS_ADMIN_ACCESS.getScope(),
+            DxScope.ORG_ADMIN_ACCESS.getScope()));
 
     JsonObject body = ctx.body().asJsonObject();
 
@@ -249,9 +228,10 @@ public class ItemController implements ApiController {
         userJson,
         List.of( // primary roles (no scope check)
             DxRole.PROVIDER.getRole(), DxRole.COS_ADMIN.getRole()),
-        List.of(DxScope.ASSET_MANAGEMENT.getScope(), COS_ADMIN_ACCESS.getScope(),
-            DxScope.ORG_ADMIN_ACCESS.getScope())
-    );
+        List.of(
+            DxScope.ASSET_MANAGEMENT.getScope(),
+            COS_ADMIN_ACCESS.getScope(),
+            DxScope.ORG_ADMIN_ACCESS.getScope()));
 
     DxUser user = RoutingContextHelper.fromPrincipal(ctx);
     String orgId = "";
@@ -266,10 +246,10 @@ public class ItemController implements ApiController {
 
     if (!allowedRoles.contains(DxRole.ORG_ADMIN.getRole())
         && !allowedRoles.contains(DxRole.COS_ADMIN.getRole())
-        && !(allowedRoles.contains(DxRole.DELEGATE.getRole()) &&
-        (scopes.contains(COS_ADMIN_ACCESS) || scopes.contains(ORG_ADMIN_ACCESS)))
-        && (allowedRoles.contains(DxRole.PROVIDER.getRole()) ||
-        allowedRoles.contains(DxRole.DELEGATE.getRole()))) {
+        && !(allowedRoles.contains(DxRole.DELEGATE.getRole())
+            && (scopes.contains(COS_ADMIN_ACCESS) || scopes.contains(ORG_ADMIN_ACCESS)))
+        && (allowedRoles.contains(DxRole.PROVIDER.getRole())
+            || allowedRoles.contains(DxRole.DELEGATE.getRole()))) {
       if (body.size() != 1 || !body.containsKey(DATA_UPLOAD_STATUS)) {
         ctx.fail(new DxForbiddenException("Providers can only patch dataUploadStatus field"));
         return;
@@ -292,10 +272,11 @@ public class ItemController implements ApiController {
                   new JsonArray().add(new JsonObject().put(ID, id)),
                   this.urnGenerator);
             })
-        .onFailure(err -> {
-          LOGGER.error("Patch item failed", err);
-          ctx.fail(err);
-        });
+        .onFailure(
+            err -> {
+              LOGGER.error("Patch item failed", err);
+              ctx.fail(err);
+            });
   }
 
   private String extractAndValidateItemType(RoutingContext ctx, JsonObject body) {
@@ -345,6 +326,9 @@ public class ItemController implements ApiController {
       }
       body.put(ROLES, ctx.user().principal().getJsonObject(REALM_ACCESS).getJsonArray(ROLES));
     }
+    body.put(
+        METRICS, new JsonObject().put(VIEWS, 0).put(DOWNLOADS, 0).put(LIKES, 0).put(DISLIKES, 0));
+
     return body;
   }
 
@@ -396,9 +380,7 @@ public class ItemController implements ApiController {
 
               // Central rollback
               () -> centralItemService.deleteItem(item.getId()),
-
               ctx,
-
               res -> {
                 ActivityAuditLogBuilder auditLog =
                     CatalogueAuditHelper.buildItemAudit(ctx, Operation.CREATE, item.toJson());
@@ -424,33 +406,32 @@ public class ItemController implements ApiController {
         GetItemRequest request = new GetItemRequest(item.getId(), subId);
         request.setRoles(roles);
 
-        itemFetchService.fetchForWrite(request)
-            .onSuccess(existingItemSnapshot -> {
+        itemFetchService
+            .fetchForWrite(request)
+            .onSuccess(
+                existingItemSnapshot -> {
+                  executeWithCentralCatalogue(
+                      isCentralCatEnabled,
 
-              executeWithCentralCatalogue(
-                  isCentralCatEnabled,
+                      // Central update
+                      () -> centralItemService.updateItem(item),
 
-                  // Central update
-                  () -> centralItemService.updateItem(item),
+                      // Local update
+                      () -> itemService.updateItem(item),
 
-                  // Local update
-                  () -> itemService.updateItem(item),
+                      // rollback
+                      () -> centralItemService.updateItem(existingItemSnapshot),
+                      ctx,
+                      res -> {
+                        ActivityAuditLogBuilder auditLog =
+                            CatalogueAuditHelper.buildItemAudit(
+                                ctx, Operation.UPDATE, item.toJson());
 
-                  // rollback
-                  () -> centralItemService.updateItem(existingItemSnapshot),
+                        RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
 
-                  ctx,
-
-                  res -> {
-                    ActivityAuditLogBuilder auditLog =
-                        CatalogueAuditHelper.buildItemAudit(
-                            ctx, Operation.UPDATE, item.toJson());
-
-                    RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
-
-                    ResponseBuilder.sendSuccess(ctx, item.toJson(), urnGenerator);
-                  });
-            })
+                        ResponseBuilder.sendSuccess(ctx, item.toJson(), urnGenerator);
+                      });
+                })
             .onFailure(ctx::fail);
       }
     } catch (Exception e) {
@@ -493,35 +474,35 @@ public class ItemController implements ApiController {
       Supplier<Future<T>> localOp,
       Runnable centralRollback,
       RoutingContext ctx,
-      Handler<T> onSuccess
-  ) {
+      Handler<T> onSuccess) {
     if (!isCentralCatEnabled) {
-      localOp.get()
-          .onSuccess(onSuccess)
-          .onFailure(err -> handleOperationError(ctx, err));
+      localOp.get().onSuccess(onSuccess).onFailure(err -> handleOperationError(ctx, err));
       return;
     }
 
     // Central (with one retry)
-    centralOp.get()
-        .recover(err -> {
-          LOGGER.warn("Central catalogue failed, retrying once", err);
-          return centralOp.get();
-        })
-        .onFailure(err -> {
-          LOGGER.error("Central catalogue failed after retry");
-          handleOperationError(ctx, err);
-        })
+    centralOp
+        .get()
+        .recover(
+            err -> {
+              LOGGER.warn("Central catalogue failed, retrying once", err);
+              return centralOp.get();
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Central catalogue failed after retry");
+              handleOperationError(ctx, err);
+            })
         .onSuccess(
             centralRes -> {
               // Local
-              localOp.get()
+              localOp
+                  .get()
                   .onSuccess(onSuccess)
                   .onFailure(
                       localErr -> {
                         LOGGER.error(
-                            "Local operation failed, rolling back central catalogue",
-                            localErr);
+                            "Local operation failed, rolling back central catalogue", localErr);
 
                         // Rollback central
                         try {
@@ -602,20 +583,15 @@ public class ItemController implements ApiController {
 
                   // Central rollback → re-create item
                   () -> centralItemService.createItem(itemSnapshot),
-
                   ctx,
-
                   res -> {
                     ActivityAuditLogBuilder auditLog =
-                        CatalogueAuditHelper.buildItemAudit(
-                            ctx, Operation.DELETE, itemJson);
+                        CatalogueAuditHelper.buildItemAudit(ctx, Operation.DELETE, itemJson);
 
                     RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
 
                     ResponseBuilder.sendSuccess(
-                        ctx,
-                        "Success: Item deleted successfully",
-                        this.urnGenerator);
+                        ctx, "Success: Item deleted successfully", this.urnGenerator);
                   });
             });
   }
@@ -717,55 +693,51 @@ public class ItemController implements ApiController {
     // ---------------- Delegator flow ----------------
     if (isDelegator) {
       if (didFromParam == null || didFromParam.isBlank()) {
-        routingContext.fail(
-            new DxBadRequestException("did is mandatory when isDelegator is true")
-        );
+        routingContext.fail(new DxBadRequestException("did is mandatory when isDelegator is true"));
         return;
       }
 
       if (dxUser == null) {
         routingContext.fail(
-            new DxUnauthorizedException("Identity token required for delegator access")
-        );
+            new DxUnauthorizedException("Identity token required for delegator access"));
         return;
       }
 
       delegationService
           .checkItemAccess(subId, didFromParam)
-          .onSuccess(response -> {
+          .onSuccess(
+              response -> {
+                JsonArray result = response.getJsonArray(RESULT);
 
-            JsonArray result = response.getJsonArray(RESULT);
+                // Defensive check
+                if (result == null) {
+                  routingContext.fail(new DxForbiddenException("Invalid delegation response"));
+                  return;
+                }
 
-            // Defensive check
-            if (result == null) {
-              routingContext.fail(
-                  new DxForbiddenException("Invalid delegation response"));
-              return;
-            }
+                // "*" means all items allowed
+                if (!result.contains("*") && !result.contains(itemId)) {
+                  routingContext.fail(
+                      new DxForbiddenException("Delegator not authorized for this item"));
+                  return;
+                }
 
-            // "*" means all items allowed
-            if (!result.contains("*") && !result.contains(itemId)) {
-              routingContext.fail(
-                  new DxForbiddenException("Delegator not authorized for this item"));
-              return;
-            }
-
-            // Delegation validated — override did
-            request.setDid(didFromParam);
-            executeGetItem(request, routingContext);
-          })
-          .onFailure(err -> {
-            LOGGER.debug("Delegation access check failed", err);
-            routingContext.fail(new DxForbiddenException(err.getMessage()));
-          });
+                // Delegation validated — override did
+                request.setDid(didFromParam);
+                executeGetItem(request, routingContext);
+              })
+          .onFailure(
+              err -> {
+                LOGGER.debug("Delegation access check failed", err);
+                routingContext.fail(new DxForbiddenException(err.getMessage()));
+              });
       return;
     }
     // ---------------- Normal flow ----------------
     executeGetItem(request, routingContext);
   }
 
-  private void executeGetItem(GetItemRequest request,
-                              RoutingContext routingContext) {
+  private void executeGetItem(GetItemRequest request, RoutingContext routingContext) {
     String itemId = routingContext.queryParams().get(ID);
     itemService
         .getItemWithAccessChecks(request)
@@ -789,8 +761,7 @@ public class ItemController implements ApiController {
               if (err instanceof DxForbiddenException) {
                 routingContext.fail(err); // failure handler should map to 403
               } else {
-                LOGGER.error("Error retrieving item with ID '{}': {}", itemId,
-                    err.getMessage());
+                LOGGER.error("Error retrieving item with ID '{}': {}", itemId, err.getMessage());
                 routingContext.fail(err);
               }
             });
@@ -829,8 +800,7 @@ public class ItemController implements ApiController {
 
     response
         .sendFile(filePath.toString())
-        .onSuccess(
-            v -> LOGGER.info("Script file downloaded successfully: {}", filename))
+        .onSuccess(v -> LOGGER.info("Script file downloaded successfully: {}", filename))
         .onFailure(
             err -> {
               LOGGER.error("Error reading script file: {}", filename, err);
