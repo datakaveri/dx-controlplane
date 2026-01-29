@@ -1,6 +1,7 @@
 package org.cdpg.dx.aaa.asset.handler;
 
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
@@ -11,6 +12,8 @@ import org.cdpg.dx.aaa.asset.models.Status;
 import org.cdpg.dx.aaa.asset.service.AssetService;
 import org.cdpg.dx.aaa.audit.util.AuditingHelper;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
+import org.cdpg.dx.aaa.item.service.ItemService;
+import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.auditing.model.AuditLog;
 import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.model.DxRole;
@@ -24,10 +27,12 @@ import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 import static org.cdpg.dx.aaa.asset.util.Constants.ALLOWED_FILTER_MAP_FOR_ASSET_REQUEST;
+import static org.cdpg.dx.aaa.asset.util.Constants.ASSET_ID;
 import static org.cdpg.dx.aaa.credit.util.Constants.*;
 import static org.cdpg.dx.aaa.credit.util.Constants.REQUESTED_AT;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
@@ -36,14 +41,16 @@ public class AssetHandler {
 
   private static final Logger LOGGER = LogManager.getLogger(AssetHandler.class);
   private final AssetService assetService;
+  private final ItemService itemService;
   private final EmailComposer emailComposer;
   private final KeycloakUserService keycloakUserService;
   private final URNGenerator urnGenerator;
 
 
-  public AssetHandler(AssetService assetService, EmailComposer emailComposer, KeycloakUserService keycloakUserService, URNGenerator urnGenerator) {
+  public AssetHandler(AssetService assetService, ItemService itemService, EmailComposer emailComposer, KeycloakUserService keycloakUserService, URNGenerator urnGenerator) {
     this.emailComposer = emailComposer;
     this.assetService = assetService;
+    this.itemService = itemService;
     this.keycloakUserService = keycloakUserService;
     this.urnGenerator = urnGenerator;
   }
@@ -62,6 +69,7 @@ public class AssetHandler {
     }
 
     String userIdStr = user.subject();
+    String assetIdStr = assetRequestJson.getString(ASSET_ID);
 
     if (userIdStr == null || userIdStr.isEmpty()) {
       LOGGER.error("User ID is null or empty");
@@ -87,7 +95,9 @@ public class AssetHandler {
       return;
     }
 
-    assetService.getAssetRequestById(assetId,userId).onSuccess(existingRequest -> {
+    GetItemRequest access = new GetItemRequest(assetIdStr,userIdStr);
+    itemService.getItem(access).compose(res->
+      assetService.getAssetRequestById(assetId,userId).onSuccess(existingRequest -> {
       if (existingRequest == true) {
         ctx.fail(new DxConflictException("Asset request already exists for asset ID and userId"));
       } else {
@@ -109,7 +119,7 @@ public class AssetHandler {
     }).onFailure(err -> {
       LOGGER.error("Error checking existing asset request: {}", err.getMessage(), err);
       ctx.fail(new DxInternalServerErrorException("Error checking existing asset request"));
-    });
+    }));
 
   }
 
@@ -135,16 +145,31 @@ public class AssetHandler {
       .build();
 
     AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-      RoutingContextHelper.getRequestPath(ctx), "GET", "Get All Credit Requests");
+      RoutingContextHelper.getRequestPath(ctx), "GET", "Get All Asset Requests");
 
     assetService.getAllAssetRequest(request)
-      .onSuccess(result -> {
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx,  result.data(), result.paginationInfo(), urnGenerator);
+      .compose(result ->
+        itemService.enrichWithAssetInfo(result.data())
+          .map(enriched -> {
+            LOGGER.info("Enriched Asset Requests count: {}", enriched.size());
+
+            enriched.forEach(asset ->
+              LOGGER.debug("Enriched Asset Request: {}", asset.getAssetRequest())
+            );
+
+            return Map.entry(enriched, result.paginationInfo());
+          })
+      )
+      .onSuccess(entry -> {
+        ResponseBuilder.sendSuccess(
+          ctx,
+          entry.getKey(),
+          entry.getValue(),
+          urnGenerator
+        );
       })
       .onFailure(ctx::fail);
-
-  }
+    }
 
   public void updateAssetRequestStatus(RoutingContext ctx) {
     JsonObject assetRequestJson = ctx.body().asJsonObject();

@@ -12,6 +12,7 @@ import org.cdpg.dx.aaa.asset.service.AssetService;
 import org.cdpg.dx.aaa.asset.service.AssetServiceImpl;
 import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
+import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.kyc.dao.KYCTransactionDAO;
 import org.cdpg.dx.aaa.kyc.dao.impl.KYCTransactionDAOImpl;
 import org.cdpg.dx.aaa.kyc.handler.KYCHandler;
@@ -28,14 +29,14 @@ public class AssetFactory {
 
   private AssetFactory() {}
 
-  public static AssetHandler createHandler(PostgresService postgresService, JsonObject config, EmailComposer emailComposer, URNGenerator urnGenerator){
+  public static AssetHandler createHandler(PostgresService postgresService, ItemService itemService, JsonObject config, EmailComposer emailComposer, URNGenerator urnGenerator){
 
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
     AssetRequestDAO assetRequestDAO = new AssetRequestDAOImpl(postgresService);
 
     AssetService assetService = new AssetServiceImpl(assetRequestDAO,config);
 
-    return new AssetHandler(assetService, emailComposer, keycloakUserService,urnGenerator);
+    return new AssetHandler(assetService, itemService, emailComposer, keycloakUserService,urnGenerator);
   }
 
 }

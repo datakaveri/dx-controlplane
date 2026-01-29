@@ -24,16 +24,19 @@ import static org.cdpg.dx.database.elastic.util.Constants.ORG_ADMIN;
 import static org.cdpg.dx.database.elastic.util.Constants.TYPE;
 import static org.cdpg.dx.database.elastic.util.Constants.TYPE_KEYWORD;
 
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+
+import java.util.*;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.asset.models.AssetRequest;
+import org.cdpg.dx.aaa.asset.models.AssetRequestResponse;
 import org.cdpg.dx.aaa.common.ResponseModel;
 import org.cdpg.dx.aaa.item.model.Item;
 import org.cdpg.dx.aaa.item.service.ItemService;
@@ -622,6 +625,65 @@ public class CentralItemServiceImpl implements ItemService {
 
   private boolean isNullOrEmpty(String str) {
     return str == null || str.trim().isEmpty();
+  }
+
+  @Override
+  public Future<List<AssetRequestResponse>> enrichWithAssetInfo(
+    List<AssetRequest> assetRequests
+  ) {
+
+    List<Future<AssetRequestResponse>> typedFutures =
+      assetRequests.stream()
+        .map(assetRequest -> {
+
+          GetItemRequest itemRequest =
+            new GetItemRequest(
+              assetRequest.assetId().toString(),
+              assetRequest.userId().toString()
+            );
+
+          return getItem(itemRequest)
+            .map(response -> {
+              if (response == null) {
+                return new AssetRequestResponse(assetRequest, null, null, null);
+              }
+
+              JsonObject item = response.getResponse();
+
+              String itemName = item.getString("name");
+              String accessPolicy = item.getString("accessPolicy");
+
+              JsonArray typeArray = item.getJsonArray("type");
+              String type =
+                (typeArray != null && !typeArray.isEmpty())
+                  ? typeArray.getString(0)
+                  : null;
+
+              return new AssetRequestResponse(
+                assetRequest,
+                itemName,
+                accessPolicy,
+                type
+              );
+            })
+            .recover(err ->
+              Future.succeededFuture(
+                new AssetRequestResponse(assetRequest, null, null, null)
+              )
+            );
+        })
+        .toList();
+
+    // CompositeFuture requires List<Future>
+    List<Future> futures = new ArrayList<>(typedFutures);
+
+    return CompositeFuture
+      .all(futures)
+      .map(v ->
+        typedFutures.stream()
+          .map(Future::result)
+          .toList()
+      );
   }
 
 }

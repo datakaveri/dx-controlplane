@@ -169,7 +169,7 @@ public class ControllerFactory {
             keycloakUserService, organizationService, creditService, esService, docUserIndex);
 
     AssetHandler assetHandler =
-        AssetFactory.createHandler(pgService, config, emailComposer, urnGenerator);
+        AssetFactory.createHandler(pgService,itemService, config, emailComposer, urnGenerator);
     ApiController assetController = new AssetController(assetHandler, auditingHandler);
 
     ApiController creditApiController =

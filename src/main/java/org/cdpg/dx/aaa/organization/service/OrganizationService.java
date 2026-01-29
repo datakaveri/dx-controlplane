@@ -38,6 +38,8 @@ public interface OrganizationService {
 
   Future<OrganizationJoinRequest> getOrganizationJoinRequestById(UUID requestId);
 
+  Future<OrganizationJoinRequest> withdrawJoinRequest(UUID userId, UUID requestId);
+
   Future<Boolean> updateOrganizationJoinRequestStatus(UUID requestId, Status Status);
 
   Future<List<OrganizationJoinRequest>> getOrganizationJoinRequestsByUser(UUID userId);

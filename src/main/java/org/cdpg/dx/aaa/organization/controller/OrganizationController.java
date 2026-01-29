@@ -112,6 +112,12 @@ public class OrganizationController implements ApiController {
         .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER,DxRole.DELEGATE))
         .handler(joinRequestHandler::getUserJoinOrganisationRequests);
 
+    routerBuilder
+      .operation(OP_WITHDRAW_USER_ORG_JOIN_REQUESTS)
+      .handler(auditingHandler::handleApiAudit) // done
+      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER,DxRole.DELEGATE))
+      .handler(joinRequestHandler::withdrawJoinRequest);
+
     // todo : delegatorId
     //done
     routerBuilder

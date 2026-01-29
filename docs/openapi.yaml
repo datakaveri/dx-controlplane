@@ -1584,6 +1584,126 @@ paths:
                     detail: Unauthorized
         '404':
           description: Join request not found
+
+  /iudx/v2/auth/organisation/join-request/{id}:
+    patch:
+      summary: User withdraws organisation join request
+      description: >
+        Allows an authenticated user to withdraw their pending organisation join request.
+        Only join requests in a withdrawable state (e.g. PENDING) can be withdrawn.
+      tags:
+        - Organisation APIs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Join request ID.
+      operationId: withdraw-auth-v2-organisations-join-request
+      requestBody:
+        required: true
+        description: >
+          Request body containing the new status of the join request.
+          Only `withdrawn` is allowed.
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [ withdrawn ]
+                  description: New status of the join request.
+            examples:
+              withdraw:
+                value:
+                  status: withdrawn
+
+      responses:
+        '200':
+          description: Join request withdrawn successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:ControlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  detail:
+                    type: string
+                    example: Withdrawn organisation join request
+
+        '400':
+          description: Invalid request or invalid state transition
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              examples:
+                invalidState:
+                  value:
+                    type: urn:dx:ControlPlane:badRequest
+                    title: Bad Request
+                    detail: Join request cannot be withdrawn in current state
+
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              examples:
+                unauthorized:
+                  value:
+                    type: urn:dx:ControlPlane:notAuthorized
+                    title: Not Authorized
+                    detail: Unauthorized
+
+        '404':
+          description: Join request not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              examples:
+                notFound:
+                  value:
+                    type: urn:dx:ControlPlane:notFound
+                    title: Not Found
+                    detail: No join request found with given ID
+      security:
+        - authorization: [ ]
+
+
   /iudx/v2/auth/organisations:
     get:
       summary: 'AAA-007-Consumer: List All Organisations'
@@ -6334,9 +6454,9 @@ paths:
 
         ❗ For items with `accessPolicy=restricted` or `accessPolicy=private`, a valid token **must** be provided.
         Otherwise, the request will be rejected with a **401 Unauthorized** error.
-        
+
         ### Delegator Access
-        
+
         - If `isDelegator=true`, the caller is treated as a delegator accessing
           the item on behalf of a **delegate**.
         - In this case, `did` is mandatory.
@@ -6456,7 +6576,7 @@ paths:
         - lang: cURL
           label: get item with accessPolicy (delegator)
           source: |
-            curl --location --request GET 
+            curl --location --request GET
             'https://${HOSTNAME}/iudx/v2/cat/item/access?id=uuid&isDelegator=true&did=delegate-did' \
             --header 'Authorization: Bearer <token>'
   /iudx/v2/cat/organisation/asset:
@@ -9403,7 +9523,7 @@ paths:
             curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/organization?organizationType=Public&assetType=DATABANK&time=2026-01-10T12%3A30%3A00&timerel=between&endtime=2026-01-20T12%3A30%3A00&page=1&size=2&sort=contribution%3Adesc'
 
 
-  
+
   /iudx/v2/user/interactions:
     post:
       tags:
@@ -9648,7 +9768,7 @@ tags:
     x-displayName: App
   - name: Leaderboard
     description: >
-      APIs under this tag provide leaderboard and ranking data for `Organization`,`Provider` and `Asset` such as `DATABANK`, `AI_MODEL`, and `USECASE`. 
+      APIs under this tag provide leaderboard and ranking data for `Organization`,`Provider` and `Asset` such as `DATABANK`, `AI_MODEL`, and `USECASE`.
       These endpoints support filtering, sorting, pagination,
       and time-based queries to retrieve ranked results based on engagement metrics like
       downloads, views, and likes.
