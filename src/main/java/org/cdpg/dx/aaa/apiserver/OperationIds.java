@@ -32,6 +32,9 @@ public final class OperationIds {
   public static final String OP_GET_USER_ORG_JOIN_REQUESTS =
       "get-auth-v2-user-organisations-join-requests";
 
+  public static final String OP_WITHDRAW_USER_ORG_JOIN_REQUESTS =
+    "withdraw-auth-v2-organisations-join-request";
+
   public static final String OP_DELETE_USER_ORG_JOIN_REQUEST =
       "delete-auth-v2-user-organisations-join-requests";
 
