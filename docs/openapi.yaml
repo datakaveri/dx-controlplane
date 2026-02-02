@@ -8370,7 +8370,10 @@ paths:
         Pagination is supported for large result sets.
       parameters:
         - $ref: '#/components/parameters/AssetTypeParam'
-        - $ref: '#/components/parameters/OperationParam'
+        - $ref: '#/components/parameters/AssetAccessPolicyParam'
+        - $ref: '#/components/parameters/ActionParam'
+        - $ref: '#/components/parameters/OrganizationIdParam'
+        - $ref: '#/components/parameters/LogTypeParam'
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
         - $ref: '#/components/parameters/TimeRelParam'
@@ -8431,7 +8434,9 @@ paths:
       parameters:
         - $ref: '#/components/parameters/UserIdParam'
         - $ref: '#/components/parameters/AssetTypeParam'
-        - $ref: '#/components/parameters/OperationParam'
+        - $ref: '#/components/parameters/AssetAccessPolicyParam'
+        - $ref: '#/components/parameters/ActionParam'
+        - $ref: '#/components/parameters/LogTypeParam'
         - $ref: '#/components/parameters/OrganizationIdParam'
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
@@ -8494,7 +8499,9 @@ paths:
       parameters:
         - $ref: '#/components/parameters/UserIdParam'
         - $ref: '#/components/parameters/AssetTypeParam'
-        - $ref: '#/components/parameters/OperationParam'
+        - $ref: '#/components/parameters/AssetAccessPolicyParam'
+        - $ref: '#/components/parameters/ActionParam'
+        - $ref: '#/components/parameters/LogTypeParam'
         - $ref: '#/components/parameters/OrganizationIdParam'
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
@@ -8551,7 +8558,10 @@ paths:
         - authorization: [ ]
       parameters:
         - $ref: '#/components/parameters/AssetTypeParam'
-        - $ref: '#/components/parameters/OperationParam'
+        - $ref:  '#/components/parameters/AssetAccessPolicyParam'
+        - $ref: '#/components/parameters/ActionParam'
+        - $ref: '#/components/parameters/LogTypeParam'
+        - $ref: '#/components/parameters/OrganizationIdParam'
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
         - $ref: '#/components/parameters/TimeRelParam'
@@ -9812,7 +9822,7 @@ components:
         pattern: '^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$'
 
     AssetTypeParam:
-      name: entityType
+      name: assetType
       in: query
       description: >
         The type of asset to filter the activity logs.
@@ -9820,25 +9830,24 @@ components:
       required: false
       schema:
         type: string
-
-    AssetNameParam:
-      name: assetname
+        enum:
+          - DATABANK
+          - AI_MODEL
+          - USECASE
+    AssetAccessPolicyParam:
+      name: accessPolicy
       in: query
       description: >
-        This asset name is used to filter the activity logs.
-        This parameter allows filtering by specific asset name.
+        The access policy of the asset to filter the activity logs.
+        This parameter allows filtering by specific access policies such as `OPEN`, `RESTRICTED`, `PRIVATE`, `PII`.
       required: false
       schema:
         type: string
-
-    ApiParam:
-      name: api
-      in: query
-      description: >
-        This parameter allows filtering by specific api endpoint name.
-      required: false
-      schema:
-        type: string
+        enum:
+          - OPEN
+          - RESTRICTED
+          - PRIVATE
+          - PII
 
     RoleParam:
       name: role
@@ -9849,12 +9858,21 @@ components:
       schema:
         type: string
 
-    OperationParam:
-      name: operation
+    ActionParam:
+      name: action
       in: query
       description: >
-        The type of operation to filter the activity logs.
-        This parameter allows filtering by specific operations, such as `View`, `created`, etc.
+        The type of action to filter the activity logs.
+        This parameter allows filtering by specific action, such as `View`, `Download`, `Upload`, `Update`,`Delete` etc.
+      required: false
+      schema:
+        type: string
+    LogTypeParam:
+      name: logType
+      in: query
+      description: >
+        The type of log to filter the activity logs.
+        This parameter allows filtering by specific log types, such as `ASSET` or `USER_ACTION`, `CREDIT`.
       required: false
       schema:
         type: string
@@ -9936,7 +9954,6 @@ components:
           - between
           - before
           - after
-          -
     OrgNameParam:
       name: name
       in: query

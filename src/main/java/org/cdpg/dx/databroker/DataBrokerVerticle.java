@@ -16,6 +16,14 @@ import org.cdpg.dx.aaa.activity.dao.ActivityLogDao;
 import org.cdpg.dx.aaa.activity.dao.impl.ActivityLogDaoImpl;
 import org.cdpg.dx.aaa.activity.service.ActivityService;
 import org.cdpg.dx.aaa.activity.service.impl.ActivityServiceImpl;
+import org.cdpg.dx.aaa.item.service.ItemService;
+import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
+import org.cdpg.dx.auditing.v2.dao.UserActivityLogDao;
+import org.cdpg.dx.auditing.v2.dao.impl.UserActivityLogDaoImpl;
+import org.cdpg.dx.auditing.v2.enrichment.AssetEnrichmentService;
+import org.cdpg.dx.auditing.v2.service.UserActivityAuditLogService;
+import org.cdpg.dx.auditing.v2.service.impl.UserActivityAuditLogServiceImpl;
+import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.client.RabbitClient;
 import org.cdpg.dx.databroker.client.RabbitWebClient;
@@ -126,10 +134,25 @@ public class DataBrokerVerticle extends AbstractVerticle {
     ActivityService activityService = new ActivityServiceImpl(activityLogDAO);
     /*ImmudbActivityService immudbActivityService = new ImmudbActivityServiceImpl(immudbService);*/
 
+    ElasticsearchService esService =
+        ElasticsearchService.createProxy(vertx, ELASTIC_SERVICE_ADDRESS);
+    PostgresService pgService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
+    String docIndex = config().getString("docIndex");
+    ItemService itemService = new ItemServiceImpl(esService, null, null, null, docIndex, null);
+    AssetEnrichmentService assetEnrichmentService = new AssetEnrichmentService(itemService);
+    UserActivityLogDao userActivityLogDao = new UserActivityLogDaoImpl(pgService);
+    UserActivityAuditLogService userActivityAuditLogService =
+        new UserActivityAuditLogServiceImpl(userActivityLogDao);
+
     String auditQueue = config().getString("auditingQueue");
 
     auditConsumer =
-        new AuditMessageConsumer(iudxInternalRabbitMqClient, auditQueue, activityService);
+        new AuditMessageConsumer(
+            iudxInternalRabbitMqClient,
+            auditQueue,
+            assetEnrichmentService,
+            userActivityAuditLogService,
+            true);
     /*immudbConsumer = new ImmudbConsumer(iudxInternalRabbitMqClient, immudbActivityService);*/
     auditConsumer.start();
     EmailService emailService = EmailService.createProxy(vertx, EMAIL_SERVICE_ADDRESS);

@@ -10,12 +10,6 @@ import io.vertx.ext.web.client.WebClient;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.ActivityReport.controller.ActivityReportController;
-import org.cdpg.dx.aaa.ActivityReport.factory.ActivityReportControllerFactory;
-import org.cdpg.dx.aaa.activity.controller.ActivityController;
-import org.cdpg.dx.aaa.activity.factory.ActivityControllerFactory;
-import org.cdpg.dx.aaa.activity.factory.ActivityFactory;
-import org.cdpg.dx.aaa.activity.service.ActivityLogService;
 import org.cdpg.dx.acl.accessReport.controller.AccessReportController;
 import org.cdpg.dx.acl.accessReport.factory.AccessReportFactory;
 import org.cdpg.dx.acl.accessRequest.controller.AccessRequestController;
@@ -56,16 +50,9 @@ public class ControllerFactory {
     boolean isRemoteAudit = config.getBoolean("isRemoteAudit", false);
     String emailExchange = config.getString("emailExchange", "Email");
     String emailRoutingKey = config.getString("emailRoutingKey", "##");
-    // Activity Controller
-    ActivityController activityController =
-        ActivityControllerFactory.create(pgService, urnGenerator);
-    ActivityReportController activityReportController =
-        ActivityReportControllerFactory.create(pgService, vertx);
-    ActivityLogService activityLogService = ActivityFactory.getActivityService();
 
     AuditingHandler auditingHandler =
-        new AuditingHandler(
-            dataBrokerService, activityLogService, auditingExchange, routingKey, isRemoteAudit);
+        new AuditingHandler(dataBrokerService, auditingExchange, routingKey, isRemoteAudit);
 
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
 

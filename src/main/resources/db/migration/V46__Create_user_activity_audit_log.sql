@@ -36,8 +36,8 @@ CREATE TABLE IF NOT EXISTS user_activity_audit_log
 
     -- API metadata
     api VARCHAR NOT NULL,
-    http_method http_method NOT NULL,
-    operation VARCHAR NOT NULL,
+    method http_method NOT NULL,
+    action VARCHAR NOT NULL,
     origin_server origin_server NOT NULL,
 
     -- Asset dimension
