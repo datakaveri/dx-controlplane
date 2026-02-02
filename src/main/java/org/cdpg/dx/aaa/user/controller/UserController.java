@@ -35,6 +35,11 @@ public class UserController implements ApiController {
       .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
       .handler(userHandler::patchUserInfo);
 
+//    routerBuilder
+//      .operation("post-auth-v2-custom-role")
+//      .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+//      .handler(userHandler::addCustomRoleAndScopes);
+
   }
 
 }

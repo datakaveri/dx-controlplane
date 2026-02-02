@@ -80,6 +80,8 @@ import org.cdpg.dx.aaa.summary.factroy.SummaryControllerFactory;
 import org.cdpg.dx.aaa.token.controller.TokenController;
 import org.cdpg.dx.aaa.token.factory.AppTokenControllerFactory;
 import org.cdpg.dx.aaa.token.factory.TokenControllerFactory;
+import org.cdpg.dx.aaa.user.dao.CustomRoleDAO;
+import org.cdpg.dx.aaa.user.dao.impl.CustomRoleDAOImpl;
 import org.cdpg.dx.aaa.user.factory.UserControllerFactory;
 import org.cdpg.dx.aaa.user.service.UserService;
 
@@ -164,9 +166,10 @@ public class ControllerFactory {
     DelegationService delegationService =
         DelegationControllerFactory.createService(
             pgService, keycloakUserService, organizationService, itemService);
+    CustomRoleDAO customRoleDAO = new CustomRoleDAOImpl(pgService);
     UserService userService =
         UserControllerFactory.createService(
-            keycloakUserService, organizationService, creditService, esService, docUserIndex);
+            keycloakUserService, organizationService, creditService, esService, customRoleDAO,docUserIndex);
 
     AssetHandler assetHandler =
         AssetFactory.createHandler(pgService,itemService, config, emailComposer, urnGenerator);

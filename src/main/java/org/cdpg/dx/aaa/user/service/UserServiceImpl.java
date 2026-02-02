@@ -4,6 +4,7 @@ import com.hazelcast.collection.ICollection;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.*;
@@ -13,6 +14,8 @@ import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.organization.models.OrganizationCreateRequest;
 import org.cdpg.dx.aaa.organization.models.OrganizationJoinRequest;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
+import org.cdpg.dx.aaa.user.dao.CustomRoleDAO;
+import org.cdpg.dx.aaa.user.model.CustomRole;
 import org.cdpg.dx.aaa.user.models.UserInfo;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
@@ -28,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import static org.cdpg.dx.aaa.common.Constants.FIELD;
 import static org.cdpg.dx.aaa.common.Constants.VALUE;
+import static org.cdpg.dx.aaa.user.util.constants.*;
 import static org.cdpg.dx.database.elastic.util.Constants.ID_KEYWORD;
 
 public class UserServiceImpl implements UserService {
@@ -38,6 +42,7 @@ public class UserServiceImpl implements UserService {
   private final CreditService creditService;
   private final ElasticsearchService elasticsearchService;
   private final String docUserIndex;
+  private final CustomRoleDAO customRoleDAO;
 
 
   public UserServiceImpl(
@@ -45,6 +50,7 @@ public class UserServiceImpl implements UserService {
     OrganizationService organizationService,
     CreditService creditService,
     ElasticsearchService elasticsearchService,
+    CustomRoleDAO customRoleDAO,
     String docUserIndex
   ) {
 
@@ -52,6 +58,7 @@ public class UserServiceImpl implements UserService {
     this.creditService = creditService;
     this.organizationService = organizationService;
     this.elasticsearchService = elasticsearchService;
+    this.customRoleDAO = customRoleDAO;
     this.docUserIndex = docUserIndex;
   }
 
@@ -225,6 +232,40 @@ public class UserServiceImpl implements UserService {
 
     return promise.future();
   }
+
+  @Override
+  public Future<Boolean> addCustomRoleAndScope(JsonObject body) {
+
+      CustomRole cr = CustomRole.fromJson(body);
+
+      return customRoleDAO.create(cr).compose(ar->{
+
+        UUID userId = ar.userId();
+        String role = ar.role();
+        JsonArray scopes = ar.scope();
+
+        return keycloakUserService
+          .addCustomRoleToUser(userId, role)
+          .compose(roleAdded -> {
+
+            if (!roleAdded) {
+              return Future.failedFuture("Failed to assign role to user");
+            }
+
+            // Scope is optional
+            if (scopes == null || scopes.isEmpty()) {
+              return Future.succeededFuture(true);
+            }
+
+            List<String> scope_list = scopes.stream()
+              .map(Object::toString)
+              .toList();
+
+            return keycloakUserService.setCustomScopeToUser(userId, scope_list);
+          });
+      });
+
+}
 
 
 }

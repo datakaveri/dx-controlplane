@@ -23,6 +23,8 @@ public interface UserService {
     Future<UserInfo> patchUserInfo(String userId, JsonObject updates);
     Future<DxUser> updateUserInfo(UUID userId,Boolean status);
 
+    Future<Boolean> addCustomRoleAndScope(JsonObject body);
+
     default <T> Future<List<JsonObject>> enrichWithUserRoles(
             List<T> items,
             Function<T, UUID> userIdExtractor,

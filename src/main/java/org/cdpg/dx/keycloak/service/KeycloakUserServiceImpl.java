@@ -489,7 +489,63 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
     });
   }
 
+  @Override
+  public Future<Boolean> addCustomRoleToUser(UUID userId,String role_user)
+  {
+    return BlockingExecutionUtil.runBlocking(() -> {
+      try {
+        RealmResource realmResource = keycloak.realm(realm);
+        UsersResource usersResource = realmResource.users();
+        RoleRepresentation role = realmResource.roles().get(role_user).toRepresentation();
 
+        if (role == null) {
+          LOGGER.warn("Role '{}' not found in realm '{}'", role_user, realm);
+          throw new KeycloakServiceException(role  + " not available in KC");
+        }
+
+        usersResource.get(userId.toString()).roles().realmLevel().add(Collections.singletonList(role));
+        LOGGER.info("Assigned role '{}' to user '{}'",role_user, userId);
+        return true;
+      } catch (Exception e) {
+        LOGGER.error("Failed to assign role '{}' to user '{}': {}",role_user, userId, e.getMessage(), e);
+        throw new KeycloakServiceException("Failed to assign role to user", e);
+      }
+    });
+  }
+
+  @Override
+  public Future<Boolean> setCustomScopeToUser(UUID userId, List<String> scope) {
+
+    try {
+      UserRepresentation user =
+        usersResource().get(userId.toString()).toRepresentation();
+
+      Map<String, List<String>> attrs =
+        Optional.ofNullable(user.getAttributes())
+          .orElse(new HashMap<>());
+
+      // Deduplicate + preserve order
+      Set<String> cleanScopes = new LinkedHashSet<>(scope);
+
+      // Build final JSON array
+      JsonArray scopesArray = new JsonArray();
+      cleanScopes.forEach(scopesArray::add);
+
+      LOGGER.info("Saving scopes for user {} : {}", userId, scopesArray.encode());
+
+      // Save back to attributes
+      attrs.put(KeycloakConstants.SCOPES, List.of(scopesArray.encode()));
+      user.setAttributes(attrs);
+
+      usersResource().get(userId.toString()).update(user);
+
+      return Future.succeededFuture(true);
+
+    } catch (Exception e) {
+      LOGGER.error("Failed to set custom scope for user {}", userId, e);
+      return Future.failedFuture(e);
+    }
+  }
 
 
 }

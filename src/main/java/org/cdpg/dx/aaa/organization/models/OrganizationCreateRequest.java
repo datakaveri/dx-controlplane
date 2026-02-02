@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.UUID;
 
+import static org.cdpg.dx.aaa.organization.config.Constants.PHONE_NO;
 import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
 import static org.cdpg.dx.common.util.DateTimeHelper.parseDateTime;
 import static org.cdpg.dx.common.util.ValidationUtils.requireNonNull;
@@ -59,7 +60,9 @@ public record OrganizationCreateRequest(
         requireNonNull(json.getString(Constants.USER_NAME), Constants.USER_NAME),
         requireNonNull(json.getString(Constants.EMP_ID), Constants.EMP_ID),
               requireNonNull(json.getString(Constants.JOB_TITLE), Constants.JOB_TITLE),
-              requireNonNull(json.getString(Constants.PHONE_NO), Constants.PHONE_NO),
+              json.getString(PHONE_NO)!=null ?
+                json.getString(PHONE_NO):"*",
+//              requireNonNull(json.getString(PHONE_NO), PHONE_NO),
         requireNonNull(json.getString(Constants.MANAGER_EMAIL), Constants.MANAGER_EMAIL),
         requireNonNull(json.getString(Constants.ORG_DOCUMENTS), Constants.ORG_DOCUMENTS),
         parseDateTime(json.getString(Constants.CREATED_AT)),
@@ -89,7 +92,8 @@ public record OrganizationCreateRequest(
     json.put(Constants.USER_NAME, userName);
     json.put(Constants.EMP_ID, empId);
     json.put(Constants.JOB_TITLE, jobTitle);
-    json.put(Constants.PHONE_NO, orgManagerphoneNo);
+//    json.put(PHONE_NO, orgManagerphoneNo);
+    if(orgManagerphoneNo!=null && !orgManagerphoneNo.isEmpty()) json.put(PHONE_NO,orgManagerphoneNo);
     json.put(Constants.MANAGER_EMAIL,managerEmail);
     if (orgDocuments != null && !orgDocuments.isEmpty()) json.put(Constants.ORG_DOCUMENTS, orgDocuments);
     if (createdAt != null) json.put(Constants.CREATED_AT, createdAt.format(FORMATTER));
@@ -116,7 +120,8 @@ public record OrganizationCreateRequest(
     json.put("userName", userName);
     json.put("empId", empId);
     json.put("jobTitle", jobTitle);
-    json.put("orgManagerphoneNo", orgManagerphoneNo);
+//    json.put("orgManagerphoneNo", orgManagerphoneNo);
+    if(orgManagerphoneNo!=null) json.put(PHONE_NO,orgManagerphoneNo);
     json.put("orgDocuments", orgDocuments);
     json.put("managerEmail",managerEmail);
     if (createdAt != null) json.put("createdAt", createdAt.format(FORMATTER));
@@ -143,7 +148,7 @@ public record OrganizationCreateRequest(
     if (!userName.isEmpty()) map.put(Constants.USER_NAME, userName);
     if (!empId.isEmpty()) map.put(Constants.EMP_ID, empId);
     if (!jobTitle.isEmpty()) map.put(Constants.JOB_TITLE, jobTitle);
-    if (!orgManagerphoneNo.isEmpty()) map.put(Constants.PHONE_NO, orgManagerphoneNo);
+    if (!orgManagerphoneNo.isEmpty()) map.put(PHONE_NO, orgManagerphoneNo);
     if (!managerEmail.isEmpty()) map.put(Constants.MANAGER_EMAIL, managerEmail);
     if (!orgDocuments.isEmpty()) map.put(Constants.ORG_DOCUMENTS, orgDocuments);
     if (createdAt != null) map.put(Constants.CREATED_AT, createdAt.format(FORMATTER));

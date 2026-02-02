@@ -31,6 +31,8 @@ public interface KeycloakUserService {
     Future<Boolean> setKycVerifiedFalse(UUID userId);
     Future<Boolean> updateUserPassword(UUID userId, String password);
     Future<Boolean> setDelegationScopes(UUID userId , List<String> scope,UUID delegatorId);
+    Future<Boolean> setCustomScopeToUser(UUID userId , List<String> scope);
+    Future<Boolean> addCustomRoleToUser(UUID userId,String role);
     Future<Boolean> clearDelegationScopes(    UUID userId,
                                               UUID delegatorId,
                                               Set<String> scopesToRemove);

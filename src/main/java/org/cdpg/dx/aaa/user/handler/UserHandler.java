@@ -1,6 +1,7 @@
 package org.cdpg.dx.aaa.user.handler;
 
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,6 +16,8 @@ import org.cdpg.dx.common.util.RoutingContextHelper;
 
 import java.util.*;
 
+import static org.cdpg.dx.aaa.organization.config.Constants.USER_ID;
+
 public class UserHandler {
 
   private static final Logger LOGGER = LogManager.getLogger(UserHandler.class);
@@ -24,6 +27,26 @@ public class UserHandler {
   public UserHandler( UserService userService, URNGenerator urnGenerator) {
     this.userService = userService;
     this.urnGenerator = urnGenerator;
+  }
+
+  public void addCustomRoleAndScopes(RoutingContext ctx)
+  {
+     UUID userId = UUID.fromString(ctx.user().subject());
+
+     JsonObject body = ctx.body().asJsonObject();
+
+     body.put(USER_ID,userId);
+
+    userService.addCustomRoleAndScope(body)
+      .onSuccess(
+        res -> {
+          AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+            RoutingContextHelper.getRequestPath(ctx), "POST", "Add Custom Role and Scope");
+          RoutingContextHelper.setAuditingLog(ctx, auditLog);
+          ResponseBuilder.sendSuccess(ctx, "Success:Addtion of Custom Role and Scoep", this.urnGenerator);
+        })
+      .onFailure(ctx::fail);
+
   }
 
 
