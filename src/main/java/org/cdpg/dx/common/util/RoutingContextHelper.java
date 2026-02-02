@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
 import org.cdpg.dx.auditing.model.AuditLog;
+import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auth.authentication.exception.AuthenticationException;
 import org.cdpg.dx.common.HttpStatusCode;
 import org.cdpg.dx.common.exception.BaseDxException;
@@ -157,6 +158,22 @@ public class RoutingContextHelper {
       RoutingContext routingContext, ActivityAuditLogBuilder auditingLog) {
     List<ActivityAuditLogBuilder> logs =
         getAuditingLogNew(routingContext).orElseGet(ArrayList::new);
+    logs.add(auditingLog);
+    routingContext.put(AUDITING_LOG, logs);
+  }
+
+  // -------------------------------------------------
+  //    * Auditing V2
+  //    * -------------------------------------------------
+  public static Optional<List<UserActivityAuditLogBuilder>> getAuditingLogV2(
+      RoutingContext routingContext) {
+    return Optional.ofNullable(routingContext.get(AUDITING_LOG));
+  }
+
+  public static void setAuditingLogV2(
+      RoutingContext routingContext, UserActivityAuditLogBuilder auditingLog) {
+    List<UserActivityAuditLogBuilder> logs =
+        getAuditingLogV2(routingContext).orElseGet(ArrayList::new);
     logs.add(auditingLog);
     routingContext.put(AUDITING_LOG, logs);
   }

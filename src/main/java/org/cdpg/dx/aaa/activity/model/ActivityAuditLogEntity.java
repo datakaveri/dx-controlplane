@@ -52,9 +52,6 @@ public class ActivityAuditLogEntity implements BaseEntity<ActivityAuditLogEntity
   private JsonObject details;
   private Boolean myActivityEnabled;
 
-  // --------------------------------------------
-  // fromJson (RMQ consumer)
-  // --------------------------------------------
   public static ActivityAuditLogEntity fromJson(JsonObject json) {
 
     ActivityAuditLogEntity e = new ActivityAuditLogEntity();

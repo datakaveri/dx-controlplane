@@ -38,22 +38,47 @@ public class ItemControllerFactory {
       WebClient webClient,
       IngestionService ingestionService,
       ConnectorService connectorService,
-      String dataPlaneUrl,String controlPlaneUrl,String ogcDataPlaneUrl,
+      String dataPlaneUrl,
+      String controlPlaneUrl,
+      String ogcDataPlaneUrl,
       boolean isCentralCatEnabled,
       boolean isEdgeCatalogue,
       boolean isStandalone,
       DelegationService delegationService) {
-      PolicyDao policyDao = new PolicyDaoImpl(pgService);
-    ItemService itemService = new ItemServiceImpl(elasticsearchService, keycloakUserService,
-        policyDao, webClient, docIndex, apdURL);
-    ItemService centralItemService = new CentralItemServiceImpl(centralElasticsearchService,
-        keycloakUserService, policyDao, webClient, centralDocIndex, apdURL);
+    PolicyDao policyDao = new PolicyDaoImpl(pgService);
+    ItemService itemService =
+        new ItemServiceImpl(
+            elasticsearchService, keycloakUserService, policyDao, webClient, docIndex, apdURL);
+    ItemService centralItemService =
+        new CentralItemServiceImpl(
+            centralElasticsearchService,
+            keycloakUserService,
+            policyDao,
+            webClient,
+            centralDocIndex,
+            apdURL);
 
     ItemRegistryService orchestrationService =
-        new ItemRegistryServiceImpl(itemService, centralItemService, ingestionService,
-            connectorService, webClient,
-            dataPlaneUrl,controlPlaneUrl,ogcDataPlaneUrl, isCentralCatEnabled);
-    return new ItemController(auditingHandler, itemService, itemOwnershipValidator, centralItemService, vocContext,
-        uploadedBy, isCentralCatEnabled, urnGenerator, orchestrationService, delegationService);
+        new ItemRegistryServiceImpl(
+            itemService,
+            centralItemService,
+            ingestionService,
+            connectorService,
+            webClient,
+            dataPlaneUrl,
+            controlPlaneUrl,
+            ogcDataPlaneUrl,
+            isCentralCatEnabled);
+    return new ItemController(
+        auditingHandler,
+        itemService,
+        itemOwnershipValidator,
+        centralItemService,
+        vocContext,
+        uploadedBy,
+        isCentralCatEnabled,
+        urnGenerator,
+        orchestrationService,
+        delegationService);
   }
 }

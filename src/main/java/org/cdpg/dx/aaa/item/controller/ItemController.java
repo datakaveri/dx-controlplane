@@ -40,23 +40,18 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.apiserver.ApiController;
-import org.cdpg.dx.aaa.common.CatalogueAuditHelper;
 import org.cdpg.dx.aaa.common.VerifyItemTypeAndRole;
 import org.cdpg.dx.aaa.delegation.ItemOwnershipValidator;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
+import org.cdpg.dx.aaa.item.enums.ItemAuditOperation;
 import org.cdpg.dx.aaa.item.model.Item;
 import org.cdpg.dx.aaa.item.service.ItemFetchService;
 import org.cdpg.dx.aaa.item.service.ItemRegistryService;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ScriptGenerationService;
-import org.cdpg.dx.aaa.item.util.DataBankCreationRequest;
-import org.cdpg.dx.aaa.item.util.GetItemRequest;
-import org.cdpg.dx.aaa.item.util.ItemExistenceValidator;
-import org.cdpg.dx.aaa.item.util.ItemFactory;
-import org.cdpg.dx.aaa.item.util.PatchItemRequest;
-import org.cdpg.dx.auditing.enums.Operation;
+import org.cdpg.dx.aaa.item.util.*;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
-import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
+import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
@@ -74,7 +69,6 @@ import org.cdpg.dx.common.util.RoutingContextHelper;
 
 public class ItemController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(ItemController.class);
-
   private final AuditingHandler auditingHandler;
   private final ItemService itemService;
   private final ItemService centralItemService;
@@ -262,10 +256,9 @@ public class ItemController implements ApiController {
         .onSuccess(
             elasticsearchResponse -> {
               JsonObject itemJson = elasticsearchResponse.getSource();
-              ActivityAuditLogBuilder auditLog =
-                  CatalogueAuditHelper.buildItemAudit(ctx, Operation.UPDATE, itemJson);
-              RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
-
+              UserActivityAuditLogBuilder auditLogBuilder =
+                  ItemAuditLogHelper.buildItemAudit(ctx, itemJson, ItemAuditOperation.UPDATE);
+              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
               ResponseBuilder.sendSuccess(
                   ctx,
                   "Success: Item patched successfully",
@@ -382,9 +375,10 @@ public class ItemController implements ApiController {
               () -> centralItemService.deleteItem(item.getId()),
               ctx,
               res -> {
-                ActivityAuditLogBuilder auditLog =
-                    CatalogueAuditHelper.buildItemAudit(ctx, Operation.CREATE, item.toJson());
-                RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
+                UserActivityAuditLogBuilder auditLogBuilder =
+                    ItemAuditLogHelper.buildItemAudit(
+                        ctx, item.toJson(), ItemAuditOperation.UPLOAD);
+                RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
                 ResponseBuilder.sendCreated(
                     ctx, "Success: Item created", item.toJson(), this.urnGenerator);
@@ -423,11 +417,10 @@ public class ItemController implements ApiController {
                       () -> centralItemService.updateItem(existingItemSnapshot),
                       ctx,
                       res -> {
-                        ActivityAuditLogBuilder auditLog =
-                            CatalogueAuditHelper.buildItemAudit(
-                                ctx, Operation.UPDATE, item.toJson());
-
-                        RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
+                        UserActivityAuditLogBuilder auditLogBuilder =
+                            ItemAuditLogHelper.buildItemAudit(
+                                ctx, item.toJson(), ItemAuditOperation.UPDATE);
+                        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
                         ResponseBuilder.sendSuccess(ctx, item.toJson(), urnGenerator);
                       });
@@ -458,11 +451,9 @@ public class ItemController implements ApiController {
         .onSuccess(
             response -> {
               LOGGER.debug("DataBank item created successfully with integrations");
-
-              ActivityAuditLogBuilder auditLog =
-                  CatalogueAuditHelper.buildItemAudit(ctx, Operation.CREATE, item.toJson());
-              RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
-
+              UserActivityAuditLogBuilder auditLogBuilder =
+                  ItemAuditLogHelper.buildItemAudit(ctx, item.toJson(), ItemAuditOperation.UPLOAD);
+              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
               ResponseBuilder.sendSuccess(ctx, response.toJson(), this.urnGenerator);
             })
         .onFailure(err -> ctx.fail(err));
@@ -585,11 +576,9 @@ public class ItemController implements ApiController {
                   () -> centralItemService.createItem(itemSnapshot),
                   ctx,
                   res -> {
-                    ActivityAuditLogBuilder auditLog =
-                        CatalogueAuditHelper.buildItemAudit(ctx, Operation.DELETE, itemJson);
-
-                    RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
-
+                    UserActivityAuditLogBuilder auditLogBuilder =
+                        ItemAuditLogHelper.buildItemAudit(ctx, itemJson, ItemAuditOperation.DELETE);
+                    RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
                     ResponseBuilder.sendSuccess(
                         ctx, "Success: Item deleted successfully", this.urnGenerator);
                   });
@@ -631,9 +620,9 @@ public class ItemController implements ApiController {
                 JsonObject itemJson =
                     responseModel.getResponse().getJsonArray(RESULTS).getJsonObject(0);
                 if (ctx.user() != null) {
-                  ActivityAuditLogBuilder auditLog =
-                      CatalogueAuditHelper.buildItemAudit(ctx, Operation.VIEW, itemJson);
-                  RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
+                  UserActivityAuditLogBuilder auditLogBuilder =
+                      ItemAuditLogHelper.buildItemAudit(ctx, itemJson, ItemAuditOperation.VIEW);
+                  RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
                 }
 
                 ResponseBuilder.sendSuccess(
