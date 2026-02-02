@@ -30,6 +30,8 @@ public class UserInteractionV2Controller implements ApiController {
   Handler<RoutingContext> syncInteractionMetricAccessHandler =
       AuthorizationHandler.forRoles(DxRole.COS_ADMIN);
 
+  Handler<RoutingContext> interactionAccessHandler = AuthorizationHandler.forRoles(DxRole.CONSUMER);
+
   public UserInteractionV2Controller(UserInteractionV2Service service, URNGenerator urnGenerator) {
     this.service = service;
     this.urnGenerator = urnGenerator;
@@ -38,8 +40,14 @@ public class UserInteractionV2Controller implements ApiController {
   @Override
   public void register(RouterBuilder builder) {
     LOGGER.info("Registering UserInteractionController routes");
-    builder.operation(OP_POST_USER_INTERACTION).handler(this::handlePostUserInteractionRequest);
-    builder.operation(OP_GET_USER_INTERACTIONS).handler(this::handleGetUserInteractionRequest);
+    builder
+        .operation(OP_POST_USER_INTERACTION)
+        .handler(interactionAccessHandler)
+        .handler(this::handlePostUserInteractionRequest);
+    builder
+        .operation(OP_GET_USER_INTERACTIONS)
+        .handler(interactionAccessHandler)
+        .handler(this::handleGetUserInteractionRequest);
     builder
         .operation(OP_SYNC_INTERACTION_METRICS)
         .handler(syncInteractionMetricAccessHandler)
