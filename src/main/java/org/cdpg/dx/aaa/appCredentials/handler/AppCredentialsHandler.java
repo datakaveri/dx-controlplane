@@ -2,21 +2,30 @@ package org.cdpg.dx.aaa.appCredentials.handler;
 
 import static org.cdpg.dx.aaa.appCredentials.util.Constants.*;
 import static org.cdpg.dx.aaa.bookmarks.util.Constants.ALLOWED_FILTER_MAP_FOR_BOOKMARK_REQUEST;
+import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
+import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
+
+import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.appCredentials.model.AppConstraints;
 import org.cdpg.dx.aaa.appCredentials.model.AppCredentials;
 import org.cdpg.dx.aaa.appCredentials.service.AppCredentialsService;
+import org.cdpg.dx.aaa.delegation.DelegationHandlerValidator;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxBadRequestException;
+import org.cdpg.dx.common.exception.DxForbiddenException;
+import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.DxUnauthorizedException;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
@@ -25,10 +34,12 @@ import org.cdpg.dx.common.response.ResponseBuilder;
 public class AppCredentialsHandler {
   private static final Logger LOGGER = LogManager.getLogger(AppCredentialsHandler.class);
   private final AppCredentialsService appCredentialsService;
+  private final DelegationHandlerValidator delegationHandlerValidator;
   private final URNGenerator urnGenerator;
 
-  public AppCredentialsHandler(AppCredentialsService appCredentialsService, URNGenerator urnGenerator) {
+  public AppCredentialsHandler(AppCredentialsService appCredentialsService, DelegationHandlerValidator delegationHandlerValidator, URNGenerator urnGenerator) {
     this.appCredentialsService = appCredentialsService;
+    this.delegationHandlerValidator = new DelegationHandlerValidator();
     this.urnGenerator = urnGenerator;
   }
 
@@ -49,17 +60,23 @@ public class AppCredentialsHandler {
       return;
     }
 
-
+      Set<String> roles = extractRoles(user);
+      String role = getHighestRole(roles);
 
     JsonObject body = ctx.body().asJsonObject();
+    body.put(USER_ID,userId);
+    body.put(ROLE,role);
 
-    body.put(USER_ID,userId.toString());
-    body.getString(EXPIRY_AT);
+      try {
+        delegationHandlerValidator.validateCreateDelegationGrantBody(userId, roles,body);
+      } catch (DxBadRequestException | DxForbiddenException e) {
+        ctx.fail(e);
+        return;
+      }
 
-    AppCredentials appCredentials = AppCredentials.fromJson(body);
 
     appCredentialsService
-      .createApp(appCredentials)
+      .createApp(body)
       .onSuccess(
         appCredentialRes -> ResponseBuilder.sendSuccess(ctx, appCredentialRes, urnGenerator))
       .onFailure(
@@ -110,4 +127,24 @@ public class AppCredentialsHandler {
             })
         .onFailure(ctx::fail);
   }
+
+  public Set<String> extractRoles(User user) {
+    Set<String> roles = new HashSet<>();
+    JsonObject principal = user.principal();
+    if (principal.containsKey("realm_access")) {
+      JsonObject realmAccess = principal.getJsonObject("realm_access");
+      if (realmAccess.containsKey("roles")) {
+        roles.addAll(realmAccess.getJsonArray("roles").getList());
+      }
+    }
+    return roles;
+  }
+
+  private String getHighestRole(Set<String> roles) {
+    if (roles.contains("cos_admin")) return "cos_admin";
+    if (roles.contains("org_admin")) return "org_admin";
+    if (roles.contains("provider")) return "provider";
+    return "consumer";
+  }
+
 }

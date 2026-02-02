@@ -303,11 +303,11 @@ public class ControllerFactory {
             dataBrokerService, pgService, urnGenerator, controlPlaneDomain);
     ApiController bookmarksController = BookmarksControllerFactory.create(pgService, urnGenerator);
     ApiController appCredentialsController =
-        AppCredentialsControllerFactory.create(pgService, urnGenerator);
+        AppCredentialsControllerFactory.create(pgService,organizationService,itemService,urnGenerator);
 
     ApiController appTokenController =
         AppTokenControllerFactory.create(
-            pgService, keycloakUserService, urnGenerator, config, vertx);
+            pgService, keycloakUserService, organizationService,itemService,urnGenerator, config, vertx);
 
     SummaryController dashboardSummaryController =
         SummaryControllerFactory.create(pgService, urnGenerator);

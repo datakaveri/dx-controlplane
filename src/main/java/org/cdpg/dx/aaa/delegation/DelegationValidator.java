@@ -36,37 +36,39 @@ public class DelegationValidator {
    * Validate ownership of entities based on delegator’s role.
    */
   public Future<Void> validateEntityOwnership(
-    JsonObject delegationGrant, Set<String> delegatorRoles , JsonArray rolesArray
+    JsonObject delegationGrant,
+    Set<String> delegatorRoles,
+    JsonArray rolesArray
   ) {
 
-    LOGGER.info("Inside the validateEntityOwnership");
+    LOGGER.info("Inside validateEntityOwnership");
 
-    UUID delegatorId = UUID.fromString(delegationGrant.getString(DELEGATOR_ID));
+    UUID delegatorId =
+      UUID.fromString(delegationGrant.getString(DELEGATOR_ID));
 
-    //  cos_admin bypass
-//    if (delegatorRoles.contains("cos_admin")) {
-//      LOGGER.info("cos_admin detected — skipping entity ownership validation");
-//      return Future.succeededFuture();
-//    }
+    return validateConstraints(delegatorId, rolesArray);
+  }
 
-    //  Full delegation → skip
+
+  public Future<Void> validateConstraints(
+    UUID actorId,
+    JsonArray rolesArray
+  ) {
+
     if (rolesArray == null || rolesArray.isEmpty()) {
-      LOGGER.info("Full delegation — skipping entity ownership validation");
+      LOGGER.info("Wildcard access — skipping entity ownership validation");
       return Future.succeededFuture();
     }
 
-    String delegatorRole = getHighestRole(delegatorRoles);
     List<Future> validations = new ArrayList<>();
 
     for (int i = 0; i < rolesArray.size(); i++) {
-      JsonArray constraints =
-        rolesArray.getJsonObject(i).getJsonArray("constraints");
 
-//      String role = rolesArray.getJsonObject(i).getString("role");
-//
-//      RoleScopeMapping allowedScopes = RoleScopeMapping.fromString(role);
-      if(constraints==null)
-      {
+      JsonArray constraints = rolesArray
+        .getJsonObject(i)
+        .getJsonArray("constraints");
+
+      if (constraints == null || constraints.isEmpty()) {
         continue;
       }
 
@@ -76,68 +78,46 @@ public class DelegationValidator {
         String scope = constraint.getString("scope");
         String normalizedScope = scope.toLowerCase();
 
-        JsonArray entityId =
-          constraint.containsKey("entity_id")
-            ? constraint.getJsonArray("entity_id")
-            : null;
+        JsonArray entityIds = constraint.getJsonArray("entity_id");
+        String entityType = constraint.getString("entity_type");
 
-        String entityType =
-          constraint.containsKey("entity_type")
-            ? constraint.getString("entity_type")
-            : null;
-
-        // Wildcard entity → skip ownership check
-        if ((entityId == null || entityId.isEmpty()) && entityType == null) {
+        // wildcard entity
+        if ((entityIds == null || entityIds.isEmpty()) && entityType == null) {
           continue;
         }
 
-        List<String> entityIdList = entityId.getList();
-        LOGGER.info("entityid: {}",entityId);
-        LOGGER.info("entityidList: {}",entityIdList);
+        List<String> entityIdList =
+          entityIds != null ? entityIds.getList() : List.of();
 
         switch (normalizedScope) {
+
           case "user_management" ->
-              validations.add(
-                validateOrgOwnership(delegatorId, entityIdList)
-              );
+            validations.add(validateOrgOwnership(actorId, entityIdList));
+
           case "data_access" ->
-            validations.add(
-              validateItemIdOwnership(delegatorId, entityIdList)
-            );
+            validations.add(validateItemIdOwnership(actorId, entityIdList));
 
           case "asset_management" ->
-            validations.add(
-              validateAssetRequestOwnership(delegatorId, entityIdList)
-            );
-//          case "cos_admin_access" ->
-//          {
-//            LOGGER.debug("Skipping ownership validation for cos_admin_access");
-//          }
-          case "compute_management" ->
-          {
-            LOGGER.debug("Skipping ownership validation for compute_management access");
+            validations.add(validateAssetRequestOwnership(actorId, entityIdList));
+
+          case "compute_management", "credit_management" -> {
+            LOGGER.debug("Skipping ownership validation for scope {}", scope);
           }
-          case "credit_management" ->
-          {
-            LOGGER.debug("Skipping ownership validation for credit_management access");
-          }
+
           default -> {
             return Future.failedFuture(
               new DxForbiddenException("Unsupported scope: " + scope)
             );
           }
-
-          }
-
         }
       }
-
-    if (validations.isEmpty()) {
-      return Future.succeededFuture();
     }
 
-    return CompositeFuture.all(validations).mapEmpty();
+    return validations.isEmpty()
+      ? Future.succeededFuture()
+      : CompositeFuture.all(validations).mapEmpty();
   }
+
 
 
 
@@ -148,14 +128,6 @@ public class DelegationValidator {
       return Future.failedFuture(new DxForbiddenException("No asset IDs provided"));
     }
 
-    //  get organization info for delegator
-//    return organizationService.getOrganizationUserInfo(delegatorId).compose(orgInfo -> {
-//      UUID orgDelId = orgInfo.organizationId();
-//      String orgDelIdStr = orgDelId.toString();
-//      if (orgDelId == null) {
-//        return Future.failedFuture(new DxForbiddenException("User does not belong to any organization!"));
-//      }
-//
       String delegatorIdStr = delegatorId.toString();
       List<Future> validations = new ArrayList<>();
 
@@ -166,28 +138,6 @@ public class DelegationValidator {
           if (response == null) {
             return Future.failedFuture(new DxBadRequestException("Response is empty for item: " + itemId));
           }
-
-//          List<JsonObject> validResponses = response.getElasticsearchResponses()
-//            .stream()
-//            .filter(Objects::nonNull)
-//            .toList();
-//
-//          LOGGER.info("List of valid responses: {}",validResponses);
-//
-//          JsonObject res = validResponses.getFirst();
-//
-//          String ownerId = res.getString("ownerUserId");
-//          String itemOrgId = res.getString("organizationId");
-//
-//          //checking if the delegator is the owner of the item id
-//          if(ownerId.equalsIgnoreCase(delegatorIdStr))
-//            return Future.succeededFuture();
-//
-//          // org id of the user doesn't match org id fetched from item info
-//          if(!orgDelIdStr.equalsIgnoreCase(itemOrgId))
-//            return Future.failedFuture(new DxBadRequestException(
-//              "User " + delegatorId + " is not authorized to delegate the item " + itemId
-//            ));
 
           return Future.succeededFuture();
         });
@@ -218,20 +168,6 @@ public class DelegationValidator {
           if (response == null) {
             return Future.failedFuture(new DxBadRequestException("Response is empty for item: " + itemId));
           }
-
-//          List<JsonObject> validResponses = response.getElasticsearchResponses()
-//            .stream()
-//            .filter(Objects::nonNull)
-//            .toList();
-//
-//          LOGGER.info("List of valid responses: {}",validResponses);
-//
-//          JsonObject res = validResponses.getFirst();
-//
-//          String ownerId = res.getString("ownerUserId");
-//
-//          if(ownerId.equalsIgnoreCase(delegatorIdStr))
-//            return Future.succeededFuture();
 
           return Future.succeededFuture();
         });

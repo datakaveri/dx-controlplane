@@ -16,12 +16,12 @@ public record AppCredentials(
   String appSecret,
   String expiryAt,
   String status,
+  String role,
   String createdAt,
   String modifiedAt,
   String revokedAt
 ) implements BaseEntity<AppCredentials> {
 
-  /* ---------- JSON → ENTITY ---------- */
   public static AppCredentials fromJson(JsonObject json) {
     return new AppCredentials(
       json.getString(APP_ID) != null
@@ -35,6 +35,7 @@ public record AppCredentials(
       json.getString(APP_SECRET),
       json.getString(EXPIRY_AT),
       json.getString(STATUS),
+      json.getString(ROLE),
       json.getString(CREATED_AT),
       json.getString(MODIFIED_AT),
       json.getString(REVOKED_AT)
@@ -56,6 +57,7 @@ public record AppCredentials(
 
     EntityUtil.putIfNonEmpty(map, APP_SECRET, appSecret);
     EntityUtil.putIfNonEmpty(map, EXPIRY_AT, expiryAt);
+    EntityUtil.putIfNonEmpty(map, ROLE, role);
     EntityUtil.putIfNonEmpty(map, STATUS, status);
     EntityUtil.putIfNonEmpty(map, REVOKED_AT, revokedAt);
     EntityUtil.putIfNonEmpty(map, MODIFIED_AT, modifiedAt);
@@ -73,6 +75,7 @@ public record AppCredentials(
       .put(APP_SECRET, appSecret)
       .put(EXPIRY_AT, expiryAt)
       .put(STATUS, status)
+      .put(ROLE, role)
       .put(CREATED_AT, createdAt)
       .put(MODIFIED_AT, modifiedAt)
       .put(REVOKED_AT, revokedAt);
