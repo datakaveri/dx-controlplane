@@ -5,7 +5,7 @@ import java.util.Set;
 
 public final class ActivityConstants {
   // Table names
-  public static final String ACTIVITY_LOG_TABLE_NAME = "user_activity_log";
+  public static final String ACTIVITY_LOG_TABLE_NAME = "user_activity_audit_log";
 
   // Common fields
   public static final String ID = "id";

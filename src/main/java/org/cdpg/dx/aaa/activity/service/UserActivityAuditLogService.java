@@ -1,4 +1,4 @@
-package org.cdpg.dx.auditing.v2.service;
+package org.cdpg.dx.aaa.activity.service;
 
 import io.vertx.core.Future;
 import org.cdpg.dx.auditing.v2.model.ActivityAuditLogEntity;

@@ -22,7 +22,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.ActivityReport.controller.ActivityReportController;
 import org.cdpg.dx.aaa.ActivityReport.factory.ActivityReportControllerFactory;
-import org.cdpg.dx.aaa.activity.factory.ActivityFactory;
 import org.cdpg.dx.aaa.admin.controller.AdminController;
 import org.cdpg.dx.aaa.admin.handler.AdminHandler;
 import org.cdpg.dx.aaa.appCredentials.factory.AppCredentialsControllerFactory;
@@ -82,8 +81,8 @@ import org.cdpg.dx.aaa.vote.factory.VoteControllerFactory;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
-import org.cdpg.dx.auditing.v2.controller.ActivityController;
-import org.cdpg.dx.auditing.v2.factory.ActivityControllerFactory;
+import org.cdpg.dx.aaa.activity.controller.ActivityController;
+import org.cdpg.dx.aaa.activity.factory.ActivityControllerFactory;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.central.service.CentralElasticsearchService;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
@@ -121,7 +120,6 @@ public class ControllerFactory {
     EmailService emailService = EmailService.createProxy(vertx, EMAIL_SERVICE_ADDRESS);
     ElasticsearchService esService =
         ElasticsearchService.createProxy(vertx, ELASTIC_SERVICE_ADDRESS);
-    ActivityFactory.init(pgService);
 
     // Activity Controller
     ActivityController activityController =

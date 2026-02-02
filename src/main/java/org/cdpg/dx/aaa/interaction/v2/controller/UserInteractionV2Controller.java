@@ -1,9 +1,7 @@
 package org.cdpg.dx.aaa.interaction.v2.controller;
 
-import static org.cdpg.dx.aaa.activity.util.ActivityConstants.CREATED_AT;
-import static org.cdpg.dx.aaa.apiserver.OperationIds.OP_GET_USER_INTERACTIONS;
-import static org.cdpg.dx.aaa.apiserver.OperationIds.OP_POST_USER_INTERACTION;
-import static org.cdpg.dx.aaa.apiserver.OperationIds.OP_SYNC_INTERACTION_METRICS;
+import static org.cdpg.dx.aaa.apiserver.OperationIds.*;
+import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.CREATED_AT;
 
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
@@ -105,19 +103,20 @@ public class UserInteractionV2Controller implements ApiController {
     LOGGER.info("GET /user/interactions/sync called");
 
     try {
-      service.syncInteractionMetrics()
-          .onSuccess(result ->
-              ResponseBuilder.sendSuccess(
-                  ctx,
-                  "Interaction metrics synced successfully",
-                  result.toJson(),
-                  urnGenerator
-              )
-          )
-          .onFailure(err -> {
-            LOGGER.error("Failed to sync interaction metrics", err);
-            ctx.fail(err);
-          });
+      service
+          .syncInteractionMetrics()
+          .onSuccess(
+              result ->
+                  ResponseBuilder.sendSuccess(
+                      ctx,
+                      "Interaction metrics synced successfully",
+                      result.toJson(),
+                      urnGenerator))
+          .onFailure(
+              err -> {
+                LOGGER.error("Failed to sync interaction metrics", err);
+                ctx.fail(err);
+              });
     } catch (Exception e) {
       LOGGER.error("Invalid GET /user/interactions/sync request:  {} ", e.getMessage(), e);
       ctx.fail(e);

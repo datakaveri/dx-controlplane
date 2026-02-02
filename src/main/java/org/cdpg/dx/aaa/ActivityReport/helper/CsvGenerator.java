@@ -8,12 +8,13 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.streams.ReadStream;
 import java.util.*;
 import java.util.stream.Collectors;
-import org.cdpg.dx.aaa.ActivityReport.model.ActivityLog;
+
+import org.cdpg.dx.aaa.ActivityReport.model.ActivityAuditLogEntity;
 
 public class CsvGenerator {
 
   public Future<ReadStream<Buffer>> toCsvStream(
-      List<ActivityLog> rows, Vertx vertx, boolean writeHeader) {
+      List<ActivityAuditLogEntity> rows, Vertx vertx, boolean writeHeader) {
     if (rows == null || rows.isEmpty()) {
       return Future.succeededFuture(null);
     }
@@ -24,7 +25,7 @@ public class CsvGenerator {
     if (writeHeader) {
       lines.add(String.join(",", headers));
     }
-    for (ActivityLog log : rows) {
+    for (ActivityAuditLogEntity log : rows) {
       JsonObject row = log.toJson();
       String line =
           headers.stream().map(h -> escapeCsv(row.getValue(h))).collect(Collectors.joining(","));
