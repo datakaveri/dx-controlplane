@@ -106,11 +106,15 @@ public class ActivityController implements ApiController {
     LOGGER.info("handleGetAllActivityLogsForAdmin() started");
 
     DxUser user = RoutingContextHelper.fromPrincipal(context);
+    Map<String, String> allowedFilters = Util.getAllowedFilterMapForAdmin(user);
+    Map<String, Object> additionalFilter = Util.getAdditionalFilters(user);
+
+    LOGGER.info("Allowed Filters for admin: {}", allowedFilters);
 
     PaginatedRequest request =
         PaginationRequestBuilder.from(context)
-            .allowedFiltersDbMap(Util.getAllowedFilterMapForAdmin(user))
-            .additionalFilters(Util.getAdditionalFilters(user))
+            .allowedFiltersDbMap(allowedFilters)
+            .additionalFilters(additionalFilter)
             .apiToDbMap(API_TO_DB_FIELD_MAP_V2)
             .allowedTimeFields(Set.of(CREATED_AT))
             .defaultTimeField(CREATED_AT)
@@ -118,7 +122,7 @@ public class ActivityController implements ApiController {
             .allowedSortFields(ALLOWED_SORT_FIELDS_V2)
             .build();
 
-    LOGGER.info("PaginatedRequest created for handleGetAllActivityLogsForAdmin:  {}", request);
+    LOGGER.debug("PaginatedRequest created for handleGetAllActivityLogsForAdmin:  {}", request);
 
     userActivityAuditLogService
         .getAllActivityLogsForAdmin(request)

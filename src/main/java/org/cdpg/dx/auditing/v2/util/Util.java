@@ -18,7 +18,7 @@ public class Util {
     String organizationId = user.organisationId();
     Map<String, Object> additionalFilters = null;
     if (roles.contains(DxRole.ORG_ADMIN.getRole())) {
-      additionalFilters = Map.of("orgId", organizationId);
+      additionalFilters = Map.of("org_Id", organizationId);
 
     } else {
       additionalFilters = Map.of();
