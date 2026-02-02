@@ -29,7 +29,10 @@ public class BatchedCsvReadStream implements ReadStream<Buffer> {
   private boolean ended = false;
 
   public BatchedCsvReadStream(
-          ActivityReportLogDao dao, CsvGenerator generator, Vertx vertx, PaginatedRequest paginatedRequest) {
+      ActivityReportLogDao dao,
+      CsvGenerator generator,
+      Vertx vertx,
+      PaginatedRequest paginatedRequest) {
     this.dao = dao;
     this.generator = generator;
     this.vertx = vertx;

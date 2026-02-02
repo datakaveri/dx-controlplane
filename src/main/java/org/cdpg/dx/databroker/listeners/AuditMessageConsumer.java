@@ -9,7 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.auditing.v2.enrichment.AssetEnrichmentService;
 import org.cdpg.dx.auditing.v2.model.ActivityAuditLogEntity;
-import org.cdpg.dx.auditing.v2.service.UserActivityAuditLogService;
+import org.cdpg.dx.aaa.activity.service.UserActivityAuditLogService;
 
 public class AuditMessageConsumer implements RabitMqConsumer {
 

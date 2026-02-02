@@ -1,9 +1,9 @@
-package org.cdpg.dx.auditing.v2.service.impl;
+package org.cdpg.dx.aaa.activity.service.impl;
 
 import io.vertx.core.Future;
-import org.cdpg.dx.auditing.v2.dao.UserActivityLogDao;
+import org.cdpg.dx.aaa.activity.dao.UserActivityLogDao;
 import org.cdpg.dx.auditing.v2.model.ActivityAuditLogEntity;
-import org.cdpg.dx.auditing.v2.service.UserActivityAuditLogService;
+import org.cdpg.dx.aaa.activity.service.UserActivityAuditLogService;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
 

@@ -32,24 +32,13 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
   }
 
   @Override
-  public Future<InteractionDelta> SaveIteraction(
-      UUID userId,
-      UserInteractionV2Request req
-  ) {
-    return dao
-        .upsertInteractionWithDelta(
-            userId,
-            req.assetId(),
-            req.assetType().name(),
-            req.action().name()
-        )
+  public Future<InteractionDelta> SaveIteraction(UUID userId, UserInteractionV2Request req) {
+    return dao.upsertInteractionWithDelta(
+            userId, req.assetId(), req.assetType().name(), req.action().name())
         .onSuccess(delta -> applyDeltaAsync(req, delta));
   }
 
-  private void applyDeltaAsync(
-      UserInteractionV2Request req,
-      InteractionDelta delta
-  ) {
+  private void applyDeltaAsync(UserInteractionV2Request req, InteractionDelta delta) {
     EngagementDelta engagementDelta = computeEngagementDelta(delta);
 
     if (engagementDelta.isNoOp()) {
@@ -60,15 +49,9 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
         .updateEngagementCounters(
             UUID.fromString(delta.entityId()),
             engagementDelta.likeDelta(),
-            engagementDelta.dislikeDelta()
-        )
-        .onFailure(err ->
-            LOGGER.warn(
-                "Failed to update CAT metrics for asset={}",
-                delta.entityId(),
-                err
-            )
-        );
+            engagementDelta.dislikeDelta())
+        .onFailure(
+            err -> LOGGER.warn("Failed to update CAT metrics for asset={}", delta.entityId(), err));
   }
 
   private EngagementDelta computeEngagementDelta(InteractionDelta d) {
@@ -89,9 +72,7 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
   @Override
   public Future<BulkSyncResult> syncInteractionMetrics() {
 
-    return dao
-        .aggregateInteractions()
-        .compose(itemService::bulkSyncMetrics);
+    return dao.aggregateInteractions().compose(itemService::bulkSyncMetrics);
   }
 
   private record EngagementDelta(int likeDelta, int dislikeDelta) {

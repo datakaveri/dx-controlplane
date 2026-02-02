@@ -1,6 +1,6 @@
 package org.cdpg.dx.aaa.leaderboard.controller;
 
-import static org.cdpg.dx.aaa.activity.util.ActivityConstants.CREATED_AT;
+import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.CREATED_AT;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
 import io.vertx.ext.web.RoutingContext;

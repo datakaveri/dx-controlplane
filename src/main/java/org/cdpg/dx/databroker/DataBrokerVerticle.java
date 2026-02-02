@@ -12,17 +12,13 @@ import io.vertx.rabbitmq.RabbitMQOptions;
 import io.vertx.serviceproxy.ServiceBinder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.activity.dao.ActivityLogDao;
-import org.cdpg.dx.aaa.activity.dao.impl.ActivityLogDaoImpl;
-import org.cdpg.dx.aaa.activity.service.ActivityService;
-import org.cdpg.dx.aaa.activity.service.impl.ActivityServiceImpl;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
-import org.cdpg.dx.auditing.v2.dao.UserActivityLogDao;
-import org.cdpg.dx.auditing.v2.dao.impl.UserActivityLogDaoImpl;
+import org.cdpg.dx.aaa.activity.dao.UserActivityLogDao;
+import org.cdpg.dx.aaa.activity.dao.impl.UserActivityLogDaoImpl;
 import org.cdpg.dx.auditing.v2.enrichment.AssetEnrichmentService;
-import org.cdpg.dx.auditing.v2.service.UserActivityAuditLogService;
-import org.cdpg.dx.auditing.v2.service.impl.UserActivityAuditLogServiceImpl;
+import org.cdpg.dx.aaa.activity.service.UserActivityAuditLogService;
+import org.cdpg.dx.aaa.activity.service.impl.UserActivityAuditLogServiceImpl;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.client.RabbitClient;
@@ -130,8 +126,6 @@ public class DataBrokerVerticle extends AbstractVerticle {
     binder = new ServiceBinder(vertx);
 
     PostgresService postgresService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
-    ActivityLogDao activityLogDAO = new ActivityLogDaoImpl(postgresService);
-    ActivityService activityService = new ActivityServiceImpl(activityLogDAO);
     /*ImmudbActivityService immudbActivityService = new ImmudbActivityServiceImpl(immudbService);*/
 
     ElasticsearchService esService =
