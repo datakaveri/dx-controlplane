@@ -17,6 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.ActivityReport.service.ActivityReportService;
 import org.cdpg.dx.aaa.apiserver.ApiController;
+import org.cdpg.dx.auditing.v2.util.Util;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.model.DxUser;
@@ -59,19 +60,21 @@ public class ActivityReportController implements ApiController {
         .setChunked(true);
 
     DxUser user = RoutingContextHelper.fromPrincipal(routingContext);
+    Map<String, String> allowedFilters = Util.getAllowedFilterMapForAdmin(user);
+    Map<String, Object> additionalFilter = Util.getAdditionalFilters(user);
+
+    LOGGER.info("Allowed Filters for admin: {}", allowedFilters);
 
     PaginatedRequest request =
         PaginationRequestBuilder.from(routingContext)
-            .allowedFiltersDbMap(
-                org.cdpg.dx.auditing.v2.util.Util.getAllowedFilterMapForAdmin(user))
-            .additionalFilters(org.cdpg.dx.auditing.v2.util.Util.getAdditionalFilters(user))
+            .allowedFiltersDbMap(allowedFilters)
+            .additionalFilters(additionalFilter)
             .apiToDbMap(API_TO_DB_FIELD_MAP_V2)
             .allowedTimeFields(Set.of(CREATED_AT))
             .defaultTimeField(CREATED_AT)
             .defaultSort(DEFAULT_SORTING_FIELD, DEFAULT_SORTING_ORDER)
             .allowedSortFields(ALLOWED_SORT_FIELDS_V2)
             .build();
-
     LOGGER.debug("PaginatedRequest created for handleGetAllActivityLogsForAdmin:  {}", request);
 
     reportService
