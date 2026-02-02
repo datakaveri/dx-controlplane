@@ -747,48 +747,6 @@ public class ItemServiceImpl implements ItemService {
     return promise.future();
   }
 
-//  @Override
-//  public Future<Void> bulkSyncMetrics(List<InteractionAggregate> aggregates) {
-//
-//    Promise<Void> promise = Promise.promise();
-//    QueryModel updateByQueryModel = new QueryModel();
-//
-//    for (InteractionAggregate agg : aggregates) {
-//
-//      QueryModel idQuery = new QueryModel(QueryType.TERM);
-//      idQuery.setQueryParameters(Map.of(
-//          FIELD, ID_KEYWORD,
-//          VALUE, agg.entityId().toString()
-//      ));
-//
-//      QueryModel boolQuery = new QueryModel(QueryType.BOOL);
-//      boolQuery.setMustQueries(List.of(idQuery));
-//
-//      boolQuery.setScriptLanguage("painless");
-//      boolQuery.setScriptSource("""
-//      ctx._source.metrics = [
-//        'likes': params.likes,
-//        'dislikes': params.dislikes,
-//        'views': ctx._source.metrics?.views ?: 0,
-//        'downloads': ctx._source.metrics?.downloads ?: 0
-//      ];
-//    """);
-//
-//      boolQuery.setScriptParams(Map.of(
-//          "likes", agg.likes(),
-//          "dislikes", agg.dislikes()
-//      ));
-//      updateByQueryModel.setQueries(boolQuery);
-//    }
-//
-//    elasticsearchService
-//        .updateDocumentsByQuery(updateByQueryModel.getQueries(), docIndex)
-//        .onSuccess(v -> promise.complete())
-//        .onFailure(promise::fail);
-//
-//    return promise.future();
-//  }
-
   @Override
   public Future<BulkSyncResult> bulkSyncMetrics(List<InteractionAggregate> aggregates) {
 
