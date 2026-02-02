@@ -9,9 +9,13 @@ import java.util.Map;
 import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.interaction.model.InteractionAggregate;
+import org.cdpg.dx.aaa.interaction.model.UserInteraction;
 import org.cdpg.dx.aaa.interaction.v2.dao.UserInteractionV2Dao;
+import org.cdpg.dx.aaa.interaction.v2.enums.InteractionAction;
 import org.cdpg.dx.aaa.interaction.v2.model.InteractionDelta;
 import org.cdpg.dx.aaa.interaction.v2.model.InteractionRow;
+import org.cdpg.dx.auditing.enums.EntityType;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.database.postgres.base.dao.AbstractBaseDAO;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
@@ -160,4 +164,38 @@ public class UserInteractionV2DaoImpl extends AbstractBaseDAO<InteractionRow>
               return postgresService.executeQuery(deleteSql, deleteParams).map(v -> delta);
             });
   }
+
+  public Future<List<InteractionAggregate>> aggregateInteractions() {
+
+    String sql = """
+    SELECT
+      asset_id,
+      asset_type,
+
+      COUNT(*) FILTER (WHERE is_liked = TRUE)      AS likes,
+      COUNT(*) FILTER (WHERE is_disliked = TRUE)   AS dislikes,
+      COUNT(*) FILTER (WHERE is_bookmarked = TRUE) AS bookmarks
+
+    FROM user_interactions
+    GROUP BY asset_id, asset_type
+  """;
+
+    return postgresService
+        .executeQuery(sql, new JsonArray())
+        .map(rows ->
+            rows.getRows().stream()
+                .map(obj -> {
+                  JsonObject r = (JsonObject) obj;
+                  return new InteractionAggregate(
+                      UUID.fromString(r.getString("asset_id")),
+                      EntityType.valueOf(r.getString("asset_type")),
+                      r.getInteger("likes", 0),
+                      r.getInteger("dislikes", 0),
+                      r.getInteger("bookmarks", 0)
+                  );
+                })
+                .toList()
+        );
+  }
+
 }

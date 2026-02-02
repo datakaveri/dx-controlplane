@@ -53,9 +53,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.database.elastic.model.BulkSyncResult;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxInternalServerErrorException;
 import org.cdpg.dx.database.elastic.ElasticClient;
+import org.cdpg.dx.database.elastic.model.BulkScriptUpdate;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.database.elastic.model.QueryModel;
 
@@ -562,6 +564,104 @@ public class CentralElasticsearchServiceImpl implements CentralElasticsearchServ
                 promise.complete();
               }
             });
+    return promise.future();
+  }
+
+  @Override
+  public Future<BulkSyncResult> bulkUpdateById(
+      String index,
+      List<BulkScriptUpdate> updates
+  ) {
+    return validateIndex(index)
+        .compose(v -> executeBulkUpdateById(index, updates));
+  }
+
+  private Future<BulkSyncResult> executeBulkUpdateById(
+      String index,
+      List<BulkScriptUpdate> updates
+  ) {
+    Promise<BulkSyncResult> promise = Promise.promise();
+
+    BulkRequest.Builder bulkBuilder = new BulkRequest.Builder();
+
+    for (BulkScriptUpdate upd : updates) {
+      Script script = Script.of(s -> s
+          .lang("painless")
+          .source(upd.getScriptSource())
+          .params(
+              upd.getScriptParams().getMap().entrySet().stream()
+                  .collect(Collectors.toMap(
+                      Map.Entry::getKey,
+                      e -> JsonData.of(e.getValue())
+                  ))
+          )
+      );
+
+      bulkBuilder.operations(op ->
+          op.update(u ->
+              u.index(index)
+                  .id(upd.getId())
+                  .action(a -> a.script(script))
+          )
+      );
+    }
+
+    BulkRequest request = bulkBuilder
+        .refresh(Refresh.WaitFor)
+        .build();
+
+    LOGGER.debug("Bulk update request: {}", request);
+
+    asyncClient
+        .bulk(request)
+        .whenComplete(
+            (resp, err) -> {
+              if (err != null) {
+                LOGGER.error("Bulk update failed", err);
+                promise.fail(new DxInternalServerErrorException("Bulk update failed", err));
+                return;
+              }
+
+              int success = 0;
+              List<JsonObject> failures = new ArrayList<>();
+
+              for (var item : resp.items()) {
+                if (item.error() != null) {
+
+                  // Missing docs are expected — log & continue
+                  LOGGER.warn(
+                      "Bulk update failed for id {} : {}",
+                      item.id(),
+                      item.error().reason()
+                  );
+
+                  failures.add(new JsonObject()
+                      .put("id", item.id())
+                      .put("reason", item.error().type())
+                      .put("message", item.error().reason())
+                  );
+
+                } else {
+                  success++;
+                }
+              }
+
+              // ❗ Fail ONLY if everything failed
+              if (success == 0) {
+                promise.fail(new DxInternalServerErrorException("All bulk updates failed"));
+                return;
+              }
+
+              promise.complete(
+                  new BulkSyncResult(
+                      updates.size(),
+                      success,
+                      failures.size(),
+                      failures
+                  )
+              );
+            });
+
     return promise.future();
   }
 }

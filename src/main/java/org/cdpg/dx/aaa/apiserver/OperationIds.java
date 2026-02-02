@@ -130,7 +130,7 @@ public final class OperationIds {
 
   public static final String OP_POST_USER_INTERACTION = "post-user-intraction";
   public static final String OP_GET_USER_INTERACTIONS = "get-user-interaction";
-
   public static final String OP_GET_ACTIVITY_FOR_CONSUMER = "get-ActivityLogs-for-consumer";
   public static final String OP_GET_ACTIVITY_FOR_ADMIN = "get-activityLogs-for-admin";
+  public static final String OP_SYNC_INTERACTION_METRICS = "sync-interaction-metrics";
 }

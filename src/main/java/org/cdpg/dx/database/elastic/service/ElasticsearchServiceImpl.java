@@ -1,6 +1,23 @@
 package org.cdpg.dx.database.elastic.service;
 
-import static org.cdpg.dx.database.elastic.util.Constants.*;
+import static org.cdpg.dx.database.elastic.util.Constants.AGGREGATIONS;
+import static org.cdpg.dx.database.elastic.util.Constants.AGGREGATION_LIST;
+import static org.cdpg.dx.database.elastic.util.Constants.AGGREGATION_ONLY;
+import static org.cdpg.dx.database.elastic.util.Constants.BUCKETS;
+import static org.cdpg.dx.database.elastic.util.Constants.COUNT_AGGREGATION_ONLY;
+import static org.cdpg.dx.database.elastic.util.Constants.DOC_COUNT;
+import static org.cdpg.dx.database.elastic.util.Constants.DOC_IDS_ONLY;
+import static org.cdpg.dx.database.elastic.util.Constants.ID;
+import static org.cdpg.dx.database.elastic.util.Constants.ITEM_TYPE_CANONICAL_MAP;
+import static org.cdpg.dx.database.elastic.util.Constants.KEY;
+import static org.cdpg.dx.database.elastic.util.Constants.RESULTS;
+import static org.cdpg.dx.database.elastic.util.Constants.SOURCE;
+import static org.cdpg.dx.database.elastic.util.Constants.SOURCE_AND_ID;
+import static org.cdpg.dx.database.elastic.util.Constants.SOURCE_AND_ID_GEOQUERY;
+import static org.cdpg.dx.database.elastic.util.Constants.SOURCE_ONLY;
+import static org.cdpg.dx.database.elastic.util.Constants.STRING_SIZE;
+import static org.cdpg.dx.database.elastic.util.Constants.SUMMARY_KEY;
+import static org.cdpg.dx.database.elastic.util.Constants.WORD_VECTOR_KEY;
 
 import co.elastic.clients.elasticsearch.ElasticsearchAsyncClient;
 import co.elastic.clients.elasticsearch._types.Refresh;
@@ -8,7 +25,15 @@ import co.elastic.clients.elasticsearch._types.Result;
 import co.elastic.clients.elasticsearch._types.Script;
 import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
-import co.elastic.clients.elasticsearch.core.*;
+import co.elastic.clients.elasticsearch.core.BulkRequest;
+import co.elastic.clients.elasticsearch.core.CountRequest;
+import co.elastic.clients.elasticsearch.core.DeleteByQueryRequest;
+import co.elastic.clients.elasticsearch.core.DeleteRequest;
+import co.elastic.clients.elasticsearch.core.ExistsRequest;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.UpdateByQueryRequest;
+import co.elastic.clients.elasticsearch.core.UpdateRequest;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.json.JsonData;
@@ -21,13 +46,19 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.json.stream.JsonGenerator;
 import java.io.StringWriter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.database.elastic.model.BulkSyncResult;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxInternalServerErrorException;
 import org.cdpg.dx.database.elastic.ElasticClient;
+import org.cdpg.dx.database.elastic.model.BulkScriptUpdate;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.database.elastic.model.QueryModel;
 
@@ -553,4 +584,103 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
             });
     return promise.future();
   }
+
+  @Override
+  public Future<BulkSyncResult> bulkUpdateById(
+      String index,
+      List<BulkScriptUpdate> updates
+  ) {
+    return validateIndex(index)
+        .compose(v -> executeBulkUpdateById(index, updates));
+  }
+
+  private Future<BulkSyncResult> executeBulkUpdateById(
+      String index,
+      List<BulkScriptUpdate> updates
+  ) {
+    Promise<BulkSyncResult> promise = Promise.promise();
+
+    BulkRequest.Builder bulkBuilder = new BulkRequest.Builder();
+
+    for (BulkScriptUpdate upd : updates) {
+      Script script = Script.of(s -> s
+          .lang("painless")
+          .source(upd.getScriptSource())
+          .params(
+              upd.getScriptParams().getMap().entrySet().stream()
+                  .collect(Collectors.toMap(
+                      Map.Entry::getKey,
+                      e -> JsonData.of(e.getValue())
+                  ))
+          )
+      );
+
+      bulkBuilder.operations(op ->
+          op.update(u ->
+              u.index(index)
+                  .id(upd.getId())
+                  .action(a -> a.script(script))
+          )
+      );
+    }
+
+    BulkRequest request = bulkBuilder
+        .refresh(Refresh.WaitFor)
+        .build();
+
+    LOGGER.debug("Bulk update request: {}", request);
+
+    asyncClient
+        .bulk(request)
+        .whenComplete(
+            (resp, err) -> {
+              if (err != null) {
+                LOGGER.error("Bulk update failed", err);
+                promise.fail(new DxInternalServerErrorException("Bulk update failed", err));
+                return;
+              }
+
+              int success = 0;
+              List<JsonObject> failures = new ArrayList<>();
+
+              for (var item : resp.items()) {
+                if (item.error() != null) {
+
+                  // Missing docs are expected — log & continue
+                  LOGGER.warn(
+                      "Bulk update failed for id {} : {}",
+                      item.id(),
+                      item.error().reason()
+                  );
+
+                  failures.add(new JsonObject()
+                      .put("id", item.id())
+                      .put("reason", item.error().type())
+                      .put("message", item.error().reason())
+                  );
+
+                } else {
+                  success++;
+                }
+              }
+
+              // Fail ONLY if everything failed
+              if (success == 0) {
+                promise.fail(new DxInternalServerErrorException("All bulk updates failed"));
+                return;
+              }
+
+              promise.complete(
+                  new BulkSyncResult(
+                      updates.size(),
+                      success,
+                      failures.size(),
+                      failures
+                  )
+              );
+            });
+
+    return promise.future();
+  }
+
 }

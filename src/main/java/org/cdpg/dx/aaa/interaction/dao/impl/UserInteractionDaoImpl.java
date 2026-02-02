@@ -11,6 +11,8 @@ import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.interaction.dao.UserInteractionDao;
+import org.cdpg.dx.aaa.interaction.enums.ActionType;
+import org.cdpg.dx.aaa.interaction.model.InteractionAggregate;
 import org.cdpg.dx.aaa.interaction.model.InteractionRow;
 import org.cdpg.dx.aaa.interaction.model.UserInteraction;
 import org.cdpg.dx.aaa.interaction.model.UserInteractionsPaginatedResponse;
@@ -162,4 +164,78 @@ public class UserInteractionDaoImpl extends AbstractBaseDAO<UserInteraction>
                   result, PaginationInfo.from(page, size, total));
             });
   }
+
+  @Override
+  public Future<UserInteraction> fetchExistingInteraction(
+      UUID userId,
+      UUID entityId,
+      ActionType actionType
+  ) {
+    String sql = """
+    SELECT *
+    FROM user_interactions
+    WHERE user_id = $1
+      AND entity_id = $2
+      AND action_type = $3
+    LIMIT 1
+  """;
+
+    JsonArray params = new JsonArray()
+        .add(userId.toString())
+        .add(entityId.toString())
+        .add(actionType.name());
+
+    return postgresService
+        .executeQuery(sql, params)
+        .map(rows -> {
+          if (rows.getRows().isEmpty()) {
+            return null;
+          }
+          return UserInteraction.fromJson(
+              rows.getRows().getJsonObject(0)
+          );
+        });
+  }
+
+  public Future<List<InteractionAggregate>> aggregateInteractions() {
+
+    String sql = """
+    SELECT
+      entity_id,
+      entity_type,
+
+      COUNT(*) FILTER (
+        WHERE action_type = 'VOTE' AND value = 'LIKE'
+      ) AS likes,
+
+      COUNT(*) FILTER (
+        WHERE action_type = 'VOTE' AND value = 'DISLIKE'
+      ) AS dislikes,
+
+      COUNT(*) FILTER (
+        WHERE action_type = 'BOOKMARK'
+      ) AS bookmarks
+
+    FROM user_interactions
+    GROUP BY entity_id, entity_type
+  """;
+
+    return postgresService
+        .executeQuery(sql, new JsonArray())
+        .map(rows ->
+            rows.getRows().stream()
+                .map(obj -> {
+                  JsonObject r = (JsonObject) obj;
+                  return new InteractionAggregate(
+                      UUID.fromString(r.getString("entity_id")),
+                      EntityType.valueOf(r.getString("entity_type")),
+                      r.getInteger("likes"),
+                      r.getInteger("dislikes"),
+                      r.getInteger("bookmarks")
+                  );
+                })
+                .toList()
+        );
+  }
+
 }

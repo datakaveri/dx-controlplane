@@ -5,16 +5,17 @@ import org.cdpg.dx.aaa.interaction.v2.dao.UserInteractionV2Dao;
 import org.cdpg.dx.aaa.interaction.v2.dao.impl.UserInteractionV2DaoImpl;
 import org.cdpg.dx.aaa.interaction.v2.service.UserInteractionV2Service;
 import org.cdpg.dx.aaa.interaction.v2.service.impl.UserInteractionV2ServiceImpl;
+import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 
 public class UserInteractionV2controllerFactory {
 
   public static UserInteractionV2Controller create(
-      PostgresService postgresService, URNGenerator urnGenerator) {
+      PostgresService postgresService, ItemService itemService, URNGenerator urnGenerator) {
 
     UserInteractionV2Dao dao = new UserInteractionV2DaoImpl(postgresService);
-    UserInteractionV2Service service = new UserInteractionV2ServiceImpl(dao);
+    UserInteractionV2Service service = new UserInteractionV2ServiceImpl(dao, itemService);
     return new UserInteractionV2Controller(service, urnGenerator);
   }
 }

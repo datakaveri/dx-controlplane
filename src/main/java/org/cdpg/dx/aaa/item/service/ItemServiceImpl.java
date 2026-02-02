@@ -37,7 +37,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.asset.models.AssetRequest;
 import org.cdpg.dx.aaa.asset.models.AssetRequestResponse;
+import org.cdpg.dx.database.elastic.model.BulkSyncResult;
 import org.cdpg.dx.aaa.common.ResponseModel;
+import org.cdpg.dx.aaa.interaction.model.InteractionAggregate;
 import org.cdpg.dx.aaa.item.model.Item;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.item.util.ItemFactory;
@@ -53,6 +55,7 @@ import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.DxUnauthorizedException;
 import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.database.elastic.model.BulkScriptUpdate;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.database.elastic.model.QueryDecoder;
 import org.cdpg.dx.database.elastic.model.QueryModel;
@@ -688,6 +691,94 @@ public class ItemServiceImpl implements ItemService {
       );
   }
 
+  @Override
+  public Future<Void> updateEngagementCounters(
+      UUID entityId,
+      int likeDelta,
+      int dislikeDelta
+  ) {
+    Promise<Void> promise = Promise.promise();
+
+    QueryModel idQuery = new QueryModel(QueryType.TERM);
+    idQuery.setQueryParameters(Map.of(
+        FIELD, ID_KEYWORD,
+        VALUE, entityId.toString()
+    ));
+
+    QueryModel boolQuery = new QueryModel();
+    boolQuery.setQueryType(QueryType.BOOL);
+    boolQuery.setMustQueries(List.of(idQuery));
+
+    boolQuery.setScriptLanguage("painless");
+    boolQuery.setScriptSource("""
+    if (ctx._source.metrics == null) {
+      ctx._source.metrics = [
+        'likes': 0,
+        'dislikes': 0,
+        'views': 0,
+        'downloads': 0
+      ];
+    }
+
+    if (params.likeDelta != 0) {
+      ctx._source.metrics.likes =
+        Math.max(0, ctx._source.metrics.likes + params.likeDelta);
+    }
+
+    if (params.dislikeDelta != 0) {
+      ctx._source.metrics.dislikes =
+        Math.max(0, ctx._source.metrics.dislikes + params.dislikeDelta);
+    }
+  """);
+
+    boolQuery.setScriptParams(Map.of(
+        "likeDelta", likeDelta,
+        "dislikeDelta", dislikeDelta
+    ));
+
+    QueryModel updateByQueryModel = new QueryModel();
+    updateByQueryModel.setQueries(boolQuery);
+
+    elasticsearchService
+        .updateDocumentsByQuery(updateByQueryModel.getQueries(), docIndex)
+        .onSuccess(v -> promise.complete())
+        .onFailure(promise::fail);
+
+    return promise.future();
+  }
+
+  @Override
+  public Future<BulkSyncResult> bulkSyncMetrics(List<InteractionAggregate> aggregates) {
+
+    List<BulkScriptUpdate> updates = new ArrayList<>();
+
+    for (InteractionAggregate agg : aggregates) {
+
+      LOGGER.info(
+          "Syncing metrics for entityId={}, likes={}, dislikes={}",
+          agg.entityId(), agg.likes(), agg.dislikes()
+      );
+
+      updates.add(
+          new BulkScriptUpdate(
+              agg.entityId().toString(),
+              """
+              ctx._source.metrics = [
+                'likes': params.likes,
+                'dislikes': params.dislikes,
+                'views': ctx._source.metrics?.views ?: 0,
+                'downloads': ctx._source.metrics?.downloads ?: 0
+              ];
+              """,
+              new JsonObject()
+                  .put("likes", agg.likes())
+                  .put("dislikes", agg.dislikes())
+          )
+      );
+    }
+
+    return elasticsearchService.bulkUpdateById(docIndex, updates);
+  }
 
 
 }
