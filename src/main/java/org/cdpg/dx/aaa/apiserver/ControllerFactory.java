@@ -347,11 +347,11 @@ public class ControllerFactory {
     controllers.add(leaderboardController);
 
     ApiController userInteractionController =
-        UserInteractionControllerFactory.create(pgService, urnGenerator);
+        UserInteractionControllerFactory.create(pgService, itemService, urnGenerator);
     // controllers.add(userInteractionController);
 
     ApiController userV2InteractionApi =
-        UserInteractionV2controllerFactory.create(pgService, urnGenerator);
+        UserInteractionV2controllerFactory.create(pgService, itemService, urnGenerator);
     controllers.add(userV2InteractionApi);
 
     return controllers;
