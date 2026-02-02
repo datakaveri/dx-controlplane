@@ -20,7 +20,7 @@ public final class ActivityAuditSchema {
   // Request / action
   public static final String API = "api";
   public static final String METHOD = "method";
-  public static final String ACTION = "operation";
+  public static final String ACTION = "action";
   public static final String ORIGIN_SERVER = "origin_server";
   public static final String ISSUER = "issuer";
 

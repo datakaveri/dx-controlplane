@@ -12,7 +12,6 @@ import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.ELASTIC_SER
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.EMAIL_SERVICE_ADDRESS;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.POSTGRES_SERVICE_ADDRESS;
 import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
-import static org.cdpg.dx.database.elastic.util.Constants.VERIFIED_BY;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -23,10 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.ActivityReport.controller.ActivityReportController;
 import org.cdpg.dx.aaa.ActivityReport.factory.ActivityReportControllerFactory;
-import org.cdpg.dx.aaa.activity.controller.ActivityController;
-import org.cdpg.dx.aaa.activity.factory.ActivityControllerFactory;
 import org.cdpg.dx.aaa.activity.factory.ActivityFactory;
-import org.cdpg.dx.aaa.activity.service.ActivityLogService;
 import org.cdpg.dx.aaa.admin.controller.AdminController;
 import org.cdpg.dx.aaa.admin.handler.AdminHandler;
 import org.cdpg.dx.aaa.appCredentials.factory.AppCredentialsControllerFactory;
@@ -84,12 +80,12 @@ import org.cdpg.dx.aaa.user.dao.CustomRoleDAO;
 import org.cdpg.dx.aaa.user.dao.impl.CustomRoleDAOImpl;
 import org.cdpg.dx.aaa.user.factory.UserControllerFactory;
 import org.cdpg.dx.aaa.user.service.UserService;
-
 import org.cdpg.dx.aaa.vote.factory.VoteControllerFactory;
-
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
+import org.cdpg.dx.auditing.v2.controller.ActivityController;
+import org.cdpg.dx.auditing.v2.factory.ActivityControllerFactory;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.central.service.CentralElasticsearchService;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
@@ -139,11 +135,8 @@ public class ControllerFactory {
     String routingKey = config.getString("auditingRoutingKey");
     boolean isRemoteAudit = config.getBoolean("isRemoteAudit", false);
 
-    ActivityLogService activityLogService = ActivityFactory.getActivityService();
-
     AuditingHandler auditingHandler =
-        new AuditingHandler(
-            dataBrokerService, activityLogService, auditingExchange, routingKey, isRemoteAudit);
+        new AuditingHandler(dataBrokerService, auditingExchange, routingKey, isRemoteAudit);
 
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
 
@@ -172,12 +165,17 @@ public class ControllerFactory {
             keycloakUserService, organizationService, creditService, esService, customRoleDAO,docUserIndex);
 
     AssetHandler assetHandler =
-        AssetFactory.createHandler(pgService,itemService, config, emailComposer, urnGenerator);
+        AssetFactory.createHandler(pgService, itemService, config, emailComposer, urnGenerator);
     ApiController assetController = new AssetController(assetHandler, auditingHandler);
 
     ApiController creditApiController =
         CreditControllerFactory.create(
-            creditService, emailComposer, userService, organizationService, urnGenerator, isKycRequired);
+            creditService,
+            emailComposer,
+            userService,
+            organizationService,
+            urnGenerator,
+            isKycRequired);
 
     ApiController delegationApiController =
         DelegationControllerFactory.create(
@@ -255,7 +253,6 @@ public class ControllerFactory {
           CentralListControllerFactory.createListController(
               centralEsService, auditingHandler, centralCatDocIndex, urnGenerator);
     }
-
     final ItemController itemController =
         ItemControllerFactory.createCrudController(
             auditingHandler,
@@ -353,11 +350,11 @@ public class ControllerFactory {
     controllers.add(leaderboardController);
 
     ApiController userInteractionController =
-        UserInteractionControllerFactory.create(pgService, urnGenerator);
+        UserInteractionControllerFactory.create(pgService, itemService, urnGenerator);
     // controllers.add(userInteractionController);
 
     ApiController userV2InteractionApi =
-        UserInteractionV2controllerFactory.create(pgService, urnGenerator);
+        UserInteractionV2controllerFactory.create(pgService, itemService, urnGenerator);
     controllers.add(userV2InteractionApi);
 
     return controllers;

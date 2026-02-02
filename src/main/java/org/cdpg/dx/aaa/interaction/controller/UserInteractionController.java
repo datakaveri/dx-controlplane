@@ -1,12 +1,15 @@
 package org.cdpg.dx.aaa.interaction.controller;
 
+import static org.cdpg.dx.aaa.activity.util.ActivityConstants.CREATED_AT;
+import static org.cdpg.dx.aaa.apiserver.OperationIds.OP_GET_USER_INTERACTIONS;
+import static org.cdpg.dx.aaa.apiserver.OperationIds.OP_POST_USER_INTERACTION;
+import static org.cdpg.dx.aaa.apiserver.OperationIds.OP_SYNC_INTERACTION_METRICS;
+
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
-
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.apiserver.ApiController;
@@ -16,10 +19,6 @@ import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
-
-import static org.cdpg.dx.aaa.activity.util.ActivityConstants.CREATED_AT;
-import static org.cdpg.dx.aaa.apiserver.OperationIds.OP_GET_USER_INTERACTIONS;
-import static org.cdpg.dx.aaa.apiserver.OperationIds.OP_POST_USER_INTERACTION;
 
 public class UserInteractionController implements ApiController {
 
@@ -49,6 +48,7 @@ public class UserInteractionController implements ApiController {
     LOGGER.info("Registering UserInteractionController routes");
     builder.operation(OP_POST_USER_INTERACTION).handler(this::handlePostUserInteractionRequest);
     builder.operation(OP_GET_USER_INTERACTIONS).handler(this::handleGetUserInteractionRequest);
+    builder.operation(OP_SYNC_INTERACTION_METRICS).handler(this::handleSyncInteractionMetrics);
   }
 
   private void handlePostUserInteractionRequest(RoutingContext ctx) {
@@ -105,4 +105,26 @@ public class UserInteractionController implements ApiController {
       ctx.fail(e);
     }
   }
+
+  private void handleSyncInteractionMetrics(RoutingContext ctx) {
+    LOGGER.info("GET /user/interactions/sync called");
+
+    try {
+      service
+          .syncInteractionMetrics()
+          .onSuccess(
+              v ->
+                  ResponseBuilder.sendSuccess(
+                      ctx, "Interaction metrics synced successfully", urnGenerator))
+          .onFailure(
+              err -> {
+                LOGGER.error("Failed to sync interaction metrics", err);
+                ctx.fail(err);
+              });
+    } catch (Exception e) {
+      LOGGER.error("Invalid GET /user/interactions/sync request:  {} ", e.getMessage(), e);
+      ctx.fail(e);
+    }
+  }
+
 }

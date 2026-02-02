@@ -33,7 +33,7 @@ public final class OperationIds {
       "get-auth-v2-user-organisations-join-requests";
 
   public static final String OP_WITHDRAW_USER_ORG_JOIN_REQUESTS =
-    "withdraw-auth-v2-organisations-join-request";
+      "withdraw-auth-v2-organisations-join-request";
 
   public static final String OP_DELETE_USER_ORG_JOIN_REQUEST =
       "delete-auth-v2-user-organisations-join-requests";
@@ -130,4 +130,7 @@ public final class OperationIds {
 
   public static final String OP_POST_USER_INTERACTION = "post-user-intraction";
   public static final String OP_GET_USER_INTERACTIONS = "get-user-interaction";
+  public static final String OP_GET_ACTIVITY_FOR_CONSUMER = "get-ActivityLogs-for-consumer";
+  public static final String OP_GET_ACTIVITY_FOR_ADMIN = "get-activityLogs-for-admin";
+  public static final String OP_SYNC_INTERACTION_METRICS = "sync-interaction-metrics";
 }

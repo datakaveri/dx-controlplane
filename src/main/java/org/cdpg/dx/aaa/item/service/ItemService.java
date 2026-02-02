@@ -3,7 +3,9 @@ package org.cdpg.dx.aaa.item.service;
 import io.vertx.core.Future;
 import org.cdpg.dx.aaa.asset.models.AssetRequest;
 import org.cdpg.dx.aaa.asset.models.AssetRequestResponse;
+import org.cdpg.dx.database.elastic.model.BulkSyncResult;
 import org.cdpg.dx.aaa.common.ResponseModel;
+import org.cdpg.dx.aaa.interaction.model.InteractionAggregate;
 import org.cdpg.dx.aaa.item.model.Item;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.item.util.PatchItemRequest;
@@ -31,4 +33,10 @@ public interface ItemService {
 
     Future<ElasticsearchResponse> patchItem(PatchItemRequest patchItemRequest);
     Future<Boolean> exists(String itemId);
+    Future<Void> updateEngagementCounters(
+        UUID entityId,
+        int likeDelta,
+        int dislikeDelta
+    );
+    Future<BulkSyncResult> bulkSyncMetrics(List<InteractionAggregate> aggregates);
 }

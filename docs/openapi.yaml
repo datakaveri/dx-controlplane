@@ -8370,7 +8370,10 @@ paths:
         Pagination is supported for large result sets.
       parameters:
         - $ref: '#/components/parameters/AssetTypeParam'
-        - $ref: '#/components/parameters/OperationParam'
+        - $ref: '#/components/parameters/AssetAccessPolicyParam'
+        - $ref: '#/components/parameters/ActionParam'
+        - $ref: '#/components/parameters/OrganizationIdParam'
+        - $ref: '#/components/parameters/LogTypeParam'
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
         - $ref: '#/components/parameters/TimeRelParam'
@@ -8431,7 +8434,9 @@ paths:
       parameters:
         - $ref: '#/components/parameters/UserIdParam'
         - $ref: '#/components/parameters/AssetTypeParam'
-        - $ref: '#/components/parameters/OperationParam'
+        - $ref: '#/components/parameters/AssetAccessPolicyParam'
+        - $ref: '#/components/parameters/ActionParam'
+        - $ref: '#/components/parameters/LogTypeParam'
         - $ref: '#/components/parameters/OrganizationIdParam'
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
@@ -8494,7 +8499,9 @@ paths:
       parameters:
         - $ref: '#/components/parameters/UserIdParam'
         - $ref: '#/components/parameters/AssetTypeParam'
-        - $ref: '#/components/parameters/OperationParam'
+        - $ref: '#/components/parameters/AssetAccessPolicyParam'
+        - $ref: '#/components/parameters/ActionParam'
+        - $ref: '#/components/parameters/LogTypeParam'
         - $ref: '#/components/parameters/OrganizationIdParam'
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
@@ -8551,7 +8558,10 @@ paths:
         - authorization: [ ]
       parameters:
         - $ref: '#/components/parameters/AssetTypeParam'
-        - $ref: '#/components/parameters/OperationParam'
+        - $ref:  '#/components/parameters/AssetAccessPolicyParam'
+        - $ref: '#/components/parameters/ActionParam'
+        - $ref: '#/components/parameters/LogTypeParam'
+        - $ref: '#/components/parameters/OrganizationIdParam'
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
         - $ref: '#/components/parameters/TimeRelParam'
@@ -9657,7 +9667,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserInteractiomResponse'
+                $ref: '#/components/schemas/UserInteractionResponse'
         '400':
           description: Bad Request
           content:
@@ -9688,6 +9698,58 @@ paths:
           label: Get User Interaction Status
           source: |
             curl --location 'https://${HOSTNAME}/iudx/v2/user/interactions' \
+            --header 'Content-Type: application/json' \
+            --header 'Authorization: Bearer <jwt token>'
+  /iudx/v2/user/interactions/sync:
+    get:
+      tags:
+        - User Interactions
+      operationId: sync-interaction-metrics
+      summary: Sync aggregated interaction metrics
+      description: >
+        Triggers synchronization of interaction metrics (likes, dislikes, bookmarks)
+        into aggregated stores for analytics or leaderboard usage.
+
+        **Authorization:** This API can be invoked only by users with the `cos_admin` role.
+      security:
+        - authorization: [ ]
+      responses:
+        '200':
+          description: Interaction metrics synced successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInteractionSyncResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+      x-codeSamples:
+        - lang: cURL
+          label: Get User Interaction Status
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/interactions/sync' \
             --header 'Content-Type: application/json' \
             --header 'Authorization: Bearer <jwt token>'
 tags:
@@ -9812,7 +9874,7 @@ components:
         pattern: '^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$'
 
     AssetTypeParam:
-      name: entityType
+      name: assetType
       in: query
       description: >
         The type of asset to filter the activity logs.
@@ -9820,25 +9882,24 @@ components:
       required: false
       schema:
         type: string
-
-    AssetNameParam:
-      name: assetname
+        enum:
+          - DATABANK
+          - AI_MODEL
+          - USECASE
+    AssetAccessPolicyParam:
+      name: accessPolicy
       in: query
       description: >
-        This asset name is used to filter the activity logs.
-        This parameter allows filtering by specific asset name.
+        The access policy of the asset to filter the activity logs.
+        This parameter allows filtering by specific access policies such as `OPEN`, `RESTRICTED`, `PRIVATE`, `PII`.
       required: false
       schema:
         type: string
-
-    ApiParam:
-      name: api
-      in: query
-      description: >
-        This parameter allows filtering by specific api endpoint name.
-      required: false
-      schema:
-        type: string
+        enum:
+          - OPEN
+          - RESTRICTED
+          - PRIVATE
+          - PII
 
     RoleParam:
       name: role
@@ -9849,12 +9910,21 @@ components:
       schema:
         type: string
 
-    OperationParam:
-      name: operation
+    ActionParam:
+      name: action
       in: query
       description: >
-        The type of operation to filter the activity logs.
-        This parameter allows filtering by specific operations, such as `View`, `created`, etc.
+        The type of action to filter the activity logs.
+        This parameter allows filtering by specific action, such as `View`, `Download`, `Upload`, `Update`,`Delete` etc.
+      required: false
+      schema:
+        type: string
+    LogTypeParam:
+      name: logType
+      in: query
+      description: >
+        The type of log to filter the activity logs.
+        This parameter allows filtering by specific log types, such as `ASSET` or `USER_ACTION`, `CREDIT`.
       required: false
       schema:
         type: string
@@ -9936,7 +10006,6 @@ components:
           - between
           - before
           - after
-          -
     OrgNameParam:
       name: name
       in: query
@@ -10470,7 +10539,68 @@ components:
 
         result:
           $ref: '#/components/schemas/BookmarkResult'
-    UserInteractiomResponse:
+    BulkSyncFailure:
+      type: object
+      required:
+        - id
+        - reason
+        - message
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Document ID that failed to update
+        reason:
+          type: string
+          description: Elasticsearch failure reason code
+        message:
+          type: string
+          description: Detailed failure message from Elasticsearch
+    BulkSyncResult:
+      type: object
+      required:
+        - total
+        - successful
+        - failed
+        - failures
+      properties:
+        total:
+          type: integer
+          description: Total number of documents processed
+          example: 9
+        successful:
+          type: integer
+          description: Number of documents successfully updated
+          example: 7
+        failed:
+          type: integer
+          description: Number of documents that failed to update
+          example: 1
+        failures:
+          type: array
+          description: List of failed document updates
+          items:
+            $ref: '#/components/schemas/BulkSyncFailure'
+    UserInteractionSyncResponse:
+      type: object
+      required:
+        - type
+        - title
+        - detail
+        - result
+      properties:
+        type:
+          type: string
+          example: dx:controlPlane:success
+        title:
+          type: string
+          example: Success
+        detail:
+          type: string
+          example: Interaction metrics synced successfully
+        result:
+          $ref: '#/components/schemas/BulkSyncResult'
+    UserInteractionResponse:
       type: object
       required:
         - type

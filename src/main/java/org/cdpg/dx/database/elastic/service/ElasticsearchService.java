@@ -6,6 +6,8 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import java.util.List;
+import org.cdpg.dx.database.elastic.model.BulkSyncResult;
+import org.cdpg.dx.database.elastic.model.BulkScriptUpdate;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.database.elastic.model.QueryModel;
 
@@ -31,6 +33,11 @@ public interface ElasticsearchService {
   Future<Void> updateDocument(String index, String id, QueryModel queryModel);
 
   Future<Void> updateDocumentsByQuery(QueryModel queryModel, String docIndex);
+  Future<BulkSyncResult> bulkUpdateById(
+      String index,
+      List<BulkScriptUpdate> updates
+  );
+
 
   Future<Void> deleteByQuery(String index, QueryModel queryModel);
 }
