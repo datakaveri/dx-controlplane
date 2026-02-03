@@ -2442,6 +2442,118 @@ paths:
 
       security:
         - authorization: [ ]
+
+  /iudx/v2/auth/user/custom/role:
+    post:
+      operationId: post-auth-v2-custom-role
+      summary: Create custom role and scopes
+      description: Creates a custom role and optional scopes for a particular user
+      tags:
+        - Role APIs
+      security:
+        - authorization: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - role
+                - user_id
+              properties:
+                role:
+                  type: string
+                  description: The name of the custom role (mandatory)
+                  example: "custom_role"
+                user_id:
+                  type: string
+                  description: UUID of the userID
+                  example: "fffb1ea9-7c57-4f2c-b410-7b5a163166a0"
+                scope:
+                  type: array
+                  description: Optional array of scopes associated with the role
+                  items:
+                    type: string
+                  nullable: true
+                  example: [ "scope1", "scope2" ]
+      responses:
+        '201':
+          description: Custom role created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomRoleResponse'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440000"
+                userId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                role: "custom_role"
+                scope: [ "scope1", "scope2" ]
+                createdAt: "2026-02-03T10:15:30"
+                updatedAt: "2026-02-03T10:15:30"
+        '400':
+          description: Invalid request (missing mandatory role or malformed scope)
+        '403':
+          description: Forbidden (e.g., constraints not met or role already exists)
+    get:
+      summary: Get Custom Roles and Scopes
+      tags:
+        - Role APIs
+      operationId: get-auth-v2-custom-role
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+        - name: role
+          in: query
+          description: Filter by role name
+          schema:
+            type: string
+        - name: userId
+          in: query
+          description: Filter by user UUID
+          schema:
+            type: string
+            format: uuid
+      security:
+        - authorization: [ ]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomRoleResponse'
+              examples:
+                Example 1:
+                  value:
+                    type: urn:dx:ControlPlane:success
+                    title: Success
+                    result:
+                      - id: a12b34cd-5678-90ef-1234-567890abcdef
+                        userId: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                        role: custom_role
+                        scope:
+                          - scope1
+                          - scope2
+                        createdAt: '2025-06-03T16:01:59.532782'
+                        updatedAt: '2025-06-03T16:01:59.532782'
+                        tableName: custom_user_role
+                    paginationInfo:
+                      page: 1
+                      size: 1
+                      totalCount: 12
+                      totalPages: 12
+                      hasNext: true
+                      hasPrevious: false
+        '401':
+          description: Unauthorized – Token invalid or expired, or caller lacks permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+
+
   /iudx/v2/auth/user/credit/balance:
     get:
       operationId: get-auth-v2-user-credit-balance
@@ -4036,7 +4148,14 @@ paths:
               properties:
                 new_password:
                   type: string
-                  description: The new password to be set
+                  description: >
+                    Password must be 8–20 characters long and include at least
+                    one uppercase letter, one lowercase letter, one number,
+                    and one special character.
+                  minLength: 8
+                  maxLength: 20
+                  pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,20}$'
+                  example: "Strong@123"
       responses:
         '200':
           description: Password changed successfully
@@ -17394,3 +17513,43 @@ components:
         - databank
         - aimodel
       description: Entity type for scoped delegation
+
+    CustomRoleResponse:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        result:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomRoleItem'
+        paginationInfo:
+          $ref: '#/components/schemas/PaginationInfoResponse'
+
+
+    CustomRoleItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        role:
+          type: string
+        scope:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        tableName:
+          type: string
+

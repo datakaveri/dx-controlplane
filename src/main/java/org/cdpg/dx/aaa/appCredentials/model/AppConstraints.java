@@ -1,6 +1,7 @@
 package org.cdpg.dx.aaa.appCredentials.model;
 
 import io.vertx.core.json.JsonObject;
+import org.apache.logging.log4j.core.util.UuidUtil;
 import org.cdpg.dx.database.postgres.base.entity.BaseEntity;
 import org.cdpg.dx.database.postgres.util.EntityUtil;
 
@@ -16,7 +17,8 @@ public record AppConstraints(
   UUID appId,
   String scope,
   String entityId,
-  String entityType
+  String entityType,
+  UUID userId
 ) implements BaseEntity<AppConstraints>
 {
 
@@ -36,7 +38,8 @@ public record AppConstraints(
         : "*",
       json.getString(ENTITY_TYPE) != null
         ? json.getString(ENTITY_TYPE)
-        : "*");
+        : "*",
+      UUID.fromString(json.getString(USER_ID)));
 
   }
 
@@ -65,6 +68,10 @@ public record AppConstraints(
         map.put(ENTITY_TYPE,entityType);
       }
 
+      if (userId != null) {
+        map.put(USER_ID,userId.toString());
+      }
+
     return map;
   }
 
@@ -77,7 +84,9 @@ public record AppConstraints(
       .put(ID, id != null ? id.toString() : null)
       .put(SCOPE, scope != null ? scope : "*")
       .put(ENTITY_ID, entityId != null ? entityId.toString() : "*")
-      .put(ENTITY_TYPE, entityType != null ? entityType : "*"); }
+      .put(ENTITY_TYPE, entityType != null ? entityType : "*")
+      .put(USER_ID, userId.toString());
+    }
 
     @Override
     public String getTableName() {

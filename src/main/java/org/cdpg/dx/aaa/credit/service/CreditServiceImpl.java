@@ -4,6 +4,7 @@ import co.elastic.clients.elasticsearch.ingest.Local;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
+import jakarta.ws.rs.ForbiddenException;
 import org.cdpg.dx.aaa.credit.dao.*;
 import org.cdpg.dx.aaa.credit.models.*;
 import org.cdpg.dx.aaa.organization.config.Constants;
@@ -16,7 +17,11 @@ import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -47,8 +52,34 @@ public class CreditServiceImpl implements CreditService {
 
   @Override
   public Future<CreditRequest> createCreditRequest(CreditRequest creditRequest) {
-    return creditRequestDAO.create(creditRequest);
+    Map<String,Object> filter = Map.of(USER_ID,creditRequest.userId().toString(),
+                                        STATUS, PENDING.getStatus());
+
+    return creditRequestDAO.getAllWithFilters(filter).compose(existingRequests -> {
+
+      Instant oneHourAgo = Instant.now().minus(1, ChronoUnit.HOURS);
+      LOGGER.info("Now (UTC): {}", LocalDateTime.now(ZoneOffset.UTC));
+      LOGGER.info("Now (System): {}", LocalDateTime.now());
+
+      boolean hasRecentPendingRequest = existingRequests.stream()
+        .anyMatch(req ->
+          req.requestedAt()
+            .toInstant(ZoneOffset.UTC)
+            .isAfter(oneHourAgo)
+        );
+
+      LOGGER.info("hasRecentPendingRequest: {}",hasRecentPendingRequest);
+      if (hasRecentPendingRequest) {
+        return Future.failedFuture(
+          new DxForbiddenException("A credit request is already pending. Please try again later.")
+        );
+      }
+
+      // No recent pending request → allow creation
+      return creditRequestDAO.create(creditRequest);
+    });
   }
+
 
   @Override
   public Future<PaginatedResult<CreditRequest>> getAllCreditRequests(PaginatedRequest request) {

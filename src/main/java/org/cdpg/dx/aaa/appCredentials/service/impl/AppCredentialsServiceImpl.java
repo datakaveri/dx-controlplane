@@ -19,6 +19,7 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.appCredentials.dao.AppConstraintsDAO;
 import org.cdpg.dx.aaa.appCredentials.dao.AppCredentialsDAO;
 import org.cdpg.dx.aaa.appCredentials.model.AppConstraints;
+import org.cdpg.dx.aaa.appCredentials.model.AppCredentialResponse;
 import org.cdpg.dx.aaa.appCredentials.model.AppCredentials;
 import org.cdpg.dx.aaa.appCredentials.service.AppCredentialsService;
 import org.cdpg.dx.aaa.delegation.DelegationHandlerValidator;
@@ -79,7 +80,7 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
     if (isWildcardApp) {
 
       flow = appCredentialsDAO.create(appCredentials)
-        .compose(savedApp->createScopes(savedApp.appId(),expiry)
+        .compose(savedApp->createScopes(savedApp.appId(),expiry,userId)
         .map(res-> savedApp)
         );
 
@@ -90,7 +91,7 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
           .validateConstraints(userId, rolesArray)
           .compose(v -> appCredentialsDAO.create(appCredentials))
           .compose(savedApp ->
-            insertAppConstraints(savedApp.appId(), rolesArray,expiry)
+            insertAppConstraints(savedApp.appId(), rolesArray,expiry,userId)
               .map(v -> savedApp)
           );
     }
@@ -111,7 +112,8 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
   private Future<Void> insertAppConstraints(
     UUID appId,
     JsonArray roles,
-    LocalDateTime expiryAt
+    LocalDateTime expiryAt,
+    UUID userId
   ) {
 
     if (roles == null || roles.isEmpty()) {
@@ -129,7 +131,7 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
 
       if(constraints.isEmpty())
       {
-        insertFutures.add(createScopes(appId,expiryAt));
+        insertFutures.add(createScopes(appId,expiryAt,userId));
         continue;
       }
 
@@ -143,12 +145,12 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
         //skipping cos_admin_access and compute_management because no entity check is needed for them
         if (entityIds != null && !entityIds.isEmpty()) {
           for (Object entity : entityIds) {
-            insertFutures.add(createScopeConstraint(appId, constraint, entity)
+            insertFutures.add(createScopeConstraint(appId, constraint, entity,userId)
             );
           }
         } else{
           // entity_id == null means entity_type is already null (validated)
-          insertFutures.add(createScopeConstraint(appId, constraint, null)
+          insertFutures.add(createScopeConstraint(appId, constraint, null,userId)
           );
         }
       }
@@ -160,7 +162,8 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
   private Future<Void> createScopeConstraint(
     UUID appId,
     JsonObject constraint,
-    Object entityId
+    Object entityId,
+    UUID userId
   ) {
 
     JsonObject dbRow = new JsonObject()
@@ -172,6 +175,7 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
         "entity_id", entityId !=null ?
           entityId
           : "*")
+      .put("user_id",userId.toString())
       .put(
         "entity_type",
         constraint.getString("entity_type") != null
@@ -189,7 +193,8 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
 
   private Future<Void> createScopes(
     UUID appId,
-    LocalDateTime expiry
+    LocalDateTime expiry,
+    UUID userId
   ) {
 
     JsonObject dbRow = new JsonObject()
@@ -198,6 +203,7 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
       .put("expiry_at", expiry)
       .put(
         "entity_id", "*")
+      .put("user_id",userId.toString())
       .put(
         "entity_type", "*"
       );
@@ -213,9 +219,28 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
 
 
   @Override
-  public Future<PaginatedResult<AppCredentials>> getApp(PaginatedRequest paginatedRequest) {
-    return appCredentialsDAO.getAllWithFilters(paginatedRequest);
+  public Future<PaginatedResult<AppCredentialResponse>> getApp(PaginatedRequest paginatedRequest) {
+    return appCredentialsDAO.getAllWithFilters(paginatedRequest)
+      .map(paginatedResult -> {
+        List<AppCredentialResponse> sanitized = paginatedResult.data().stream()
+          .map(app -> new AppCredentialResponse(
+            app.appId(),
+            app.userId(),
+            app.expiryAt(),
+            app.status(),
+            app.createdAt(),
+            app.modifiedAt(),
+            app.revokedAt()
+          ))
+          .toList();
+
+        return new PaginatedResult<>(
+          paginatedResult.paginationInfo(),
+          sanitized
+        );
+      });
   }
+
 
   @Override
   public Future<Boolean> deleteApp(UUID userId, UUID appId) {

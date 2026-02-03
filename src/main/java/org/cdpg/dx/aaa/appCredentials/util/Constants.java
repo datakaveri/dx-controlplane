@@ -10,8 +10,6 @@ public class Constants {
           "user_id",
           "app_id",
           "appId",
-          "app_secret",
-          "appSecret",
           "status",
           "entity_type",
           "createdAt",

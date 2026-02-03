@@ -1,9 +1,7 @@
-package org.cdpg.dx.aaa.user.model;
+package org.cdpg.dx.aaa.user.models;
 
-import com.nimbusds.jose.shaded.gson.annotations.JsonAdapter;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.cdpg.dx.aaa.organization.config.Constants;
 import org.cdpg.dx.common.exception.DxValidationException;
 import org.cdpg.dx.database.postgres.base.entity.BaseEntity;
 

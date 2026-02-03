@@ -3,6 +3,7 @@ package org.cdpg.dx.aaa.appCredentials.service;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.aaa.appCredentials.model.AppConstraints;
+import org.cdpg.dx.aaa.appCredentials.model.AppCredentialResponse;
 import org.cdpg.dx.aaa.appCredentials.model.AppCredentials;
 import org.cdpg.dx.aaa.bookmarks.model.Bookmark;
 import org.cdpg.dx.common.request.PaginatedRequest;
@@ -14,7 +15,7 @@ public interface AppCredentialsService {
 
   Future<AppCredentials> createApp(JsonObject appConstraints);
 
-  Future<PaginatedResult<AppCredentials>> getApp(PaginatedRequest paginatedRequest);
+  Future<PaginatedResult<AppCredentialResponse>> getApp(PaginatedRequest paginatedRequest);
 
   Future<Boolean> deleteApp(UUID userId, UUID appId);
 

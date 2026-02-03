@@ -1,38 +1,44 @@
 package org.cdpg.dx.aaa.user.service;
 
-import com.hazelcast.collection.ICollection;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.*;
 
-import org.cdpg.dx.aaa.common.ResponseModel;
+import io.vertx.ext.auth.User;
+import io.vertx.ext.web.RoutingContext;
 import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.organization.models.OrganizationCreateRequest;
 import org.cdpg.dx.aaa.organization.models.OrganizationJoinRequest;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.dao.CustomRoleDAO;
-import org.cdpg.dx.aaa.user.model.CustomRole;
+import org.cdpg.dx.aaa.user.models.CustomRole;
 import org.cdpg.dx.aaa.user.models.UserInfo;
+import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
+import org.cdpg.dx.auth.authentication.util.AccessValidator;
+import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.model.DxUser;
-import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
+import org.cdpg.dx.common.request.PaginatedRequest;
+import org.cdpg.dx.common.request.PaginationRequestBuilder;
+import org.cdpg.dx.common.response.ResponseBuilder;
+import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.database.elastic.model.QueryModel;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.elastic.util.QueryType;
+import org.cdpg.dx.database.postgres.models.PaginatedResult;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
-import org.keycloak.jose.jwk.JWK;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.cdpg.dx.aaa.common.Constants.FIELD;
 import static org.cdpg.dx.aaa.common.Constants.VALUE;
 import static org.cdpg.dx.aaa.user.util.constants.*;
-import static org.cdpg.dx.database.elastic.util.Constants.ID_KEYWORD;
+import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
 public class UserServiceImpl implements UserService {
 
@@ -266,6 +272,14 @@ public class UserServiceImpl implements UserService {
       });
 
 }
+
+  @Override
+ public Future<PaginatedResult<CustomRole>> getAllCustomRoles(PaginatedRequest request)
+  {
+    return customRoleDAO.getAllWithFilters(request);
+  }
+
+
 
 
 }
