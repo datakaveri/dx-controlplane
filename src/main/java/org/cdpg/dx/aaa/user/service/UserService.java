@@ -4,8 +4,11 @@ import io.vertx.core.Future;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.aaa.common.ResponseModel;
+import org.cdpg.dx.aaa.user.models.CustomRole;
 import org.cdpg.dx.aaa.user.models.UserInfo;
 import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.common.request.PaginatedRequest;
+import org.cdpg.dx.database.postgres.models.PaginatedResult;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +25,8 @@ public interface UserService {
     Future<UserInfo> getUserInfo(String userId);
     Future<UserInfo> patchUserInfo(String userId, JsonObject updates);
     Future<DxUser> updateUserInfo(UUID userId,Boolean status);
+    Future<PaginatedResult<CustomRole>> getAllCustomRoles(PaginatedRequest customRoles);
+    Future<Boolean> addCustomRoleAndScope(JsonObject body);
 
     default <T> Future<List<JsonObject>> enrichWithUserRoles(
             List<T> items,

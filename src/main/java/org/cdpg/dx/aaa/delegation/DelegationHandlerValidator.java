@@ -29,7 +29,6 @@ public class DelegationHandlerValidator {
 
 
   public void validateCreateDelegationGrantBody(UUID userId, Set<String> delegatorRoles, JsonObject body) {
-    body.put("delegator_id", userId);
 
     //*****************************************************************************************************************
 
@@ -55,7 +54,7 @@ public class DelegationHandlerValidator {
 
     // Full delegation (wildcard for all roles & scopes)
     if (rolesArray == null || rolesArray.isEmpty()) {
-      LOGGER.info("Delegation gives full access to all roles and scopes of delegator");
+      LOGGER.info("Delegation/AppKey creation gives full access to all roles and scopes of delegator");
       return;
     }
 
@@ -73,12 +72,12 @@ public class DelegationHandlerValidator {
       }
       else if(!delegatorRoles.contains(role))
       {
-        throw new DxBadRequestException("The delegator doesnot have the role "+ role);
+        throw new DxBadRequestException("The delegator/user doesnot have the role "+ role);
       }
 
       JsonArray constraints = roleObj.getJsonArray("constraints");
       if (constraints == null || constraints.isEmpty()) {
-        LOGGER.info("Delegate has full access to the given role");
+        LOGGER.info("Delegate/User has full access to the given role");
         return;
       }
 

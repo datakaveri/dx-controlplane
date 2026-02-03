@@ -14,6 +14,8 @@ import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.aaa.organization.dao.OrganizationDAOFactory;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.organization.service.OrganizationServiceImpl;
+import org.cdpg.dx.aaa.user.dao.CustomRoleDAO;
+import org.cdpg.dx.aaa.user.dao.impl.CustomRoleDAOImpl;
 import org.cdpg.dx.aaa.user.service.UserServiceImpl;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
@@ -51,9 +53,11 @@ public class EmailComposerFactory {
 
     final String docUserIndex = config.getString(DOC_USER_INDEX);
 
+    CustomRoleDAO customRoleDAO = new CustomRoleDAOImpl(pgService);
+
     UserServiceImpl userService =
         new UserServiceImpl(
-            keycloakUserService, organizationService, creditService, esService, docUserIndex);
+            keycloakUserService, organizationService, creditService, esService, customRoleDAO, docUserIndex);
 
     return new EmailComposer(
         emailService, keycloakUserService, config, organizationService, userService, creditService);

@@ -8,6 +8,8 @@ import org.cdpg.dx.aaa.user.handler.UserHandler;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 
+import static org.cdpg.dx.auth.authorization.model.DxRole.*;
+
 public class UserController implements ApiController {
 
   private static final Logger LOGGER = LogManager.getLogger(UserController.class);
@@ -34,6 +36,16 @@ public class UserController implements ApiController {
       .operation("patch-auth-v2-user-info")
       .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
       .handler(userHandler::patchUserInfo);
+
+    routerBuilder
+      .operation("post-auth-v2-custom-role")
+      .handler(AuthorizationHandler.forRoles(ORG_ADMIN,COS_ADMIN))
+      .handler(userHandler::addCustomRoleAndScopes);
+
+    routerBuilder
+      .operation("get-auth-v2-custom-role")
+      .handler(AuthorizationHandler.forRoles(CONSUMER))
+      .handler(userHandler::getAllCustomRoles);
 
   }
 

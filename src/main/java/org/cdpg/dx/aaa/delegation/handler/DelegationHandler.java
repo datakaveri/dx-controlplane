@@ -170,6 +170,8 @@ public class DelegationHandler {
     body.put(DELEGATOR_ID,delegatorId.toString());
 
     Set<String> delegatorRoles = delegationHandlerValidator.extractRoles(user);
+    body.put("delegator_id", delegatorId);
+
 
     try {
       delegationHandlerValidator.validateCreateDelegationGrantBody(delegatorId, delegatorRoles,body);

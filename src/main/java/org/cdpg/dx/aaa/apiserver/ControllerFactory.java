@@ -75,6 +75,8 @@ import org.cdpg.dx.aaa.summary.factroy.SummaryControllerFactory;
 import org.cdpg.dx.aaa.token.controller.TokenController;
 import org.cdpg.dx.aaa.token.factory.AppTokenControllerFactory;
 import org.cdpg.dx.aaa.token.factory.TokenControllerFactory;
+import org.cdpg.dx.aaa.user.dao.CustomRoleDAO;
+import org.cdpg.dx.aaa.user.dao.impl.CustomRoleDAOImpl;
 import org.cdpg.dx.aaa.user.factory.UserControllerFactory;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.aaa.vote.factory.VoteControllerFactory;
@@ -155,9 +157,10 @@ public class ControllerFactory {
     DelegationService delegationService =
         DelegationControllerFactory.createService(
             pgService, keycloakUserService, organizationService, itemService);
+    CustomRoleDAO customRoleDAO = new CustomRoleDAOImpl(pgService);
     UserService userService =
         UserControllerFactory.createService(
-            keycloakUserService, organizationService, creditService, esService, docUserIndex);
+            keycloakUserService, organizationService, creditService, esService, customRoleDAO,docUserIndex);
 
     AssetHandler assetHandler =
         AssetFactory.createHandler(pgService, itemService, config, emailComposer, urnGenerator);
@@ -298,11 +301,11 @@ public class ControllerFactory {
             dataBrokerService, pgService, urnGenerator, controlPlaneDomain);
     ApiController bookmarksController = BookmarksControllerFactory.create(pgService, urnGenerator);
     ApiController appCredentialsController =
-        AppCredentialsControllerFactory.create(pgService, urnGenerator);
+        AppCredentialsControllerFactory.create(pgService,organizationService,itemService,urnGenerator);
 
     ApiController appTokenController =
         AppTokenControllerFactory.create(
-            pgService, keycloakUserService, urnGenerator, config, vertx);
+            pgService, keycloakUserService, organizationService,itemService,urnGenerator, config, vertx);
 
     SummaryController dashboardSummaryController =
         SummaryControllerFactory.create(pgService, urnGenerator);
