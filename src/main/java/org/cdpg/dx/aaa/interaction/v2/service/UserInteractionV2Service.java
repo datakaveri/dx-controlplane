@@ -3,6 +3,7 @@ package org.cdpg.dx.aaa.interaction.v2.service;
 import io.vertx.core.Future;
 import java.util.UUID;
 
+import org.cdpg.dx.aaa.interaction.v2.model.UserInteractionEnriched;
 import org.cdpg.dx.database.elastic.model.BulkSyncResult;
 import org.cdpg.dx.aaa.interaction.v2.model.InteractionDelta;
 import org.cdpg.dx.aaa.interaction.v2.model.InteractionRow;
