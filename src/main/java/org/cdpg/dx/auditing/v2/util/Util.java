@@ -1,6 +1,5 @@
 package org.cdpg.dx.auditing.v2.util;
 
-import static org.cdpg.dx.aaa.activity.util.ActivityConstants.*;
 import static org.cdpg.dx.auditing.v2.Constant.ActivityApiParamConstants.ALLOWED_FILTER_MAP_FOR_ADMIN_V2;
 import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.ORG_ID;
 
@@ -19,7 +18,7 @@ public class Util {
     String organizationId = user.organisationId();
     Map<String, Object> additionalFilters = null;
     if (roles.contains(DxRole.ORG_ADMIN.getRole())) {
-      additionalFilters = Map.of("orgId", organizationId);
+      additionalFilters = Map.of("org_Id", organizationId);
 
     } else {
       additionalFilters = Map.of();

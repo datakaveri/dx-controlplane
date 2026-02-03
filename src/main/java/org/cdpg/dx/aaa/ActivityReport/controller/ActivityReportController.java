@@ -1,6 +1,8 @@
 package org.cdpg.dx.aaa.ActivityReport.controller;
 
-import static org.cdpg.dx.aaa.activity.util.ActivityConstants.*;
+import static org.cdpg.dx.auditing.v2.Constant.ActivityApiParamConstants.*;
+import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.CREATED_AT;
+import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.USER_ID;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_FIELD;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
@@ -14,9 +16,8 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.ActivityReport.service.ActivityReportService;
-import org.cdpg.dx.aaa.activity.util.ActivityConstants;
-import org.cdpg.dx.aaa.activity.util.Util;
 import org.cdpg.dx.aaa.apiserver.ApiController;
+import org.cdpg.dx.auditing.v2.util.Util;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.model.DxUser;
@@ -59,21 +60,23 @@ public class ActivityReportController implements ApiController {
         .setChunked(true);
 
     DxUser user = RoutingContextHelper.fromPrincipal(routingContext);
+    Map<String, String> allowedFilters = Util.getAllowedFilterMapForAdmin(user);
+    Map<String, Object> additionalFilter = Util.getAdditionalFilters(user);
 
-    Map<String, Object> additionalFilters = Util.getAdditionalFilters(user);
-    Map<String, String> allowedFilterMap = Util.getAllowedFilterMapForAdmin(user);
+    LOGGER.info("Allowed Filters for admin: {}", allowedFilters);
 
     PaginatedRequest request =
         PaginationRequestBuilder.from(routingContext)
-            .allowedFiltersDbMap(allowedFilterMap)
-            .additionalFilters(additionalFilters)
+            .allowedFiltersDbMap(allowedFilters)
+            .additionalFilters(additionalFilter)
+            .apiToDbMap(API_TO_DB_FIELD_MAP_V2)
             .allowedTimeFields(Set.of(CREATED_AT))
             .defaultTimeField(CREATED_AT)
             .defaultSort(DEFAULT_SORTING_FIELD, DEFAULT_SORTING_ORDER)
-            .allowedSortFields(ActivityConstants.ALLOWED_SORT_FIELDS)
+            .allowedSortFields(ALLOWED_SORT_FIELDS_V2)
             .build();
+    LOGGER.debug("PaginatedRequest created for handleGetAllActivityLogsForAdmin:  {}", request);
 
-    LOGGER.info("PaginatedRequest created for handleGetAllActivityLogsForAdmin:  {}", request);
     reportService
         .streamAdminCsvBatched(request)
         .onSuccess(
@@ -109,17 +112,18 @@ public class ActivityReportController implements ApiController {
         .setChunked(true);
 
     User user = routingContext.user();
-    Map<String, Object> additionalFilters =
-        Map.of("user_id", user.subject(), "myactivity_enabled", true);
+
+    Map<String, Object> additionalFilters = Map.of(USER_ID, user.subject());
 
     PaginatedRequest request =
         PaginationRequestBuilder.from(routingContext)
-            .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_USER)
+            .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_CONSUMER_V2)
             .additionalFilters(additionalFilters)
+            .apiToDbMap(API_TO_DB_FIELD_MAP_V2)
             .allowedTimeFields(Set.of(CREATED_AT))
             .defaultTimeField(CREATED_AT)
             .defaultSort(DEFAULT_SORTING_FIELD, DEFAULT_SORTING_ORDER)
-            .allowedSortFields(ActivityConstants.ALLOWED_SORT_FIELDS)
+            .allowedSortFields(ALLOWED_SORT_FIELDS_V2)
             .build();
 
     reportService

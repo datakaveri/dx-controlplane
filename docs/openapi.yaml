@@ -8485,7 +8485,7 @@ paths:
         - authorization: [ ]
       description: >
         Retrieve a list of activity logs for the authenticated DX user.
-        This endpoint allows users to view their own activity and filter logs based on <b>assetType</b>, <b>operation</b> and a specified time range (time, endtime).
+        This endpoint allows users to view their own activity and filter logs based on <b>assetType</b>, <b>action</b>, <b>logType</b> a specified time range (time, endtime) and etc.
         Pagination is supported for large result sets.
       parameters:
         - $ref: '#/components/parameters/AssetTypeParam'
@@ -8534,7 +8534,7 @@ paths:
         - lang: cURL
           label: Fetch Admin Activity Logs
           source: |
-            curl --location 'https://${HOSTNAME}/dx/auditing/consumer/activity?starttime=2025-04-24T16%3A07%3A54.00&endtime=2025-06-24T16%3A07%3A54.00&page=1&size=1' \
+            curl --location 'https://${HOSTNAME}/iudx/v2/auditing/consumer/activity?page=1&size=10' \
             --header 'Authorization: Bearer <your-token>'
 
 
@@ -8547,8 +8547,8 @@ paths:
         - authorization: [ ]
       summary: Admin Activity
       description: >
-        Retrieve a list of activity logs for DX users.
-        This endpoint allows filtering activity logs based on <b>userId</b>,<b>assetType</b>, <b>operation</b> and a specified time range (time, endtime).
+        **Platform admins** (`cos_admin`) can access all activity logs, while **organization admins** (`cos_org`) can access logs only for their own organization.
+        This endpoint also allows filtering activity logs based on <b>userId</b>,<b>assetType</b>, <b>action</b> and a specified time range (time, endtime).
         Use this API to get detailed audit records for administrative purposes, including pagination support for large result sets.</br>
       parameters:
         - $ref: '#/components/parameters/UserIdParam'
@@ -8598,7 +8598,7 @@ paths:
         - lang: cURL
           label: Fetch Admin Activity Logs
           source: |
-            curl --location 'https://${HOSTNAME}/dx/auditing/admin/activity?starttime=2025-05-24T16%3A07%3A54.00&endtime=2025-06-24T16%3A07%3A54.00&page=1&size=1' \
+            curl --location 'https://${HOSTNAME}/iudx/v2/auditing/admin/activity?page=1&size=10' \
             --header 'Authorization: Bearer <your-token>'
 
 
@@ -8661,7 +8661,7 @@ paths:
         - lang: cURL
           label: Admin Csv Activity Logs
           source: |
-            curl --location 'https://${HOSTNAME}/dx/auditing/reportactivity/admin' \
+            curl --location 'https://${HOSTNAME}//iudx/v2/auditing/reportactivity/admin?page=1&size=10' \
             --header 'Authorization: Bearer <your-token>'
 
 
@@ -8719,7 +8719,7 @@ paths:
         - lang: cURL
           label: Admin Csv Activity Logs
           source: |
-            curl --location 'https://${HOSTNAME}/dx/auditing/reportactivity/consumer' \
+            curl --location 'https://${HOSTNAME}/iudx/v2/auditing/reportactivity/consumer?page=1&size=10' \
             --header 'Authorization: Bearer <your-token>'
 
 
@@ -17372,46 +17372,162 @@ components:
         id:
           type: string
           format: uuid
-          example: 4c9d066a-e2f7-46fd-a580-718d35f649bc
-        assetName:
-          type: string
-          example: AiSandBoxAiModelPrivate
-        assetType:
-          type: string
-          example: adex:AiModel
-        operation:
-          type: string
-          example: VIEWED
-        createdAt:
-          type: string
-          format: date-time
-          example: 2025-05-30T15:37:20.237353
-        assetId:
-          type: string
-          format: uuid
-          example: 0e889bb0-38f8-496c-ba85-02845ff5cf67
-        api:
-          type: string
-          example: /iudx/cat/v2/item
-        method:
-          type: string
-          example: POST
-        size:
-          type: integer
-          example: 0
-        role:
-          type: string
-          example: consumer
+          example: 7751ca4f-d7fb-40c6-9a48-de3f6e32c140
+
+        # -------------------
+        # User context
+        # -------------------
         userId:
           type: string
           format: uuid
-          example: e0782a4e-3bdb-43e3-be8c-7beafb89efd9
+          example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+
+        userName:
+          type: string
+          example: nivosat nivosat
+
+        role:
+          type: string
+          example: org_admin
+
+        orgId:
+          type: string
+          format: uuid
+          example: 2accd360-d791-4364-b18b-530b1b148cb9
+
+        orgName:
+          type: string
+          example: TestOrg1
+
+        orgType:
+          type: string
+          example: PUBLIC
+
+        # -------------------
+        # API metadata
+        # -------------------
+        api:
+          type: string
+          example: /iudx/v2/cat/item
+
+        method:
+          type: string
+          example: GET
+
+        action:
+          type: string
+          description: Audit operation (camel case)
+          example: View
+
         originServer:
           type: string
-          example: Catalogue
-        myactivityEnabled:
-          type: boolean
-          example: true
+          example: CATALOGUE
+
+        issuer:
+          type: string
+          example: https://v2.dev.keycloak.iudx.io/auth/realms/iudx-v2
+
+        # -------------------
+        # Asset context
+        # -------------------
+        assetId:
+          type: string
+          format: uuid
+          example: 19e3f6d6-4f93-4718-8395-2d76c13d60a5
+
+        assetName:
+          type: string
+          example: Traffic Density Databank
+
+        assetShortDescription:
+          type: string
+          example: Traffic sensor data for city roads
+
+        assetType:
+          type: string
+          example: DATABANK
+
+        assetAccessPolicy:
+          type: string
+          example: OPEN
+
+        assetOrgId:
+          type: string
+          format: uuid
+          example: 2accd360-d791-4364-b18b-530b1b148cb9
+
+        assetOrgName:
+          type: string
+          example: TestOrg1
+
+        assetOrgType:
+          type: string
+          example: PUBLIC
+
+        assetProviderId:
+          type: string
+          format: uuid
+          example: 64cb5154-6f8c-40ff-891f-baee2aac8b85
+
+        assetProviderName:
+          type: string
+          example: Org Admin
+
+        # -------------------
+        # Metrics / size
+        # -------------------
+        sizeBytes:
+          type: integer
+          format: int64
+          example: 10240
+
+        amount:
+          type: number
+          format: decimal
+          example: 12.50
+
+        # -------------------
+        # Classification
+        # -------------------
+        logType:
+          type: string
+          example: ASSET
+
+        requestId:
+          type: string
+          format: uuid
+          example: a3f3cbb4-6d79-4bfa-b9d6-3b7b0d1bbd55
+
+        # -------------------
+        # Technical metadata
+        # -------------------
+        ipAddress:
+          type: string
+          example: 0:0:0:0:0:0:0:1
+
+        userAgent:
+          type: string
+          example: Mozilla/5.0 (X11; Ubuntu; Linux x86_64)
+
+        # -------------------
+        # Time
+        # -------------------
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-01-31T03:13:20.123
+
+        # -------------------
+        # Extensible context
+        # -------------------
+        #context:
+         # type: object
+          #additionalProperties: true
+          #example:
+           # via: ui
+            #page: 1
+            #size: 10
+
     PageInfo:
       type: object
       properties:

@@ -4,13 +4,7 @@ import io.vertx.ext.web.RoutingContext;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.activity.model.ActivityAuditLogEntity;
-
-import org.cdpg.dx.aaa.activity.service.ActivityLogService;
-
-import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
-import org.cdpg.dx.auditing.v2.service.UserActivityAuditLogService;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 

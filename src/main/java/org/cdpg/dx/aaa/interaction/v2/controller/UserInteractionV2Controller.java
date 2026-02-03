@@ -1,9 +1,7 @@
 package org.cdpg.dx.aaa.interaction.v2.controller;
 
-import static org.cdpg.dx.aaa.activity.util.ActivityConstants.CREATED_AT;
-import static org.cdpg.dx.aaa.apiserver.OperationIds.OP_GET_USER_INTERACTIONS;
-import static org.cdpg.dx.aaa.apiserver.OperationIds.OP_POST_USER_INTERACTION;
-import static org.cdpg.dx.aaa.apiserver.OperationIds.OP_SYNC_INTERACTION_METRICS;
+import static org.cdpg.dx.aaa.apiserver.OperationIds.*;
+import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.CREATED_AT;
 
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
@@ -32,6 +30,8 @@ public class UserInteractionV2Controller implements ApiController {
   Handler<RoutingContext> syncInteractionMetricAccessHandler =
       AuthorizationHandler.forRoles(DxRole.COS_ADMIN);
 
+  Handler<RoutingContext> interactionAccessHandler = AuthorizationHandler.forRoles(DxRole.CONSUMER);
+
   public UserInteractionV2Controller(UserInteractionV2Service service, URNGenerator urnGenerator) {
     this.service = service;
     this.urnGenerator = urnGenerator;
@@ -40,8 +40,14 @@ public class UserInteractionV2Controller implements ApiController {
   @Override
   public void register(RouterBuilder builder) {
     LOGGER.info("Registering UserInteractionController routes");
-    builder.operation(OP_POST_USER_INTERACTION).handler(this::handlePostUserInteractionRequest);
-    builder.operation(OP_GET_USER_INTERACTIONS).handler(this::handleGetUserInteractionRequest);
+    builder
+        .operation(OP_POST_USER_INTERACTION)
+        .handler(interactionAccessHandler)
+        .handler(this::handlePostUserInteractionRequest);
+    builder
+        .operation(OP_GET_USER_INTERACTIONS)
+        .handler(interactionAccessHandler)
+        .handler(this::handleGetUserInteractionRequest);
     builder
         .operation(OP_SYNC_INTERACTION_METRICS)
         .handler(syncInteractionMetricAccessHandler)
@@ -49,6 +55,7 @@ public class UserInteractionV2Controller implements ApiController {
   }
 
   private void handlePostUserInteractionRequest(RoutingContext ctx) {
+    LOGGER.info("handlePostUserInteractionRequest() method started");
     try {
       UserInteractionV2Request req =
           ctx.body().asJsonObject().mapTo(UserInteractionV2Request.class);
@@ -105,19 +112,20 @@ public class UserInteractionV2Controller implements ApiController {
     LOGGER.info("GET /user/interactions/sync called");
 
     try {
-      service.syncInteractionMetrics()
-          .onSuccess(result ->
-              ResponseBuilder.sendSuccess(
-                  ctx,
-                  "Interaction metrics synced successfully",
-                  result.toJson(),
-                  urnGenerator
-              )
-          )
-          .onFailure(err -> {
-            LOGGER.error("Failed to sync interaction metrics", err);
-            ctx.fail(err);
-          });
+      service
+          .syncInteractionMetrics()
+          .onSuccess(
+              result ->
+                  ResponseBuilder.sendSuccess(
+                      ctx,
+                      "Interaction metrics synced successfully",
+                      result.toJson(),
+                      urnGenerator))
+          .onFailure(
+              err -> {
+                LOGGER.error("Failed to sync interaction metrics", err);
+                ctx.fail(err);
+              });
     } catch (Exception e) {
       LOGGER.error("Invalid GET /user/interactions/sync request:  {} ", e.getMessage(), e);
       ctx.fail(e);

@@ -1,9 +1,10 @@
 package org.cdpg.dx.aaa.interaction.controller;
 
-import static org.cdpg.dx.aaa.activity.util.ActivityConstants.CREATED_AT;
 import static org.cdpg.dx.aaa.apiserver.OperationIds.OP_GET_USER_INTERACTIONS;
 import static org.cdpg.dx.aaa.apiserver.OperationIds.OP_POST_USER_INTERACTION;
 import static org.cdpg.dx.aaa.apiserver.OperationIds.OP_SYNC_INTERACTION_METRICS;
+
+import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.CREATED_AT;
 
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
@@ -126,5 +127,4 @@ public class UserInteractionController implements ApiController {
       ctx.fail(e);
     }
   }
-
 }
