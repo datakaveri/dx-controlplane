@@ -42,6 +42,6 @@ public interface ItemService {
             UUID entityId,
             String metricField,
             int delta
-    )
+    );
     Future<BulkSyncResult> bulkSyncMetrics(List<InteractionAggregate> aggregates);
 }

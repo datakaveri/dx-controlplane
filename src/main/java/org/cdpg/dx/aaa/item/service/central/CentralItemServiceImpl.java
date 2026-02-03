@@ -74,14 +74,16 @@ public class CentralItemServiceImpl implements ItemService {
   CentralElasticsearchService centralElasticsearchService;
   QueryDecoder queryDecoder = new QueryDecoder();
 
-  public CentralItemServiceImpl(CentralElasticsearchService centralElasticsearchService,
-                         KeycloakUserService keycloakUserService,
-                         PolicyDao policyDao,
-                         WebClient webClient, String docIndex, String apdURL) {
+  public CentralItemServiceImpl(
+      CentralElasticsearchService centralElasticsearchService,
+      KeycloakUserService keycloakUserService,
+      PolicyDao policyDao,
+      WebClient webClient,
+      String docIndex,
+      String apdURL) {
     this.centralElasticsearchService = centralElasticsearchService;
     PolicyService policyService = new PolicyServiceImpl(this, policyDao, apdURL);
-    this.policyVerifyService = new PolicyVerifyServiceImpl(policyService, webClient,
-        apdURL);
+    this.policyVerifyService = new PolicyVerifyServiceImpl(policyService, webClient, apdURL);
     this.keycloakUserService = keycloakUserService;
     this.client = webClient;
     this.docIndex = docIndex;
@@ -127,26 +129,28 @@ public class CentralItemServiceImpl implements ItemService {
 
     LOGGER.debug("Retrieving item with ID: {}", queryModel.toJson());
 
-    Future<ElasticsearchResponse> elResponse = centralElasticsearchService
-        .getSingleDocument(docIndex, queryModel.getQueries());
+    Future<ElasticsearchResponse> elResponse =
+        centralElasticsearchService.getSingleDocument(docIndex, queryModel.getQueries());
 
-    return elResponse.compose(elasticResponse -> {
-      int totalHits = ElasticsearchResponse.getTotalHits();
-      if (totalHits == 0) {
-        LOGGER.warn("Item with ID {} does not exist", request.getItemId());
-        ResponseModel responseModel = new ResponseModel(List.of(elasticResponse));
-        responseModel.setTotalHits(totalHits);
-        return Future.succeededFuture(responseModel);
-      }
+    return elResponse.compose(
+        elasticResponse -> {
+          int totalHits = ElasticsearchResponse.getTotalHits();
+          if (totalHits == 0) {
+            LOGGER.warn("Item with ID {} does not exist", request.getItemId());
+            ResponseModel responseModel = new ResponseModel(List.of(elasticResponse));
+            responseModel.setTotalHits(totalHits);
+            return Future.succeededFuture(responseModel);
+          }
 
-      JsonObject source = elasticResponse.getSource();
-      String accessPolicy = source.getString(ACCESS_POLICY);
-      String ownerUserId = source.getString(PROVIDER_USER_ID);
-      if (accessPolicy.equalsIgnoreCase(PRIVATE)) {
-        return getResponseWhenResourceIsPrivate(ownerUserId, request, elasticResponse, totalHits);
-      }
-      return getResponseWhenResourceIsPublic(accessPolicy, totalHits, elasticResponse);
-    });
+          JsonObject source = elasticResponse.getSource();
+          String accessPolicy = source.getString(ACCESS_POLICY);
+          String ownerUserId = source.getString(PROVIDER_USER_ID);
+          if (accessPolicy.equalsIgnoreCase(PRIVATE)) {
+            return getResponseWhenResourceIsPrivate(
+                ownerUserId, request, elasticResponse, totalHits);
+          }
+          return getResponseWhenResourceIsPublic(accessPolicy, totalHits, elasticResponse);
+        });
   }
 
   @Override
@@ -156,35 +160,36 @@ public class CentralItemServiceImpl implements ItemService {
 
     LOGGER.debug("Retrieving item with ID: {}", queryModel.toJson());
 
-    Future<ElasticsearchResponse> elResponse = centralElasticsearchService
-        .getSingleDocument(docIndex, queryModel.getQueries());
+    Future<ElasticsearchResponse> elResponse =
+        centralElasticsearchService.getSingleDocument(docIndex, queryModel.getQueries());
 
-    return elResponse.compose(elasticResponse -> {
-      int totalHits = ElasticsearchResponse.getTotalHits();
-      if (totalHits == 0) {
-        LOGGER.warn("Item with ID {} does not exist", request.getItemId());
-        ResponseModel responseModel = new ResponseModel(List.of(elasticResponse));
-        responseModel.setTotalHits(totalHits);
-        return Future.succeededFuture(responseModel);
-      }
+    return elResponse.compose(
+        elasticResponse -> {
+          int totalHits = ElasticsearchResponse.getTotalHits();
+          if (totalHits == 0) {
+            LOGGER.warn("Item with ID {} does not exist", request.getItemId());
+            ResponseModel responseModel = new ResponseModel(List.of(elasticResponse));
+            responseModel.setTotalHits(totalHits);
+            return Future.succeededFuture(responseModel);
+          }
 
-      JsonObject source = elasticResponse.getSource();
-      String accessPolicy = source.getString(ACCESS_POLICY);
-      String ownerUserId = source.getString(PROVIDER_USER_ID);
-      if (accessPolicy.equalsIgnoreCase(PRIVATE)) {
-        return getResponseWhenResourceIsPrivate(ownerUserId, request, elasticResponse, totalHits);
-      } else if (accessPolicy.equalsIgnoreCase(RESTRICTED) || accessPolicy.equalsIgnoreCase(PII)) {
-        return getResponseWhenResourceIsRestricted(ownerUserId, request, totalHits,
-            elasticResponse);
-      }
-      return getResponseWhenResourceIsPublic(accessPolicy, totalHits, elasticResponse);
-    });
+          JsonObject source = elasticResponse.getSource();
+          String accessPolicy = source.getString(ACCESS_POLICY);
+          String ownerUserId = source.getString(PROVIDER_USER_ID);
+          if (accessPolicy.equalsIgnoreCase(PRIVATE)) {
+            return getResponseWhenResourceIsPrivate(
+                ownerUserId, request, elasticResponse, totalHits);
+          } else if (accessPolicy.equalsIgnoreCase(RESTRICTED)
+              || accessPolicy.equalsIgnoreCase(PII)) {
+            return getResponseWhenResourceIsRestricted(
+                ownerUserId, request, totalHits, elasticResponse);
+          }
+          return getResponseWhenResourceIsPublic(accessPolicy, totalHits, elasticResponse);
+        });
   }
 
-  public Future<ResponseModel> getResponseWhenResourceIsPrivate(String ownerUserId,
-                                                                GetItemRequest request,
-                                                                ElasticsearchResponse response,
-                                                                int totalHits) {
+  public Future<ResponseModel> getResponseWhenResourceIsPrivate(
+      String ownerUserId, GetItemRequest request, ElasticsearchResponse response, int totalHits) {
     if (request.getSubId() == null || request.getSubId().isEmpty()) {
       LOGGER.warn("Private item access denied: Missing token (subId is null/empty)");
       return Future.failedFuture(
@@ -203,9 +208,10 @@ public class CentralItemServiceImpl implements ItemService {
 
   private boolean ownershipCheck(String ownerUserId, String subId, List<String> roles) {
     // Allow admin roles to bypass ownership restrictions
-    if (roles != null && roles.stream().anyMatch(
-        role -> role.equalsIgnoreCase(COS_ADMIN) ||
-            role.equalsIgnoreCase(ORG_ADMIN))) {
+    if (roles != null
+        && roles.stream()
+            .anyMatch(
+                role -> role.equalsIgnoreCase(COS_ADMIN) || role.equalsIgnoreCase(ORG_ADMIN))) {
       LOGGER.info("Ownership check bypassed for admin role(s):");
       return true;
     }
@@ -221,19 +227,17 @@ public class CentralItemServiceImpl implements ItemService {
     return true;
   }
 
-  public Future<ResponseModel> getResponseWhenResourceIsPublic(String accessPolicy, int totalHits
-      , ElasticsearchResponse response) {
-    LOGGER.info("Ownership and access check not required for access policy " +
-        "'{}'", accessPolicy);
+  public Future<ResponseModel> getResponseWhenResourceIsPublic(
+      String accessPolicy, int totalHits, ElasticsearchResponse response) {
+    LOGGER.info(
+        "Ownership and access check not required for access policy " + "'{}'", accessPolicy);
     ResponseModel responseModel = new ResponseModel(List.of(response), 1, 1);
     responseModel.setTotalHits(totalHits);
     return Future.succeededFuture(responseModel);
   }
 
-  public Future<ResponseModel> getResponseWhenResourceIsRestricted(String ownerUserId,
-                                                                   GetItemRequest request,
-                                                                   int totalHits,
-                                                                   ElasticsearchResponse response) {
+  public Future<ResponseModel> getResponseWhenResourceIsRestricted(
+      String ownerUserId, GetItemRequest request, int totalHits, ElasticsearchResponse response) {
     String subId = request.getSubId();
     String did = request.getDid();
     if (subId == null || subId.isEmpty()) {
@@ -244,8 +248,10 @@ public class CentralItemServiceImpl implements ItemService {
 
     // Allow the owner direct access
     if (subId.equalsIgnoreCase(ownerUserId)) {
-      LOGGER.debug("Restricted item access granted: User {} is the owner of item {}",
-          subId, request.getItemId());
+      LOGGER.debug(
+          "Restricted item access granted: User {} is the owner of item {}",
+          subId,
+          request.getItemId());
       ResponseModel responseModel = new ResponseModel(List.of(response), 1, 1);
       responseModel.setTotalHits(totalHits);
       return Future.succeededFuture(responseModel);
@@ -279,47 +285,69 @@ public class CentralItemServiceImpl implements ItemService {
     Future<DxUser> ownerFut = keycloakUserService.getUserById(UUID.fromString(ownerUserId));
 
     Future<DxUser> delegatorFut =
-        (did != null) ? keycloakUserService.getUserById(UUID.fromString(did))
+        (did != null)
+            ? keycloakUserService.getUserById(UUID.fromString(did))
             : Future.succeededFuture(null);
 
-    return Future.all(subFut, ownerFut, delegatorFut).compose(v -> {
-      DxUser requester = subFut.result();
-      DxUser owner = ownerFut.result();
-      DxUser delegator = delegatorFut.result();
+    return Future.all(subFut, ownerFut, delegatorFut)
+        .compose(
+            v -> {
+              DxUser requester = subFut.result();
+              DxUser owner = ownerFut.result();
+              DxUser delegator = delegatorFut.result();
 
-      Future<ResponseModel> verificationChain;
+              Future<ResponseModel> verificationChain;
 
-      if (did != null) {
-        verificationChain =
-            policyVerifyService.verify(apdUrl, delegator, owner, request.getItemId(),
-                    finalItemType, request.getToken())
-                .compose(dto -> completePolicySuccess(dto, response, totalHits))
-                .recover(err -> {
-                  LOGGER.info("Delegator {} not authorized, trying requester {}", did, subId);
-                  return policyVerifyService.verify(apdUrl, requester, owner, request.getItemId(),
-                          finalItemType, request.getToken())
-                      .compose(dto -> completePolicySuccess(dto, response, totalHits));
-                });
+              if (did != null) {
+                verificationChain =
+                    policyVerifyService
+                        .verify(
+                            apdUrl,
+                            delegator,
+                            owner,
+                            request.getItemId(),
+                            finalItemType,
+                            request.getToken())
+                        .compose(dto -> completePolicySuccess(dto, response, totalHits))
+                        .recover(
+                            err -> {
+                              LOGGER.info(
+                                  "Delegator {} not authorized, trying requester {}", did, subId);
+                              return policyVerifyService
+                                  .verify(
+                                      apdUrl,
+                                      requester,
+                                      owner,
+                                      request.getItemId(),
+                                      finalItemType,
+                                      request.getToken())
+                                  .compose(dto -> completePolicySuccess(dto, response, totalHits));
+                            });
 
-      } else {
-        verificationChain =
-            policyVerifyService.verify(apdUrl, requester, owner, request.getItemId(),
-                    finalItemType, request.getToken())
-                .compose(dto -> completePolicySuccess(dto, response, totalHits));
-      }
+              } else {
+                verificationChain =
+                    policyVerifyService
+                        .verify(
+                            apdUrl,
+                            requester,
+                            owner,
+                            request.getItemId(),
+                            finalItemType,
+                            request.getToken())
+                        .compose(dto -> completePolicySuccess(dto, response, totalHits));
+              }
 
-      // Final fallback — ensure requester failure becomes 403
-      return verificationChain.recover(err -> {
-        LOGGER.error("Final policy verification failed: {}", err.getMessage());
-        return Future.failedFuture(
-            new DxForbiddenException(err.getLocalizedMessage()));
-      });
-    });
+              // Final fallback — ensure requester failure becomes 403
+              return verificationChain.recover(
+                  err -> {
+                    LOGGER.error("Final policy verification failed: {}", err.getMessage());
+                    return Future.failedFuture(new DxForbiddenException(err.getLocalizedMessage()));
+                  });
+            });
   }
 
-  private Future<ResponseModel> completePolicySuccess(VerifyPolicyDto dto,
-                                                      ElasticsearchResponse response,
-                                                      int totalHits) {
+  private Future<ResponseModel> completePolicySuccess(
+      VerifyPolicyDto dto, ElasticsearchResponse response, int totalHits) {
 
     JsonObject item = response.getSource();
     item.put("cons", dto.getConstraints());
@@ -328,7 +356,6 @@ public class CentralItemServiceImpl implements ItemService {
 
     return succeededResponse(response, totalHits);
   }
-
 
   // --- Helpers ---
   private Future<ResponseModel> succeededResponse(ElasticsearchResponse response, int totalHits) {
@@ -351,11 +378,13 @@ public class CentralItemServiceImpl implements ItemService {
     if (roles.contains(COS_ADMIN)) {
       queryModel = queryDecoder.getItemIdQueryModel(patchItemRequest.getItemId());
     } else if (roles.contains(ORG_ADMIN)) {
-      queryModel = queryDecoder.getItemIdOrgIdQueryModel(patchItemRequest.getItemId(),
-          patchItemRequest.getOrgId());
+      queryModel =
+          queryDecoder.getItemIdOrgIdQueryModel(
+              patchItemRequest.getItemId(), patchItemRequest.getOrgId());
     } else if (roles.contains(PROVIDER)) {
-      queryModel = queryDecoder.getItemIdOwnerIdQueryModel(patchItemRequest.getItemId(),
-          patchItemRequest.getUserId());
+      queryModel =
+          queryDecoder.getItemIdOwnerIdQueryModel(
+              patchItemRequest.getItemId(), patchItemRequest.getUserId());
       // Provider restriction: only allow 'dataUploadStatus'
       JsonObject patchBody = patchItemRequest.getRequestBody();
       if (!patchBody.containsKey("dataUploadStatus") || patchBody.size() != 1) {
@@ -384,8 +413,11 @@ public class CentralItemServiceImpl implements ItemService {
                   errorMsg = "Item not found or access denied";
                 }
 
-                LOGGER.debug("Item with ID {} not found for update. Role: {}, message: {}",
-                    id, roles, errorMsg);
+                LOGGER.debug(
+                    "Item with ID {} not found for update. Role: {}, message: {}",
+                    id,
+                    roles,
+                    errorMsg);
                 promise.fail(new DxBadRequestException(errorMsg));
               } else {
                 LOGGER.debug("Update item with ID: {}", id);
@@ -393,7 +425,8 @@ public class CentralItemServiceImpl implements ItemService {
                 LOGGER.debug("Result {}", result.getSource());
                 QueryModel patchQueryModel = new QueryModel();
                 patchQueryModel.createQueryModelFromDocument(patchItemRequest.getRequestBody());
-                centralElasticsearchService.updateDocument(docIndex, docId, patchQueryModel)
+                centralElasticsearchService
+                    .updateDocument(docIndex, docId, patchQueryModel)
                     .onSuccess(
                         v -> {
                           LOGGER.debug("Item with ID {} updated successfully", id);
@@ -402,18 +435,16 @@ public class CentralItemServiceImpl implements ItemService {
                     .onFailure(
                         failure -> {
                           LOGGER.error(
-                              "Failed to update item with ID {}: {}",
-                              id,
-                              failure.getMessage());
-                          promise.fail(new DxBadRequestException(
-                              "Failed to update item: " + failure.getMessage()));
+                              "Failed to update item with ID {}: {}", id, failure.getMessage());
+                          promise.fail(
+                              new DxBadRequestException(
+                                  "Failed to update item: " + failure.getMessage()));
                         });
               }
             })
         .onFailure(promise::fail);
 
     return promise.future();
-
   }
 
   @Override
@@ -456,7 +487,8 @@ public class CentralItemServiceImpl implements ItemService {
                     new DxConflictException("Item has associated entities and cannot be deleted"));
               } else if (ElasticsearchResponse.getTotalHits() < 1) {
                 LOGGER.debug("Item with ID {} not found for deletion in central cat", id);
-                promise.fail(new DxNotFoundException("Item not found for deletion in central catalogue"));
+                promise.fail(
+                    new DxNotFoundException("Item not found for deletion in central catalogue"));
               } else {
                 LOGGER.debug("Deleting item with ID: {}", id);
                 String docId = result.getDocId();
@@ -557,24 +589,30 @@ public class CentralItemServiceImpl implements ItemService {
     }
 
     QueryModel termQuery = new QueryModel(QueryType.TERM);
-    termQuery.setQueryParameters(Map.of(
-        FIELD, ID_KEYWORD,
-        VALUE, itemId
-    ));
+    termQuery.setQueryParameters(
+        Map.of(
+            FIELD, ID_KEYWORD,
+            VALUE, itemId));
 
     return centralElasticsearchService
         .getSingleDocument(docIndex, termQuery)
         .map(res -> ElasticsearchResponse.getTotalHits() > 0)
-        .recover(err -> {
-          LOGGER.error("Central existence check failed for ID {}: {}", itemId, err.getMessage());
-          return Future.failedFuture("Failed to check central catalogue existence");
-        });
+        .recover(
+            err -> {
+              LOGGER.error(
+                  "Central existence check failed for ID {}: {}", itemId, err.getMessage());
+              return Future.failedFuture("Failed to check central catalogue existence");
+            });
   }
+
   @Override
-  public Future<Void> ownerShipTransfer(String oldOwnerId, String newOwnerId,
-                                        String organizationId) {
-    LOGGER.debug("Starting ownership transfer from {} to {} in organization {}",
-        oldOwnerId, newOwnerId, organizationId);
+  public Future<Void> ownerShipTransfer(
+      String oldOwnerId, String newOwnerId, String organizationId) {
+    LOGGER.debug(
+        "Starting ownership transfer from {} to {} in organization {}",
+        oldOwnerId,
+        newOwnerId,
+        organizationId);
 
     if (isNullOrEmpty(oldOwnerId)) {
       String errorMsg = "Old owner ID cannot be null or empty";
@@ -603,24 +641,34 @@ public class CentralItemServiceImpl implements ItemService {
     try {
       QueryModel ownerShipTransferQuery =
           queryDecoder.ownerShipTransferQuery(oldOwnerId, newOwnerId, organizationId);
-      LOGGER.debug("Query for ownership transfer: {}",
-          ownerShipTransferQuery.getQueries().toJson());
-      return centralElasticsearchService.updateDocumentsByQuery(ownerShipTransferQuery.getQueries(),
-              docIndex)
+      LOGGER.debug(
+          "Query for ownership transfer: {}", ownerShipTransferQuery.getQueries().toJson());
+      return centralElasticsearchService
+          .updateDocumentsByQuery(ownerShipTransferQuery.getQueries(), docIndex)
           .onSuccess(
-              result -> LOGGER.debug("Ownership transfer from {} to {} completed successfully",
-                  oldOwnerId, newOwnerId))
-          .onFailure(failure -> {
-            LOGGER.error("Ownership transfer from {} to {} failed: {}",
-                oldOwnerId, newOwnerId, failure.getMessage());
-            Future.failedFuture("Ownership transfer failed: " + failure.getMessage());
-          })
+              result ->
+                  LOGGER.debug(
+                      "Ownership transfer from {} to {} completed successfully",
+                      oldOwnerId,
+                      newOwnerId))
+          .onFailure(
+              failure -> {
+                LOGGER.error(
+                    "Ownership transfer from {} to {} failed: {}",
+                    oldOwnerId,
+                    newOwnerId,
+                    failure.getMessage());
+                Future.failedFuture("Ownership transfer failed: " + failure.getMessage());
+              })
           .mapEmpty();
 
     } catch (Exception e) {
       LOGGER.error(
           "Failed to create ownership transfer query for oldOwner: {}, newOwner: {}, org: {}",
-          oldOwnerId, newOwnerId, organizationId, e);
+          oldOwnerId,
+          newOwnerId,
+          organizationId,
+          e);
       return Future.failedFuture("Failed to create ownership transfer query: " + e.getMessage());
     }
   }
@@ -630,84 +678,65 @@ public class CentralItemServiceImpl implements ItemService {
   }
 
   @Override
-  public Future<List<AssetRequestResponse>> enrichWithAssetInfo(
-    List<AssetRequest> assetRequests
-  ) {
+  public Future<List<AssetRequestResponse>> enrichWithAssetInfo(List<AssetRequest> assetRequests) {
 
     List<Future<AssetRequestResponse>> typedFutures =
-      assetRequests.stream()
-        .map(assetRequest -> {
+        assetRequests.stream()
+            .map(
+                assetRequest -> {
+                  GetItemRequest itemRequest =
+                      new GetItemRequest(
+                          assetRequest.assetId().toString(), assetRequest.userId().toString());
 
-          GetItemRequest itemRequest =
-            new GetItemRequest(
-              assetRequest.assetId().toString(),
-              assetRequest.userId().toString()
-            );
+                  return getItem(itemRequest)
+                      .map(
+                          response -> {
+                            if (response == null) {
+                              return new AssetRequestResponse(assetRequest, null, null, null);
+                            }
 
-          return getItem(itemRequest)
-            .map(response -> {
-              if (response == null) {
-                return new AssetRequestResponse(assetRequest, null, null, null);
-              }
+                            JsonObject item = response.getResponse();
 
-              JsonObject item = response.getResponse();
+                            String itemName = item.getString("name");
+                            String accessPolicy = item.getString("accessPolicy");
 
-              String itemName = item.getString("name");
-              String accessPolicy = item.getString("accessPolicy");
+                            JsonArray typeArray = item.getJsonArray("type");
+                            String type =
+                                (typeArray != null && !typeArray.isEmpty())
+                                    ? typeArray.getString(0)
+                                    : null;
 
-              JsonArray typeArray = item.getJsonArray("type");
-              String type =
-                (typeArray != null && !typeArray.isEmpty())
-                  ? typeArray.getString(0)
-                  : null;
-
-              return new AssetRequestResponse(
-                assetRequest,
-                itemName,
-                accessPolicy,
-                type
-              );
-            })
-            .recover(err ->
-              Future.succeededFuture(
-                new AssetRequestResponse(assetRequest, null, null, null)
-              )
-            );
-        })
-        .toList();
+                            return new AssetRequestResponse(
+                                assetRequest, itemName, accessPolicy, type);
+                          })
+                      .recover(
+                          err ->
+                              Future.succeededFuture(
+                                  new AssetRequestResponse(assetRequest, null, null, null)));
+                })
+            .toList();
 
     // CompositeFuture requires List<Future>
     List<Future> futures = new ArrayList<>(typedFutures);
 
-    return CompositeFuture
-      .all(futures)
-      .map(v ->
-        typedFutures.stream()
-          .map(Future::result)
-          .toList()
-      );
+    return CompositeFuture.all(futures)
+        .map(v -> typedFutures.stream().map(Future::result).toList());
   }
 
   @Override
-  public Future<Void> updateEngagementCounters(
-      UUID entityId,
-      int likeDelta,
-      int dislikeDelta
-  ) {
+  public Future<Void> updateEngagementCounters(UUID entityId, int likeDelta, int dislikeDelta) {
     Promise<Void> promise = Promise.promise();
 
     QueryModel idQuery = new QueryModel(QueryType.TERM);
-    idQuery.setQueryParameters(Map.of(
-        FIELD, ID_KEYWORD,
-        VALUE, entityId.toString()
-    ));
+    idQuery.setQueryParameters(Map.of(FIELD, ID_KEYWORD, VALUE, entityId.toString()));
 
     QueryModel boolQuery = new QueryModel();
     boolQuery.setQueryType(QueryType.BOOL);
     boolQuery.setMustQueries(List.of(idQuery));
 
     boolQuery.setScriptLanguage("painless");
-    boolQuery.setScriptSource("""
+    boolQuery.setScriptSource(
+        """
     if (ctx._source.metrics == null) {
       ctx._source.metrics = [
         'likes': 0,
@@ -728,16 +757,65 @@ public class CentralItemServiceImpl implements ItemService {
     }
   """);
 
-    boolQuery.setScriptParams(Map.of(
-        "likeDelta", likeDelta,
-        "dislikeDelta", dislikeDelta
-    ));
+    boolQuery.setScriptParams(
+        Map.of(
+            "likeDelta", likeDelta,
+            "dislikeDelta", dislikeDelta));
 
     QueryModel updateByQueryModel = new QueryModel();
     updateByQueryModel.setQueries(boolQuery);
 
     centralElasticsearchService
         .updateDocumentsByQuery(updateByQueryModel, docIndex)
+        .onSuccess(v -> promise.complete())
+        .onFailure(promise::fail);
+
+    return promise.future();
+  }
+
+  @Override
+  public Future<Void> updateMetric(UUID entityId, String metricField, int delta) {
+    Promise<Void> promise = Promise.promise();
+
+    QueryModel idQuery = new QueryModel(QueryType.TERM);
+    idQuery.setQueryParameters(Map.of(FIELD, ID_KEYWORD, VALUE, entityId.toString()));
+
+    QueryModel boolQuery = new QueryModel(QueryType.BOOL);
+    boolQuery.setMustQueries(List.of(idQuery));
+
+    boolQuery.setScriptLanguage("painless");
+    boolQuery.setScriptSource(
+        """
+    if (ctx._source.metrics == null) {
+      ctx._source.metrics = [
+        'likes': 0,
+        'dislikes': 0,
+        'views': 0,
+        'downloads': 0
+      ];
+    }
+
+    if (ctx._source.metrics[params.metricField] == null) {
+      ctx._source.metrics[params.metricField] = 0;
+    }
+
+    ctx._source.metrics[params.metricField] =
+      Math.max(
+        0,
+        ctx._source.metrics[params.metricField] + params.delta
+      );
+  """);
+
+    boolQuery.setScriptParams(
+        Map.of(
+            "metricField", metricField,
+            "delta", delta));
+
+    QueryModel updateByQueryModel = new QueryModel();
+    updateByQueryModel.setQueries(boolQuery);
+
+    centralElasticsearchService
+        .updateDocumentsByQuery(updateByQueryModel.getQueries(), docIndex)
         .onSuccess(v -> promise.complete())
         .onFailure(promise::fail);
 
@@ -753,16 +831,14 @@ public class CentralItemServiceImpl implements ItemService {
     for (InteractionAggregate agg : aggregates) {
 
       QueryModel idQuery = new QueryModel(QueryType.TERM);
-      idQuery.setQueryParameters(Map.of(
-          FIELD, ID_KEYWORD,
-          VALUE, agg.entityId().toString()
-      ));
+      idQuery.setQueryParameters(Map.of(FIELD, ID_KEYWORD, VALUE, agg.entityId().toString()));
 
       QueryModel boolQuery = new QueryModel(QueryType.BOOL);
       boolQuery.setMustQueries(List.of(idQuery));
 
       boolQuery.setScriptLanguage("painless");
-      boolQuery.setScriptSource("""
+      boolQuery.setScriptSource(
+          """
       ctx._source.metrics = [
         'likes': params.likes,
         'dislikes': params.dislikes,
@@ -771,10 +847,10 @@ public class CentralItemServiceImpl implements ItemService {
       ];
     """);
 
-      boolQuery.setScriptParams(Map.of(
-          "likes", agg.likes(),
-          "dislikes", agg.dislikes()
-      ));
+      boolQuery.setScriptParams(
+          Map.of(
+              "likes", agg.likes(),
+              "dislikes", agg.dislikes()));
       updateByQueryModel.setQueries(boolQuery);
     }
 
@@ -785,5 +861,4 @@ public class CentralItemServiceImpl implements ItemService {
 
     return promise.future();
   }
-
 }
