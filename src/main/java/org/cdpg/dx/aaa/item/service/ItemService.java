@@ -38,5 +38,10 @@ public interface ItemService {
         int likeDelta,
         int dislikeDelta
     );
+     Future<Void> updateMetric(
+            UUID entityId,
+            String metricField,
+            int delta
+    )
     Future<BulkSyncResult> bulkSyncMetrics(List<InteractionAggregate> aggregates);
 }
