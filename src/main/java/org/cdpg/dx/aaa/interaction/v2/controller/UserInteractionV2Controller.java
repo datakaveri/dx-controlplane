@@ -55,6 +55,7 @@ public class UserInteractionV2Controller implements ApiController {
   }
 
   private void handlePostUserInteractionRequest(RoutingContext ctx) {
+    LOGGER.info("handlePostUserInteractionRequest() method started");
     try {
       UserInteractionV2Request req =
           ctx.body().asJsonObject().mapTo(UserInteractionV2Request.class);
