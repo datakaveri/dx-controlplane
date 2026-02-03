@@ -779,8 +779,8 @@ public class ItemServiceImpl implements ItemService {
 
     return elasticsearchService.bulkUpdateById(docIndex, updates);
   }
-
-  private Future<Void> updateMetric(
+@Override
+  public Future<Void> updateMetric(
       UUID entityId,
       String metricField,
       int delta

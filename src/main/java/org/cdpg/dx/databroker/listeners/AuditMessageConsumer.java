@@ -7,6 +7,7 @@ import io.vertx.rabbitmq.RabbitMQConsumer;
 import io.vertx.rabbitmq.RabbitMQMessage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.auditing.v2.enrichment.AssetEnrichmentService;
 import org.cdpg.dx.auditing.v2.model.ActivityAuditLogEntity;
 import org.cdpg.dx.aaa.activity.service.UserActivityAuditLogService;
@@ -19,6 +20,7 @@ public class AuditMessageConsumer implements RabitMqConsumer {
   private final String queueName;
   private final AssetEnrichmentService assetEnrichmentService;
   private final UserActivityAuditLogService auditService;
+  private final ItemService itemService;
   private final boolean dlqEnabled;
 
   private RabbitMQConsumer consumer;
@@ -27,17 +29,18 @@ public class AuditMessageConsumer implements RabitMqConsumer {
       new QueueOptions().setAutoAck(false).setMaxInternalQueueSize(100).setKeepMostRecent(true);
 
   public AuditMessageConsumer(
-      RabbitMQClient rabbitMqClient,
-      String queueName,
-      AssetEnrichmentService assetEnrichmentService,
-      UserActivityAuditLogService auditService,
-      boolean dlqEnabled) {
+          RabbitMQClient rabbitMqClient,
+          String queueName,
+          AssetEnrichmentService assetEnrichmentService,
+          UserActivityAuditLogService auditService, ItemService itemService,
+          boolean dlqEnabled) {
 
     this.rabbitMqClient = rabbitMqClient;
     this.queueName = queueName;
     this.assetEnrichmentService = assetEnrichmentService;
     this.auditService = auditService;
-    this.dlqEnabled = dlqEnabled;
+      this.itemService = itemService;
+      this.dlqEnabled = dlqEnabled;
   }
 
   @Override
