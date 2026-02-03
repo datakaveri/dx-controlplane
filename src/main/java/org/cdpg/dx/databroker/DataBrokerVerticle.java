@@ -146,6 +146,7 @@ public class DataBrokerVerticle extends AbstractVerticle {
             auditQueue,
             assetEnrichmentService,
             userActivityAuditLogService,
+            itemService,
             true);
     /*immudbConsumer = new ImmudbConsumer(iudxInternalRabbitMqClient, immudbActivityService);*/
     auditConsumer.start();
