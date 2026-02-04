@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.interaction.v2.model;
 
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 public record ItemSummary(
@@ -9,7 +10,10 @@ public record ItemSummary(
     String type,
     String accessPolicy,
     String ownerUserId,
-    String ownerUserName,
     String organizationId,
     String organizationName,
+    String uploadedBy,
+    JsonArray resourceServer,
+    String fileFormat,
+    String itemCreatedAt,
     JsonObject metrics) {}

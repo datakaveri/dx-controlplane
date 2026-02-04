@@ -332,7 +332,7 @@ public class ControllerFactory {
     controllers.add(activityController);
     controllers.add(activityReportController);
     controllers.add(subscriptionController);
-    controllers.add(bookmarksController);
+    //controllers.add(bookmarksController);
     controllers.add(appCredentialsController);
     controllers.add(appTokenController);
 
@@ -342,7 +342,7 @@ public class ControllerFactory {
       controllers.add(centralSearchController);
     }
     controllers.add(dashboardSummaryController);
-    controllers.add(voteController);
+   // controllers.add(voteController);
     ApiController leaderboardController =
         LeaderboardControllerFactory.create(pgService, urnGenerator);
     controllers.add(leaderboardController);
