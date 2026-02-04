@@ -61,13 +61,13 @@ public final class AuditLogHelper {
 
         // ---- User context ----
         .withUserId(userId)
-       // .withUserName(userName)
+        .withUserName(userName)
         .withRole(role)
         .withIssuer(issuer)
 
         // ---- Org context ----
         .withOrgId(orgId)
-       // .withOrgName(orgName)
+        .withOrgName(orgName)
 
         // ---- API context ----
         .withApi(apiTemplate)

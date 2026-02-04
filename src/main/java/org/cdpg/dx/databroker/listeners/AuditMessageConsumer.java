@@ -151,7 +151,7 @@ public class AuditMessageConsumer implements RabitMqConsumer {
     } else if ("DOWNLOAD".equalsIgnoreCase(action)) {
       metricField = "downloads";
     } else {
-      return; // Not a metric-relevant action
+      return;
     }
 
     UUID assetId;

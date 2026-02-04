@@ -62,7 +62,8 @@ public class UserInteractionV2Controller implements ApiController {
 
       UUID userId = UUID.fromString(ctx.user().subject());
 
-      service.SaveIteraction(userId, req)
+      service
+          .saveInteraction(userId, req)
           .onSuccess(
               v -> {
                 LOGGER.info("Interaction updated successfully for user {}", userId);
@@ -94,7 +95,7 @@ public class UserInteractionV2Controller implements ApiController {
               result -> {
                 LOGGER.info("Fetched user interactions successfully");
                 ResponseBuilder.sendSuccess(
-                    ctx, result.data(), result.paginationInfo(), urnGenerator);
+                    ctx, result.result(), result.paginationInfo(), urnGenerator);
               })
           .onFailure(
               err -> {
