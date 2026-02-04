@@ -279,6 +279,9 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
     }
 
     String orgTypeCsv = toCsv(filters, "organizationType");
+    if (orgTypeCsv != null) {
+      orgTypeCsv = orgTypeCsv.toUpperCase();
+    }
 
     // -------------------------------------------------
     // 3. Optional time filter
@@ -299,55 +302,57 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
     int offset = (request.page() - 1) * request.size();
 
     // -------------------------------------------------
-    // 5. SQL (NEW, schema-aligned)
+    // 5. SQL (provider name from organization_users)
     // -------------------------------------------------
     StringBuilder sql =
         new StringBuilder(
             """
-                        WITH provider_stats AS (
-                            SELECT
-                                a.asset_provider_id   AS provider_id,
-                                a.asset_provider_name AS provider_name,
-                                a.asset_org_id        AS org_id,
-                                a.asset_org_name      AS org_name,
-                                a.asset_org_type      AS org_type,
+                    WITH provider_stats AS (
+                        SELECT
+                            a.asset_provider_id AS provider_id,
+                            u.user_name         AS provider_name,
+                            a.asset_org_id      AS org_id,
+                            a.asset_org_name    AS org_name,
+                            a.asset_org_type    AS org_type,
 
+                            COUNT(*) FILTER (
+                                WHERE a.action = 'Upload'
+                                  AND a.asset_type = 'DATABANK'
+                            ) AS databank_published_count,
 
-                                COUNT(*) FILTER (
-                                    WHERE a.action = 'Upload'
-                                      AND a.asset_type = 'DATABANK'
-                                ) AS databank_published_count,
+                            COUNT(*) FILTER (
+                                WHERE a.action = 'Upload'
+                                  AND a.asset_type = 'AI_MODEL'
+                            ) AS ai_model_published_count,
 
-                                COUNT(*) FILTER (
-                                    WHERE a.action = 'Upload'
-                                      AND a.asset_type = 'AI_MODEL'
-                                ) AS ai_model_published_count,
+                            COUNT(*) FILTER (
+                                WHERE a.action = 'Upload'
+                                  AND a.asset_type = 'USECASE'
+                            ) AS use_case_published_count,
 
-                                COUNT(*) FILTER (
-                                    WHERE a.action = 'Upload'
-                                      AND a.asset_type = 'USECASE'
-                                ) AS use_case_published_count,
+                            COUNT(*) FILTER (
+                                WHERE a.action = 'Upload'
+                                  AND a.asset_type IN ('DATABANK','AI_MODEL','USECASE')
+                            ) AS total_published,
 
-                                COUNT(*) FILTER (
-                                    WHERE a.action = 'Upload'
-                                      AND a.asset_type IN ('DATABANK','AI_MODEL','USECASE')
-                                ) AS total_published,
+                            COUNT(*) FILTER (WHERE a.action = 'Download') AS downloads,
+                            COUNT(*) FILTER (WHERE a.action = 'View')     AS views,
+                            COUNT(*) FILTER (WHERE a.action = 'Like')     AS likes,
+                            COUNT(*) FILTER (WHERE a.action = 'Dislike')  AS dislikes
 
-                                COUNT(*) FILTER (WHERE a.action = 'Download') AS downloads,
-                                COUNT(*) FILTER (WHERE a.action = 'View')     AS views,
-                                COUNT(*) FILTER (WHERE a.action = 'Like')     AS likes,
-                                COUNT(*) FILTER (WHERE a.action = 'Dislike')  AS dislikes
+                        FROM user_activity_audit_log a
+                        LEFT JOIN organization_users u
+                          ON u.user_id = a.asset_provider_id 
 
-                            FROM user_activity_audit_log a
-                            WHERE a.asset_provider_id IS NOT NULL
-                              AND a.asset_type = ANY(string_to_array($1, ','))
-                        """);
+                        WHERE a.asset_provider_id IS NOT NULL
+                          AND a.asset_type = ANY(string_to_array($1, ','))
+                    """);
 
     JsonArray params = new JsonArray();
     params.add(assetTypeCsv);
     int idx = 2;
 
-    // ---- Time filter
+    // ---- Optional time filter
     if (startTime != null && endTime != null) {
       sql.append(" AND a.created_at BETWEEN ")
           .append("to_timestamp($")
@@ -362,6 +367,7 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
       idx += 2;
     }
 
+    // ---- Optional org type filter
     if (orgTypeCsv != null) {
       sql.append(" AND a.asset_org_type = ANY(string_to_array($").append(idx).append(", ','))");
       params.add(orgTypeCsv);
@@ -371,21 +377,21 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
     // ---- Close CTE
     sql.append(
         """
-                        GROUP BY
-                            a.asset_provider_id,
-                            a.asset_provider_name,
-                            a.asset_org_id,
-                            a.asset_org_name,
-                            a.asset_org_type
-                    )
-                    SELECT *,
-                           ROW_NUMBER() OVER (ORDER BY %s) AS rank,
-                           COUNT(*) OVER() AS total_count
-                    FROM provider_stats
-                    WHERE total_published > 0
-                    ORDER BY %s
-                    LIMIT $%d OFFSET $%d
-                    """
+                    GROUP BY
+                        a.asset_provider_id,
+                        u.user_name,
+                        a.asset_org_id,
+                        a.asset_org_name,
+                        a.asset_org_type
+                )
+                SELECT *,
+                       ROW_NUMBER() OVER (ORDER BY %s) AS rank,
+                       COUNT(*) OVER() AS total_count
+                FROM provider_stats
+                WHERE total_published > 0
+                ORDER BY %s
+                LIMIT $%d OFFSET $%d
+                """
             .formatted(orderBySql, orderBySql, idx, idx + 1));
 
     params.add(limit);
