@@ -4,6 +4,7 @@ import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import org.cdpg.dx.auditing.v2.model.ActivityAuditLogEntity;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
@@ -22,59 +23,71 @@ public class AssetEnrichmentService {
   }
 
   /**
-   * Enrich audit entity with asset-related data.
+   * Best-effort asset enrichment.
    *
-   * <p>Rules: - If assetId is null → skip - If already enriched → skip - If item service fails →
-   * return original entity - Audit must NEVER fail due to enrichment
+   * <p>Rules: - If assetId is null → skip - Never fail audit pipeline - Log success once, failures
+   * as WARN
    */
   public Future<ActivityAuditLogEntity> enrich(ActivityAuditLogEntity entity) {
-    LOGGER.info("Starting asset enrichment for entity: {}", entity.getAssetId());
 
     if (entity == null || entity.getAssetId() == null) {
+      LOGGER.debug("Asset enrichment skipped (no assetId)");
       return Future.succeededFuture(entity);
     }
-    GetItemRequest getItemRequest =
-        new GetItemRequest(entity.getAssetId().toString(), entity.getUserId().toString());
-    // 3️⃣ Fetch from Item Service
+
+    LOGGER.debug(
+        "Starting asset enrichment [assetId={}, userId={}]",
+        entity.getAssetId(),
+        entity.getUserId());
+
+    String userId = entity.getUserId() != null ? entity.getUserId().toString() : null;
+
+    GetItemRequest request = new GetItemRequest(entity.getAssetId().toString(), userId);
+
     return itemService
-        .getItem(getItemRequest)
-        .map(
-            item -> {
-
-              // ---- Asset basics ----
-              JsonObject itemJson = item.getResponse().getJsonArray("results").getJsonObject(0);
-              entity.setAssetName(itemJson.getString("name"));
-              LOGGER.debug("After setAssetName: {}", entity.getAssetName());
-              entity.setAssetSortDescription(itemJson.getString("shortDescription"));
-              entity.setAssetType(AssetTypeUtil.extractAssetType(itemJson));
-              entity.setAssetAccessPolicy(itemJson.getString("accessPolicy"));
-
-              // ---- Asset organisation ----
-              entity.setAssetOrgId(
-                  safeParse(itemJson.getString("organizationId"), "organizationId"));
-
-              entity.setAssetOrgName(itemJson.getString("organization"));
-              entity.setAssetOrgType(itemJson.getString("organizationType"));
-
-              // ---- Provider ----
-              entity.setAssetProviderId(
-                  safeParse(itemJson.getString("ownerUserId"), "ownerUserId"));
-
-              entity.setAssetProviderName(itemJson.getString("ownerUserName"));
-
-              LOGGER.debug("Asset enrichment completed for assetId={}", entity.toJson());
-              return entity;
-            })
-        .onFailure(
-            err ->
-                LOGGER.warn(
-                    "Asset enrichment failed for assetId={}: {}",
-                    entity.getAssetId(),
-                    err.getMessage()))
-        .recover(err -> Future.succeededFuture(entity));
+        .getItem(request)
+        .map(item -> applyAssetInfo(entity, item.getResponse()))
+        .onSuccess(
+            e ->
+                LOGGER.info(
+                    "Asset enrichment successful [assetId={}, assetName={}, assetType={}]",
+                    e.getAssetId(),
+                    e.getAssetName(),
+                    e.getAssetType()))
+        .recover(
+            err -> {
+              LOGGER.warn(
+                  "Asset enrichment failed [assetId={}]. Proceeding without enrichment",
+                  entity.getAssetId(),
+                  err);
+              return Future.succeededFuture(entity);
+            });
   }
 
-  public static UUID safeParse(String value, String fieldName) {
+  private ActivityAuditLogEntity applyAssetInfo(
+      ActivityAuditLogEntity entity, JsonObject response) {
+
+    JsonObject itemJson = response.getJsonArray("results").getJsonObject(0);
+
+    // ---- Asset basics ----
+    entity.setAssetName(itemJson.getString("name"));
+    entity.setAssetSortDescription(itemJson.getString("shortDescription"));
+    entity.setAssetType(AssetTypeUtil.extractAssetType(itemJson));
+    entity.setAssetAccessPolicy(itemJson.getString("accessPolicy"));
+
+    // ---- Asset organisation ----
+    entity.setAssetOrgId(safeParse(itemJson.getString("organizationId"), "organizationId"));
+    entity.setAssetOrgName(itemJson.getString("organization"));
+    entity.setAssetOrgType(itemJson.getString("organizationType"));
+
+    // ---- Provider ----
+    entity.setAssetProviderId(safeParse(itemJson.getString("ownerUserId"), "ownerUserId"));
+    entity.setAssetProviderName(itemJson.getString("ownerUserName"));
+
+    return entity;
+  }
+
+  private static UUID safeParse(String value, String fieldName) {
     if (value == null || value.isBlank()) {
       return null;
     }
