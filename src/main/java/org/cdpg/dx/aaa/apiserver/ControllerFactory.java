@@ -160,7 +160,12 @@ public class ControllerFactory {
     CustomRoleDAO customRoleDAO = new CustomRoleDAOImpl(pgService);
     UserService userService =
         UserControllerFactory.createService(
-            keycloakUserService, organizationService, creditService, esService, customRoleDAO,docUserIndex);
+            keycloakUserService,
+            organizationService,
+            creditService,
+            esService,
+            customRoleDAO,
+            docUserIndex);
 
     AssetHandler assetHandler =
         AssetFactory.createHandler(pgService, itemService, config, emailComposer, urnGenerator);
@@ -301,11 +306,18 @@ public class ControllerFactory {
             dataBrokerService, pgService, urnGenerator, controlPlaneDomain);
     ApiController bookmarksController = BookmarksControllerFactory.create(pgService, urnGenerator);
     ApiController appCredentialsController =
-        AppCredentialsControllerFactory.create(pgService,organizationService,itemService,urnGenerator);
+        AppCredentialsControllerFactory.create(
+            pgService, organizationService, itemService, urnGenerator);
 
     ApiController appTokenController =
         AppTokenControllerFactory.create(
-            pgService, keycloakUserService, organizationService,itemService,urnGenerator, config, vertx);
+            pgService,
+            keycloakUserService,
+            organizationService,
+            itemService,
+            urnGenerator,
+            config,
+            vertx);
 
     SummaryController dashboardSummaryController =
         SummaryControllerFactory.create(pgService, urnGenerator);
@@ -332,7 +344,7 @@ public class ControllerFactory {
     controllers.add(activityController);
     controllers.add(activityReportController);
     controllers.add(subscriptionController);
-    //controllers.add(bookmarksController);
+    // controllers.add(bookmarksController);
     controllers.add(appCredentialsController);
     controllers.add(appTokenController);
 
@@ -342,7 +354,7 @@ public class ControllerFactory {
       controllers.add(centralSearchController);
     }
     controllers.add(dashboardSummaryController);
-   // controllers.add(voteController);
+    // controllers.add(voteController);
     ApiController leaderboardController =
         LeaderboardControllerFactory.create(pgService, urnGenerator);
     controllers.add(leaderboardController);
@@ -352,7 +364,8 @@ public class ControllerFactory {
     // controllers.add(userInteractionController);
 
     ApiController userV2InteractionApi =
-        UserInteractionV2controllerFactory.create(pgService, itemService, urnGenerator);
+        UserInteractionV2controllerFactory.create(
+            pgService, itemService, auditingHandler, urnGenerator);
     controllers.add(userV2InteractionApi);
 
     return controllers;

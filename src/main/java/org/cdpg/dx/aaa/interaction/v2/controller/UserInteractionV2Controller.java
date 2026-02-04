@@ -12,19 +12,27 @@ import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.apiserver.ApiController;
+import org.cdpg.dx.aaa.interaction.v2.enums.InteractionAction;
+import org.cdpg.dx.aaa.interaction.v2.enums.InteractionAuditAction;
+import org.cdpg.dx.aaa.interaction.v2.model.InteractionDelta;
 import org.cdpg.dx.aaa.interaction.v2.model.UserInteractionV2Request;
 import org.cdpg.dx.aaa.interaction.v2.service.UserInteractionV2Service;
+import org.cdpg.dx.aaa.interaction.v2.util.InteractionAuditLogHelper;
+import org.cdpg.dx.auditing.handler.AuditingHandler;
+import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
+import org.cdpg.dx.common.util.RoutingContextHelper;
 
 public class UserInteractionV2Controller implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(UserInteractionV2Controller.class);
   private static final Map<String, String> FILTER_MAP =
       Map.of("assetId", "asset_id", "assetType", "asset_type", "actionType", "action_type");
+  private final AuditingHandler auditingHandler;
   private final UserInteractionV2Service service;
   private final URNGenerator urnGenerator;
   Handler<RoutingContext> syncInteractionMetricAccessHandler =
@@ -32,7 +40,11 @@ public class UserInteractionV2Controller implements ApiController {
 
   Handler<RoutingContext> interactionAccessHandler = AuthorizationHandler.forRoles(DxRole.CONSUMER);
 
-  public UserInteractionV2Controller(UserInteractionV2Service service, URNGenerator urnGenerator) {
+  public UserInteractionV2Controller(
+      AuditingHandler auditingHandler,
+      UserInteractionV2Service service,
+      URNGenerator urnGenerator) {
+    this.auditingHandler = auditingHandler;
     this.service = service;
     this.urnGenerator = urnGenerator;
   }
@@ -42,6 +54,7 @@ public class UserInteractionV2Controller implements ApiController {
     LOGGER.info("Registering UserInteractionController routes");
     builder
         .operation(OP_POST_USER_INTERACTION)
+        .handler(auditingHandler::handleApiAudit)
         .handler(interactionAccessHandler)
         .handler(this::handlePostUserInteractionRequest);
     builder
@@ -55,7 +68,9 @@ public class UserInteractionV2Controller implements ApiController {
   }
 
   private void handlePostUserInteractionRequest(RoutingContext ctx) {
+
     LOGGER.info("handlePostUserInteractionRequest() method started");
+
     try {
       UserInteractionV2Request req =
           ctx.body().asJsonObject().mapTo(UserInteractionV2Request.class);
@@ -65,9 +80,18 @@ public class UserInteractionV2Controller implements ApiController {
       service
           .saveInteraction(userId, req)
           .onSuccess(
-              v -> {
+              delta -> {
                 LOGGER.info("Interaction updated successfully for user {}", userId);
-                LOGGER.debug("Interaction details: {}", v.toJson());
+                LOGGER.debug("Interaction details: {}", delta.toJson());
+
+                InteractionAuditAction auditAction = resolveAuditAction(delta, req.action());
+
+                if (auditAction != null) {
+                  UserActivityAuditLogBuilder auditLog =
+                      InteractionAuditLogHelper.buildItemAudit(ctx, delta.entityId(), auditAction);
+                  RoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+                }
+
                 ResponseBuilder.sendSuccess(ctx, "Interaction recorded successfully", urnGenerator);
               })
           .onFailure(ctx::fail);
@@ -131,5 +155,33 @@ public class UserInteractionV2Controller implements ApiController {
       LOGGER.error("Invalid GET /user/interactions/sync request:  {} ", e.getMessage(), e);
       ctx.fail(e);
     }
+  }
+
+  private InteractionAuditAction resolveAuditAction(
+      InteractionDelta delta, InteractionAction requestAction) {
+
+    // Bookmark actions are explicit
+    if (delta.oldBookmarked() != delta.newBookmarked()) {
+      return delta.newBookmarked()
+          ? InteractionAuditAction.BOOKMARK
+          : InteractionAuditAction.UNBOOKMARK;
+    }
+
+    // Vote actions based on actual transition
+    if (!delta.oldLiked() && delta.newLiked()) {
+      return InteractionAuditAction.LIKE;
+    }
+
+    if (!delta.oldDisliked() && delta.newDisliked()) {
+      return InteractionAuditAction.DISLIKE;
+    }
+
+    // Neutral (vote removed)
+    if ((delta.oldLiked() || delta.oldDisliked()) && !delta.newLiked() && !delta.newDisliked()) {
+      return InteractionAuditAction.NEUTRAL;
+    }
+
+    // No-op → nothing to audit
+    return null;
   }
 }
