@@ -27,26 +27,46 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
   public Future<LeaderboardResponse<OrganizationLeaderboardEntry>> fetchOrgLeaderboard(
       PaginatedRequest request) {
 
-    Map<String, Object> filters = request.filters();
+    LOGGER.debug("Fetching org leaderboard with filters: {}", request.filters());
 
-    OrderBy orderBy = request.orderByList().getFirst();
-    LOGGER.debug("Fetching org leaderboard with orderBy: {}", orderBy.toJson());
+    // -------------------------------------------------
+    // 1. Sorting (safe whitelist)
+    // -------------------------------------------------
+    Set<String> allowedSortColumns = Set.of("downloads", "likes", "dislikes", "total_published");
 
-    // -----------------------
-    // 1. assetType (optional)
-    // -----------------------
-    List<String> assetTypes =
-        getList(filters, "assetType").stream().map(String::toUpperCase).toList();
+    String sortColumn = "downloads";
+    OrderBy.Direction sortDirection = OrderBy.Direction.DESC;
 
-    if (assetTypes.isEmpty()) {
-      assetTypes = List.of("DATABANK", "AI_MODEL", "USECASE");
+    if (request.orderByList() != null && !request.orderByList().isEmpty()) {
+      OrderBy ob = request.orderByList().getFirst();
+
+      if (ob.getColumn() != null && allowedSortColumns.contains(ob.getColumn())) {
+        sortColumn = ob.getColumn();
+      }
+      if (ob.getDirection() != null) {
+        sortDirection = ob.getDirection();
+      }
     }
 
-    LOGGER.debug("Fetching org leaderboard with assetTypes: {}", assetTypes);
+    String orderBySql = sortColumn + " " + sortDirection.name() + ", org_name ASC";
 
-    // -----------------------
-    // 2. Optional time filter
-    // -----------------------
+    // -------------------------------------------------
+    // 2. Filters
+    // -------------------------------------------------
+    Map<String, Object> filters = request.filters();
+
+    String assetTypeCsv = toCsv(filters, "assetType");
+    if (assetTypeCsv == null || assetTypeCsv.isBlank()) {
+      assetTypeCsv = "DATABANK,AI_MODEL,USECASE";
+    } else {
+      assetTypeCsv = assetTypeCsv.toUpperCase();
+    }
+
+    String orgTypeCsv = toCsv(filters, "organizationType");
+
+    // -------------------------------------------------
+    // 3. Optional time filter
+    // -------------------------------------------------
     String startTime = null;
     String endTime = null;
 
@@ -55,147 +75,128 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
       startTime = t.time();
       endTime = t.endtime();
     }
-    String dbColumn =
-        switch (orderBy.getColumn().toLowerCase()) {
-          case "downloads" -> "o.downloads";
-          case "likes" -> "COALESCE(v.likes,0)";
-          default -> "o.total_published";
-        };
-    String orderClause = "ORDER BY " + dbColumn + " " + orderBy.getDirection() + ", o.org_name ASC";
 
-    // -----------------------
-    // 3. Pagination
-    // -----------------------
+    // -------------------------------------------------
+    // 4. Pagination
+    // -------------------------------------------------
     int limit = request.size();
     int offset = (request.page() - 1) * request.size();
 
-    // -----------------------
-    // 4. SQL
-    // -----------------------
-    String sql =
+    // -------------------------------------------------
+    // 5. SQL (members CTE preserved, time optional)
+    // -------------------------------------------------
+    StringBuilder sql =
+        new StringBuilder(
+            """
+                    WITH org_stats AS (
+                        SELECT
+                            a.asset_org_id   AS org_id,
+                            a.asset_org_name AS org_name,
+                            a.asset_org_type AS org_type,
+
+                            COUNT(*) FILTER (
+                                WHERE a.action = 'Upload'
+                                  AND a.asset_type = 'DATABANK'
+                            ) AS published_databanks,
+
+                            COUNT(*) FILTER (
+                                WHERE a.action = 'Upload'
+                                  AND a.asset_type = 'AI_MODEL'
+                            ) AS published_ai_models,
+
+                            COUNT(*) FILTER (
+                                WHERE a.action = 'Upload'
+                                  AND a.asset_type = 'USECASE'
+                            ) AS published_usecases,
+
+                            COUNT(*) FILTER (
+                                WHERE a.action = 'Upload'
+                                  AND a.asset_type IN ('DATABANK','AI_MODEL','USECASE')
+                            ) AS total_published,
+
+                            COUNT(*) FILTER (WHERE a.action = 'Download') AS downloads,
+                            COUNT(*) FILTER (WHERE a.action = 'Like')     AS likes,
+                            COUNT(*) FILTER (WHERE a.action = 'Dislike')  AS dislikes
+
+                        FROM user_activity_audit_log a
+                        WHERE a.asset_org_id IS NOT NULL
+                          AND a.asset_type = ANY(string_to_array($1, ','))
+                    """);
+
+    JsonArray params = new JsonArray();
+    params.add(assetTypeCsv);
+    int idx = 2;
+
+    // ---- Optional time filter (ONLY if both present)
+    if (startTime != null && endTime != null) {
+      sql.append(" AND a.created_at BETWEEN ")
+          .append("to_timestamp($")
+          .append(idx)
+          .append(", 'YYYY-MM-DD\"T\"HH24:MI:SS')")
+          .append(" AND ")
+          .append("to_timestamp($")
+          .append(idx + 1)
+          .append(", 'YYYY-MM-DD\"T\"HH24:MI:SS')");
+      params.add(startTime);
+      params.add(endTime);
+      idx += 2;
+    }
+
+    // ---- Optional org type filter
+    if (orgTypeCsv != null) {
+      sql.append(" AND a.asset_org_type = ANY(string_to_array($").append(idx).append(", ','))");
+      params.add(orgTypeCsv);
+      idx++;
+    }
+
+    // ---- Close CTE + members (UNCHANGED)
+    sql.append(
         """
-            WITH org_stats AS (
-                SELECT
-                    a.org_id,
-                    a.org_name,
-
-                    COUNT(*) FILTER (
-                        WHERE a.operation = 'CREATE' AND a.entity_type = 'DATABANK'
-                    ) AS published_databanks,
-
-                    COUNT(*) FILTER (
-                        WHERE a.operation = 'CREATE' AND a.entity_type = 'AI_MODEL'
-                    ) AS published_ai_models,
-
-                    COUNT(*) FILTER (
-                        WHERE a.operation = 'CREATE' AND a.entity_type = 'USECASE'
-                    ) AS published_usecases,
-
-                    COUNT(*) FILTER (
-                        WHERE a.operation = 'CREATE'
-                          AND a.entity_type IN ('DATABANK','AI_MODEL','USECASE')
-                    ) AS total_published,
-
-                    COUNT(*) FILTER (WHERE a.operation = 'DOWNLOAD') AS downloads
-
-                FROM activity_audit_log a
-                WHERE a.org_id IS NOT NULL
-                  AND a.entity_type::text = ANY (
-                      SELECT jsonb_array_elements_text($1::jsonb)
-                  )
-                  AND (
-                      $2::text IS NULL
-                      OR $3::text IS NULL
-                      OR a.created_at BETWEEN
-                           to_timestamp($2, 'YYYY-MM-DD"T"HH24:MI:SS')
-                       AND to_timestamp($3, 'YYYY-MM-DD"T"HH24:MI:SS')
-                  )
-                GROUP BY a.org_id, a.org_name
-            ),
-
-            votes AS (
-                SELECT
-                    a.org_id,
-                    SUM(v.likes)    AS likes,
-                    SUM(v.dislikes) AS dislikes
-                FROM (
+                    GROUP BY
+                        a.asset_org_id,
+                        a.asset_org_name,
+                        a.asset_org_type
+                ),
+                members AS (
                     SELECT
-                        entity_id,
-                        entity_type,
-                        COUNT(*) FILTER (WHERE vote_type = 'LIKE')    AS likes,
-                        COUNT(*) FILTER (WHERE vote_type = 'DISLIKE') AS dislikes
-                    FROM item_votes
-                    GROUP BY entity_id, entity_type
-                ) v
-                JOIN (
-                    SELECT DISTINCT entity_id, entity_type, org_id
-                    FROM activity_audit_log
-                    WHERE org_id IS NOT NULL
-                ) a
-                  ON v.entity_id = a.entity_id
-                 AND v.entity_type = a.entity_type
-                GROUP BY a.org_id
-            ),
+                        organization_id AS org_id,
+                        COUNT(*) AS members
+                    FROM organization_users
+                    GROUP BY organization_id
+                )
+                SELECT
+                    o.org_id,
+                    o.org_name,
+                    o.org_type,
+                    COALESCE(m.members, 0) AS members,
+                    o.published_databanks,
+                    o.published_ai_models,
+                    o.published_usecases,
+                    o.total_published,
+                    o.downloads,
+                    o.likes,
+                    o.dislikes,
+                    ROW_NUMBER() OVER (ORDER BY %s) AS rank,
+                    COUNT(*) OVER() AS total_count
+                FROM org_stats o
+                LEFT JOIN members m ON o.org_id = m.org_id
+                WHERE o.total_published > 0
+                ORDER BY %s
+                LIMIT $%d OFFSET $%d
+                """
+            .formatted(orderBySql, orderBySql, idx, idx + 1));
 
-            members AS (
-                 SELECT
-                     organization_id AS org_id,
-                     COUNT(*) AS members
-                 FROM organization_users
-                 GROUP BY organization_id
-             )
+    params.add(limit);
+    params.add(offset);
 
-
-            SELECT
-                o.org_id                           AS id,
-                o.org_name                         AS organization_name,
-                NULL                               AS organization_type,
-                NULL                               AS sector,
-
-                COALESCE(m.members, 0)             AS members,
-                o.published_databanks,
-                o.published_ai_models,
-                o.published_usecases,
-                o.total_published,
-                o.downloads,
-
-                COALESCE(v.likes, 0)               AS likes,
-                COALESCE(v.dislikes, 0)            AS dislikes,
-
-                ROW_NUMBER() OVER (
-                   %s
-                ) AS rank,
-
-                COUNT(*) OVER() AS total_count
-
-            FROM org_stats o
-        LEFT JOIN votes v   ON o.org_id = v.org_id
-        LEFT JOIN members m ON o.org_id = m.org_id
-        WHERE o.total_published > 0
-        %s
-        LIMIT $4 OFFSET $5
-        """
-            .formatted(orderClause, orderClause);
-
-    // -----------------------
-    // 5. Params
-    // -----------------------
-    JsonArray params =
-        new JsonArray()
-            .add(new JsonArray(assetTypes)) // $1
-            .add(startTime) // $2
-            .add(endTime) // $3
-            .add(limit) // $4
-            .add(offset); // $5
-
-    LOGGER.debug("Executing org leaderboard SQL");
+    LOGGER.debug("Executing Org Leaderboard SQL:\n{}", sql);
     LOGGER.debug("Params: {}", params.encodePrettily());
 
-    // -----------------------
+    // -------------------------------------------------
     // 6. Execute & map
-    // -----------------------
+    // -------------------------------------------------
     return postgresService
-        .executeQuery(sql, params)
+        .executeQuery(sql.toString(), params)
         .map(
             result -> {
               List<OrganizationLeaderboardEntry> data =
@@ -205,8 +206,9 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
                             JsonObject r = (JsonObject) obj;
                             return new OrganizationLeaderboardEntry(
                                 r.getInteger("rank"),
-                                r.getString("id"),
-                                r.getString("organization_name"),
+                                r.getString("org_id"),
+                                r.getString("org_name"),
+                                r.getString("org_type", ""),
                                 r.getInteger("members", 0),
                                 r.getInteger("published_databanks", 0),
                                 r.getInteger("published_ai_models", 0),
@@ -240,153 +242,184 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
   public Future<LeaderboardResponse<ProviderLeaderboardEntry>> fetchProviderLeaderboard(
       PaginatedRequest request) {
 
-    Map<String, Object> filters = request.filters();
+    LOGGER.debug("Fetching provider leaderboard with filters: {}", request.filters());
 
-    // 1. assetType (optional, default all)
-    List<String> assetTypes = getList(filters, "assetType");
-    if (assetTypes.isEmpty()) {
-      assetTypes = List.of("DATABANK", "AI_MODEL", "USECASE");
+    // -------------------------------------------------
+    // 1. Sorting (safe whitelist)
+    // -------------------------------------------------
+    Set<String> allowedSortColumns =
+        Set.of("downloads", "views", "likes", "dislikes", "total_published");
+
+    String sortColumn = "downloads";
+    OrderBy.Direction sortDirection = OrderBy.Direction.DESC;
+
+    if (request.orderByList() != null && !request.orderByList().isEmpty()) {
+      OrderBy ob = request.orderByList().getFirst();
+
+      if (ob.getColumn() != null && allowedSortColumns.contains(ob.getColumn())) {
+        sortColumn = ob.getColumn();
+      }
+      if (ob.getDirection() != null) {
+        sortDirection = ob.getDirection();
+      }
     }
 
-    LOGGER.debug("Fetching provider leaderboard with asset types: {}", assetTypes);
+    String orderBySql = sortColumn + " " + sortDirection.name() + ", provider_name ASC";
 
-    // 2. Optional time
+    // -------------------------------------------------
+    // 2. Filters
+    // -------------------------------------------------
+    Map<String, Object> filters = request.filters();
+
+    String assetTypeCsv = toCsv(filters, "assetType");
+    if (assetTypeCsv == null || assetTypeCsv.isBlank()) {
+      assetTypeCsv = "DATABANK,AI_MODEL,USECASE";
+    } else {
+      assetTypeCsv = assetTypeCsv.toUpperCase();
+    }
+
+    String orgTypeCsv = toCsv(filters, "organizationType");
+
+    // -------------------------------------------------
+    // 3. Optional time filter
+    // -------------------------------------------------
     String startTime = null;
     String endTime = null;
+
     if (request.temporalRequests() != null && !request.temporalRequests().isEmpty()) {
       TemporalRequest t = request.temporalRequests().getFirst();
       startTime = t.time();
       endTime = t.endtime();
     }
 
-    OrderBy orderBy = request.orderByList().getFirst();
-
-    String dbColumn =
-        switch (orderBy.getColumn().toLowerCase()) {
-          case "downloads" -> "p.total_downloads";
-          case "likes" -> "COALESCE(v.total_likes,0)";
-          case "views" -> "p.total_views";
-          default -> "p.total_published_count";
-        };
-
-    String orderClause = "ORDER BY " + dbColumn + " " + orderBy.getDirection() + ", p.org_name ASC";
-
-    // 3. Pagination
+    // -------------------------------------------------
+    // 4. Pagination
+    // -------------------------------------------------
     int limit = request.size();
     int offset = (request.page() - 1) * request.size();
 
-    // 4. SQL (JSON-safe array binding)
-    String sql =
+    // -------------------------------------------------
+    // 5. SQL (NEW, schema-aligned)
+    // -------------------------------------------------
+    StringBuilder sql =
+        new StringBuilder(
+            """
+                        WITH provider_stats AS (
+                            SELECT
+                                a.asset_provider_id   AS provider_id,
+                                a.asset_provider_name AS provider_name,
+                                a.asset_org_id        AS org_id,
+                                a.asset_org_name      AS org_name,
+                                a.asset_org_type      AS org_type,
+
+
+                                COUNT(*) FILTER (
+                                    WHERE a.action = 'Upload'
+                                      AND a.asset_type = 'DATABANK'
+                                ) AS databank_published_count,
+
+                                COUNT(*) FILTER (
+                                    WHERE a.action = 'Upload'
+                                      AND a.asset_type = 'AI_MODEL'
+                                ) AS ai_model_published_count,
+
+                                COUNT(*) FILTER (
+                                    WHERE a.action = 'Upload'
+                                      AND a.asset_type = 'USECASE'
+                                ) AS use_case_published_count,
+
+                                COUNT(*) FILTER (
+                                    WHERE a.action = 'Upload'
+                                      AND a.asset_type IN ('DATABANK','AI_MODEL','USECASE')
+                                ) AS total_published,
+
+                                COUNT(*) FILTER (WHERE a.action = 'Download') AS downloads,
+                                COUNT(*) FILTER (WHERE a.action = 'View')     AS views,
+                                COUNT(*) FILTER (WHERE a.action = 'Like')     AS likes,
+                                COUNT(*) FILTER (WHERE a.action = 'Dislike')  AS dislikes
+
+                            FROM user_activity_audit_log a
+                            WHERE a.asset_provider_id IS NOT NULL
+                              AND a.asset_type = ANY(string_to_array($1, ','))
+                        """);
+
+    JsonArray params = new JsonArray();
+    params.add(assetTypeCsv);
+    int idx = 2;
+
+    // ---- Time filter
+    if (startTime != null && endTime != null) {
+      sql.append(" AND a.created_at BETWEEN ")
+          .append("to_timestamp($")
+          .append(idx)
+          .append(", 'YYYY-MM-DD\"T\"HH24:MI:SS')")
+          .append(" AND ")
+          .append("to_timestamp($")
+          .append(idx + 1)
+          .append(", 'YYYY-MM-DD\"T\"HH24:MI:SS')");
+      params.add(startTime);
+      params.add(endTime);
+      idx += 2;
+    }
+
+    if (orgTypeCsv != null) {
+      sql.append(" AND a.asset_org_type = ANY(string_to_array($").append(idx).append(", ','))");
+      params.add(orgTypeCsv);
+      idx++;
+    }
+
+    // ---- Close CTE
+    sql.append(
         """
-      WITH provider_stats AS (
-          SELECT
-              a.provider_id,
-              a.org_id,
-              a.org_name,
-              COUNT(*) FILTER (
-                  WHERE a.operation = 'CREATE' AND a.entity_type = 'DATABANK'
-              ) AS databank_published_count,
-              COUNT(*) FILTER (
-                  WHERE a.operation = 'CREATE' AND a.entity_type = 'AI_MODEL'
-              ) AS ai_model_published_count,
-              COUNT(*) FILTER (
-                  WHERE a.operation = 'CREATE' AND a.entity_type = 'USECASE'
-              ) AS use_case_published_count,
-              COUNT(*) FILTER (
-                  WHERE a.operation = 'CREATE' AND a.entity_type IN ('DATABANK', 'AI_MODEL', 'USECASE')
-              ) AS total_published_count,
-              COUNT(*) FILTER (
-                  WHERE a.operation = 'DOWNLOAD'
-              ) AS total_downloads,
-              COUNT(*) FILTER (
-                  WHERE a.operation = 'VIEW'
-              ) AS total_views
-          FROM activity_audit_log a
-          WHERE a.provider_id IS NOT NULL
-            AND a.entity_type::text = ANY (
-                SELECT jsonb_array_elements_text($1::jsonb)
-            )
-           AND (
-                  $2::text IS NULL
-                  OR $3::text IS NULL
-                  OR a.created_at BETWEEN
-                       to_timestamp($2, 'YYYY-MM-DD"T"HH24:MI:SS')
-                   AND to_timestamp($3, 'YYYY-MM-DD"T"HH24:MI:SS')
-              )
+                        GROUP BY
+                            a.asset_provider_id,
+                            a.asset_provider_name,
+                            a.asset_org_id,
+                            a.asset_org_name,
+                            a.asset_org_type
+                    )
+                    SELECT *,
+                           ROW_NUMBER() OVER (ORDER BY %s) AS rank,
+                           COUNT(*) OVER() AS total_count
+                    FROM provider_stats
+                    WHERE total_published > 0
+                    ORDER BY %s
+                    LIMIT $%d OFFSET $%d
+                    """
+            .formatted(orderBySql, orderBySql, idx, idx + 1));
 
-          GROUP BY a.provider_id, a.org_id, a.org_name
-      ),
-      votes AS (
-           SELECT
-               a.provider_id,
-               SUM(v.likes)    AS total_likes,
-               SUM(v.dislikes) AS total_dislikes
-           FROM (
-               SELECT
-                   entity_id,
-                   entity_type,
-                   COUNT(*) FILTER (WHERE vote_type = 'LIKE')    AS likes,
-                   COUNT(*) FILTER (WHERE vote_type = 'DISLIKE') AS dislikes
-               FROM item_votes
-               GROUP BY entity_id, entity_type
-           ) v
-           JOIN (
-               SELECT DISTINCT entity_id, entity_type, provider_id
-               FROM activity_audit_log
-               WHERE provider_id IS NOT NULL
-           ) a
-             ON v.entity_id = a.entity_id
-            AND v.entity_type = a.entity_type
-           GROUP BY a.provider_id
-       )
+    params.add(limit);
+    params.add(offset);
 
-      SELECT
-          p.*,
-          COALESCE(v.total_likes, 0)    AS total_likes,
-          COALESCE(v.total_dislikes, 0) AS total_dislikes,
-          ROW_NUMBER() OVER (
-              %s
-          ) AS rank,
-          COUNT(*) OVER() AS total_count
-      FROM provider_stats p
-      LEFT JOIN votes v ON p.provider_id = v.provider_id
-      WHERE p.total_published_count > 0
-      %s
-      LIMIT $4 OFFSET $5
-      """
-            .formatted(orderClause, orderClause);
-    // 5. Params (JSON-safe)
-    JsonArray params =
-        new JsonArray()
-            .add(new JsonArray(assetTypes)) // $1
-            .add(startTime) // $2
-            .add(endTime) // $3
-            .add(limit) // $4
-            .add(offset); // $5
+    LOGGER.debug("Executing Provider Leaderboard SQL:\n{}", sql);
+    LOGGER.debug("Params: {}", params.encodePrettily());
 
+    // -------------------------------------------------
     // 6. Execute & map
+    // -------------------------------------------------
     return postgresService
-        .executeQuery(sql, params)
+        .executeQuery(sql.toString(), params)
         .map(
             result -> {
               List<ProviderLeaderboardEntry> data =
                   result.getRows().stream()
                       .map(
                           obj -> {
-                            JsonObject row = (JsonObject) obj;
+                            JsonObject r = (JsonObject) obj;
                             return new ProviderLeaderboardEntry(
-                                row.getInteger("rank"),
-                                row.getString("provider_id"),
-                                row.getString("provider_name", "provider name"),
-                                row.getString("org_id"),
-                                row.getString("org_name", ""),
-                                row.getInteger("databank_published_count", 0),
-                                row.getInteger("ai_model_published_count", 0),
-                                row.getInteger("use_case_published_count", 0),
-                                row.getInteger("total_published_count", 0),
-                                row.getInteger("total_downloads", 0),
-                                row.getInteger("total_likes", 0),
-                                row.getInteger("total_dislikes", 0));
+                                r.getInteger("rank"),
+                                r.getString("provider_id"),
+                                r.getString("provider_name"),
+                                r.getString("org_id"),
+                                r.getString("org_name"),
+                                r.getString("org_type", ""),
+                                r.getInteger("databank_published_count", 0),
+                                r.getInteger("ai_model_published_count", 0),
+                                r.getInteger("use_case_published_count", 0),
+                                r.getInteger("total_published", 0),
+                                r.getInteger("downloads", 0),
+                                r.getInteger("likes", 0),
+                                r.getInteger("dislikes", 0));
                           })
                       .toList();
 
@@ -412,21 +445,22 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
   public Future<LeaderboardResponse<AssetLeaderboardEntry>> fetchAssetLeaderboard(
       PaginatedRequest request) {
 
-    LOGGER.debug("Fetching asset leaderboard with request filter: {}", request.filters());
+    LOGGER.debug("Fetching asset leaderboard with filters: {}", request.filters());
     LOGGER.debug("Page: {}, Size: {}", request.page(), request.size());
     LOGGER.debug("Sort: {}", request.orderByList());
 
-    // ----------------------------
-    // 1. Sorting (safe whitelist)
-    // ----------------------------
-    Set<String> allowed = Set.of("downloads", "views", "likes", "dislikes");
+    // -------------------------------------------------
+    // 1. Allowed sorting (strict whitelist)
+    // -------------------------------------------------
+    Set<String> allowedSortColumns = Set.of("downloads", "views", "likes", "dislikes");
 
     String sortColumn = "downloads";
     OrderBy.Direction sortDirection = OrderBy.Direction.DESC;
 
     if (request.orderByList() != null && !request.orderByList().isEmpty()) {
       OrderBy ob = request.orderByList().getFirst();
-      if (ob.getColumn() != null && allowed.contains(ob.getColumn())) {
+
+      if (ob.getColumn() != null && allowedSortColumns.contains(ob.getColumn())) {
         sortColumn = ob.getColumn();
       }
       if (ob.getDirection() != null) {
@@ -434,27 +468,27 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
       }
     }
 
-    String orderBySql = sortColumn + " " + sortDirection.name() + ", entity_name ASC";
+    String orderBySql = sortColumn + " " + sortDirection.name() + ", asset_name ASC";
 
-    // ----------------------------
+    // -------------------------------------------------
     // 2. Filters
-    // ----------------------------
+    // -------------------------------------------------
     Map<String, Object> filters = request.filters();
 
-    String assetType = toCsv(filters, "assetType");
-    if (assetType == null || assetType.isBlank()) {
-      assetType = "DATABANK,AI_MODEL,USECASE";
+    String assetTypeCsv = toCsv(filters, "assetType");
+    if (assetTypeCsv == null || assetTypeCsv.isBlank()) {
+      assetTypeCsv = "DATABANK,AI_MODEL,USECASE";
     } else {
-      assetType = assetType.toUpperCase();
+      assetTypeCsv = assetTypeCsv.toUpperCase();
     }
 
     String accessPolicy = toCsv(filters, "accessPolicy");
-    String orgType = toCsv(filters, "organizationType"); // only apply if column exists
-    String sector = toCsv(filters, "sector"); // only apply if column exists
+    String orgType = toCsv(filters, "organizationType");
+    String sector = toCsv(filters, "sector");
 
-    // ----------------------------
-    // 3. Optional time filter
-    // ----------------------------
+    // -------------------------------------------------
+    // 3. Optional time window
+    // -------------------------------------------------
     String startTime = null;
     String endTime = null;
 
@@ -464,53 +498,44 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
       endTime = t.endtime();
     }
 
-    // ----------------------------
+    // -------------------------------------------------
     // 4. Pagination
-    // ----------------------------
+    // -------------------------------------------------
     int limit = request.size();
     int offset = (request.page() - 1) * request.size();
 
-    // ----------------------------
-    // 5. Build SQL dynamically
-    // ----------------------------
+    // -------------------------------------------------
+    // 5. SQL (dynamic + safe)
+    // -------------------------------------------------
     StringBuilder sql =
         new StringBuilder(
             """
-    WITH stats AS (
-        SELECT
-            a.entity_id,
-            a.entity_name,
-            a.entity_type,
-            a.org_id,
-            a.org_name,
-            a.provider_id,
-            MAX(a.short_description) AS short_description,
+                    WITH asset_stats AS (
+                        SELECT
+                            a.asset_id,
+                            a.asset_name,
+                            a.asset_type,
+                            a.asset_org_id,
+                            a.asset_org_name,
+                            a.asset_org_type,
+                            a.asset_provider_id,
+                            a.asset_provider_name,
+                            MAX(a.asset_sort_discription) AS short_description,
 
-            COUNT(*) FILTER (WHERE a.operation = 'VIEW')     AS views,
-            COUNT(*) FILTER (WHERE a.operation = 'DOWNLOAD') AS downloads,
-            COALESCE(v.likes, 0)    AS likes,
-            COALESCE(v.dislikes, 0) AS dislikes
+                            COUNT(*) FILTER (WHERE a.action = 'View')     AS views,
+                            COUNT(*) FILTER (WHERE a.action = 'Download') AS downloads,
+                            COUNT(*) FILTER (WHERE a.action = 'Like')     AS likes,
+                            COUNT(*) FILTER (WHERE a.action = 'Dislike')  AS dislikes
 
-        FROM activity_audit_log a
-        LEFT JOIN (
-            SELECT
-                entity_id,
-                entity_type,
-                COUNT(*) FILTER (WHERE vote_type = 'LIKE')    AS likes,
-                COUNT(*) FILTER (WHERE vote_type = 'DISLIKE') AS dislikes
-            FROM item_votes
-            GROUP BY entity_id, entity_type
-        ) v
-          ON a.entity_id = v.entity_id
-         AND a.entity_type = v.entity_type
-
-        WHERE a.operation IN ('VIEW', 'DOWNLOAD')
-  """);
+                        FROM user_activity_audit_log a
+                       WHERE a.asset_type = ANY(string_to_array($1, ',')) \s
+                    """);
 
     JsonArray params = new JsonArray();
-    int idx = 1;
+    params.add(assetTypeCsv);
+    int idx = 2;
 
-    // Optional time filter
+    // ---- Time filter
     if (startTime != null && endTime != null) {
       sql.append(" AND a.created_at BETWEEN ")
           .append("to_timestamp($")
@@ -520,64 +545,64 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
           .append("to_timestamp($")
           .append(idx + 1)
           .append(", 'YYYY-MM-DD\"T\"HH24:MI:SS')");
-
       params.add(startTime);
       params.add(endTime);
       idx += 2;
     }
 
-    // assetType (ENUM safe)
-    sql.append(" AND a.entity_type = ANY(string_to_array($")
-        .append(idx)
-        .append(", ',')::entity_type[])");
-    params.add(assetType);
-    idx++;
-
+    // ---- Optional filters
     if (accessPolicy != null) {
-      sql.append(" AND a.access_policy = ANY(string_to_array($").append(idx).append(", ','))");
+      sql.append(" AND a.asset_access_policy = ANY(string_to_array($")
+          .append(idx)
+          .append(", ','))");
       params.add(accessPolicy);
       idx++;
     }
 
     if (orgType != null) {
-      sql.append(" AND a.org_type = ANY(string_to_array($").append(idx).append("::text, ','))");
+      sql.append(" AND a.asset_org_type = ANY(string_to_array($").append(idx).append(", ','))");
       params.add(orgType);
       idx++;
     }
 
     if (sector != null) {
-      sql.append(" AND a.sector = ANY(string_to_array($").append(idx).append("::text, ','))");
+      sql.append(" AND a.sector = ANY(string_to_array($").append(idx).append(", ','))");
       params.add(sector);
       idx++;
     }
 
-    // Finish SQL
+    // ---- Close CTE + final select
     sql.append(
         """
-        GROUP BY
-            a.entity_id, a.entity_name, a.entity_type,
-            a.org_id, a.org_name,
-            a.provider_id,
-            v.likes, v.dislikes
-    )
-    SELECT *,
-           ROW_NUMBER() OVER (ORDER BY %s) AS rank,
-           COUNT(*) OVER() AS total_count
-    FROM stats
-    ORDER BY %s
-    LIMIT $%d OFFSET $%d
-  """
+                    GROUP BY
+                        a.asset_id,
+                        a.asset_name,
+                        a.asset_type,
+                        a.asset_org_type,
+                        a.asset_org_id,
+                        a.asset_org_name,
+                        a.asset_provider_id,
+                        a.asset_provider_name
+                )
+                SELECT *,
+                       ROW_NUMBER() OVER (ORDER BY %s) AS rank,
+                       COUNT(*) OVER() AS total_count
+                FROM asset_stats
+                WHERE downloads > 0 OR views > 0
+                ORDER BY %s
+                LIMIT $%d OFFSET $%d
+                """
             .formatted(orderBySql, orderBySql, idx, idx + 1));
 
     params.add(limit);
     params.add(offset);
 
-    LOGGER.debug("Executing SQL:\n{}", sql);
+    LOGGER.debug("Executing Asset Leaderboard SQL:\n{}", sql);
     LOGGER.debug("Params: {}", params.encodePrettily());
 
-    // ----------------------------
+    // -------------------------------------------------
     // 6. Execute & map
-    // ----------------------------
+    // -------------------------------------------------
     return postgresService
         .executeQuery(sql.toString(), params)
         .map(
@@ -586,22 +611,23 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
                   result.getRows().stream()
                       .map(
                           obj -> {
-                            JsonObject row = (JsonObject) obj;
+                            JsonObject r = (JsonObject) obj;
                             return new AssetLeaderboardEntry(
-                                row.getInteger("rank"),
-                                row.getString("entity_id"),
-                                row.getString("entity_name"),
-                                row.getString("entity_type"),
-                                row.getString("short_description"),
-                                row.getString("access_policy", ""),
-                                row.getString("provider_id"),
-                                row.getString("provider_name", ""),
-                                row.getString("org_id"),
-                                row.getString("org_name"),
-                                row.getInteger("downloads", 0),
-                                row.getInteger("likes", 0),
-                                row.getInteger("dislikes", 0),
-                                row.getInteger("views", 0));
+                                r.getInteger("rank"),
+                                r.getString("asset_id"),
+                                r.getString("asset_name"),
+                                r.getString("asset_type"),
+                                r.getString("short_description"),
+                                r.getString("access_policy", ""),
+                                r.getString("asset_provider_id"),
+                                r.getString("asset_provider_name", ""),
+                                r.getString("asset_org_id"),
+                                r.getString("asset_org_name"),
+                                r.getString("asset_org_type", ""),
+                                r.getInteger("downloads", 0),
+                                r.getInteger("likes", 0),
+                                r.getInteger("dislikes", 0),
+                                r.getInteger("views", 0));
                           })
                       .toList();
 

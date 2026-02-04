@@ -6,6 +6,7 @@ public record ProviderLeaderboardEntry(
     String username,
     String organizationId,
     String organizationName,
+    String organizationType,
     int publishedDatabank,
     int publishedAiModels,
     int publishedUsecases,
