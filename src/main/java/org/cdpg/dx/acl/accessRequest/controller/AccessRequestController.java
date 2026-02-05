@@ -1,10 +1,20 @@
 package org.cdpg.dx.acl.accessRequest.controller;
 
-import static org.cdpg.dx.acl.accessRequest.config.Constants.*;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.*;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.CHECK_ACCESS_REQUEST_API;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.CREATE_ACCESS_REQUEST_API;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_ACCESS_REQUEST_CONSUMER_API;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_ACCESS_REQUEST_FOR_ORG_ADMIN_API;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_ACCESS_REQUEST_PROVIDER_API;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.UPDATE_ACCESS_REQUEST_API;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.WITHDRAW_ACCESS_REQUEST_API_FOR_CONSUMER;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ASSET_ORGANIZATION_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ASSET_TYPE;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CREATED_AT;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_EXPIRY_AT;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_UPDATED_AT;
 import static org.cdpg.dx.acl.accessRequest.util.Constants.API_TO_DB_MAP;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
-import static org.cdpg.dx.email.util.Constants.*;
 
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -22,12 +32,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
 import org.cdpg.dx.acl.accessRequest.dao.model.Status;
+import org.cdpg.dx.acl.accessRequest.model.AccessRequestAuditOperation;
 import org.cdpg.dx.acl.accessRequest.service.AccessRequestService;
-import org.cdpg.dx.acl.accessRequest.util.AuditingHelper;
+import org.cdpg.dx.acl.accessRequest.util.AccessRequestAuditLogHelper;
 import org.cdpg.dx.acl.apiserver.ApdApiController;
 import org.cdpg.dx.acl.policy.util.UserAccessHandler;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
-import org.cdpg.dx.auditing.model.AuditLog;
+import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.URNGenerator;
@@ -144,12 +155,8 @@ public class AccessRequestController implements ApdApiController {
   private void updateAccessRequestHandlerForConumser(RoutingContext routingContext) {
     LOGGER.info("Handling deleteAccessRequest request...");
 
-    DxUser user = RoutingContextHelper.fromPrincipal(routingContext);
-    ;
     UUID userId = UUID.fromString(routingContext.user().subject());
     UUID requestId = RequestHelper.getPathParamAsUUID(routingContext, "id");
-    String organizationId = user.organisationId();
-    String organizationName = user.organisationName();
 
     accessRequestService
         .updateAccessRequestForConsumer(userId, requestId)
@@ -159,16 +166,10 @@ public class AccessRequestController implements ApdApiController {
               //          Future<Void> future =
               //            emailComposer.sendEmailForUpdateAccessRequest(accessRequestDto, status);
 
-              AuditLog auditLog =
-                  AuditingHelper.createAuditLog(
-                      accessRequestDto,
-                      routingContext.user(),
-                      RoutingContextHelper.getRequestPath(routingContext),
-                      "PUT",
-                      "Download Access Withdrawn",
-                      organizationId,
-                      organizationName);
-              RoutingContextHelper.setAuditingLog(routingContext, auditLog);
+              UserActivityAuditLogBuilder auditLog =
+                  AccessRequestAuditLogHelper.buildAudit(
+                      routingContext, accessRequestDto, AccessRequestAuditOperation.WITHDRAW);
+              RoutingContextHelper.setAuditingLogV2(routingContext, auditLog);
               ResponseBuilder.sendSuccess(
                   routingContext, "Request updated successfully", urnGenerator);
             })
@@ -314,7 +315,6 @@ public class AccessRequestController implements ApdApiController {
 
     String organizationId = provider.organisationId();
     UUID providerOrganizationId = organizationId != null ? UUID.fromString(organizationId) : null;
-    String providerOrganizationName = provider.organisationName();
     boolean isUserOrgAdmin = provider.roles().contains(DxRole.ORG_ADMIN.getRole());
 
     if (status == Status.GRANTED) {
@@ -332,16 +332,10 @@ public class AccessRequestController implements ApdApiController {
               feedbackToConsumer)
           .onSuccess(
               accessRequestDto -> {
-                AuditLog auditLog =
-                    AuditingHelper.createAuditLog(
-                        accessRequestDto,
-                        ctx.user(),
-                        RoutingContextHelper.getRequestPath(ctx),
-                        "PUT",
-                        "Download Access Granted",
-                        organizationId,
-                        providerOrganizationName);
-                //RoutingContextHelper.setAuditingLog(ctx, auditLog);
+                UserActivityAuditLogBuilder auditLog =
+                    AccessRequestAuditLogHelper.buildAudit(
+                        ctx, accessRequestDto, AccessRequestAuditOperation.GRANT);
+                RoutingContextHelper.setAuditingLogV2(ctx, auditLog);
                 ResponseBuilder.sendSuccess(ctx, "Request updated successfully", urnGenerator);
                 JsonObject jsonObject =
                     new SendEmail(
@@ -377,16 +371,11 @@ public class AccessRequestController implements ApdApiController {
               feedbackToConsumer)
           .onSuccess(
               accessRequestDto -> {
-                AuditLog auditLog =
-                    AuditingHelper.createAuditLog(
-                        accessRequestDto,
-                        ctx.user(),
-                        RoutingContextHelper.getRequestPath(ctx),
-                        "PUT",
-                        "Download Access Rejected",
-                        organizationId,
-                        providerOrganizationName);
-                //RoutingContextHelper.setAuditingLog(ctx, auditLog);
+                UserActivityAuditLogBuilder auditLog =
+                    AccessRequestAuditLogHelper.buildAudit(
+                        ctx, accessRequestDto, AccessRequestAuditOperation.REJECT);
+                RoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+                // RoutingContextHelper.setAuditingLog(ctx, auditLog);
                 ResponseBuilder.sendSuccess(ctx, "Request updated successfully", urnGenerator);
                 JsonObject jsonObject =
                     new SendEmail(
@@ -428,23 +417,16 @@ public class AccessRequestController implements ApdApiController {
       ctx.fail(new DxForbiddenException("Invalid user"));
       return;
     }
-    String organizationId = consumer.organisationId();
-    String consumerOrganizationName = consumer.organisationName();
 
     accessRequestService
         .createAccessRequest(consumer, itemId, requestType, additionalInfo, constraints)
         .onSuccess(
             accessRequestDto -> {
-              AuditLog auditLog =
-                  AuditingHelper.createAuditLog(
-                      accessRequestDto,
-                      ctx.user(),
-                      RoutingContextHelper.getRequestPath(ctx),
-                      "POST",
-                      "Download Access Requested",
-                      organizationId,
-                      consumerOrganizationName);
-              //RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              UserActivityAuditLogBuilder auditLog =
+                  AccessRequestAuditLogHelper.buildAudit(
+                      ctx, accessRequestDto, AccessRequestAuditOperation.REQUEST);
+              RoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+              // RoutingContextHelper.setAuditingLog(ctx, auditLog);
               ResponseBuilder.sendSuccess(ctx, "Request inserted successfully!", urnGenerator);
               JsonObject jsonObject =
                   new SendEmail(
