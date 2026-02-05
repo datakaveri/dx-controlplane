@@ -32,6 +32,7 @@ import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RoutingContextHelper;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 import static org.cdpg.dx.aaa.delegation.util.Constants.DELEGATOR_ID;
 import static org.cdpg.dx.aaa.organization.config.Constants.*;
@@ -43,85 +44,99 @@ public class OrganizationCreateRequestHandler {
   private static final Logger LOGGER = LogManager.getLogger(OrganizationCreateRequestHandler.class);
 
   private final OrganizationService organizationService;
+  private final KeycloakUserService keycloakUserService;
   private final URNGenerator urnGenerator;
   private final EmailComposer emailComposer;
 
   public OrganizationCreateRequestHandler(
       OrganizationService organizationService,
+      KeycloakUserService keycloakUserService,
       EmailComposer emailComposer,
       URNGenerator urnGenerator) {
     this.organizationService = organizationService;
     this.urnGenerator = urnGenerator;
+    this.keycloakUserService = keycloakUserService;
     this.emailComposer = emailComposer;
   }
 
   public void createOrganisationRequest(RoutingContext ctx) {
-    JsonObject OrgRequestJson = ctx.body().asJsonObject();
 
+    if (ctx.body() == null || ctx.body().isEmpty() || ctx.body().asJsonObject() == null) {
+      ctx.fail(new DxBadRequestException("Request Body is required and must be valid JSON."));
+      return;
+    }
+
+    JsonObject orgRequestJson = ctx.body().asJsonObject();
     User user = ctx.user();
+    UUID userId = UUID.fromString(user.subject());
 
-    OrgRequestJson.put("requested_by", user.subject());
-    OrgRequestJson.put("user_name", user.principal().getString("name"));
-    String orgName = OrgRequestJson.getString("name");
+    String orgName = orgRequestJson.getString("name");
 
-    OrganizationCreateRequest organizationCreateRequest =
-        OrganizationCreateRequest.fromJson(OrgRequestJson);
+    keycloakUserService.getUserById(userId)
+      .compose(keycloakUser -> {
 
-    organizationService
-        .getOrganizationCreateRequestsByUserId(UUID.fromString(user.subject()))
-        .compose(
-            createRequests -> {
-              for (OrganizationCreateRequest request : createRequests) {
-                if (request.requestedBy().equals(UUID.fromString(user.subject()))) {
-                  return Future.failedFuture(
-                      new DxConflictException(
-                          "Organisation create request already granted/ pending for this user"));
-                }
+        // enrich request with Keycloak data
+        orgRequestJson.put("requested_by", userId.toString());
+        orgRequestJson.put("user_name", keycloakUser.name());
+
+        OrganizationCreateRequest organizationCreateRequest =
+          OrganizationCreateRequest.fromJson(orgRequestJson);
+
+        return organizationService
+          .getOrganizationCreateRequestsByUserId(userId)
+          .compose(createRequests -> {
+
+            // check if user already has a request
+            for (OrganizationCreateRequest request : createRequests) {
+              if (request.requestedBy().equals(userId)) {
+                return Future.failedFuture(
+                  new DxConflictException(
+                    "Organisation create request already granted/ pending for this user"));
               }
-              return organizationService
-                  .getAllPendingGrantedOrganizationCreateRequests()
-                  .compose(
-                      requests -> {
-                        for (OrganizationCreateRequest request : requests) {
-                          if (request.name().equalsIgnoreCase(orgName)) {
-                            return Future.failedFuture(
-                                new DxConflictException(
-                                    "Organisation name already exists/ under review"));
-                          }
-                        }
-                        return organizationService
-                            .getAllPendingGrantedOrganizationCreateRequests()
-                            .compose(
-                                pendingRequests -> {
-                                  for (OrganizationCreateRequest request : requests) {
-                                    if (request
-                                        .managerEmail()
-                                        .equalsIgnoreCase(
-                                            organizationCreateRequest.managerEmail())) {
-                                      return Future.failedFuture(
-                                          new DxConflictException(
-                                              "Manager email is already in use for another organisation request"));
-                                    }
-                                  }
-                                  return organizationService.createOrganizationRequest(
-                                      organizationCreateRequest);
-                                })
-                            .onFailure(ctx::fail);
-                      })
-                  .onFailure(ctx::fail);
-            })
-        .onSuccess(
-            requests -> {
-              ActivityAuditLogBuilder auditLog =
-                  OrganizationAuditHelper.buildOrgCreateRequestAudit(
-                      ctx, requests.id(), requests.name());
-              RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
+            }
 
-              ResponseBuilder.sendSuccess(ctx, requests, urnGenerator);
-              emailComposer.sendEmailForCreatingOrg(organizationCreateRequest, user);
-            })
-        .onFailure(ctx::fail);
+            return organizationService
+              .getAllPendingGrantedOrganizationCreateRequests()
+              .compose(requests -> {
+
+                // check org name uniqueness
+                for (OrganizationCreateRequest request : requests) {
+                  if (request.name().equalsIgnoreCase(orgName)) {
+                    return Future.failedFuture(
+                      new DxConflictException(
+                        "Organisation name already exists/ under review"));
+                  }
+                }
+
+                // check manager email uniqueness
+                for (OrganizationCreateRequest request : requests) {
+                  if (request.managerEmail()
+                    .equalsIgnoreCase(organizationCreateRequest.managerEmail())) {
+                    return Future.failedFuture(
+                      new DxConflictException(
+                        "Manager email is already in use for another organisation request"));
+                  }
+                }
+
+                return organizationService
+                  .createOrganizationRequest(organizationCreateRequest);
+              });
+          });
+      })
+      .onSuccess(requests -> {
+
+        ActivityAuditLogBuilder auditLog =
+          OrganizationAuditHelper.buildOrgCreateRequestAudit(
+            ctx, requests.id(), requests.name());
+
+        RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
+
+        ResponseBuilder.sendSuccess(ctx, requests, urnGenerator);
+        emailComposer.sendEmailForCreatingOrg(requests, user);
+      })
+      .onFailure(ctx::fail);
   }
+
 
   public void updateOrganisationRequest(RoutingContext ctx) {
 

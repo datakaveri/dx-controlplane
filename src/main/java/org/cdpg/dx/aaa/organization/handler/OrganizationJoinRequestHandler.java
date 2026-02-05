@@ -34,6 +34,7 @@ import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.util.RoutingContextHelper;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 import static org.cdpg.dx.aaa.organization.config.Constants.*;
 import static org.cdpg.dx.aaa.organization.config.Constants.API_TO_DB_ORG_JOIN_REQUEST;
@@ -50,11 +51,13 @@ public class OrganizationJoinRequestHandler {
   private final EmailComposer emailComposer;
   private final URNGenerator urnGenerator;
   private final OrgOwnershipValidator orgOwnershipValidator;
+  private final KeycloakUserService keycloakUserService;
 
   public OrganizationJoinRequestHandler(
       OrganizationService organizationService,
       OrgOwnershipValidator orgOwnershipValidator,
       UserService userService,
+      KeycloakUserService keycloakUserService,
       EmailComposer emailComposer,
       URNGenerator urnGenerator) {
     this.organizationService = organizationService;
@@ -62,6 +65,8 @@ public class OrganizationJoinRequestHandler {
     this.userService = userService;
     this.emailComposer = emailComposer;
     this.urnGenerator = urnGenerator;
+    this.keycloakUserService = keycloakUserService;
+
   }
 
   public void joinOrganisationRequest(RoutingContext ctx) {
@@ -70,49 +75,56 @@ public class OrganizationJoinRequestHandler {
     JsonObject orgRequestJson = ctx.body().asJsonObject();
 
     User user = ctx.user();
-    orgRequestJson.put("user_id", user.subject());
-    orgRequestJson.put("user_name", user.principal().getString("name"));
-    orgRequestJson.put("organization_id", orgId.toString());
+    UUID userId = UUID.fromString(user.subject());
 
-    OrganizationJoinRequest organizationJoinRequest =
-      OrganizationJoinRequest.fromJson(orgRequestJson);
+    keycloakUserService.getUserById(userId)
+      .compose(keycloakUser -> {
 
-    String officialEmailStr = organizationJoinRequest.officialEmail();
+        // ONLY change: user_name from Keycloak
+        orgRequestJson.put("user_id", user.subject());
+        orgRequestJson.put("user_name", keycloakUser.name());
+        orgRequestJson.put("organization_id", orgId.toString());
 
-    organizationService
-      .getAllOrganizationJoinRequests()
-      .compose(joinRequests -> {
+        OrganizationJoinRequest organizationJoinRequest =
+          OrganizationJoinRequest.fromJson(orgRequestJson);
 
-        for (OrganizationJoinRequest request : joinRequests) {
+        String officialEmailStr = organizationJoinRequest.officialEmail();
 
-          // Same user + same org + active request
-          if (
-            request.organizationId().equals(orgId)
-              && request.userId().equals(UUID.fromString(user.subject()))
-              && !request.status().equals(Status.WITHDRAWN.getStatus())
-          ) {
-            return Future.failedFuture(
-              new DxConflictException(
-                "User already has a pending/granted join request for this organization"
-              )
-            );
-          }
+        return organizationService
+          .getAllOrganizationJoinRequests()
+          .compose(joinRequests -> {
 
-          // Same official email already in use
-          if (
-            request.officialEmail().equals(officialEmailStr)
-              && !Set.of(
-              Status.REJECTED.getStatus(),
-              Status.WITHDRAWN.getStatus()
-            ).contains(request.status())
-          ) {
-            return Future.failedFuture(
-              new DxConflictException("This email has been used already!")
-            );
-          }
-        }
+            for (OrganizationJoinRequest request : joinRequests) {
 
-        return organizationService.joinOrganizationRequest(organizationJoinRequest);
+              // Same user + same org + active request
+              if (
+                request.organizationId().equals(orgId)
+                  && request.userId().equals(userId)
+                  && !request.status().equals(Status.WITHDRAWN.getStatus())
+              ) {
+                return Future.failedFuture(
+                  new DxConflictException(
+                    "User already has a pending/granted join request for this organization"
+                  )
+                );
+              }
+
+              // Same official email already in use
+              if (
+                request.officialEmail().equals(officialEmailStr)
+                  && !Set.of(
+                  Status.REJECTED.getStatus(),
+                  Status.WITHDRAWN.getStatus()
+                ).contains(request.status())
+              ) {
+                return Future.failedFuture(
+                  new DxConflictException("This email has been used already!")
+                );
+              }
+            }
+
+            return organizationService.joinOrganizationRequest(organizationJoinRequest);
+          });
       })
       .onSuccess(createdRequest -> {
 
@@ -127,11 +139,10 @@ public class OrganizationJoinRequestHandler {
         RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
         ResponseBuilder.sendSuccess(ctx, "Created Join request", urnGenerator);
 
-        emailComposer.sendEmailForJoiningOrg(organizationJoinRequest, user);
+        emailComposer.sendEmailForJoiningOrg(createdRequest, user);
       })
       .onFailure(ctx::fail);
   }
-
 
   public void getJoinOrganisationRequests(RoutingContext ctx) {
 
