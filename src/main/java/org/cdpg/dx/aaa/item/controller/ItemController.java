@@ -303,14 +303,18 @@ public class ItemController implements ApiController {
 
       String kcId = ctx.user().principal().getString(SUB);
       String orgName = ctx.user().principal().getString(ORG_NAME);
-      //String name = ctx.user().principal().getString(NAME);
+      String name = ctx.user().principal().getString(NAME);
       String orgId = ctx.user().principal().getString(ORGANISATION_ID);
-      body.put(PROVIDER_USER_ID, kcId)
-          .put(ORGANIZATION, orgName)
-          .put(VERIFIED_BY, orgName);
+      body.put(PROVIDER_USER_ID, kcId);
       // Only set organizationId if it exists in token and not already provided in payload
       if (orgId != null && !orgId.isBlank()) {
         body.put(ORGANIZATION_ID, orgId);
+      }
+      if (orgName != null && !orgName.isBlank()) {
+        body.put(ORGANIZATION, orgName);
+      }
+      if (name != null && !name.isBlank()) {
+        body.put(VERIFIED_BY, name);
       }
       // Add uploadedBy only if user hasn't provided one
       if (!body.containsKey(UPLOADED_BY) || body.getString(UPLOADED_BY).isBlank()) {
