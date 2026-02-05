@@ -80,11 +80,11 @@ public class OrganizationControllerFactory {
         new OrganizationQueryHandler(organizationService, urnGenerator);
 
     OrganizationCreateRequestHandler createRequestHandler =
-        new OrganizationCreateRequestHandler(organizationService,emailComposer, urnGenerator);
+        new OrganizationCreateRequestHandler(organizationService,keycloakUserService,emailComposer, urnGenerator);
 
     OrganizationJoinRequestHandler joinRequestHandler =
         new OrganizationJoinRequestHandler(
-            organizationService, orgOwnershipValidator,userService, emailComposer, urnGenerator);
+            organizationService, orgOwnershipValidator,userService,keycloakUserService, emailComposer, urnGenerator);
 
     OrganizationUserHandler userHandler =
         new OrganizationUserHandler(organizationService, userService, urnGenerator);

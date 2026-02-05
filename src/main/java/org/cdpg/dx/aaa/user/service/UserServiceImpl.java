@@ -6,9 +6,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.*;
-
-import io.vertx.ext.auth.User;
-import io.vertx.ext.web.RoutingContext;
 import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.organization.models.OrganizationCreateRequest;
 import org.cdpg.dx.aaa.organization.models.OrganizationJoinRequest;
@@ -16,17 +13,10 @@ import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.dao.CustomRoleDAO;
 import org.cdpg.dx.aaa.user.models.CustomRole;
 import org.cdpg.dx.aaa.user.models.UserInfo;
-import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
-import org.cdpg.dx.auth.authentication.util.AccessValidator;
-import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.request.PaginatedRequest;
-import org.cdpg.dx.common.request.PaginationRequestBuilder;
-import org.cdpg.dx.common.response.ResponseBuilder;
-import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.database.elastic.model.QueryModel;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.elastic.util.QueryType;
@@ -37,8 +27,6 @@ import org.slf4j.LoggerFactory;
 
 import static org.cdpg.dx.aaa.common.Constants.FIELD;
 import static org.cdpg.dx.aaa.common.Constants.VALUE;
-import static org.cdpg.dx.aaa.user.util.constants.*;
-import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
 public class UserServiceImpl implements UserService {
 
