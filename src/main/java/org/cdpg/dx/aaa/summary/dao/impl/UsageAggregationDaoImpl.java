@@ -49,8 +49,8 @@ public class UsageAggregationDaoImpl implements UsageAggregationDao {
                   COALESCE(SUM(size_bytes) FILTER (WHERE created_at >= now() - interval '7 days'), 0)   AS one_week_size,
                   COALESCE(SUM(size_bytes) FILTER (WHERE created_at >= now() - interval '1 day'), 0)    AS one_day_size
                 FROM %s
-                WHERE entity_type IN ('DATABANK', 'AI_MODEL')
-                  AND operation IN ('VIEW', 'DOWNLOAD')
+                WHERE asset_type IN ('DATABANK', 'AI_MODEL', 'USECASE')
+                  AND action IN ('View', 'Download')
                 """
                 .formatted(activityTable));
 

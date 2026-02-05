@@ -11,6 +11,7 @@ public record AssetLeaderboardEntry(
     String providerName,
     String organizationId,
     String organizationName,
+    String organizationType,
     int downloads,
     int likes,
     int dislikes,
