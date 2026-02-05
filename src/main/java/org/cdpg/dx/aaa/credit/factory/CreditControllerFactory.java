@@ -21,10 +21,10 @@ public class CreditControllerFactory {
 
   private CreditControllerFactory() {}
 
-  public static CreditController create(CreditService creditService, EmailComposer emailCompose, UserService userService, OrganizationService organizationService, URNGenerator urnGenerator, Boolean isKycRequired) {
+  public static CreditController create(CreditService creditService, EmailComposer emailCompose, UserService userService, OrganizationService organizationService, KeycloakUserService keycloakUserService,URNGenerator urnGenerator, Boolean isKycRequired) {
 
 
-    CreditHandler creditHandler = new CreditHandler(creditService,emailCompose,userService, organizationService, urnGenerator);
+    CreditHandler creditHandler = new CreditHandler(creditService,emailCompose,userService, organizationService,keycloakUserService, urnGenerator);
 
     return new CreditController(creditHandler, isKycRequired);
   }

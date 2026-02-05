@@ -28,6 +28,7 @@ import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -49,12 +50,14 @@ public class CreditHandler {
   private final UserService userService;
   private final URNGenerator urnGenerator;
   private final OrganizationService organizationService;
+  private final KeycloakUserService keycloakUserService;
 
 
-  public CreditHandler(CreditService creditService, EmailComposer emailComposer, UserService userService, OrganizationService organizationService, URNGenerator urnGenerator) {
+  public CreditHandler(CreditService creditService, EmailComposer emailComposer, UserService userService, OrganizationService organizationService, KeycloakUserService keycloakUserService,URNGenerator urnGenerator) {
     this.creditService = creditService;
     this.emailComposer = emailComposer;
     this.userService = userService;
+    this.keycloakUserService = keycloakUserService;
     this.organizationService = organizationService;
     this.urnGenerator = urnGenerator;
   }
@@ -62,33 +65,41 @@ public class CreditHandler {
 
   public void createCreditRequest(RoutingContext ctx) {
 
-
-
-
     JsonObject creditRequestJson = Optional.ofNullable(ctx.body().asJsonObject())
       .orElse(new JsonObject());
 
-
-    CreditRequest creditRequest;
     User user = ctx.user();
-    creditRequestJson.put("user_id", user.subject());
+    UUID userId = UUID.fromString(user.subject());
 
-    String userName = user.principal().getString("given_name");
-    creditRequestJson.put("user_name", userName);
+    keycloakUserService.getUserById(userId)
+      .compose(keycloakUser -> {
 
-    creditRequest = CreditRequest.fromJson(creditRequestJson);
+        // enrich request JSON
+        creditRequestJson.put("user_id", keycloakUser.sub().toString());
 
-    creditService.createCreditRequest(creditRequest)
-      .onSuccess(requests ->
-      {
-        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx), "POST", "Credit Request Created");
+        creditRequestJson.put("user_name", keycloakUser.name());
+
+        CreditRequest creditRequest = CreditRequest.fromJson(creditRequestJson);
+
+        return creditService.createCreditRequest(creditRequest);
+      })
+      .onSuccess(requests -> {
+
+        AuditLog auditLog = AuditingHelper.createAuditLog(
+          ctx.user(),
+          RoutingContextHelper.getRequestPath(ctx),
+          "POST",
+          "Credit Request Created"
+        );
+
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
         ResponseBuilder.sendSuccess(ctx, requests, this.urnGenerator);
+
         emailComposer.sendEmailForCreditRequest(user);
       })
       .onFailure(ctx::fail);
   }
+
 
   public void getCreditRequests(RoutingContext ctx) {
 
@@ -327,64 +338,79 @@ public class CreditHandler {
 
   public void createComputeRoleRequest(RoutingContext ctx) {
 
-    User user = ctx.user();
-    String userID = user.subject();
-    String userName = user.principal().getString("name");
-
     if (ctx.body() == null || ctx.body().isEmpty() || ctx.body().asJsonObject() == null) {
       ctx.fail(new DxBadRequestException("Request Body is required and must be valid JSON."));
       return;
     }
 
-    JsonObject computeRoleJsonBody = ctx.body().asJsonObject();
-    System.out.println("Additional Info: " + computeRoleJsonBody);
+    User user = ctx.user();
+    UUID userId = UUID.fromString(user.subject());
 
+    JsonObject computeRoleJsonBody = ctx.body().asJsonObject();
     JsonObject additionalInfo = computeRoleJsonBody.getJsonObject("additional_info");
 
-    ComputeRole computeRoleRequest = ComputeRole.fromJson(new JsonObject().put("user_id", userID).put("user_name", userName).put("additional_info", additionalInfo));
+    keycloakUserService.getUserById(userId)
+      .compose(keycloakUser -> {
 
-    creditService.getComputeRoleRequestByUserId(UUID.fromString(userID))
-      .recover(err -> {
-        if (err instanceof DxNotFoundException) {
-          return Future.succeededFuture(null);
-        }
-        // For other errors, propagate
-        return Future.failedFuture(err);
-      })
-      .compose(existingComputeRole -> {
-        if (existingComputeRole != null && existingComputeRole.status().equalsIgnoreCase(Status.REJECTED.getStatus())) {
-          return creditService.updateComputeRoleStatus(existingComputeRole.id(), Status.PENDING, existingComputeRole.approvedBy())
-            .map(updated -> true);
-        } else {
-          // Otherwise, create a new compute role request
-          return Future.succeededFuture(false);
-        }
-      })
-      .compose(updated -> {
-        System.out.println("here in compose block after update" + updated);
-        if (!updated) {
-          return creditService.createComputeRoleRequest(computeRoleRequest)
-            .onSuccess(requests -> {
-              LOGGER.info("Requests in compute : {}",requests.toJson());
-              ResponseBuilder.sendSuccess(ctx, requests, this.urnGenerator);
-              emailComposer.sendEmailForComputeRole(computeRoleRequest, user);
-            })
-            .onFailure(ctx::fail)
-            .mapEmpty();
-        } else {
-          return Future.succeededFuture();
-        }
+        // Build request using Keycloak data
+        ComputeRole computeRoleRequest = ComputeRole.fromJson(
+          new JsonObject()
+            .put("user_id", userId.toString())
+            .put("user_name", keycloakUser.name())
+            .put("additional_info", additionalInfo)
+        );
+
+        return creditService.getComputeRoleRequestByUserId(userId)
+          .recover(err -> {
+            if (err instanceof DxNotFoundException) {
+              return Future.succeededFuture(null);
+            }
+            return Future.failedFuture(err);
+          })
+          .compose(existingComputeRole -> {
+            if (existingComputeRole != null &&
+              existingComputeRole.status().equalsIgnoreCase(Status.REJECTED.getStatus())) {
+
+              return creditService.updateComputeRoleStatus(
+                  existingComputeRole.id(),
+                  Status.PENDING,
+                  existingComputeRole.approvedBy()
+                )
+                .map(updated -> true);
+            }
+            return Future.succeededFuture(false);
+          })
+          .compose(updated -> {
+            if (!updated) {
+              return creditService.createComputeRoleRequest(computeRoleRequest)
+                .onSuccess(requests -> {
+                  LOGGER.info("Requests in compute : {}", requests.toJson());
+                  ResponseBuilder.sendSuccess(ctx, requests, this.urnGenerator);
+                  emailComposer.sendEmailForComputeRole(computeRoleRequest, user);
+                })
+                .mapEmpty();
+            }
+            return Future.succeededFuture();
+          });
       })
       .onSuccess(v -> {
-        System.out.println("here in onSuccess block");
-        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx), "POST", "Compute Role Request Created");
+        AuditLog auditLog = AuditingHelper.createAuditLog(
+          ctx.user(),
+          RoutingContextHelper.getRequestPath(ctx),
+          "POST",
+          "Compute Role Request Created"
+        );
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, "Compute Role Request created successfully", this.urnGenerator);
+
+        ResponseBuilder.sendSuccess(
+          ctx,
+          "Compute Role Request created successfully",
+          this.urnGenerator
+        );
       })
       .onFailure(ctx::fail);
-
   }
+
 
   public void getAllComputeRequests(RoutingContext ctx) {
 

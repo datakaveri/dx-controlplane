@@ -177,6 +177,7 @@ public class ControllerFactory {
             emailComposer,
             userService,
             organizationService,
+            keycloakUserService,
             urnGenerator,
             isKycRequired);
 
