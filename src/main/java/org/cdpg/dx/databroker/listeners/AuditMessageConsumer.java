@@ -7,9 +7,13 @@ import io.vertx.rabbitmq.RabbitMQConsumer;
 import io.vertx.rabbitmq.RabbitMQMessage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.auditing.v2.enrichment.AssetEnrichmentService;
+import org.cdpg.dx.auditing.v2.enrichment.AuditEnrichmentService;
 import org.cdpg.dx.auditing.v2.model.ActivityAuditLogEntity;
 import org.cdpg.dx.aaa.activity.service.UserActivityAuditLogService;
+
+import java.util.UUID;
 
 public class AuditMessageConsumer implements RabitMqConsumer {
 
@@ -17,8 +21,9 @@ public class AuditMessageConsumer implements RabitMqConsumer {
 
   private final RabbitMQClient rabbitMqClient;
   private final String queueName;
-  private final AssetEnrichmentService assetEnrichmentService;
+  private final AuditEnrichmentService auditEnrichmentService;
   private final UserActivityAuditLogService auditService;
+  private final ItemService itemService;
   private final boolean dlqEnabled;
 
   private RabbitMQConsumer consumer;
@@ -29,17 +34,22 @@ public class AuditMessageConsumer implements RabitMqConsumer {
   public AuditMessageConsumer(
       RabbitMQClient rabbitMqClient,
       String queueName,
-      AssetEnrichmentService assetEnrichmentService,
+      AuditEnrichmentService auditEnrichmentService,
       UserActivityAuditLogService auditService,
+      ItemService itemService,
       boolean dlqEnabled) {
 
     this.rabbitMqClient = rabbitMqClient;
     this.queueName = queueName;
-    this.assetEnrichmentService = assetEnrichmentService;
+    this.auditEnrichmentService = auditEnrichmentService;
     this.auditService = auditService;
+    this.itemService = itemService;
     this.dlqEnabled = dlqEnabled;
   }
 
+  // ----------------------------------------------------
+  // Lifecycle
+  // ----------------------------------------------------
   @Override
   public void start() {
     rabbitMqClient
@@ -70,14 +80,13 @@ public class AuditMessageConsumer implements RabitMqConsumer {
   // Message handling
   // ----------------------------------------------------
   private void handleMessage(RabbitMQMessage message) {
+
+    long deliveryTag = message.envelope().getDeliveryTag();
     boolean redelivered = message.envelope().isRedeliver();
 
     LOGGER.info(
-        "Audit message received [deliveryTag={}, redelivered={}]",
-        message.envelope().getDeliveryTag(),
-        redelivered);
+        "Audit message received [deliveryTag={}, redelivered={}]", deliveryTag, redelivered);
 
-    long deliveryTag = message.envelope().getDeliveryTag();
     JsonObject body = message.body().toJsonObject();
 
     ActivityAuditLogEntity entity;
@@ -89,11 +98,12 @@ public class AuditMessageConsumer implements RabitMqConsumer {
       return;
     }
 
-    assetEnrichmentService
+    auditEnrichmentService
         .enrich(entity)
         .compose(auditService::insertUserActivityLogIntoDb)
         .onSuccess(
             v -> {
+              updateAssetMetricIfApplicable(entity);
               rabbitMqClient.basicAck(deliveryTag, false);
               LOGGER.debug("Audit log persisted successfully, id={}", entity.getId());
             })
@@ -122,5 +132,42 @@ public class AuditMessageConsumer implements RabitMqConsumer {
       LOGGER.error("Audit insert failed (second attempt), dropping message", err);
       rabbitMqClient.basicAck(deliveryTag, false);
     }
+  }
+
+  // ----------------------------------------------------
+  // Asset metrics update (best-effort)
+  // ----------------------------------------------------
+  private void updateAssetMetricIfApplicable(ActivityAuditLogEntity entity) {
+
+    // Only asset-level audit logs
+    if (!"ASSET".equalsIgnoreCase(entity.getLogType())) {
+      return;
+    }
+
+    String action = entity.getAction();
+    String metricField;
+
+    if ("VIEW".equalsIgnoreCase(action)) {
+      metricField = "views";
+    } else if ("DOWNLOAD".equalsIgnoreCase(action)) {
+      metricField = "downloads";
+    } else {
+      return;
+    }
+
+    UUID assetId;
+    try {
+      assetId = entity.getAssetId();
+    } catch (Exception e) {
+      LOGGER.warn("Invalid assetId in audit log: {}", entity.getAssetId(), e);
+      return;
+    }
+
+    itemService
+        .updateMetric(assetId, metricField, 1)
+        .onFailure(
+            err ->
+                LOGGER.warn(
+                    "Failed to update {} metric for assetId={}", metricField, assetId, err));
   }
 }

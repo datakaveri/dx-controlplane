@@ -26,7 +26,15 @@ public final class ActivityApiParamConstants {
   // Sort fields
   // -------------------------------------------------
   public static final Set<String> ALLOWED_SORT_FIELDS_V2 =
-      Set.of("createdAt", "userName", "orgName", "assetName", "assetShortDescription", "action");
+      Set.of(
+          "createdAt",
+          "userName",
+          "assetType",
+          "orgName",
+          "assetName",
+          "assetShortDescription",
+          "action",
+          "amount");
 
   // -------------------------------------------------
   // Consumer filters (many entries → Map.ofEntries)

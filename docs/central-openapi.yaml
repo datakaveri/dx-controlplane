@@ -7109,7 +7109,7 @@ paths:
                   items:
                     type: string
                   example: [ "concepts", "tags", "fileFormat", "organizationType", "accessPolicy",
-                             "resourceServer.url", "department", "industry" ]
+                             "resourceServer.url", "organization", "industry" ]
       responses:
         '200':
           description: Success
@@ -7222,7 +7222,7 @@ paths:
                 "organizationType",
                 "accessPolicy",
                 "resourceServer.url",
-                "department",
+                "organization",
                 "industry"
               ]
             }'
@@ -7241,7 +7241,7 @@ paths:
                 }
               ],
               "filter": [
-                "department",
+                "organization",
                 "organizationType",
                 "industry",
                 "fileFormat",
@@ -7264,7 +7264,7 @@ paths:
                 }
               ],
               "filter": [
-                "department",
+                "organization",
                 "organizationType"
               ]
             }'
@@ -7329,7 +7329,7 @@ paths:
             },
             {
               "searchType": "term",
-              "field": "department",
+              "field": "organization",
               "values": ["Health", "Environment"]
             }
           ]
@@ -7634,7 +7634,7 @@ paths:
                 },
                 {
                   "searchType": "term",
-                  "field": "department",
+                  "field": "organization",
                   "values": ["Environment Forests Science and Technology"]
                 },
                 {
@@ -7648,7 +7648,7 @@ paths:
                   "values": [80, 84]
                 }
               ],
-              "filter": ["id", "type", "department", "itemCreatedAt", "dataReadiness"]
+              "filter": ["id", "type", "organization", "itemCreatedAt", "dataReadiness"]
             }'
   /iudx/v2/cat/count:
     post:
@@ -8081,7 +8081,7 @@ paths:
                 },
                 {
                   "searchType": "term",
-                  "field": "department",
+                  "field": "organization",
                   "values": ["Environment Forests Science and Technology"]
                 },
                 {
@@ -8095,7 +8095,8 @@ paths:
                   "values": [80, 84]
                 }
               ],
-              "filter": ["id", "type", "department", "itemCreatedAt", "dataReadiness", "ownerUserId"]
+              "filter": ["id", "type", "organization", "itemCreatedAt", "dataReadiness", 
+              "ownerUserId"]
             }'
 
   ## Central CAT apis
@@ -8164,7 +8165,7 @@ paths:
                   items:
                     type: string
                   example: [ "concepts", "tags", "fileFormat", "organizationType", "accessPolicy",
-                             "resourceServer.url", "department", "industry" ]
+                             "resourceServer.url", "organization", "industry" ]
       responses:
         '200':
           description: Success
@@ -8277,7 +8278,7 @@ paths:
                 "organizationType",
                 "accessPolicy",
                 "resourceServer.url",
-                "department",
+                "organization",
                 "industry"
               ]
             }'
@@ -8296,7 +8297,7 @@ paths:
                 }
               ],
               "filter": [
-                "department",
+                "organization",
                 "organizationType",
                 "industry",
                 "fileFormat",
@@ -8319,7 +8320,7 @@ paths:
                 }
               ],
               "filter": [
-                "department",
+                "organization",
                 "organizationType"
               ]
             }'
@@ -8513,7 +8514,7 @@ paths:
                 },
                 {
                   "searchType": "term",
-                  "field": "department",
+                  "field": "organization",
                   "values": ["Environment Forests Science and Technology"]
                 },
                 {
@@ -8527,7 +8528,7 @@ paths:
                   "values": [80, 84]
                 }
               ],
-              "filter": ["id", "type", "department", "itemCreatedAt", "dataReadiness"]
+              "filter": ["id", "type", "organization", "itemCreatedAt", "dataReadiness"]
             }'
   /iudx/v2/central/cat/count:
     post:

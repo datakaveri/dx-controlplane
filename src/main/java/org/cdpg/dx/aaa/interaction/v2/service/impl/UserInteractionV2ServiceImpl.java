@@ -2,42 +2,67 @@ package org.cdpg.dx.aaa.interaction.v2.service.impl;
 
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import org.cdpg.dx.aaa.interaction.v2.dao.UserInteractionV2Dao;
 import org.cdpg.dx.aaa.interaction.v2.model.*;
 import org.cdpg.dx.aaa.interaction.v2.service.UserInteractionV2Service;
+
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
+
 import org.cdpg.dx.common.request.PaginatedRequest;
+import org.cdpg.dx.common.response.PaginatedApiResponse;
+
 import org.cdpg.dx.database.elastic.model.BulkSyncResult;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
 
 public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
+
   private static final Logger LOGGER = LogManager.getLogger(UserInteractionV2ServiceImpl.class);
 
   private final UserInteractionV2Dao dao;
   private final ItemService itemService;
 
   public UserInteractionV2ServiceImpl(UserInteractionV2Dao dao, ItemService itemService) {
+
     this.dao = dao;
     this.itemService = itemService;
   }
 
+  // =====================================================
+  // GET interactions (Paginated)
+  // =====================================================
   @Override
-  public Future<InteractionDelta> SaveIteraction(UUID userId, UserInteractionV2Request req) {
+  public Future<PaginatedApiResponse<UserInteractionAssetResponse>> getUserInteractions(
+      PaginatedRequest request) {
+
+    return dao.getUserInteractions(request).compose(this::enrichAndConvert);
+  }
+
+  // =====================================================
+  // SAVE interaction (LIKE / DISLIKE / BOOKMARK / NEUTRAL)
+  // =====================================================
+  @Override
+  public Future<InteractionDelta> saveInteraction(UUID userId, UserInteractionV2Request req) {
+
     return dao.upsertInteractionWithDelta(
             userId, req.assetId(), req.assetType().name(), req.action().name())
         .onSuccess(delta -> applyDeltaAsync(req, delta));
   }
 
+  // =====================================================
+  // Async ES metrics update (fire-and-forget)
+  // =====================================================
   private void applyDeltaAsync(UserInteractionV2Request req, InteractionDelta delta) {
+
     EngagementDelta engagementDelta = computeEngagementDelta(delta);
 
     if (engagementDelta.isNoOp()) {
@@ -50,10 +75,13 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
             engagementDelta.likeDelta(),
             engagementDelta.dislikeDelta())
         .onFailure(
-            err -> LOGGER.warn("Failed to update CAT metrics for asset={}", delta.entityId(), err));
+            err ->
+                LOGGER.warn(
+                    "Failed to update engagement metrics for asset={}", delta.entityId(), err));
   }
 
   private EngagementDelta computeEngagementDelta(InteractionDelta d) {
+
     int likeDelta = 0;
     int dislikeDelta = 0;
 
@@ -68,40 +96,49 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
     return new EngagementDelta(likeDelta, dislikeDelta);
   }
 
+  // =====================================================
+  // Bulk sync (admin / maintenance)
+  // =====================================================
   @Override
   public Future<BulkSyncResult> syncInteractionMetrics() {
-
     return dao.aggregateInteractions().compose(itemService::bulkSyncMetrics);
   }
 
-  private record EngagementDelta(int likeDelta, int dislikeDelta) {
-    boolean isNoOp() {
-      return likeDelta == 0 && dislikeDelta == 0;
-    }
-  }
-
-  @Override
-  public Future<PaginatedResult<InteractionRow>> getUserInteractions(PaginatedRequest request) {
-    return dao.getUserInteractions(request).compose(this::enrichWithItemData);
-  }
-
-  private Future<PaginatedResult<InteractionRow>> enrichWithItemData(
+  // =====================================================
+  // Enrichment + API mapping (single correct path)
+  // =====================================================
+  private Future<PaginatedApiResponse<UserInteractionAssetResponse>> enrichAndConvert(
       PaginatedResult<InteractionRow> page) {
 
     List<InteractionRow> rows = page.data();
 
     if (rows.isEmpty()) {
-      return Future.succeededFuture(page);
+      return Future.succeededFuture(new PaginatedApiResponse<>(List.of(), page.paginationInfo()));
     }
 
-    List<Future<InteractionRow>> futures =
+    List<Future<UserInteractionAssetResponse>> futures =
         rows.stream()
-            .map(row -> fetchItemSummary(UUID.fromString(row.getAssetId())).map(row::withItem))
+            .map(
+                row ->
+                    fetchItemSummary(UUID.fromString(row.assetId()))
+                        .map(
+                            item ->
+                                new UserInteractionAssetResponse(
+                                    item,
+                                    new UserInteractionState(
+                                        row.isLiked(), row.isDisliked(), row.isBookmarked()))))
             .toList();
 
-    return Future.all(futures).map(v -> page);
+    return CompositeFuture.all(new ArrayList<>(futures))
+        .map(
+            cf ->
+                new PaginatedApiResponse<>(
+                    futures.stream().map(Future::result).toList(), page.paginationInfo()));
   }
 
+  // =====================================================
+  // Fetch asset metadata from ES
+  // =====================================================
   private Future<ItemSummary> fetchItemSummary(UUID assetId) {
 
     GetItemRequest request = new GetItemRequest(assetId.toString(), null);
@@ -128,9 +165,12 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
                   type,
                   item.getString("accessPolicy"),
                   item.getString("ownerUserId"),
-                  item.getString("ownerUserName", ""),
                   item.getString("organizationId"),
                   item.getString("organization"),
+                  item.getString("uploadedBy"),
+                  item.getJsonArray("resourceServer"),
+                  item.getString("fileFormat"),
+                  item.getString("itemCreatedAt"),
                   item.getJsonObject("metrics", new JsonObject()));
             })
         .recover(
@@ -138,5 +178,14 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
               LOGGER.warn("Failed to fetch item metadata for assetId={}", assetId, err);
               return Future.succeededFuture(null);
             });
+  }
+
+  // =====================================================
+  // Internal helper
+  // =====================================================
+  private record EngagementDelta(int likeDelta, int dislikeDelta) {
+    boolean isNoOp() {
+      return likeDelta == 0 && dislikeDelta == 0;
+    }
   }
 }

@@ -19,6 +19,8 @@ import org.cdpg.dx.aaa.activity.dao.impl.UserActivityLogDaoImpl;
 import org.cdpg.dx.auditing.v2.enrichment.AssetEnrichmentService;
 import org.cdpg.dx.aaa.activity.service.UserActivityAuditLogService;
 import org.cdpg.dx.aaa.activity.service.impl.UserActivityAuditLogServiceImpl;
+import org.cdpg.dx.auditing.v2.enrichment.AuditEnrichmentService;
+import org.cdpg.dx.auditing.v2.enrichment.UserEnrichmentService;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.client.RabbitClient;
@@ -29,6 +31,8 @@ import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.databroker.service.DataBrokerServiceImpl;
 import org.cdpg.dx.databroker.util.Vhosts;
 import org.cdpg.dx.email.service.EmailService;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
+import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
 
 public class DataBrokerVerticle extends AbstractVerticle {
 
@@ -128,12 +132,18 @@ public class DataBrokerVerticle extends AbstractVerticle {
     PostgresService postgresService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
     /*ImmudbActivityService immudbActivityService = new ImmudbActivityServiceImpl(immudbService);*/
 
+    KeycloakUserService keycloakUserService =
+       new KeycloakUserServiceImpl(config());
+
     ElasticsearchService esService =
         ElasticsearchService.createProxy(vertx, ELASTIC_SERVICE_ADDRESS);
     PostgresService pgService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
     String docIndex = config().getString("docIndex");
     ItemService itemService = new ItemServiceImpl(esService, null, null, null, docIndex, null);
     AssetEnrichmentService assetEnrichmentService = new AssetEnrichmentService(itemService);
+    UserEnrichmentService userEnrichmentService = new UserEnrichmentService(keycloakUserService);
+    AuditEnrichmentService auditEnrichmentService = new AuditEnrichmentService(assetEnrichmentService,userEnrichmentService);
+
     UserActivityLogDao userActivityLogDao = new UserActivityLogDaoImpl(pgService);
     UserActivityAuditLogService userActivityAuditLogService =
         new UserActivityAuditLogServiceImpl(userActivityLogDao);
@@ -144,8 +154,9 @@ public class DataBrokerVerticle extends AbstractVerticle {
         new AuditMessageConsumer(
             iudxInternalRabbitMqClient,
             auditQueue,
-            assetEnrichmentService,
+                auditEnrichmentService,
             userActivityAuditLogService,
+            itemService,
             true);
     /*immudbConsumer = new ImmudbConsumer(iudxInternalRabbitMqClient, immudbActivityService);*/
     auditConsumer.start();

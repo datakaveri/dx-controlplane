@@ -779,6 +779,59 @@ public class ItemServiceImpl implements ItemService {
 
     return elasticsearchService.bulkUpdateById(docIndex, updates);
   }
+@Override
+  public Future<Void> updateMetric(
+      UUID entityId,
+      String metricField,
+      int delta
+  ) {
+    Promise<Void> promise = Promise.promise();
 
+    QueryModel idQuery = new QueryModel(QueryType.TERM);
+    idQuery.setQueryParameters(Map.of(
+        FIELD, ID_KEYWORD,
+        VALUE, entityId.toString()
+    ));
+
+    QueryModel boolQuery = new QueryModel(QueryType.BOOL);
+    boolQuery.setMustQueries(List.of(idQuery));
+
+    boolQuery.setScriptLanguage("painless");
+    boolQuery.setScriptSource("""
+    if (ctx._source.metrics == null) {
+      ctx._source.metrics = [
+        'likes': 0,
+        'dislikes': 0,
+        'views': 0,
+        'downloads': 0
+      ];
+    }
+
+    if (ctx._source.metrics[params.metricField] == null) {
+      ctx._source.metrics[params.metricField] = 0;
+    }
+
+    ctx._source.metrics[params.metricField] =
+      Math.max(
+        0,
+        ctx._source.metrics[params.metricField] + params.delta
+      );
+  """);
+
+    boolQuery.setScriptParams(Map.of(
+        "metricField", metricField,
+        "delta", delta
+    ));
+
+    QueryModel updateByQueryModel = new QueryModel();
+    updateByQueryModel.setQueries(boolQuery);
+
+    elasticsearchService
+        .updateDocumentsByQuery(updateByQueryModel.getQueries(), docIndex)
+        .onSuccess(v -> promise.complete())
+        .onFailure(promise::fail);
+
+    return promise.future();
+  }
 
 }

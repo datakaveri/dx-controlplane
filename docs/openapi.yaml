@@ -7459,7 +7459,7 @@ paths:
                   items:
                     type: string
                   example: [ "concepts", "tags", "fileFormat", "organizationType", "accessPolicy",
-                             "resourceServer.url", "department", "industry" ]
+                             "resourceServer.url", "organization", "industry" ]
       responses:
         '200':
           description: Success
@@ -7572,7 +7572,7 @@ paths:
                 "organizationType",
                 "accessPolicy",
                 "resourceServer.url",
-                "department",
+                "organization",
                 "industry"
               ]
             }'
@@ -7591,7 +7591,7 @@ paths:
                 }
               ],
               "filter": [
-                "department",
+                "organization",
                 "organizationType",
                 "industry",
                 "fileFormat",
@@ -7614,7 +7614,7 @@ paths:
                 }
               ],
               "filter": [
-                "department",
+                "organization",
                 "organizationType"
               ]
             }'
@@ -7679,7 +7679,7 @@ paths:
             },
             {
               "searchType": "term",
-              "field": "department",
+              "field": "organization",
               "values": ["Health", "Environment"]
             }
           ]
@@ -7984,7 +7984,7 @@ paths:
                 },
                 {
                   "searchType": "term",
-                  "field": "department",
+                  "field": "organization",
                   "values": ["Environment Forests Science and Technology"]
                 },
                 {
@@ -7998,7 +7998,7 @@ paths:
                   "values": [80, 84]
                 }
               ],
-              "filter": ["id", "type", "department", "itemCreatedAt", "dataReadiness"]
+              "filter": ["id", "type", "organization", "itemCreatedAt", "dataReadiness"]
             }'
   /iudx/v2/cat/count:
     post:
@@ -8431,7 +8431,7 @@ paths:
                 },
                 {
                   "searchType": "term",
-                  "field": "department",
+                  "field": "organization",
                   "values": ["Environment Forests Science and Technology"]
                 },
                 {
@@ -8445,7 +8445,8 @@ paths:
                   "values": [80, 84]
                 }
               ],
-              "filter": ["id", "type", "department", "itemCreatedAt", "dataReadiness", "ownerUserId"]
+              "filter": ["id", "type", "organization", "itemCreatedAt", "dataReadiness", 
+              "ownerUserId"]
             }'
 
   /iudx/v2/dashboard/usage-summary:
@@ -8532,7 +8533,7 @@ paths:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
       x-codeSamples:
         - lang: cURL
-          label: Fetch Admin Activity Logs
+          label: Fetch consumer Activity Logs
           source: |
             curl --location 'https://${HOSTNAME}/iudx/v2/auditing/consumer/activity?page=1&size=10' \
             --header 'Authorization: Bearer <your-token>'
@@ -8991,236 +8992,6 @@ paths:
         To delete the subscription list, the provider must present the `subscriptionId` and `token`.
 
       deprecated: false
-
-  /iudx/v2/bookmarks:
-    post:
-      tags:
-        - Bookmarks
-      summary: Create a bookmark
-      operationId: post-bookmark
-      security:
-        - authorization: [ ]
-      description: >
-            Creates a bookmark for a supported entity.
-            The operation is idempotent.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PostBookmarkRequest'
-
-      responses:
-        '200':
-          description: Bookmark created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BookmarkResponse'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericBadRequestResponse'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UnauthorizedResponse'
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ForbiddenResponse'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InternalServerErrorResponse'
-      x-codeSamples:
-        - lang: cURL
-          label: Create Bookmark
-          source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/bookmarks' \
-            --header 'Authorization: Bearer <token>' \
-            --header 'Content-Type: application/json' \
-            --data '{
-              "entityId": "7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9",
-              "entityType": "DATABANK"
-            }'
-
-    get:
-      tags:
-        - Bookmarks
-      summary: Get user bookmarks
-      operationId: get-bookmarks
-      security:
-        - authorization: [ ]
-      description: >
-        Retrieve all bookmarks created by the authenticated user.
-        The user is identified from the access token.
-      parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParam'
-      responses:
-        "200":
-          description: Successfully retrieved bookmarks for the authenticated user
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GetBookmarksSuccessResponse'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericBadRequestResponse'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UnauthorizedResponse'
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ForbiddenResponse'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InternalServerErrorResponse'
-      x-codeSamples:
-        - lang: cURL
-          label: Get Bookmarks
-          source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/bookmarks' \
-            --header 'Authorization: Bearer <token>'
-  /iudx/v2/bookmarks/{entityId}:
-    delete:
-      tags:
-        - Bookmarks
-      summary: Delete a bookmark
-      operationId: delete-bookmark
-      security:
-        - authorization: [ ]
-      description: >
-        Remove a bookmark for the authenticated user.
-        If the bookmark does not exist, the operation still succeeds.
-      parameters:
-        - name: entityId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: Unique identifier of the bookmarked entity
-      responses:
-        "204":
-          description: Bookmark deleted successfully
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UnauthorizedResponse'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericBadRequestResponse'
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ForbiddenResponse'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InternalServerErrorResponse'
-      x-codeSamples:
-        - lang: cURL
-          label: Delete Bookmark
-          source: |
-            curl --location --request DELETE \
-            'https://${HOSTNAME}/iudx/v2/bookmarks/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9' \
-            --header 'Authorization: Bearer <token>'
-
-  /iudx/v2/user/vote:
-    post:
-      tags:
-        - Vote
-      operationId: post-item-vote
-      summary: Cast or update a vote on an entity
-      description: >
-        Allows an authenticated user to vote on an entity.
-         `LIKE`
-         `DISLIKE`
-         `NEUTRAL` (Remove existing vote)
-        The user identity is derived from the authentication token.
-      security:
-        - authorization: [ ]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PostItemVoteRequest'
-      responses:
-        '200':
-          description: Vote recorded successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ItemVoteResponse'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericBadRequestResponse'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UnauthorizedResponse'
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ForbiddenResponse'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InternalServerErrorResponse'
-
-      x-codeSamples:
-          - lang: cURL
-            label: Cast Vote
-            source: |
-              curl --location 'https://${HOSTNAME}/iudx/v2/user/vote' \
-              --header 'Authorization: <token>' \
-              --header 'Content-Type: application/json' \
-              --data '{
-                        "entityId": "e74112d5-b58b-401e-a799-712b473279ea",
-                        "entityType": "DATABANK",
-                        "voteType": "DISLIKE"
-                        }'
 
   /iudx/v2/auth/app:
     post:
@@ -9924,17 +9695,17 @@ tags:
       These apis are intended to be for the streaming purpose.
     x-displayName: Subscriptions
 
-  - name: Bookmarks
-    description: >
-      APIs for managing user bookmarks on `DATABANK`, `AI_MODEL`, `USECASE` and ,
-      `APP`.
-    x-displayName: Bookmarks
+  #- name: Bookmarks
+    #description: >
+      #APIs for managing user bookmarks on `DATABANK`, `AI_MODEL`, `USECASE` and ,
+      #`APP`.
+    #x-displayName: Bookmarks
 
-  - name: Vote
-    description: >
-      APIs for casting votes on entities such as `DATABANK`, `AI_MODEL`, `USECASE`, and `APP`.
-      Users can express their preferences by voting `LIKE`, `DISLIKE`, or setting their vote to `NEUTRAL` to remove any existing vote.
-    x-displayName: Vote
+ # - name: Vote
+   # description: >
+   #   APIs for casting votes on entities such as `DATABANK`, `AI_MODEL`, `USECASE`, and `APP`.
+    #  Users can express their preferences by voting `LIKE`, `DISLIKE`, or setting their vote to `NEUTRAL` to remove any existing vote.
+   # x-displayName: Vote
   - name: Summary
     description: |
       APIs for retrieving summary datasets for dashboard visualizations.
@@ -10043,7 +9814,7 @@ components:
       in: query
       description: >
         The type of log to filter the activity logs.
-        This parameter allows filtering by specific log types, such as `ASSET` or `USER_ACTION`, `CREDIT`.
+        This parameter allows filtering by specific log types, such as `ASSET`, `USER_ACTION`, and `COMPUTE`.
       required: false
       schema:
         type: string
@@ -10725,6 +10496,7 @@ components:
         - type
         - title
         - result
+        - paginationInfo
       properties:
         type:
           type: string
@@ -10735,37 +10507,106 @@ components:
           type: string
           description: Short response title
           example: Success
+
         result:
           type: array
           items:
             type: object
             required:
-              - assetId
-              - assetType
-              - isBookmarked
-              - isLiked
-              - isDisliked
+              - asset
+              - userInteraction
             properties:
-              assetId:
-                type: string
-                format: uuid
-              assetType:
-                type: string
-                example: DATABANK
-              isBookmarked:
-                type: boolean
-              isLiked:
-                type: boolean
-              isDisliked:
-                type: boolean
-          example:
-            - assetId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1"
-              assetType: "DATABANK"
-              isBookmarked: true
-              isLiked: false
-              isDisliked: false
+              asset:
+                $ref: '#/components/schemas/AssetSummary'
+
+              userInteraction:
+                $ref: '#/components/schemas/UserInteractionState'
+
         paginationInfo:
           $ref: '#/components/schemas/PaginationInfoResponse'
+    AssetSummary:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - accessPolicy
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        shortDescription:
+          type: string
+        type:
+          type: string
+          example: adex:DataBank
+        accessPolicy:
+          type: string
+          example: OPEN
+        ownerUserId:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        organizationName:
+          type: string
+        uploadedBy:
+          type: string
+        resourceServer:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              datasetType:
+                type: string
+              accessTypes:
+                type: array
+                items:
+                  type: string
+              queryTypes:
+                type: array
+                items:
+                  type: string
+              url:
+                type: string
+        fileFormat:
+          type: string
+        itemCreatedAt:
+          type: string
+          format: date-time
+        metrics:
+          type: object
+          properties:
+            downloads:
+              type: integer
+            views:
+              type: integer
+            likes:
+              type: integer
+            dislikes:
+              type: integer
+    UserInteractionState:
+      type: object
+      required:
+        - liked
+        - disliked
+        - bookmarked
+      properties:
+        liked:
+          type: boolean
+          description: Whether the user has liked the asset
+        disliked:
+          type: boolean
+          description: Whether the user has disliked the asset
+        bookmarked:
+          type: boolean
+          description: Whether the user has bookmarked the asset
+
 
 
     BookmarkResult:
