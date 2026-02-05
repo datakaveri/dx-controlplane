@@ -73,7 +73,7 @@ public class CreditHandler {
     User user = ctx.user();
     creditRequestJson.put("user_id", user.subject());
 
-    String userName = user.principal().getString("name");
+    String userName = user.principal().getString("given_name");
     creditRequestJson.put("user_name", userName);
 
     creditRequest = CreditRequest.fromJson(creditRequestJson);
