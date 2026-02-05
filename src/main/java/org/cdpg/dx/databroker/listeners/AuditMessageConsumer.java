@@ -9,6 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.auditing.v2.enrichment.AssetEnrichmentService;
+import org.cdpg.dx.auditing.v2.enrichment.AuditEnrichmentService;
 import org.cdpg.dx.auditing.v2.model.ActivityAuditLogEntity;
 import org.cdpg.dx.aaa.activity.service.UserActivityAuditLogService;
 
@@ -20,7 +21,7 @@ public class AuditMessageConsumer implements RabitMqConsumer {
 
   private final RabbitMQClient rabbitMqClient;
   private final String queueName;
-  private final AssetEnrichmentService assetEnrichmentService;
+  private final AuditEnrichmentService auditEnrichmentService;
   private final UserActivityAuditLogService auditService;
   private final ItemService itemService;
   private final boolean dlqEnabled;
@@ -33,14 +34,14 @@ public class AuditMessageConsumer implements RabitMqConsumer {
   public AuditMessageConsumer(
       RabbitMQClient rabbitMqClient,
       String queueName,
-      AssetEnrichmentService assetEnrichmentService,
+      AuditEnrichmentService auditEnrichmentService,
       UserActivityAuditLogService auditService,
       ItemService itemService,
       boolean dlqEnabled) {
 
     this.rabbitMqClient = rabbitMqClient;
     this.queueName = queueName;
-    this.assetEnrichmentService = assetEnrichmentService;
+    this.auditEnrichmentService = auditEnrichmentService;
     this.auditService = auditService;
     this.itemService = itemService;
     this.dlqEnabled = dlqEnabled;
@@ -97,7 +98,7 @@ public class AuditMessageConsumer implements RabitMqConsumer {
       return;
     }
 
-    assetEnrichmentService
+    auditEnrichmentService
         .enrich(entity)
         .compose(auditService::insertUserActivityLogIntoDb)
         .onSuccess(
