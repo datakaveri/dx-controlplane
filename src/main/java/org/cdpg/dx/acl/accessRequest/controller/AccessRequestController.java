@@ -55,6 +55,7 @@ import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.service.DataBrokerService;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class AccessRequestController implements ApdApiController {
   private static final Logger LOGGER = LogManager.getLogger(AccessRequestController.class);
@@ -63,6 +64,7 @@ public class AccessRequestController implements ApdApiController {
   private final PostgresService postgresService;
   private final AuditingHandler auditingHandler;
   private final DataBrokerService dataBrokerService;
+  private final KeycloakUserService keycloakUserService;
   private final URNGenerator urnGenerator;
   private final String emailExchange;
   private final String emailRoutingKey;
@@ -73,6 +75,7 @@ public class AccessRequestController implements ApdApiController {
       DataBrokerService dataBrokerService,
       URNGenerator urnGenerator,
       PostgresService postgresService,
+      KeycloakUserService keycloakUserService,
       String emailExchange,
       String emailRoutingKey) {
     this.accessRequestService = accessRequestService;
@@ -80,6 +83,7 @@ public class AccessRequestController implements ApdApiController {
     this.dataBrokerService = dataBrokerService;
     this.urnGenerator = urnGenerator;
     this.postgresService = postgresService;
+    this.keycloakUserService = keycloakUserService;
     this.emailExchange = emailExchange;
     this.emailRoutingKey = emailRoutingKey;
   }
@@ -304,102 +308,107 @@ public class AccessRequestController implements ApdApiController {
     String providerComment = body.getString("providerComment", "");
     UUID providerId = UUID.fromString(ctx.user().subject());
 
-    DxUser provider;
-    try {
-      provider = RoutingContextHelper.fromPrincipal(ctx);
-    } catch (Exception e) {
-      LOGGER.error("Error extracting user from token: {}", e.getMessage(), e);
-      ctx.fail(new DxForbiddenException("Invalid user"));
-      return;
-    }
+    keycloakUserService
+        .getUserById(providerId)
+        .onFailure(
+            err -> {
+              LOGGER.error("Failed to fetch provider from Keycloak", err);
+              ctx.fail(new DxForbiddenException("Invalid provider"));
+            })
+        .onSuccess(
+            provider -> {
+              UUID providerOrganizationId =
+                  provider.organisationId() != null
+                      ? UUID.fromString(provider.organisationId())
+                      : null;
+              boolean isUserOrgAdmin = provider.roles().contains(DxRole.ORG_ADMIN.getRole());
 
-    String organizationId = provider.organisationId();
-    UUID providerOrganizationId = organizationId != null ? UUID.fromString(organizationId) : null;
-    boolean isUserOrgAdmin = provider.roles().contains(DxRole.ORG_ADMIN.getRole());
+              if (status == Status.GRANTED) {
+                LocalDateTime expiryAt = parseAndValidateFutureTime(body.getString("expiryAt"));
 
-    if (status == Status.GRANTED) {
-      LocalDateTime expiryAt = parseAndValidateFutureTime(body.getString("expiryAt"));
-
-      accessRequestService
-          .approveAccessRequest(
-              providerId,
-              requestId,
-              expiryAt,
-              providerOrganizationId,
-              isUserOrgAdmin,
-              constraints,
-              providerComment,
-              feedbackToConsumer)
-          .onSuccess(
-              accessRequestDto -> {
-                UserActivityAuditLogBuilder auditLog =
-                    AccessRequestAuditLogHelper.buildAudit(
-                        ctx, accessRequestDto, AccessRequestAuditOperation.GRANT);
-                RoutingContextHelper.setAuditingLogV2(ctx, auditLog);
-                ResponseBuilder.sendSuccess(ctx, "Request updated successfully", urnGenerator);
-                JsonObject jsonObject =
-                    new SendEmail(
-                            accessRequestDto.getConsumerId(),
-                            "PATH",
-                            "templates/AssetRequestApprovedEmailTemplate.html",
-                            null,
-                            accessRequestDto.getAssetType(),
-                            accessRequestDto.getItemId(),
-                            accessRequestDto.getShortDescription(),
-                            false,
-                            status.getStatus(),
-                            accessRequestDto.getAssetName())
-                        .toJson();
-                Future<Void> future =
-                    dataBrokerService.publishMessageInternal(
-                        jsonObject, emailExchange, emailRoutingKey);
-              })
-          .onFailure(
-              err -> {
-                LOGGER.error("Error updating access request: {}", err.getMessage(), err);
-                ctx.fail(err);
-              });
-    } else {
-      // pass providerComment and feedbackToConsumer to be stored
-      accessRequestService
-          .rejectAccessRequest(
-              providerId,
-              requestId,
-              providerOrganizationId,
-              isUserOrgAdmin,
-              providerComment,
-              feedbackToConsumer)
-          .onSuccess(
-              accessRequestDto -> {
-                UserActivityAuditLogBuilder auditLog =
-                    AccessRequestAuditLogHelper.buildAudit(
-                        ctx, accessRequestDto, AccessRequestAuditOperation.REJECT);
-                RoutingContextHelper.setAuditingLogV2(ctx, auditLog);
-                // RoutingContextHelper.setAuditingLog(ctx, auditLog);
-                ResponseBuilder.sendSuccess(ctx, "Request updated successfully", urnGenerator);
-                JsonObject jsonObject =
-                    new SendEmail(
-                            accessRequestDto.getConsumerId(),
-                            "PATH",
-                            "templates/AssetRequestApprovedEmailTemplate.html",
-                            null,
-                            accessRequestDto.getAssetType(),
-                            accessRequestDto.getItemId(),
-                            accessRequestDto.getShortDescription(),
-                            false,
-                            status.getStatus(),
-                            accessRequestDto.getAssetName())
-                        .toJson();
-                Future<Void> future =
-                    dataBrokerService.publishMessageInternal(
-                        jsonObject, emailExchange, emailRoutingKey);
-              })
-          .onFailure(
-              err -> {
-                LOGGER.error("Error rejecting access request: {}", err.getMessage(), err);
-                ctx.fail(err);
-              });
-    }
+                accessRequestService
+                    .approveAccessRequest(
+                        providerId,
+                        requestId,
+                        expiryAt,
+                        providerOrganizationId,
+                        isUserOrgAdmin,
+                        constraints,
+                        providerComment,
+                        feedbackToConsumer)
+                    .onSuccess(
+                        accessRequestDto -> {
+                          UserActivityAuditLogBuilder auditLog =
+                              AccessRequestAuditLogHelper.buildAudit(
+                                  ctx, accessRequestDto, AccessRequestAuditOperation.GRANT);
+                          RoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+                          ResponseBuilder.sendSuccess(
+                              ctx, "Request updated successfully", urnGenerator);
+                          JsonObject jsonObject =
+                              new SendEmail(
+                                      accessRequestDto.getConsumerId(),
+                                      "PATH",
+                                      "templates/AssetRequestApprovedEmailTemplate.html",
+                                      null,
+                                      accessRequestDto.getAssetType(),
+                                      accessRequestDto.getItemId(),
+                                      accessRequestDto.getShortDescription(),
+                                      false,
+                                      status.getStatus(),
+                                      accessRequestDto.getAssetName())
+                                  .toJson();
+                          Future<Void> future =
+                              dataBrokerService.publishMessageInternal(
+                                  jsonObject, emailExchange, emailRoutingKey);
+                        })
+                    .onFailure(
+                        err -> {
+                          LOGGER.error("Error updating access request: {}", err.getMessage(), err);
+                          ctx.fail(err);
+                        });
+              } else {
+                // pass providerComment and feedbackToConsumer to be stored
+                accessRequestService
+                    .rejectAccessRequest(
+                        providerId,
+                        requestId,
+                        providerOrganizationId,
+                        isUserOrgAdmin,
+                        providerComment,
+                        feedbackToConsumer)
+                    .onSuccess(
+                        accessRequestDto -> {
+                          UserActivityAuditLogBuilder auditLog =
+                              AccessRequestAuditLogHelper.buildAudit(
+                                  ctx, accessRequestDto, AccessRequestAuditOperation.REJECT);
+                          RoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+                          // RoutingContextHelper.setAuditingLog(ctx, auditLog);
+                          ResponseBuilder.sendSuccess(
+                              ctx, "Request updated successfully", urnGenerator);
+                          JsonObject jsonObject =
+                              new SendEmail(
+                                      accessRequestDto.getConsumerId(),
+                                      "PATH",
+                                      "templates/AssetRequestApprovedEmailTemplate.html",
+                                      null,
+                                      accessRequestDto.getAssetType(),
+                                      accessRequestDto.getItemId(),
+                                      accessRequestDto.getShortDescription(),
+                                      false,
+                                      status.getStatus(),
+                                      accessRequestDto.getAssetName())
+                                  .toJson();
+                          Future<Void> future =
+                              dataBrokerService.publishMessageInternal(
+                                  jsonObject, emailExchange, emailRoutingKey);
+                        })
+                    .onFailure(
+                        err -> {
+                          LOGGER.error("Error rejecting access request: {}", err.getMessage(), err);
+                          ctx.fail(err);
+                        });
+              }
+            });
   }
 
   private void createAccessRequestHandler(RoutingContext ctx) {
