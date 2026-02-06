@@ -50,13 +50,13 @@ public class IngestionServiceImpl implements IngestionService {
                       assetId, DATABASE_QUEUE, assetId, Vhosts.IUDX_PROD)
                   .map(v -> meta);
             })
-        .compose(
+        /*.compose(
             meta -> {
               LOGGER.debug("Redis queue bound. Binding to Subscription queue...");
               return dataBroker
                   .queueBinding(assetId, QUEUE_SUBS, assetId, Vhosts.IUDX_PROD)
                   .map(v -> meta);
-            })
+            })*/
         .onSuccess(
             meta -> {
               LOGGER.debug("Adapter metadata inserted successfully.");
