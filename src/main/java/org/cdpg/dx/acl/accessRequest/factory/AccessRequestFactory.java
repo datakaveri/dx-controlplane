@@ -57,7 +57,7 @@ public class AccessRequestFactory {
             config.getString(APD_URL));
 
     AccessRequestService accessRequestService =
-        new AccessRequestServiceImpl(itemService, accessRequestDao, policyDao);
+        new AccessRequestServiceImpl(keycloakUserService, itemService, accessRequestDao, policyDao);
 
     return new AccessRequestController(
         accessRequestService,
@@ -65,6 +65,7 @@ public class AccessRequestFactory {
         dataBrokerService,
         urnGenerator,
         pgService,
+        keycloakUserService,
         emailExchange,
         emailRoutingKey);
   }

@@ -79,6 +79,7 @@ public class ItemControllerFactory {
         isCentralCatEnabled,
         urnGenerator,
         orchestrationService,
-        delegationService);
+        delegationService,
+        keycloakUserService);
   }
 }
