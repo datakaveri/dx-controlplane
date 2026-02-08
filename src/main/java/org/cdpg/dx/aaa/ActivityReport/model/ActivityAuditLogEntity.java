@@ -31,6 +31,14 @@ public class ActivityAuditLogEntity implements BaseEntity<ActivityAuditLogEntity
   private String orgName;
   private String orgType;
 
+  public String getSandboxType() {
+    return sandboxType;
+  }
+
+  public void setSandboxType(String sandboxType) {
+    this.sandboxType = sandboxType;
+  }
+
   private UUID appId;
   private String role;
   private String issuer;
@@ -69,6 +77,7 @@ public class ActivityAuditLogEntity implements BaseEntity<ActivityAuditLogEntity
   private String createdAt;
 
   private JsonObject context;
+  private String sandboxType;
 
   // --------------------------------------------
   // fromJson (RMQ / API consumer)
@@ -100,7 +109,7 @@ public class ActivityAuditLogEntity implements BaseEntity<ActivityAuditLogEntity
 
     e.assetId = EntityUtil.parseUUID(json.getString(ASSET_ID), ASSET_ID);
     e.assetName = json.getString(ASSET_NAME);
-    e.assetSortDescription = json.getString(ASSET_SORT_DESCRIPTION);
+    e.assetSortDescription = json.getString(ASSET_SHORT_DESCRIPTION);
     e.assetType = json.getString(ASSET_TYPE);
     e.assetAccessPolicy = json.getString(ASSET_ACCESS_POLICY);
 
@@ -127,6 +136,7 @@ public class ActivityAuditLogEntity implements BaseEntity<ActivityAuditLogEntity
     e.createdAt = json.getString(CREATED_AT);
 
     e.context = json.getJsonObject(CONTEXT);
+    e.sandboxType = json.getString(SANDBOX_TYPE);
 
     return e;
   }
@@ -162,7 +172,7 @@ public class ActivityAuditLogEntity implements BaseEntity<ActivityAuditLogEntity
 
     EntityUtil.putIfNonEmpty(map, ASSET_ID, safe(assetId));
     EntityUtil.putIfNonEmpty(map, ASSET_NAME, assetName);
-    EntityUtil.putIfNonEmpty(map, ASSET_SORT_DESCRIPTION, assetSortDescription);
+    EntityUtil.putIfNonEmpty(map, ASSET_SHORT_DESCRIPTION, assetSortDescription);
     EntityUtil.putIfNonEmpty(map, ASSET_TYPE, assetType);
     EntityUtil.putIfNonEmpty(map, ASSET_ACCESS_POLICY, assetAccessPolicy);
 
@@ -184,6 +194,7 @@ public class ActivityAuditLogEntity implements BaseEntity<ActivityAuditLogEntity
 
     EntityUtil.putIfNonEmpty(map, CREATED_AT, createdAt);
     EntityUtil.putIfNonEmpty(map, CONTEXT, context);
+    EntityUtil.putIfNonEmpty(map, SANDBOX_TYPE, sandboxType);
 
     return map;
   }
@@ -230,6 +241,7 @@ public class ActivityAuditLogEntity implements BaseEntity<ActivityAuditLogEntity
 
     putIfNonNull(json, "requestId", safe(requestId));
     putIfNonNull(json, "logType", logType);
+    putIfNonNull(json, "sandboxType", sandboxType);
 
     putIfNonNull(json, "ipAddress", ipAddress);
     putIfNonNull(json, "userAgent", userAgent);

@@ -47,6 +47,9 @@ public class UserActivityAuditLogBuilder {
   private BigDecimal amount;
   private UUID requestId;
 
+  // sandbox
+  private String sandboxType;
+
   // Classification
   private String logType;
 
@@ -94,10 +97,11 @@ public class UserActivityAuditLogBuilder {
     json.put(HTTP_METHOD, httpMethod);
     json.put(ACTION, action);
     json.put(ORIGIN_SERVER, originServer);
+    json.put(SANDBOX_TYPE, sandboxType);
 
     json.put(ASSET_ID, safe(assetId));
     json.put(ASSET_NAME, assetName);
-    json.put(ASSET_SORT_DESCRIPTION, assetShortDescription);
+    json.put(ASSET_SHORT_DESCRIPTION, assetShortDescription);
     json.put(ASSET_TYPE, assetType);
     json.put(ASSET_ACCESS_POLICY, assetAccessPolicy);
 
@@ -291,6 +295,11 @@ public class UserActivityAuditLogBuilder {
 
     public Builder withContext(JsonObject ctx) {
       log.context = ctx;
+      return this;
+    }
+
+    public Builder withSandboxType(String sandboxType) {
+      log.sandboxType = sandboxType;
       return this;
     }
 

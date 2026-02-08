@@ -68,13 +68,21 @@ public class ActivityAuditLogEntity implements BaseEntity<ActivityAuditLogEntity
 
   private String createdAt;
 
+  public String getSandboxType() {
+    return sandboxType;
+  }
+
+  public void setSandboxType(String sandboxType) {
+    this.sandboxType = sandboxType;
+  }
+
   private JsonObject context;
+  private String sandboxType;
 
   // --------------------------------------------
   // fromJson (RMQ / API consumer)
   // --------------------------------------------
   public static ActivityAuditLogEntity fromJson(JsonObject json) {
-
     ActivityAuditLogEntity e = new ActivityAuditLogEntity();
 
     e.id = EntityUtil.parseUUID(json.getString(ID), ID);
@@ -100,7 +108,7 @@ public class ActivityAuditLogEntity implements BaseEntity<ActivityAuditLogEntity
 
     e.assetId = EntityUtil.parseUUID(json.getString(ASSET_ID), ASSET_ID);
     e.assetName = json.getString(ASSET_NAME);
-    e.assetSortDescription = json.getString(ASSET_SORT_DESCRIPTION);
+    e.assetSortDescription = json.getString(ASSET_SHORT_DESCRIPTION);
     e.assetType = json.getString(ASSET_TYPE);
     e.assetAccessPolicy = json.getString(ASSET_ACCESS_POLICY);
 
@@ -111,7 +119,6 @@ public class ActivityAuditLogEntity implements BaseEntity<ActivityAuditLogEntity
     e.assetProviderId = EntityUtil.parseUUID(json.getString(ASSET_PROVIDER_ID), ASSET_PROVIDER_ID);
     e.assetProviderName = json.getString(ASSET_PROVIDER_NAME);
 
-    e.sizeBytes = json.getLong(SIZE_BYTES);
     e.sizeBytes = json.getLong(SIZE_BYTES);
 
     Object rawAmount = json.getValue(UserActivityAuditSchema.AMOUNT);
@@ -127,6 +134,7 @@ public class ActivityAuditLogEntity implements BaseEntity<ActivityAuditLogEntity
     e.createdAt = json.getString(CREATED_AT);
 
     e.context = json.getJsonObject(CONTEXT);
+    e.sandboxType = json.getString(SANDBOX_TYPE);
 
     return e;
   }
@@ -162,7 +170,7 @@ public class ActivityAuditLogEntity implements BaseEntity<ActivityAuditLogEntity
 
     EntityUtil.putIfNonEmpty(map, ASSET_ID, safe(assetId));
     EntityUtil.putIfNonEmpty(map, ASSET_NAME, assetName);
-    EntityUtil.putIfNonEmpty(map, ASSET_SORT_DESCRIPTION, assetSortDescription);
+    EntityUtil.putIfNonEmpty(map, ASSET_SHORT_DESCRIPTION, assetSortDescription);
     EntityUtil.putIfNonEmpty(map, ASSET_TYPE, assetType);
     EntityUtil.putIfNonEmpty(map, ASSET_ACCESS_POLICY, assetAccessPolicy);
 
@@ -184,6 +192,7 @@ public class ActivityAuditLogEntity implements BaseEntity<ActivityAuditLogEntity
 
     EntityUtil.putIfNonEmpty(map, CREATED_AT, createdAt);
     EntityUtil.putIfNonEmpty(map, CONTEXT, context);
+    EntityUtil.putIfNonEmpty(map, SANDBOX_TYPE, sandboxType);
 
     return map;
   }
@@ -230,6 +239,7 @@ public class ActivityAuditLogEntity implements BaseEntity<ActivityAuditLogEntity
 
     putIfNonNull(json, "requestId", safe(requestId));
     putIfNonNull(json, "logType", logType);
+    putIfNonNull(json, "sandboxType", sandboxType);
 
     putIfNonNull(json, "ipAddress", ipAddress);
     putIfNonNull(json, "userAgent", userAgent);
@@ -510,7 +520,7 @@ public class ActivityAuditLogEntity implements BaseEntity<ActivityAuditLogEntity
 
   @Override
   public String getTableName() {
-    return "user_activity_audit_log";
+    return "";
   }
 
   private static void putIfNonNull(JsonObject json, String key, Object value) {
