@@ -35,6 +35,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -66,6 +68,7 @@ import org.cdpg.dx.common.exception.DxUnauthorizedException;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RoutingContextHelper;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class ItemController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(ItemController.class);
@@ -84,6 +87,7 @@ public class ItemController implements ApiController {
   private final ScriptGenerationService scriptGenerationService;
   private final ItemOwnershipValidator itemOwnershipValidator;
   private final VerifyItemTypeAndRole verifyItemTypeAndRole = new VerifyItemTypeAndRole();
+  private final KeycloakUserService keycloakUserService;
   Handler<RoutingContext> patchItemAccessHandler =
       AuthorizationHandler.forRoles(DxRole.COS_ADMIN, DxRole.ORG_ADMIN, DxRole.PROVIDER);
 
@@ -97,7 +101,8 @@ public class ItemController implements ApiController {
       boolean isCentralCatEnabled,
       URNGenerator urnGenerator,
       ItemRegistryService itemRegistryService,
-      DelegationService delegationService) {
+      DelegationService delegationService,
+      KeycloakUserService keycloakUserService) {
     this.auditingHandler = auditingHandler;
     this.itemService = itemService;
     this.centralItemService = centralItemService;
@@ -113,6 +118,7 @@ public class ItemController implements ApiController {
     this.itemFetchService =
         new ItemFetchService(itemService, centralItemService, isCentralCatEnabled);
     this.delegationService = delegationService;
+    this.keycloakUserService = keycloakUserService;
   }
 
   @Override
@@ -180,28 +186,34 @@ public class ItemController implements ApiController {
       return;
     }
 
-    JsonObject doc = injectKeycloakInfoIfApplicable(ctx, body, itemType);
-
     String method = ctx.request().method().toString();
+    UUID userId = UUID.fromString(ctx.user().subject());
+    keycloakUserService
+        .getUserById(userId)
+        .map(dxUser -> injectKeycloakInfoIfApplicable(ctx, dxUser, body, itemType))
+        .onFailure(ctx::fail)
+        .onSuccess(
+            doc -> {
 
-    // Add @context only if user hasn't provided one
-    if (!doc.containsKey(CONTEXT) || doc.getString(CONTEXT).isBlank()) {
-      doc.put(CONTEXT, vocContext);
-    }
-
-    Promise<JsonObject> validationPromise = Promise.promise();
-    validateItemExistence(ctx, itemType, doc, method, validationPromise);
-
-    doc.remove(HTTP_METHOD);
-    validationPromise
-        .future()
-        .onComplete(
-            result -> {
-              if (result.failed()) {
-                handleValidationFailure(ctx, result.cause());
-                return;
+              // Add @context only if user hasn't provided one
+              if (!doc.containsKey(CONTEXT) || doc.getString(CONTEXT).isBlank()) {
+                doc.put(CONTEXT, vocContext);
               }
-              processItemCreationOrUpdate(ctx, method, result.result());
+
+              Promise<JsonObject> validationPromise = Promise.promise();
+              validateItemExistence(ctx, itemType, doc, method, validationPromise);
+
+              doc.remove(HTTP_METHOD);
+              validationPromise
+                  .future()
+                  .onComplete(
+                      result -> {
+                        if (result.failed()) {
+                          handleValidationFailure(ctx, result.cause());
+                          return;
+                        }
+                        processItemCreationOrUpdate(ctx, method, result.result());
+                      });
             });
   }
 
@@ -228,10 +240,24 @@ public class ItemController implements ApiController {
             DxScope.ORG_ADMIN_ACCESS.getScope()));
 
     DxUser user = RoutingContextHelper.fromPrincipal(ctx);
-    String orgId = "";
-    orgId = user.organisationId();
     String userId = "";
     userId = user.sub().toString();
+    AtomicReference<String> orgId = new AtomicReference<>("");
+    // orgId = user.organisationId();
+
+    // Fetch orgId from Keycloak
+    keycloakUserService
+        .getUserById(UUID.fromString(userId))
+        .onSuccess(
+            dxUser -> {
+              orgId.set(dxUser.organisationId());
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Failed to fetch user from Keycloak", err);
+              ctx.fail(err);
+            });
+
     LOGGER.debug("Keycloak ID: {},12aa: {}", orgId, id);
     List<String> allowedRoles;
     allowedRoles = ctx.get("allowedRoles");
@@ -250,7 +276,8 @@ public class ItemController implements ApiController {
       }
     }
 
-    PatchItemRequest patchItemRequest = new PatchItemRequest(id, orgId, userId, body, allowedRoles);
+    PatchItemRequest patchItemRequest =
+        new PatchItemRequest(id, orgId.get(), userId, body, allowedRoles);
     itemService
         .patchItem(patchItemRequest)
         .onSuccess(
@@ -296,16 +323,14 @@ public class ItemController implements ApiController {
   }
 
   private JsonObject injectKeycloakInfoIfApplicable(
-      RoutingContext ctx, JsonObject body, String itemType) {
+      RoutingContext ctx, DxUser user, JsonObject body, String itemType) {
     if (ITEM_TYPE_AI_MODEL.equals(itemType)
         || ITEM_TYPE_DATA_BANK.equals(itemType)
         || ITEM_TYPE_APPS.equals(itemType)) {
-
-      String kcId = ctx.user().principal().getString(SUB);
-      String orgName = ctx.user().principal().getString(ORG_NAME);
-      String name = ctx.user().principal().getString(NAME);
-      String orgId = ctx.user().principal().getString(ORGANISATION_ID);
-      body.put(PROVIDER_USER_ID, kcId);
+      String orgName = user.organisationName();
+      String name = user.name();
+      String orgId = user.organisationId();
+      body.put(PROVIDER_USER_ID, user.sub());
       // Only set organizationId if it exists in token and not already provided in payload
       if (orgId != null && !orgId.isBlank()) {
         body.put(ORGANIZATION_ID, orgId);

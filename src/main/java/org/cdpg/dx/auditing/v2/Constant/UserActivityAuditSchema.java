@@ -31,7 +31,7 @@ public final class UserActivityAuditSchema {
   // Asset
   public static final String ASSET_ID = "asset_id";
   public static final String ASSET_NAME = "asset_name";
-  public static final String ASSET_SORT_DESCRIPTION = "asset_sort_discription";
+  public static final String ASSET_SHORT_DESCRIPTION = "asset_sort_discription";
   public static final String ASSET_TYPE = "asset_type";
   public static final String ASSET_ACCESS_POLICY = "asset_access_policy";
   public static final String ASSET_ORG_ID = "asset_org_id";
@@ -57,4 +57,5 @@ public final class UserActivityAuditSchema {
 
   // JSON
   public static final String CONTEXT = "context";
+  public static final String SANDBOX_TYPE = "sandbox_type";
 }

@@ -43,6 +43,7 @@ import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.model.RequestType;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class AccessRequestServiceImpl implements AccessRequestService {
 
@@ -51,9 +52,14 @@ public class AccessRequestServiceImpl implements AccessRequestService {
   private final AccessRequestDao accessRequestDao;
   private final ItemService itemService;
   private final PolicyDao policyDao;
+  private final KeycloakUserService keycloakUserService;
 
-  public AccessRequestServiceImpl(ItemService itemService, AccessRequestDao accessRequestDao,
-                                  PolicyDao policyDao) {
+  public AccessRequestServiceImpl(
+      KeycloakUserService keycloakUserService,
+      ItemService itemService,
+      AccessRequestDao accessRequestDao,
+      PolicyDao policyDao) {
+    this.keycloakUserService = keycloakUserService;
     this.itemService = itemService;
     this.accessRequestDao = Objects.requireNonNull(accessRequestDao);
     this.policyDao = policyDao;
@@ -61,74 +67,80 @@ public class AccessRequestServiceImpl implements AccessRequestService {
 
   @Override
   public Future<AccessRequestDto> createAccessRequest(
-      DxUser consumer, UUID itemId, RequestType requestType, JsonObject additionalInfo,
+      DxUser consumer,
+      UUID itemId,
+      RequestType requestType,
+      JsonObject additionalInfo,
       JsonObject constraints) {
-    AccessRequestDto accessRequestDto =
-        new AccessRequestDto()
-            .setRequestType(requestType)
-            .setConsumerId(consumer.sub().toString())
-            .setConsumerEmail(consumer.email())
-            .setConsumerFirstName(consumer.givenName())
-            .setConsumerLastName(consumer.familyName())
-            .setConsumerOrganization(consumer.organisationName());
 
-    if (additionalInfo != null) {
-      accessRequestDto.setAdditionalInfo(additionalInfo);
-    }
-    if (constraints != null) {
-      accessRequestDto.setConstraints(constraints);
-    }
-
-    return accessRequestDao
-        .isAccessRequestPresent(consumer.sub(), itemId)
+    return keycloakUserService
+        .getUserById(consumer.sub())
         .compose(
-            isPresent -> {
-              if (isPresent) {
-                String message = "Access request already exists";
-                LOGGER.warn(message);
-                return Future.failedFuture(
-                    new DxConflictException("Access request already exists"));
-              }
-              GetItemRequest request = new GetItemRequest(itemId.toString(), "");
-              return itemService.getItem(request);
-            })
-        .compose(
-            responseModel -> {
-              if (responseModel.getElasticsearchResponses().isEmpty()) {
-                String message = "Item not found for ID: " + itemId;
-                LOGGER.error(message);
-                return Future.failedFuture(new DxForbiddenException(message));
-              }
-              JsonObject itemJson = responseModel.getElasticsearchResponses().getFirst();
-              Asset asset = parseAndGetAsset(itemJson, itemId.toString());
+            fullUser -> {
+              AccessRequestDto accessRequestDto =
+                  new AccessRequestDto()
+                      .setRequestType(requestType)
+                      .setConsumerId(fullUser.sub().toString())
+                      .setConsumerEmail(fullUser.email())
+                      .setConsumerFirstName(fullUser.givenName())
+                      .setConsumerLastName(fullUser.familyName())
+                      .setConsumerOrganization(fullUser.organisationName());
 
-              /*Forbidden if the provider id is equal to the consumer id
-              as provider cannot create an access request for his resource*/
-              if (asset.getProviderId().equals(consumer.sub().toString())) {
-                String message = "Provider cannot create an access request for their own resource";
-                LOGGER.warn(message);
-                return Future.failedFuture(new DxCreateAccessRequestForbiddenException(message));
+              if (additionalInfo != null) {
+                accessRequestDto.setAdditionalInfo(additionalInfo);
+              }
+              if (constraints != null) {
+                accessRequestDto.setConstraints(constraints);
               }
 
-              accessRequestDto
-                  .setAssetType(asset.getAssetType())
-                  .setAssetName(asset.getAssetName())
-                  .setProviderId(asset.getProviderId())
-                  .setItemOrganization(asset.getOrganizationId())
-                  .setShortDescription(asset.getShortDescription())
-                  .setItemId(asset.getItemId());
-              return accessRequestDao.create(accessRequestDto);
+              return accessRequestDao
+                  .isAccessRequestPresent(fullUser.sub(), itemId)
+                  .compose(
+                      isPresent -> {
+                        if (isPresent) {
+                          String message = "Access request already exists";
+                          LOGGER.warn(message);
+                          return Future.failedFuture(
+                              new DxConflictException("Access request already exists"));
+                        }
+
+                        GetItemRequest request = new GetItemRequest(itemId.toString(), "");
+
+                        return itemService.getItem(request);
+                      })
+                  .compose(
+                      responseModel -> {
+                        if (responseModel.getElasticsearchResponses().isEmpty()) {
+                          return Future.failedFuture(
+                              new DxForbiddenException("Item not found for ID: " + itemId));
+                        }
+
+                        JsonObject itemJson = responseModel.getElasticsearchResponses().getFirst();
+
+                        Asset asset = parseAndGetAsset(itemJson, itemId.toString());
+
+                        // Provider cannot request own resource
+                        if (asset.getProviderId().equals(fullUser.sub().toString())) {
+                          String message =
+                              "Provider cannot create an access request for their own resource";
+                          LOGGER.warn(message);
+                          return Future.failedFuture(
+                              new DxCreateAccessRequestForbiddenException(message));
+                        }
+
+                        accessRequestDto
+                            .setAssetType(asset.getAssetType())
+                            .setAssetName(asset.getAssetName())
+                            .setProviderId(asset.getProviderId())
+                            .setItemOrganization(asset.getOrganizationId())
+                            .setShortDescription(asset.getShortDescription())
+                            .setItemId(asset.getItemId());
+
+                        return accessRequestDao.create(accessRequestDto);
+                      });
             })
-        .compose(
-            dto -> {
-              LOGGER.info("Access request created successfully: {}", dto);
-              return Future.succeededFuture(dto);
-            })
-        .recover(
-            error -> {
-              LOGGER.error("Failed to create access request", error);
-              return Future.failedFuture(error);
-            });
+        .onSuccess(dto -> LOGGER.info("Access request created successfully: {}", dto))
+        .onFailure(err -> LOGGER.error("Failed to create access request", err));
   }
 
   @Override
@@ -151,116 +163,126 @@ public class AccessRequestServiceImpl implements AccessRequestService {
     // -------------------------
     return accessRequestDao
         .ownershipCheck(requestId, providerId, providerOrganizationId, isUserOrgAdmin)
-        .compose(owned -> {
-          if (!owned) {
-            return Future.failedFuture(new DxForbiddenException("User cannot update this request"));
-          }
-          // fetch the request DTO
-          return accessRequestDao.get(requestId);
-        })
+        .compose(
+            owned -> {
+              if (!owned) {
+                return Future.failedFuture(
+                    new DxForbiddenException("User cannot update this request"));
+              }
+              // fetch the request DTO
+              return accessRequestDao.get(requestId);
+            })
 
         // -------------------------
         // Fetch request + item metadata
         // -------------------------
-        .compose(request -> {
-          if (request == null) {
-            return Future.failedFuture(new DxNotFoundException("Access request not found"));
-          }
-          if (request.getStatus() != Status.PENDING) {
-            return Future.failedFuture(
-                new DxValidationException("Request cannot be updated; not in PENDING state"));
-          }
+        .compose(
+            request -> {
+              if (request == null) {
+                return Future.failedFuture(new DxNotFoundException("Access request not found"));
+              }
+              if (request.getStatus() != Status.PENDING) {
+                return Future.failedFuture(
+                    new DxValidationException("Request cannot be updated; not in PENDING state"));
+              }
 
-          // validate expiryAt again at service-layer (defence-in-depth)
-          if (expiryAt != null && expiryAt.isBefore(LocalDateTime.now())) {
-            return Future.failedFuture(
-                new DxValidationException("Invalid expiry time; expiryAt must be in the future"));
-          }
+              // validate expiryAt again at service-layer (defence-in-depth)
+              if (expiryAt != null && expiryAt.isBefore(LocalDateTime.now())) {
+                return Future.failedFuture(
+                    new DxValidationException(
+                        "Invalid expiry time; expiryAt must be in the future"));
+              }
 
-          // get item metadata from catalogue
-          UUID itemId = UUID.fromString(request.getItemId());
-          GetItemRequest itemReq = new GetItemRequest(itemId.toString(), "");
+              // get item metadata from catalogue
+              UUID itemId = UUID.fromString(request.getItemId());
+              GetItemRequest itemReq = new GetItemRequest(itemId.toString(), "");
 
-          return itemService
-              .getItem(itemReq)
-              .map(itemResponse -> {
-                Map<String, Object> ctx = new HashMap<>();
-                ctx.put("request", request);   // safe
-                ctx.put("itemResponse", itemResponse.getElasticsearchResponses().getFirst());
-                ctx.put("itemId", itemId);
-                return ctx;
-              });
-        })
+              return itemService
+                  .getItem(itemReq)
+                  .map(
+                      itemResponse -> {
+                        Map<String, Object> ctx = new HashMap<>();
+                        ctx.put("request", request); // safe
+                        ctx.put(
+                            "itemResponse", itemResponse.getElasticsearchResponses().getFirst());
+                        ctx.put("itemId", itemId);
+                        return ctx;
+                      });
+            })
 
         // -------------------------
         // 3. Extract constraints & validate
         // -------------------------
-        .compose(ctxObj -> {
+        .compose(
+            ctxObj -> {
+              Map<String, Object> ctx = ctxObj;
 
-          Map<String, Object> ctx = ctxObj;
+              AccessRequestDto request = (AccessRequestDto) ctx.get("request");
+              JsonObject itemResponse = (JsonObject) ctx.get("itemResponse");
+              UUID itemId = (UUID) ctx.get("itemId");
 
-          AccessRequestDto request = (AccessRequestDto) ctx.get("request");
-          JsonObject itemResponse = (JsonObject) ctx.get("itemResponse");
-          UUID itemId = (UUID) ctx.get("itemId");
+              JsonArray resourceServers =
+                  itemResponse.getJsonArray("resourceServer", new JsonArray());
 
-          JsonArray resourceServers = itemResponse.getJsonArray("resourceServer", new JsonArray());
+              Set<String> allowedAccessTypes = getAllowedAccessTypes(resourceServers);
 
-          Set<String> allowedAccessTypes = getAllowedAccessTypes(resourceServers);
+              JsonObject requestedConstraints =
+                  request.getConstraints() == null ? constraints : request.getConstraints();
+              // validate; throws DxValidationException on invalid constraints
+              validateAccessConstraints(requestedConstraints, allowedAccessTypes);
 
-          JsonObject requestedConstraints =
-              request.getConstraints() == null ? constraints : request.getConstraints();
-          // validate; throws DxValidationException on invalid constraints
-          validateAccessConstraints(requestedConstraints, allowedAccessTypes);
+              // ------------------------------------------
+              // CHECK IF ACTIVE POLICY ALREADY EXISTS
+              // ------------------------------------------
+              return policyDao
+                  .checkExistingPoliciesForIds(
+                      itemId, UUID.fromString(request.getProviderId()), request.getConsumerEmail())
+                  .compose(
+                      res -> {
+                        if (!res.getRows().isEmpty()) {
+                          // ACTIVE policy already exists → reject
+                          return Future.failedFuture(
+                              new DxValidationException(
+                                  "Active policy already exists for this user & item"));
+                        }
 
-          // ------------------------------------------
-          // CHECK IF ACTIVE POLICY ALREADY EXISTS
-          // ------------------------------------------
-          return policyDao.checkExistingPoliciesForIds(itemId,
-                  UUID.fromString(request.getProviderId()),
-                  request.getConsumerEmail())
-              .compose(res -> {
-                if (!res.getRows().isEmpty()) {
-                  // ACTIVE policy already exists → reject
-                  return Future.failedFuture(
-                      new DxValidationException(
-                          "Active policy already exists for this user & item"));
-                }
-
-                // No existing policy → SAFE TO CREATE POLICY
-                return createPolicyForApproval(
-                    request.getConsumerEmail(),
-                    request.getConsumerId(),
-                    itemId.toString(),
-                    ItemType.fromCatalogueItemType(request.getAssetType()),
-                    requestedConstraints,
-                    expiryAt,
-                    request.getProviderId(),
-                    request.getAdditionalInfo(),
-                    providerComment,
-                    feedbackToConsumer
-                );
-              })
-              .map(v -> {
-                ctx.put("constraints", requestedConstraints);
-                ctx.put("request", request);
-                return ctx;
-              });
-        })
+                        // No existing policy → SAFE TO CREATE POLICY
+                        return createPolicyForApproval(
+                            request.getConsumerEmail(),
+                            request.getConsumerId(),
+                            itemId.toString(),
+                            ItemType.fromCatalogueItemType(request.getAssetType()),
+                            requestedConstraints,
+                            expiryAt,
+                            request.getProviderId(),
+                            request.getAdditionalInfo(),
+                            providerComment,
+                            feedbackToConsumer);
+                      })
+                  .map(
+                      v -> {
+                        ctx.put("constraints", requestedConstraints);
+                        ctx.put("request", request);
+                        return ctx;
+                      });
+            })
 
         // -------------------------
         // 4. Update AccessRequest status → GRANTED
         // -------------------------
-        .compose(ctx -> {
-          AccessRequestDto req = (AccessRequestDto) ctx.get("request");
+        .compose(
+            ctx -> {
+              AccessRequestDto req = (AccessRequestDto) ctx.get("request");
 
-          return accessRequestDao
-              .approveAccessRequest(requestId, "GRANTED", expiryAt)
-              .map(updated -> {
-                req.setStatus(Status.GRANTED);
-                req.setExpiryAt(expiryAt);
-                return req;
-              });
-        });
+              return accessRequestDao
+                  .approveAccessRequest(requestId, "GRANTED", expiryAt)
+                  .map(
+                      updated -> {
+                        req.setStatus(Status.GRANTED);
+                        req.setExpiryAt(expiryAt);
+                        return req;
+                      });
+            });
   }
 
   private Set<String> getAllowedAccessTypes(JsonArray resourceServers) {
@@ -295,7 +317,6 @@ public class AccessRequestServiceImpl implements AccessRequestService {
     }
   }
 
-
   private Future<Object> createPolicyForApproval(
       String consumerEmail,
       String consumerId,
@@ -329,7 +350,8 @@ public class AccessRequestServiceImpl implements AccessRequestService {
     List<CreatePolicyRequest> list = new ArrayList<>();
     list.add(request);
 
-    return policyDao.insertPolicies(list, UUID.fromString(providerUserId))
+    return policyDao
+        .insertPolicies(list, UUID.fromString(providerUserId))
         .mapEmpty()
         .onSuccess(v -> LOGGER.info("Policy created for consumer {}", consumerId))
         .onFailure(err -> LOGGER.error("Policy create failed: {}", err.getMessage(), err));
@@ -337,8 +359,12 @@ public class AccessRequestServiceImpl implements AccessRequestService {
 
   @Override
   public Future<AccessRequestDto> rejectAccessRequest(
-      UUID providerId, UUID requestId, UUID providerOrganizationId, boolean isUserOrgAdmin,
-      String providerComment, String feedbackToConsumer) {
+      UUID providerId,
+      UUID requestId,
+      UUID providerOrganizationId,
+      boolean isUserOrgAdmin,
+      String providerComment,
+      String feedbackToConsumer) {
 
     if (providerOrganizationId == null) {
       LOGGER.error("Provider organization ID is null for requestId: {}", requestId);
@@ -381,39 +407,45 @@ public class AccessRequestServiceImpl implements AccessRequestService {
 
   @Override
   public Future<AccessRequestDto> updateAccessRequestForConsumer(UUID consumerId, UUID requestId) {
-    return accessRequestDao.get(requestId)
-        .compose(request -> {
-          if (request == null) {
-            return Future.failedFuture(new DxNotFoundException("Access request not found"));
-          }
+    return accessRequestDao
+        .get(requestId)
+        .compose(
+            request -> {
+              if (request == null) {
+                return Future.failedFuture(new DxNotFoundException("Access request not found"));
+              }
 
-          boolean isOwner = request.getConsumerId() != null &&
-              request.getConsumerId().equals(consumerId.toString());
-          if (!isOwner) {
-            return Future.failedFuture(
-                new DxForbiddenException("User cannot withdraw this request"));
-          }
+              boolean isOwner =
+                  request.getConsumerId() != null
+                      && request.getConsumerId().equals(consumerId.toString());
+              if (!isOwner) {
+                return Future.failedFuture(
+                    new DxForbiddenException("User cannot withdraw this request"));
+              }
 
-          if (!Status.PENDING.equals(request.getStatus())) {
-            return Future.failedFuture(
-                new DxValidationException("Only pending requests can be withdraw"));
-          }
+              if (!Status.PENDING.equals(request.getStatus())) {
+                return Future.failedFuture(
+                    new DxValidationException("Only pending requests can be withdraw"));
+              }
 
-          Map<String, Object> conditions = Map.of(DB_REQUEST_ID, requestId.toString());
-          Map<String, Object> updates = Map.of(DB_STATUS, Status.WITHDRAWN.getStatus());
+              Map<String, Object> conditions = Map.of(DB_REQUEST_ID, requestId.toString());
+              Map<String, Object> updates = Map.of(DB_STATUS, Status.WITHDRAWN.getStatus());
 
-          return accessRequestDao.update(conditions, updates)
-              .compose(updateResult -> {
-                request.setStatus(Status.WITHDRAWN);
-                return Future.succeededFuture(request);
-              });
-        })
+              return accessRequestDao
+                  .update(conditions, updates)
+                  .compose(
+                      updateResult -> {
+                        request.setStatus(Status.WITHDRAWN);
+                        return Future.succeededFuture(request);
+                      });
+            })
         .onSuccess(
             v -> LOGGER.info("Withdrew access request {} by consumer {}", requestId, consumerId))
-        .onFailure(err -> LOGGER.error("Failed to withdraw access request {}: {}", requestId,
-            err.getMessage()));
+        .onFailure(
+            err ->
+                LOGGER.error(
+                    "Failed to withdraw access request {}: {}", requestId, err.getMessage()));
   }
-
 
   private Asset parseAndGetAsset(JsonObject result, String id) {
     LOGGER.debug("Asset info : {}", result.encodePrettily());
