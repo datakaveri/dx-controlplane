@@ -8494,6 +8494,7 @@ paths:
         - $ref: '#/components/parameters/ActionParam'
         - $ref: '#/components/parameters/OrganizationIdParam'
         - $ref: '#/components/parameters/LogTypeParam'
+        - $ref: '#/components/parameters/SandboxTypeParam'
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
         - $ref: '#/components/parameters/TimeRelParam'
@@ -8557,6 +8558,7 @@ paths:
         - $ref: '#/components/parameters/AssetAccessPolicyParam'
         - $ref: '#/components/parameters/ActionParam'
         - $ref: '#/components/parameters/LogTypeParam'
+        - $ref: '#/components/parameters/SandboxTypeParam'
         - $ref: '#/components/parameters/OrganizationIdParam'
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
@@ -8622,6 +8624,7 @@ paths:
         - $ref: '#/components/parameters/AssetAccessPolicyParam'
         - $ref: '#/components/parameters/ActionParam'
         - $ref: '#/components/parameters/LogTypeParam'
+        - $ref: '#/components/parameters/SandboxTypeParam'
         - $ref: '#/components/parameters/OrganizationIdParam'
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
@@ -8681,6 +8684,7 @@ paths:
         - $ref:  '#/components/parameters/AssetAccessPolicyParam'
         - $ref: '#/components/parameters/ActionParam'
         - $ref: '#/components/parameters/LogTypeParam'
+        - $ref: '#/components/parameters/SandboxTypeParam'
         - $ref: '#/components/parameters/OrganizationIdParam'
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
@@ -9776,6 +9780,19 @@ components:
           - DATABANK
           - AI_MODEL
           - USECASE
+    SandboxTypeParam:
+      name: sandboxType
+      in: query
+      description: >
+        Sandbox execution type used to filter audit logs.
+        Possible values indicate the compute environment.
+      required: false
+      schema:
+        type: string
+        enum:
+          - cpu
+          - gpu
+
     AssetAccessPolicyParam:
       name: accessPolicy
       in: query
@@ -17338,6 +17355,9 @@ components:
           type: string
           format: uuid
           example: a3f3cbb4-6d79-4bfa-b9d6-3b7b0d1bbd55
+        sandboxType:
+          type: string
+          example: "cpu"
 
         # -------------------
         # Technical metadata

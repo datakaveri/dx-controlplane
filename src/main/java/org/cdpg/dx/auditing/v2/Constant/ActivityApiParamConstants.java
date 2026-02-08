@@ -20,7 +20,8 @@ public final class ActivityApiParamConstants {
           Map.entry("assetOrgType", ASSET_ORG_TYPE),
           Map.entry("accessPolicy", ASSET_ACCESS_POLICY),
           Map.entry("action", ACTION),
-          Map.entry("logType", LOG_TYPE));
+          Map.entry("logType", LOG_TYPE),
+          Map.entry("sandboxType", SANDBOX_TYPE));
 
   // -------------------------------------------------
   // Sort fields
@@ -34,7 +35,8 @@ public final class ActivityApiParamConstants {
           "assetName",
           "assetShortDescription",
           "action",
-          "amount");
+          "amount",
+          "sandboxType");
 
   // -------------------------------------------------
   // Consumer filters (many entries → Map.ofEntries)
@@ -49,7 +51,8 @@ public final class ActivityApiParamConstants {
           Map.entry("assetOrgType", ASSET_ORG_TYPE), // ✅ fixed
           Map.entry("accessPolicy", ASSET_ACCESS_POLICY),
           Map.entry("action", ACTION),
-          Map.entry("logType", LOG_TYPE));
+          Map.entry("logType", LOG_TYPE),
+          Map.entry("sandboxType", SANDBOX_TYPE));
 
   // -------------------------------------------------
   // API → DB field mapping (filters + sorts)
@@ -70,9 +73,10 @@ public final class ActivityApiParamConstants {
           // ---- Asset ----
           Map.entry("assetId", ASSET_ID),
           Map.entry("assetName", ASSET_NAME),
-          Map.entry("assetShortDescription", ASSET_SORT_DESCRIPTION),
+          Map.entry("assetShortDescription", ASSET_SHORT_DESCRIPTION),
           Map.entry("assetType", ASSET_TYPE),
           Map.entry("accessPolicy", ASSET_ACCESS_POLICY),
           Map.entry("assetOrgType", ASSET_ORG_TYPE),
-          Map.entry("assetProviderId", ASSET_PROVIDER_ID));
+          Map.entry("assetProviderId", ASSET_PROVIDER_ID),
+          Map.entry("sandboxType", SANDBOX_TYPE));
 }
