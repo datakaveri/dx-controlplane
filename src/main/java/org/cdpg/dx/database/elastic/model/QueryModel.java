@@ -770,10 +770,19 @@ public class QueryModel {
       this.queries = new QueryModel();
     }
     Map<String, Object> documentFields = new HashMap<>();
-    processedDocument.forEach(
-        entry -> {
-          documentFields.put(entry.getKey(), entry.getValue());
-        });
+    processedDocument.forEach( entry->{
+//        entry -> {
+//          documentFields.put(entry.getKey(), entry.getValue());
+//        });
+//    processedDocument.forEach(entry -> {
+      Object val = entry.getValue();
+      if (val instanceof UUID) {
+        documentFields.put(entry.getKey(), val.toString());
+      } else {
+        documentFields.put(entry.getKey(), val);
+      }
+    });
+
     this.queries.setQueryParameters(documentFields);
   }
 

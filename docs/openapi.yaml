@@ -2459,13 +2459,8 @@ paths:
             schema:
               type: object
               required:
-                - role
                 - user_id
               properties:
-                role:
-                  type: string
-                  description: The name of the custom role (mandatory)
-                  example: "custom_role"
                 user_id:
                   type: string
                   description: UUID of the userID
@@ -2487,7 +2482,6 @@ paths:
               example:
                 id: "550e8400-e29b-41d4-a716-446655440000"
                 userId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                role: "custom_role"
                 scope: [ "scope1", "scope2" ]
                 createdAt: "2026-02-03T10:15:30"
                 updatedAt: "2026-02-03T10:15:30"
@@ -2553,6 +2547,104 @@ paths:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
 
+    delete:
+      summary: Delete Custom Role Scope or Request
+      description: >
+        Deletes a custom role scope or an entire custom role request.
+        Either requestId OR (userId and scope) must be provided.
+        Only the original requester or COS_ADMIN is allowed.
+      tags:
+        - Role APIs
+      operationId: delete-auth-v2-custom-role
+      security:
+        - authorization: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                requestId:
+                  type: string
+                  format: uuid
+                  description: Custom role request ID
+                userId:
+                  type: string
+                  format: uuid
+                  description: Target user ID
+                scope:
+                  type: string
+                  description: Scope to be removed
+              oneOf:
+                - required: [ requestId ]
+                - required: [ userId, scope ]
+
+      responses:
+        '200':
+          description: Successfully deleted custom role or scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          description: Bad Request – Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: Unauthorized – Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden – Not the requester or admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+        '404':
+          description: Not Found – Request or scope does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+  /auth/v2/custom-role/requester:
+    get:
+      summary: Get Custom Roles and Scopes created by the requester
+      description: >
+        Returns all custom role requests created by the authenticated requester.
+        Accessible only to ORG_ADMIN and COS_ADMIN.
+      tags:
+        - Role APIs
+      operationId: get-auth-v2-custom-role-requester
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+      security:
+        - authorization: [ ]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomRoleResponse'
+        '401':
+          description: Unauthorized – Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden (e.g., constraints not met or role already exists)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
 
   /iudx/v2/auth/user/credit/balance:
     get:
@@ -8445,7 +8537,7 @@ paths:
                   "values": [80, 84]
                 }
               ],
-              "filter": ["id", "type", "organization", "itemCreatedAt", "dataReadiness", 
+              "filter": ["id", "type", "organization", "itemCreatedAt", "dataReadiness",
               "ownerUserId"]
             }'
 
@@ -17529,4 +17621,71 @@ components:
           format: date-time
         tableName:
           type: string
+
+    Success:
+      type: object
+      properties:
+        type:
+          type: string
+          example: urn:dx:ControlPlane:success
+        title:
+          type: string
+          example: Success
+        result:
+          type: string
+          example: Operation completed successfully
+      required:
+        - type
+        - title
+
+    BadRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          example: urn:dx:ControlPlane:bad_request
+        title:
+          type: string
+          example: Bad Request
+        detail:
+          type: string
+          example: Either requestId or (userId and scope) is required
+      required:
+        - type
+        - title
+        - detail
+
+    Forbidden:
+      type: object
+      properties:
+        type:
+          type: string
+          example: urn:dx:ControlPlane:forbidden
+        title:
+          type: string
+          example: Forbidden
+        detail:
+          type: string
+          example: You are not authorized to perform this action
+      required:
+        - type
+        - title
+        - detail
+
+    NotFound:
+      type: object
+      properties:
+        type:
+          type: string
+          example: urn:dx:ControlPlane:not_found
+        title:
+          type: string
+          example: Not Found
+        detail:
+          type: string
+          example: Requested resource does not exist
+      required:
+        - type
+        - title
+        - detail
 
