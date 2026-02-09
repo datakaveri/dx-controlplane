@@ -8,12 +8,16 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.leaderboard.enums.LeaderboardType;
 import org.cdpg.dx.aaa.leaderboard.model.*;
+import org.cdpg.dx.aaa.leaderboard.util.SortQueryBuilder;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.TemporalRequest;
 import org.cdpg.dx.common.util.PaginationInfo;
 import org.cdpg.dx.database.postgres.models.OrderBy;
 import org.cdpg.dx.database.postgres.service.PostgresService;
+
+import static org.cdpg.dx.aaa.leaderboard.enums.LeaderboardType.*;
 
 public class LeaderboardDaoImpl implements LeaderboardDao {
   private static final Logger LOGGER = LogManager.getLogger(LeaderboardDaoImpl.class);
@@ -29,26 +33,16 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
 
     LOGGER.debug("Fetching org leaderboard with filters: {}", request.filters());
 
-    // -------------------------------------------------
-    // 1. Sorting (safe whitelist)
-    // -------------------------------------------------
-    Set<String> allowedSortColumns = Set.of("downloads", "likes", "dislikes", "total_published");
+    OrderBy orderBy =
+        request.orderByList() != null && !request.orderByList().isEmpty()
+            ? request.orderByList().getFirst()
+            : null;
 
-    String sortColumn = "downloads";
-    OrderBy.Direction sortDirection = OrderBy.Direction.DESC;
+    // String orderBySql = sortColumn + " " + sortDirection.name() + ", org_name ASC";
 
-    if (request.orderByList() != null && !request.orderByList().isEmpty()) {
-      OrderBy ob = request.orderByList().getFirst();
-
-      if (ob.getColumn() != null && allowedSortColumns.contains(ob.getColumn())) {
-        sortColumn = ob.getColumn();
-      }
-      if (ob.getDirection() != null) {
-        sortDirection = ob.getDirection();
-      }
-    }
-
-    String orderBySql = sortColumn + " " + sortDirection.name() + ", org_name ASC";
+    String orderBySql =
+        SortQueryBuilder.buildLeaderboardOrderBy(
+            ORGANIZATION, orderBy.getColumn(), orderBy.getDirection(), "org_name");
 
     // -------------------------------------------------
     // 2. Filters
@@ -95,28 +89,27 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
                             a.asset_org_type AS org_type,
 
                             COUNT(*) FILTER (
-                                WHERE a.action = 'Upload'
+                                WHERE a.action = 'Create'
                                   AND a.asset_type = 'DATABANK'
                             ) AS published_databanks,
 
                             COUNT(*) FILTER (
-                                WHERE a.action = 'Upload'
+                                WHERE a.action = 'Create'
                                   AND a.asset_type = 'AI_MODEL'
                             ) AS published_ai_models,
 
                             COUNT(*) FILTER (
-                                WHERE a.action = 'Upload'
+                                WHERE a.action = 'Create'
                                   AND a.asset_type = 'USECASE'
                             ) AS published_usecases,
 
                             COUNT(*) FILTER (
-                                WHERE a.action = 'Upload'
+                                WHERE a.action = 'Create'
                                   AND a.asset_type IN ('DATABANK','AI_MODEL','USECASE')
                             ) AS total_published,
 
                             COUNT(*) FILTER (WHERE a.action = 'Download') AS downloads,
-                            COUNT(*) FILTER (WHERE a.action = 'Like')     AS likes,
-                            COUNT(*) FILTER (WHERE a.action = 'Dislike')  AS dislikes
+                            COUNT(*) FILTER (WHERE a.action = 'Like')     AS likes
 
                         FROM user_activity_audit_log a
                         WHERE a.asset_org_id IS NOT NULL
@@ -175,7 +168,6 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
                     o.total_published,
                     o.downloads,
                     o.likes,
-                    o.dislikes,
                     ROW_NUMBER() OVER (ORDER BY %s) AS rank,
                     COUNT(*) OVER() AS total_count
                 FROM org_stats o
@@ -215,8 +207,7 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
                                 r.getInteger("published_usecases", 0),
                                 r.getInteger("total_published", 0),
                                 r.getInteger("downloads", 0),
-                                r.getInteger("likes", 0),
-                                r.getInteger("dislikes", 0));
+                                r.getInteger("likes", 0));
                           })
                       .toList();
 
@@ -243,28 +234,16 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
       PaginatedRequest request) {
 
     LOGGER.debug("Fetching provider leaderboard with filters: {}", request.filters());
+    OrderBy orderBy =
+        request.orderByList() != null && !request.orderByList().isEmpty()
+            ? request.orderByList().getFirst()
+            : null;
 
-    // -------------------------------------------------
-    // 1. Sorting (safe whitelist)
-    // -------------------------------------------------
-    Set<String> allowedSortColumns =
-        Set.of("downloads", "views", "likes", "dislikes", "total_published");
+    //  String orderBySql = sortColumn + " " + sortDirection.name() + ", provider_name ASC";
 
-    String sortColumn = "downloads";
-    OrderBy.Direction sortDirection = OrderBy.Direction.DESC;
-
-    if (request.orderByList() != null && !request.orderByList().isEmpty()) {
-      OrderBy ob = request.orderByList().getFirst();
-
-      if (ob.getColumn() != null && allowedSortColumns.contains(ob.getColumn())) {
-        sortColumn = ob.getColumn();
-      }
-      if (ob.getDirection() != null) {
-        sortDirection = ob.getDirection();
-      }
-    }
-
-    String orderBySql = sortColumn + " " + sortDirection.name() + ", provider_name ASC";
+    String orderBySql =
+        SortQueryBuilder.buildLeaderboardOrderBy(
+            ORGANIZATION, orderBy.getColumn(), orderBy.getDirection(), "provider_name");
 
     // -------------------------------------------------
     // 2. Filters
@@ -316,33 +295,31 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
                             a.asset_org_type    AS org_type,
 
                             COUNT(*) FILTER (
-                                WHERE a.action = 'Upload'
+                                WHERE a.action = 'Create'
                                   AND a.asset_type = 'DATABANK'
                             ) AS databank_published_count,
 
                             COUNT(*) FILTER (
-                                WHERE a.action = 'Upload'
+                                WHERE a.action = 'Create'
                                   AND a.asset_type = 'AI_MODEL'
                             ) AS ai_model_published_count,
 
                             COUNT(*) FILTER (
-                                WHERE a.action = 'Upload'
+                                WHERE a.action = 'Create'
                                   AND a.asset_type = 'USECASE'
                             ) AS use_case_published_count,
 
                             COUNT(*) FILTER (
-                                WHERE a.action = 'Upload'
+                                WHERE a.action = 'Create'
                                   AND a.asset_type IN ('DATABANK','AI_MODEL','USECASE')
                             ) AS total_published,
 
                             COUNT(*) FILTER (WHERE a.action = 'Download') AS downloads,
-                            COUNT(*) FILTER (WHERE a.action = 'View')     AS views,
-                            COUNT(*) FILTER (WHERE a.action = 'Like')     AS likes,
-                            COUNT(*) FILTER (WHERE a.action = 'Dislike')  AS dislikes
+                            COUNT(*) FILTER (WHERE a.action = 'Like')     AS likes
 
                         FROM user_activity_audit_log a
                         LEFT JOIN organization_users u
-                          ON u.user_id = a.asset_provider_id 
+                          ON u.user_id = a.asset_provider_id
 
                         WHERE a.asset_provider_id IS NOT NULL
                           AND a.asset_type = ANY(string_to_array($1, ','))
@@ -424,8 +401,7 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
                                 r.getInteger("use_case_published_count", 0),
                                 r.getInteger("total_published", 0),
                                 r.getInteger("downloads", 0),
-                                r.getInteger("likes", 0),
-                                r.getInteger("dislikes", 0));
+                                r.getInteger("likes", 0));
                           })
                       .toList();
 
@@ -455,26 +431,16 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
     LOGGER.debug("Page: {}, Size: {}", request.page(), request.size());
     LOGGER.debug("Sort: {}", request.orderByList());
 
-    // -------------------------------------------------
-    // 1. Allowed sorting (strict whitelist)
-    // -------------------------------------------------
-    Set<String> allowedSortColumns = Set.of("downloads", "views", "likes", "dislikes");
+    OrderBy orderBy =
+        request.orderByList() != null && !request.orderByList().isEmpty()
+            ? request.orderByList().getFirst()
+            : null;
 
-    String sortColumn = "downloads";
-    OrderBy.Direction sortDirection = OrderBy.Direction.DESC;
+    // String orderBySql = sortColumn + " " + sortDirection.name() + ", asset_name ASC";
 
-    if (request.orderByList() != null && !request.orderByList().isEmpty()) {
-      OrderBy ob = request.orderByList().getFirst();
-
-      if (ob.getColumn() != null && allowedSortColumns.contains(ob.getColumn())) {
-        sortColumn = ob.getColumn();
-      }
-      if (ob.getDirection() != null) {
-        sortDirection = ob.getDirection();
-      }
-    }
-
-    String orderBySql = sortColumn + " " + sortDirection.name() + ", asset_name ASC";
+    String orderBySql =
+        SortQueryBuilder.buildLeaderboardOrderBy(
+            ORGANIZATION, orderBy.getColumn(), orderBy.getDirection(), "asset_name");
 
     // -------------------------------------------------
     // 2. Filters
@@ -530,8 +496,7 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
 
                             COUNT(*) FILTER (WHERE a.action = 'View')     AS views,
                             COUNT(*) FILTER (WHERE a.action = 'Download') AS downloads,
-                            COUNT(*) FILTER (WHERE a.action = 'Like')     AS likes,
-                            COUNT(*) FILTER (WHERE a.action = 'Dislike')  AS dislikes
+                            COUNT(*) FILTER (WHERE a.action = 'Like')     AS likes
 
                         FROM user_activity_audit_log a
                        WHERE a.asset_type = ANY(string_to_array($1, ',')) \s
@@ -632,7 +597,6 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
                                 r.getString("asset_org_type", ""),
                                 r.getInteger("downloads", 0),
                                 r.getInteger("likes", 0),
-                                r.getInteger("dislikes", 0),
                                 r.getInteger("views", 0));
                           })
                       .toList();
