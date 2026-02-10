@@ -113,7 +113,7 @@ public class AccessRequestController implements ApdApiController {
     Handler<RoutingContext> orgAdminAccessHandler = AuthorizationHandler.forRoles(DxRole.ORG_ADMIN);
     Handler<RoutingContext> providerAndOrgAdminAccessHandler =
         AuthorizationHandler.forRoles(DxRole.PROVIDER, DxRole.ORG_ADMIN);
-    UserAccessHandler userAccessHandler = new UserAccessHandler(postgresService);
+    UserAccessHandler userAccessHandler = new UserAccessHandler(postgresService, keycloakUserService);
 
     builder
         .operation(CREATE_ACCESS_REQUEST_API)
