@@ -11,5 +11,4 @@ public record OrganizationLeaderboardEntry(
     int publishedUsecases,
     int totalPublished,
     int downloads,
-    int likes,
-    int dislikes) {}
+    int likes) {}

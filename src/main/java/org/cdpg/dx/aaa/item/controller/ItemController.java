@@ -405,7 +405,7 @@ public class ItemController implements ApiController {
               res -> {
                 UserActivityAuditLogBuilder auditLogBuilder =
                     ItemAuditLogHelper.buildItemAudit(
-                        ctx, item.toJson(), ItemAuditOperation.UPLOAD);
+                        ctx, item.toJson(), ItemAuditOperation.CREATE);
                 RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
                 ResponseBuilder.sendCreated(
@@ -480,7 +480,7 @@ public class ItemController implements ApiController {
             response -> {
               LOGGER.debug("DataBank item created successfully with integrations");
               UserActivityAuditLogBuilder auditLogBuilder =
-                  ItemAuditLogHelper.buildItemAudit(ctx, item.toJson(), ItemAuditOperation.UPLOAD);
+                  ItemAuditLogHelper.buildItemAudit(ctx, item.toJson(), ItemAuditOperation.CREATE);
               RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
               ResponseBuilder.sendSuccess(ctx, response.toJson(), this.urnGenerator);
             })
