@@ -38,6 +38,7 @@ public class PolicyFactory {
     PolicyService policyService =
         new PolicyServiceImpl(itemService, policyDao, config.getString(APD_URL));
 
-    return new PolicyController(policyService, pgService, auditingHandler, urnGenerator, config);
+    return new PolicyController(policyService, pgService, auditingHandler,
+        keycloakUserService, urnGenerator, config);
   }
 }

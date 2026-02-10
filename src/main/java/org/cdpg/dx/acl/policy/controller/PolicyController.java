@@ -44,12 +44,14 @@ import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.database.postgres.service.PostgresService;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class PolicyController implements ApdApiController {
   private static final Logger LOGGER = LogManager.getLogger(PolicyController.class);
   private final PolicyService policyService;
   private final AuditingHandler auditingHandler;
   private final PostgresService postgresService;
+  private final KeycloakUserService keycloakUserService;
   private final URNGenerator urnGenerator;
   private final JsonObject config;
 
@@ -57,11 +59,13 @@ public class PolicyController implements ApdApiController {
       PolicyService policyService,
       PostgresService postgresService,
       AuditingHandler auditingHandler,
+      KeycloakUserService keycloakUserService,
       URNGenerator urnGenerator,
       JsonObject config) {
     this.policyService = policyService;
     this.postgresService = postgresService;
     this.auditingHandler = auditingHandler;
+    this.keycloakUserService = keycloakUserService;
     this.urnGenerator = urnGenerator;
     this.config = config;
   }
@@ -74,7 +78,8 @@ public class PolicyController implements ApdApiController {
         AuthorizationHandler.forRoles(DxRole.CONSUMER, DxRole.PROVIDER, DxRole.DELEGATE);
     Handler<RoutingContext> apiAccessVerifyApiRole =
         AuthorizationHandler.forRoles(DxRole.PROVIDER, DxRole.ORG_ADMIN, DxRole.CONSUMER);
-    UserAccessHandler userAccessHandler = new UserAccessHandler(postgresService);
+    UserAccessHandler userAccessHandler = new UserAccessHandler(postgresService,
+        keycloakUserService);
 
     builder.operation(CREATE_POLICY_API)
         .handler(auditingHandler::handleApiAudit)

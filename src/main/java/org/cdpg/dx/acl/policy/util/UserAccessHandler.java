@@ -4,7 +4,6 @@ import static org.cdpg.dx.common.ResponseUrn.DB_ERROR_URN;
 
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import java.util.ArrayList;
@@ -19,47 +18,55 @@ import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.database.postgres.models.InsertQuery;
 import org.cdpg.dx.database.postgres.models.QueryResult;
 import org.cdpg.dx.database.postgres.service.PostgresService;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class UserAccessHandler implements Handler<RoutingContext> {
   private static final Logger LOGGER = LogManager.getLogger(UserAccessHandler.class);
   private final PostgresService postgresService;
+  private final KeycloakUserService keycloakUserService;
 
-  public UserAccessHandler(PostgresService postgresService) {
+  public UserAccessHandler(PostgresService postgresService, KeycloakUserService keycloakUserService) {
     this.postgresService = postgresService;
+    this.keycloakUserService = keycloakUserService;
   }
 
   @Override
   public void handle(RoutingContext event) {
-    // Extract user info from routing context
     User user = event.user();
-    DxUser dxUser = RoutingContextHelper.fromPrincipal(event);
 
-    // Insert user into DB
-    insertUserIntoDb(user.principal())
-        .onSuccess(v -> {
-          LOGGER.debug("User successfully inserted in DB");
-          RoutingContextHelper.setUser(event, user);
-          event.next();
-        })
-        .onFailure(err -> {
-          LOGGER.error("Failed to insert user with ID {} in DB", dxUser.sub().toString(), err);
-          event.fail(
-              new DxRuntimeException(HttpStatusCode.getByValue(500).getValue(),
-                  String.valueOf(DB_ERROR_URN)));
-        });
+    UUID userId = UUID.fromString(user.principal().getString("sub"));
+
+    keycloakUserService
+        .getUserById(userId)
+        .compose(this::insertUserIntoDb)
+        .onSuccess(
+            result -> {
+              LOGGER.debug("User {} successfully inserted/updated in DB", userId);
+              RoutingContextHelper.setUser(event, user);
+              event.next();
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Failed to insert user {} in DB", userId, err);
+              event.fail(
+                  new DxRuntimeException(
+                      HttpStatusCode.INTERNAL_SERVER_ERROR.getValue(),
+                      String.valueOf(DB_ERROR_URN)));
+            });
   }
 
+
   /**
-   * Inserts user into DB using a JsonObject principal (instead of the old custom User POJO)
+   * Inserts or updates user details in DB using DxUser fetched from Keycloak service
    */
-  private Future<QueryResult> insertUserIntoDb(JsonObject principal) {
+  private Future<QueryResult> insertUserIntoDb(DxUser dxUser) {
     LOGGER.debug("inside insert user in DB method");
 
     List<Object> values = new ArrayList<>();
-    values.add(principal.getString("sub"));         // user ID
-    values.add(principal.getString("email"));                        // email
-    values.add(principal.getString("given_name"));                   // first name
-    values.add(principal.getString("family_name"));                  // last name
+    values.add(dxUser.sub().toString());         // user ID
+    values.add(dxUser.email());                  // email
+    values.add(dxUser.givenName());              // first name
+    values.add(dxUser.familyName());             // last name
 
     InsertQuery insertQuery = new InsertQuery()
         .setTable("user_table")
@@ -71,7 +78,7 @@ public class UserAccessHandler implements Handler<RoutingContext> {
 
     return postgresService.insert(insertQuery)
         .onSuccess(result -> LOGGER.debug("User with ID {} inserted successfully: {}",
-            principal.getString("sub"), result.toString()))
+            dxUser.sub(), result.toString()))
         .onFailure(err -> {
           LOGGER.error("Failure while executing user insertion query: {}", err.getMessage(), err);
           throw new DxRuntimeException(
