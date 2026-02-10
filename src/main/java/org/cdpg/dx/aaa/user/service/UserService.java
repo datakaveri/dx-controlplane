@@ -2,6 +2,7 @@ package org.cdpg.dx.aaa.user.service;
 
 import io.vertx.core.Future;
 import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.aaa.common.ResponseModel;
 import org.cdpg.dx.aaa.user.models.CustomRole;
@@ -26,9 +27,14 @@ public interface UserService {
     Future<UserInfo> patchUserInfo(String userId, JsonObject updates);
     Future<DxUser> updateUserInfo(UUID userId,Boolean status);
     Future<PaginatedResult<CustomRole>> getAllCustomRoles(PaginatedRequest customRoles);
-    Future<Boolean> addCustomRoleAndScope(JsonObject body);
+    Future<CustomRole> addCustomRoleAndScope(JsonObject body);
+    Future<CustomRole> updateCustomScope(UUID requestId , JsonArray scopes);
+    Future<List<CustomRole>> getCustomRoleRequestByRequester(UUID userId);
+    Future<CustomRole> getCustomRoleByUserAndRequester(UUID targetUserId, UUID requesterId);
+    Future<Boolean> deleteScope(UUID requestedBy, JsonObject body);
 
-    default <T> Future<List<JsonObject>> enrichWithUserRoles(
+
+  default <T> Future<List<JsonObject>> enrichWithUserRoles(
             List<T> items,
             Function<T, UUID> userIdExtractor,
             Function<T, JsonObject> baseJsonMapper

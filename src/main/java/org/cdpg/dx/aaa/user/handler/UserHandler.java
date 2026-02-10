@@ -1,5 +1,7 @@
 package org.cdpg.dx.aaa.user.handler;
 
+import io.vertx.core.Future;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
@@ -12,6 +14,8 @@ import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
 import org.cdpg.dx.auditing.model.AuditLog;
 import org.cdpg.dx.common.URNGenerator;
+import org.cdpg.dx.common.exception.DxForbiddenException;
+import org.cdpg.dx.common.exception.DxInternalServerErrorException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
@@ -22,6 +26,7 @@ import java.util.*;
 
 import static org.cdpg.dx.aaa.organization.config.Constants.USER_ID;
 import static org.cdpg.dx.aaa.user.util.constants.*;
+import static org.cdpg.dx.auth.authorization.model.DxRole.COS_ADMIN;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
 public class UserHandler {
@@ -35,21 +40,101 @@ public class UserHandler {
     this.urnGenerator = urnGenerator;
   }
 
-  public void addCustomRoleAndScopes(RoutingContext ctx)
-  {
-     UUID userId = UUID.fromString(ctx.user().subject());
-     JsonObject body = ctx.body().asJsonObject();
-    userService.addCustomRoleAndScope(body)
-      .onSuccess(
-        res -> {
-          AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-            RoutingContextHelper.getRequestPath(ctx), "POST", "Add Custom Role and Scope");
-          RoutingContextHelper.setAuditingLog(ctx, auditLog);
-          ResponseBuilder.sendSuccess(ctx, "Success:Addtion of Custom Role and Scoep", this.urnGenerator);
-        })
-      .onFailure(ctx::fail);
+  public void addCustomRoleAndScopes(RoutingContext ctx) {
 
+    UUID requesterId = UUID.fromString(ctx.user().subject());
+    JsonObject body = ctx.body().asJsonObject();
+
+    UUID targetUserId = UUID.fromString(body.getString(USER_ID));
+    JsonArray newScopes = body.getJsonArray(SCOPE, new JsonArray());
+
+    body.put(REQUESTED_BY, requesterId.toString());
+
+    userService
+      .getCustomRoleByUserAndRequester(targetUserId, requesterId)
+      .recover(err -> {
+        // No existing entry → create new
+        if (err instanceof DxNotFoundException) {
+          return Future.succeededFuture(null);
+        }
+        return Future.failedFuture(err);
+      })
+      .compose(existingRole -> {
+
+        // CASE 1: Existing role → merge scopes
+        if (existingRole != null) {
+
+          JsonArray existingScopes = existingRole.scope();
+          Set<String> mergedScopes = new HashSet<>();
+
+          if (existingScopes != null) {
+            existingScopes.forEach(s -> mergedScopes.add((String) s));
+          }
+          newScopes.forEach(s -> mergedScopes.add((String) s));
+
+          JsonArray updatedScopes = new JsonArray(new ArrayList<>(mergedScopes));
+
+          // FIX: return CustomRole directly
+          return userService.updateCustomScope(existingRole.id(), updatedScopes);
+        }
+
+        // CASE 2: No role exists → create new
+        return userService.addCustomRoleAndScope(body);
+      })
+      .onSuccess(customRole -> {
+
+        AuditLog auditLog = AuditingHelper.createAuditLog(
+          ctx.user(),
+          RoutingContextHelper.getRequestPath(ctx),
+          "POST",
+          "Add Custom Role and Scope"
+        );
+
+        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        ResponseBuilder.sendSuccess(
+          ctx,
+          customRole,
+          this.urnGenerator
+        );
+      })
+      .onFailure(ctx::fail);
   }
+
+  public void deleteCustomRoleScope(RoutingContext ctx) {
+
+    User user = ctx.user();
+    UUID userId = UUID.fromString(user.subject());
+    JsonObject body = ctx.body().asJsonObject();
+
+    userService
+      .deleteScope(userId, body)
+      .onSuccess(deleted -> {
+
+        if (!deleted) {
+          ctx.fail(
+            new DxInternalServerErrorException("Failed to delete custom role scope")
+          );
+          return;
+        }
+
+        AuditLog auditLog = AuditingHelper.createAuditLog(
+          ctx.user(),
+          RoutingContextHelper.getRequestPath(ctx),
+          "DELETE",
+          "Delete Custom Role Scope"
+        );
+
+        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        ResponseBuilder.sendSuccess(
+          ctx,
+          "Scope deleted successfully",
+          this.urnGenerator
+        );
+      })
+      .onFailure(ctx::fail);
+  }
+
+
 
   public void getAllCustomRoles(RoutingContext ctx) {
 
@@ -76,6 +161,19 @@ public class UserHandler {
 //          CustomRoleAuditHelper.buildGetCustomRolesAudit(ctx);
 //        RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
         ResponseBuilder.sendSuccess(ctx, res.data(), res.paginationInfo(), urnGenerator);
+      })
+      .onFailure(ctx::fail);
+  }
+
+  public void getAllCustomRolesByRequester(RoutingContext ctx) {
+
+    User user = ctx.user();
+    UUID userId = UUID.fromString(user.subject());
+
+    userService
+      .getCustomRoleRequestByRequester(userId)
+      .onSuccess(customRoles -> {
+        ResponseBuilder.sendSuccess(ctx, customRoles, urnGenerator);
       })
       .onFailure(ctx::fail);
   }

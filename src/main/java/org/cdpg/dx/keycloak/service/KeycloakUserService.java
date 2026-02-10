@@ -34,7 +34,6 @@ public interface KeycloakUserService {
     Future<Boolean> setCustomScopeToUser(UUID userId , List<String> scope);
     Future<Boolean> addCustomRoleToUser(UUID userId,String role);
     Future<Boolean> clearDelegationScopes(    UUID userId,
-                                              UUID delegatorId,
                                               Set<String> scopesToRemove);
 //    Future<Boolean> addScopesToUser(UUID userId, List<String> scopes);
 }
