@@ -472,6 +472,7 @@ public class Constants {
   public static final String DATA_UPLOAD_STATUS = "dataUploadStatus";
   public static final String RESOURCE_SVR_URL = "resourceServer.url";
   public static final String PUBLISH_STATUS = "publishStatus";
+  public static final String FILTER_MYASSETS = "filter_myassets";
   public static final String MEDIA_URL = "mediaURL";
   public static final String PENDING = "PENDING";
   public static final String QUERY_KEY = "query";
