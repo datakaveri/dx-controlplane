@@ -21,8 +21,8 @@ public class SortQueryBuilder {
     // Base tie-breakers (order matters!)
     List<String> baseTieBreakers =
         switch (type) {
-          case ASSET -> List.of("downloads", "views", "likes");
-          case PROVIDER, ORGANIZATION -> List.of("downloads", "likes");
+          case ASSET -> List.of("downloads", "likes", "views");
+          case PROVIDER, ORGANIZATION -> List.of("total_published", "downloads", "likes");
         };
 
     // Remove primary from tie-breakers

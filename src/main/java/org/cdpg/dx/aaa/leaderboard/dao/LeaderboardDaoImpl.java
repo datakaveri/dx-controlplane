@@ -440,7 +440,9 @@ public class LeaderboardDaoImpl implements LeaderboardDao {
 
     String orderBySql =
         SortQueryBuilder.buildLeaderboardOrderBy(
-            ORGANIZATION, orderBy.getColumn(), orderBy.getDirection(), "asset_name");
+            ASSET, orderBy.getColumn(), orderBy.getDirection(), "asset_name");
+
+    LOGGER.info("OrderBy SQL: {}", orderBySql);
 
     // -------------------------------------------------
     // 2. Filters
