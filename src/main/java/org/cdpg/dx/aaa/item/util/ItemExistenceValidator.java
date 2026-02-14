@@ -40,7 +40,7 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
-import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
+import org.cdpg.dx.common.exception.DxNotFoundException;
 
 public class ItemExistenceValidator {
 
@@ -49,17 +49,14 @@ public class ItemExistenceValidator {
   private final ItemService centralItemService;
   private final boolean isCentralCatEnabled;
 
-  public ItemExistenceValidator(ItemService itemService,
-                                ItemService centralItemService,
-                                boolean isCentralCatEnabled) {
+  public ItemExistenceValidator(
+      ItemService itemService, ItemService centralItemService, boolean isCentralCatEnabled) {
     this.itemService = itemService;
     this.centralItemService = centralItemService;
     this.isCentralCatEnabled = isCentralCatEnabled;
   }
 
-  /**
-   * Generates timestamp with timezone +05:30.
-   */
+  /** Generates timestamp with timezone +05:30. */
   public static String getUtcDatetimeAsString() {
     DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssZ");
     df.setTimeZone(TimeZone.getTimeZone("IST"));
@@ -82,35 +79,48 @@ public class ItemExistenceValidator {
     return offsetDateTime.format(outputFormatter);
   }
 
-  private Future<Boolean> itemExists(
-      ItemService service,
-      String itemType,
-      String name
-  ) {
-    return service.itemWithTheNameExists(itemType, name)
+  private Future<Boolean> itemExists(ItemService service, String itemType, String name) {
+    return service
+        .itemWithTheNameExists(itemType, name)
         .map(res -> getReturnTypeForValidation(res.toJson()).contains(itemType))
-        .recover(err -> {
-          if (DETAIL_ITEM_NOT_FOUND.equals(err.getMessage())) {
-            return Future.succeededFuture(false);
-          }
-          return Future.failedFuture(new DxBadRequestException(VALIDATION_FAILURE_MSG));
-        });
+        .recover(
+            err -> {
+              if (DETAIL_ITEM_NOT_FOUND.equals(err.getMessage())) {
+                return Future.succeededFuture(false);
+              }
+              return Future.failedFuture(new DxBadRequestException(VALIDATION_FAILURE_MSG));
+            });
   }
 
   public void validateApps(JsonObject request, String method, Promise<JsonObject> promise) {
     validateAndAddId(request, promise);
-    setCommonFields(request);
+    setCommonFields(request, method);
 
     if (!REQUEST_POST.equalsIgnoreCase(method)) {
-      setPublishStatus(request);
-      promise.complete(request);
+      GetItemRequest getItemRequest = new GetItemRequest(request.getString(ID), null);
+      itemService
+          .getItem(getItemRequest)
+          .onFailure(promise::fail)
+          .onSuccess(
+              responseModel -> {
+                if (responseModel.getTotalHits() == 0) {
+                  promise.fail(
+                      new DxNotFoundException(
+                          "Apps item not found with id " + request.getString(ID)));
+                  return;
+                }
+                preserveImmutableFields(
+                    request, responseModel.getElasticsearchResponses().getFirst());
+
+                promise.complete(request);
+              });
+
       return;
     }
 
     String name = request.getString(NAME);
 
-    Future<Boolean> localExists =
-        itemExists(itemService, ITEM_TYPE_APPS, name);
+    Future<Boolean> localExists = itemExists(itemService, ITEM_TYPE_APPS, name);
 
     Future<Boolean> centralExists =
         isCentralCatEnabled
@@ -119,241 +129,310 @@ public class ItemExistenceValidator {
 
     Future.all(localExists, centralExists)
         .onFailure(promise::fail)
-        .onSuccess(cf -> {
+        .onSuccess(
+            cf -> {
+              boolean l = cf.resultAt(0);
+              boolean c = cf.resultAt(1);
 
-          boolean l = cf.resultAt(0);
-          boolean c = cf.resultAt(1);
+              if (l && c) {
+                promise.fail(new DxConflictException("Apps item with this name already exists"));
+                return;
+              }
+              if (l) {
+                promise.fail(
+                    new DxConflictException(
+                        "Apps item with this name already exists in local catalogue"));
+                return;
+              }
+              if (c) {
+                promise.fail(
+                    new DxConflictException(
+                        "Apps item with this name already exists in central catalogue"));
+                return;
+              }
 
-          if (l && c) {
-            promise.fail(new DxConflictException(
-                "Apps item with this name already exists"));
-            return;
-          }
-          if (l) {
-            promise.fail(new DxConflictException(
-                "Apps item with this name already exists in local catalogue"));
-            return;
-          }
-          if (c) {
-            promise.fail(new DxConflictException(
-                "Apps item with this name already exists in central catalogue"));
-            return;
-          }
-
-          setPublishStatus(request);
-          promise.complete(request);
-        });
+              setPublishStatus(request);
+              promise.complete(request);
+            });
   }
 
   private void setPublishStatus(JsonObject request) {
     JsonArray roles = request.getJsonArray("roles", new JsonArray());
-    request.put(PUBLISH_STATUS,
-        (roles.contains(ORG_ADMIN) || roles.contains(COS_ADMIN)) ? ACTIVE : PENDING
-    );
+    request.put(
+        PUBLISH_STATUS,
+        (roles.contains(ORG_ADMIN) || roles.contains(COS_ADMIN)) ? ACTIVE : PENDING);
   }
 
   public void validateAiModel(JsonObject request, String method, Promise<JsonObject> promise) {
 
     validateAndAddId(request, promise);
-    setCommonFields(request);
+    setCommonFields(request, method);
+
+    if (!REQUEST_POST.equalsIgnoreCase(method)) {
+      GetItemRequest getItemRequest = new GetItemRequest(request.getString(ID), null);
+      itemService
+          .getItem(getItemRequest)
+          .onFailure(promise::fail)
+          .onSuccess(
+              responseModel -> {
+                if (responseModel.getTotalHits() == 0) {
+                  promise.fail(
+                      new DxNotFoundException(
+                          "Apps item not found with id " + request.getString(ID)));
+                  return;
+                }
+                preserveImmutableFields(
+                    request, responseModel.getElasticsearchResponses().getFirst());
+
+                promise.complete(request);
+              });
+
+      return;
+    }
 
     String name = request.getString(NAME);
 
     // -------- Local existence check --------
     Future<Boolean> localExistsFuture =
-        itemService.itemWithTheNameExists(ITEM_TYPE_AI_MODEL, name)
-            .map(res -> {
-              String returnType = getReturnTypeForValidation(res.toJson());
-              return returnType.contains(ITEM_TYPE_AI_MODEL);
-            })
-            .recover(err -> {
-              if (DETAIL_ITEM_NOT_FOUND.equals(err.getMessage())) {
-                return Future.succeededFuture(false);
-              }
-              LOGGER.debug("Fail: Local DB error: {}", err.getLocalizedMessage());
-              return Future.failedFuture(VALIDATION_FAILURE_MSG);
-            });
+        itemService
+            .itemWithTheNameExists(ITEM_TYPE_AI_MODEL, name)
+            .map(
+                res -> {
+                  String returnType = getReturnTypeForValidation(res.toJson());
+                  return returnType.contains(ITEM_TYPE_AI_MODEL);
+                })
+            .recover(
+                err -> {
+                  if (DETAIL_ITEM_NOT_FOUND.equals(err.getMessage())) {
+                    return Future.succeededFuture(false);
+                  }
+                  LOGGER.debug("Fail: Local DB error: {}", err.getLocalizedMessage());
+                  return Future.failedFuture(VALIDATION_FAILURE_MSG);
+                });
 
     // -------- Central existence check --------
     Future<Boolean> centralExistsFuture =
         isCentralCatEnabled
-            ? centralItemService.itemWithTheNameExists(ITEM_TYPE_AI_MODEL, name)
-            .map(res -> {
-              String returnType = getReturnTypeForValidation(res.toJson());
-              return returnType.contains(ITEM_TYPE_AI_MODEL);
-            })
-            .recover(err -> {
-              if (DETAIL_ITEM_NOT_FOUND.equals(err.getMessage())) {
-                return Future.succeededFuture(false);
-              }
-              LOGGER.debug("Fail: Central DB error: {}", err.getLocalizedMessage());
-              return Future.failedFuture(VALIDATION_FAILURE_MSG);
-            })
+            ? centralItemService
+                .itemWithTheNameExists(ITEM_TYPE_AI_MODEL, name)
+                .map(
+                    res -> {
+                      String returnType = getReturnTypeForValidation(res.toJson());
+                      return returnType.contains(ITEM_TYPE_AI_MODEL);
+                    })
+                .recover(
+                    err -> {
+                      if (DETAIL_ITEM_NOT_FOUND.equals(err.getMessage())) {
+                        return Future.succeededFuture(false);
+                      }
+                      LOGGER.debug("Fail: Central DB error: {}", err.getLocalizedMessage());
+                      return Future.failedFuture(VALIDATION_FAILURE_MSG);
+                    })
             : Future.succeededFuture(false);
 
     // -------- Combine results --------
     Future.all(localExistsFuture, centralExistsFuture)
         .onFailure(promise::fail)
-        .onSuccess(cf -> {
+        .onSuccess(
+            cf -> {
+              boolean localExists = cf.resultAt(0);
+              boolean centralExists = cf.resultAt(1);
 
-          boolean localExists = cf.resultAt(0);
-          boolean centralExists = cf.resultAt(1);
+              // ================= POST =================
+              if (REQUEST_POST.equalsIgnoreCase(method)) {
 
-          // ================= POST =================
-          if (REQUEST_POST.equalsIgnoreCase(method)) {
+                if (localExists && centralExists) {
+                  promise.fail(
+                      new DxConflictException("AI Model item with this name already exists"));
+                  return;
+                }
 
-            if (localExists && centralExists) {
-              promise.fail(new DxConflictException(
-                  "AI Model item with this name already exists"));
-              return;
-            }
+                if (localExists) {
+                  promise.fail(
+                      new DxConflictException(
+                          "AI Model item with this name already exists in local catalogue"));
+                  return;
+                }
 
-            if (localExists) {
-              promise.fail(new DxConflictException(
-                  "AI Model item with this name already exists in local catalogue"));
-              return;
-            }
+                if (centralExists) {
+                  promise.fail(
+                      new DxConflictException(
+                          "AI Model item with this name already exists in central catalogue"));
+                  return;
+                }
 
-            if (centralExists) {
-              promise.fail(new DxConflictException(
-                  "AI Model item with this name already exists in central catalogue"));
-              return;
-            }
+                // Not present anywhere → proceed
+                boolean mediaUrlPresent =
+                    request.containsKey(MEDIA_URL) && !request.getString(MEDIA_URL).isBlank();
 
-            // Not present anywhere → proceed
-            boolean mediaUrlPresent =
-                request.containsKey(MEDIA_URL) && !request.getString(MEDIA_URL).isBlank();
+                request.put(DATA_UPLOAD_STATUS, mediaUrlPresent);
+                setPublishStatus(request);
+                promise.complete(request);
+                return;
+              }
 
-            request.put(DATA_UPLOAD_STATUS, mediaUrlPresent);
-            setPublishStatus(request);
-            promise.complete(request);
-            return;
-          }
+              // ================= PUT / PATCH =================
+              boolean mediaUrlPresent =
+                  request.containsKey(MEDIA_URL) && !request.getString(MEDIA_URL).isBlank();
 
-          // ================= PUT / PATCH =================
-          boolean mediaUrlPresent =
-              request.containsKey(MEDIA_URL) && !request.getString(MEDIA_URL).isBlank();
+              boolean wasPreviouslyUploaded = extractDataUploadStatusFromES(request);
 
-          boolean wasPreviouslyUploaded =
-              extractDataUploadStatusFromES(request);
+              // Sticky behavior
+              request.put(DATA_UPLOAD_STATUS, mediaUrlPresent || wasPreviouslyUploaded);
 
-          // Sticky behavior
-          request.put(
-              DATA_UPLOAD_STATUS,
-              mediaUrlPresent || wasPreviouslyUploaded
-          );
+              // Preserve publish status
+              request.put(PUBLISH_STATUS, extractPublishStatusFromES(request));
 
-          // Preserve publish status
-          request.put(
-              PUBLISH_STATUS,
-              extractPublishStatusFromES(request)
-          );
-
-          promise.complete(request);
-        });
+              promise.complete(request);
+            });
   }
 
   public void validateDataBank(JsonObject request, String method, Promise<JsonObject> promise) {
     validateAndAddId(request, promise);
+    setCommonFields(request, method);
 
-    if (!request.containsKey(ID)) {
-      request.put(ID, UUID.randomUUID().toString());
+    if (!REQUEST_POST.equalsIgnoreCase(method)) {
+      GetItemRequest getItemRequest = new GetItemRequest(request.getString(ID), null);
+      itemService
+          .getItem(getItemRequest)
+          .onFailure(promise::fail)
+          .onSuccess(
+              responseModel -> {
+                if (responseModel.getTotalHits() == 0) {
+                  promise.fail(
+                      new DxNotFoundException(
+                          "DataBank item not found with id " + request.getString(ID)));
+                  return;
+                }
+                preserveImmutableFields(
+                    request, responseModel.getElasticsearchResponses().getFirst());
+
+                promise.complete(request);
+              });
+
+      return;
     }
 
-    setCommonFields(request);
     String name = request.getString(NAME);
 
     Future<Boolean> localExistsFuture =
-        itemService.itemWithTheNameExists(ITEM_TYPE_DATA_BANK, name)
-            .map(res -> {
-              String returnType = getReturnTypeForValidation(res.toJson());
-              return returnType.contains(ITEM_TYPE_DATA_BANK);
-            })
-            .recover(err -> {
-              if (DETAIL_ITEM_NOT_FOUND.equals(err.getMessage())) {
-                return Future.succeededFuture(false);
-              }
-              LOGGER.debug("Fail: DB Error: {}", err.getLocalizedMessage());
-              return Future.failedFuture(VALIDATION_FAILURE_MSG);
-            });
+        itemService
+            .itemWithTheNameExists(ITEM_TYPE_DATA_BANK, name)
+            .map(
+                res -> {
+                  String returnType = getReturnTypeForValidation(res.toJson());
+                  return returnType.contains(ITEM_TYPE_DATA_BANK);
+                })
+            .recover(
+                err -> {
+                  if (DETAIL_ITEM_NOT_FOUND.equals(err.getMessage())) {
+                    return Future.succeededFuture(false);
+                  }
+                  LOGGER.debug("Fail: DB Error: {}", err.getLocalizedMessage());
+                  return Future.failedFuture(VALIDATION_FAILURE_MSG);
+                });
 
     Future<Boolean> centralExistsFuture =
         isCentralCatEnabled
-            ? centralItemService.itemWithTheNameExists(ITEM_TYPE_DATA_BANK, name)
-            .map(res -> {
-              String returnType = getReturnTypeForValidation(res.toJson());
-              return returnType.contains(ITEM_TYPE_DATA_BANK);
-            })
-            .recover(err -> {
-              if (DETAIL_ITEM_NOT_FOUND.equals(err.getMessage())) {
-                return Future.succeededFuture(false);
-              }
-              LOGGER.debug("Fail: DB Error: {}", err.getLocalizedMessage());
-              return Future.failedFuture(VALIDATION_FAILURE_MSG);
-            }) : Future.succeededFuture(false);
+            ? centralItemService
+                .itemWithTheNameExists(ITEM_TYPE_DATA_BANK, name)
+                .map(
+                    res -> {
+                      String returnType = getReturnTypeForValidation(res.toJson());
+                      return returnType.contains(ITEM_TYPE_DATA_BANK);
+                    })
+                .recover(
+                    err -> {
+                      if (DETAIL_ITEM_NOT_FOUND.equals(err.getMessage())) {
+                        return Future.succeededFuture(false);
+                      }
+                      LOGGER.debug("Fail: DB Error: {}", err.getLocalizedMessage());
+                      return Future.failedFuture(VALIDATION_FAILURE_MSG);
+                    })
+            : Future.succeededFuture(false);
 
     Future.all(localExistsFuture, centralExistsFuture)
         .onFailure(promise::fail)
-        .onSuccess(cf -> {
+        .onSuccess(
+            cf -> {
+              boolean localExists = cf.resultAt(0);
+              boolean centralExists = cf.resultAt(1);
 
-          boolean localExists = cf.resultAt(0);
-          boolean centralExists = cf.resultAt(1);
+              // POST: existence conflicts
+              if (REQUEST_POST.equalsIgnoreCase(method)) {
 
-          // POST: existence conflicts
-          if (REQUEST_POST.equalsIgnoreCase(method)) {
+                if (localExists && centralExists) {
+                  LOGGER.error("Fail: DataBank item with the name {} already exists", name);
+                  promise.fail(
+                      new DxConflictException("DataBank item with this name already exists"));
+                  return;
+                }
 
-            if (localExists && centralExists) {
-              LOGGER.error("Fail: DataBank item with the name {} already exists", name);
-              promise.fail(new DxConflictException("DataBank item with this name already exists"));
-              return;
-            }
+                if (localExists) {
+                  LOGGER.error(
+                      "Fail: DataBank item with the name {} already exists in local cat", name);
+                  promise.fail(
+                      new DxConflictException(
+                          "Item with this name already exists in local catalogue"));
+                  return;
+                }
 
-            if (localExists) {
-              LOGGER.error("Fail: DataBank item with the name {} already exists in local cat",
-                  name);
-              promise.fail(new DxConflictException(
-                  "Item with this name already exists in local catalogue"));
-              return;
-            }
+                if (centralExists) {
+                  LOGGER.error(
+                      "Fail: DataBank item with the name {} already exists in central cat", name);
+                  promise.fail(
+                      new DxConflictException(
+                          "Item with this name already exists in central catalogue"));
+                  return;
+                }
 
-            if (centralExists) {
-              LOGGER.error("Fail: DataBank item with the name {} already exists in central cat",
-                  name);
-              promise.fail(new DxConflictException(
-                  "Item with this name already exists in central catalogue"));
-              return;
-            }
+                // Not present anywhere → proceed
+                boolean mediaUrlPresent =
+                    request.containsKey(MEDIA_URL) && !request.getString(MEDIA_URL).isBlank();
 
-            // Not present anywhere → proceed
-            boolean mediaUrlPresent =
-                request.containsKey(MEDIA_URL) && !request.getString(MEDIA_URL).isBlank();
+                request.put(DATA_UPLOAD_STATUS, mediaUrlPresent);
+                setPublishStatus(request);
+                promise.complete(request);
+                return;
+              }
 
-            request.put(DATA_UPLOAD_STATUS, mediaUrlPresent);
-            setPublishStatus(request);
-            promise.complete(request);
-            return;
-          }
+              // PUT / PATCH (update)
+              boolean mediaUrlPresent =
+                  request.containsKey(MEDIA_URL) && !request.getString(MEDIA_URL).isBlank();
 
-          // PUT / PATCH (update)
-          boolean mediaUrlPresent =
-              request.containsKey(MEDIA_URL) && !request.getString(MEDIA_URL).isBlank();
+              if (localExists) {
+                request.put(
+                    DATA_UPLOAD_STATUS, mediaUrlPresent || extractDataUploadStatusFromES(request));
+                request.put(PUBLISH_STATUS, extractPublishStatusFromES(request));
+              }
 
-          if (localExists) {
-            request.put(
-                DATA_UPLOAD_STATUS,
-                mediaUrlPresent || extractDataUploadStatusFromES(request));
-            request.put(PUBLISH_STATUS, extractPublishStatusFromES(request));
-          }
-
-          promise.complete(request);
-        });
+              promise.complete(request);
+            });
   }
 
-  private void setCommonFields(JsonObject request) {
-    request
-        .put(ITEM_STATUS, ACTIVE)
-        .put(LAST_UPDATED, getPrettyLastUpdatedForUI())
-        .put(ITEM_CREATED_AT, getUtcDatetimeAsString());
+  private void setCommonFields(JsonObject request, String method) {
+    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getPrettyLastUpdatedForUI());
+
+    if (REQUEST_POST.equalsIgnoreCase(method)) {
+      request.put(ITEM_CREATED_AT, getUtcDatetimeAsString());
+    }
+  }
+
+  private void preserveImmutableFields(JsonObject request, JsonObject existing) {
+
+    // Preserve itemCreatedAt
+    request.put(ITEM_CREATED_AT, existing.getString(ITEM_CREATED_AT));
+
+    // Preserve publishStatus
+    request.put(PUBLISH_STATUS, existing.getString(PUBLISH_STATUS, PENDING));
+
+    // Sticky dataUploadStatus
+    boolean mediaUrlPresent =
+        request.containsKey(MEDIA_URL) && !request.getString(MEDIA_URL).isBlank();
+
+    boolean previouslyUploaded = existing.getBoolean(DATA_UPLOAD_STATUS, false);
+
+    request.put(DATA_UPLOAD_STATUS, mediaUrlPresent || previouslyUploaded);
   }
 
   private void validateAndAddId(JsonObject request, Promise<JsonObject> promise) {
@@ -384,15 +463,6 @@ public class ItemExistenceValidator {
       return res != null && res.getBoolean(DATA_UPLOAD_STATUS, false);
     } catch (Exception e) {
       LOGGER.error("Error extracting dataUploadStatus from ES", e);
-      return false;
-    }
-  }
-
-  private boolean extractMediaUrlFromES(JsonObject res) {
-    try {
-      return res != null && !res.getString(MEDIA_URL, "").isBlank();
-    } catch (Exception e) {
-      LOGGER.error("Error extracting mediaURL from ES {}", e.getMessage());
       return false;
     }
   }
