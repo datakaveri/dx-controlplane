@@ -178,6 +178,7 @@ public class ControllerFactory {
             userService,
             organizationService,
             keycloakUserService,
+            auditingHandler,
             urnGenerator,
             isKycRequired);
 

@@ -9,15 +9,16 @@ import io.vertx.ext.web.RoutingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.audit.util.AuditingHelper;
-import org.cdpg.dx.aaa.credit.models.ComputeRole;
-import org.cdpg.dx.aaa.credit.models.CreditRequest;
-import org.cdpg.dx.aaa.credit.models.CreditTransaction;
-import org.cdpg.dx.aaa.credit.models.Status;
+import org.cdpg.dx.aaa.credit.models.*;
 import org.cdpg.dx.aaa.credit.service.CreditService;
+import org.cdpg.dx.aaa.credit.util.CreditRequestAuditLogHelper;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
+import org.cdpg.dx.aaa.item.enums.ItemAuditOperation;
+import org.cdpg.dx.aaa.item.util.ItemAuditLogHelper;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.AuditLog;
+import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
@@ -34,6 +35,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.cdpg.dx.aaa.common.Constants.ID;
 import static org.cdpg.dx.aaa.credit.util.Constants.*;
 import static org.cdpg.dx.aaa.credit.models.Status.GRANTED;
 import static org.cdpg.dx.aaa.credit.util.Constants.ALLOWED_FILTER_MAP_FOR_COMPUTE_ROLE;
@@ -85,14 +87,11 @@ public class CreditHandler {
       })
       .onSuccess(requests -> {
 
-        AuditLog auditLog = AuditingHelper.createAuditLog(
-          ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx),
-          "POST",
-          "Credit Request Created"
-        );
+        UserActivityAuditLogBuilder auditLogBuilder =
+          CreditRequestAuditLogHelper.buildAudit(
+            ctx, requests.toJson(), CreditRequestAuditOperation.REQUEST_CREDITS);
 
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
         ResponseBuilder.sendSuccess(ctx, requests, this.urnGenerator);
 
         emailComposer.sendEmailForCreditRequest(user);
@@ -181,7 +180,13 @@ public class CreditHandler {
 
     creditService.getBalance(userId)
       .onSuccess(balance -> {
-        ResponseBuilder.sendSuccess(ctx, new JsonObject(Map.of("balance", balance)), this.urnGenerator);
+        UserActivityAuditLogBuilder auditLogBuilder =
+          CreditRequestAuditLogHelper.buildAudit(
+            ctx, balance, CreditRequestAuditOperation.GET);
+
+        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+
+        ResponseBuilder.sendSuccess(ctx, balance, this.urnGenerator);
       })
       .onFailure(ctx::fail);
   }
@@ -201,7 +206,13 @@ public class CreditHandler {
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "id");
     creditService.getBalance(userId)
       .onSuccess(res -> {
-        ResponseBuilder.sendSuccess(ctx, new JsonObject(Map.of("user_id", userId, "balance", res.getDouble("balance"))), this.urnGenerator);
+
+        UserActivityAuditLogBuilder auditLogBuilder =
+          CreditRequestAuditLogHelper.buildAudit(
+            ctx, res, CreditRequestAuditOperation.GET);
+
+        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        ResponseBuilder.sendSuccess(ctx,res, this.urnGenerator);
       })
       .onFailure(ctx::fail);
   }
@@ -260,9 +271,16 @@ public class CreditHandler {
 
     creditService.updateCreditRequestStatus(requestId, status, transactedBy, amount, expirationDate)
       .onSuccess(transaction -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx), "PUT", "Credit Request Status Updated");
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+//        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+//          RoutingContextHelper.getRequestPath(ctx), "PUT", "Credit Request Status Updated");
+//        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+
+        UserActivityAuditLogBuilder auditLogBuilder =
+          CreditRequestAuditLogHelper.buildAudit(
+            ctx, transaction.toJson(), CreditRequestAuditOperation.UPDATE);
+
+        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+
         ResponseBuilder.sendSuccess(ctx, transaction, this.urnGenerator);
         emailComposer.sendUserEmailForCreditApproval(requestId, status);
       })
@@ -296,9 +314,16 @@ public class CreditHandler {
     CreditTransaction creditTransaction = CreditTransaction.fromJson(creditDeductionJson);
     creditService.deductCredits(creditTransaction)
       .onSuccess(res -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx), "PUT", "Credits Deducted");
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+//        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+//          RoutingContextHelper.getRequestPath(ctx), "PUT", "Credits Deducted");
+//        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+
+        UserActivityAuditLogBuilder auditLogBuilder =
+          CreditRequestAuditLogHelper.buildAudit(
+            ctx, res.toJson(), CreditRequestAuditOperation.DEBIT);
+
+        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+
         ResponseBuilder.sendSuccess(ctx, res, this.urnGenerator);
       })
       .onFailure(ctx::fail);
@@ -328,9 +353,15 @@ public class CreditHandler {
     CreditTransaction creditTransaction = CreditTransaction.fromJson(creditAdditionJson);
     creditService.addCredits(creditTransaction)
       .onSuccess(res -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx), "PUT", "Credits Added");
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+//        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+//          RoutingContextHelper.getRequestPath(ctx), "PUT", "Credits Added");
+//        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        UserActivityAuditLogBuilder auditLogBuilder =
+          CreditRequestAuditLogHelper.buildAudit(
+            ctx, res.toJson(), CreditRequestAuditOperation.CREDIT);
+
+        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+
         ResponseBuilder.sendSuccess(ctx, res, this.urnGenerator);
       })
       .onFailure(ctx::fail);
@@ -385,6 +416,13 @@ public class CreditHandler {
               return creditService.createComputeRoleRequest(computeRoleRequest)
                 .onSuccess(requests -> {
                   LOGGER.info("Requests in compute : {}", requests.toJson());
+
+                  UserActivityAuditLogBuilder auditLogBuilder =
+                    CreditRequestAuditLogHelper.buildAudit(
+                      ctx, requests.toJson(), CreditRequestAuditOperation.REQUEST_COMPUTE);
+
+                  RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+
                   ResponseBuilder.sendSuccess(ctx, requests, this.urnGenerator);
                   emailComposer.sendEmailForComputeRole(computeRoleRequest, user);
                 })
@@ -480,9 +518,16 @@ public class CreditHandler {
 
     creditService.updateComputeRoleStatus(requestId, status, approvedBy)
       .onSuccess(updated -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx), "PUT", "Compute Role Status Updated");
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+//        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+//          RoutingContextHelper.getRequestPath(ctx), "PUT", "Compute Role Status Updated");
+//        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+
+        UserActivityAuditLogBuilder auditLogBuilder =
+          CreditRequestAuditLogHelper.buildAudit(
+            ctx, new JsonObject().put(ID,requestId.toString()), CreditRequestAuditOperation.UPDATE);
+
+        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+
         ResponseBuilder.sendSuccess(ctx, "Compute Role Status " + status.getStatus(), this.urnGenerator);
         Future<Void> future = emailComposer.sendUserEmailForComputeRoleApproval(requestId, status);
       })
@@ -593,13 +638,19 @@ public class CreditHandler {
         return creditService.deletePendingCreditRequestById(requestId);
       })
       .onSuccess(deleted -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(
-          ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx),
-          "DELETE",
-          "Deleted Pending Credit Request"
-        );
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+//        AuditLog auditLog = AuditingHelper.createAuditLog(
+//          ctx.user(),
+//          RoutingContextHelper.getRequestPath(ctx),
+//          "DELETE",
+//          "Deleted Pending Credit Request"
+//        );
+//        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+
+        UserActivityAuditLogBuilder auditLogBuilder =
+          CreditRequestAuditLogHelper.buildAudit(
+            ctx,new JsonObject().put(ID,requestIdStr), CreditRequestAuditOperation.DELETE);
+
+        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
         ResponseBuilder.sendSuccess(ctx, "Pending Credit Request deleted successfully", urnGenerator);
       })
@@ -631,13 +682,14 @@ public class CreditHandler {
         ).map(list -> list.isEmpty() ? null : list.get(0));
       })
       .onSuccess(enriched -> {
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+//        RoutingContextHelper.setAuditingLog(ctx, auditLog);
 
-        if (enriched == null) {
-          ResponseBuilder.sendSuccess(ctx, new JsonObject(), this.urnGenerator);
-        } else {
-          ResponseBuilder.sendSuccess(ctx, enriched, this.urnGenerator);
-        }
+        UserActivityAuditLogBuilder auditLogBuilder =
+          CreditRequestAuditLogHelper.buildAudit(
+            ctx, enriched , CreditRequestAuditOperation.GET);
+
+        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        ResponseBuilder.sendSuccess(ctx, enriched, this.urnGenerator);
       })
       .onFailure(err -> {
         LOGGER.error("Failed to fetch pending compute request for user {}: {}", userId, err.getMessage());
@@ -668,13 +720,19 @@ public class CreditHandler {
         return creditService.deletePendingComputeRequestById(requestId);
       })
       .onSuccess(deleted -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(
-          ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx),
-          "DELETE",
-          "Deleted Pending Compute Request"
-        );
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+//        AuditLog auditLog = AuditingHelper.createAuditLog(
+//          ctx.user(),
+//          RoutingContextHelper.getRequestPath(ctx),
+//          "DELETE",
+//          "Deleted Pending Compute Request"
+//        );
+//        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+
+        UserActivityAuditLogBuilder auditLogBuilder =
+          CreditRequestAuditLogHelper.buildAudit(
+            ctx, new JsonObject().put(ID,requestIdStr) , CreditRequestAuditOperation.DELETE);
+
+        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
         ResponseBuilder.sendSuccess(ctx, "Pending Compute Request deleted successfully", urnGenerator);
       })
