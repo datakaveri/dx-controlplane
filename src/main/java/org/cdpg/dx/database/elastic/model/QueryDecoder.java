@@ -162,17 +162,37 @@ public class QueryDecoder {
   }
 
   private static QueryModel buildOrganisationFilter(QueryDecoderRequestDTO request) {
+
+    // --- must: organisationId ---
     Map<String, Object> matchParams = new HashMap<>();
     matchParams.put(FIELD, ORGANIZATION_ID_KEYWORD);
     matchParams.put(VALUE, request.getOrganisationId());
 
-    QueryModel matchQuery = new QueryModel(QueryType.MATCH, matchParams);
+    QueryModel orgMatchQuery = new QueryModel(QueryType.MATCH, matchParams);
 
-    // Wrap inside a bool must
     QueryModel boolQuery = new QueryModel(QueryType.BOOL);
     List<QueryModel> mustQueries = new ArrayList<>();
-    mustQueries.add(matchQuery);
+    mustQueries.add(orgMatchQuery);
     boolQuery.setMustQueries(mustQueries);
+
+    // --- must_not: ownerId == sub (only when filter_myassets=true) ---
+    if (request.isFilterMyAssets()) {
+      String sub = request.getAccessPolicyRequest().getSub();
+
+      if (sub != null && !sub.isBlank()) {
+        Map<String, Object> excludeOwnerParams = new HashMap<>();
+        excludeOwnerParams.put(FIELD, OWNER_USER_ID_KEYWORD);
+        excludeOwnerParams.put(VALUE, sub);
+
+        QueryModel excludeOwnerQuery =
+            new QueryModel(QueryType.MATCH, excludeOwnerParams);
+
+        List<QueryModel> mustNotQueries = new ArrayList<>();
+        mustNotQueries.add(excludeOwnerQuery);
+        boolQuery.setMustNotQueries(mustNotQueries);
+      }
+    }
+
     return boolQuery;
   }
 

@@ -226,8 +226,14 @@ public class AccessRequestServiceImpl implements AccessRequestService {
 
               Set<String> allowedAccessTypes = getAllowedAccessTypes(resourceServers);
 
-              JsonObject requestedConstraints =
-                  request.getConstraints() == null ? constraints : request.getConstraints();
+              // Provider constraints are authoritative.
+              // If null → derive from allowedAccessTypes.
+              final JsonObject requestedConstraints =
+                  constraints != null
+                      ? constraints
+                      : new JsonObject()
+                          .put("access", new JsonArray(new ArrayList<>(allowedAccessTypes)));
+
               // validate; throws DxValidationException on invalid constraints
               validateAccessConstraints(requestedConstraints, allowedAccessTypes);
 
@@ -369,17 +375,57 @@ public class AccessRequestServiceImpl implements AccessRequestService {
     if (providerOrganizationId == null) {
       LOGGER.error("Provider organization ID is null for requestId: {}", requestId);
       return Future.failedFuture(
-          new DxForbiddenException("Provider organization ID in the token, cannot be null"));
+          new DxForbiddenException("Provider organization ID in the token cannot be null"));
     }
+
     return accessRequestDao
         .ownershipCheck(requestId, providerId, providerOrganizationId, isUserOrgAdmin)
         .compose(
             owned -> {
-              Map<String, Object> conditions = Map.of(DB_REQUEST_ID, requestId.toString());
-              Map<String, Object> updates = Map.of(DB_STATUS, Status.REJECTED.getStatus());
-              return accessRequestDao.update(conditions, updates);
+              if (!owned) {
+                return Future.failedFuture(
+                    new DxForbiddenException("User cannot update this request"));
+              }
+              return accessRequestDao.get(requestId);
             })
-        .onSuccess(v -> LOGGER.info("Access request rejected: {}", requestId))
+        .compose(
+            request -> {
+              if (request == null) {
+                return Future.failedFuture(new DxNotFoundException("Access request not found"));
+              }
+
+              UUID itemId = UUID.fromString(request.getItemId());
+              UUID ownerId = UUID.fromString(request.getProviderId());
+              String consumerEmail = request.getConsumerEmail();
+
+              // Delete policy if exists
+              return policyDao
+                  .deletePolicyByUserAndItem(itemId, ownerId, consumerEmail)
+                  .recover(
+                      err -> {
+                        LOGGER.warn("Policy delete skipped or failed: {}", err.getMessage());
+                        return Future.succeededFuture();
+                      })
+                  .compose(
+                      v -> {
+
+                        // Update request status
+                        Map<String, Object> conditions =
+                            Map.of(DB_REQUEST_ID, requestId.toString());
+
+                        Map<String, Object> updates =
+                            Map.of(DB_STATUS, Status.REJECTED.getStatus());
+
+                        return accessRequestDao
+                            .update(conditions, updates)
+                            .map(
+                                updateResult -> {
+                                  request.setStatus(Status.REJECTED);
+                                  return request;
+                                });
+                      });
+            })
+        .onSuccess(v -> LOGGER.info("Access request rejected and policy removed: {}", requestId))
         .onFailure(err -> LOGGER.error("Failed to reject access request: {}", requestId, err));
   }
 

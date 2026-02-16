@@ -6796,6 +6796,8 @@ paths:
         - Organisation Assets Management
       description: |
         Retrieve all assets belonging to the organisation of the authenticated user.
+        By default, all organisation-owned assets are returned.
+        Optionally, set `filter_myassets=true` to exclude assets owned by the authenticated user.
 
         This endpoint is restricted to users with the `org_admin` role and returns
         organisation-owned assets regardless of their publication status.
@@ -6830,6 +6832,17 @@ paths:
           required: false
           schema:
             type: string
+        - name: filter_myassets
+          in: query
+          description: >
+              When set to `true`, excludes assets owned by the authenticated user
+              from the response. Ownership is determined by comparing the asset's
+              `ownerUserId` with the `sub` (userId) from the authentication token.
+              Default is `false`.
+          required: false
+          schema:
+            type: boolean
+            default: false
       responses:
         '200':
           description: Assets belonging to an organisation | org_admin can access this endpoint
@@ -6939,6 +6952,12 @@ paths:
             curl --location --request GET
             'https://${HOSTNAME}/iudx/v2/cat/organisation/asset?sort=name:asc&page=1' \
             --header 'Authorization: Bearer <token>'
+        - lang: cURL
+          label: get organisation assets (excluding my assets)
+          source: |
+              curl --location --request GET
+              'https://${HOSTNAME}/iudx/v2/cat/organisation/asset?filter_myassets=true&page=1&size=50' \
+              --header 'Authorization: Bearer <token>'
     post:
       summary: Retrieve organisation assets with filters
       description: |
@@ -6951,6 +6970,9 @@ paths:
 
         This operation is restricted to users with the `org_admin` role and is not part
         of public catalogue discovery.
+        
+        Optionally, set `filter_myassets=true` to exclude assets owned by the
+        authenticated user from the results.
       operationId: get org assets with filters
       tags:
         - Organisation Assets Management
@@ -6983,6 +7005,17 @@ paths:
           required: false
           schema:
             type: string
+        - name: filter_myassets
+          in: query
+          description: >
+            When set to `true`, excludes assets owned by the authenticated user
+            from the filtered search results. Ownership is determined by comparing
+            the asset's `ownerUserId` with the `sub` (userId) from the authentication token.
+            Default is `false`.
+          required: false
+          schema:
+            type: boolean
+            default: false
       requestBody:
         description: Request body containing unified search filters
         required: true

@@ -2,6 +2,7 @@ package org.cdpg.dx.common.request;
 
 import static org.cdpg.dx.database.elastic.util.Constants.ATTRIBUTE;
 import static org.cdpg.dx.database.elastic.util.Constants.FILTER;
+import static org.cdpg.dx.database.elastic.util.Constants.FILTER_MYASSETS;
 import static org.cdpg.dx.database.elastic.util.Constants.INSTANCE;
 import static org.cdpg.dx.database.elastic.util.Constants.KEYWORD_KEY;
 import static org.cdpg.dx.database.elastic.util.Constants.PAGE_KEY;
@@ -35,14 +36,14 @@ import org.cdpg.dx.database.elastic.model.TextSearchRequestDTO;
 
 public class PostSearchRequestBuilder {
   private static final Logger LOGGER = LogManager.getLogger(PostSearchRequestBuilder.class);
-  boolean isCountApi = false;
-  boolean isAssetSearch = false;
-  boolean isPFAssetsSearch = false;
-  boolean isOrgAssetsSearch = false;
   private final RoutingContext routingContext;
   private final String defaultSortBy = "itemCreatedAt";
   private final String defaultOrder = "desc";
   private final String requestType = "search";
+  boolean isCountApi = false;
+  boolean isAssetSearch = false;
+  boolean isPFAssetsSearch = false;
+  boolean isOrgAssetsSearch = false;
 
   public PostSearchRequestBuilder(RoutingContext routingContext) {
     this.routingContext = routingContext;
@@ -94,6 +95,7 @@ public class PostSearchRequestBuilder {
       throw new DxBadRequestException("'page' and 'size' must be positive integers");
     }
 
+    boolean filterMyAssets = Boolean.parseBoolean(params.get(FILTER_MYASSETS));
 
     QueryDecoderRequestDTO dto = new QueryDecoderRequestDTO(
         buildSearchType(requestBody),
@@ -112,6 +114,7 @@ public class PostSearchRequestBuilder {
 
     if (isOrgAssetsSearch) {
       dto.setOrganisationId(getOrgId(routingContext));
+      dto.setFilterMyAssets(filterMyAssets);
     }
 
     return dto;

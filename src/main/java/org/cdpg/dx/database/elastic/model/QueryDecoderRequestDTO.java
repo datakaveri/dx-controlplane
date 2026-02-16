@@ -3,6 +3,7 @@ package org.cdpg.dx.database.elastic.model;
 import java.util.List;
 
 public class QueryDecoderRequestDTO {
+  private final String requestType;
   private String searchType;
   private Integer size;
   private Integer page;
@@ -16,7 +17,8 @@ public class QueryDecoderRequestDTO {
   private InstanceFilterRequestDTO instanceFilterRequest;
   private ResponseFilterRequestDTO responseFilterRequest;
   private List<OrderBy> sort;
-  private String requestType;
+  private boolean filterMyAssets;
+
   public QueryDecoderRequestDTO(
       String searchType,
       Integer size,
@@ -28,7 +30,8 @@ public class QueryDecoderRequestDTO {
       AccessPolicyRequestDTO accessPolicyRequest,
       InstanceFilterRequestDTO instanceFilterRequest,
       ResponseFilterRequestDTO responseFilterRequest,
-      List<OrderBy> sort,String requestType) {
+      List<OrderBy> sort,
+      String requestType) {
     this.searchType = searchType;
     this.size = size;
     this.page = page;
@@ -40,38 +43,37 @@ public class QueryDecoderRequestDTO {
     this.instanceFilterRequest = instanceFilterRequest;
     this.responseFilterRequest = responseFilterRequest;
     this.sort = sort;
-    this.requestType=requestType;
-  }
-
-  public QueryDecoderRequestDTO(
-          Integer size,
-          Integer page,
-          List<OrderBy> sort,
-          String organizationId,
-          String publishStatus,
-          String requestType
-  ) {
-    this.size = size;
-    this.page = page;
-    this.sort = sort;
-    this.organisationId = organizationId;
-    this.publishStatus = publishStatus;
-    this.requestType=requestType;
+    this.requestType = requestType;
   }
 
   public QueryDecoderRequestDTO(
       Integer size,
       Integer page,
       List<OrderBy> sort,
+      String organizationId,
       String publishStatus,
-      String requestType
-  ) {
+      String requestType,
+      AccessPolicyRequestDTO accessPolicyRequest,
+      boolean filterMyAssets) {
+    this.size = size;
+    this.page = page;
+    this.sort = sort;
+    this.organisationId = organizationId;
+    this.publishStatus = publishStatus;
+    this.requestType = requestType;
+    this.accessPolicyRequest = accessPolicyRequest;
+    this.filterMyAssets = filterMyAssets;
+  }
+
+  public QueryDecoderRequestDTO(
+      Integer size, Integer page, List<OrderBy> sort, String publishStatus, String requestType) {
     this.size = size;
     this.page = page;
     this.sort = sort;
     this.publishStatus = publishStatus;
-    this.requestType=requestType;
+    this.requestType = requestType;
   }
+
   public List<OrderBy> getSort() {
     return sort;
   }
@@ -104,10 +106,6 @@ public class QueryDecoderRequestDTO {
     this.publishStatus = publishStatus;
   }
 
-  public void setOrganisationId(String organisationId) {
-    this.organisationId = organisationId;
-  }
-
   public String getSearchType() {
     return searchType;
   }
@@ -136,9 +134,14 @@ public class QueryDecoderRequestDTO {
     return organisationId;
   }
 
+  public void setOrganisationId(String organisationId) {
+    this.organisationId = organisationId;
+  }
+
   public String getRequestType() {
     return requestType;
   }
+
   public TextSearchRequestDTO getTextSearchRequest() {
     return textSearchRequest;
   }
@@ -177,5 +180,13 @@ public class QueryDecoderRequestDTO {
 
   public void setResponseFilterRequest(ResponseFilterRequestDTO responseFilterRequest) {
     this.responseFilterRequest = responseFilterRequest;
+  }
+
+  public boolean isFilterMyAssets() {
+    return filterMyAssets;
+  }
+
+  public void setFilterMyAssets(boolean filterMyAssets) {
+    this.filterMyAssets = filterMyAssets;
   }
 }
