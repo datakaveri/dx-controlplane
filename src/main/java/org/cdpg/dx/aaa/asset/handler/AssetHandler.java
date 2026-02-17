@@ -10,11 +10,16 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.asset.models.AssetRequest;
 import org.cdpg.dx.aaa.asset.models.Status;
 import org.cdpg.dx.aaa.asset.service.AssetService;
+import org.cdpg.dx.aaa.asset.util.AssetAuthAuditLogHelper;
+import org.cdpg.dx.aaa.asset.util.AssetAuthAuditOperation;
 import org.cdpg.dx.aaa.audit.util.AuditingHelper;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
+import org.cdpg.dx.aaa.kyc.util.KYCAuditLogHelper;
+import org.cdpg.dx.aaa.kyc.util.KYCAuditOperation;
 import org.cdpg.dx.auditing.model.AuditLog;
+import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
@@ -31,8 +36,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.cdpg.dx.aaa.asset.util.Constants.ALLOWED_FILTER_MAP_FOR_ASSET_REQUEST;
-import static org.cdpg.dx.aaa.asset.util.Constants.ASSET_ID;
+import static org.cdpg.dx.aaa.asset.util.Constants.*;
+import static org.cdpg.dx.aaa.asset.util.Constants.STATUS;
 import static org.cdpg.dx.aaa.credit.util.Constants.*;
 import static org.cdpg.dx.aaa.credit.util.Constants.REQUESTED_AT;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
@@ -109,9 +114,14 @@ public class AssetHandler {
             return Future.failedFuture(new DxForbiddenException("User is not authorized to create asset request"));
           }
         }).onSuccess(requests -> {
-          AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-            RoutingContextHelper.getRequestPath(ctx), "POST", "Created Asset Request");
-          RoutingContextHelper.setAuditingLog(ctx, auditLog);
+//          AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+//            RoutingContextHelper.getRequestPath(ctx), "POST", "Created Asset Request");
+//          RoutingContextHelper.setAuditingLog(ctx, auditLog);
+          UserActivityAuditLogBuilder auditLogBuilder =
+            AssetAuthAuditLogHelper.buildAudit(
+              ctx, requests.toJson(),AssetAuthAuditOperation.CREATE);
+
+          RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
           ResponseBuilder.sendSuccess(ctx, "Created Asset Request", urnGenerator);
         }).onFailure(ctx::fail);
 
@@ -161,6 +171,12 @@ public class AssetHandler {
           })
       )
       .onSuccess(entry -> {
+        UserActivityAuditLogBuilder auditLogBuilder =
+          AssetAuthAuditLogHelper.buildAudit(
+            ctx, new JsonObject(),AssetAuthAuditOperation.GET);
+
+        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+
         ResponseBuilder.sendSuccess(
           ctx,
           entry.getKey(),
@@ -212,9 +228,15 @@ public class AssetHandler {
         return Future.failedFuture(new DxForbiddenException("User is not authorized to update asset request status"));
       }
     }).onSuccess(updatedAssetRequest -> {
-      AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-        RoutingContextHelper.getRequestPath(ctx), "PUT", "Update Asset Request Status");
-      RoutingContextHelper.setAuditingLog(ctx, auditLog);
+//      AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+//        RoutingContextHelper.getRequestPath(ctx), "PUT", "Update Asset Request Status");
+//      RoutingContextHelper.setAuditingLog(ctx, auditLog);
+
+      UserActivityAuditLogBuilder auditLogBuilder =
+        AssetAuthAuditLogHelper.buildAudit(
+          ctx, new JsonObject().put(ASSET_REQUEST_ID,requestId.toString()),AssetAuthAuditOperation.UPDATE);
+
+      RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
       ResponseBuilder.sendSuccess(ctx, "Asset Request updated", urnGenerator);
 
     }).onFailure(err -> {
@@ -233,9 +255,14 @@ public class AssetHandler {
         if (v.userId().equals(userId)) {
           return assetService.deleteAssetRequestById(assetRequestId)
             .onSuccess(t -> {
-              AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-                RoutingContextHelper.getRequestPath(ctx), "DELETE", "Deleted Asset Request");
-              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+//              AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+//                RoutingContextHelper.getRequestPath(ctx), "DELETE", "Deleted Asset Request");
+//              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              UserActivityAuditLogBuilder auditLogBuilder =
+                AssetAuthAuditLogHelper.buildAudit(
+                  ctx, new JsonObject().put(ASSET_REQUEST_ID,assetRequestId.toString()),AssetAuthAuditOperation.DELETE);
+
+              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
               ResponseBuilder.sendSuccess(ctx, "Asset Request deleted successfully", urnGenerator);
             })
             .onFailure(ctx::fail);
