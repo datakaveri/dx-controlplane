@@ -329,8 +329,10 @@ public class ItemController implements ApiController {
         || ITEM_TYPE_APPS.equals(itemType)) {
       String orgName = user.organisationName();
       String name = user.name();
+
       String orgId = user.organisationId();
-      body.put(PROVIDER_USER_ID, user.sub());
+      ctx.put(ORGANIZATION_ID, orgId);
+
       // Only set organizationId if it exists in token and not already provided in payload
       if (orgId != null && !orgId.isBlank()) {
         body.put(ORGANIZATION_ID, orgId);
@@ -347,9 +349,22 @@ public class ItemController implements ApiController {
       }
       body.put(ROLES, ctx.user().principal().getJsonObject(REALM_ACCESS).getJsonArray(ROLES));
     }
-    body.put(
-        METRICS, new JsonObject().put(VIEWS, 0).put(DOWNLOADS, 0).put(LIKES, 0).put(DISLIKES, 0));
 
+    String method = ctx.request().method().toString();
+
+    if (REQUEST_POST.equalsIgnoreCase(method)) {
+
+      // Only set owner during creation
+      body.put(PROVIDER_USER_ID, user.sub());
+
+      body.put(
+          METRICS, new JsonObject().put(VIEWS, 0).put(DOWNLOADS, 0).put(LIKES, 0).put(DISLIKES, 0));
+
+    } else if (REQUEST_PUT.equalsIgnoreCase(method)) {
+
+      // Never allow ownership change
+      body.remove(PROVIDER_USER_ID);
+    }
     return body;
   }
 
@@ -432,6 +447,30 @@ public class ItemController implements ApiController {
             .fetchForWrite(request)
             .onSuccess(
                 existingItemSnapshot -> {
+                  JsonObject existingJson = existingItemSnapshot.toJson();
+
+                  String itemOrgId = existingJson.getString(ORGANIZATION_ID);
+                  String itemOwnerId = existingJson.getString(PROVIDER_USER_ID);
+
+                  DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+                  String currentUserId = dxUser.sub().toString();
+                  String currentUserOrgId = ctx.get(ORGANIZATION_ID);
+                  List<String> userRoles = dxUser.roles();
+
+                  boolean isCosAdmin = userRoles.contains(DxRole.COS_ADMIN.getRole());
+                  boolean isOrgAdmin = userRoles.contains(DxRole.ORG_ADMIN.getRole());
+                  boolean isOwner = currentUserId.equals(itemOwnerId);
+                  boolean sameOrg = currentUserOrgId != null && currentUserOrgId.equals(itemOrgId);
+
+                  if (!(isCosAdmin || (isOrgAdmin && sameOrg) || isOwner)) {
+
+                    ctx.fail(
+                        new DxForbiddenException(
+                            "Only COS_ADMIN or ORG_ADMIN of same organization or item owner can "
+                                + "update"));
+                    return;
+                  }
+
                   executeWithCentralCatalogue(
                       isCentralCatEnabled,
 
