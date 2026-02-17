@@ -347,9 +347,11 @@ public class ItemController implements ApiController {
       }
       body.put(ROLES, ctx.user().principal().getJsonObject(REALM_ACCESS).getJsonArray(ROLES));
     }
-    body.put(
-        METRICS, new JsonObject().put(VIEWS, 0).put(DOWNLOADS, 0).put(LIKES, 0).put(DISLIKES, 0));
-
+    String method = ctx.request().method().toString();
+    if (method.equalsIgnoreCase(REQUEST_POST)) {
+      body.put(
+          METRICS, new JsonObject().put(VIEWS, 0).put(DOWNLOADS, 0).put(LIKES, 0).put(DISLIKES, 0));
+    }
     return body;
   }
 
