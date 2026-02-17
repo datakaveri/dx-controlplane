@@ -12,13 +12,17 @@ import io.vertx.rabbitmq.RabbitMQOptions;
 import io.vertx.serviceproxy.ServiceBinder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.item.service.ItemService;
-import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.aaa.activity.dao.UserActivityLogDao;
 import org.cdpg.dx.aaa.activity.dao.impl.UserActivityLogDaoImpl;
-import org.cdpg.dx.auditing.v2.enrichment.AssetEnrichmentService;
 import org.cdpg.dx.aaa.activity.service.UserActivityAuditLogService;
 import org.cdpg.dx.aaa.activity.service.impl.UserActivityAuditLogServiceImpl;
+import org.cdpg.dx.aaa.item.service.ItemService;
+import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
+import org.cdpg.dx.aaa.leaderboard.dao.LeaderboardDaoV2;
+import org.cdpg.dx.aaa.leaderboard.dao.impl.LeaderboardDaoImplV2;
+import org.cdpg.dx.aaa.leaderboard.enrichment.LeaderboardEnrichmentService;
+import org.cdpg.dx.aaa.leaderboard.writer.LeaderboardWriterService;
+import org.cdpg.dx.auditing.v2.enrichment.AssetEnrichmentService;
 import org.cdpg.dx.auditing.v2.enrichment.AuditEnrichmentService;
 import org.cdpg.dx.auditing.v2.enrichment.UserEnrichmentService;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
@@ -27,6 +31,7 @@ import org.cdpg.dx.databroker.client.RabbitClient;
 import org.cdpg.dx.databroker.client.RabbitWebClient;
 import org.cdpg.dx.databroker.listeners.AuditMessageConsumer;
 import org.cdpg.dx.databroker.listeners.EmailMessageConsumer;
+import org.cdpg.dx.databroker.listeners.LeaderboardConsumer;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.databroker.service.DataBrokerServiceImpl;
 import org.cdpg.dx.databroker.util.Vhosts;
@@ -132,8 +137,7 @@ public class DataBrokerVerticle extends AbstractVerticle {
     PostgresService postgresService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
     /*ImmudbActivityService immudbActivityService = new ImmudbActivityServiceImpl(immudbService);*/
 
-    KeycloakUserService keycloakUserService =
-       new KeycloakUserServiceImpl(config());
+    KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config());
 
     ElasticsearchService esService =
         ElasticsearchService.createProxy(vertx, ELASTIC_SERVICE_ADDRESS);
@@ -142,7 +146,8 @@ public class DataBrokerVerticle extends AbstractVerticle {
     ItemService itemService = new ItemServiceImpl(esService, null, null, null, docIndex, null);
     AssetEnrichmentService assetEnrichmentService = new AssetEnrichmentService(itemService);
     UserEnrichmentService userEnrichmentService = new UserEnrichmentService(keycloakUserService);
-    AuditEnrichmentService auditEnrichmentService = new AuditEnrichmentService(assetEnrichmentService,userEnrichmentService);
+    AuditEnrichmentService auditEnrichmentService =
+        new AuditEnrichmentService(assetEnrichmentService, userEnrichmentService);
 
     UserActivityLogDao userActivityLogDao = new UserActivityLogDaoImpl(pgService);
     UserActivityAuditLogService userActivityAuditLogService =
@@ -154,12 +159,25 @@ public class DataBrokerVerticle extends AbstractVerticle {
         new AuditMessageConsumer(
             iudxInternalRabbitMqClient,
             auditQueue,
-                auditEnrichmentService,
+            auditEnrichmentService,
             userActivityAuditLogService,
             itemService,
             true);
-    /*immudbConsumer = new ImmudbConsumer(iudxInternalRabbitMqClient, immudbActivityService);*/
     auditConsumer.start();
+
+    /*immudbConsumer = new ImmudbConsumer(iudxInternalRabbitMqClient, immudbActivityService);*/
+
+    LeaderboardDaoV2 leaderboardDaoV2 = new LeaderboardDaoImplV2(pgService);
+
+    LeaderboardConsumer leaderboardConsumer =
+        new LeaderboardConsumer(
+            iudxInternalRabbitMqClient,
+            new LeaderboardEnrichmentService(itemService),
+            new LeaderboardWriterService(leaderboardDaoV2),
+            config().getString("leaderboardQueue", "leaderboard"));
+
+    leaderboardConsumer.start();
+
     EmailService emailService = EmailService.createProxy(vertx, EMAIL_SERVICE_ADDRESS);
     String emailQueue = config().getString("emailQueue", "email-notification");
     emailMessageConsumer =

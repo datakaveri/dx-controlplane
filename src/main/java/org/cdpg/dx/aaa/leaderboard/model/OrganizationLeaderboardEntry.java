@@ -5,10 +5,10 @@ public record OrganizationLeaderboardEntry(
     String id,
     String organizationName,
     String organizationType,
-    int members,
-    int publishedDatabanks,
-    int publishedAiModels,
-    int publishedUsecases,
-    int totalPublished,
-    int downloads,
-    int likes) {}
+    long members,
+    long publishedDatabanks,
+    long publishedAiModels,
+    long publishedUsecases,
+    long totalPublished,
+    long downloads,
+    long likes) {}

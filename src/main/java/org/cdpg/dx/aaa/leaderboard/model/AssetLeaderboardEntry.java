@@ -12,6 +12,6 @@ public record AssetLeaderboardEntry(
     String organizationId,
     String organizationName,
     String organizationType,
-    int downloads,
-    int likes,
-    int views) {}
+    long downloads,
+    long likes,
+    long views) {}

@@ -1,14 +1,31 @@
---CREATE TYPE publish_status_enum AS ENUM ('ACTIVE', 'PENDING');
+CREATE TYPE publish_status_enum AS ENUM ('ACTIVE', 'PENDING');
 
-/*CREATE TABLE IF NOT EXISTS asset_status (
+----
+--Derived helper table used only for leaderboard backfill and rebuilds.
+--Not a source of truth and not used in runtime APIs.
+---
+
+CREATE TABLE IF NOT EXISTS asset_visibility_snapshot (
     asset_id UUID PRIMARY KEY,
 
-    data_upload_status BOOLEAN NOT NULL,
-    publish_status publish_status_enum NOT NULL,
+    asset_name TEXT NOT NULL,
+    asset_type TEXT NOT NULL,
+    access_policy TEXT NOT NULL,
 
-    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now()
+    provider_id UUID NOT NULL,
+    organization_id UUID,
+    organization_name TEXT,
+    organization_type TEXT,
 
-);*/
+    snapshot_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now()
+    );
+
+
+CREATE INDEX IF NOT EXISTS idx_avs_org
+    ON asset_visibility_snapshot (organization_id);
+
+CREATE INDEX IF NOT EXISTS idx_avs_provider
+    ON asset_visibility_snapshot (provider_id);
 
 
 CREATE TABLE IF NOT EXISTS asset_leaderboard (
@@ -17,13 +34,16 @@ CREATE TABLE IF NOT EXISTS asset_leaderboard (
     asset_type TEXT NOT NULL,
     access_policy TEXT NOT NULL,
 
+    data_upload_status BOOLEAN NOT NULL,
+    publish_status publish_status_enum NOT NULL,
 
-    provider_id UUID DEFAULT NULL,
-    --provider_name TEXT NOT NULL,
 
-    organization_id UUID   DEFAULT NULL,
-    organization_name TEXT DEFAULT NULL,
-    organization_type TEXT DEFAULT NULL,
+    provider_id UUID NOT NULL,
+    provider_name TEXT,
+
+    organization_id UUID ,
+    organization_name TEXT,
+    organization_type TEXT,
 
     downloads BIGINT NOT NULL DEFAULT 0,
     likes BIGINT NOT NULL DEFAULT 0,
@@ -54,11 +74,11 @@ CREATE INDEX idx_asset_lb_views
 
 CREATE TABLE IF NOT EXISTS provider_leaderboard (
     provider_id UUID PRIMARY KEY,
-    provider_name TEXT NOT NULL,
+    provider_name TEXT,
 
-    organization_id UUID DEFAULT NULL,
-    organization_name TEXT DEFAULT NULL,
-    organization_type TEXT DEFAULT NULL,
+    organization_id UUID,
+    organization_name TEXT,
+    organization_type TEXT,
 
     published_databank BIGINT NOT NULL DEFAULT 0,
     published_ai_models BIGINT NOT NULL DEFAULT 0,
@@ -91,7 +111,7 @@ CREATE INDEX idx_pro_lb_views
 CREATE TABLE IF NOT EXISTS organization_leaderboard (
     organization_id UUID PRIMARY KEY,
     organization_name TEXT NOT NULL,
-    organization_type TEXT NOT NULL,
+    organization_type TEXT,
 
    -- total_members INT NOT NULL DEFAULT 0,
 
@@ -126,7 +146,7 @@ CREATE INDEX idx_org_lb_views
 
 GRANT ALL PRIVILEGES
 ON TABLE
---asset_status,
+asset_visibility_snapshot,
 asset_leaderboard,
 provider_leaderboard,
 organization_leaderboard
