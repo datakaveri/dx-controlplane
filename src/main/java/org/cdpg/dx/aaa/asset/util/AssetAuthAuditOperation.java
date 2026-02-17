@@ -2,10 +2,10 @@ package org.cdpg.dx.aaa.asset.util;
 
 public enum AssetAuthAuditOperation
 {
-  CREATE("Create asset upload request"),
-  GET("Get asset requests"),
-  DELETE("Delete pending asset request"),
-  UPDATE("Update asset requests");
+  CREATE("Create data upload type request SFTP/API"),
+  GET("Get data upload type requests"),
+  DELETE("Delete pending data type upload request"),
+  UPDATE("Update data upload type requests");
 
   private final String value;
 
