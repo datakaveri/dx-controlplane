@@ -198,9 +198,6 @@ public class PostgresServiceImpl implements PostgresService {
     for (Object value : params) {
       tuple.addValue(value);
     }
-
-    LOG.info("Executing raw SQL: {} | With parameters: {}", sql, params.encodePrettily());
-
     return client
         .preparedQuery(sql)
         .execute(tuple)

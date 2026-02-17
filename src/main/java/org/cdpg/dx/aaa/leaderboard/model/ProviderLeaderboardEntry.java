@@ -7,9 +7,9 @@ public record ProviderLeaderboardEntry(
     String organizationId,
     String organizationName,
     String organizationType,
-    int publishedDatabank,
-    int publishedAiModels,
-    int publishedUsecases,
-    int totalPublished,
-    int downloads,
-    int likes) {}
+    long publishedDatabank,
+    long publishedAiModels,
+    long publishedUsecases,
+    long totalPublished,
+    long downloads,
+    long likes) {}

@@ -30,8 +30,10 @@ public class AssetEnrichmentService {
    */
   public Future<ActivityAuditLogEntity> enrich(ActivityAuditLogEntity entity) {
 
-    if (entity == null || entity.getAssetId() == null) {
-      LOGGER.debug("Asset enrichment skipped (no assetId)");
+    if (entity == null
+        || entity.getAssetId() == null
+        || entity.getAction().equalsIgnoreCase("DELETE")) {
+      LOGGER.debug("Asset enrichment skipped (no assetId) or delete action");
       return Future.succeededFuture(entity);
     }
 
