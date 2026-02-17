@@ -8,9 +8,11 @@ import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
+import org.cdpg.dx.aaa.organization.models.OrganisationAuditOperation;
 import org.cdpg.dx.aaa.organization.models.UpdateOrgDTO;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
+import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
@@ -18,6 +20,8 @@ import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
+
+import static org.cdpg.dx.aaa.common.Constants.ID;
 
 public class OrganizationCommandHandler {
   private static final Logger LOGGER = LogManager.getLogger(OrganizationCommandHandler.class);
@@ -53,10 +57,11 @@ public class OrganizationCommandHandler {
         .updateOrganizationById(orgId, updateOrgDTO)
         .onSuccess(
             updatedOrg -> {
-              ActivityAuditLogBuilder auditLog =
-                  OrganizationAuditHelper.buildOrganizationUpdateAudit(
-                      ctx, updatedOrg.id(), updatedOrg.orgName(), updateOrgDTO.toJson());
-              RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
+
+              UserActivityAuditLogBuilder auditLogBuilder =
+                  OrganizationAuditHelper.buildOrganisationAudit(
+                      ctx, updatedOrg.toJson(), OrganisationAuditOperation.UPDATE_ORG);
+              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
               ResponseBuilder.sendSuccess(ctx, updatedOrg, urnGenerator);
             })
         .onFailure(
@@ -85,10 +90,10 @@ public class OrganizationCommandHandler {
         .deleteOrganization(orgId)
         .onSuccess(
             updatedOrg -> {
-              ActivityAuditLogBuilder auditLog =
-                  OrganizationAuditHelper.buildOrganizationDeleteAudit(ctx, orgId, null);
-              RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
-              ResponseBuilder.sendSuccess(ctx, updatedOrg, urnGenerator);
+              UserActivityAuditLogBuilder auditLogBuilder =
+                OrganizationAuditHelper.buildOrganisationAudit(
+                  ctx, new JsonObject().put(ID,orgId.toString()), OrganisationAuditOperation.DELETE_ORG);
+              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
               ResponseBuilder.sendSuccess(ctx, "Organisation deleted Successfully!", urnGenerator);
             })
         .onFailure(ctx::fail);

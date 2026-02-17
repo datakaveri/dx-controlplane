@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.audit.util.AuditingHelper;
+import org.cdpg.dx.aaa.credit.models.CreditRequestAuditOperation;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
@@ -24,6 +25,7 @@ import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
 import org.cdpg.dx.auditing.model.AuditLog;
+import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
@@ -146,10 +148,6 @@ public class OrganizationHandler {
         .updateOrganizationById(orgId, updateOrgDTO)
         .onSuccess(
             updatedOrg -> {
-              ActivityAuditLogBuilder auditLog =
-                  OrganizationAuditHelper.buildOrganizationUpdateAudit(
-                      ctx, updatedOrg.id(), updatedOrg.orgName(), updateOrgDTO.toJson());
-              RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
               ResponseBuilder.sendSuccess(ctx, updatedOrg, urnGenerator);
             })
         .onFailure(
@@ -170,9 +168,7 @@ public class OrganizationHandler {
         .deleteOrganization(orgId)
         .onSuccess(
             updatedOrg -> {
-              ActivityAuditLogBuilder auditLog =
-                  OrganizationAuditHelper.buildOrganizationDeleteAudit(ctx, orgId,  null);
-              RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
+
               ResponseBuilder.sendSuccess(ctx, updatedOrg, urnGenerator);
               ResponseBuilder.sendSuccess(ctx, "Organisation deleted Successfully!", urnGenerator);
             })
@@ -347,13 +343,7 @@ public class OrganizationHandler {
                   .joinOrganizationRequest(organizationJoinRequest)
                   .onSuccess(
                       createdRequest -> {
-                        ActivityAuditLogBuilder auditLog =
-                            OrganizationAuditHelper.buildJoinOrgRequestAudit(
-                                ctx,
-                                createdRequest.id(),
-                                createdRequest.organizationId(),
-                                "member");
-                        RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
+
 
                         ResponseBuilder.sendSuccess(ctx, "Created Join request", urnGenerator);
                         Future<Void> future =
@@ -386,10 +376,6 @@ public class OrganizationHandler {
         .updateOrganizationCreateRequestStatus(requestId, status)
         .onSuccess(
             updated -> {
-              ActivityAuditLogBuilder auditLog =
-                  OrganizationAuditHelper.buildOrgCreateOrgUpdateAudit(
-                      ctx, requestId, status.getStatus());
-              RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
 
               ResponseBuilder.sendSuccess(ctx, "Updated Sucessfully", urnGenerator);
               Future<Void> future =
@@ -493,10 +479,8 @@ public class OrganizationHandler {
             })
         .onSuccess(
             requests -> {
-              ActivityAuditLogBuilder auditLog =
-                  OrganizationAuditHelper.buildOrgCreateRequestAudit(
-                      ctx, requests.id(), requests.name());
-              RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
+
+//              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
               ResponseBuilder.sendSuccess(ctx, requests, urnGenerator);
               emailComposer.sendEmailForCreatingOrg(organizationCreateRequest, user);

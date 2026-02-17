@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.organization.handler;
 
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 
 import java.util.Set;
@@ -8,10 +9,12 @@ import java.util.stream.Collectors;
 
 import org.cdpg.dx.aaa.audit.util.AuditingHelper;
 import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
+import org.cdpg.dx.aaa.organization.models.OrganisationAuditOperation;
 import org.cdpg.dx.aaa.organization.models.Organization;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
 import org.cdpg.dx.auditing.model.AuditLog;
+import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
@@ -52,6 +55,11 @@ public class OrganizationQueryHandler {
         .getOrganizations(request)
         .onSuccess(
             orgs -> {
+              UserActivityAuditLogBuilder auditLogBuilder =
+                OrganizationAuditHelper.buildOrganisationAudit(
+                  ctx, new JsonObject(), OrganisationAuditOperation.GET_ORG);
+              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+
               ResponseBuilder.sendSuccess(
                   ctx,
                   orgs.data().stream()
@@ -70,10 +78,10 @@ public class OrganizationQueryHandler {
         .getOrganizationById(orgId)
         .onSuccess(
             org -> {
-              ActivityAuditLogBuilder audit =
-                  OrganizationAuditHelper.buildViewOrganizationAudit(ctx, orgId, org.orgName());
-
-              RoutingContextHelper.setAuditingLogNew(ctx, audit);
+              UserActivityAuditLogBuilder auditLogBuilder =
+                OrganizationAuditHelper.buildOrganisationAudit(
+                  ctx, new JsonObject(), OrganisationAuditOperation.GET_ORG);
+              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
               ResponseBuilder.sendSuccess(ctx, org.toJson(), urnGenerator);
             })
         .onFailure(

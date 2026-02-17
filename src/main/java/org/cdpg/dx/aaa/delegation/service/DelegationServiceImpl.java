@@ -335,7 +335,6 @@ public class DelegationServiceImpl implements DelegationService{
 
           return keycloakUserService.clearDelegationScopes(
             delegationGrant.delegateId(),
-            delegationGrant.delegatorId(),
             scopesToRemove
           );
         })

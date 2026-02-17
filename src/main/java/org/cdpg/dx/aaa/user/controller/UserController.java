@@ -47,6 +47,15 @@ public class UserController implements ApiController {
       .handler(AuthorizationHandler.forRoles(CONSUMER))
       .handler(userHandler::getAllCustomRoles);
 
+    routerBuilder
+      .operation("get-auth-v2-custom-role-requester")
+      .handler(AuthorizationHandler.forRoles(ORG_ADMIN,COS_ADMIN))
+      .handler(userHandler::getAllCustomRolesByRequester);
+
+    routerBuilder
+      .operation("delete-auth-v2-custom-role")
+      .handler(AuthorizationHandler.forRoles(ORG_ADMIN,COS_ADMIN))
+      .handler(userHandler::deleteCustomRoleScope);
   }
 
 }

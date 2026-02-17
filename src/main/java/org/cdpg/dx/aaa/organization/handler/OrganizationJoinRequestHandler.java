@@ -15,11 +15,13 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.delegation.OrgOwnershipValidator;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
+import org.cdpg.dx.aaa.organization.models.OrganisationAuditOperation;
 import org.cdpg.dx.aaa.organization.models.OrganizationJoinRequest;
 import org.cdpg.dx.aaa.organization.models.Status;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
+import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
@@ -36,6 +38,7 @@ import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
+import static org.cdpg.dx.aaa.common.Constants.ID;
 import static org.cdpg.dx.aaa.organization.config.Constants.*;
 import static org.cdpg.dx.aaa.organization.config.Constants.API_TO_DB_ORG_JOIN_REQUEST;
 import static org.cdpg.dx.aaa.organization.config.Constants.REQUESTED_AT;
@@ -128,15 +131,10 @@ public class OrganizationJoinRequestHandler {
       })
       .onSuccess(createdRequest -> {
 
-        ActivityAuditLogBuilder auditLog =
-          OrganizationAuditHelper.buildJoinOrgRequestAudit(
-            ctx,
-            createdRequest.id(),
-            createdRequest.organizationId(),
-            "member"
-          );
-
-        RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
+        UserActivityAuditLogBuilder auditLogBuilder =
+          OrganizationAuditHelper.buildOrganisationAudit(
+            ctx, createdRequest.toJson(), OrganisationAuditOperation.REQUEST_ORG_JOIN);
+        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
         ResponseBuilder.sendSuccess(ctx, "Created Join request", urnGenerator);
 
         emailComposer.sendEmailForJoiningOrg(createdRequest, user);
@@ -266,12 +264,10 @@ public class OrganizationJoinRequestHandler {
       })
       .onSuccess(entry -> {
 
-        ActivityAuditLogBuilder audit =
-          OrganizationAuditHelper
-            .buildViewJoinOrgRequestsAudit(ctx, orgId);
-
-        RoutingContextHelper
-          .setAuditingLogNew(ctx, audit);
+        UserActivityAuditLogBuilder auditLogBuilder =
+          OrganizationAuditHelper.buildOrganisationAudit(
+            ctx, new JsonObject(), OrganisationAuditOperation.GET);
+        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
         ResponseBuilder.sendSuccess(
           ctx,
@@ -310,9 +306,10 @@ public class OrganizationJoinRequestHandler {
             })
         .onSuccess(
             result -> {
-              ActivityAuditLogBuilder audit =
-                  OrganizationAuditHelper.buildViewUserJoinOrgRequestsAudit(ctx, finalUserId);
-              RoutingContextHelper.setAuditingLogNew(ctx, audit);
+              UserActivityAuditLogBuilder auditLogBuilder =
+                OrganizationAuditHelper.buildOrganisationAudit(
+                  ctx, new JsonObject(), OrganisationAuditOperation.GET);
+              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
               ResponseBuilder.sendSuccess(ctx, result, urnGenerator);
             })
@@ -372,11 +369,10 @@ public class OrganizationJoinRequestHandler {
                                   "Failed to delete join organisation request with ID: "
                                       + requestId));
                         }
-                        ActivityAuditLogBuilder audit =
-                            OrganizationAuditHelper.buildWithdrawJoinOrgRequestAudit(
-                                ctx, requestId, request.organizationId());
-
-                        RoutingContextHelper.setAuditingLogNew(ctx, audit);
+                        UserActivityAuditLogBuilder auditLogBuilder =
+                          OrganizationAuditHelper.buildOrganisationAudit(
+                            ctx, new JsonObject().put(ID,requestId.toString()), OrganisationAuditOperation.DELETE_PENDING_ORG_JOIN_REQUEST);
+                        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
                         ResponseBuilder.sendSuccess(
                             ctx, "Join organisation request deleted successfully", urnGenerator);
@@ -478,28 +474,10 @@ public class OrganizationJoinRequestHandler {
                   return;
                 }
 
-                ActivityAuditLogBuilder audit;
-                if (status == Status.GRANTED) {
-                  audit =
-                    OrganizationAuditHelper
-                      .buildJoinOrgApproveAudit(
-                        ctx,
-                        requestId,
-                        orgId,
-                        userJson.getString(ORGANISATION_NAME));
-                } else {
-                  audit =
-                    OrganizationAuditHelper
-                      .buildJoinOrgRejectAudit(
-                        ctx,
-                        requestId,
-                        orgId,
-                        userJson.getString(ORGANISATION_NAME),
-                        "Rejected by org admin");
-                }
-
-                RoutingContextHelper
-                  .setAuditingLogNew(ctx, audit);
+                UserActivityAuditLogBuilder auditLogBuilder =
+                  OrganizationAuditHelper.buildOrganisationAudit(
+                    ctx, new JsonObject().put(ID,requestId.toString()), OrganisationAuditOperation.UPDATE_ORG_JOIN_REQUEST);
+                RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
                 emailComposer
                   .sendUserEmailForOrgJoinRequestApproval(
@@ -580,19 +558,10 @@ public class OrganizationJoinRequestHandler {
     validationFuture.compose(v -> organizationService.withdrawJoinRequest(finalUserId, orgJoinReqId))
       .onSuccess(res -> {
 
-        ActivityAuditLogBuilder audit = new ActivityAuditLogBuilder();
-
-        if (WITHDRAWN.getStatus().equals(res.status())) {
-          audit =
-            OrganizationAuditHelper.buildJoinOrgWithdrawnAudit(
-              ctx,
-              res.id(),
-              res.organizationId(),
-              userJson.getString(ORGANISATION_NAME),
-              "Withdrawn by user");
-        }
-
-        RoutingContextHelper.setAuditingLogNew(ctx, audit);
+        UserActivityAuditLogBuilder auditLogBuilder =
+          OrganizationAuditHelper.buildOrganisationAudit(
+            ctx, new JsonObject().put(ID,orgJoinReqId.toString()), OrganisationAuditOperation.WITHDRAW_PENDING_ORG_JOIN_REQUEST);
+        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
         ResponseBuilder.sendSuccess(
           ctx,

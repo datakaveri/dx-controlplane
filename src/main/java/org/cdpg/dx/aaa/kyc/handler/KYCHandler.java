@@ -7,10 +7,15 @@ import io.vertx.ext.web.RoutingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.audit.util.AuditingHelper;
+import org.cdpg.dx.aaa.credit.models.CreditRequestAuditOperation;
 import org.cdpg.dx.aaa.credit.models.Status;
 import org.cdpg.dx.aaa.credit.service.CreditService;
+import org.cdpg.dx.aaa.credit.util.CreditRequestAuditLogHelper;
 import org.cdpg.dx.aaa.kyc.service.KYCService;
+import org.cdpg.dx.aaa.kyc.util.KYCAuditLogHelper;
+import org.cdpg.dx.aaa.kyc.util.KYCAuditOperation;
 import org.cdpg.dx.auditing.model.AuditLog;
+import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxBadRequestException;
@@ -19,6 +24,8 @@ import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 import java.util.UUID;
+
+import static org.cdpg.dx.aaa.common.Constants.ID;
 
 
 public class KYCHandler {
@@ -54,9 +61,14 @@ public class KYCHandler {
     }
     kycService.getKYCData(userId, code, codeVerifier)
       .onSuccess(res -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx), "POST", "Verify KYC Data");
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+//        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+//          RoutingContextHelper.getRequestPath(ctx), "POST", "Verify KYC Data");
+//        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        UserActivityAuditLogBuilder auditLogBuilder =
+          KYCAuditLogHelper.buildAudit(
+            ctx, KYCAuditOperation.VERIFY);
+
+        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
         ResponseBuilder.sendSuccess(ctx, res,urnGenerator);
       })
       .onFailure(ctx::fail);
@@ -76,9 +88,13 @@ public class KYCHandler {
 
     kycService.confirmKYCData(userId, codeVerifier, user.principal().getString("name"))
       .onSuccess(res -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx), "GET", "Confirm KYC Data");
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+//        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+//          RoutingContextHelper.getRequestPath(ctx), "GET", "Confirm KYC Data");
+//        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        UserActivityAuditLogBuilder auditLogBuilder =
+          KYCAuditLogHelper.buildAudit(
+            ctx, KYCAuditOperation.CONFIRM);
+        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
         ResponseBuilder.sendSuccess(ctx, res,urnGenerator);
       })
       .onFailure(ctx::fail);
@@ -108,9 +124,13 @@ public class KYCHandler {
           })
       )
       .onSuccess(res -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx), "POST", "KYC revoked");
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+//        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+//          RoutingContextHelper.getRequestPath(ctx), "POST", "KYC revoked");
+//        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        UserActivityAuditLogBuilder auditLogBuilder =
+          KYCAuditLogHelper.buildAudit(
+            ctx, KYCAuditOperation.REVOKE);
+        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
         ResponseBuilder.sendSuccess(ctx, "KYC revoked successfully",urnGenerator);
       })
       .onFailure(ctx::fail);

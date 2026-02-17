@@ -12,6 +12,7 @@ import org.cdpg.dx.aaa.credit.service.CreditServiceImpl;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
+import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
@@ -21,12 +22,12 @@ public class CreditControllerFactory {
 
   private CreditControllerFactory() {}
 
-  public static CreditController create(CreditService creditService, EmailComposer emailCompose, UserService userService, OrganizationService organizationService, KeycloakUserService keycloakUserService,URNGenerator urnGenerator, Boolean isKycRequired) {
+  public static CreditController create(CreditService creditService, EmailComposer emailCompose, UserService userService, OrganizationService organizationService, KeycloakUserService keycloakUserService, AuditingHandler auditingHandler,URNGenerator urnGenerator, Boolean isKycRequired) {
 
 
     CreditHandler creditHandler = new CreditHandler(creditService,emailCompose,userService, organizationService,keycloakUserService, urnGenerator);
 
-    return new CreditController(creditHandler, isKycRequired);
+    return new CreditController(creditHandler, auditingHandler, isKycRequired);
   }
 
   public static CreditService createService(PostgresService pgService, KeycloakUserService keycloakUserService, JsonObject config) {

@@ -1,6 +1,7 @@
 package org.cdpg.dx.keycloak.service;
 
 import io.vertx.core.Future;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -19,7 +20,10 @@ import org.cdpg.dx.keycloak.util.UserInfoMapper;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -308,6 +312,7 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
                 Map<String, List<String>> existingAttrs = Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>());
                 attributes.forEach((k, v) -> existingAttrs.put(k, List.of(v)));
                 user.setAttributes(existingAttrs);
+                LOGGER.info("user attributes: {}",user.getAttributes());
                 usersResource().get(userId.toString()).update(user);
                 return true;
             } catch (Exception e) {
@@ -316,7 +321,7 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
         });
     }
 
-    @Override
+  @Override
     public Future<Boolean> updateUserAttributes(UUID userId, Map<String, String> attributes, String firstName, String lastName) {
         return BlockingExecutionUtil.runBlocking(() -> {
             try {
@@ -412,7 +417,6 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
   @Override
   public Future<Boolean> clearDelegationScopes(
     UUID userId,
-    UUID delegatorId,
     Set<String> scopesToRemove
   ) {
 
@@ -536,6 +540,8 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
       // Save back to attributes
       attrs.put(KeycloakConstants.SCOPES, List.of(scopesArray.encode()));
       user.setAttributes(attrs);
+
+      LOGGER.info("Keycloak client: {}", keycloak.tokenManager().getAccessTokenString());
 
       usersResource().get(userId.toString()).update(user);
 

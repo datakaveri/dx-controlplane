@@ -178,6 +178,7 @@ public class ControllerFactory {
             userService,
             organizationService,
             keycloakUserService,
+            auditingHandler,
             urnGenerator,
             isKycRequired);
 
@@ -189,7 +190,7 @@ public class ControllerFactory {
 
     KYCHandler kycHandler =
         KYCFactory.createHandler(vertx, config, creditService, pgService, urnGenerator);
-    ApiController kycController = new KYCController(kycHandler);
+    ApiController kycController = new KYCController(kycHandler,auditingHandler);
 
     OrgOwnershipValidator orgOwnershipValidator = new OrgOwnershipValidator(organizationService);
 
