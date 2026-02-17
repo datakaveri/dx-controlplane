@@ -16,6 +16,7 @@ import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auditing.v2.util.AuditLogHelper;
 import org.checkerframework.checker.units.qual.C;
 
+import static org.cdpg.dx.aaa.common.Constants.ID;
 import static org.cdpg.dx.aaa.credit.models.CreditRequestAuditOperation.CREDIT;
 import static org.cdpg.dx.aaa.credit.util.Constants.*;
 
@@ -36,7 +37,10 @@ public final class CreditRequestAuditLogHelper {
       .withAction(operation.value())
 
       /* -------- Request / workflow -------- */
-      .withRequestId(safeUuid(body.getString(CREDIT_REQUEST_ID)))
+      .withRequestId(
+        body != null && body.getString(CREDIT_REQUEST_ID) != null
+          ? safeUuid(body.getString(CREDIT_REQUEST_ID))
+          : null)
 
       /* -------- Credit / transaction -------- */
       .withAmount(

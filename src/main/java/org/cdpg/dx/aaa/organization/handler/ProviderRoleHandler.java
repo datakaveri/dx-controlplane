@@ -15,12 +15,14 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.delegation.OrgOwnershipValidator;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
+import org.cdpg.dx.aaa.organization.models.OrganisationAuditOperation;
 import org.cdpg.dx.aaa.organization.models.OrganizationJoinRequest;
 import org.cdpg.dx.aaa.organization.models.ProviderRoleRequest;
 import org.cdpg.dx.aaa.organization.models.Status;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
+import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
@@ -36,6 +38,7 @@ import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
 
+import static org.cdpg.dx.aaa.common.Constants.ID;
 import static org.cdpg.dx.aaa.organization.config.Constants.*;
 import static org.cdpg.dx.aaa.organization.config.Constants.API_TO_DB_PROVIDER_ROLE_REQUEST;
 import static org.cdpg.dx.aaa.organization.config.Constants.CREATED_AT;
@@ -94,11 +97,10 @@ public class ProviderRoleHandler {
       .createProviderRequest(providerRoleRequest)
       .onSuccess(
         requests -> {
-          ActivityAuditLogBuilder audit =
-            OrganizationAuditHelper.buildProviderRoleRequestSubmitAudit(
-              ctx, requests.id(), UUID.fromString(orgID));
-
-          RoutingContextHelper.setAuditingLogNew(ctx, audit);
+          UserActivityAuditLogBuilder auditLogBuilder =
+            OrganizationAuditHelper.buildOrganisationAudit(
+              ctx, requests.toJson(), OrganisationAuditOperation.REQUEST_PROVIDER_ROLE);
+          RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
           ResponseBuilder.sendSuccess(ctx, "Created Request", urnGenerator);
           Future<Void> future =
@@ -191,20 +193,10 @@ public class ProviderRoleHandler {
       .onSuccess(
         orgId -> {
 
-          ActivityAuditLogBuilder audit;
-          if (status == Status.GRANTED) {
-            audit =
-              OrganizationAuditHelper
-                .buildProviderRoleApproveAudit(
-                  ctx, reqId, orgId);
-          } else {
-            audit =
-              OrganizationAuditHelper
-                .buildProviderRoleRejectAudit(
-                  ctx, reqId, orgId, "Rejected by admin");
-          }
-
-          RoutingContextHelper.setAuditingLogNew(ctx, audit);
+          UserActivityAuditLogBuilder auditLogBuilder =
+            OrganizationAuditHelper.buildOrganisationAudit(
+              ctx, new JsonObject().put(ID,reqId.toString()), OrganisationAuditOperation.UPDATE_PROVIDER_REQUEST);
+          RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
           emailComposer
             .sendUserEmailForProviderRoleApproval(reqId, status)
@@ -336,12 +328,20 @@ public class ProviderRoleHandler {
         });
       })
       .onSuccess(entry ->
+        {
+
+        UserActivityAuditLogBuilder auditLogBuilder =
+        OrganizationAuditHelper.buildOrganisationAudit(
+          ctx,new JsonObject(), OrganisationAuditOperation.GET_PROVIDER_REQS);
+        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+
         ResponseBuilder.sendSuccess(
           ctx,
           entry.getKey(),
           entry.getValue(),
           urnGenerator
-        )
+        );
+        }
       )
       .onFailure(ctx::fail);
 }
@@ -386,11 +386,10 @@ public class ProviderRoleHandler {
             })
         .onSuccess(
             request -> {
-              ActivityAuditLogBuilder audit =
-                  OrganizationAuditHelper.buildProviderRoleWithdrawAudit(
-                      ctx, request.id(), request.orgId());
-
-              RoutingContextHelper.setAuditingLogNew(ctx, audit);
+              UserActivityAuditLogBuilder auditLogBuilder =
+                OrganizationAuditHelper.buildOrganisationAudit(
+                  ctx,new JsonObject().put(ID,request.id().toString()), OrganisationAuditOperation.DELETE_PENDING_PROVIDER_REQUEST);
+              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
               ResponseBuilder.sendSuccess(
                   ctx, "Provider Role Request deleted successfully", urnGenerator);
@@ -435,6 +434,11 @@ public class ProviderRoleHandler {
             })
         .onSuccess(
             enriched -> {
+              UserActivityAuditLogBuilder auditLogBuilder =
+                OrganizationAuditHelper.buildOrganisationAudit(
+                  ctx,enriched, OrganisationAuditOperation.GET_PROVIDER_REQS);
+              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+
               if (enriched == null) {
                 ResponseBuilder.sendSuccess(ctx, new JsonObject(), this.urnGenerator);
               } else {
@@ -470,10 +474,10 @@ public class ProviderRoleHandler {
       .createProviderRole(providerRoleRequest)
       .onSuccess(
         org -> {
-          ActivityAuditLogBuilder audit =
-            OrganizationAuditHelper.buildProviderRoleGrantedAudit(
-              ctx, providerRoleRequest.id(), providerRoleRequest.orgId());
-          RoutingContextHelper.setAuditingLogNew(ctx, audit);
+          UserActivityAuditLogBuilder auditLogBuilder =
+            OrganizationAuditHelper.buildOrganisationAudit(
+              ctx,new JsonObject(), OrganisationAuditOperation.REQUEST_PROVIDER_ROLE);
+          RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
           ResponseBuilder.sendSuccess(ctx, "Provider role granted successfully", urnGenerator);
         })

@@ -14,11 +14,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
+import org.cdpg.dx.aaa.organization.models.OrganisationAuditOperation;
 import org.cdpg.dx.aaa.organization.models.OrganizationCreateRequest;
 import org.cdpg.dx.aaa.organization.models.Status;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
+import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
@@ -34,6 +36,7 @@ import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
+import static org.cdpg.dx.aaa.common.Constants.ID;
 import static org.cdpg.dx.aaa.delegation.util.Constants.DELEGATOR_ID;
 import static org.cdpg.dx.aaa.organization.config.Constants.*;
 import static org.cdpg.dx.aaa.organization.config.Constants.API_TO_DB_ORG_CREATE_REQUEST;
@@ -125,11 +128,11 @@ public class OrganizationCreateRequestHandler {
       })
       .onSuccess(requests -> {
 
-        ActivityAuditLogBuilder auditLog =
-          OrganizationAuditHelper.buildOrgCreateRequestAudit(
-            ctx, requests.id(), requests.name());
+        UserActivityAuditLogBuilder auditLogBuilder =
+          OrganizationAuditHelper.buildOrganisationAudit(
+            ctx, requests.toJson(), OrganisationAuditOperation.REQUEST_ORG_CREATE);
 
-        RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
+        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
         ResponseBuilder.sendSuccess(ctx, requests, urnGenerator);
         emailComposer.sendEmailForCreatingOrg(requests, user);
@@ -160,10 +163,11 @@ public class OrganizationCreateRequestHandler {
         .updateOrganizationCreateRequestStatus(requestId, status)
         .onSuccess(
             updated -> {
-              ActivityAuditLogBuilder auditLog =
-                  OrganizationAuditHelper.buildOrgCreateOrgUpdateAudit(
-                      ctx, requestId, status.getStatus());
-              RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
+              UserActivityAuditLogBuilder auditLogBuilder =
+                OrganizationAuditHelper.buildOrganisationAudit(
+                  ctx, new JsonObject().put(ID,requestId.toString()), OrganisationAuditOperation.UPDATE_ORG_CREATE_REQUEST);
+
+              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
               ResponseBuilder.sendSuccess(ctx, "Updated Sucessfully", urnGenerator);
               Future<Void> future =
@@ -216,9 +220,11 @@ public class OrganizationCreateRequestHandler {
                               new DxNotFoundException(
                                   "Failed to delete organization request with ID: " + requestId));
                         }
-                        ActivityAuditLogBuilder auditLog =
-                            OrganizationAuditHelper.buildOrgCreateDeleteAudit(ctx, requestId, null);
-                        RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
+                        UserActivityAuditLogBuilder auditLogBuilder =
+                          OrganizationAuditHelper.buildOrganisationAudit(
+                            ctx, new JsonObject().put(ID,requestId.toString()), OrganisationAuditOperation.DELETE_PENDING_ORG_CREATE_REQUEST);
+
+                        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
                         ResponseBuilder.sendSuccess(
                             ctx, "Organization request deleted successfully", urnGenerator);
@@ -252,11 +258,10 @@ public class OrganizationCreateRequestHandler {
         .onSuccess(
             result -> {
               // todo : check if audit log is needed for this and also need verify the audit log
-              // content
-              ActivityAuditLogBuilder auditLog =
-                  OrganizationAuditHelper.buildGetOrgCreateListAudit(ctx);
-              RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
-
+              UserActivityAuditLogBuilder auditLogBuilder =
+                OrganizationAuditHelper.buildOrganisationAudit(
+                  ctx, new JsonObject(), OrganisationAuditOperation.GET);
+              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
               ResponseBuilder.sendSuccess(ctx, result, urnGenerator);
             })
         .onFailure(
@@ -294,9 +299,10 @@ public class OrganizationCreateRequestHandler {
         .getAllOrganizationCreateRequests(request)
         .onSuccess(
             res -> {
-              ActivityAuditLogBuilder auditLog =
-                  OrganizationAuditHelper.buildGetOrgCreateListAudit(ctx);
-              RoutingContextHelper.setAuditingLogNew(ctx, auditLog);
+              UserActivityAuditLogBuilder auditLogBuilder =
+                OrganizationAuditHelper.buildOrganisationAudit(
+                  ctx, new JsonObject(), OrganisationAuditOperation.GET);
+              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
               ResponseBuilder.sendSuccess(ctx, res.data(), res.paginationInfo(), urnGenerator);
             })
         .onFailure(ctx::fail);

@@ -15,6 +15,8 @@ import org.cdpg.dx.aaa.credit.util.CreditRequestAuditLogHelper;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.item.enums.ItemAuditOperation;
 import org.cdpg.dx.aaa.item.util.ItemAuditLogHelper;
+import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
+import org.cdpg.dx.aaa.organization.models.OrganisationAuditOperation;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.AuditLog;
@@ -122,9 +124,6 @@ public class CreditHandler {
       .allowedSortFields(ALLOWED_FILTER_MAP_FOR_CREDIT_REQUEST.keySet())
       .build();
 
-    AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-      RoutingContextHelper.getRequestPath(ctx), "GET", "Get All Credit Requests");
-
     creditService.getAllCreditRequests(request)
       .onSuccess(result -> {
         List<CreditRequest> creditRequests = result.data();
@@ -164,7 +163,10 @@ public class CreditHandler {
         CompositeFuture.all(futures)
           .onSuccess(cf -> {
             List<JsonObject> enrichedList = cf.list();
-            RoutingContextHelper.setAuditingLog(ctx, auditLog);
+            UserActivityAuditLogBuilder auditLogBuilder =
+              CreditRequestAuditLogHelper.buildAudit(
+                ctx,new JsonObject(), CreditRequestAuditOperation.GET_CREDIT_REQUESTS);
+            RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
             ResponseBuilder.sendSuccess(ctx, enrichedList, result.paginationInfo(), this.urnGenerator);
           })
           .onFailure(ctx::fail);
@@ -182,7 +184,7 @@ public class CreditHandler {
       .onSuccess(balance -> {
         UserActivityAuditLogBuilder auditLogBuilder =
           CreditRequestAuditLogHelper.buildAudit(
-            ctx, balance, CreditRequestAuditOperation.GET);
+            ctx, balance, CreditRequestAuditOperation.GET_BALANCE);
 
         RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
@@ -209,7 +211,7 @@ public class CreditHandler {
 
         UserActivityAuditLogBuilder auditLogBuilder =
           CreditRequestAuditLogHelper.buildAudit(
-            ctx, res, CreditRequestAuditOperation.GET);
+            ctx, res, CreditRequestAuditOperation.GET_BALANCE);
 
         RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
         ResponseBuilder.sendSuccess(ctx,res, this.urnGenerator);
@@ -484,13 +486,10 @@ public class CreditHandler {
           .map(enrichedList -> Map.entry(enrichedList, result.paginationInfo()))
       )
       .onSuccess(entry -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(
-          ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx),
-          "GET",
-          "Get Compute Role Requests"
-        );
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        UserActivityAuditLogBuilder auditLogBuilder =
+          CreditRequestAuditLogHelper.buildAudit(
+            ctx,new JsonObject(), CreditRequestAuditOperation.GET_COMPUTE_REQUESTS);
+        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
         ResponseBuilder.sendSuccess(ctx, entry.getKey(), entry.getValue(), this.urnGenerator);
       }).onFailure(ctx::fail);
 
@@ -603,7 +602,10 @@ public class CreditHandler {
         CompositeFuture.all(futures)
           .onSuccess(cf -> {
             List<JsonObject> enrichedList = cf.list();
-            RoutingContextHelper.setAuditingLog(ctx, auditLog);
+            UserActivityAuditLogBuilder auditLogBuilder =
+              CreditRequestAuditLogHelper.buildAudit(
+                ctx,new JsonObject(), CreditRequestAuditOperation.GET_CREDIT_REQUESTS);
+            RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
             ResponseBuilder.sendSuccess(ctx, enrichedList, this.urnGenerator);
           })
           .onFailure(ctx::fail);
@@ -686,7 +688,7 @@ public class CreditHandler {
 
         UserActivityAuditLogBuilder auditLogBuilder =
           CreditRequestAuditLogHelper.buildAudit(
-            ctx, enriched , CreditRequestAuditOperation.GET);
+            ctx, enriched , CreditRequestAuditOperation.GET_COMPUTE_REQUESTS);
 
         RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
         ResponseBuilder.sendSuccess(ctx, enriched, this.urnGenerator);
