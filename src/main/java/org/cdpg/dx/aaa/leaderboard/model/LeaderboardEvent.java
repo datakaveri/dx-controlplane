@@ -31,7 +31,7 @@ public record LeaderboardEvent(
 
     UUID organizationId =
         json.getString(ASSET_ORG_ID) != null ? UUID.fromString(json.getString(ASSET_ORG_ID)) : null;
-    JsonObject context = json.getJsonObject(CONTEXT);
+    JsonObject context = json.getJsonObject(CONTEXT, new JsonObject());
     return new LeaderboardEvent(
         assetId,
         json.getString(ACTION),
