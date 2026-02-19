@@ -1,39 +1,54 @@
 #!/usr/bin/env python3
 
+# Utility script for backfill, rebuild, and recovery of leaderboard asset
+# visibility and engagement metrics using Elasticsearch and PostgreSQL.
+
+
 import logging
 import requests
 import psycopg2
 import json
+import os
+import configparser
 from psycopg2.extras import execute_batch
 from requests.auth import HTTPBasicAuth
 from datetime import datetime
 from collections import defaultdict
 
-# =================================================
-# CONFIG
-# =================================================
+# -------------------------------------------------
+# CONFIG LOADING (ROBUST)
+# -------------------------------------------------
 
-# ---------------- ELASTIC CONFIG ----------------
-ES_URL = "http://example-es-host:9200"
-ES_INDEX = "catalogue-index"
-ES_USER = "user"
-ES_PASSWORD = "password"
-SCROLL_TIME = "2m"
-BATCH_SIZE = 500
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_PATH = os.path.join(BASE_DIR, "../secrets/leaderboard.ini")
 
-# ---------------- POSTGRES CONFIG ----------------
-PG_HOST = "example-db-host"
-PG_PORT = 123
-PG_DB = "dbname"
-PG_USER = "user"
-PG_PASSWORD = "pass"
-PG_SCHEMA = "aaa"
+config = configparser.RawConfigParser()
 
-# ---------------- OUTPUT ----------------
-SKIPPED_JSON_FILE = "skipped_assets.json"
+if not config.read(CONFIG_PATH):
+    raise RuntimeError(f"Failed to load config file: {CONFIG_PATH}")
 
-# ---------------- LEADERBOARD SQL ----------------
-LEADERBOARD_SQL_FILE = "sql/leaderboard_rebuild.sql"
+print("Using config file:", CONFIG_PATH)
+print("Loaded sections:", config.sections())
+
+#init local variables
+ES_URL = config.get("elastic", "url")
+ES_INDEX = config.get("elastic", "index")
+ES_USER = config.get("elastic", "user")
+ES_PASSWORD = config.get("elastic", "password")
+SCROLL_TIME = config.get("elastic", "scroll_time")
+BATCH_SIZE = config.getint("elastic", "batch_size")
+
+
+PG_HOST = config.get("postgres", "host")
+PG_PORT = config.getint("postgres", "port")
+PG_DB = config.get("postgres", "db")
+PG_USER = config.get("postgres", "user")
+PG_PASSWORD = config.get("postgres", "password")
+PG_SCHEMA = config.get("postgres", "schema")
+
+
+SKIPPED_JSON_FILE = config.get("output", "skipped_json_file")
+LEADERBOARD_SQL_FILE = config.get("sql", "leaderboard_rebuild_file")
 
 
 # =================================================
