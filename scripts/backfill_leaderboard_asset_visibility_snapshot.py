@@ -2,6 +2,7 @@
 
 # Utility script for backfill, rebuild, and recovery of leaderboard asset
 # visibility and engagement metrics using Elasticsearch and PostgreSQL.
+# congiguration is loaded from a .ini file for flexibility and security. path : ../secrets/leaderboard.ini
 
 
 import logging
