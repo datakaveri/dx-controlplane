@@ -1,7 +1,9 @@
 package org.cdpg.dx.aaa.interaction.v2.factory;
 
 import org.cdpg.dx.aaa.interaction.v2.controller.UserInteractionV2Controller;
+import org.cdpg.dx.aaa.interaction.v2.dao.UserFeedbackDao;
 import org.cdpg.dx.aaa.interaction.v2.dao.UserInteractionV2Dao;
+import org.cdpg.dx.aaa.interaction.v2.dao.impl.UserFeedbackDaoImpl;
 import org.cdpg.dx.aaa.interaction.v2.dao.impl.UserInteractionV2DaoImpl;
 import org.cdpg.dx.aaa.interaction.v2.service.UserInteractionV2Service;
 import org.cdpg.dx.aaa.interaction.v2.service.impl.UserInteractionV2ServiceImpl;
@@ -19,7 +21,8 @@ public class UserInteractionV2controllerFactory {
       URNGenerator urnGenerator) {
 
     UserInteractionV2Dao dao = new UserInteractionV2DaoImpl(postgresService);
-    UserInteractionV2Service service = new UserInteractionV2ServiceImpl(dao, itemService);
+    UserFeedbackDao userFeedbackDao = new UserFeedbackDaoImpl(postgresService);
+    UserInteractionV2Service service = new UserInteractionV2ServiceImpl(dao, userFeedbackDao,itemService);
     return new UserInteractionV2Controller(auditingHandler, service, urnGenerator);
   }
 }

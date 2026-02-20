@@ -4,6 +4,7 @@ import static org.cdpg.dx.aaa.apiserver.OperationIds.*;
 import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.CREATED_AT;
 
 import io.vertx.core.Handler;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import java.util.Map;
@@ -15,6 +16,7 @@ import org.cdpg.dx.aaa.apiserver.ApiController;
 import org.cdpg.dx.aaa.interaction.v2.enums.InteractionAction;
 import org.cdpg.dx.aaa.interaction.v2.enums.InteractionAuditAction;
 import org.cdpg.dx.aaa.interaction.v2.model.InteractionDelta;
+import org.cdpg.dx.aaa.interaction.v2.model.UserFeedback;
 import org.cdpg.dx.aaa.interaction.v2.model.UserInteractionV2Request;
 import org.cdpg.dx.aaa.interaction.v2.service.UserInteractionV2Service;
 import org.cdpg.dx.aaa.interaction.v2.util.InteractionAuditLogHelper;
@@ -32,6 +34,8 @@ public class UserInteractionV2Controller implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(UserInteractionV2Controller.class);
   private static final Map<String, String> FILTER_MAP =
       Map.of("assetId", "asset_id", "assetType", "asset_type", "actionType", "action_type");
+  private static final Map<String, String> FEEDBACK_FILTER_MAP =
+    Map.of("assetId", "asset_id", "actionSubType", "asset_subtype", "userId", "user_id");
   private final AuditingHandler auditingHandler;
   private final UserInteractionV2Service service;
   private final URNGenerator urnGenerator;
@@ -65,6 +69,23 @@ public class UserInteractionV2Controller implements ApiController {
         .operation(OP_SYNC_INTERACTION_METRICS)
         .handler(syncInteractionMetricAccessHandler)
         .handler(this::handleSyncInteractionMetrics);
+
+     builder
+        .operation(OP_POST_USER_FEEDBACK)
+        .handler(interactionAccessHandler)
+        .handler(this::handlePostUpdateUserFeedbackRequest);
+
+     builder
+          .operation(OP_GET_USER_FEEDBACK)
+          .handler(interactionAccessHandler)
+          .handler(this::handleGetUserFeedbackRequest);
+
+    builder
+       .operation(OP_DELETE_USER_FEEDBACK)
+       .handler(interactionAccessHandler)
+       .handler(this::handleDeleteUserFeedbackRequest);
+
+
   }
 
   private void handlePostUserInteractionRequest(RoutingContext ctx) {
@@ -184,4 +205,104 @@ public class UserInteractionV2Controller implements ApiController {
     // No-op → nothing to audit
     return null;
   }
+
+
+  private void handlePostUpdateUserFeedbackRequest(RoutingContext ctx) {
+    LOGGER.info("POST /user/feedback called");
+    try {
+      JsonObject req = ctx.body().asJsonObject();
+      UUID userId = UUID.fromString(ctx.user().subject());
+      req.put("user_id",userId.toString());
+
+      UserFeedback userFeedback = UserFeedback.fromJson(req);
+
+      service
+        .postUserFeedback(userFeedback)
+        .onSuccess(
+          v ->
+            ResponseBuilder.sendSuccess(
+              ctx, "Interaction updated successfully", urnGenerator))
+        .onFailure(
+          err -> {
+            LOGGER.error("POST /user/feedback failed", err);
+            ctx.fail(err);
+          });
+
+    } catch (Exception e) {
+      LOGGER.error("Invalid POST /user/feedback request", e);
+      ctx.fail(e);
+    }
+  }
+
+  private void handleGetUserFeedbackRequest(RoutingContext ctx) {
+    LOGGER.info("GET /user/feedback called");
+
+    try {
+      PaginatedRequest paginatedRequest =
+        PaginationRequestBuilder.from(ctx)
+          .allowedFiltersDbMap(FEEDBACK_FILTER_MAP)
+          .apiToDbMap(FEEDBACK_FILTER_MAP)
+//          .additionalFilters(Map.of("user_id", ctx.user().subject()))
+          .allowedTimeFields(Set.of(CREATED_AT))
+          .build();
+      LOGGER.debug("paginated request has been build ");
+      service
+        .getUserFeedback(paginatedRequest)
+        .onSuccess(
+          result -> {
+            LOGGER.info("Fetched user feedbacks successfully");
+            ResponseBuilder.sendSuccess(
+              ctx, result.data(), result.paginationInfo(), urnGenerator);
+          })
+        .onFailure(
+          err -> {
+            LOGGER.error("Failed to fetch user feedbacks {}", err.getMessage(), err);
+            ctx.fail(err);
+          });
+
+    } catch (Exception e) {
+      LOGGER.error("Invalid GET /user/feedback request:  {} ", e.getMessage(), e);
+      ctx.fail(e);
+    }
+
+  }
+
+  private void handleDeleteUserFeedbackRequest(RoutingContext ctx) {
+    LOGGER.info("DELETE /user/feedback/{id} called");
+    try {
+      String idParam = ctx.request().getParam("id");
+
+      if (idParam == null) {
+        ctx.fail(new IllegalArgumentException("Missing required query parameter: id"));
+        return;
+      }
+
+      UUID reqId;
+      try {
+        reqId = UUID.fromString(idParam);
+      } catch (IllegalArgumentException e) {
+        ctx.fail(new IllegalArgumentException("Invalid UUID format for parameter: id"));
+        return;
+      }
+
+      UUID userId = UUID.fromString(ctx.user().subject());
+
+      service
+        .deleteUserFeedback(reqId,userId)
+        .onSuccess(
+          v ->
+            ResponseBuilder.sendSuccess(
+              ctx, "Interaction updated successfully", urnGenerator))
+        .onFailure(
+          err -> {
+            LOGGER.error("Delete /user/feedback failed", err);
+            ctx.fail(err);
+          });
+
+    } catch (Exception e) {
+      LOGGER.error("Invalid POST /user/feedback request", e);
+      ctx.fail(e);
+    }
+  }
+
 }

@@ -2,6 +2,7 @@ package org.cdpg.dx.aaa.interaction.v2.service;
 
 import io.vertx.core.Future;
 import java.util.UUID;
+
 import org.cdpg.dx.aaa.interaction.v2.model.*;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.response.PaginatedApiResponse;
@@ -15,4 +16,11 @@ public interface UserInteractionV2Service {
   Future<InteractionDelta> saveInteraction(UUID userId, UserInteractionV2Request req);
 
   Future<BulkSyncResult> syncInteractionMetrics();
+
+  Future<UserFeedback> postUserFeedback(UserFeedback request);
+
+  Future<UserFeedbackPaginatedResponse> getUserFeedback(PaginatedRequest request);
+
+  Future<Boolean> deleteUserFeedback(UUID reqId, UUID userId);
+
 }
