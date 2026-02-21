@@ -190,7 +190,7 @@ public class ControllerFactory {
 
     KYCHandler kycHandler =
         KYCFactory.createHandler(vertx, config, creditService, pgService, urnGenerator);
-    ApiController kycController = new KYCController(kycHandler,auditingHandler);
+    ApiController kycController = new KYCController(kycHandler, auditingHandler);
 
     OrgOwnershipValidator orgOwnershipValidator = new OrgOwnershipValidator(organizationService);
 
@@ -305,7 +305,7 @@ public class ControllerFactory {
 
     SubscriptionController subscriptionController =
         SubscriptionControllerFactory.create(
-            dataBrokerService, pgService, urnGenerator, controlPlaneDomain);
+            auditingHandler, dataBrokerService, pgService, urnGenerator, controlPlaneDomain);
     ApiController bookmarksController = BookmarksControllerFactory.create(pgService, urnGenerator);
     ApiController appCredentialsController =
         AppCredentialsControllerFactory.create(
