@@ -19,6 +19,9 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.apiserver.ApiController;
 import org.cdpg.dx.aaa.subscription.service.SubscriptionService;
 import org.cdpg.dx.aaa.subscription.util.GetDid;
+import org.cdpg.dx.aaa.subscription.util.SubscriptionAuditHelper;
+import org.cdpg.dx.auditing.handler.AuditingHandler;
+import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.URNGenerator;
@@ -30,6 +33,7 @@ import org.cdpg.dx.common.validations.itemcheck.SubscriptionAuthorizationHandler
 public class SubscriptionController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(SubscriptionController.class);
   private final SubscriptionService subscriptionService;
+  private final AuditingHandler auditingHandler;
   Handler<RoutingContext> roleAllowed =
       AuthorizationHandler.forRoles(DxRole.DELEGATE, DxRole.CONSUMER);
   SubscriptionAuthorizationHandler subscriptionAuthorizationHandler;
@@ -37,8 +41,10 @@ public class SubscriptionController implements ApiController {
   public SubscriptionController(
       SubscriptionService subscriptionService,
       URNGenerator urnGenerator,
+      AuditingHandler auditingHandler,
       String controlPlaneDomain) {
     this.subscriptionService = subscriptionService;
+    this.auditingHandler = auditingHandler;
     this.subscriptionAuthorizationHandler =
         new SubscriptionAuthorizationHandler(controlPlaneDomain);
   }
@@ -171,20 +177,27 @@ public class SubscriptionController implements ApiController {
   @Override
   public void register(RouterBuilder builder) {
     GetIdFromBodyHandler getIdFromBodyHandler = new GetIdFromBodyHandler();
-    builder.operation(DELETE_SUBSCRIPTION).handler(roleAllowed).handler(this::deleteSubscription);
+    builder
+        .operation(DELETE_SUBSCRIPTION)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(roleAllowed)
+        .handler(this::deleteSubscription);
     builder
         .operation(GET_BY_ID_SUBSCRIPTION)
+        .handler(auditingHandler::handleApiAudit)
         .handler(roleAllowed)
         .handler(this::getSubscriptionById);
     builder.operation(GET_ALL_SUBSCRIPTION).handler(roleAllowed).handler(this::getAllSubscriptions);
     builder
         .operation(UPDATE_SUBSCRIPTION)
+        .handler(auditingHandler::handleApiAudit)
         .handler(getIdFromBodyHandler)
         .handler(subscriptionAuthorizationHandler)
         .handler(roleAllowed)
         .handler(this::updateSubscription);
     builder
         .operation(CREATE_SUBSCRIPTION)
+        .handler(auditingHandler::handleApiAudit)
         .handler(getIdFromBodyHandler)
         .handler(subscriptionAuthorizationHandler)
         .handler(roleAllowed)
@@ -216,17 +229,22 @@ public class SubscriptionController implements ApiController {
             providerId,
             did)
         .onSuccess(
-            v ->
-                routingContext
-                    .response()
-                    .putHeader("Content-Type", "application/json")
-                    .putHeader(HEADER_ALLOW_ORIGIN, "*")
-                    .putHeader("Location", v.subscriptionId())
-                    .putHeader(
-                        "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
-                    .putHeader("Access-Control-Allow-Headers", "Authorization, Content-Type")
-                    .setStatusCode(201)
-                    .end(v.toJson().encode()))
+            v -> {
+              UserActivityAuditLogBuilder auditLogBuilder =
+                  SubscriptionAuditHelper.buildCreateSubscriptionAudit(routingContext, entitiesId);
+              RoutingContextHelper.setAuditingLogV2(routingContext, auditLogBuilder);
+
+              routingContext
+                  .response()
+                  .putHeader("Content-Type", "application/json")
+                  .putHeader(HEADER_ALLOW_ORIGIN, "*")
+                  .putHeader("Location", v.subscriptionId())
+                  .putHeader(
+                      "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
+                  .putHeader("Access-Control-Allow-Headers", "Authorization, Content-Type")
+                  .setStatusCode(201)
+                  .end(v.toJson().encode());
+            })
         .onFailure(routingContext::fail);
   }
 
@@ -244,16 +262,21 @@ public class SubscriptionController implements ApiController {
             subsId,
             parseAndValidateFutureTimeWithPolicy2(requestJson.getString("expiryAt"), policyAt))
         .onSuccess(
-            v ->
-                routingContext
-                    .response()
-                    .putHeader("Content-Type", "application/json")
-                    .putHeader(HEADER_ALLOW_ORIGIN, "*")
-                    .putHeader(
-                        "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
-                    .putHeader("Access-Control-Allow-Headers", "Authorization, Content-Type")
-                    .setStatusCode(204)
-                    .end())
+            v -> {
+              UserActivityAuditLogBuilder auditLogBuilder =
+                  SubscriptionAuditHelper.buildUpdateSubscriptionAudit(routingContext, entities);
+              RoutingContextHelper.setAuditingLogV2(routingContext, auditLogBuilder);
+
+              routingContext
+                  .response()
+                  .putHeader("Content-Type", "application/json")
+                  .putHeader(HEADER_ALLOW_ORIGIN, "*")
+                  .putHeader(
+                      "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
+                  .putHeader("Access-Control-Allow-Headers", "Authorization, Content-Type")
+                  .setStatusCode(204)
+                  .end();
+            })
         .onFailure(routingContext::fail);
   }
 
@@ -265,19 +288,23 @@ public class SubscriptionController implements ApiController {
     subscriptionService
         .getAllSubscriptions(userId, limit, offset)
         .onSuccess(
-            getResult ->
-                routingContext
-                    .response()
-                    .putHeader("Content-Type", "application/json")
-                    .putHeader(HEADER_ALLOW_ORIGIN, "*")
-                    .putHeader(
-                        "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
-                    .putHeader("Access-Control-Allow-Headers", "Authorization, Content-Type")
-                    .putHeader(NGSILD_RESULTS_COUNT, String.valueOf(getResult.count()))
-                    .putHeader(NGSILD_LIMIT, String.valueOf(limit))
-                    .putHeader(NGSILD_OFFSET, String.valueOf(offset))
-                    .setStatusCode(200)
-                    .end(getResult.withoutTotalCount().toString()))
+            getResult -> {
+              UserActivityAuditLogBuilder auditLogBuilder =
+                  SubscriptionAuditHelper.buildUListSubscriptionAudit(routingContext);
+              RoutingContextHelper.setAuditingLogV2(routingContext, auditLogBuilder);
+              routingContext
+                  .response()
+                  .putHeader("Content-Type", "application/json")
+                  .putHeader(HEADER_ALLOW_ORIGIN, "*")
+                  .putHeader(
+                      "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
+                  .putHeader("Access-Control-Allow-Headers", "Authorization, Content-Type")
+                  .putHeader(NGSILD_RESULTS_COUNT, String.valueOf(getResult.count()))
+                  .putHeader(NGSILD_LIMIT, String.valueOf(limit))
+                  .putHeader(NGSILD_OFFSET, String.valueOf(offset))
+                  .setStatusCode(200)
+                  .end(getResult.withoutTotalCount().toString());
+            })
         .onFailure(routingContext::fail);
   }
 
@@ -289,16 +316,20 @@ public class SubscriptionController implements ApiController {
     subscriptionService
         .getSubscriptionById(subsId, userId)
         .onSuccess(
-            getResult ->
-                routingContext
-                    .response()
-                    .putHeader("Content-Type", "application/json")
-                    .putHeader(HEADER_ALLOW_ORIGIN, "*")
-                    .putHeader(
-                        "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
-                    .putHeader("Access-Control-Allow-Headers", "Authorization, Content-Type")
-                    .setStatusCode(200)
-                    .end(getResult.jsonArray().encode()))
+            getResult -> {
+              UserActivityAuditLogBuilder auditLogBuilder =
+                  SubscriptionAuditHelper.buildUViewSubscriptionAudit(routingContext);
+              RoutingContextHelper.setAuditingLogV2(routingContext, auditLogBuilder);
+              routingContext
+                  .response()
+                  .putHeader("Content-Type", "application/json")
+                  .putHeader(HEADER_ALLOW_ORIGIN, "*")
+                  .putHeader(
+                      "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
+                  .putHeader("Access-Control-Allow-Headers", "Authorization, Content-Type")
+                  .setStatusCode(200)
+                  .end(getResult.jsonArray().encode());
+            })
         .onFailure(routingContext::fail);
   }
 
@@ -310,16 +341,20 @@ public class SubscriptionController implements ApiController {
     subscriptionService
         .deleteSubscription(subsId, userId)
         .onSuccess(
-            v ->
-                routingContext
-                    .response()
-                    .putHeader("Content-Type", "application/json")
-                    .putHeader(HEADER_ALLOW_ORIGIN, "*")
-                    .putHeader(
-                        "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
-                    .putHeader("Access-Control-Allow-Headers", "Authorization, Content-Type")
-                    .setStatusCode(204)
-                    .end())
+            v -> {
+              UserActivityAuditLogBuilder auditLogBuilder =
+                  SubscriptionAuditHelper.buildUDeleteSubscriptionAudit(routingContext);
+              RoutingContextHelper.setAuditingLogV2(routingContext, auditLogBuilder);
+              routingContext
+                  .response()
+                  .putHeader("Content-Type", "application/json")
+                  .putHeader(HEADER_ALLOW_ORIGIN, "*")
+                  .putHeader(
+                      "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
+                  .putHeader("Access-Control-Allow-Headers", "Authorization, Content-Type")
+                  .setStatusCode(204)
+                  .end();
+            })
         .onFailure(routingContext::fail);
   }
 }
