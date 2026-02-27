@@ -42,7 +42,8 @@ public class EmailComposerFactory {
     PolicyDao policyDao = new PolicyDaoImpl(pgService);
 
     ItemService itemService =
-        new ItemServiceImpl(esService, keycloakUserService, policyDao, webClient, docIndex, apdURL);
+        new ItemServiceImpl(
+            esService, keycloakUserService, pgService, policyDao, webClient, docIndex, apdURL);
 
     OrganizationService organizationService =
         new OrganizationServiceImpl(organizationDAOFactory, keycloakUserService, itemService);
@@ -57,7 +58,12 @@ public class EmailComposerFactory {
 
     UserServiceImpl userService =
         new UserServiceImpl(
-            keycloakUserService, organizationService, creditService, esService, customRoleDAO, docUserIndex);
+            keycloakUserService,
+            organizationService,
+            creditService,
+            esService,
+            customRoleDAO,
+            docUserIndex);
 
     return new EmailComposer(
         emailService, keycloakUserService, config, organizationService, userService, creditService);

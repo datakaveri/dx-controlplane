@@ -13,6 +13,8 @@ import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.aaa.item.service.central.CentralItemServiceImpl;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
+import org.cdpg.dx.acl.rule.dao.AccessRuleDao;
+import org.cdpg.dx.acl.rule.dao.impl.AccessRuleDaoImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.central.service.CentralElasticsearchService;
@@ -46,14 +48,22 @@ public class ItemControllerFactory {
       boolean isStandalone,
       DelegationService delegationService) {
     PolicyDao policyDao = new PolicyDaoImpl(pgService);
+    AccessRuleDao accessRuleDao = new AccessRuleDaoImpl(pgService);
     ItemService itemService =
         new ItemServiceImpl(
-            elasticsearchService, keycloakUserService, policyDao, webClient, docIndex, apdURL);
+            elasticsearchService,
+            keycloakUserService,
+            pgService,
+            policyDao,
+            webClient,
+            docIndex,
+            apdURL);
     ItemService centralItemService =
         new CentralItemServiceImpl(
             centralElasticsearchService,
             keycloakUserService,
             policyDao,
+            accessRuleDao,
             webClient,
             centralDocIndex,
             apdURL);

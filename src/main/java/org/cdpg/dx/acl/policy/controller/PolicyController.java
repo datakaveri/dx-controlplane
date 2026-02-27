@@ -73,7 +73,7 @@ public class PolicyController implements ApdApiController {
   @Override
   public void register(RouterBuilder builder) {
     Handler<RoutingContext> providerAndOrgAdmin =
-        AuthorizationHandler.forRoles(DxRole.PROVIDER, DxRole.ORG_ADMIN);
+        AuthorizationHandler.forRoles(DxRole.PROVIDER, DxRole.ORG_ADMIN, DxRole.DELEGATE);
     Handler<RoutingContext> apiAccessHandler =
         AuthorizationHandler.forRoles(DxRole.CONSUMER, DxRole.PROVIDER, DxRole.DELEGATE);
     Handler<RoutingContext> apiAccessVerifyApiRole =

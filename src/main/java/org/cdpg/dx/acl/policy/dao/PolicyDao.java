@@ -24,7 +24,7 @@ public interface PolicyDao {
   Future<QueryResult> verifyPolicy(UUID policyId);
 
   Future<QueryResult> deletePolicy(UUID policyId);
-  Future<QueryResult> deletePolicyByUserAndItem(
+  Future<QueryResult> deActivatePolicyByUserAndItem(
       UUID itemId,
       UUID ownerId,
       String userEmail);

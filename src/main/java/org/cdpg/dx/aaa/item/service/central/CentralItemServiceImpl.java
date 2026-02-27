@@ -30,14 +30,11 @@ import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
-
 import java.util.*;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.asset.models.AssetRequest;
 import org.cdpg.dx.aaa.asset.models.AssetRequestResponse;
-import org.cdpg.dx.database.elastic.model.BulkSyncResult;
 import org.cdpg.dx.aaa.common.ResponseModel;
 import org.cdpg.dx.aaa.interaction.model.InteractionAggregate;
 import org.cdpg.dx.aaa.item.model.Item;
@@ -51,6 +48,7 @@ import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.model.VerifyPolicyDto;
 import org.cdpg.dx.acl.policy.service.PolicyService;
 import org.cdpg.dx.acl.policy.service.impl.PolicyServiceImpl;
+import org.cdpg.dx.acl.rule.dao.AccessRuleDao;
 import org.cdpg.dx.catalogueService.models.ItemType;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
@@ -59,6 +57,7 @@ import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.DxUnauthorizedException;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.database.elastic.central.service.CentralElasticsearchService;
+import org.cdpg.dx.database.elastic.model.BulkSyncResult;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.database.elastic.model.QueryDecoder;
 import org.cdpg.dx.database.elastic.model.QueryModel;
@@ -78,11 +77,12 @@ public class CentralItemServiceImpl implements ItemService {
       CentralElasticsearchService centralElasticsearchService,
       KeycloakUserService keycloakUserService,
       PolicyDao policyDao,
+      AccessRuleDao accessRuleDao,
       WebClient webClient,
       String docIndex,
       String apdURL) {
     this.centralElasticsearchService = centralElasticsearchService;
-    PolicyService policyService = new PolicyServiceImpl(this, policyDao, apdURL);
+    PolicyService policyService = new PolicyServiceImpl(this, policyDao, accessRuleDao, apdURL);
     this.policyVerifyService = new PolicyVerifyServiceImpl(policyService, webClient, apdURL);
     this.keycloakUserService = keycloakUserService;
     this.client = webClient;

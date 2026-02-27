@@ -1,6 +1,5 @@
 package org.cdpg.dx.aaa.common;
 
-import org.bouncycastle.pqc.crypto.util.PQCOtherInfoGenerator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -100,6 +99,7 @@ public class Constants {
 
     public static final String ITEM_STATUS = "itemStatus";
     public static final String ACTIVE = "ACTIVE";
+    public static final String IN_ACTIVE = "INACTIVE";
     public static final String ITEM_CREATED_AT = "itemCreatedAt";
     public static final String LAST_UPDATED = "lastUpdated";
 

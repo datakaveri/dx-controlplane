@@ -293,7 +293,7 @@ public class PolicyDaoImpl implements PolicyDao {
   }
 
   @Override
-  public Future<QueryResult> deletePolicyByUserAndItem(
+  public Future<QueryResult> deActivatePolicyByUserAndItem(
       UUID itemId, UUID ownerId, String userEmail) {
 
     Condition condition =
