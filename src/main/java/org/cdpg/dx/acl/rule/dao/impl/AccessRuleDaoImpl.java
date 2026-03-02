@@ -1,7 +1,25 @@
 package org.cdpg.dx.acl.rule.dao.impl;
 
+import static org.cdpg.dx.aaa.common.Constants.ACTIVE;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ACCESS_RULE_ALLOWED_ORG_TABLE;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ACCESS_RULE_ALLOWED_ROLE_TABLE;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ACCESS_RULE_TABLE;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ACSESS_RULE_ALLOWED_USER_TABLE;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ALLOWED_ORG_IDS;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ALLOWED_ROLES;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ALLOWED_USER_IDS;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CONSTRAINTS;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_EXPIRY_AT;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ITEM_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ORG_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_OWNER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_POLICY_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ROLE;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_RULE_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_USER_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.EXPIRY_AT;
 
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
@@ -38,9 +56,10 @@ public class AccessRuleDaoImpl implements AccessRuleDao {
 
     List<Join> joins =
         List.of(
-            new Join(Join.JoinType.LEFT, "access_rule_allowed_user", "U", "R._id", "rule_id"),
-            new Join(Join.JoinType.LEFT, "access_rule_allowed_org", "O", "R._id", "rule_id"),
-            new Join(Join.JoinType.LEFT, "access_rule_allowed_role", "RL", "R._id", "rule_id"));
+            new Join(Join.JoinType.LEFT, ACSESS_RULE_ALLOWED_USER_TABLE, "U", "R._id", DB_RULE_ID),
+            new Join(Join.JoinType.LEFT, ACCESS_RULE_ALLOWED_ORG_TABLE, "O", "R._id", DB_RULE_ID),
+            new Join(
+                Join.JoinType.LEFT, ACCESS_RULE_ALLOWED_ROLE_TABLE, "RL", "R._id", DB_RULE_ID));
 
     // R.item_id = ?
     Condition itemCondition =
@@ -91,7 +110,7 @@ public class AccessRuleDaoImpl implements AccessRuleDao {
 
     SelectQuery selectQuery =
         new SelectQuery()
-            .setTable("access_rule")
+            .setTable(ACCESS_RULE_TABLE)
             .setTableAlias("R")
             .setColumns(List.of("1"))
             .setJoins(joins)
@@ -113,9 +132,10 @@ public class AccessRuleDaoImpl implements AccessRuleDao {
 
     List<Join> joins =
         List.of(
-            new Join(Join.JoinType.LEFT, "access_rule_allowed_user", "U", "R._id", "rule_id"),
-            new Join(Join.JoinType.LEFT, "access_rule_allowed_org", "O", "R._id", "rule_id"),
-            new Join(Join.JoinType.LEFT, "access_rule_allowed_role", "RL", "R._id", "rule_id"));
+            new Join(Join.JoinType.LEFT, ACSESS_RULE_ALLOWED_USER_TABLE, "U", "R._id", DB_RULE_ID),
+            new Join(Join.JoinType.LEFT, ACCESS_RULE_ALLOWED_ORG_TABLE, "O", "R._id", DB_RULE_ID),
+            new Join(
+                Join.JoinType.LEFT, ACCESS_RULE_ALLOWED_ROLE_TABLE, "RL", "R._id", DB_RULE_ID));
 
     Condition itemCondition =
         new Condition("R.item_id", Condition.Operator.EQUALS, List.of(itemId.toString()));
@@ -155,9 +175,9 @@ public class AccessRuleDaoImpl implements AccessRuleDao {
 
     SelectQuery selectQuery =
         new SelectQuery()
-            .setTable("access_rule")
+            .setTable(ACCESS_RULE_TABLE)
             .setTableAlias("R")
-            .setColumns(List.of("R._id", "R.constraints"))
+            .setColumns(List.of("R.expiry_at", "R.constraints"))
             .setJoins(joins)
             .setCondition(finalCondition)
             .setLimit(1);
@@ -174,11 +194,11 @@ public class AccessRuleDaoImpl implements AccessRuleDao {
 
               JsonObject rule =
                   new JsonObject()
-                      .put("ruleId", row.getString("_id"))
+                      .put(EXPIRY_AT, row.getString(DB_EXPIRY_AT))
                       .put(
-                          "constraints",
-                          row.getString("constraints") != null
-                              ? new JsonObject(row.getString("constraints"))
+                          DB_CONSTRAINTS,
+                          row.getString(DB_CONSTRAINTS) != null
+                              ? new JsonObject(row.getString(DB_CONSTRAINTS))
                               : new JsonObject());
 
               return rule;
@@ -191,14 +211,27 @@ public class AccessRuleDaoImpl implements AccessRuleDao {
   // ============================================================
   @Override
   public Future<Void> createRule(
-      UUID policyId, UUID itemId, UUID ownerId, JsonObject subjects, JsonObject constraints) {
+      UUID policyId,
+      UUID itemId,
+      UUID ownerId,
+      JsonObject subjects,
+      JsonObject constraints,
+      String expiryAt) {
 
     UUID ruleId = UUID.randomUUID();
 
     InsertQuery insertRule =
         new InsertQuery()
-            .setTable("access_rule")
-            .setColumns(List.of("_id", "policy_id", "item_id", "owner_id", "constraints", "status"))
+            .setTable(ACCESS_RULE_TABLE)
+            .setColumns(
+                List.of(
+                    DB_ID,
+                    DB_POLICY_ID,
+                    DB_ITEM_ID,
+                    DB_OWNER_ID,
+                    DB_CONSTRAINTS,
+                    DB_STATUS,
+                    DB_EXPIRY_AT))
             .setValues(
                 List.of(
                     ruleId.toString(),
@@ -206,7 +239,8 @@ public class AccessRuleDaoImpl implements AccessRuleDao {
                     itemId.toString(),
                     ownerId.toString(),
                     constraints != null ? constraints.encode() : "{}",
-                    "ACTIVE"));
+                    ACTIVE,
+                    expiryAt));
 
     return postgresService
         .insert(insertRule)
@@ -225,40 +259,40 @@ public class AccessRuleDaoImpl implements AccessRuleDao {
 
     List<Future<?>> futures = new ArrayList<>();
 
-    JsonArray orgs = subjects.getJsonArray("allowedOrgIds", new JsonArray());
+    JsonArray orgs = subjects.getJsonArray(ALLOWED_ORG_IDS, new JsonArray());
 
     for (int i = 0; i < orgs.size(); i++) {
 
       InsertQuery insertOrg =
           new InsertQuery()
-              .setTable("access_rule_allowed_org")
-              .setColumns(List.of("rule_id", "org_id"))
+              .setTable(ACCESS_RULE_ALLOWED_ORG_TABLE)
+              .setColumns(List.of(DB_RULE_ID, DB_ORG_ID))
               .setValues(List.of(ruleId.toString(), orgs.getString(i)));
 
       futures.add(postgresService.insert(insertOrg));
     }
 
-    JsonArray users = subjects.getJsonArray("allowedUserIds", new JsonArray());
+    JsonArray users = subjects.getJsonArray(ALLOWED_USER_IDS, new JsonArray());
 
     for (int i = 0; i < users.size(); i++) {
 
       InsertQuery insertUser =
           new InsertQuery()
-              .setTable("access_rule_allowed_user")
-              .setColumns(List.of("rule_id", "user_id"))
+              .setTable(ACSESS_RULE_ALLOWED_USER_TABLE)
+              .setColumns(List.of(DB_RULE_ID, DB_USER_ID))
               .setValues(List.of(ruleId.toString(), users.getString(i)));
 
       futures.add(postgresService.insert(insertUser));
     }
 
-    JsonArray rolesArray = subjects.getJsonArray("allowedRoles", new JsonArray());
+    JsonArray rolesArray = subjects.getJsonArray(ALLOWED_ROLES, new JsonArray());
 
     for (int i = 0; i < rolesArray.size(); i++) {
 
       InsertQuery insertRole =
           new InsertQuery()
-              .setTable("access_rule_allowed_role")
-              .setColumns(List.of("rule_id", "role"))
+              .setTable(ACCESS_RULE_ALLOWED_ROLE_TABLE)
+              .setColumns(List.of(DB_RULE_ID, DB_ROLE))
               .setValues(List.of(ruleId.toString(), rolesArray.getString(i)));
 
       futures.add(postgresService.insert(insertRole));
@@ -281,7 +315,7 @@ public class AccessRuleDaoImpl implements AccessRuleDao {
             .setOperator(Condition.Operator.EQUALS);
     UpdateQuery updateQuery =
         new UpdateQuery()
-            .setTable("access_rule")
+            .setTable(ACCESS_RULE_TABLE)
             .setColumns(List.of(DB_STATUS))
             .setValues(List.of(status))
             .setCondition(condition);

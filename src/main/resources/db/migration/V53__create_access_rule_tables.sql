@@ -148,6 +148,9 @@ ALTER TABLE access_rule
 ADD COLUMN policy_id uuid NOT NULL;
 
 ALTER TABLE access_rule
+ADD COLUMN expiry_at timestamp without time zone NOT NULL;
+
+ALTER TABLE access_rule
 ADD CONSTRAINT fk_access_rule_policy
 FOREIGN KEY (policy_id)
 REFERENCES policy(_id)

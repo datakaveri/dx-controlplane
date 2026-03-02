@@ -13,6 +13,7 @@ import static org.cdpg.dx.aaa.common.Constants.RESOURCE_GRP;
 import static org.cdpg.dx.aaa.common.Constants.RESOURCE_SVR;
 import static org.cdpg.dx.aaa.common.Constants.RESTRICTED;
 import static org.cdpg.dx.aaa.common.Constants.VALUE;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSTRAINTS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.EXPIRY_AT;
 import static org.cdpg.dx.database.elastic.util.Constants.ACCESS_POLICY;
 import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
@@ -49,6 +50,7 @@ import org.cdpg.dx.acl.policy.dao.model.VerifyPolicyDto;
 import org.cdpg.dx.acl.policy.service.PolicyService;
 import org.cdpg.dx.acl.policy.service.impl.PolicyServiceImpl;
 import org.cdpg.dx.acl.rule.dao.AccessRuleDao;
+import org.cdpg.dx.acl.rule.dao.impl.AccessRuleDaoImpl;
 import org.cdpg.dx.catalogueService.models.ItemType;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
@@ -57,17 +59,20 @@ import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.DxUnauthorizedException;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.database.elastic.central.service.CentralElasticsearchService;
+import org.cdpg.dx.database.elastic.model.BulkScriptUpdate;
 import org.cdpg.dx.database.elastic.model.BulkSyncResult;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.database.elastic.model.QueryDecoder;
 import org.cdpg.dx.database.elastic.model.QueryModel;
 import org.cdpg.dx.database.elastic.util.QueryType;
+import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class CentralItemServiceImpl implements ItemService {
   private static final Logger LOGGER = LogManager.getLogger(CentralItemServiceImpl.class);
   private final String docIndex;
   private final PolicyVerifyService policyVerifyService;
+  private final AccessRuleDao accessRuleDao;
   private final KeycloakUserService keycloakUserService;
   private final WebClient client;
   CentralElasticsearchService centralElasticsearchService;
@@ -76,11 +81,12 @@ public class CentralItemServiceImpl implements ItemService {
   public CentralItemServiceImpl(
       CentralElasticsearchService centralElasticsearchService,
       KeycloakUserService keycloakUserService,
+      PostgresService postgresService,
       PolicyDao policyDao,
-      AccessRuleDao accessRuleDao,
       WebClient webClient,
       String docIndex,
       String apdURL) {
+    this.accessRuleDao = new AccessRuleDaoImpl(postgresService);
     this.centralElasticsearchService = centralElasticsearchService;
     PolicyService policyService = new PolicyServiceImpl(this, policyDao, accessRuleDao, apdURL);
     this.policyVerifyService = new PolicyVerifyServiceImpl(policyService, webClient, apdURL);
@@ -340,17 +346,51 @@ public class CentralItemServiceImpl implements ItemService {
               // Final fallback — ensure requester failure becomes 403
               return verificationChain.recover(
                   err -> {
-                    LOGGER.error("Final policy verification failed: {}", err.getMessage());
-                    return Future.failedFuture(new DxForbiddenException(err.getLocalizedMessage()));
+                    LOGGER.info("Policy verification failed. Trying rule-based access...");
+
+                    return accessRuleDao
+                        .ruleMatches(
+                            UUID.fromString(request.getItemId()),
+                            requester.sub().toString(),
+                            requester.organisationId(),
+                            requester.roles())
+                        .compose(
+                            ruleMatch -> {
+                              if (Boolean.TRUE.equals(ruleMatch)) {
+
+                                LOGGER.info(
+                                    "Rule-based access granted for user {}", requester.sub());
+
+                                // fetch constraints from rule
+                                return accessRuleDao
+                                    .findMatchingRule(
+                                        UUID.fromString(request.getItemId()),
+                                        requester.sub().toString(),
+                                        requester.organisationId(),
+                                        requester.roles())
+                                    .compose(
+                                        constraints -> {
+                                          JsonObject item = response.getSource();
+                                          // append constraints and expiryAt
+                                          item.mergeIn(constraints);
+                                          response.setSource(item);
+
+                                          return succeededResponse(response, totalHits);
+                                        });
+                              }
+
+                              LOGGER.error("Rule-based access denied.");
+                              return Future.failedFuture(
+                                  new DxForbiddenException("Access denied for restricted item"));
+                            });
                   });
             });
   }
 
   private Future<ResponseModel> completePolicySuccess(
       VerifyPolicyDto dto, ElasticsearchResponse response, int totalHits) {
-
     JsonObject item = response.getSource();
-    item.put("cons", dto.getConstraints());
+    item.put(CONSTRAINTS, dto.getConstraints());
     item.put(EXPIRY_AT, dto.getExpiryAt());
     response.setSource(item);
 
@@ -486,9 +526,9 @@ public class CentralItemServiceImpl implements ItemService {
                 promise.fail(
                     new DxConflictException("Item has associated entities and cannot be deleted"));
               } else if (ElasticsearchResponse.getTotalHits() < 1) {
-                LOGGER.debug("Item with ID {} not found for deletion in central cat", id);
+                LOGGER.debug("Item with ID {} not found for deletion", id);
                 promise.fail(
-                    new DxNotFoundException("Item not found for deletion in central catalogue"));
+                    new DxNotFoundException("Item not found for deletion in local catalogue"));
               } else {
                 LOGGER.debug("Deleting item with ID: {}", id);
                 String docId = result.getDocId();
@@ -599,9 +639,8 @@ public class CentralItemServiceImpl implements ItemService {
         .map(res -> ElasticsearchResponse.getTotalHits() > 0)
         .recover(
             err -> {
-              LOGGER.error(
-                  "Central existence check failed for ID {}: {}", itemId, err.getMessage());
-              return Future.failedFuture("Failed to check central catalogue existence");
+              LOGGER.error("Local existence check failed for ID {}: {}", itemId, err.getMessage());
+              return Future.failedFuture("Failed to check local catalogue existence");
             });
   }
 
@@ -692,10 +731,12 @@ public class CentralItemServiceImpl implements ItemService {
                       .map(
                           response -> {
                             if (response == null) {
+                              LOGGER.info("response is null");
                               return new AssetRequestResponse(assetRequest, null, null, null);
                             }
 
-                            JsonObject item = response.getResponse();
+                            JsonObject item =
+                                response.getResponse().getJsonArray("results").getJsonObject(0);
 
                             String itemName = item.getString("name");
                             String accessPolicy = item.getString("accessPolicy");
@@ -705,6 +746,8 @@ public class CentralItemServiceImpl implements ItemService {
                                 (typeArray != null && !typeArray.isEmpty())
                                     ? typeArray.getString(0)
                                     : null;
+
+                            LOGGER.info("Building asset response");
 
                             return new AssetRequestResponse(
                                 assetRequest, itemName, accessPolicy, type);
@@ -766,11 +809,41 @@ public class CentralItemServiceImpl implements ItemService {
     updateByQueryModel.setQueries(boolQuery);
 
     centralElasticsearchService
-        .updateDocumentsByQuery(updateByQueryModel, docIndex)
+        .updateDocumentsByQuery(updateByQueryModel.getQueries(), docIndex)
         .onSuccess(v -> promise.complete())
         .onFailure(promise::fail);
 
     return promise.future();
+  }
+
+  @Override
+  public Future<BulkSyncResult> bulkSyncMetrics(List<InteractionAggregate> aggregates) {
+
+    List<BulkScriptUpdate> updates = new ArrayList<>();
+
+    for (InteractionAggregate agg : aggregates) {
+
+      LOGGER.info(
+          "Syncing metrics for entityId={}, likes={}, dislikes={}",
+          agg.entityId(),
+          agg.likes(),
+          agg.dislikes());
+
+      updates.add(
+          new BulkScriptUpdate(
+              agg.entityId().toString(),
+              """
+              ctx._source.metrics = [
+                'likes': params.likes,
+                'dislikes': params.dislikes,
+                'views': ctx._source.metrics?.views ?: 0,
+                'downloads': ctx._source.metrics?.downloads ?: 0
+              ];
+              """,
+              new JsonObject().put("likes", agg.likes()).put("dislikes", agg.dislikes())));
+    }
+
+    return centralElasticsearchService.bulkUpdateById(docIndex, updates);
   }
 
   @Override
@@ -816,46 +889,6 @@ public class CentralItemServiceImpl implements ItemService {
 
     centralElasticsearchService
         .updateDocumentsByQuery(updateByQueryModel.getQueries(), docIndex)
-        .onSuccess(v -> promise.complete())
-        .onFailure(promise::fail);
-
-    return promise.future();
-  }
-
-  @Override
-  public Future<BulkSyncResult> bulkSyncMetrics(List<InteractionAggregate> aggregates) {
-
-    Promise<BulkSyncResult> promise = Promise.promise();
-    QueryModel updateByQueryModel = new QueryModel();
-
-    for (InteractionAggregate agg : aggregates) {
-
-      QueryModel idQuery = new QueryModel(QueryType.TERM);
-      idQuery.setQueryParameters(Map.of(FIELD, ID_KEYWORD, VALUE, agg.entityId().toString()));
-
-      QueryModel boolQuery = new QueryModel(QueryType.BOOL);
-      boolQuery.setMustQueries(List.of(idQuery));
-
-      boolQuery.setScriptLanguage("painless");
-      boolQuery.setScriptSource(
-          """
-      ctx._source.metrics = [
-        'likes': params.likes,
-        'dislikes': params.dislikes,
-        'views': ctx._source.metrics?.views ?: 0,
-        'downloads': ctx._source.metrics?.downloads ?: 0
-      ];
-    """);
-
-      boolQuery.setScriptParams(
-          Map.of(
-              "likes", agg.likes(),
-              "dislikes", agg.dislikes()));
-      updateByQueryModel.setQueries(boolQuery);
-    }
-
-    centralElasticsearchService
-        .updateDocumentsByQuery(updateByQueryModel, docIndex)
         .onSuccess(v -> promise.complete())
         .onFailure(promise::fail);
 

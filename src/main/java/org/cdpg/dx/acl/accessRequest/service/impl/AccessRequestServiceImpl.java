@@ -303,7 +303,8 @@ public class AccessRequestServiceImpl implements AccessRequestService {
                                 policyId,
                                 itemId,
                                 UUID.fromString(req.getProviderId()),
-                                requestedConstraints)
+                                requestedConstraints,
+                            String.valueOf(expiryAt))
                             .recover(
                                 err -> {
                                   LOGGER.error("Access rule creation failed", err);
@@ -320,7 +321,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
   }
 
   private Future<Void> createAccessRule(
-      UUID policyId, UUID itemId, UUID providerId, JsonObject constraints) {
+      UUID policyId, UUID itemId, UUID providerId, JsonObject constraints, String expiryAt) {
 
     if (constraints == null) {
       return Future.succeededFuture();
@@ -332,7 +333,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
       return Future.succeededFuture();
     }
 
-    return accessRuleDao.createRule(policyId, itemId, providerId, subjects, constraints);
+    return accessRuleDao.createRule(policyId, itemId, providerId, subjects, constraints, expiryAt);
   }
 
   private Set<String> getAllowedAccessTypes(JsonArray resourceServers) {

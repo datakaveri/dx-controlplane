@@ -147,9 +147,7 @@ public class PolicyServiceImpl implements PolicyService {
               LOGGER.debug("Policy created successfully with info: {}", response);
             })
         .onFailure(
-            err -> {
-              LOGGER.error("Failed to create policy: {}", err.getMessage());
-            })
+            err -> LOGGER.error("Failed to create policy: {}", err.getMessage()))
         .compose(
             insertResults -> {
               List<Future> ruleFutures = new ArrayList<>();
@@ -163,6 +161,7 @@ public class PolicyServiceImpl implements PolicyService {
                 CreatePolicyRequest req = requests.get(i);
 
                 JsonObject constraints = req.getConstraints();
+                String expiryAt = String.valueOf(req.getExpiryTime());
 
                 if (constraints != null && constraints.containsKey("subjects")) {
 
@@ -170,7 +169,7 @@ public class PolicyServiceImpl implements PolicyService {
 
                   ruleFutures.add(
                       accessRuleDao.createRule(
-                          policyId, req.getItemId(), userId, subjects, constraints));
+                          policyId, req.getItemId(), userId, subjects, constraints, expiryAt));
                 }
               }
 
@@ -439,11 +438,10 @@ public class PolicyServiceImpl implements PolicyService {
   }
 
   @Override
-  public Future<Void> deletePolicy(JsonObject policy, DxUser user) {
-    UUID policyId = UUID.fromString(policy.getString(ID));
+  public Future<Void> deActivatePolicy(String policyId, DxUser user) {
 
     return policyDao
-        .verifyPolicy(policyId)
+        .verifyPolicy(UUID.fromString(policyId))
         .compose(
             result -> {
               if (result.getRows().isEmpty()) {
@@ -481,7 +479,7 @@ public class PolicyServiceImpl implements PolicyService {
               // Passed all checks → proceed to delete
               Promise<Void> promise = Promise.promise();
               policyDao
-                  .deletePolicy(policyId)
+                  .deActivatePolicy(UUID.fromString(policyId))
                   .onFailure(
                       err -> {
                         LOGGER.debug("query failed: {}", err.getLocalizedMessage());
@@ -502,7 +500,7 @@ public class PolicyServiceImpl implements PolicyService {
                           promise.complete();
                         }
                       });
-              return deactivatePolicyLifecycle(policyId);
+              return deactivatePolicyLifecycle(UUID.fromString(policyId));
             });
   }
 
@@ -576,7 +574,7 @@ public class PolicyServiceImpl implements PolicyService {
                 .put(POLICY_ID, row.getString(DB_ID))
                 .put(USER_EMAIL_ID, row.getString(DB_USER_EMAIL_ID))
                 .put(ITEM_ID, row.getString(DB_ITEM_ID))
-                .put(EXPIRY_AT, row.getString(DB_EXPIRY_AT));
+                .put(DB_EXPIRY_AT, row.getString(DB_EXPIRY_AT));
 
         if (ownerJsonObject[0] == null) {
           ownerJsonObject[0] = new JsonObject().put(OWNER_ID, row.getValue(DB_OWNER_ID).toString());

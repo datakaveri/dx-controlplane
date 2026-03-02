@@ -28,5 +28,4 @@ public class Constants {
   public static final String SCOPE = "scope";
   public static final String ENTITY_TYPE = "entity_type";
   public static final String ENTITY_ID = "entity_id";
-
 }

@@ -22,7 +22,8 @@ public interface AccessRuleDao {
       UUID itemId,
       UUID ownerId,
       JsonObject subjects,
-      JsonObject constraints
+      JsonObject constraints,
+      String expiryAt
   );
 
   Future<QueryResult> updateStatusByPolicyId(UUID policyId, String status);
