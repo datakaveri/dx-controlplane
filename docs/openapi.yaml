@@ -9938,6 +9938,160 @@ paths:
           source: |
             curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/user/feedback?id=811e9876-9381-4a25-8ad1-e8b289616ab8' --header 'Authorization: Bearer ${TOKEN}'
 
+  /iudx/v2/provider/feedback:
+    post:
+      tags:
+        - User Interactions
+      summary: Post provider feedback on entity
+      description: |
+        Submit provider feedback for a specific data asset, including an optional star rating (1-5) and/or a structured action subtype with associated data. User should be the one who has already interacted with the asset before.
+      operationId: post-provider-feedback
+      security:
+        - authorization: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - asset_id
+              properties:
+                asset_id:
+                  type: string
+                  format: uuid
+                  description: UUID of the asset
+                type:
+                  type: string
+                data:
+                  type: object
+      responses:
+        '200':
+          description: Feedback successfully recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+    get:
+      tags:
+        - User Interactions
+      summary: Get provider feedback
+      description: |
+        Retrieve paginated provider feedback with optional filters by user, asset, or type.
+      operationId: get-provider-feedback
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: user_id
+          in: query
+          description: Filter by user UUID
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: asset_id
+          in: query
+          description: Filter by asset UUID
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: type
+          in: query
+          description: Filter by action subtype (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Successfully retrieved Provider feedback
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderFeedbackPaginatedResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Get user feedback
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/provider/feedback?asset_id=811e9876-9381-4a25-8ad1-e8b289616ab8&type=bookmark&page=1&size=10'
+    delete:
+      tags:
+        - User Interactions
+      summary: Delete provider feedback
+      description: |
+        Clears the feedback fields (data, type) for a specific feedback entry. User should be the one who has already interacted with the asset before.
+      operationId: delete-provider-feedback
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: id
+          in: query
+          description: UUID of the asset entry to delete
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Feedback fields cleared successfully
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Delete provider feedback
+          source: |
+            curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/provider/feedback?id=811e9876-9381-4a25-8ad1-e8b289616ab8' --header 'Authorization: Bearer ${TOKEN}'
 tags:
   - name: Activity Logs
     x-displayName: "Activity Logs"
@@ -10343,6 +10497,46 @@ components:
               action_subtype:
                 type: string
               action_subdata:
+                type: object
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+              example: 1
+            size:
+              type: integer
+              example: 10
+            total:
+              type: integer
+              example: 100
+            totalPages:
+              type: integer
+              example: 10
+
+    ProviderFeedbackPaginatedResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              user_id:
+                type: string
+                format: uuid
+              asset_id:
+                type: string
+                format: uuid
+              type:
+                type: string
+              data:
                 type: object
         pagination:
           type: object

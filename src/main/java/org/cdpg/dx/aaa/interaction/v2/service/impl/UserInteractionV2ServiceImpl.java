@@ -199,6 +199,14 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
     return userFeedbackDao.updateFeedback(request);
   }
 
+
+  @Override
+  public Future<ProviderFeedback> postProviderFeedback(ProviderFeedback request)
+  {
+    LOGGER.info("Inside service imple method - post provider feedbaack");
+    return userFeedbackDao.postProviderFeedback(request);
+  }
+
   @Override
   public Future<Boolean> deleteUserFeedback(UUID reqId, UUID userId)
   {
@@ -213,5 +221,20 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
     LOGGER.debug("UserInteractionsPaginatedResponse() method started");
     return userFeedbackDao.fetchUserFeedbacks(request);
   }
+
+  @Override
+  public  Future<ProviderFeedbackPaginatedResponse> getProviderFeedback(PaginatedRequest request)
+  {
+    LOGGER.debug("UserInteractionsPaginatedResponse() method started");
+    return userFeedbackDao.fetchProviderFeedbacks(request);
+  }
+
+  @Override
+  public Future<Boolean> deleteProviderFeedback(UUID reqId, UUID userId)
+  {
+    LOGGER.info("Inside service imple method - delete user feedbaack");
+    return userFeedbackDao.deleteProviderFeedback(reqId,userId);
+  }
+
 
 }

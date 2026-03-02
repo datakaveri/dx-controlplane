@@ -23,4 +23,12 @@ public interface UserInteractionV2Service {
 
   Future<Boolean> deleteUserFeedback(UUID reqId, UUID userId);
 
+  Future<ProviderFeedback> postProviderFeedback(ProviderFeedback providerFeedback);
+
+  Future<ProviderFeedbackPaginatedResponse> getProviderFeedback(PaginatedRequest request);
+
+  Future<Boolean> deleteProviderFeedback(UUID reqId, UUID userId);
+
+
+
 }

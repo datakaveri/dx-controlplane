@@ -16,6 +16,7 @@ import org.cdpg.dx.aaa.apiserver.ApiController;
 import org.cdpg.dx.aaa.interaction.v2.enums.InteractionAction;
 import org.cdpg.dx.aaa.interaction.v2.enums.InteractionAuditAction;
 import org.cdpg.dx.aaa.interaction.v2.model.InteractionDelta;
+import org.cdpg.dx.aaa.interaction.v2.model.ProviderFeedback;
 import org.cdpg.dx.aaa.interaction.v2.model.UserFeedback;
 import org.cdpg.dx.aaa.interaction.v2.model.UserInteractionV2Request;
 import org.cdpg.dx.aaa.interaction.v2.service.UserInteractionV2Service;
@@ -36,6 +37,9 @@ public class UserInteractionV2Controller implements ApiController {
       Map.of("assetId", "asset_id", "assetType", "asset_type", "actionType", "action_type");
   private static final Map<String, String> FEEDBACK_FILTER_MAP =
     Map.of("assetId", "asset_id", "actionSubType", "asset_subtype", "userId", "user_id");
+  private static final Map<String, String> PROVIDER_FEEDBACK_FILTER_MAP =
+    Map.of("assetId", "asset_id", "type", "type", "userId", "user_id");
+
   private final AuditingHandler auditingHandler;
   private final UserInteractionV2Service service;
   private final URNGenerator urnGenerator;
@@ -43,6 +47,8 @@ public class UserInteractionV2Controller implements ApiController {
       AuthorizationHandler.forRoles(DxRole.COS_ADMIN);
 
   Handler<RoutingContext> interactionAccessHandler = AuthorizationHandler.forRoles(DxRole.CONSUMER);
+  Handler<RoutingContext> feedbackAccessHandler = AuthorizationHandler.forRoles(DxRole.PROVIDER);
+
 
   public UserInteractionV2Controller(
       AuditingHandler auditingHandler,
@@ -85,6 +91,20 @@ public class UserInteractionV2Controller implements ApiController {
        .handler(interactionAccessHandler)
        .handler(this::handleDeleteUserFeedbackRequest);
 
+    builder
+      .operation(OP_POST_PROVIDER_FEEDBACK)
+      .handler(feedbackAccessHandler)
+      .handler(this::handlePostUpdateProviderFeedbackRequest);
+
+    builder
+      .operation(OP_GET_PROVIDER_FEEDBACK)
+      .handler(feedbackAccessHandler)
+      .handler(this::handleGetProviderFeedbackRequest);
+
+    builder
+      .operation(OP_DELETE_PROVIDER_FEEDBACK)
+      .handler(feedbackAccessHandler)
+      .handler(this::handleDeleteProviderFeedbackRequest);
 
   }
 
@@ -268,9 +288,9 @@ public class UserInteractionV2Controller implements ApiController {
   }
 
   private void handleDeleteUserFeedbackRequest(RoutingContext ctx) {
-    LOGGER.info("DELETE /user/feedback/{id} called");
+    LOGGER.info("DELETE /user/feedback?id= called");
     try {
-      String idParam = ctx.request().getParam("id");
+      String idParam = ctx.queryParam("id").toString();
 
       if (idParam == null) {
         ctx.fail(new IllegalArgumentException("Missing required query parameter: id"));
@@ -289,6 +309,104 @@ public class UserInteractionV2Controller implements ApiController {
 
       service
         .deleteUserFeedback(reqId,userId)
+        .onSuccess(
+          v ->
+            ResponseBuilder.sendSuccess(
+              ctx, "Interaction updated successfully", urnGenerator))
+        .onFailure(
+          err -> {
+            LOGGER.error("Delete /user/feedback failed", err);
+            ctx.fail(err);
+          });
+
+    } catch (Exception e) {
+      LOGGER.error("Invalid POST /user/feedback request", e);
+      ctx.fail(e);
+    }
+  }
+
+  private void handlePostUpdateProviderFeedbackRequest(RoutingContext ctx) {
+    LOGGER.info("POST /user/feedback called");
+    try {
+      JsonObject req = ctx.body().asJsonObject();
+      UUID userId = UUID.fromString(ctx.user().subject());
+      req.put("user_id",userId.toString());
+
+      ProviderFeedback providerFeedback = ProviderFeedback.fromJson(req);
+
+      service
+        .postProviderFeedback(providerFeedback)
+        .onSuccess(
+          v ->
+            ResponseBuilder.sendSuccess(
+              ctx, "Interaction updated successfully", urnGenerator))
+        .onFailure(
+          err -> {
+            LOGGER.error("POST /provider/feedback failed", err);
+            ctx.fail(err);
+          });
+
+    } catch (Exception e) {
+      LOGGER.error("Invalid POST /user/feedback request", e);
+      ctx.fail(e);
+    }
+  }
+//
+  private void handleGetProviderFeedbackRequest(RoutingContext ctx) {
+    LOGGER.info("GET /user/feedback called");
+
+    try {
+      PaginatedRequest paginatedRequest =
+        PaginationRequestBuilder.from(ctx)
+          .allowedFiltersDbMap(PROVIDER_FEEDBACK_FILTER_MAP)
+          .apiToDbMap(PROVIDER_FEEDBACK_FILTER_MAP)
+//          .additionalFilters(Map.of("user_id", ctx.user().subject()))
+          .allowedTimeFields(Set.of(CREATED_AT))
+          .build();
+      LOGGER.debug("paginated request has been build ");
+      service
+        .getProviderFeedback(paginatedRequest)
+        .onSuccess(
+          result -> {
+            LOGGER.info("Fetched provider feedbacks successfully");
+            ResponseBuilder.sendSuccess(
+              ctx, result.data(), result.paginationInfo(), urnGenerator);
+          })
+        .onFailure(
+          err -> {
+            LOGGER.error("Failed to fetch user feedbacks {}", err.getMessage(), err);
+            ctx.fail(err);
+          });
+
+    } catch (Exception e) {
+      LOGGER.error("Invalid GET /user/feedback request:  {} ", e.getMessage(), e);
+      ctx.fail(e);
+    }
+
+  }
+
+  private void handleDeleteProviderFeedbackRequest(RoutingContext ctx) {
+    LOGGER.info("DELETE /user/feedback/{id} called");
+    try {
+      String idParam = ctx.queryParam("id").toString();
+
+      if (idParam == null) {
+        ctx.fail(new IllegalArgumentException("Missing required query parameter: id"));
+        return;
+      }
+
+      UUID reqId;
+      try {
+        reqId = UUID.fromString(idParam);
+      } catch (IllegalArgumentException e) {
+        ctx.fail(new IllegalArgumentException("Invalid UUID format for parameter: id"));
+        return;
+      }
+
+      UUID userId = UUID.fromString(ctx.user().subject());
+
+      service
+        .deleteProviderFeedback(reqId,userId)
         .onSuccess(
           v ->
             ResponseBuilder.sendSuccess(
