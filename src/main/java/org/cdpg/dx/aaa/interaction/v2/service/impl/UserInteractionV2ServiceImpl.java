@@ -11,6 +11,7 @@ import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import org.cdpg.dx.aaa.interaction.v2.dao.ProviderFeedbackDao;
 import org.cdpg.dx.aaa.interaction.v2.dao.UserFeedbackDao;
 import org.cdpg.dx.aaa.interaction.v2.dao.UserInteractionV2Dao;
 import org.cdpg.dx.aaa.interaction.v2.model.*;
@@ -31,12 +32,14 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
 
   private final UserInteractionV2Dao dao;
   private final UserFeedbackDao userFeedbackDao;
+  private final ProviderFeedbackDao providerFeedbackDao;
   private final ItemService itemService;
 
-  public UserInteractionV2ServiceImpl(UserInteractionV2Dao dao, UserFeedbackDao userFeedbackDao,ItemService itemService) {
+  public UserInteractionV2ServiceImpl(UserInteractionV2Dao dao, UserFeedbackDao userFeedbackDao, ProviderFeedbackDao providerFeedbackDao,ItemService itemService) {
 
     this.dao = dao;
     this.userFeedbackDao = userFeedbackDao;
+    this.providerFeedbackDao = providerFeedbackDao;
     this.itemService = itemService;
   }
 
@@ -204,7 +207,7 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
   public Future<ProviderFeedback> postProviderFeedback(ProviderFeedback request)
   {
     LOGGER.info("Inside service imple method - post provider feedbaack");
-    return userFeedbackDao.postProviderFeedback(request);
+    return providerFeedbackDao.postProviderFeedback(request);
   }
 
   @Override
@@ -226,14 +229,14 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
   public  Future<ProviderFeedbackPaginatedResponse> getProviderFeedback(PaginatedRequest request)
   {
     LOGGER.debug("UserInteractionsPaginatedResponse() method started");
-    return userFeedbackDao.fetchProviderFeedbacks(request);
+    return providerFeedbackDao.fetchProviderFeedbacks(request);
   }
 
   @Override
   public Future<Boolean> deleteProviderFeedback(UUID reqId, UUID userId)
   {
     LOGGER.info("Inside service imple method - delete user feedbaack");
-    return userFeedbackDao.deleteProviderFeedback(reqId,userId);
+    return providerFeedbackDao.deleteProviderFeedback(reqId,userId);
   }
 
 

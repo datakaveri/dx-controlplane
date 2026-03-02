@@ -9,14 +9,13 @@ import org.cdpg.dx.common.request.PaginatedRequest;
 
 import java.util.UUID;
 
-public interface UserFeedbackDao {
+public interface ProviderFeedbackDao {
 
-  Future<UserFeedback> updateFeedback(UserFeedback userFeedback);
+  Future<Boolean> deleteProviderFeedback(UUID reqId,UUID userId);
 
-  Future<Boolean> deleteFeedback(UUID reqId,UUID userId);
+  Future<ProviderFeedback> postProviderFeedback(ProviderFeedback providerFeedback);
 
-  Future<UserFeedbackPaginatedResponse> fetchUserFeedbacks(PaginatedRequest request);
-
+  Future<ProviderFeedbackPaginatedResponse> fetchProviderFeedbacks(PaginatedRequest request);
 
 
 }

@@ -544,7 +544,7 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
       LOGGER.info("Saving scopes for user {} : {}", userId, scopesArray.encode());
 
       // Save back to attributes
-      attrs.put(KeycloakConstants.SCOPES, List.of(scopesArray.encode()));
+      attrs.put(KeycloakConstants.USER_SCOPE, List.of(scopesArray.encode()));
       user.setAttributes(attrs);
 
       LOGGER.info("Keycloak client: {}", keycloak.tokenManager().getAccessTokenString());

@@ -136,4 +136,7 @@ public final class OperationIds {
   public static final String OP_POST_USER_FEEDBACK = "post-user-feedback";
   public static final String OP_GET_USER_FEEDBACK = "get-user-feedback";
   public static final String OP_DELETE_USER_FEEDBACK = "delete-user-feedback";
+  public static final String OP_POST_PROVIDER_FEEDBACK = "post-provider-feedback";
+  public static final String OP_GET_PROVIDER_FEEDBACK = "get-provider-feedback";
+  public static final String OP_DELETE_PROVIDER_FEEDBACK = "delete-provider-feedback";
 }

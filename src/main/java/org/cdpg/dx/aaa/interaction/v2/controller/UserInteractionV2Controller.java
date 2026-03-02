@@ -47,7 +47,7 @@ public class UserInteractionV2Controller implements ApiController {
       AuthorizationHandler.forRoles(DxRole.COS_ADMIN);
 
   Handler<RoutingContext> interactionAccessHandler = AuthorizationHandler.forRoles(DxRole.CONSUMER);
-  Handler<RoutingContext> feedbackAccessHandler = AuthorizationHandler.forRoles(DxRole.PROVIDER);
+  Handler<RoutingContext> feedbackAccessHandler = AuthorizationHandler.forRoles(DxRole.CONSUMER);
 
 
   public UserInteractionV2Controller(
@@ -326,7 +326,7 @@ public class UserInteractionV2Controller implements ApiController {
   }
 
   private void handlePostUpdateProviderFeedbackRequest(RoutingContext ctx) {
-    LOGGER.info("POST /user/feedback called");
+    LOGGER.info("POST /provider/feedback called");
     try {
       JsonObject req = ctx.body().asJsonObject();
       UUID userId = UUID.fromString(ctx.user().subject());
@@ -353,7 +353,7 @@ public class UserInteractionV2Controller implements ApiController {
   }
 //
   private void handleGetProviderFeedbackRequest(RoutingContext ctx) {
-    LOGGER.info("GET /user/feedback called");
+    LOGGER.info("GET /provider/feedback called");
 
     try {
       PaginatedRequest paginatedRequest =
@@ -374,21 +374,21 @@ public class UserInteractionV2Controller implements ApiController {
           })
         .onFailure(
           err -> {
-            LOGGER.error("Failed to fetch user feedbacks {}", err.getMessage(), err);
+            LOGGER.error("Failed to fetch provider feedbacks {}", err.getMessage(), err);
             ctx.fail(err);
           });
 
     } catch (Exception e) {
-      LOGGER.error("Invalid GET /user/feedback request:  {} ", e.getMessage(), e);
+      LOGGER.error("Invalid GET /provider/feedback request:  {} ", e.getMessage(), e);
       ctx.fail(e);
     }
 
   }
 
   private void handleDeleteProviderFeedbackRequest(RoutingContext ctx) {
-    LOGGER.info("DELETE /user/feedback/{id} called");
+    LOGGER.info("DELETE /user/feedback called");
     try {
-      String idParam = ctx.queryParam("id").toString();
+      String idParam = ctx.queryParam("id").getFirst();
 
       if (idParam == null) {
         ctx.fail(new IllegalArgumentException("Missing required query parameter: id"));
@@ -410,7 +410,7 @@ public class UserInteractionV2Controller implements ApiController {
         .onSuccess(
           v ->
             ResponseBuilder.sendSuccess(
-              ctx, "Interaction updated successfully", urnGenerator))
+              ctx, "Interaction deleted successfully", urnGenerator))
         .onFailure(
           err -> {
             LOGGER.error("Delete /user/feedback failed", err);
@@ -418,7 +418,7 @@ public class UserInteractionV2Controller implements ApiController {
           });
 
     } catch (Exception e) {
-      LOGGER.error("Invalid POST /user/feedback request", e);
+      LOGGER.error("Invalid Delete /user/feedback request", e);
       ctx.fail(e);
     }
   }
