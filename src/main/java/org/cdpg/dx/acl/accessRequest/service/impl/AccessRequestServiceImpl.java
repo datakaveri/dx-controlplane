@@ -1,5 +1,7 @@
 package org.cdpg.dx.acl.accessRequest.service.impl;
 
+import static org.cdpg.dx.aaa.common.Constants.IN_ACTIVE;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
 import static org.cdpg.dx.catalogueService.config.Constants.ASSET_NAME_KEY;
@@ -31,11 +33,15 @@ import org.cdpg.dx.acl.accessRequest.dao.model.Status;
 import org.cdpg.dx.acl.accessRequest.service.AccessRequestService;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.service.model.CreatePolicyRequest;
+import org.cdpg.dx.acl.rule.dao.AccessRuleDao;
 import org.cdpg.dx.catalogueService.models.Asset;
 import org.cdpg.dx.catalogueService.models.ItemType;
 import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.common.exception.DxCreateAccessRequestForbiddenException;
+import org.cdpg.dx.common.exception.DxForbiddenAccessRejectedException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
+import org.cdpg.dx.common.exception.DxForbiddenNoAccessException;
+import org.cdpg.dx.common.exception.DxForbiddenPendingAccessException;
 import org.cdpg.dx.common.exception.DxInternalServerErrorException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.DxValidationException;
@@ -43,6 +49,7 @@ import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.model.RequestType;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
+import org.cdpg.dx.database.postgres.models.QueryResult;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class AccessRequestServiceImpl implements AccessRequestService {
@@ -52,17 +59,20 @@ public class AccessRequestServiceImpl implements AccessRequestService {
   private final AccessRequestDao accessRequestDao;
   private final ItemService itemService;
   private final PolicyDao policyDao;
+  private final AccessRuleDao accessRuleDao;
   private final KeycloakUserService keycloakUserService;
 
   public AccessRequestServiceImpl(
       KeycloakUserService keycloakUserService,
       ItemService itemService,
       AccessRequestDao accessRequestDao,
-      PolicyDao policyDao) {
+      PolicyDao policyDao,
+      AccessRuleDao accessRuleDao) {
     this.keycloakUserService = keycloakUserService;
     this.itemService = itemService;
     this.accessRequestDao = Objects.requireNonNull(accessRequestDao);
     this.policyDao = policyDao;
+    this.accessRuleDao = accessRuleDao;
   }
 
   @Override
@@ -266,7 +276,8 @@ public class AccessRequestServiceImpl implements AccessRequestService {
                             feedbackToConsumer);
                       })
                   .map(
-                      v -> {
+                      policyId -> {
+                        ctx.put("policyId", policyId);
                         ctx.put("constraints", requestedConstraints);
                         ctx.put("request", request);
                         return ctx;
@@ -279,16 +290,50 @@ public class AccessRequestServiceImpl implements AccessRequestService {
         .compose(
             ctx -> {
               AccessRequestDto req = (AccessRequestDto) ctx.get("request");
+              JsonObject requestedConstraints = (JsonObject) ctx.get("constraints");
+              UUID itemId = UUID.fromString(req.getItemId());
 
               return accessRequestDao
                   .approveAccessRequest(requestId, "GRANTED", expiryAt)
-                  .map(
+                  .compose(
                       updated -> {
-                        req.setStatus(Status.GRANTED);
-                        req.setExpiryAt(expiryAt);
-                        return req;
+                        // create access rule if subjects present
+                        UUID policyId = (UUID) ctx.get("policyId");
+                        return createAccessRule(
+                                policyId,
+                                itemId,
+                                UUID.fromString(req.getProviderId()),
+                                requestedConstraints,
+                            String.valueOf(expiryAt))
+                            .recover(
+                                err -> {
+                                  LOGGER.error("Access rule creation failed", err);
+                                  return Future.succeededFuture();
+                                })
+                            .map(
+                                v -> {
+                                  req.setStatus(Status.GRANTED);
+                                  req.setExpiryAt(expiryAt);
+                                  return req;
+                                });
                       });
             });
+  }
+
+  private Future<Void> createAccessRule(
+      UUID policyId, UUID itemId, UUID providerId, JsonObject constraints, String expiryAt) {
+
+    if (constraints == null) {
+      return Future.succeededFuture();
+    }
+
+    JsonObject subjects = constraints.getJsonObject("subjects");
+
+    if (subjects == null || subjects.isEmpty()) {
+      return Future.succeededFuture();
+    }
+
+    return accessRuleDao.createRule(policyId, itemId, providerId, subjects, constraints, expiryAt);
   }
 
   private Set<String> getAllowedAccessTypes(JsonArray resourceServers) {
@@ -315,7 +360,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
     JsonArray requested = constraints.getJsonArray("access", new JsonArray());
 
     for (int i = 0; i < requested.size(); i++) {
-      String type = requested.getString(i);
+      String type = requested.getJsonObject(0).getString("accessType");
       if (!allowedAccessTypes.contains(type)) {
         throw new DxValidationException(
             "Requested access type '" + type + "' is not allowed for this resource");
@@ -323,7 +368,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
     }
   }
 
-  private Future<Object> createPolicyForApproval(
+  private Future<UUID> createPolicyForApproval(
       String consumerEmail,
       String consumerId,
       String itemId,
@@ -358,7 +403,19 @@ public class AccessRequestServiceImpl implements AccessRequestService {
 
     return policyDao
         .insertPolicies(list, UUID.fromString(providerUserId))
-        .mapEmpty()
+        .map(
+            results -> {
+              if (results.isEmpty()) {
+                throw new RuntimeException("Policy insert returned empty result");
+              }
+
+              QueryResult firstResult = results.getFirst();
+
+              // assuming QueryResult exposes rows as JsonObject
+              JsonObject row = firstResult.getRows().getJsonObject(0);
+
+              return UUID.fromString(row.getString("_id"));
+            })
         .onSuccess(v -> LOGGER.info("Policy created for consumer {}", consumerId))
         .onFailure(err -> LOGGER.error("Policy create failed: {}", err.getMessage(), err));
   }
@@ -400,7 +457,20 @@ public class AccessRequestServiceImpl implements AccessRequestService {
 
               // Delete policy if exists
               return policyDao
-                  .deletePolicyByUserAndItem(itemId, ownerId, consumerEmail)
+                  .deActivatePolicyByUserAndItem(itemId, ownerId, consumerEmail)
+                  .compose(queryResult -> {
+
+                    if (queryResult.getRows() == null || queryResult.getRows().isEmpty()) {
+                      // No policy existed — continue safely
+                      return Future.succeededFuture();
+                    }
+
+                    JsonObject row = queryResult.getRows().getJsonObject(0);
+                    UUID policyId = UUID.fromString(row.getString(DB_ID));
+
+                    // deactivate associated access rules
+                    return accessRuleDao.updateStatusByPolicyId(policyId, IN_ACTIVE);
+                  })
                   .recover(
                       err -> {
                         LOGGER.warn("Policy delete skipped or failed: {}", err.getMessage());
@@ -431,8 +501,50 @@ public class AccessRequestServiceImpl implements AccessRequestService {
 
   @Override
   public Future<Boolean> checkAccessRequest(UUID consumerId, String itemId) {
+
     return accessRequestDao
         .hasAccess(consumerId.toString(), itemId)
+
+        // If policy exists → true
+        .recover(
+            err -> {
+
+              // If PENDING → propagate immediately
+              if (err instanceof DxForbiddenPendingAccessException) {
+                return Future.failedFuture(err);
+              }
+
+              // If REJECTED → propagate immediately
+              if (err instanceof DxForbiddenAccessRejectedException) {
+                return Future.failedFuture(err);
+              }
+
+              //  Only fallback when NO ACCESS POLICY
+              if (err instanceof DxForbiddenNoAccessException) {
+
+                return keycloakUserService
+                    .getUserById(consumerId)
+                    .compose(
+                        fullUser ->
+                            accessRuleDao.ruleMatches(
+                                UUID.fromString(itemId),
+                                fullUser.sub().toString(),
+                                fullUser.organisationId(),
+                                fullUser.roles()))
+                    .compose(
+                        ruleMatch -> {
+                          if (Boolean.TRUE.equals(ruleMatch)) {
+                            return Future.succeededFuture(true);
+                          }
+                          return Future.failedFuture(
+                              new DxForbiddenNoAccessException(
+                                  "User does not have access to the given item"));
+                        });
+              }
+
+              // Any other unexpected failure
+              return Future.failedFuture(err);
+            })
         .onFailure(
             err ->
                 LOGGER.error(

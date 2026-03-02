@@ -48,11 +48,18 @@ public class ItemControllerFactory {
     PolicyDao policyDao = new PolicyDaoImpl(pgService);
     ItemService itemService =
         new ItemServiceImpl(
-            elasticsearchService, keycloakUserService, policyDao, webClient, docIndex, apdURL);
+            elasticsearchService,
+            keycloakUserService,
+            pgService,
+            policyDao,
+            webClient,
+            docIndex,
+            apdURL);
     ItemService centralItemService =
         new CentralItemServiceImpl(
             centralElasticsearchService,
             keycloakUserService,
+            pgService,
             policyDao,
             webClient,
             centralDocIndex,

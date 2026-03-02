@@ -148,7 +148,7 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
                     .put(SHORT_DESCRIPTION, getShortDescription()))
             .put(CREATED_AT, getCreatedAt())
             .put(UPDATED_AT, getUpdatedAt())
-            .put(EXPIRY_AT, getExpiryAt());
+            .put(DB_EXPIRY_AT, getExpiryAt());
     return request;
   }
 

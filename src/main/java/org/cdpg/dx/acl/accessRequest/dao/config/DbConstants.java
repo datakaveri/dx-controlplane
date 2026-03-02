@@ -9,6 +9,7 @@ public class DbConstants {
   public static final String DB_PROVIDER_COMMENT = "provider_comment";
   public static final String DB_FEEDBACK_TO_CONSUMER = "feedback_to_consumer";
   public static final String POLICY_TABLE = "policy";
+  public static final String ACCESS_RULE_TABLE = "access_rule";
   public static final String DB_OWNER_ID = "owner_id";
   public static final String DB_USER_EMAIL_ID = "user_emailid";
   public static final String DB_POLICY_ID = "policy_id";
@@ -28,7 +29,14 @@ public class DbConstants {
   public static final String DB_CREATED_AT = "created_at";
   public static final String DB_UPDATED_AT = "updated_at";
   public static final String REQUEST_TABLE = "request";
-  public static final String DB_ID  = "_id";
+  public static final String ACCESS_RULE_ALLOWED_ROLE_TABLE = "access_rule_allowed_role";
+  public static final String ACSESS_RULE_ALLOWED_USER_TABLE = "access_rule_allowed_user";
+  public static final String ACCESS_RULE_ALLOWED_ORG_TABLE = "access_rule_allowed_org";
+  public static final String DB_ID = "_id";
+  public static final String DB_RULE_ID = "rule_id";
+  public static final String DB_ROLE = "role";
+  public static final String DB_USER_ID = "user_id";
+  public static final String DB_ORG_ID = "org_id";
 
   // Access request dto constants
   public static final String REQUEST_ID = "requestId";
@@ -64,4 +72,7 @@ public class DbConstants {
   public static final String FIRST_NAME = "firstName";
   public static final String LAST_NAME = "lastName";
   public static final String EMAIL = "email";
+  public static final String ALLOWED_ORG_IDS = "allowedOrgIds";
+  public static final String ALLOWED_USER_IDS = "allowedUserIds";
+  public static final String ALLOWED_ROLES = "allowedRoles";
 }

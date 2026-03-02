@@ -51,17 +51,29 @@ paths:
       tags:
         - Access Request
       summary: Create Access Request
-      description: 'Access requests are made by consumer to request a provider to
-        grant access to the provider''s resources.
+      description: |-
 
-        A provider will be notified whenever the consumer creates an access request.
+        Consumers can create an access request to request access to a provider’s resource.
 
+        When an access request is created:
 
-        Users with the consumer role can request access for a resource/resource group
-        <br>
+        - The request status is set to `PENDING`
+        - The provider is notified
 
-        `Note`: The request cannot be made for the asset if the user is a provider
-        of the resource'
+        ## Important Rules
+
+        - A consumer cannot create an access request for their own resource.
+        - If an ACTIVE policy already exists for the consumer and resource,
+          the request will be rejected with `409 Conflict`.
+
+        ## Request Lifecycle
+
+        - `PENDING` → Awaiting provider action
+        - `GRANTED` → Policy is created automatically
+        - `REJECTED` → No policy is created
+
+        The request does not grant access by itself. Access is granted only
+        when the provider approves the request.
       operationId: post-auth-v2-access-requests
 
       requestBody:
@@ -121,9 +133,18 @@ paths:
                     description: The resource would be used for testing the abcd application
                       in which services are offered free of cost for public welfare
                   constraints:
+                    subjects:
+                      allowedOrgIds: [ "<uuid>", "<uuid>" ]
+                      allowedUserIds: [ "<uuid>" ]
+                      allowedRoles: [ "consumer" ]
                     access:
-                      - api
-                      - file
+                      - accessType: api
+                        expiry: 1735689600
+                        limits:
+                          dataUsage: "100:gb"
+                          apiHits: 100
+                      - accessType: sub
+                        expiry: 1735689600
       responses:
         '200':
           description: OK
@@ -232,24 +253,29 @@ paths:
       tags:
         - Access Request
       summary: Update Access Request
-      description: 'Providers or organization admin can choose to approve or reject
-        **pending** access requests associated with their asset or their organisation
-        respectively.
+      description: |-
 
+        Providers or authorized delegates can approve or reject **PENDING**
+        access requests for resources they own.
 
-        If the request is approved
+        ## If Approved (`status = granted`)
 
-        - The request is modified to the `approved` state
+        - The request status is updated to `GRANTED`
+        - A new policy is created with status = `ACTIVE`
+        - A corresponding access rule is created
+        - The policy and rule will expire based on the provided `expiryAt`
+        - Constraints provided in this request override consumer-suggested constraints
 
-        - A policy is created corresponding to the requested resource with the applicable
-        expiry time and constraints.
+        ## If Rejected (`status = rejected`)
 
+        - The request status is updated to `REJECTED`
+        - No policy is created
+        - No access rule is created
 
-        If the request is rejected
+        ## Important
 
-        - The request is modified to the `rejected` state
-
-        '
+        - Only requests in `PENDING` state can be updated
+        - Providers can only act on requests for resources they own
       operationId: put-auth-v2-access-requests
       requestBody:
         description: '- `requestId` :  ID of the request. Can get this `id` by using
@@ -315,9 +341,20 @@ paths:
                   status: granted
                   expiryAt: '2026-03-05T20:00:19'
                   constraints:
+                    subjects:
+                      allowedOrgIds: [ "<uuid>", "<uuid>" ]
+                      allowedUserIds: [ "<uuid>" ]
+                      allowedRoles: [ "consumer" ]
                     access:
-                      - api
-                      - file
+                      - accessType: api
+                        expiry: 1735689600
+                        limits:
+                          dataUsage: "100:gb"
+                          apiHits: 100
+                      - accessType: file
+                        expiry: 1735689600
+                        limits:
+                          dataUsage: "10:gb"
               Update Rejected access request:
                 value:
                   requestId: bca11712-f381-46a5-afa3-a29b00568ace
@@ -1280,22 +1317,45 @@ paths:
       summary: Create Policy
       description: |-
 
-        The `Create Policy` API empowers both `providers` and their `delegates` to establish policies for resources owned by the `provider`. It enables `providers` to define policies for resources they own, and `delegates` can create policies on behalf of `providers` who own the resources.
+        The `Create Policy` API allows a `provider` or an authorized `delegate`
+        to create an **ACTIVE access policy** for a resource owned by the provider.
 
-        ## User Policies
+        When a policy is successfully created:
 
-          User policies, which are applicable to the `DATABANK` and `AIMODEL` item types, can
-           be
-        defined by a `provider` or its `delegate`. These policies regulate access to resources owned by the `provider` and apply to `consumers` accessing these resources.
+        - A new policy record is created with status = `ACTIVE`
+        - A corresponding access rule is created and linked to the policy
+        - The rule inherits the same lifecycle as the policy
+
+        ## Policy Lifecycle
+
+        - On creation → Policy status = `ACTIVE`
+        - On deletion → Policy status = `DELETED`
+        - On expiry → Policy remains `ACTIVE`, but is treated as invalid during verification
+
+        ### Expiry Handling
+  
+        Policy expiry does not modify the stored status.
+
+        Instead, during policy verification:
+        - The system checks whether `expiryAt` is greater than the current timestamp.
+        - If expired, the policy is treated as inactive for access evaluation.
+        - The database status remains unchanged.
+
+        ### Rule Synchronization
+  
+        When a policy is marked as `DELETED`, all associated access rules are also marked as 
+        `DELETED`.
 
         ## Item Types
 
-        - `DATABANK`: Policies can be applied to individual resources.
-        - `AIMODEL`: Policies can be set for resource groups.
+        - `DATABANK`: Policy applies to individual resources.
+        - `AIMODEL`: Policy applies to resource groups.
 
-        By utilizing the `Create Policy` API, `providers` and their `delegates` can effectively manage access control and resource governance within the system.
+        ## Important Notes
 
-        `Note`: Only one policy can be generated per request.
+        - Only one policy can be created per request.
+        - Only one ACTIVE policy can exist per (user, itemId).
+        - If a valid ACTIVE policy already exists, a `409 Conflict` is returned.
       operationId: post-auth-v1-policies
       parameters:
         - name: Authorization
@@ -1318,7 +1378,20 @@ paths:
             - `itemId`: The UUID value of the item for which the policy is being established.
             - `itemType`: An enum value representing the type of the item.
             - `expiryTime`: An optional field, representing the policy's expiry time in ISO8601 format compatible with UTC (yyyy-MM-dd'T'HH:mm:ss). If not provided, a default expiry time is set for the policy.
-            - `constraints`: A JSON object containing constraints that the resource server can interpret.
+            - `constraints`: JSON object defining subjects and access controls.
+          ### Constraints Structure:
+
+          `constraints` may contain:
+          
+          - `subjects`
+            - allowedOrgIds
+            - allowedUserIds
+            - allowedRoles
+                
+          - `access` (array)
+            - accessType: api | file | sub
+            - expiry (epoch seconds)
+            - limits (optional, varies per accessType)
 
         required: true
         content:
@@ -1394,12 +1467,44 @@ paths:
                       itemId: example-resource-group
                       itemType: DATABANK
                       expiryTime: '2023-08-30T21:10:06'
-                      constraints: { }
+                      constraints:
+                        subjects:
+                          allowedOrgIds: [ "<uuid>", "<uuid>" ]
+                          allowedUserIds: [ "<uuid>" ]
+                          allowedRoles: [ "consumer" ]
+                        access:
+                          - accessType: api
+                            expiry: 1735689600
+                            limits:
+                              dataUsage: "100:gb"
+                              apiHits: 100
+                          - accessType: file
+                            expiry: 1735689600
+                            limits:
+                              dataUsage: "10:gb"
+                          - accessType: sub
+                            expiry: 1735689600
                     - userEmail: test@demo.com
                       itemId: example-resource-group
                       itemType: DATABANK
                       expiryTime: '2023-08-30T21:10:06'
-                      constraints: { }
+                      constraints:
+                        subjects:
+                          allowedOrgIds: [ "<uuid>", "<uuid>" ]
+                          allowedUserIds: [ "<uuid>" ]
+                          allowedRoles: [ "consumer" ]
+                        access:
+                          - accessType: api
+                            expiry: 1735689600
+                            limits:
+                              dataUsage: "100:gb"
+                              apiHits: 100
+                          - accessType: file
+                            expiry: 1735689600
+                            limits:
+                              dataUsage: "10:gb"
+                          - accessType: sub
+                            expiry: 1735689600
             examples:
               Request for resource with additionalInfo:
                 value:
@@ -1409,8 +1514,22 @@ paths:
                       itemType: DATABANK
                       expiryTime: '2022-08-04T20:00:19'
                       constraints:
+                        subjects:
+                          allowedOrgIds: [ "<uuid>", "<uuid>" ]
+                          allowedUserIds: [ "<uuid>" ]
+                          allowedRoles: [ "consumer" ]
                         access:
-                          - sub
+                          - accessType: api
+                            expiry: 1735689600
+                            limits:
+                              dataUsage: "100:gb"
+                              apiHits: 100
+                          - accessType: file
+                            expiry: 1735689600
+                            limits:
+                              dataUsage: "10:gb"
+                          - accessType: sub
+                            expiry: 1735689600
                       additionalInfo:
                         name: Miles Davis
                       providerComment: The resource is used for transportation data analysis
@@ -1423,9 +1542,22 @@ paths:
                       itemType: DATABANK
                       expiryTime: '2022-10-10T04:00:19'
                       constraints:
+                        subjects:
+                          allowedOrgIds: [ "<uuid>", "<uuid>" ]
+                          allowedUserIds: [ "<uuid>" ]
+                          allowedRoles: [ "consumer" ]
                         access:
-                          - api
-                          - sub
+                          - accessType: api
+                            expiry: 1735689600
+                            limits:
+                              dataUsage: "100:gb"
+                              apiHits: 100
+                          - accessType: file
+                            expiry: 1735689600
+                            limits:
+                              dataUsage: "10:gb"
+                          - accessType: sub
+                            expiry: 1735689600
       responses:
         '200':
           description: >-
@@ -1489,11 +1621,27 @@ paths:
         - lang: 'cURL'
           label: 'Create policy'
           source: |
-            curl --location --request POST 'https://example-apd.com/dx/apd/acl/v1/policies' \
-            --header 'Authorization: <tokenValue>' \
+            curl --location 'https://${HOSTNAME}/iudx/acl/apd/v2/policy' \
+            --header 'Authorization: Bearer <tokenValue>' \
             --header 'Content-Type: application/json' \
-              --data-raw '<payload>'
-
+            --data-raw '{
+              "request": [
+                {
+                  "userEmail": "consumer@example.com",
+                  "itemId": "5011676f-0835-4cee-9b3e-fe81adab65f1",
+                  "itemType": "DATABANK",
+                  "expiryTime": "2026-08-04T20:00:19Z",
+                  "constraints": {
+                    "access": [
+                      {
+                        "accessType": "api",
+                        "expiry": 1735689600
+                      }
+                    ]
+                  }
+                }
+              ]
+            }'
     get:
       tags:
         - Policies
@@ -1559,16 +1707,41 @@ paths:
         - lang: 'cURL'
           label: 'get latest policies'
           source: |
-            curl --location --request GET 'https://example-apd.com/dx/apd/acl/v1/policies' \
+            curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/policy' \
             --header 'Authorization: <tokenValue>'
 
-    delete:
+    put:
       tags:
         - Policies
-      summary: Delete Policy
+      summary: Deactivate Policy
       description: |-
-        A provider of the resource can delete the policy. An existing active policy can be deleted by the provider or provider delegate. The request would contain id, i.e. the ID of the policy that the user wants to delete. The user can use the GET Policy API to get the policy ID.
-      operationId: delete-auth-v1-policies
+
+        This API performs a **soft delete** of an existing ACTIVE policy.
+
+        Instead of permanently removing the policy from the system:
+
+        - The policy status is updated from `ACTIVE` → `DELETE`
+        - All access rules associated with the policy are also updated to `DELETE`
+        - The policy record is retained for audit and traceability purposes
+
+        ## Who Can Delete
+
+        - The resource `provider`
+        - An authorized `delegate` of the provider
+
+        ## Preconditions
+
+        - The policy must exist
+        - The policy must belong to the requesting provider/delegate
+        - The policy must currently be in `ACTIVE` state
+
+        ## Effects
+
+        - Access granted via this policy is immediately revoked
+        - The policy cannot be reactivated via this API (a new policy must be created)
+
+        Users can retrieve the policy ID using the GET Policies API.
+      operationId: deactivate-auth-v1-policies
       parameters:
         - name: Authorization
           in: header
@@ -1578,29 +1751,17 @@ paths:
             type: string
             minLength: 1
             pattern: 'Bearer [a-zA-Z0-9_*\-*\.\/]+$|^[a-zA-Z0-9_*\-*\.\/]+$'
-      requestBody:
-        description: Request body is a JsonObject containing ID whose value is the policy ID.
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                id:
-                  type: string
-                  format: uuid
-                  pattern: '^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$'
-                  minLength: 36
-
-              required:
-                - id
-            examples:
-              Request body for Delete Policy:
-                value:
-                  id: 231f6eca-6276-4993-bfeb-53cbbbba6f06
+        - name: id
+          in: query
+          description: ID of the DX Entity
+          required: true
+          schema:
+            type: string
+            format: uuid
+            pattern: '^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$'
       responses:
         '200':
-          description: User Policy deleted successfully.
+          description: Policy deactivated successfully.
           content:
             application/json:
               schema:
@@ -1657,12 +1818,11 @@ paths:
 
       x-codeSamples:
         - lang: 'cURL'
-          label: 'Delete policy'
+          label: 'Deactivate policy'
           source: |
-            curl --location --request DELETE 'https://example-apd.com/dx/apd/acl/v1/policies' \
-            --header 'Content-Type: application/json' \
-            --header 'Authorization: <tokenValue>' \
-            --data-raw '<payload>'
+            curl --location --request PUT \
+            'https://${HOSTNAME}/iudx/acl/apd/v2/policy?id=231f6eca-6276-4993-bfeb-53cbbbba6f06' \
+            --header 'Authorization: <tokenValue>'
   /iudx/acl/apd/v2/verify:
     post:
       tags:
@@ -1721,8 +1881,13 @@ paths:
                 result:
                   type: urn:apd:Allow
                   constraints:
+                    subjects:
+                      allowedOrgIds: [ "<uuid>", "<uuid>" ]
+                      allowedUserIds: [ "<uuid>" ]
+                      allowedRoles: [ "consumer" ]
                     access:
-                      - sub
+                      - accessType: sub
+                        expiry: 1735689600
                   expiryAt: "2026-08-04T20:00:19"
         '400':
           description: Bad Request
@@ -1748,7 +1913,7 @@ paths:
         - lang: 'cURL'
           label: 'Verify policy'
           source: |
-            curl --location --request POST 'https://example-apd.com/verify' \
+            curl --location --request POST ''https://${HOSTNAME}/iudx/acl/apd/v2/verify' \
             --header 'Authorization: bearer <tokenValue>' \
             --header 'Content-Type: application/json' \
               --data-raw '<payload>'
@@ -2365,8 +2530,13 @@ components:
             itemType: RESOURCE
             expiryAt: '2024-03-05T20:00:19'
             constraints:
+              subjects:
+                allowedOrgIds: [ "<uuid>", "<uuid>" ]
+                allowedUserIds: [ "<uuid>" ]
+                allowedRoles: [ "consumer" ]
               access:
-                - sub
+                - accessType: sub
+                  expiry: 1735689600
             status: ACTIVE
             updatedAt: '2023-11-07T09:12:44.144204'
             createdAt: '2023-09-26T11:17:58.473452'
@@ -2480,8 +2650,13 @@ components:
             itemType: DATABANK
             expiryAt: '2024-09-05T20:00:19'
             constraints:
+              subjects:
+                allowedOrgIds: [ "<uuid>", "<uuid>" ]
+                allowedUserIds: [ "<uuid>" ]
+                allowedRoles: [ "consumer" ]
               access:
-                - sub
+                - accessType: sub
+                  expiry: 1735689600
             status: ACTIVE
             updatedAt: '2024-02-14T04:54:16.592540'
             createdAt: '2023-10-26T11:17:58.473452'
@@ -2502,8 +2677,22 @@ components:
             itemType: DATABANK
             expiryAt: '2024-08-05T20:00:29'
             constraints:
+              subjects:
+                allowedOrgIds: [ "<uuid>", "<uuid>" ]
+                allowedUserIds: [ "<uuid>" ]
+                allowedRoles: [ "consumer" ]
               access:
-                - sub
+                - accessType: api
+                  expiry: 1735689600
+                  limits:
+                    dataUsage: "100:gb"
+                    apiHits: 100
+                - accessType: file
+                  expiry: 1735689600
+                  limits:
+                    dataUsage: "10:gb"
+                - accessType: sub
+                  expiry: 1735689600
             status: ACTIVE
             updatedAt: '2023-11-07T09:12:44.144204'
             createdAt: '2023-09-26T11:17:58.473452'
@@ -2628,7 +2817,7 @@ components:
       example:
         type: urn:dx:apdServerPanel:success
         title: Success
-        detail: Policy deleted successfully
+        detail: Policy deactivated successfully
     deletePolicyInvalidUserResponse:
       title: deletePolicyInvalidUserResponse
       type: object
@@ -3002,10 +3191,22 @@ components:
               status: pending
               expiryDuration: string
               constraints:
+                subjects:
+                  allowedOrgIds: [ "<uuid>", "<uuid>" ]
+                  allowedUserIds: [ "<uuid>" ]
+                  allowedRoles: [ "consumer" ]
                 access:
-                  - api
-                  - sub
-                  - file
+                  - accessType: api
+                    expiry: 1735689600
+                    limits:
+                      dataUsage: "100:gb"
+                      apiHits: 100
+                  - accessType: file
+                    expiry: 1735689600
+                    limits:
+                      dataUsage: "10:gb"
+                  - accessType: sub
+                    expiry: 1735689600
               user:
                 id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
                 email: user@example.com

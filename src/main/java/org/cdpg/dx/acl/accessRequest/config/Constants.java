@@ -97,7 +97,7 @@ public class Constants {
   public static final String WITHDRAW_ACCESS_REQUEST_API_FOR_CONSUMER = "patch-auth-v2-access-requests";
   public static final String CREATE_POLICY_API = "post-auth-v1-policies";
   public static final String GET_POLICY_API = "get-auth-v1-policies";
-  public static final String DELETE_POLICY_API = "delete-auth-v1-policies";
+  public static final String DELETE_POLICY_API = "deactivate-auth-v1-policies";
   public static final String VERIFY_API = "get-auth-v1-verify";
 
 

@@ -18,6 +18,8 @@ import org.cdpg.dx.acl.accessRequest.service.AccessRequestService;
 import org.cdpg.dx.acl.accessRequest.service.impl.AccessRequestServiceImpl;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
+import org.cdpg.dx.acl.rule.dao.AccessRuleDao;
+import org.cdpg.dx.acl.rule.dao.impl.AccessRuleDaoImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
@@ -47,17 +49,20 @@ public class AccessRequestFactory {
         new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
 
     PolicyDao policyDao = new PolicyDaoImpl(pgService);
+    AccessRuleDao accessRuleDao = new AccessRuleDaoImpl(pgService);
     ItemService itemService =
         new ItemServiceImpl(
             elasticsearchService,
             keycloakUserService,
+            pgService,
             policyDao,
             webClient,
             config.getString(DOC_INDEX),
             config.getString(APD_URL));
 
     AccessRequestService accessRequestService =
-        new AccessRequestServiceImpl(keycloakUserService, itemService, accessRequestDao, policyDao);
+        new AccessRequestServiceImpl(keycloakUserService, itemService, accessRequestDao,
+            policyDao, accessRuleDao);
 
     return new AccessRequestController(
         accessRequestService,

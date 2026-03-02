@@ -55,6 +55,7 @@ public class TokenControllerFactory {
         new ItemServiceImpl(
             elasticsearchService,
             keycloakUserService,
+            pgService,
             policyDao,
             webClient,
             config.getString(DOC_INDEX),
