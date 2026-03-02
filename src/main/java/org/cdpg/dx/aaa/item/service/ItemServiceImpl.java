@@ -13,7 +13,6 @@ import static org.cdpg.dx.aaa.common.Constants.RESOURCE_GRP;
 import static org.cdpg.dx.aaa.common.Constants.RESOURCE_SVR;
 import static org.cdpg.dx.aaa.common.Constants.RESTRICTED;
 import static org.cdpg.dx.aaa.common.Constants.VALUE;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSTRAINTS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.EXPIRY_AT;
 import static org.cdpg.dx.database.elastic.util.Constants.ACCESS_POLICY;
 import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
@@ -387,7 +386,7 @@ public class ItemServiceImpl implements ItemService {
   private Future<ResponseModel> completePolicySuccess(
       VerifyPolicyDto dto, ElasticsearchResponse response, int totalHits) {
     JsonObject item = response.getSource();
-    item.put(CONSTRAINTS, dto.getConstraints());
+    item.put("cons", dto.getConstraints());
     item.put(EXPIRY_AT, dto.getExpiryAt());
     response.setSource(item);
 

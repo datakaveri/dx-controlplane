@@ -15198,7 +15198,7 @@ components:
                 type: string
                 description: If the fetched item is of RESTRICTED accessPolicy, then the response
                   will include the expiry time of the policy
-              constraints:
+              cons:
                 type: object
                 description: Constraints associated with the model
                 additionalProperties:
@@ -15256,7 +15256,7 @@ components:
             itemCreatedAt: "2025-12-15T05:16:43+0530"
             lastUpdated: "15 December, 2025 - 05:16 PM"
             expiryAt: '2026-09-05T20:00:19'
-            constraints:
+            cons:
               subjects:
                 allowedOrgIds: [ "<uuid>", "<uuid>" ]
                 allowedUserIds: [ "<uuid>" ]
@@ -15426,7 +15426,7 @@ components:
                 type: string
                 description: If the fetched item is of RESTRICTED accessPolicy, then the response
                   will include the expiry time of the policy
-              constraints:
+              cons:
                 type: object
                 description: Constraints associated with the databank
                 additionalProperties:
@@ -15514,7 +15514,7 @@ components:
             itemCreatedAt: "2024-01-05T02:09:10+0530"
             lastUpdated: "15 December, 2025 - 05:04 PM"
             expiryAt: '2026-09-05T20:00:19'
-            constraints:
+            cons:
               subjects:
                 allowedOrgIds: [ "<uuid>", "<uuid>" ]
                 allowedUserIds: [ "<uuid>" ]
@@ -15667,7 +15667,7 @@ components:
                 type: string
                 description: If the fetched item is of RESTRICTED accessPolicy, then the response
                   will include the expiry time of the policy
-              constraints:
+              cons:
                 type: object
                 description: Constraints associated with the model
                 additionalProperties:
@@ -15742,7 +15742,7 @@ components:
             lastUpdated: '2024-01-10T11:30:00+0530'
             verifiedBy: 'Department of Agriculture'
             expiryAt: '2026-09-05T20:00:19'
-            constraints:
+            cons:
               subjects:
                 allowedOrgIds: [ "<uuid>", "<uuid>" ]
                 allowedUserIds: [ "<uuid>" ]

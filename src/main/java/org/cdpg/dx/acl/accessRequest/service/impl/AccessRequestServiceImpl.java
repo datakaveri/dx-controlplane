@@ -360,7 +360,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
     JsonArray requested = constraints.getJsonArray("access", new JsonArray());
 
     for (int i = 0; i < requested.size(); i++) {
-      String type = requested.getString(i);
+      String type = requested.getJsonObject(0).getString("accessType");
       if (!allowedAccessTypes.contains(type)) {
         throw new DxValidationException(
             "Requested access type '" + type + "' is not allowed for this resource");

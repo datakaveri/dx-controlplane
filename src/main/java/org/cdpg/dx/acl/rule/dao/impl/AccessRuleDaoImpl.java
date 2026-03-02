@@ -196,7 +196,7 @@ public class AccessRuleDaoImpl implements AccessRuleDao {
                   new JsonObject()
                       .put(EXPIRY_AT, row.getString(DB_EXPIRY_AT))
                       .put(
-                          DB_CONSTRAINTS,
+                          "cons",
                           row.getString(DB_CONSTRAINTS) != null
                               ? new JsonObject(row.getString(DB_CONSTRAINTS))
                               : new JsonObject());
