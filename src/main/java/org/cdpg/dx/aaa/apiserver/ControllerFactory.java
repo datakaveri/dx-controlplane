@@ -144,7 +144,8 @@ public class ControllerFactory {
 
     PolicyDao policyDao = new PolicyDaoImpl(pgService);
     ItemService itemService =
-        new ItemServiceImpl(esService, keycloakUserService, policyDao, webClient, docIndex, apdURL);
+        new ItemServiceImpl(
+            esService, keycloakUserService, pgService, policyDao, webClient, docIndex, apdURL);
 
     ItemOwnershipValidator itemOwnershipValidator = new ItemOwnershipValidator(itemService);
 

@@ -143,7 +143,8 @@ public class DataBrokerVerticle extends AbstractVerticle {
         ElasticsearchService.createProxy(vertx, ELASTIC_SERVICE_ADDRESS);
     PostgresService pgService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
     String docIndex = config().getString("docIndex");
-    ItemService itemService = new ItemServiceImpl(esService, null, null, null, docIndex, null);
+    ItemService itemService =
+        new ItemServiceImpl(esService, null, null, null, null, docIndex, null);
     AssetEnrichmentService assetEnrichmentService = new AssetEnrichmentService(itemService);
     UserEnrichmentService userEnrichmentService = new UserEnrichmentService(keycloakUserService);
     AuditEnrichmentService auditEnrichmentService =

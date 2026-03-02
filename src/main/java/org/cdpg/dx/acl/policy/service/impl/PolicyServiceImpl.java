@@ -48,6 +48,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -64,6 +65,7 @@ import org.cdpg.dx.acl.policy.dao.model.PolicyDto;
 import org.cdpg.dx.acl.policy.dao.model.VerifyPolicyDto;
 import org.cdpg.dx.acl.policy.service.PolicyService;
 import org.cdpg.dx.acl.policy.service.model.CreatePolicyRequest;
+import org.cdpg.dx.acl.rule.dao.AccessRuleDao;
 import org.cdpg.dx.catalogueService.models.ItemType;
 import org.cdpg.dx.common.HttpStatusCode;
 import org.cdpg.dx.common.ResponseUrn;
@@ -77,27 +79,26 @@ public class PolicyServiceImpl implements PolicyService {
   private static final String FAILURE_MESSAGE = "Policy could not be deleted";
   private final ItemService itemService;
   private final PolicyDao policyDao;
+  private final AccessRuleDao accessRuleDao;
   private final String apdUrl;
 
-
-  public PolicyServiceImpl(ItemService itemService, PolicyDao policyDao, String apdUrl) {
+  public PolicyServiceImpl(
+      ItemService itemService, PolicyDao policyDao, AccessRuleDao accessRuleDao, String apdUrl) {
     this.itemService = itemService;
+    this.accessRuleDao = accessRuleDao;
     this.apdUrl = apdUrl;
     this.policyDao = policyDao;
   }
-
 
   @Override
   public Future<Void> createPolicy(List<CreatePolicyRequest> requests, DxUser caller) {
     // ownership checks -- caller must be owner or org delegate; simplified here
     UUID userId = caller.sub();
 
-    Set<UUID> itemIds = requests.stream()
-        .map(CreatePolicyRequest::getItemId)
-        .collect(Collectors.toSet());
-    Set<String> itemTypes = requests.stream()
-        .map(req -> req.getItemType().getTypeValue())
-        .collect(Collectors.toSet());
+    Set<UUID> itemIds =
+        requests.stream().map(CreatePolicyRequest::getItemId).collect(Collectors.toSet());
+    Set<String> itemTypes =
+        requests.stream().map(req -> req.getItemType().getTypeValue()).collect(Collectors.toSet());
 
     // Fail fast if resource_group
     if (itemTypes.contains(ITEM_TYPE_RESOURCE_GROUP)) {
@@ -109,41 +110,71 @@ public class PolicyServiceImpl implements PolicyService {
     LOGGER.debug("itemIds: {}", itemIds);
     LOGGER.debug("itemTypes: {}", itemTypes);
 
-    //Ownership check
+    // Ownership check
     return checkForItemsInDb(itemIds, itemTypes, caller)
-        .compose(providerIds -> {
-          LOGGER.debug("no.of providerIds: {}", providerIds.size());
-          if (providerIds.stream().allMatch(id -> id.equals(userId))) {
-            // Step 2: Ensure no duplicate policy
-            return policyDao.checkExistingPoliciesForIds(requests, userId);
-          } else {
-            return Future.failedFuture(
-                generateErrorResponse(FORBIDDEN, "Access Denied: Not owner of resource"));
-          }
-        })
-        .compose(queryResult -> {
-          JsonArray existingPolicies = queryResult.getRows();
-          if (existingPolicies != null && !existingPolicies.isEmpty()) {
-            List<String> existingIds = existingPolicies.stream()
-                .map(obj -> ((JsonObject) obj).getString("_id"))
-                .collect(Collectors.toList());
-            LOGGER.error("Policy already exists for items: {}", existingIds);
-            return Future.failedFuture(
-                generateErrorResponse(CONFLICT,
-                    "Policy already exists for some of the requested items: " + existingIds));
-          }
+        .compose(
+            providerIds -> {
+              LOGGER.debug("no.of providerIds: {}", providerIds.size());
+              if (providerIds.stream().allMatch(id -> id.equals(userId))) {
+                // Step 2: Ensure no duplicate policy
+                return policyDao.checkExistingPoliciesForIds(requests, userId);
+              } else {
+                return Future.failedFuture(
+                    generateErrorResponse(FORBIDDEN, "Access Denied: Not owner of resource"));
+              }
+            })
+        .compose(
+            queryResult -> {
+              JsonArray existingPolicies = queryResult.getRows();
+              if (existingPolicies != null && !existingPolicies.isEmpty()) {
+                List<String> existingIds =
+                    existingPolicies.stream()
+                        .map(obj -> ((JsonObject) obj).getString("_id"))
+                        .collect(Collectors.toList());
+                LOGGER.error("Policy already exists for items: {}", existingIds);
+                return Future.failedFuture(
+                    generateErrorResponse(
+                        CONFLICT,
+                        "Policy already exists for some of the requested items: " + existingIds));
+              }
 
-          // No duplicates found → insert new policies
-          return policyDao.insertPolicies(requests, userId);
-        })
-        .onSuccess(rowList -> {
-          JsonArray response = createResponseArray(rowList);
-          LOGGER.debug("Policy created successfully with info: {}", response);
-        })
-        .onFailure(err -> {
-          LOGGER.error("Failed to create policy: {}", err.getMessage());
-        })
-        .mapEmpty();
+              // No duplicates found → insert new policies
+              return policyDao.insertPolicies(requests, userId);
+            })
+        .onSuccess(
+            rowList -> {
+              JsonArray response = createResponseArray(rowList);
+              LOGGER.debug("Policy created successfully with info: {}", response);
+            })
+        .onFailure(
+            err -> LOGGER.error("Failed to create policy: {}", err.getMessage()))
+        .compose(
+            insertResults -> {
+              List<Future> ruleFutures = new ArrayList<>();
+
+              for (int i = 0; i < insertResults.size(); i++) {
+
+                QueryResult result = insertResults.get(i);
+                JsonObject row = result.getRows().getJsonObject(0);
+
+                UUID policyId = UUID.fromString(row.getString("_id"));
+                CreatePolicyRequest req = requests.get(i);
+
+                JsonObject constraints = req.getConstraints();
+                String expiryAt = String.valueOf(req.getExpiryTime());
+
+                if (constraints != null && constraints.containsKey("subjects")) {
+
+                  JsonObject subjects = constraints.getJsonObject("subjects");
+
+                  ruleFutures.add(
+                      accessRuleDao.createRule(
+                          policyId, req.getItemId(), userId, subjects, constraints, expiryAt));
+                }
+              }
+
+              return CompositeFuture.all(ruleFutures).mapEmpty();
+            });
   }
 
   public Future<Set<UUID>> checkForItemsInDb(
@@ -156,58 +187,64 @@ public class PolicyServiceImpl implements PolicyService {
 
     // Fetch items from catalogue directly
     return fetchResourcesFromCatalogue(itemIdList)
-        .compose(resourceObjs -> {
-          Set<UUID> providerIdSet = new HashSet<>();
+        .compose(
+            resourceObjs -> {
+              Set<UUID> providerIdSet = new HashSet<>();
 
-          for (ResourceObj obj : resourceObjs) {
-            // Validate item types
-            if (!itemTypeRequest.contains(obj.getItemType().name())) {
-              return Future.failedFuture(
-                  generateErrorResponse(BAD_REQUEST,
-                      "Invalid item type for ID: " + obj.getItemId()));
-            }
+              for (ResourceObj obj : resourceObjs) {
+                // Validate item types
+                if (!itemTypeRequest.contains(obj.getItemType().name())) {
+                  return Future.failedFuture(
+                      generateErrorResponse(
+                          BAD_REQUEST, "Invalid item type for ID: " + obj.getItemId()));
+                }
 
-            // Optionally: validate user has access via resource server URLs
-            // if (obj.getResourceServerUrls().stream().noneMatch(url -> url.equals(user.getResourceServerUrls()))) {
-            //     return Future.failedFuture(generateErrorResponse(FORBIDDEN,
-            //             "Access denied: user does not have rights for resource ID " + obj.getItemId()));
-            // }
+                // Optionally: validate user has access via resource server URLs
+                // if (obj.getResourceServerUrls().stream().noneMatch(url ->
+                // url.equals(user.getResourceServerUrls()))) {
+                //     return Future.failedFuture(generateErrorResponse(FORBIDDEN,
+                //             "Access denied: user does not have rights for resource ID " +
+                // obj.getItemId()));
+                // }
 
-            providerIdSet.add(obj.getProviderId());
-          }
+                providerIdSet.add(obj.getProviderId());
+              }
 
-          return Future.succeededFuture(providerIdSet);
-        })
-        .recover(failure -> {
-          String failureMessage = failure.getMessage();
-          if (failureMessage.contains(TYPE) && failureMessage.contains(TITLE)) {
-            return Future.failedFuture(failureMessage);
-          } else {
-            return Future.failedFuture(generateErrorResponse(BAD_REQUEST, failureMessage));
-          }
-        });
+              return Future.succeededFuture(providerIdSet);
+            })
+        .recover(
+            failure -> {
+              String failureMessage = failure.getMessage();
+              if (failureMessage.contains(TYPE) && failureMessage.contains(TITLE)) {
+                return Future.failedFuture(failureMessage);
+              } else {
+                return Future.failedFuture(generateErrorResponse(BAD_REQUEST, failureMessage));
+              }
+            });
   }
 
   public Future<List<ResourceObj>> fetchResourcesFromCatalogue(Set<UUID> ids) {
-    List<Future> futures = ids.stream()
-        .map(this::fetchAndValidateResource) // fetch each UUID
-        .collect(Collectors.toList());
+    List<Future> futures =
+        ids.stream()
+            .map(this::fetchAndValidateResource) // fetch each UUID
+            .collect(Collectors.toList());
 
     // Combine all futures
     return CompositeFuture.all(futures)
-        .map(composite -> futures.stream()
-            .map(f -> ((Future<ResourceObj>) f).result())
-            .collect(Collectors.toList()));
+        .map(
+            composite ->
+                futures.stream()
+                    .map(f -> ((Future<ResourceObj>) f).result())
+                    .collect(Collectors.toList()));
   }
 
-  /**
-   * Fetch a single resource using ItemService and apply all catalogue validations
-   */
+  /** Fetch a single resource using ItemService and apply all catalogue validations */
   private Future<ResourceObj> fetchAndValidateResource(UUID id) {
     Promise<ResourceObj> promise = Promise.promise();
 
     GetItemRequest request = new GetItemRequest(id.toString(), "");
-    itemService.getItem(request)
+    itemService
+        .getItem(request)
         .onFailure(
             ar -> {
               LOGGER.error("fetchItem error : " + ar.getMessage());
@@ -216,10 +253,10 @@ public class PolicyServiceImpl implements PolicyService {
         .onSuccess(
             catSuccessResponse -> {
               // Filter out null Elasticsearch responses
-              List<JsonObject> validResponses = catSuccessResponse.getElasticsearchResponses()
-                  .stream()
-                  .filter(Objects::nonNull)
-                  .toList();
+              List<JsonObject> validResponses =
+                  catSuccessResponse.getElasticsearchResponses().stream()
+                      .filter(Objects::nonNull)
+                      .toList();
 
               if (!validResponses.isEmpty()) {
                 JsonObject resultJson = validResponses.getFirst();
@@ -231,36 +268,44 @@ public class PolicyServiceImpl implements PolicyService {
                 String type = resultJson.getJsonArray(TYPE).getString(0);
                 String idFromResponse = resultJson.getString(ID);
                 /* check if the id being sent is of valid type*/
-                if (!ITEM_TYPE_DATA_BANK.equalsIgnoreCase(type) &&
-                    !ITEM_TYPE_AI_MODEL.equalsIgnoreCase(type) &&
-                    !ITEM_TYPE_APPS.equalsIgnoreCase(type)) {
+                if (!ITEM_TYPE_DATA_BANK.equalsIgnoreCase(type)
+                    && !ITEM_TYPE_AI_MODEL.equalsIgnoreCase(type)
+                    && !ITEM_TYPE_APPS.equalsIgnoreCase(type)) {
                   LOGGER.error("Invalid item type: {}", type);
-                  promise.fail(generateFailureMessage(BAD_REQUEST, ResponseUrn.BAD_REQUEST_URN,
-                      "Given id is invalid - only DataBank or AiModel items are supported, but " +
-                          "got: " + type));
+                  promise.fail(
+                      generateFailureMessage(
+                          BAD_REQUEST,
+                          ResponseUrn.BAD_REQUEST_URN,
+                          "Given id is invalid - only DataBank or AiModel items are supported, but "
+                              + "got: "
+                              + type));
                   return;
                 }
 
                 // Extract provider
                 UUID provider = UUID.fromString(resultJson.getString(PROVIDER_USER_ID));
                 if (provider == null) {
-                  promise.fail(generateFailureMessage(INTERNAL_SERVER_ERROR,
-                      ResponseUrn.INTERNAL_SERVER_ERROR,
-                      "Provider ID missing in catalogue response"));
+                  promise.fail(
+                      generateFailureMessage(
+                          INTERNAL_SERVER_ERROR,
+                          ResponseUrn.INTERNAL_SERVER_ERROR,
+                          "Provider ID missing in catalogue response"));
                   return;
                 }
 
                 // Extract resource servers
-                resServerUrls = resultJson.getJsonArray("resourceServer")
-                    .stream()
-                    .map(obj -> ((JsonObject) obj).getString("url"))
-                    .filter(Objects::nonNull)
-                    .toList();
+                resServerUrls =
+                    resultJson.getJsonArray("resourceServer").stream()
+                        .map(obj -> ((JsonObject) obj).getString("url"))
+                        .filter(Objects::nonNull)
+                        .toList();
 
                 if (resServerUrls.isEmpty()) {
-                  promise.fail(generateFailureMessage(INTERNAL_SERVER_ERROR,
-                      ResponseUrn.INTERNAL_SERVER_ERROR,
-                      "Resource server URLs missing in catalogue response"));
+                  promise.fail(
+                      generateFailureMessage(
+                          INTERNAL_SERVER_ERROR,
+                          ResponseUrn.INTERNAL_SERVER_ERROR,
+                          "Resource server URLs missing in catalogue response"));
                   return;
                 }
                 apdUrlOfResource = resultJson.getString(APD_URL);
@@ -282,10 +327,9 @@ public class PolicyServiceImpl implements PolicyService {
                   } else if (type.equalsIgnoreCase(ITEM_TYPE_AI_MODEL)) {
                     itemType = ItemType.AIMODEL;
                   } else if (type.equalsIgnoreCase(ITEM_TYPE_APPS)) {
-                  itemType = ItemType.APPS;
-                }
-                  ResourceObj resourceObj =
-                      new ResourceObj(id, provider, resServerUrls, itemType);
+                    itemType = ItemType.APPS;
+                  }
+                  ResourceObj resourceObj = new ResourceObj(id, provider, resServerUrls, itemType);
                   promise.complete(resourceObj);
                 }
               } else {
@@ -298,12 +342,9 @@ public class PolicyServiceImpl implements PolicyService {
     return promise.future();
   }
 
-
-  /**
-   * Generate failure JSON string (same as CatalogueClient)
-   */
-  private String generateFailureMessage(HttpStatusCode httpStatusCode, ResponseUrn responseUrn,
-                                        String detail) {
+  /** Generate failure JSON string (same as CatalogueClient) */
+  private String generateFailureMessage(
+      HttpStatusCode httpStatusCode, ResponseUrn responseUrn, String detail) {
     return new JsonObject()
         .put(TYPE, httpStatusCode.getValue())
         .put(TITLE, responseUrn.getUrn())
@@ -316,175 +357,198 @@ public class PolicyServiceImpl implements PolicyService {
     List<String> role = user.roles();
     Future<QueryResult> daoFuture;
 
-    //TODO: Fetch rsurls from user token if needed as an extension
-//    List<Object> resourceServerUrls = new ArrayList<>();
-//    resourceServerUrls.add("rs.forestdx.iudx.io");
-//    resourceServerUrls.add("file.forestdx.iudx.io");
+    // TODO: Fetch rsurls from user token if needed as an extension
+    //    List<Object> resourceServerUrls = new ArrayList<>();
+    //    resourceServerUrls.add("rs.forestdx.iudx.io");
+    //    resourceServerUrls.add("file.forestdx.iudx.io");
     if (role.contains(PROVIDER.getRole()) || role.contains(PROVIDER_DELEGATE.getRole())) {
-      daoFuture =
-          policyDao.getPoliciesByProvider(user.sub().toString());
+      daoFuture = policyDao.getPoliciesByProvider(user.sub().toString());
     } else if (role.contains(CONSUMER.getRole()) || role.contains(CONSUMER_DELEGATE.getRole())) {
-      daoFuture =
-          policyDao.getPoliciesByConsumer(user.email());
+      daoFuture = policyDao.getPoliciesByConsumer(user.email());
     } else {
-      JsonObject error = new JsonObject()
-          .put(TYPE, HttpStatusCode.BAD_REQUEST.getValue())
-          .put(TITLE, ResponseUrn.BAD_REQUEST_URN.getUrn())
-          .put(DETAIL, "Invalid role");
+      JsonObject error =
+          new JsonObject()
+              .put(TYPE, HttpStatusCode.BAD_REQUEST.getValue())
+              .put(TITLE, ResponseUrn.BAD_REQUEST_URN.getUrn())
+              .put(DETAIL, "Invalid role");
       return Future.failedFuture(error.encode());
     }
 
-    return daoFuture.map(queryResult -> {
-      JsonArray rows = queryResult.getRows();
+    return daoFuture.map(
+        queryResult -> {
+          JsonArray rows = queryResult.getRows();
 
-      if (rows.isEmpty()) {
-        JsonObject error = new JsonObject()
-            .put(TYPE, HttpStatusCode.NOT_FOUND.getValue())
-            .put(TITLE, ResponseUrn.RESOURCE_NOT_FOUND_URN.getUrn())
-            .put(DETAIL, "Policy not found");
-        throw new RuntimeException(error.encode());
-      }
+          if (rows.isEmpty()) {
+            JsonObject error =
+                new JsonObject()
+                    .put(TYPE, HttpStatusCode.NOT_FOUND.getValue())
+                    .put(TITLE, ResponseUrn.RESOURCE_NOT_FOUND_URN.getUrn())
+                    .put(DETAIL, "Policy not found");
+            throw new RuntimeException(error.encode());
+          }
 
-      return rows.stream()
-          .map(obj -> {
-            JsonObject row = (JsonObject) obj;
+          return rows.stream()
+              .map(
+                  obj -> {
+                    JsonObject row = (JsonObject) obj;
 
-            // Log each row from DB
-            LOGGER.info("Policy Row: {}", row.encodePrettily());
+                    // Log each row from DB
+                    LOGGER.info("Policy Row: {}", row.encodePrettily());
 
-            // Enrich row before passing to DTO
-            if (role.contains(PROVIDER.getRole()) || role.contains(PROVIDER_DELEGATE.getRole())) {
-              row.mergeIn(getProviderInfo(row));
-            } else {
-              row.mergeIn(getConsumerInfo(row));
-            }
+                    // Enrich row before passing to DTO
+                    if (role.contains(PROVIDER.getRole())
+                        || role.contains(PROVIDER_DELEGATE.getRole())) {
+                      row.mergeIn(getProviderInfo(row));
+                    } else {
+                      row.mergeIn(getConsumerInfo(row));
+                    }
 
-            return new PolicyDto(row);
-          })
-          .collect(Collectors.toList());
-    });
+                    return new PolicyDto(row);
+                  })
+              .collect(Collectors.toList());
+        });
   }
 
   private JsonObject getConsumerInfo(JsonObject row) {
-    return new JsonObject().put(DbConstants.CONSUMER, new JsonObject()
-        .put(ID, row.getString(CONSUMER_ID))
-        .put(EMAIL, row.getString(CONSUMER_EMAIL_ID))
-        .put(NAME, new JsonObject()
-            .put(FIRST_NAME, row.getString(CONSUMER_FIRST_NAME))
-            .put(LAST_NAME, row.getString(CONSUMER_LAST_NAME))
-        )
-    );
+    return new JsonObject()
+        .put(
+            DbConstants.CONSUMER,
+            new JsonObject()
+                .put(ID, row.getString(CONSUMER_ID))
+                .put(EMAIL, row.getString(CONSUMER_EMAIL_ID))
+                .put(
+                    NAME,
+                    new JsonObject()
+                        .put(FIRST_NAME, row.getString(CONSUMER_FIRST_NAME))
+                        .put(LAST_NAME, row.getString(CONSUMER_LAST_NAME))));
   }
 
   private JsonObject getProviderInfo(JsonObject row) {
-    return new JsonObject().put(DbConstants.PROVIDER, new JsonObject()
-        .put(ID, row.getString(OWNER_ID))
-        .put(EMAIL, row.getString(OWNER_EMAIL_ID))
-        .put(NAME, new JsonObject()
-            .put(FIRST_NAME, row.getString(OWNER_FIRST_NAME))
-            .put(LAST_NAME, row.getString(OWNER_LAST_NAME))
-        )
-    );
+    return new JsonObject()
+        .put(
+            DbConstants.PROVIDER,
+            new JsonObject()
+                .put(ID, row.getString(OWNER_ID))
+                .put(EMAIL, row.getString(OWNER_EMAIL_ID))
+                .put(
+                    NAME,
+                    new JsonObject()
+                        .put(FIRST_NAME, row.getString(OWNER_FIRST_NAME))
+                        .put(LAST_NAME, row.getString(OWNER_LAST_NAME))));
   }
 
   @Override
-  public Future<Void> deletePolicy(JsonObject policy, DxUser user) {
-    UUID policyId = UUID.fromString(policy.getString(ID));
+  public Future<Void> deActivatePolicy(String policyId, DxUser user) {
 
-    return policyDao.verifyPolicy(policyId).compose(result -> {
-      if (result.getRows().isEmpty()) {
-        return Future.failedFuture(
-            new JsonObject()
-                .put(TYPE, HttpStatusCode.NOT_FOUND.getValue())
-                .put(TITLE, ResponseUrn.RESOURCE_NOT_FOUND_URN.getUrn())
-                .put(DETAIL, FAILURE_MESSAGE + ", as it doesn't exist")
-                .encode());
-      }
-      JsonObject row = result.getRows().getJsonObject(0);
-      LOGGER.debug("Row: {}", row);
-      String ownerId = row.getString(DB_OWNER_ID);
-      String status = row.getString(DB_STATUS);
+    return policyDao
+        .verifyPolicy(UUID.fromString(policyId))
+        .compose(
+            result -> {
+              if (result.getRows().isEmpty()) {
+                return Future.failedFuture(
+                    new JsonObject()
+                        .put(TYPE, HttpStatusCode.NOT_FOUND.getValue())
+                        .put(TITLE, ResponseUrn.RESOURCE_NOT_FOUND_URN.getUrn())
+                        .put(DETAIL, FAILURE_MESSAGE + ", as it doesn't exist")
+                        .encode());
+              }
+              JsonObject row = result.getRows().getJsonObject(0);
+              LOGGER.debug("Row: {}", row);
+              String ownerId = row.getString(DB_OWNER_ID);
+              String status = row.getString(DB_STATUS);
 
-      /* does the policy belong to the owner who is requesting */
-      if (ownerId.equals(user.sub().toString())) {
-        /* is policy in ACTIVE status */
-        if (!ACTIVE.equalsIgnoreCase(status)) {
-          LOGGER.error("Failure : policy is not active");
-          return Future.failedFuture(
-              getFailureResponse(
-                  new JsonObject(), FAILURE_MESSAGE + ", as policy is not ACTIVE"));
-        }
-      } else {
-        LOGGER.error("Failure : policy does not belong to the user");
-        return Future.failedFuture(
-            new JsonObject()
-                .put(TYPE, HttpStatusCode.FORBIDDEN.getValue())
-                .put(TITLE, ResponseUrn.FORBIDDEN_URN.getUrn())
-                .put(DETAIL, FAILURE_MESSAGE + ", as policy doesn't belong to the user")
-                .encode());
-      }
+              /* does the policy belong to the owner who is requesting */
+              if (ownerId.equals(user.sub().toString())) {
+                /* is policy in ACTIVE status */
+                if (!ACTIVE.equalsIgnoreCase(status)) {
+                  LOGGER.error("Failure : policy is not active");
+                  return Future.failedFuture(
+                      getFailureResponse(
+                          new JsonObject(), FAILURE_MESSAGE + ", as policy is not ACTIVE"));
+                }
+              } else {
+                LOGGER.error("Failure : policy does not belong to the user");
+                return Future.failedFuture(
+                    new JsonObject()
+                        .put(TYPE, HttpStatusCode.FORBIDDEN.getValue())
+                        .put(TITLE, ResponseUrn.FORBIDDEN_URN.getUrn())
+                        .put(DETAIL, FAILURE_MESSAGE + ", as policy doesn't belong to the user")
+                        .encode());
+              }
 
-      // Passed all checks → proceed to delete
-      Promise<Void> promise = Promise.promise();
-      policyDao.deletePolicy(policyId)
-          .onFailure(err -> {
-            LOGGER.debug("query failed: {}", err.getLocalizedMessage());
-            promise.fail(
-                getFailureResponse(new JsonObject(), FAILURE_MESSAGE + ", update query failed"));
-          })
-          .onSuccess(delResult -> {
-            if (delResult.getRows().isEmpty()) {
-              promise.fail(
-                  getFailureResponse(
-                      new JsonObject(), FAILURE_MESSAGE + " , as policy is expired"));
-            } else {
-              LOGGER.info("query succeeded");
-              JsonObject responseJson = delResult.getRows().getJsonObject(0);
-              LOGGER.debug("Delete policy succeeded: {}", responseJson);
-              promise.complete();
-            }
-          });
-      return promise.future();
-    });
+              // Passed all checks → proceed to delete
+              Promise<Void> promise = Promise.promise();
+              policyDao
+                  .deActivatePolicy(UUID.fromString(policyId))
+                  .onFailure(
+                      err -> {
+                        LOGGER.debug("query failed: {}", err.getLocalizedMessage());
+                        promise.fail(
+                            getFailureResponse(
+                                new JsonObject(), FAILURE_MESSAGE + ", update query failed"));
+                      })
+                  .onSuccess(
+                      delResult -> {
+                        if (delResult.getRows().isEmpty()) {
+                          promise.fail(
+                              getFailureResponse(
+                                  new JsonObject(), FAILURE_MESSAGE + " , as policy is expired"));
+                        } else {
+                          LOGGER.info("query succeeded");
+                          JsonObject responseJson = delResult.getRows().getJsonObject(0);
+                          LOGGER.debug("Delete policy succeeded: {}", responseJson);
+                          promise.complete();
+                        }
+                      });
+              return deactivatePolicyLifecycle(UUID.fromString(policyId));
+            });
   }
 
-  /**
-   * Verify if an ACTIVE policy exists for a given user/item pair.
-   */
+  private Future<Void> deactivatePolicyLifecycle(UUID policyId) {
+
+    return accessRuleDao.updateStatusByPolicyId(policyId, "INACTIVE").mapEmpty();
+  }
+
+  /** Verify if an ACTIVE policy exists for a given user/item pair. */
   @Override
-  public Future<VerifyPolicyDto> initiateVerifyPolicy(UUID ownerId, String userEmail, UUID itemId,
-                                                      ItemType itemType, DxUser user) {
+  public Future<VerifyPolicyDto> initiateVerifyPolicy(
+      UUID ownerId, String userEmail, UUID itemId, ItemType itemType, DxUser user) {
     Promise<VerifyPolicyDto> promise = Promise.promise();
 
-    policyDao.checkExistingPoliciesForIds(itemId, ownerId, userEmail)
-        .onSuccess(queryResult -> {
-          JsonArray rows = queryResult.getRows();
-          if (rows != null && !rows.isEmpty()) {
-            JsonObject row = rows.getJsonObject(0);
-            UUID policyId = UUID.fromString(row.getString(DB_ID));
-            JsonObject constraints = row.getJsonObject(CONSTRAINTS);
-            String expiryAt = row.getString(DB_EXPIRY_AT);
+    policyDao
+        .checkExistingPoliciesForIds(itemId, ownerId, userEmail)
+        .onSuccess(
+            queryResult -> {
+              JsonArray rows = queryResult.getRows();
+              if (rows != null && !rows.isEmpty()) {
+                JsonObject row = rows.getJsonObject(0);
+                UUID policyId = UUID.fromString(row.getString(DB_ID));
+                JsonObject constraints = row.getJsonObject(CONSTRAINTS);
+                String expiryAt = row.getString(DB_EXPIRY_AT);
 
-            // Fetch full policy constraints (optional deep validation)
-            policyDao.verifyPolicy(policyId)
-                .onSuccess(verifiedPolicy -> {
-                  VerifyPolicyDto verifyPolicyDto = new VerifyPolicyDto(
-                      ResponseUrn.VERIFY_SUCCESS_URN.getUrn(),
-                      constraints, expiryAt
-                  );
-                  promise.complete(verifyPolicyDto);
-                })
-                .onFailure(promise::fail);
+                // Fetch full policy constraints (optional deep validation)
+                policyDao
+                    .verifyPolicy(policyId)
+                    .onSuccess(
+                        verifiedPolicy -> {
+                          VerifyPolicyDto verifyPolicyDto =
+                              new VerifyPolicyDto(
+                                  ResponseUrn.VERIFY_SUCCESS_URN.getUrn(), constraints, expiryAt);
+                          promise.complete(verifyPolicyDto);
+                        })
+                    .onFailure(promise::fail);
 
-          } else {
-            promise.fail(generateErrorResponse(HttpStatusCode.FORBIDDEN,
-                "No ACTIVE policy exists for this user/item"));
-          }
-        })
-        .onFailure(err -> {
-          LOGGER.error("Error during initiateVerifyPolicy: {}", err.getMessage());
-          promise.fail(generateErrorResponse(INTERNAL_SERVER_ERROR, err.getMessage()));
-        });
+              } else {
+                promise.fail(
+                    generateErrorResponse(
+                        HttpStatusCode.FORBIDDEN, "No ACTIVE policy exists for this user/item"));
+              }
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Error during initiateVerifyPolicy: {}", err.getMessage());
+              promise.fail(generateErrorResponse(INTERNAL_SERVER_ERROR, err.getMessage()));
+            });
 
     return promise.future();
   }
@@ -505,15 +569,15 @@ public class PolicyServiceImpl implements PolicyService {
       for (int i = 0; i < queryResult.getRows().size(); i++) {
         JsonObject row = queryResult.getRows().getJsonObject(i);
 
-        JsonObject jsonObject = new JsonObject()
-            .put(POLICY_ID, row.getString(DB_ID))
-            .put(USER_EMAIL_ID, row.getString(DB_USER_EMAIL_ID))
-            .put(ITEM_ID, row.getString(DB_ITEM_ID))
-            .put(EXPIRY_AT, row.getString(DB_EXPIRY_AT));
+        JsonObject jsonObject =
+            new JsonObject()
+                .put(POLICY_ID, row.getString(DB_ID))
+                .put(USER_EMAIL_ID, row.getString(DB_USER_EMAIL_ID))
+                .put(ITEM_ID, row.getString(DB_ITEM_ID))
+                .put(DB_EXPIRY_AT, row.getString(DB_EXPIRY_AT));
 
         if (ownerJsonObject[0] == null) {
-          ownerJsonObject[0] = new JsonObject()
-              .put(OWNER_ID, row.getValue(DB_OWNER_ID).toString());
+          ownerJsonObject[0] = new JsonObject().put(OWNER_ID, row.getValue(DB_OWNER_ID).toString());
         }
         response.add(jsonObject);
       }

@@ -3,7 +3,6 @@ package org.cdpg.dx.aaa.organization.factory;
 import io.vertx.ext.web.client.WebClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.delegation.OrgOwnershipValidator;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
@@ -15,7 +14,6 @@ import org.cdpg.dx.aaa.organization.handler.*;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.organization.service.OrganizationServiceImpl;
 import org.cdpg.dx.aaa.user.service.UserService;
-import org.cdpg.dx.aaa.user.service.UserServiceImpl;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
@@ -64,7 +62,8 @@ public class OrganizationControllerFactory {
     PolicyDao policyDao = new PolicyDaoImpl(pgService);
 
     ItemService itemService =
-        new ItemServiceImpl(esService, keycloakUserService, policyDao, webClient, docIndex, apdURL);
+        new ItemServiceImpl(
+            esService, keycloakUserService, pgService, policyDao, webClient, docIndex, apdURL);
 
     OrganizationService organizationService =
         new OrganizationServiceImpl(organizationDAOFactory, keycloakUserService, itemService);
@@ -80,17 +79,24 @@ public class OrganizationControllerFactory {
         new OrganizationQueryHandler(organizationService, urnGenerator);
 
     OrganizationCreateRequestHandler createRequestHandler =
-        new OrganizationCreateRequestHandler(organizationService,keycloakUserService,emailComposer, urnGenerator);
+        new OrganizationCreateRequestHandler(
+            organizationService, keycloakUserService, emailComposer, urnGenerator);
 
     OrganizationJoinRequestHandler joinRequestHandler =
         new OrganizationJoinRequestHandler(
-            organizationService, orgOwnershipValidator,userService,keycloakUserService, emailComposer, urnGenerator);
+            organizationService,
+            orgOwnershipValidator,
+            userService,
+            keycloakUserService,
+            emailComposer,
+            urnGenerator);
 
     OrganizationUserHandler userHandler =
         new OrganizationUserHandler(organizationService, userService, urnGenerator);
 
     ProviderRoleHandler providerRoleHandler =
-        new ProviderRoleHandler(organizationService, userService,orgOwnershipValidator, emailComposer, urnGenerator);
+        new ProviderRoleHandler(
+            organizationService, userService, orgOwnershipValidator, emailComposer, urnGenerator);
 
     /* =========================
      * Controller (ONLY wiring)

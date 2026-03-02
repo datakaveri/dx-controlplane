@@ -8,6 +8,7 @@ import static org.cdpg.dx.acl.accessRequest.config.Constants.DELETE_POLICY_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.DETAIL;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_POLICY_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.HEADER_X_CONTENT_TYPE_OPTIONS;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.ID;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.TITLE;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.VERIFY_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.X_CONTENT_TYPE_OPTIONS_NOSNIFF;
@@ -73,7 +74,7 @@ public class PolicyController implements ApdApiController {
   @Override
   public void register(RouterBuilder builder) {
     Handler<RoutingContext> providerAndOrgAdmin =
-        AuthorizationHandler.forRoles(DxRole.PROVIDER, DxRole.ORG_ADMIN);
+        AuthorizationHandler.forRoles(DxRole.PROVIDER, DxRole.ORG_ADMIN, DxRole.DELEGATE);
     Handler<RoutingContext> apiAccessHandler =
         AuthorizationHandler.forRoles(DxRole.CONSUMER, DxRole.PROVIDER, DxRole.DELEGATE);
     Handler<RoutingContext> apiAccessVerifyApiRole =
@@ -176,15 +177,15 @@ public class PolicyController implements ApdApiController {
   }
 
   private void handleDeletePolicy(RoutingContext ctx) {
-    JsonObject policy = ctx.body().asJsonObject();
+    String policyId = ctx.queryParams().get(ID);
     DxUser user = RoutingContextHelper.fromPrincipal(ctx);
     policyService
-        .deletePolicy(policy, user)
+        .deActivatePolicy(policyId, user)
         .onComplete(
             handler -> {
               if (handler.succeeded()) {
-                LOGGER.info("Delete policy succeeded");
-                ResponseBuilder.sendSuccess(ctx, "Policy deleted successfully", urnGenerator);
+                LOGGER.info("Deactivating policy succeeded");
+                ResponseBuilder.sendSuccess(ctx, "Policy deactivated successfully", urnGenerator);
               } else {
                 LOGGER.error("Delete policy failed : {} ", handler.cause().getMessage());
                 handleFailureResponse(ctx, handler.cause().getMessage());

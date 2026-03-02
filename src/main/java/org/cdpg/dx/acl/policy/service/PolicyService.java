@@ -13,7 +13,7 @@ import org.cdpg.dx.common.model.DxUser;
 public interface PolicyService {
   Future<Void> createPolicy(List<CreatePolicyRequest> policy, DxUser caller);
   Future<List<PolicyDto>> getPolicy(DxUser caller);
-  Future<Void> deletePolicy(JsonObject policy, DxUser user);
+  Future<Void> deActivatePolicy(String policyId, DxUser user);
   Future<VerifyPolicyDto> initiateVerifyPolicy(UUID ownerId, String userEmail, UUID itemId,
                                                ItemType itemType, DxUser user);
 }

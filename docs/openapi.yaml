@@ -12647,7 +12647,7 @@ components:
           - policyId: aaaaaaaa-6473-3546-5436-8758aaaa5897
             itemId: cccccccc-6754-8958-2456-3452aaaa5436
             itemType: RESOURCE_GROUP
-            expiryAt: '2024-09-05T20:00:19'
+            expiryAt: '2026-09-05T20:00:19'
             constraints:
               access:
                 - sub
@@ -15681,9 +15681,15 @@ components:
             dataUploadStatus: false
             itemCreatedAt: "2025-12-15T05:16:43+0530"
             lastUpdated: "15 December, 2025 - 05:16 PM"
-            expiryAt: "2025-12-04T20:00:19"
+            expiryAt: '2026-09-05T20:00:19'
             cons:
-              access: [ 'sub' ]
+              subjects:
+                allowedOrgIds: [ "<uuid>", "<uuid>" ]
+                allowedUserIds: [ "<uuid>" ]
+                allowedRoles: [ "consumer" ]
+              access:
+                - accessType: sub
+                  expiry: 1735689600
         paginationInfo:
           page: 1
           size: 1
@@ -15848,7 +15854,7 @@ components:
                   will include the expiry time of the policy
               cons:
                 type: object
-                description: Constraints associated with the model
+                description: Constraints associated with the databank
                 additionalProperties:
                   type: array
                   items:
@@ -15933,9 +15939,15 @@ components:
             dataUploadStatus: false
             itemCreatedAt: "2024-01-05T02:09:10+0530"
             lastUpdated: "15 December, 2025 - 05:04 PM"
-            expiryAt: "2025-12-04T20:00:19"
+            expiryAt: '2026-09-05T20:00:19'
             cons:
-              access: [ 'sub' ]
+              subjects:
+                allowedOrgIds: [ "<uuid>", "<uuid>" ]
+                allowedUserIds: [ "<uuid>" ]
+                allowedRoles: [ "consumer" ]
+              access:
+                - accessType: sub
+                  expiry: 1735689600
         paginationInfo:
           page: 1
           size: 1
@@ -16155,9 +16167,15 @@ components:
             itemCreatedAt: '2024-01-05T02:09:10+0530'
             lastUpdated: '2024-01-10T11:30:00+0530'
             verifiedBy: 'Department of Agriculture'
-            expiryAt: "2025-12-04T20:00:19"
+            expiryAt: '2026-09-05T20:00:19'
             cons:
-              access: [ 'sub' ]
+              subjects:
+                allowedOrgIds: [ "<uuid>", "<uuid>" ]
+                allowedUserIds: [ "<uuid>" ]
+                allowedRoles: [ "consumer" ]
+              access:
+                - accessType: sub
+                  expiry: 1735689600
         paginationInfo:
           page: 1
           size: 1

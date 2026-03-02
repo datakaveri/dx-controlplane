@@ -267,7 +267,7 @@ public class PolicyDaoImpl implements PolicyDao {
 
   /** Update policy status to DELETED if not expired */
   @Override
-  public Future<QueryResult> deletePolicy(UUID policyId) {
+  public Future<QueryResult> deActivatePolicy(UUID policyId) {
     Condition condition =
         new Condition()
             .setGroup(true)
@@ -293,7 +293,7 @@ public class PolicyDaoImpl implements PolicyDao {
   }
 
   @Override
-  public Future<QueryResult> deletePolicyByUserAndItem(
+  public Future<QueryResult> deActivatePolicyByUserAndItem(
       UUID itemId, UUID ownerId, String userEmail) {
 
     Condition condition =
