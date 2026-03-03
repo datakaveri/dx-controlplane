@@ -8,6 +8,7 @@ import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ACSESS_RULE_A
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ALLOWED_ORG_IDS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ALLOWED_ROLES;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ALLOWED_USER_IDS;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CONSTRAINTS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_EXPIRY_AT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ID;
@@ -20,6 +21,7 @@ import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_RULE_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_USER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.EXPIRY_AT;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.POLICY_ID;
 
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
@@ -177,7 +179,7 @@ public class AccessRuleDaoImpl implements AccessRuleDao {
         new SelectQuery()
             .setTable(ACCESS_RULE_TABLE)
             .setTableAlias("R")
-            .setColumns(List.of("R.expiry_at", "R.constraints"))
+            .setColumns(List.of("R.expiry_at", "R.constraints", "R.policy_id"))
             .setJoins(joins)
             .setCondition(finalCondition)
             .setLimit(1);
@@ -194,12 +196,13 @@ public class AccessRuleDaoImpl implements AccessRuleDao {
 
               JsonObject rule =
                   new JsonObject()
-                      .put(EXPIRY_AT, row.getString(DB_EXPIRY_AT))
+                      .put(POLICY_ID, row.getString(DB_POLICY_ID))
                       .put(
-                          "cons",
+                          CONS,
                           row.getString(DB_CONSTRAINTS) != null
                               ? new JsonObject(row.getString(DB_CONSTRAINTS))
-                              : new JsonObject());
+                              : new JsonObject())
+                      .put(EXPIRY_AT, row.getString(DB_EXPIRY_AT));
 
               return rule;
             })

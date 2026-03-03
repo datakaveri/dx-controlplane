@@ -5,7 +5,6 @@ import java.util.Objects;
 import java.util.UUID;
 import org.cdpg.dx.catalogueService.models.ItemType;
 
-
 /**
  * A class representing a resource object with item ID, provider ID, resource server URLs,
  * and item type (AIMODEL or DATABANK).
@@ -15,6 +14,7 @@ public class ResourceObj {
   private final UUID providerId;
   private final List<String> resourceServerUrls;
   private final ItemType itemType;
+  private UUID organizationId;
 
   /**
    * Constructs a new ResourceObj with the given item ID, provider ID, resource server URLs,
@@ -81,5 +81,13 @@ public class ResourceObj {
   @Override
   public int hashCode() {
     return Objects.hash(itemId, providerId, resourceServerUrls, itemType);
+  }
+
+  public UUID getOrganizationId() {
+    return organizationId;
+  }
+
+  public void setOrganizationId(UUID organizationId) {
+    this.organizationId = organizationId;
   }
 }

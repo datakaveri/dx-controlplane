@@ -112,7 +112,7 @@ public class PolicyController implements ApdApiController {
     JsonObject request = ctx.body().asJsonObject();
     DxUser user;
     try {
-      user = RoutingContextHelper.fromPrincipal(ctx);
+      user = RoutingContextHelper.getDxUser(ctx);
     } catch (Exception e) {
       LOGGER.error("Error extracting user from token: {}", e.getMessage(), e);
       ctx.fail(new DxForbiddenException("Invalid user"));

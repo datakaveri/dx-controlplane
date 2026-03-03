@@ -54,6 +54,7 @@ public class DbConstants {
   public static final String ASSET = "asset";
   public static final String ITEM_ID = "itemId";
   public static final String POLICY_ID = "policyId";
+  public static final String CONS = "cons";
   public static final String USER_EMAIL_ID = "userEmailId";
   public static final String OWNER_ID = "ownerId";
   public static final String PROVIDER = "provider";
@@ -64,6 +65,7 @@ public class DbConstants {
   public static final String ASSET_PERMISSION = "assetPermission";
   public static final String RESOURCE_SERVER_URL = "resourceServerUrl";
   public static final String EXPIRY_AT = "expiryAt";
+  public static final String POLICIES = "policies";
   public static final String CREATED_AT = "createdAt";
   public static final String UPDATED_AT = "updatedAt";
   public static final String RESULT = "result";

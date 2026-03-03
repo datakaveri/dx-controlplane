@@ -13,7 +13,10 @@ import static org.cdpg.dx.aaa.common.Constants.RESOURCE_GRP;
 import static org.cdpg.dx.aaa.common.Constants.RESOURCE_SVR;
 import static org.cdpg.dx.aaa.common.Constants.RESTRICTED;
 import static org.cdpg.dx.aaa.common.Constants.VALUE;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.EXPIRY_AT;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.POLICIES;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.POLICY_ID;
 import static org.cdpg.dx.database.elastic.util.Constants.ACCESS_POLICY;
 import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
 import static org.cdpg.dx.database.elastic.util.Constants.COS_ADMIN;
@@ -365,10 +368,10 @@ public class ItemServiceImpl implements ItemService {
                                         requester.organisationId(),
                                         requester.roles())
                                     .compose(
-                                        constraints -> {
+                                        policyObj -> {
                                           JsonObject item = response.getSource();
-                                          // append constraints and expiryAt
-                                          item.mergeIn(constraints);
+                                          // append policyId, constraints and expiryAt
+                                          item.put(POLICIES, new JsonArray().add(policyObj));
                                           response.setSource(item);
 
                                           return succeededResponse(response, totalHits);
@@ -386,8 +389,13 @@ public class ItemServiceImpl implements ItemService {
   private Future<ResponseModel> completePolicySuccess(
       VerifyPolicyDto dto, ElasticsearchResponse response, int totalHits) {
     JsonObject item = response.getSource();
-    item.put("cons", dto.getConstraints());
-    item.put(EXPIRY_AT, dto.getExpiryAt());
+
+    JsonObject policyObj = new JsonObject();
+    policyObj.put(POLICY_ID, dto.getPolicyId());
+    policyObj.put(CONS, dto.getConstraints());
+    policyObj.put(EXPIRY_AT, dto.getExpiryAt());
+
+    item.put(POLICIES, new JsonArray().add(policyObj));
     response.setSource(item);
 
     return succeededResponse(response, totalHits);

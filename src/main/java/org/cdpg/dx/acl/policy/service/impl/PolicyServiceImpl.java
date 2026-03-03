@@ -8,6 +8,7 @@ import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_APPS;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_RESOURCE_GROUP;
 import static org.cdpg.dx.aaa.common.Constants.NAME;
+import static org.cdpg.dx.aaa.common.Constants.ORGANIZATION_ID;
 import static org.cdpg.dx.aaa.common.Constants.PROVIDER_USER_ID;
 import static org.cdpg.dx.aaa.common.Constants.TITLE;
 import static org.cdpg.dx.aaa.common.Constants.TYPE;
@@ -26,7 +27,6 @@ import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_OWNER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_USER_EMAIL_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.EMAIL;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.EXPIRY_AT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.FIRST_NAME;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ITEM_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.LAST_NAME;
@@ -94,6 +94,7 @@ public class PolicyServiceImpl implements PolicyService {
   public Future<Void> createPolicy(List<CreatePolicyRequest> requests, DxUser caller) {
     // ownership checks -- caller must be owner or org delegate; simplified here
     UUID userId = caller.sub();
+    UUID userOrgId = UUID.fromString(caller.organisationId());
 
     Set<UUID> itemIds =
         requests.stream().map(CreatePolicyRequest::getItemId).collect(Collectors.toSet());
@@ -113,15 +114,26 @@ public class PolicyServiceImpl implements PolicyService {
     // Ownership check
     return checkForItemsInDb(itemIds, itemTypes, caller)
         .compose(
-            providerIds -> {
-              LOGGER.debug("no.of providerIds: {}", providerIds.size());
-              if (providerIds.stream().allMatch(id -> id.equals(userId))) {
-                // Step 2: Ensure no duplicate policy
+            resourceObjs -> {
+              Set<UUID> providerIds =
+                  resourceObjs.stream().map(ResourceObj::getProviderId).collect(Collectors.toSet());
+
+              boolean isOwner = providerIds.stream().allMatch(id -> id.equals(userId));
+
+              boolean isOrgAdmin = caller.roles().contains("org_admin");
+
+              if (isOwner) {
                 return policyDao.checkExistingPoliciesForIds(requests, userId);
-              } else {
-                return Future.failedFuture(
-                    generateErrorResponse(FORBIDDEN, "Access Denied: Not owner of resource"));
               }
+
+              if (isOrgAdmin) {
+                return validateOrgAdminAccess(resourceObjs, caller)
+                    .compose(v -> policyDao.checkExistingPoliciesForIds(requests, userId));
+              }
+
+              return Future.failedFuture(
+                  generateErrorResponse(
+                      FORBIDDEN, "Access Denied: Not owner or org_admin of same organisation"));
             })
         .compose(
             queryResult -> {
@@ -146,8 +158,7 @@ public class PolicyServiceImpl implements PolicyService {
               JsonArray response = createResponseArray(rowList);
               LOGGER.debug("Policy created successfully with info: {}", response);
             })
-        .onFailure(
-            err -> LOGGER.error("Failed to create policy: {}", err.getMessage()))
+        .onFailure(err -> LOGGER.error("Failed to create policy: {}", err.getMessage()))
         .compose(
             insertResults -> {
               List<Future> ruleFutures = new ArrayList<>();
@@ -177,12 +188,39 @@ public class PolicyServiceImpl implements PolicyService {
             });
   }
 
-  public Future<Set<UUID>> checkForItemsInDb(
+  private Future<Void> validateOrgAdminAccess(List<ResourceObj> resources, DxUser caller) {
+
+    String callerOrgId = caller.organisationId();
+
+    for (ResourceObj resource : resources) {
+
+      UUID resourceOrgId = resource.getOrganizationId();
+
+      // If item has NO orgId → org admin cannot manage it
+      if (resourceOrgId == null) {
+        return Future.failedFuture(
+            generateErrorResponse(
+                FORBIDDEN, "Org Admin cannot create policy for items without organisation"));
+      }
+
+      // Org mismatch
+      if (!resourceOrgId.toString().equals(callerOrgId)) {
+        return Future.failedFuture(
+            generateErrorResponse(
+                FORBIDDEN,
+                "Org Admin cannot create policy for resources outside their organisation"));
+      }
+    }
+
+    return Future.succeededFuture();
+  }
+
+  public Future<List<ResourceObj>> checkForItemsInDb(
       Set<UUID> itemIdList, Set<String> itemTypeRequest, DxUser user) {
 
     if (itemIdList.isEmpty()) {
       LOGGER.warn("item id list is empty...");
-      return Future.succeededFuture(Set.of());
+      return Future.succeededFuture(List.of());
     }
 
     // Fetch items from catalogue directly
@@ -190,6 +228,8 @@ public class PolicyServiceImpl implements PolicyService {
         .compose(
             resourceObjs -> {
               Set<UUID> providerIdSet = new HashSet<>();
+              Set<UUID> organizationIdSet = new HashSet<>();
+              List<ResourceObj> resourceObjList = new ArrayList<>();
 
               for (ResourceObj obj : resourceObjs) {
                 // Validate item types
@@ -208,9 +248,11 @@ public class PolicyServiceImpl implements PolicyService {
                 // }
 
                 providerIdSet.add(obj.getProviderId());
+                organizationIdSet.add(obj.getOrganizationId());
+                resourceObjList.add(obj);
               }
 
-              return Future.succeededFuture(providerIdSet);
+              return Future.succeededFuture(resourceObjList);
             })
         .recover(
             failure -> {
@@ -330,6 +372,10 @@ public class PolicyServiceImpl implements PolicyService {
                     itemType = ItemType.APPS;
                   }
                   ResourceObj resourceObj = new ResourceObj(id, provider, resServerUrls, itemType);
+                  if (resultJson.getString(ORGANIZATION_ID) != null) {
+                    resourceObj.setOrganizationId(
+                        UUID.fromString(resultJson.getString(ORGANIZATION_ID)));
+                  }
                   promise.complete(resourceObj);
                 }
               } else {
@@ -533,7 +579,8 @@ public class PolicyServiceImpl implements PolicyService {
                         verifiedPolicy -> {
                           VerifyPolicyDto verifyPolicyDto =
                               new VerifyPolicyDto(
-                                  ResponseUrn.VERIFY_SUCCESS_URN.getUrn(), constraints, expiryAt);
+                                  policyId.toString(), ResponseUrn.VERIFY_SUCCESS_URN.getUrn(),
+                                  constraints, expiryAt);
                           promise.complete(verifyPolicyDto);
                         })
                     .onFailure(promise::fail);
