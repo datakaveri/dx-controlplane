@@ -40,6 +40,14 @@ public class RoutingContextHelper {
     return routingContext.get(USER);
   }
 
+  public static void setDxUser(RoutingContext routingContext, DxUser dxUser) {
+     routingContext.put(DX_USER, dxUser);
+  }
+
+  public static DxUser getDxUser(RoutingContext routingContext) {
+    return routingContext.get(DX_USER);
+  }
+
   public static JsonObject getAuthInfo(RoutingContext routingContext) {
     return new JsonObject()
         .put(API_ENDPOINT, getRequestPath(routingContext))

@@ -29,6 +29,7 @@ public class ApiConstants {
   public static final String CONTENT_TYPE = "Content-Type";
   public static final String X_REQUESTED_WITH = "X-Requested-With";
   public static final String USER = "user";
+  public static final String DX_USER = "dxUser";
 
   /** Accept Headers and CORS */
   public static final String MIME_APPLICATION_JSON = "application/json";

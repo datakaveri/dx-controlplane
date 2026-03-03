@@ -15781,17 +15781,26 @@ components:
               lastUpdated:
                 type: string
                 description: Last updated timestamp (human-readable)
-              expiryAt:
-                type: string
-                description: If the fetched item is of RESTRICTED accessPolicy, then the response
-                  will include the expiry time of the policy
-              cons:
-                type: object
-                description: Constraints associated with the model
-                additionalProperties:
-                  type: array
-                  items:
-                    type: string
+              policies:
+                type: array
+                description: List of policies applicable to the item (present only for RESTRICTED accessPolicy)
+                items:
+                  type: object
+                  properties:
+                    policyId:
+                      type: string
+                      format: uuid
+                      description: Unique identifier of the policy
+
+                    expiryAt:
+                      type: string
+                      format: date-time
+                      description: Expiry timestamp of the policy (human-readable ISO format)
+
+                    cons:
+                      type: object
+                      description: Constraints associated with the policy
+                      additionalProperties: true
             required:
               - id
               - type
@@ -15842,15 +15851,23 @@ components:
             dataUploadStatus: false
             itemCreatedAt: "2025-12-15T05:16:43+0530"
             lastUpdated: "15 December, 2025 - 05:16 PM"
-            expiryAt: '2026-09-05T20:00:19'
-            cons:
-              subjects:
-                allowedOrgIds: [ "<uuid>", "<uuid>" ]
-                allowedUserIds: [ "<uuid>" ]
-                allowedRoles: [ "consumer" ]
-              access:
-                - accessType: sub
-                  expiry: 1735689600
+            policies:
+              - policyId: fc6eaf20-98e5-4ef0-b09b-f78d7c73b28c
+                expiryAt: "2026-09-05T20:00:19"
+                cons:
+                  subjects:
+                    allowedOrgIds:
+                      - 74e3b919-1d1b-44de-ace1-504f1887fcc1
+                      - 91c2d732-3cbb-4b9f-8f3e-8c2e4a9b1122
+                    allowedUserIds:
+                      - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                    allowedRoles:
+                      - consumer
+                  access:
+                    - accessType: sub
+                      expiry: 1735689600
+                      limits:
+                        apiHits: 100
         paginationInfo:
           page: 1
           size: 1
@@ -16009,17 +16026,26 @@ components:
               lastUpdated:
                 type: string
                 description: Last updated timestamp (human-readable)
-              expiryAt:
-                type: string
-                description: If the fetched item is of RESTRICTED accessPolicy, then the response
-                  will include the expiry time of the policy
-              cons:
-                type: object
-                description: Constraints associated with the databank
-                additionalProperties:
-                  type: array
-                  items:
-                    type: string
+              policies:
+                type: array
+                description: List of policies applicable to the item (present only for RESTRICTED accessPolicy)
+                items:
+                  type: object
+                  properties:
+                    policyId:
+                      type: string
+                      format: uuid
+                      description: Unique identifier of the policy
+
+                    expiryAt:
+                      type: string
+                      format: date-time
+                      description: Expiry timestamp of the policy (human-readable ISO format)
+
+                    cons:
+                      type: object
+                      description: Constraints associated with the policy
+                      additionalProperties: true
             required:
               - id
               - type
@@ -16100,15 +16126,23 @@ components:
             dataUploadStatus: false
             itemCreatedAt: "2024-01-05T02:09:10+0530"
             lastUpdated: "15 December, 2025 - 05:04 PM"
-            expiryAt: '2026-09-05T20:00:19'
-            cons:
-              subjects:
-                allowedOrgIds: [ "<uuid>", "<uuid>" ]
-                allowedUserIds: [ "<uuid>" ]
-                allowedRoles: [ "consumer" ]
-              access:
-                - accessType: sub
-                  expiry: 1735689600
+            policies:
+              - policyId: fc6eaf20-98e5-4ef0-b09b-f78d7c73b28c
+                expiryAt: "2026-09-05T20:00:19"
+                cons:
+                  subjects:
+                    allowedOrgIds:
+                      - 74e3b919-1d1b-44de-ace1-504f1887fcc1
+                      - 91c2d732-3cbb-4b9f-8f3e-8c2e4a9b1122
+                    allowedUserIds:
+                      - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                    allowedRoles:
+                      - consumer
+                  access:
+                    - accessType: sub
+                      expiry: 1735689600
+                      limits:
+                        apiHits: 100
         paginationInfo:
           page: 1
           size: 1
@@ -16250,17 +16284,26 @@ components:
               verifiedBy:
                 type: string
                 description: Authority that verified the application
-              expiryAt:
-                type: string
-                description: If the fetched item is of RESTRICTED accessPolicy, then the response
-                  will include the expiry time of the policy
-              cons:
-                type: object
-                description: Constraints associated with the model
-                additionalProperties:
-                  type: array
-                  items:
-                    type: string
+              policies:
+                type: array
+                description: List of policies applicable to the item (present only for RESTRICTED accessPolicy)
+                items:
+                  type: object
+                  properties:
+                    policyId:
+                      type: string
+                      format: uuid
+                      description: Unique identifier of the policy
+
+                    expiryAt:
+                      type: string
+                      format: date-time
+                      description: Expiry timestamp of the policy (human-readable ISO format)
+
+                    cons:
+                      type: object
+                      description: Constraints associated with the policy
+                      additionalProperties: true
         paginationInfo:
           $ref: '#/components/schemas/PaginationInfo'
       example:
@@ -16328,15 +16371,23 @@ components:
             itemCreatedAt: '2024-01-05T02:09:10+0530'
             lastUpdated: '2024-01-10T11:30:00+0530'
             verifiedBy: 'Department of Agriculture'
-            expiryAt: '2026-09-05T20:00:19'
-            cons:
-              subjects:
-                allowedOrgIds: [ "<uuid>", "<uuid>" ]
-                allowedUserIds: [ "<uuid>" ]
-                allowedRoles: [ "consumer" ]
-              access:
-                - accessType: sub
-                  expiry: 1735689600
+            policies:
+              - policyId: fc6eaf20-98e5-4ef0-b09b-f78d7c73b28c
+                expiryAt: "2026-09-05T20:00:19"
+                cons:
+                  subjects:
+                    allowedOrgIds:
+                      - 74e3b919-1d1b-44de-ace1-504f1887fcc1
+                      - 91c2d732-3cbb-4b9f-8f3e-8c2e4a9b1122
+                    allowedUserIds:
+                      - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                    allowedRoles:
+                      - consumer
+                  access:
+                    - accessType: sub
+                      expiry: 1735689600
+                      limits:
+                        apiHits: 100
         paginationInfo:
           page: 1
           size: 1

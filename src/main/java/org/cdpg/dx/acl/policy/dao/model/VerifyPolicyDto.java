@@ -3,23 +3,25 @@ package org.cdpg.dx.acl.policy.dao.model;
 import io.vertx.core.json.JsonObject;
 
 public class VerifyPolicyDto {
+  private String policyId;
   private String type;
   private JsonObject constraints;
   private String expiryAt;
 
-  public VerifyPolicyDto() {
-  }
+  public VerifyPolicyDto() {}
 
   public VerifyPolicyDto(JsonObject json) {
     if (json == null) {
       return;
     }
+    this.type = json.getString("policyId");
     this.type = json.getString("type");
     this.constraints = json.getJsonObject("constraints");
     this.expiryAt = json.getString("expiryAt");
   }
 
-  public VerifyPolicyDto(String type, JsonObject constraints, String expiryAt) {
+  public VerifyPolicyDto(String policyId, String type, JsonObject constraints, String expiryAt) {
+    this.policyId = policyId;
     this.type = type;
     this.constraints = constraints;
     this.expiryAt = expiryAt;
@@ -49,9 +51,20 @@ public class VerifyPolicyDto {
     this.expiryAt = expiryAt;
   }
 
+  public String getPolicyId() {
+    return policyId;
+  }
+
+  public void setPolicyId(String policyId) {
+    this.policyId = policyId;
+  }
+
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
 
+    if (policyId != null) {
+      json.put("policyId", policyId);
+    }
     if (type != null) {
       json.put("type", type);
     }
