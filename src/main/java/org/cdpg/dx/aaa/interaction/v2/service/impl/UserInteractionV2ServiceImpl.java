@@ -11,6 +11,8 @@ import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import org.cdpg.dx.aaa.interaction.v2.dao.ProviderFeedbackDao;
+import org.cdpg.dx.aaa.interaction.v2.dao.UserFeedbackDao;
 import org.cdpg.dx.aaa.interaction.v2.dao.UserInteractionV2Dao;
 import org.cdpg.dx.aaa.interaction.v2.model.*;
 import org.cdpg.dx.aaa.interaction.v2.service.UserInteractionV2Service;
@@ -29,11 +31,15 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
   private static final Logger LOGGER = LogManager.getLogger(UserInteractionV2ServiceImpl.class);
 
   private final UserInteractionV2Dao dao;
+  private final UserFeedbackDao userFeedbackDao;
+  private final ProviderFeedbackDao providerFeedbackDao;
   private final ItemService itemService;
 
-  public UserInteractionV2ServiceImpl(UserInteractionV2Dao dao, ItemService itemService) {
+  public UserInteractionV2ServiceImpl(UserInteractionV2Dao dao, UserFeedbackDao userFeedbackDao, ProviderFeedbackDao providerFeedbackDao,ItemService itemService) {
 
     this.dao = dao;
+    this.userFeedbackDao = userFeedbackDao;
+    this.providerFeedbackDao = providerFeedbackDao;
     this.itemService = itemService;
   }
 
@@ -188,4 +194,50 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
       return likeDelta == 0 && dislikeDelta == 0;
     }
   }
+
+  @Override
+  public Future<UserFeedback> postUserFeedback(UserFeedback request)
+  {
+    LOGGER.info("Inside service imple method - post user feedbaack");
+    return userFeedbackDao.updateFeedback(request);
+  }
+
+
+  @Override
+  public Future<ProviderFeedback> postProviderFeedback(ProviderFeedback request)
+  {
+    LOGGER.info("Inside service imple method - post provider feedbaack");
+    return providerFeedbackDao.postProviderFeedback(request);
+  }
+
+  @Override
+  public Future<Boolean> deleteUserFeedback(UUID reqId, UUID userId)
+  {
+    LOGGER.info("Inside service imple method - delete user feedbaack");
+    return userFeedbackDao.deleteFeedback(reqId,userId);
+  }
+
+
+  @Override
+  public  Future<UserFeedbackPaginatedResponse> getUserFeedback(PaginatedRequest request)
+  {
+    LOGGER.debug("UserInteractionsPaginatedResponse() method started");
+    return userFeedbackDao.fetchUserFeedbacks(request);
+  }
+
+  @Override
+  public  Future<ProviderFeedbackPaginatedResponse> getProviderFeedback(PaginatedRequest request)
+  {
+    LOGGER.debug("UserInteractionsPaginatedResponse() method started");
+    return providerFeedbackDao.fetchProviderFeedbacks(request);
+  }
+
+  @Override
+  public Future<Boolean> deleteProviderFeedback(UUID reqId, UUID userId)
+  {
+    LOGGER.info("Inside service imple method - delete user feedbaack");
+    return providerFeedbackDao.deleteProviderFeedback(reqId,userId);
+  }
+
+
 }

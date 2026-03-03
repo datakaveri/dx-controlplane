@@ -4,10 +4,13 @@ import io.vertx.core.Future;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import jakarta.ws.rs.ForbiddenException;
 import org.apache.logging.log4j.LogManager;
 import org.cdpg.dx.aaa.delegation.util.RoleScopeMapping;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
+import org.cdpg.dx.common.exception.BaseDxException;
+import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.KeycloakServiceException;
 import org.cdpg.dx.common.model.UserInfo;
@@ -94,17 +97,20 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
     return BlockingExecutionUtil.runBlocking(() -> {
       try {
         UsersResource users = usersResource();
-
         if (searchTerm != null && !searchTerm.isBlank()) {
           List<UserRepresentation> matchedUsers = users.search(searchTerm, 0, Integer.MAX_VALUE);
           return matchedUsers.size();
         }
-
         return users.count();
-      } catch (Exception e) {
-        LOGGER.error("Failed to retrieve user count from Keycloak: {}", e.getMessage(), e);
-        throw new KeycloakServiceException("Failed to retrieve user count", e);
+      } catch (ForbiddenException e) {
+        throw new DxForbiddenException("User is forbidden to run: get total count of search term");
       }
+    }).recover(err -> {
+      BaseDxException dxEx = BaseDxException.from(err);
+      if (dxEx instanceof DxForbiddenException) {
+        return Future.failedFuture(new DxForbiddenException("User not found"));
+      }
+      return Future.failedFuture(dxEx);
     });
   }
 
@@ -538,7 +544,7 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
       LOGGER.info("Saving scopes for user {} : {}", userId, scopesArray.encode());
 
       // Save back to attributes
-      attrs.put(KeycloakConstants.SCOPES, List.of(scopesArray.encode()));
+      attrs.put(KeycloakConstants.USER_SCOPE, List.of(scopesArray.encode()));
       user.setAttributes(attrs);
 
       LOGGER.info("Keycloak client: {}", keycloak.tokenManager().getAccessTokenString());
