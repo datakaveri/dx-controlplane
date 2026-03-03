@@ -379,6 +379,10 @@ paths:
       tags:
         - Organisation APIs
       operationId: get-auth-v2-organisations-request
+      description: >
+        Returns a paginated list of organisation creation requests.
+
+        **Log Type:** `USER_ACTION`
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
@@ -533,6 +537,10 @@ paths:
       summary: 'AAA-002-New User: New organisation creation request'
       tags:
         - Organisation APIs
+      description: >
+        Submits a new organisation creation request by the authenticated user.
+
+        **Log Type:** `USER_ACTION`
       operationId: post-auth-v2-organisations-request
       requestBody:
         description: |
@@ -750,6 +758,8 @@ paths:
         This API allows an AAA-003-PF Admin to approve or reject a pending organization creation request.
         The request body must include the `req_id` of the organization request and the `status` (granted or rejected).
         A successful response indicates that the organization request has been updated.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       operationId: post-auth-v2-approve-create_org
@@ -862,6 +872,10 @@ paths:
       tags:
         - Organisation APIs
       operationId: get-auth-v2-user-organisations-request
+      description: >
+        This request lists all the organisation creation requests made by that user.
+
+        **Log Type:** `USER_ACTION`
       responses:
         '200':
           description: OK
@@ -990,6 +1004,8 @@ paths:
       summary: 'User: Delete Pending Organization Requests'
       description: >
         delete the pending organization requests made by the user calling the API.
+
+        **Log Type:** `USER_ACTION`
       operationId: delete-auth-v2-user-organisations-request
       parameters:
         - name: id
@@ -1024,6 +1040,7 @@ paths:
       summary: 'User: Get all Join requests for an organisation'
       description: >
         This API allows a user to view all its organization join requests made by it.
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       parameters:
@@ -1144,6 +1161,7 @@ paths:
       summary: 'User: Delete Pending Organization Join Requests'
       description: >
         delete the pending organization requests made by the user calling the API.
+        **Log Type:** `USER_ACTION`
       operationId: delete-auth-v2-user-organisations-join-requests
       parameters:
         - name: id
@@ -1176,7 +1194,10 @@ paths:
       - name: id
         in: path
         required: true
-        description: UUID of the organisation for which to retrieve/put join requests.
+        description: >
+          UUID of the organisation for which to retrieve/put join requests.
+
+          **Log Type:** `USER_ACTION`
         schema:
           type: string
           format: uuid
@@ -1196,6 +1217,8 @@ paths:
         (e.g., pending, granted, rejected). It provides details about each join request,
         including the user who requested to join, their current status, job title, employee ID,
         official email, and any assigned roles. Pagination information is also included in the response.
+
+        **Log Type:** `USER_ACTION`
       parameters:
         - name: status
           in: query
@@ -1338,6 +1361,8 @@ paths:
         This API allows an authenticated user to submit a request to join a specific organization,
         identified by its `id` in the path parameter. The request includes the user's job title and employee ID.
         The organization administrator will then review and process this join request.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       requestBody:
@@ -1497,6 +1522,8 @@ paths:
         This API allows an organization administrator to approve or reject a specific join request for their organization.
         The organization is identified by `id` and the join request by `req_id` in the path parameters.
         This operation updates the status of an existing join request.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       operationId: put-auth-v2-organisations-join-requests
@@ -1591,6 +1618,8 @@ paths:
       description: >
         Allows an authenticated user to withdraw their pending organisation join request.
         Only join requests in a withdrawable state (e.g. PENDING) can be withdrawn.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       parameters:
@@ -1711,6 +1740,8 @@ paths:
         This API allows authenticated users to retrieve a list of all registered organizations.
         It provides details such as the organization's name, logo, entity type, sector, and website.
         Pagination information is also included in the response. This endpoint does not require a request body.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       responses:
@@ -1847,6 +1878,8 @@ paths:
         This API allows an PFAdmin to delete an organization by its unique identifier (ID).
         The ID of the organization to be deleted is provided as a path parameter.
         A successful response indicates that the organization has been deleted.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       responses:
@@ -1862,6 +1895,8 @@ paths:
         The ID of the organization to be updated is provided as a path parameter.
         The request body should contain the updated organization details.
         A successful response indicates that the organization has been updated.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       security:
@@ -1973,6 +2008,8 @@ paths:
         This API allows retrieving the details of a specific organization by its unique identifier (ID).
         The ID of the organization to be retrieved is provided as a path parameter.
         A successful response includes the organization's details such as name, logo, entity type, sector, and website.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       parameters:
@@ -2111,6 +2148,8 @@ paths:
         identified by its `id` in the path parameter. The response includes details about each user,
         such as their role within the organization, job title, employee ID, official email, and account status.
         Pagination information is also included in the response.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       responses:
@@ -2330,6 +2369,8 @@ paths:
         This API allows an organization administrator to delete a specific user from their organization,
         identified by the user's `user_id` and the organization's `id` in the path parameters.
         A successful response indicates that the user has been deleted from the organization.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       responses:
@@ -2370,6 +2411,8 @@ paths:
         The user is identified by their `user_id` and the organization by its `id` in the path parameters.
         The request body should contain the new role for the user.
         A successful response indicates that the user's role has been updated.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       responses:
@@ -2447,7 +2490,8 @@ paths:
     post:
       operationId: post-auth-v2-custom-role
       summary: Create custom role and scopes
-      description: Creates a custom role and optional scopes for a particular user
+      description: >
+       Creates a custom role and optional scopes for a particular user
       tags:
         - Role APIs
       security:
@@ -2650,7 +2694,10 @@ paths:
     get:
       operationId: get-auth-v2-user-credit-balance
       summary: Get the specified user's credit balance
-      description: Returns the credit balance for the specified user (KYC-verified).
+      description: >
+       Returns the credit balance for the specified user (KYC-verified).
+
+        **Log Type:** `COMPUTE`
       tags:
         - Credit APIs
 
@@ -2685,7 +2732,10 @@ paths:
     get:
       operationId: get-auth-v2-admin-user-credit-balance
       summary: Get the specified user's credit balance (COS ADMIN)
-      description: Returns the credit balance for the specified user (KYC-verified).
+      description: >
+       Returns the credit balance for the specified user (KYC-verified).
+
+        **Log Type:** `COMPUTE`
       tags:
         - Credit APIs
 
@@ -2711,6 +2761,10 @@ paths:
   /iudx/v2/auth/user/credit/request:
     get:
       summary: 'User: Get all pending credit requests'
+      description: >
+        Get all the pending credit requests of the user
+
+        **Log Type:** `COMPUTE`
       tags:
         - Credit APIs
       responses:
@@ -2820,6 +2874,8 @@ paths:
       summary: 'User: Delete Pending Credit Request'
       description: >
         delete the pending credit requests made by the user calling the API.
+
+        **Log Type:** `COMPUTE`
       operationId: delete-auth-v2-user-credit
       parameters:
         - name: id
@@ -2850,6 +2906,10 @@ paths:
   /iudx/v2/auth/credit/request:
     get:
       summary: Get all credit requests by status (COS ADMIN)
+      description: >
+        Get all the credit requests.
+
+        **Log Type:** `COMPUTE`
       tags:
         - Credit APIs
       responses:
@@ -2957,6 +3017,10 @@ paths:
       summary: Create Credit Request
       tags:
         - Credit APIs
+      description: >
+        This api helps users create credit request. The cos admin can then review and take action on those requests.
+
+        **Log Type:** `COMPUTE`
       requestBody:
         description: >
           - `additional_info` : Optional extra details about requester and intent
@@ -3032,6 +3096,10 @@ paths:
 
     put:
       summary: Update Credit Request Status (COS ADMIN)
+      description: >
+        This api helps COS ADMIN to update the credit requests and add credits or reject the request of the users.
+
+        **Log Type:** `COMPUTE`
       tags:
         - Credit APIs
       responses:
@@ -3155,6 +3223,10 @@ paths:
   /iudx/v2/auth/admin/user/credit/deduct:
     put:
       summary: Deduct User Credit (COS ADMIN)
+      description: >
+        This api helps COS ADMIN to deduct the credits of a user.
+
+        **Log Type:** `COMPUTE`
       tags:
         - Credit APIs
       responses:
@@ -3242,7 +3314,10 @@ paths:
     put:
       operationId: put-auth-v2-user-credit-add
       summary: Add credits to user's balance amount
-      description: Adds credits to the specified user's balance.
+      description: >
+       Adds credits to the specified user's balance.
+
+       **Log Type:** `COMPUTE`
       requestBody:
         content:
           application/json:
@@ -3357,6 +3432,8 @@ paths:
       summary: 'User: Delete Pending Compute Request'
       description: >
         delete the pending compute requests made by the user calling the API.
+
+        **Log Type:** `COMPUTE`
       operationId: delete-auth-v2-user-compute-role-request
       parameters:
         - name: id
@@ -3389,6 +3466,10 @@ paths:
   /iudx/v2/auth/user/compute/requests:
     get:
       summary: 'User: Get All ComputeRole Requests'
+      description: >
+        This api helps a user to check all compute requests made by them.
+
+        **Log Type:** `COMPUTE`
       tags:
         - Compute APIs
       responses:
@@ -3494,6 +3575,10 @@ paths:
   /iudx/v2/auth/compute/requests:
     get:
       summary: Get All Pending ComputeRole Requests (COS ADMIN)
+      description: >
+        This api helps COS ADMIN get all the pending compute role requests.
+
+        **Log Type:** `COMPUTE`
       tags:
         - Compute APIs
       responses:
@@ -3600,6 +3685,10 @@ paths:
       summary: Create Compute Role Request (USER)
       tags:
         - Compute APIs
+      description: >
+        This api helps user to create request to get a compute role.
+
+        **Log Type:** `COMPUTE`
       responses:
         '200':
           description: OK
@@ -3675,6 +3764,10 @@ paths:
       summary: Update Compute Roles (COS ADMIN)
       tags:
         - Compute APIs
+      description: >
+        This api helps COS ADMIN to update the users with compute role by granting/rejecting the compute role request.
+
+        **Log Type:** `COMPUTE`
       responses:
         '200':
           description: OK
@@ -3765,6 +3858,8 @@ paths:
         A successful response returns a list of pending
         requests with details such as user ID, user name, organization ID, organization name,
         status, and timestamps.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       parameters:
@@ -3812,6 +3907,8 @@ paths:
       summary: 'User: Delete Pending Provider Request'
       description: >
         delete the pending provider requests made by the user calling the API.
+
+        **Log Type:** `USER_ACTION`
       operationId: delete-auth-v2-user-provider-requests
       parameters:
         - name: id
@@ -3854,6 +3951,8 @@ paths:
         This API allows a user to submit a role upgrade request from Consumer to Provider within their organization.
         Once the organization administrator(`org_admin`) approves the request, the user will be granted the Provider role for the respective organization.
         A successful response indicates that the request has been successfully submitted.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       operationId: post-auth-v2-user-roles
@@ -3892,6 +3991,8 @@ paths:
         from users in its organization. A successful response returns a list of pending
         requests with details such as user ID, user name, organization ID, organization name,
         status, and timestamps.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       parameters:
@@ -3941,6 +4042,8 @@ paths:
         The request is identified by its `id` in the path parameter. The request body should contain the new
         status for the provider role request. A successful response indicates that the provider role request
         has been updated.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       parameters:
@@ -4035,6 +4138,10 @@ paths:
       summary: (User) Get User Information
       tags:
         - Role APIs
+      description: >
+        Retrieves the profile and account details of the currently authenticated user.
+
+        **Log Type:** `USER_ACTION`
       responses:
         '200':
           description: OK
@@ -4184,6 +4291,10 @@ paths:
       summary: (User) Update First Name, Last Name, Social Media Information
       tags:
         - Role APIs
+      description: >
+        Updates the first name, last name, and social media information of the currently authenticated user.
+
+        **Log Type:** `USER_ACTION`
       responses:
         '200':
           description: OK
@@ -4296,6 +4407,10 @@ paths:
       summary: (COS Admin) Get User Information
       tags:
         - Role APIs
+      description: >
+        Retrieves the profile and account details of a user. Accessible only by COS Admin.
+
+        **Log Type:** `USER_ACTION`
       responses:
         '200':
           description: OK
@@ -4385,6 +4500,10 @@ paths:
   /iudx/v2/auth/admin/user:
     get:
       summary: (COS Admin) Get All Users Info
+      description: >
+        Retrieves the profile and account details of all users. Accessible only by COS Admin.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Role APIs
       responses:
@@ -4588,7 +4707,10 @@ paths:
   /iudx/v2/auth/user/basic:
     get:
       summary: (All Users) Get basic user information
-      description: Returns paginated list of users with UUID, name, username, and email.
+      description: >
+        Returns paginated list of users with UUID, name, username, and email.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Role APIs
       operationId: get-auth-v2-user-search
@@ -4645,12 +4767,16 @@ paths:
     post:
       operationId: post-auth-v2-organization-user-provider
       summary: 'AAA-017-OrgAdmin: Grant provider role to user'
-      description: This endpoint allows organization admin grants provider role
+      description: >
+        This endpoint allows organization admin grants provider role
         to user in its organization.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       requestBody:
-        description: This endpoint allows organization admin grants provider role
+        description: >
+          This endpoint allows organization admin grants provider role
           to user in its organization.
         required: true
         content:
@@ -4688,6 +4814,10 @@ paths:
   /iudx/v2/auth/user/update:
     post:
       summary: (User) Deactivate User Account
+      description: >
+        Deactivates the currently authenticated user's account.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Role APIs
       requestBody:
@@ -4712,6 +4842,10 @@ paths:
   /iudx/v2/auth/admin/{id}/update:
     post:
       summary: (Admin) Deactivate/Activate User Account
+      description: >
+        Deactivates or activates a user account by ID. Accessible only by Admin.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Role APIs
       parameters:
@@ -4750,6 +4884,10 @@ paths:
         '200':
           description: OK
       operationId: delete-auth-v2-user
+      description: >
+        Permanently deletes the currently authenticated user's account.
+
+        **Log Type:** `USER_ACTION`
       security:
         - authorization: [ ]
   /iudx/v2/auth/kyc/revoke:
@@ -5737,6 +5875,10 @@ paths:
       tags:
         - Asset APIs
       operationId: post-auth-v2-asset-request
+      description: >
+        Creates a data ingestion request(SFTP/API) for the authenticated user.
+
+        **Log Type:** `USER_ACTION`
       requestBody:
         description: >
           - `asset_id` : The catalogue ID of the asset for which the request is to be created
@@ -5819,6 +5961,8 @@ paths:
       description: >
         Lists all the latest asset requests made by the org admin user calling the API,
         regardless of the request status.
+
+        **Log Type:** `USER_ACTION`
       operationId: get-auth-v2-asset-request
       parameters:
         - $ref: '#/components/parameters/PageParam'
@@ -5885,6 +6029,10 @@ paths:
       tags:
         - Asset APIs
       operationId: put-auth-v2-asset-request
+      description: >
+        Updates the status of an existing data ingestion access request by ID.
+
+        **Log Type:** `USER_ACTION`
       parameters:
         - name: id
           in: path
@@ -5954,6 +6102,8 @@ paths:
       summary: Delete User Asset Request
       description: >
         delete the pending asset requests made by the user calling the API.
+
+        **Log Type:** `USER_ACTION`
       operationId: delete-auth-v2-asset-request
       parameters:
         - name: id
@@ -6246,6 +6396,8 @@ paths:
         ### Visibility rules
         An item becomes visible across the platform **only when both**
         `publishStatus = ACTIVE` **and** `dataUploadStatus = true`.
+
+        **Log Type:** `ASSET`
       operationId: create item
       security:
         - authorization: [ ]
@@ -6361,6 +6513,8 @@ paths:
            - itemCreatedAt
            - publishStatus
            - dataUploadStatus
+
+        **Log Type:** `ASSET`
       operationId: update item
       security:
         - authorization: [ ]
@@ -6454,6 +6608,8 @@ paths:
         Get an item given the ID.
 
         If a Bearer token is provided in the Authorization header, the request will be authenticated and an audit log entry will be created for a **View** operation.
+
+        **Log Type:** `ASSET`
       operationId: get item
       security:
         - optionalAuth: [ ]
@@ -6517,7 +6673,10 @@ paths:
     delete:
       tags:
         - CAT Entity
-      description: Delete an item
+      description: >
+       Delete an item
+
+       **Log Type:** `ASSET`
       operationId: delete item
       security:
         - authorization: [ ]
@@ -6675,6 +6834,8 @@ paths:
           the requested item.
         - If delegation does not exist or scope does not permit access,
           the request will be rejected with **403 Forbidden**.
+
+        **Log Type:** `ASSET`
       operationId: get item with accessPolicy
       security:
         - optionalAuth: [ ]
