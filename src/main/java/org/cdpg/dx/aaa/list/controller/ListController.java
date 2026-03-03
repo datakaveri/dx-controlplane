@@ -13,49 +13,55 @@ import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.request.PostSearchRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
-import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class ListController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(ListController.class);
+  private final URNGenerator urnGenerator;
+  private final KeycloakUserService keycloakUserService;
   AuditingHandler auditingHandler;
   ListService listService;
-  private final URNGenerator urnGenerator;
 
-  public ListController(AuditingHandler auditingHandler, ListService listService,URNGenerator urnGenerator) {
+  public ListController(
+      AuditingHandler auditingHandler,
+      ListService listService,
+      KeycloakUserService keycloakUserService,
+      URNGenerator urnGenerator) {
     this.auditingHandler = auditingHandler;
     this.listService = listService;
     this.urnGenerator = urnGenerator;
+    this.keycloakUserService = keycloakUserService;
   }
 
   @Override
   public void register(RouterBuilder builder) {
     builder
-      .operation(LIST_AVAILABLE_FILTER)
-      .handler(this::handleGetAvailableFilters)
-      .handler(auditingHandler::handleApiAudit);
+        .operation(LIST_AVAILABLE_FILTER)
+        .handler(this::handleGetAvailableFilters)
+        .handler(auditingHandler::handleApiAudit);
     LOGGER.debug("List Controller registered");
   }
 
   private void handleGetAvailableFilters(RoutingContext routingContext) {
-    QueryDecoderRequestDTO queryDecoder =
-      PostSearchRequestBuilder.fromRoutingContext(routingContext)
+
+    PostSearchRequestBuilder.fromRoutingContext(routingContext, keycloakUserService)
         .setAssetSearch(false)
         .setCountApi(false)
-        .build();
-    listService
-      .getAvailableFilters(queryDecoder)
-      .onSuccess(
-        successHandler -> {
-          ResponseBuilder.sendSuccess(
-            routingContext,
-            successHandler.getResponse().getJsonArray(RESULTS),
-            successHandler.getPaginationInfo(),urnGenerator);
-        })
-      .onFailure(
-        failureHandler -> {
-          LOGGER.error(
-            "Failed to fetch activity logs: {}", failureHandler.getMessage());
-          routingContext.fail(failureHandler);
-        });
+        .build() // Future<QueryDecoderRequestDTO>
+        .compose(queryDecoder -> listService.getAvailableFilters(queryDecoder))
+        .onSuccess(
+            successHandler -> {
+              ResponseBuilder.sendSuccess(
+                  routingContext,
+                  successHandler.getResponse().getJsonArray(RESULTS),
+                  successHandler.getPaginationInfo(),
+                  urnGenerator);
+            })
+        .onFailure(
+            failureHandler -> {
+              LOGGER.error(
+                  "Failed to fetch activity logs: {}", failureHandler.getMessage(), failureHandler);
+              routingContext.fail(failureHandler);
+            });
   }
 }

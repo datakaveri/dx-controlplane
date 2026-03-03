@@ -6,12 +6,17 @@ import org.cdpg.dx.aaa.list.service.ListServiceImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class ListControllerFactory {
 
   public static ListController createListController(
-    ElasticsearchService elasticsearchService, AuditingHandler auditingHandler, String docIndex,URNGenerator urnGenerator) {
+      ElasticsearchService elasticsearchService,
+      KeycloakUserService keycloakUserService,
+      AuditingHandler auditingHandler,
+      String docIndex,
+      URNGenerator urnGenerator) {
     ListService listService = new ListServiceImpl(elasticsearchService, docIndex);
-    return new ListController(auditingHandler, listService,urnGenerator);
+    return new ListController(auditingHandler, listService, keycloakUserService, urnGenerator);
   }
 }
