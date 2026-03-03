@@ -6,12 +6,17 @@ import org.cdpg.dx.aaa.search.service.SearchServiceImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class SearchControllerFactory {
 
   public static SearchController createSearchController(
-    ElasticsearchService elasticsearchService, AuditingHandler auditingHandler, String docIndex, URNGenerator unrGenerator) {
+      ElasticsearchService elasticsearchService,
+      KeycloakUserService keycloakUserService,
+      AuditingHandler auditingHandler,
+      String docIndex,
+      URNGenerator unrGenerator) {
     SearchService searchService = new SearchServiceImpl(elasticsearchService, docIndex);
-    return new SearchController(searchService, auditingHandler,unrGenerator);
+    return new SearchController(searchService, keycloakUserService, auditingHandler, unrGenerator);
   }
 }

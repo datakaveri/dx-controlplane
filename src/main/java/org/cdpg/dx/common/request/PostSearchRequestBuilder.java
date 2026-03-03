@@ -16,12 +16,14 @@ import static org.cdpg.dx.database.elastic.util.Constants.SEARCH_TYPE_PF_ASSETS_
 import static org.cdpg.dx.database.elastic.util.Constants.SEARCH_TYPE_TEXT;
 import static org.cdpg.dx.database.elastic.util.Constants.SIZE_KEY;
 
+import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.common.exception.DxBadRequestException;
@@ -33,10 +35,12 @@ import org.cdpg.dx.database.elastic.model.ResponseFilterRequestDTO;
 import org.cdpg.dx.database.elastic.model.SearchCriteriaDTO;
 import org.cdpg.dx.database.elastic.model.SearchCriteriaRequestDTO;
 import org.cdpg.dx.database.elastic.model.TextSearchRequestDTO;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class PostSearchRequestBuilder {
   private static final Logger LOGGER = LogManager.getLogger(PostSearchRequestBuilder.class);
   private final RoutingContext routingContext;
+  private final KeycloakUserService keycloakUserService;
   private final String defaultSortBy = "itemCreatedAt";
   private final String defaultOrder = "desc";
   private final String requestType = "search";
@@ -45,12 +49,15 @@ public class PostSearchRequestBuilder {
   boolean isPFAssetsSearch = false;
   boolean isOrgAssetsSearch = false;
 
-  public PostSearchRequestBuilder(RoutingContext routingContext) {
+  public PostSearchRequestBuilder(
+      RoutingContext routingContext, KeycloakUserService keycloakUserService) {
     this.routingContext = routingContext;
+    this.keycloakUserService = keycloakUserService;
   }
 
-  public static PostSearchRequestBuilder fromRoutingContext(RoutingContext routingContext) {
-    return new PostSearchRequestBuilder(routingContext);
+  public static PostSearchRequestBuilder fromRoutingContext(
+      RoutingContext routingContext, KeycloakUserService keycloakUserService) {
+    return new PostSearchRequestBuilder(routingContext, keycloakUserService);
   }
 
   public PostSearchRequestBuilder setCountApi(boolean countApi) {
@@ -73,7 +80,7 @@ public class PostSearchRequestBuilder {
     return this;
   }
 
-  public QueryDecoderRequestDTO build() {
+  public Future<QueryDecoderRequestDTO> build() {
     JsonObject requestBody = routingContext.getBodyAsJson();
     MultiMap params = routingContext.queryParams();
 
@@ -97,27 +104,32 @@ public class PostSearchRequestBuilder {
 
     boolean filterMyAssets = Boolean.parseBoolean(params.get(FILTER_MYASSETS));
 
-    QueryDecoderRequestDTO dto = new QueryDecoderRequestDTO(
-        buildSearchType(requestBody),
-        size,
-        page,
-        getId(requestBody),
-        getFilters(requestBody),
-        getTextSearchRequest(requestBody),
-        getSearchCriteriaRequest(requestBody),
-        getAccessPolicyRequest(isAssetSearch, getSub(routingContext)),
-        getInstanceFilterRequest(requestBody),
-        getResponseFilterRequest(requestBody),
-        extractSortOrders(),
-        requestType
-    );
+    QueryDecoderRequestDTO dto =
+        new QueryDecoderRequestDTO(
+            buildSearchType(requestBody),
+            size,
+            page,
+            getId(requestBody),
+            getFilters(requestBody),
+            getTextSearchRequest(requestBody),
+            getSearchCriteriaRequest(requestBody),
+            getAccessPolicyRequest(isAssetSearch, getSub(routingContext)),
+            getInstanceFilterRequest(requestBody),
+            getResponseFilterRequest(requestBody),
+            extractSortOrders(),
+            requestType);
 
     if (isOrgAssetsSearch) {
-      dto.setOrganisationId(getOrgId(routingContext));
-      dto.setFilterMyAssets(filterMyAssets);
+      return getOrgId(routingContext)
+          .map(
+              orgId -> {
+                dto.setOrganisationId(orgId);
+                dto.setFilterMyAssets(filterMyAssets);
+                return dto;
+              });
     }
 
-    return dto;
+    return Future.succeededFuture(dto);
   }
 
   public int getSize(MultiMap params) {
@@ -278,14 +290,32 @@ public class PostSearchRequestBuilder {
     return orderByList;
   }
 
-  private String getOrgId(RoutingContext ctx) {
-    try {
-      if (ctx.user() != null) {
-        return ctx.user().principal().getString("organisation_id");
-      }
-    } catch (Exception e) {
-      throw new DxBadRequestException("User not found in context", e);
+  private Future<String> getOrgId(RoutingContext ctx) {
+
+    if (ctx.user() == null) {
+      return Future.failedFuture(new DxBadRequestException("User not found in context"));
     }
-    return null;
+
+    try {
+      String userIdStr = ctx.user().principal().getString("sub");
+      if (userIdStr == null || userIdStr.isBlank()) {
+        return Future.failedFuture(new DxBadRequestException("User ID missing in token"));
+      }
+
+      UUID userId = UUID.fromString(userIdStr);
+
+      return keycloakUserService
+          .getUserById(userId)
+          .map(user -> user != null ? user.organisationId() : null)
+          .recover(
+              err -> {
+                LOGGER.warn("Failed to fetch organisationId for user {}", userId, err);
+                return Future.succeededFuture(null);
+              });
+
+    } catch (Exception e) {
+      LOGGER.warn("Failed extracting userId from context", e);
+      return Future.succeededFuture(null);
+    }
   }
 }

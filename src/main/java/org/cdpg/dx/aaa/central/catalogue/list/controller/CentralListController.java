@@ -13,51 +13,53 @@ import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.request.PostSearchRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
-import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class CentralListController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(CentralListController.class);
+  private final URNGenerator urnGenerator;
   AuditingHandler auditingHandler;
   CentralListService centralListService;
-  private final URNGenerator urnGenerator;
+  KeycloakUserService keycloakUserService;
 
-  public CentralListController(AuditingHandler auditingHandler,
-                               CentralListService centralListService,
-                               URNGenerator urnGenerator) {
+  public CentralListController(
+      AuditingHandler auditingHandler,
+      CentralListService centralListService,
+      KeycloakUserService keycloakUserService,
+      URNGenerator urnGenerator) {
     this.auditingHandler = auditingHandler;
     this.centralListService = centralListService;
     this.urnGenerator = urnGenerator;
+    this.keycloakUserService = keycloakUserService;
   }
 
   @Override
   public void register(RouterBuilder builder) {
     builder
-      .operation(LIST_AVAILABLE_CENTRAL_CAT_FILTERS)
-      .handler(this::handleGetAvailableFilters)
-      .handler(auditingHandler::handleApiAudit);
+        .operation(LIST_AVAILABLE_CENTRAL_CAT_FILTERS)
+        .handler(this::handleGetAvailableFilters)
+        .handler(auditingHandler::handleApiAudit);
     LOGGER.debug("List Controller registered");
   }
 
   private void handleGetAvailableFilters(RoutingContext routingContext) {
-    QueryDecoderRequestDTO queryDecoder =
-      PostSearchRequestBuilder.fromRoutingContext(routingContext)
+
+    PostSearchRequestBuilder.fromRoutingContext(routingContext, keycloakUserService)
         .setAssetSearch(false)
         .setCountApi(false)
-        .build();
-    centralListService
-      .getAvailableFilters(queryDecoder)
-      .onSuccess(
-        successHandler -> {
-          ResponseBuilder.sendSuccess(
-            routingContext,
-            successHandler.getResponse().getJsonArray(RESULTS),
-            successHandler.getPaginationInfo(),urnGenerator);
-        })
-      .onFailure(
-        failureHandler -> {
-          LOGGER.error(
-            "Failed to fetch activity logs: {}", failureHandler.getMessage());
-          routingContext.fail(failureHandler);
-        });
+        .build() // now returns Future<QueryDecoderRequestDTO>
+        .compose(queryDecoder -> centralListService.getAvailableFilters(queryDecoder))
+        .onSuccess(
+            successHandler ->
+                ResponseBuilder.sendSuccess(
+                    routingContext,
+                    successHandler.getResponse().getJsonArray(RESULTS),
+                    successHandler.getPaginationInfo(),
+                    urnGenerator))
+        .onFailure(
+            failureHandler -> {
+              LOGGER.error("Failed to fetch activity logs: {}", failureHandler.getMessage());
+              routingContext.fail(failureHandler);
+            });
   }
 }

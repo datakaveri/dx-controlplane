@@ -21,6 +21,7 @@ import org.cdpg.dx.common.request.PlatformAssetRequestBuilder;
 import org.cdpg.dx.common.request.PostSearchRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class SearchController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(SearchController.class);
@@ -28,14 +29,19 @@ public class SearchController implements ApiController {
   private final SearchService searchService;
   private final AuditingHandler auditingHandler;
   private final URNGenerator urnGenerator;
+  private final KeycloakUserService keycloakUserService;
   Handler<RoutingContext> orgAdminAccessHandler = AuthorizationHandler.forRoles(DxRole.ORG_ADMIN);
   Handler<RoutingContext> pfAdminAccessHandler = AuthorizationHandler.forRoles(DxRole.COS_ADMIN);
 
-  public SearchController(SearchService searchService, AuditingHandler auditingHandler,
-                          URNGenerator urnGenerator) {
+  public SearchController(
+      SearchService searchService,
+      KeycloakUserService keycloakUserService,
+      AuditingHandler auditingHandler,
+      URNGenerator urnGenerator) {
     this.searchService = searchService;
     this.auditingHandler = auditingHandler;
     this.urnGenerator = urnGenerator;
+    this.keycloakUserService = keycloakUserService;
   }
 
   @Override
@@ -62,25 +68,29 @@ public class SearchController implements ApiController {
         .handler(this::handleGetAsset)
         .handler(auditingHandler::handleApiAudit);
 
-    builder.operation(GET_ORG_ASSETS)
+    builder
+        .operation(GET_ORG_ASSETS)
         .handler(TOKEN_CHECK)
         .handler(orgAdminAccessHandler)
         .handler(this::handleOrganisationGetItems)
         .handler(auditingHandler::handleApiAudit);
 
-    builder.operation(GET_ORG_ASSETS_VTH_FILTERS)
+    builder
+        .operation(GET_ORG_ASSETS_VTH_FILTERS)
         .handler(TOKEN_CHECK)
         .handler(orgAdminAccessHandler)
         .handler(this::handleOrganisationAssetsVthFilters)
         .handler(auditingHandler::handleApiAudit);
 
-    builder.operation(GET_PLATFORM_ASSETS)
+    builder
+        .operation(GET_PLATFORM_ASSETS)
         .handler(TOKEN_CHECK)
         .handler(pfAdminAccessHandler)
         .handler(this::handleGetPlatformItems)
         .handler(auditingHandler::handleApiAudit);
 
-    builder.operation(GET_PLATFORM_ASSETS_VTH_FILTERS)
+    builder
+        .operation(GET_PLATFORM_ASSETS_VTH_FILTERS)
         .handler(TOKEN_CHECK)
         .handler(pfAdminAccessHandler)
         .handler(this::handlePlatformAssetsVthFilters)
@@ -93,9 +103,10 @@ public class SearchController implements ApiController {
         POST_ASSET_SEARCH,
         GET_ASSET_SEARCH,
         GET_PLATFORM_ASSETS,
-        GET_ORG_ASSETS, GET_ORG_ASSETS_VTH_FILTERS, GET_PLATFORM_ASSETS,
-        GET_PLATFORM_ASSETS_VTH_FILTERS
-    );
+        GET_ORG_ASSETS,
+        GET_ORG_ASSETS_VTH_FILTERS,
+        GET_PLATFORM_ASSETS,
+        GET_PLATFORM_ASSETS_VTH_FILTERS);
   }
 
   private void handleGetPlatformItems(RoutingContext ctx) {
@@ -111,20 +122,24 @@ public class SearchController implements ApiController {
   }
 
   private void handlePlatformAssetsVthFilters(RoutingContext ctx) {
+
     LOGGER.debug("Received POST request on at search'{}'", GET_PLATFORM_ASSETS_VTH_FILTERS);
-    try {
-      QueryDecoderRequestDTO queryDecoder =
-          PostSearchRequestBuilder.fromRoutingContext(ctx)
-              .setPlatformAssetSearch(true)
-              .setOrgAssetsSearch(false)
-              .setAssetSearch(false)
-              .setCountApi(false)
-              .build();
-      processSearchRequest(ctx, queryDecoder);
-    } catch (Exception e) {
-      LOGGER.error("Error processing search request: {}", e.getMessage());
-      ctx.fail(e);
-    }
+
+    PostSearchRequestBuilder.fromRoutingContext(ctx, keycloakUserService)
+        .setPlatformAssetSearch(true)
+        .setOrgAssetsSearch(false)
+        .setAssetSearch(false)
+        .setCountApi(false)
+        .build()
+        .onSuccess(
+            queryDecoder -> {
+              processSearchRequest(ctx, queryDecoder);
+            })
+        .onFailure(
+            e -> {
+              LOGGER.error("Error processing search request: {}", e.getMessage(), e);
+              ctx.fail(e);
+            });
   }
 
   private void handleOrganisationGetItems(RoutingContext ctx) {
@@ -140,63 +155,73 @@ public class SearchController implements ApiController {
   }
 
   private void handleOrganisationAssetsVthFilters(RoutingContext ctx) {
+
     LOGGER.debug("Received POST request on at search'{}'", GET_ORG_ASSETS_VTH_FILTERS);
-    try {
-      QueryDecoderRequestDTO queryDecoder =
-          PostSearchRequestBuilder.fromRoutingContext(ctx)
-              .setPlatformAssetSearch(false)
-              .setOrgAssetsSearch(true)
-              .setAssetSearch(false)
-              .setCountApi(false)
-              .build();
-      processSearchRequest(ctx, queryDecoder);
-    } catch (Exception e) {
-      LOGGER.error("Error processing search request: {}", e.getMessage());
-      ctx.fail(e);
-    }
+
+    PostSearchRequestBuilder.fromRoutingContext(ctx, keycloakUserService)
+        .setPlatformAssetSearch(false)
+        .setOrgAssetsSearch(true)
+        .setAssetSearch(false)
+        .setCountApi(false)
+        .build()
+        .onSuccess(
+            queryDecoder -> {
+              processSearchRequest(ctx, queryDecoder);
+            })
+        .onFailure(
+            e -> {
+              LOGGER.error("Error processing search request: {}", e.getMessage(), e);
+              ctx.fail(e);
+            });
   }
 
   private void handleSearch(RoutingContext ctx) {
+
     LOGGER.debug("Received POST request on at search'{}'", POST_SEARCH);
-    try {
-      QueryDecoderRequestDTO queryDecoder =
-          PostSearchRequestBuilder.fromRoutingContext(ctx)
-              .setPlatformAssetSearch(false)
-              .setOrgAssetsSearch(false)
-              .setAssetSearch(false)
-              .setCountApi(false)
-              .build();
-      processSearchRequest(ctx, queryDecoder);
-    } catch (Exception e) {
-      LOGGER.error("Error processing search request: {}", e.getMessage());
-      ctx.fail(e);
-    }
+
+    PostSearchRequestBuilder.fromRoutingContext(ctx, keycloakUserService)
+        .setPlatformAssetSearch(false)
+        .setOrgAssetsSearch(false)
+        .setAssetSearch(false)
+        .setCountApi(false)
+        .build()
+        .onSuccess(
+            queryDecoder -> {
+              processSearchRequest(ctx, queryDecoder);
+            })
+        .onFailure(
+            e -> {
+              LOGGER.error("Error processing search request: {}", e.getMessage(), e);
+              ctx.fail(e);
+            });
   }
 
   private void handlePostAsset(RoutingContext ctx) {
+
     LOGGER.debug("Received POST Asset request on '{}'", POST_ASSET_SEARCH);
-    try {
-      QueryDecoderRequestDTO queryDecoder =
-          PostSearchRequestBuilder.fromRoutingContext(ctx)
-              .setPlatformAssetSearch(false)
-              .setOrgAssetsSearch(false)
-              .setAssetSearch(true)
-              .setCountApi(false)
-              .build();
-      processSearchRequest(ctx, queryDecoder);
-    } catch (Exception e) {
-      LOGGER.error("Error processing asset request: {}", e.getMessage());
-      ctx.fail(e);
-    }
+
+    PostSearchRequestBuilder.fromRoutingContext(ctx, keycloakUserService)
+        .setPlatformAssetSearch(false)
+        .setOrgAssetsSearch(false)
+        .setAssetSearch(true)
+        .setCountApi(false)
+        .build()
+        .onSuccess(
+            queryDecoder -> {
+              processSearchRequest(ctx, queryDecoder);
+            })
+        .onFailure(
+            e -> {
+              LOGGER.error("Error processing asset request: {}", e.getMessage(), e);
+              ctx.fail(e);
+            });
   }
 
   private void handleGetAsset(RoutingContext ctx) {
     LOGGER.debug("Received GET Asset request on '{}'", GET_ASSET_SEARCH);
     try {
       QueryDecoderRequestDTO queryDecoder =
-          GetSearchRequestBuilder.fromRoutingContext(ctx)
-              .setAssetSearch(true)
-              .build();
+          GetSearchRequestBuilder.fromRoutingContext(ctx).setAssetSearch(true).build();
       processSearchRequest(ctx, queryDecoder);
     } catch (Exception e) {
       LOGGER.error("Error processing asset request: {}", e.getMessage());
@@ -205,39 +230,37 @@ public class SearchController implements ApiController {
   }
 
   private void handleCount(RoutingContext ctx) {
+
     LOGGER.debug("Received POST Count request on '{}'", POST_COUNT_SEARCH);
-    try {
-      QueryDecoderRequestDTO queryDecoderRequestDTO =
-          PostSearchRequestBuilder.fromRoutingContext(ctx)
-              .setPlatformAssetSearch(false)
-              .setOrgAssetsSearch(false)
-              .setAssetSearch(false)
-              .setCountApi(true)
-              .build();
-      searchService
-          .postCount(queryDecoderRequestDTO)
-          .onSuccess(
-              response -> ResponseBuilder.sendSuccess(ctx,
-                  response.getResponse().getJsonArray(RESULTS), urnGenerator))
-          .onFailure(
-              err -> {
-                LOGGER.error("Count request failed: {}", err.getMessage());
-                ctx.fail(err);
-              });
-    } catch (Exception e) {
-      LOGGER.error("Error processing count request: {}", e.getMessage());
-      ctx.fail(e);
-    }
+
+    PostSearchRequestBuilder.fromRoutingContext(ctx, keycloakUserService)
+        .setPlatformAssetSearch(false)
+        .setOrgAssetsSearch(false)
+        .setAssetSearch(false)
+        .setCountApi(true)
+        .build()
+        .compose(searchService::postCount)
+        .onSuccess(
+            response ->
+                ResponseBuilder.sendSuccess(
+                    ctx, response.getResponse().getJsonArray(RESULTS), urnGenerator))
+        .onFailure(
+            err -> {
+              LOGGER.error("Count request failed: {}", err.getMessage(), err);
+              ctx.fail(err);
+            });
   }
 
   private void processSearchRequest(RoutingContext ctx, QueryDecoderRequestDTO queryDecoder) {
     searchService
         .postSearch(queryDecoder)
         .onSuccess(
-            result -> ResponseBuilder.sendSuccess(
-                ctx,
-                result.getElasticsearchResponses(),
-                result.getPaginationInfo(), urnGenerator))
+            result ->
+                ResponseBuilder.sendSuccess(
+                    ctx,
+                    result.getElasticsearchResponses(),
+                    result.getPaginationInfo(),
+                    urnGenerator))
         .onFailure(
             err -> {
               LOGGER.error("Search request failed: {}", err.getMessage());

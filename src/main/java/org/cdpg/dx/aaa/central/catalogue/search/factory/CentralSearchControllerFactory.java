@@ -6,15 +6,19 @@ import org.cdpg.dx.aaa.central.catalogue.search.service.CentralSearchServiceImpl
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.central.service.CentralElasticsearchService;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class CentralSearchControllerFactory {
 
   public static CentralSearchController createSearchController(
-      CentralElasticsearchService centralElasticsearchService, AuditingHandler auditingHandler,
+      CentralElasticsearchService centralElasticsearchService,
+      KeycloakUserService keycloakUserService,
+      AuditingHandler auditingHandler,
       String docIndex,
       URNGenerator unrGenerator) {
     CentralSearchService centralSearchService =
         new CentralSearchServiceImpl(centralElasticsearchService, docIndex);
-    return new CentralSearchController(centralSearchService, auditingHandler, unrGenerator);
+    return new CentralSearchController(
+        centralSearchService, keycloakUserService, auditingHandler, unrGenerator);
   }
 }

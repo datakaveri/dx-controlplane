@@ -227,10 +227,10 @@ public class ControllerFactory {
 
     final ListController listController =
         ListControllerFactory.createListController(
-            esService, auditingHandler, docIndex, urnGenerator);
+            esService, keycloakUserService, auditingHandler, docIndex, urnGenerator);
     final SearchController searchController =
         SearchControllerFactory.createSearchController(
-            esService, auditingHandler, docIndex, urnGenerator);
+            esService, keycloakUserService, auditingHandler, docIndex, urnGenerator);
     IngestionService ingestionService = new IngestionServiceImpl(dataBrokerService);
     String publishExchange = config.getString("publishExchange");
     ConnectorService connectorService =
@@ -253,11 +253,19 @@ public class ControllerFactory {
 
       centralSearchController =
           CentralSearchControllerFactory.createSearchController(
-              centralEsService, auditingHandler, centralCatDocIndex, urnGenerator);
+              centralEsService,
+              keycloakUserService,
+              auditingHandler,
+              centralCatDocIndex,
+              urnGenerator);
 
       centralListController =
           CentralListControllerFactory.createListController(
-              centralEsService, auditingHandler, centralCatDocIndex, urnGenerator);
+              centralEsService,
+              keycloakUserService,
+              auditingHandler,
+              centralCatDocIndex,
+              urnGenerator);
     }
     final ItemController itemController =
         ItemControllerFactory.createCrudController(
