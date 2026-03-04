@@ -379,6 +379,10 @@ paths:
       tags:
         - Organisation APIs
       operationId: get-auth-v2-organisations-request
+      description: >
+        Returns a paginated list of organisation creation requests.
+
+        **Log Type:** `USER_ACTION`
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
@@ -533,6 +537,10 @@ paths:
       summary: 'AAA-002-New User: New organisation creation request'
       tags:
         - Organisation APIs
+      description: >
+        Submits a new organisation creation request by the authenticated user.
+
+        **Log Type:** `USER_ACTION`
       operationId: post-auth-v2-organisations-request
       requestBody:
         description: |
@@ -565,7 +573,6 @@ paths:
                 - pancard_path
                 - emp_id
                 - job_title
-                - phone_no
                 - organisation_documents
                 - manager_email
               properties:
@@ -751,6 +758,8 @@ paths:
         This API allows an AAA-003-PF Admin to approve or reject a pending organization creation request.
         The request body must include the `req_id` of the organization request and the `status` (granted or rejected).
         A successful response indicates that the organization request has been updated.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       operationId: post-auth-v2-approve-create_org
@@ -863,6 +872,10 @@ paths:
       tags:
         - Organisation APIs
       operationId: get-auth-v2-user-organisations-request
+      description: >
+        This request lists all the organisation creation requests made by that user.
+
+        **Log Type:** `USER_ACTION`
       responses:
         '200':
           description: OK
@@ -991,6 +1004,8 @@ paths:
       summary: 'User: Delete Pending Organization Requests'
       description: >
         delete the pending organization requests made by the user calling the API.
+
+        **Log Type:** `USER_ACTION`
       operationId: delete-auth-v2-user-organisations-request
       parameters:
         - name: id
@@ -1025,8 +1040,17 @@ paths:
       summary: 'User: Get all Join requests for an organisation'
       description: >
         This API allows a user to view all its organization join requests made by it.
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
+      parameters:
+        - name: delegatorId
+          in: query
+          description: Unique ID of the delegator
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       responses:
         '200':
           description: OK
@@ -1137,6 +1161,7 @@ paths:
       summary: 'User: Delete Pending Organization Join Requests'
       description: >
         delete the pending organization requests made by the user calling the API.
+        **Log Type:** `USER_ACTION`
       operationId: delete-auth-v2-user-organisations-join-requests
       parameters:
         - name: id
@@ -1169,10 +1194,21 @@ paths:
       - name: id
         in: path
         required: true
-        description: UUID of the organisation for which to retrieve/put join requests.
+        description: >
+          UUID of the organisation for which to retrieve/put join requests.
+
+          **Log Type:** `USER_ACTION`
         schema:
           type: string
           format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+      - name: delegatorId
+        in: query
+        description: Unique ID of the delegator
+        schema:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
     get:
       summary: 'AAA-004-Org Admin: Get all Join requests for an organisation'
       description: >
@@ -1181,6 +1217,8 @@ paths:
         (e.g., pending, granted, rejected). It provides details about each join request,
         including the user who requested to join, their current status, job title, employee ID,
         official email, and any assigned roles. Pagination information is also included in the response.
+
+        **Log Type:** `USER_ACTION`
       parameters:
         - name: status
           in: query
@@ -1323,6 +1361,8 @@ paths:
         This API allows an authenticated user to submit a request to join a specific organization,
         identified by its `id` in the path parameter. The request includes the user's job title and employee ID.
         The organization administrator will then review and process this join request.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       requestBody:
@@ -1453,15 +1493,8 @@ paths:
       operationId: post-auth-v2-organisations-join-requests
       security:
         - authorization: [ ]
-  /iudx/v2/auth/organisations/{id}/join_requests/{req_id}:
+  /iudx/v2/auth/organisations/{org_id}/join_requests/{req_id}:
     parameters:
-      - name: id
-        in: path
-        required: true
-        description: UUID of the organization to which the join request belongs.
-        schema:
-          type: string
-          format: uuid
       - name: req_id
         in: path
         required: true
@@ -1469,12 +1502,28 @@ paths:
           type: string
           format: uuid
         description: Request ID of the join request to update.
+      - name: delegatorId
+        in: query
+        description: Unique ID of the delegator
+        schema:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+      - name: org_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: UUID of the organization
     put:
       summary: 'AAA-006-OrgAdmin: Approve or update status of a join request'
       description: >
         This API allows an organization administrator to approve or reject a specific join request for their organization.
         The organization is identified by `id` and the join request by `req_id` in the path parameters.
         This operation updates the status of an existing join request.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       operationId: put-auth-v2-organisations-join-requests
@@ -1562,6 +1611,128 @@ paths:
                     detail: Unauthorized
         '404':
           description: Join request not found
+
+  /iudx/v2/auth/organisation/join-request/{id}:
+    patch:
+      summary: User withdraws organisation join request
+      description: >
+        Allows an authenticated user to withdraw their pending organisation join request.
+        Only join requests in a withdrawable state (e.g. PENDING) can be withdrawn.
+
+        **Log Type:** `USER_ACTION`
+      tags:
+        - Organisation APIs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Join request ID.
+      operationId: withdraw-auth-v2-organisations-join-request
+      requestBody:
+        required: true
+        description: >
+          Request body containing the new status of the join request.
+          Only `withdrawn` is allowed.
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [ withdrawn ]
+                  description: New status of the join request.
+            examples:
+              withdraw:
+                value:
+                  status: withdrawn
+
+      responses:
+        '200':
+          description: Join request withdrawn successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:ControlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  detail:
+                    type: string
+                    example: Withdrawn organisation join request
+
+        '400':
+          description: Invalid request or invalid state transition
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              examples:
+                invalidState:
+                  value:
+                    type: urn:dx:ControlPlane:badRequest
+                    title: Bad Request
+                    detail: Join request cannot be withdrawn in current state
+
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              examples:
+                unauthorized:
+                  value:
+                    type: urn:dx:ControlPlane:notAuthorized
+                    title: Not Authorized
+                    detail: Unauthorized
+
+        '404':
+          description: Join request not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              examples:
+                notFound:
+                  value:
+                    type: urn:dx:ControlPlane:notFound
+                    title: Not Found
+                    detail: No join request found with given ID
+      security:
+        - authorization: [ ]
+
+
   /iudx/v2/auth/organisations:
     get:
       summary: 'AAA-007-Consumer: List All Organisations'
@@ -1569,6 +1740,8 @@ paths:
         This API allows authenticated users to retrieve a list of all registered organizations.
         It provides details such as the organization's name, logo, entity type, sector, and website.
         Pagination information is also included in the response. This endpoint does not require a request body.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       responses:
@@ -1692,12 +1865,21 @@ paths:
         in: path
         required: true
         description: UUID of organization
+      - name: delegatorId
+        in: query
+        description: Unique ID of the delegator
+        schema:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
     delete:
       summary: 'AAA-008-PFAdmin: Delete organisation by ID'
       description: >
         This API allows an PFAdmin to delete an organization by its unique identifier (ID).
         The ID of the organization to be deleted is provided as a path parameter.
         A successful response indicates that the organization has been deleted.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       responses:
@@ -1713,6 +1895,8 @@ paths:
         The ID of the organization to be updated is provided as a path parameter.
         The request body should contain the updated organization details.
         A successful response indicates that the organization has been updated.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       security:
@@ -1824,6 +2008,8 @@ paths:
         This API allows retrieving the details of a specific organization by its unique identifier (ID).
         The ID of the organization to be retrieved is provided as a path parameter.
         A successful response includes the organization's details such as name, logo, entity type, sector, and website.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       parameters:
@@ -1962,6 +2148,8 @@ paths:
         identified by its `id` in the path parameter. The response includes details about each user,
         such as their role within the organization, job title, employee ID, official email, and account status.
         Pagination information is also included in the response.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       responses:
@@ -2168,12 +2356,21 @@ paths:
         schema:
           type: string
           format: uuid
+      - name: delegatorId
+        in: query
+        description: Unique ID of the delegator
+        schema:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
     delete:
       summary: 'AAA-012-OrgAdmin: Delete User by ID'
       description: >
         This API allows an organization administrator to delete a specific user from their organization,
         identified by the user's `user_id` and the organization's `id` in the path parameters.
         A successful response indicates that the user has been deleted from the organization.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       responses:
@@ -2214,6 +2411,8 @@ paths:
         The user is identified by their `user_id` and the organization by its `id` in the path parameters.
         The request body should contain the new role for the user.
         A successful response indicates that the user's role has been updated.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       responses:
@@ -2286,11 +2485,219 @@ paths:
 
       security:
         - authorization: [ ]
+
+  /iudx/v2/auth/user/custom/role:
+    post:
+      operationId: post-auth-v2-custom-role
+      summary: Create custom role and scopes
+      description: >
+        Creates a custom role and optional scopes for a particular user
+      tags:
+        - Role APIs
+      security:
+        - authorization: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+              properties:
+                user_id:
+                  type: string
+                  description: UUID of the userID
+                  example: "fffb1ea9-7c57-4f2c-b410-7b5a163166a0"
+                scope:
+                  type: array
+                  description: Optional array of scopes associated with the role
+                  items:
+                    type: string
+                  nullable: true
+                  example: [ "scope1", "scope2" ]
+      responses:
+        '201':
+          description: Custom role created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomRoleResponse'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440000"
+                userId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                scope: [ "scope1", "scope2" ]
+                createdAt: "2026-02-03T10:15:30"
+                updatedAt: "2026-02-03T10:15:30"
+        '400':
+          description: Invalid request (missing mandatory role or malformed scope)
+        '403':
+          description: Forbidden (e.g., constraints not met or role already exists)
+    get:
+      summary: Get Custom Roles and Scopes
+      tags:
+        - Role APIs
+      operationId: get-auth-v2-custom-role
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+        - name: role
+          in: query
+          description: Filter by role name
+          schema:
+            type: string
+        - name: userId
+          in: query
+          description: Filter by user UUID
+          schema:
+            type: string
+            format: uuid
+      security:
+        - authorization: [ ]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomRoleResponse'
+              examples:
+                Example 1:
+                  value:
+                    type: urn:dx:ControlPlane:success
+                    title: Success
+                    result:
+                      - id: a12b34cd-5678-90ef-1234-567890abcdef
+                        userId: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                        role: custom_role
+                        scope:
+                          - scope1
+                          - scope2
+                        createdAt: '2025-06-03T16:01:59.532782'
+                        updatedAt: '2025-06-03T16:01:59.532782'
+                        tableName: custom_user_role
+                    paginationInfo:
+                      page: 1
+                      size: 1
+                      totalCount: 12
+                      totalPages: 12
+                      hasNext: true
+                      hasPrevious: false
+        '401':
+          description: Unauthorized – Token invalid or expired, or caller lacks permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+
+    delete:
+      summary: Delete Custom Role Scope or Request
+      description: >
+        Deletes a custom role scope or an entire custom role request.
+        Either requestId OR (userId and scope) must be provided.
+        Only the original requester or COS_ADMIN is allowed.
+      tags:
+        - Role APIs
+      operationId: delete-auth-v2-custom-role
+      security:
+        - authorization: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                requestId:
+                  type: string
+                  format: uuid
+                  description: Custom role request ID
+                userId:
+                  type: string
+                  format: uuid
+                  description: Target user ID
+                scope:
+                  type: string
+                  description: Scope to be removed
+              oneOf:
+                - required: [ requestId ]
+                - required: [ userId, scope ]
+
+      responses:
+        '200':
+          description: Successfully deleted custom role or scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          description: Bad Request – Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: Unauthorized – Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden – Not the requester or admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+        '404':
+          description: Not Found – Request or scope does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+  /auth/v2/custom-role/requester:
+    get:
+      summary: Get Custom Roles and Scopes created by the requester
+      description: >
+        Returns all custom role requests created by the authenticated requester.
+        Accessible only to ORG_ADMIN and COS_ADMIN.
+      tags:
+        - Role APIs
+      operationId: get-auth-v2-custom-role-requester
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+      security:
+        - authorization: [ ]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomRoleResponse'
+        '401':
+          description: Unauthorized – Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden (e.g., constraints not met or role already exists)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+
   /iudx/v2/auth/user/credit/balance:
     get:
       operationId: get-auth-v2-user-credit-balance
       summary: Get the specified user's credit balance
-      description: Returns the credit balance for the specified user (KYC-verified).
+      description: >
+        Returns the credit balance for the specified user (KYC-verified).
+        
+         **Log Type:** `COMPUTE`
       tags:
         - Credit APIs
 
@@ -2325,7 +2732,10 @@ paths:
     get:
       operationId: get-auth-v2-admin-user-credit-balance
       summary: Get the specified user's credit balance (COS ADMIN)
-      description: Returns the credit balance for the specified user (KYC-verified).
+      description: >
+        Returns the credit balance for the specified user (KYC-verified).
+        
+         **Log Type:** `COMPUTE`
       tags:
         - Credit APIs
 
@@ -2351,6 +2761,10 @@ paths:
   /iudx/v2/auth/user/credit/request:
     get:
       summary: 'User: Get all pending credit requests'
+      description: >
+        Get all the pending credit requests of the user
+
+        **Log Type:** `COMPUTE`
       tags:
         - Credit APIs
       responses:
@@ -2460,6 +2874,8 @@ paths:
       summary: 'User: Delete Pending Credit Request'
       description: >
         delete the pending credit requests made by the user calling the API.
+
+        **Log Type:** `COMPUTE`
       operationId: delete-auth-v2-user-credit
       parameters:
         - name: id
@@ -2490,6 +2906,10 @@ paths:
   /iudx/v2/auth/credit/request:
     get:
       summary: Get all credit requests by status (COS ADMIN)
+      description: >
+        Get all the credit requests.
+
+        **Log Type:** `COMPUTE`
       tags:
         - Credit APIs
       responses:
@@ -2597,6 +3017,10 @@ paths:
       summary: Create Credit Request
       tags:
         - Credit APIs
+      description: >
+        This api helps users create credit request. The cos admin can then review and take action on those requests.
+
+        **Log Type:** `COMPUTE`
       requestBody:
         description: >
           - `additional_info` : Optional extra details about requester and intent
@@ -2670,9 +3094,12 @@ paths:
       security:
         - authorization: [ ]
 
-  /iudx/v2/auth/credit/request/{id}:
     put:
       summary: Update Credit Request Status (COS ADMIN)
+      description: >
+        This api helps COS ADMIN to update the credit requests and add credits or reject the request of the users.
+
+        **Log Type:** `COMPUTE`
       tags:
         - Credit APIs
       responses:
@@ -2742,14 +3169,6 @@ paths:
                       updatedBalance: 20000
                       tableName: credit_transactions
       operationId: put-auth-v2-credit-request
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: UUID of the credit request
-          schema:
-            type: string
-            format: uuid
       security:
         - authorization: [ ]
       requestBody:
@@ -2760,6 +3179,10 @@ paths:
               oneOf:
                 - type: object
                   properties:
+                    id:
+                      type: string
+                      format: uuid
+                      description: ID of the credit request to be updated.
                     status:
                       type: string
                       enum: [ granted ]
@@ -2774,6 +3197,7 @@ paths:
                     - status
                     - amount
                     - expiration_date
+                    - id
                   additionalProperties: false
 
                 - type: object
@@ -2781,18 +3205,28 @@ paths:
                     status:
                       type: string
                       enum: [ rejected ]
+                    id:
+                      type: string
+                      format: uuid
+                      description: ID of the credit request to be updated
                   required:
                     - status
+                    - id
                   additionalProperties: false
             examples:
               Example 1:
                 value:
-                  status: granted
+                  id: "ac1e0e2d-c4cc-4008-951f-62916f0d06e7"
+                  status: "granted"
                   amount: 10000.0
-                  expiration_date: '2025-12-31T23:59:59'
+                  expiration_date: "2025-12-31T23:59:59"
   /iudx/v2/auth/admin/user/credit/deduct:
     put:
       summary: Deduct User Credit (COS ADMIN)
+      description: >
+        This api helps COS ADMIN to deduct the credits of a user.
+
+        **Log Type:** `COMPUTE`
       tags:
         - Credit APIs
       responses:
@@ -2880,7 +3314,10 @@ paths:
     put:
       operationId: put-auth-v2-user-credit-add
       summary: Add credits to user's balance amount
-      description: Adds credits to the specified user's balance.
+      description: >
+        Adds credits to the specified user's balance.
+        
+        **Log Type:** `COMPUTE`
       requestBody:
         content:
           application/json:
@@ -2995,6 +3432,8 @@ paths:
       summary: 'User: Delete Pending Compute Request'
       description: >
         delete the pending compute requests made by the user calling the API.
+
+        **Log Type:** `COMPUTE`
       operationId: delete-auth-v2-user-compute-role-request
       parameters:
         - name: id
@@ -3027,6 +3466,10 @@ paths:
   /iudx/v2/auth/user/compute/requests:
     get:
       summary: 'User: Get All ComputeRole Requests'
+      description: >
+        This api helps a user to check all compute requests made by them.
+
+        **Log Type:** `COMPUTE`
       tags:
         - Compute APIs
       responses:
@@ -3132,6 +3575,10 @@ paths:
   /iudx/v2/auth/compute/requests:
     get:
       summary: Get All Pending ComputeRole Requests (COS ADMIN)
+      description: >
+        This api helps COS ADMIN get all the pending compute role requests.
+
+        **Log Type:** `COMPUTE`
       tags:
         - Compute APIs
       responses:
@@ -3238,6 +3685,10 @@ paths:
       summary: Create Compute Role Request (USER)
       tags:
         - Compute APIs
+      description: >
+        This api helps user to create request to get a compute role.
+
+        **Log Type:** `COMPUTE`
       responses:
         '200':
           description: OK
@@ -3313,6 +3764,10 @@ paths:
       summary: Update Compute Roles (COS ADMIN)
       tags:
         - Compute APIs
+      description: >
+        This api helps COS ADMIN to update the users with compute role by granting/rejecting the compute role request.
+
+        **Log Type:** `COMPUTE`
       responses:
         '200':
           description: OK
@@ -3403,8 +3858,18 @@ paths:
         A successful response returns a list of pending
         requests with details such as user ID, user name, organization ID, organization name,
         status, and timestamps.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
+      parameters:
+        - name: delegatorId
+          in: query
+          description: Unique ID of the delegator
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       responses:
         '200':
           description: OK
@@ -3442,12 +3907,21 @@ paths:
       summary: 'User: Delete Pending Provider Request'
       description: >
         delete the pending provider requests made by the user calling the API.
+
+        **Log Type:** `USER_ACTION`
       operationId: delete-auth-v2-user-provider-requests
       parameters:
         - name: id
           in: path
           required: true
           description: Unique ID of the provider request
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+        - name: delegatorId
+          in: query
+          description: Unique ID of the delegator
           schema:
             type: string
             format: uuid
@@ -3469,7 +3943,47 @@ paths:
                 $ref: '#/components/schemas/Unauthorized'
       security:
         - authorization: [ ]
-  /iudx/v2/auth/organization/{id}/provider/requests:
+
+  /iudx/v2/auth/organization/user/provider_role/requests:
+    post:
+      summary: 'AAA-015-Any User:Create a Provider Role Request'
+      description: >
+        This API allows a user to submit a role upgrade request from Consumer to Provider within their organization.
+        Once the organization administrator(`org_admin`) approves the request, the user will be granted the Provider role for the respective organization.
+        A successful response indicates that the request has been successfully submitted.
+
+        **Log Type:** `USER_ACTION`
+      tags:
+        - Organisation APIs
+      operationId: post-auth-v2-user-roles
+      security:
+        - authorization: [ ]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+                x-examples:
+                  Example 1:
+                    type: 'urn:dx:controlPanel:success'
+                    title: Success
+                    detail: Created request
+              examples:
+                Example 1:
+                  value:
+                    type: 'urn:dx:controlPanel:success'
+                    title: Success
+                    detail: Created request
+
     get:
       summary: 'AAA-014-OrgAdmin: Get All pending provider role requests'
       description: >
@@ -3477,8 +3991,18 @@ paths:
         from users in its organization. A successful response returns a list of pending
         requests with details such as user ID, user name, organization ID, organization name,
         status, and timestamps.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
+      parameters:
+        - name: delegatorId
+          in: query
+          description: Unique ID of the delegator
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       responses:
         '200':
           description: OK
@@ -3507,63 +4031,10 @@ paths:
                       totalPages: 1
                       hasNext: false
                       hasPrevious: false
-      operationId: get-auth-v2-orgid-provider-requests
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: UUID of the organization
-          schema:
-            type: string
-            format: uuid
-      security:
-        - authorization: [ ]
-
-  /iudx/v2/auth/organization/provider/requests:
-    post:
-      summary: 'AAA-015-Any User:Create a Provider Role Request'
-      description: >
-        This API allows a user to create a provider role request within their organization.
-        A successful response indicates that the provider role request has been created.
-      tags:
-        - Organisation APIs
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  detail:
-                    type: string
-                x-examples:
-                  Example 1:
-                    type: 'urn:dx:controlPanel:success'
-                    title: Success
-                    detail: Created request
-              examples:
-                Example 1:
-                  value:
-                    type: 'urn:dx:controlPanel:success'
-                    title: Success
-                    detail: Created request
-      operationId: post-auth-v2-user-roles
+      operationId: get-auth-v2-provider-requests
       security:
         - authorization: [ ]
   /iudx/v2/auth/organization/user/provider_role/requests/{id}:
-    parameters:
-      - name: id
-        in: path
-        required: true
-        description: UUID of the request
-        schema:
-          type: string
-          format: uuid
     put:
       summary: 'AAA-016-OrgAdmin: Update a Provider Role Request'
       description: >
@@ -3571,8 +4042,25 @@ paths:
         The request is identified by its `id` in the path parameter. The request body should contain the new
         status for the provider role request. A successful response indicates that the provider role request
         has been updated.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the request
+          schema:
+            type: string
+            format: uuid
+        - name: delegatorId
+          in: query
+          description: Unique ID of the delegator
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       responses:
         '200':
           description: OK
@@ -3650,6 +4138,10 @@ paths:
       summary: (User) Get User Information
       tags:
         - Role APIs
+      description: >
+        Retrieves the profile and account details of the currently authenticated user.
+
+        **Log Type:** `USER_ACTION`
       responses:
         '200':
           description: OK
@@ -3799,6 +4291,10 @@ paths:
       summary: (User) Update First Name, Last Name, Social Media Information
       tags:
         - Role APIs
+      description: >
+        Updates the first name, last name, and social media information of the currently authenticated user.
+
+        **Log Type:** `USER_ACTION`
       responses:
         '200':
           description: OK
@@ -3855,7 +4351,14 @@ paths:
               properties:
                 new_password:
                   type: string
-                  description: The new password to be set
+                  description: >
+                    Password must be 8–20 characters long and include at least
+                    one uppercase letter, one lowercase letter, one number,
+                    and one special character.
+                  minLength: 8
+                  maxLength: 20
+                  pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,20}$'
+                  example: "Strong@123"
       responses:
         '200':
           description: Password changed successfully
@@ -3904,6 +4407,10 @@ paths:
       summary: (COS Admin) Get User Information
       tags:
         - Role APIs
+      description: >
+        Retrieves the profile and account details of a user. Accessible only by COS Admin.
+
+        **Log Type:** `USER_ACTION`
       responses:
         '200':
           description: OK
@@ -3993,6 +4500,10 @@ paths:
   /iudx/v2/auth/admin/user:
     get:
       summary: (COS Admin) Get All Users Info
+      description: >
+        Retrieves the profile and account details of all users. Accessible only by COS Admin.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Role APIs
       responses:
@@ -4196,7 +4707,10 @@ paths:
   /iudx/v2/auth/user/basic:
     get:
       summary: (All Users) Get basic user information
-      description: Returns paginated list of users with UUID, name, username, and email.
+      description: >
+        Returns paginated list of users with UUID, name, username, and email.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Role APIs
       operationId: get-auth-v2-user-search
@@ -4253,12 +4767,16 @@ paths:
     post:
       operationId: post-auth-v2-organization-user-provider
       summary: 'AAA-017-OrgAdmin: Grant provider role to user'
-      description: This endpoint allows organization admin grants provider role
+      description: >
+        This endpoint allows organization admin grants provider role
         to user in its organization.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       requestBody:
-        description: This endpoint allows organization admin grants provider role
+        description: >
+          This endpoint allows organization admin grants provider role
           to user in its organization.
         required: true
         content:
@@ -4270,12 +4788,17 @@ paths:
                   type: string
                   description: UUID of the user to be granted provider role
                   example: 436cb796-5826-458b-a914-a54721f70997
+                organization_id:
+                  type: string
+                  description: UUID of the organization
+                  example: 436cb796-5826-458b-a914-a54721f70997
                 status:
                   type: string
                   description: Status of the provider role request
                   example: granted
               required:
                 - status
+                - organization_id
                 - user_id
       responses:
         '200':
@@ -4291,6 +4814,10 @@ paths:
   /iudx/v2/auth/user/update:
     post:
       summary: (User) Deactivate User Account
+      description: >
+        Deactivates the currently authenticated user's account.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Role APIs
       requestBody:
@@ -4315,6 +4842,10 @@ paths:
   /iudx/v2/auth/admin/{id}/update:
     post:
       summary: (Admin) Deactivate/Activate User Account
+      description: >
+        Deactivates or activates a user account by ID. Accessible only by Admin.
+
+        **Log Type:** `USER_ACTION`
       tags:
         - Role APIs
       parameters:
@@ -4353,6 +4884,10 @@ paths:
         '200':
           description: OK
       operationId: delete-auth-v2-user
+      description: >
+        Permanently deletes the currently authenticated user's account.
+
+        **Log Type:** `USER_ACTION`
       security:
         - authorization: [ ]
   /iudx/v2/auth/kyc/revoke:
@@ -5340,6 +5875,10 @@ paths:
       tags:
         - Asset APIs
       operationId: post-auth-v2-asset-request
+      description: >
+        Creates a data ingestion request(SFTP/API) for the authenticated user.
+
+        **Log Type:** `USER_ACTION`
       requestBody:
         description: >
           - `asset_id` : The catalogue ID of the asset for which the request is to be created
@@ -5422,6 +5961,8 @@ paths:
       description: >
         Lists all the latest asset requests made by the org admin user calling the API,
         regardless of the request status.
+
+        **Log Type:** `USER_ACTION`
       operationId: get-auth-v2-asset-request
       parameters:
         - $ref: '#/components/parameters/PageParam'
@@ -5488,6 +6029,10 @@ paths:
       tags:
         - Asset APIs
       operationId: put-auth-v2-asset-request
+      description: >
+        Updates the status of an existing data ingestion access request by ID.
+
+        **Log Type:** `USER_ACTION`
       parameters:
         - name: id
           in: path
@@ -5557,6 +6102,8 @@ paths:
       summary: Delete User Asset Request
       description: >
         delete the pending asset requests made by the user calling the API.
+
+        **Log Type:** `USER_ACTION`
       operationId: delete-auth-v2-asset-request
       parameters:
         - name: id
@@ -5849,6 +6396,8 @@ paths:
         ### Visibility rules
         An item becomes visible across the platform **only when both**
         `publishStatus = ACTIVE` **and** `dataUploadStatus = true`.
+
+        **Log Type:** `ASSET`
       operationId: create item
       security:
         - authorization: [ ]
@@ -5964,6 +6513,8 @@ paths:
            - itemCreatedAt
            - publishStatus
            - dataUploadStatus
+
+        **Log Type:** `ASSET`
       operationId: update item
       security:
         - authorization: [ ]
@@ -6057,6 +6608,8 @@ paths:
         Get an item given the ID.
 
         If a Bearer token is provided in the Authorization header, the request will be authenticated and an audit log entry will be created for a **View** operation.
+
+        **Log Type:** `ASSET`
       operationId: get item
       security:
         - optionalAuth: [ ]
@@ -6120,7 +6673,10 @@ paths:
     delete:
       tags:
         - CAT Entity
-      description: Delete an item
+      description: >
+        Delete an item
+        
+        **Log Type:** `ASSET`
       operationId: delete item
       security:
         - authorization: [ ]
@@ -6208,6 +6764,51 @@ paths:
           source: |
             curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/cat/item?id=uuid' \
             --header 'token: <token>'
+  /items/scripts/download/{filename}:
+    get:
+      tags:
+        - CAT Entity
+      summary: Download generated ingestion script
+      description: |
+        Download a generated Python script for onboarding OGC vector or STAC raster data.
+
+        The `filename` path parameter must match the filename returned by the script
+        generation APIs (e.g., `/items/scripts/download/<filename>.py`).
+      operationId: download script
+      parameters:
+        - in: path
+          name: filename
+          required: true
+          schema:
+            type: string
+            example: 123e4567-e89b-12d3-a456-426614174000_vector_20250120_120000.py
+          description: Name of the generated script file to download (must end with `.py`).
+      responses:
+        '200':
+          description: Python script file
+          content:
+            text/x-python:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Invalid filename
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Script file not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error while reading the script file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /iudx/v2/cat/item/access:
     get:
       tags:
@@ -6233,6 +6834,8 @@ paths:
           the requested item.
         - If delegation does not exist or scope does not permit access,
           the request will be rejected with **403 Forbidden**.
+
+        **Log Type:** `ASSET`
       operationId: get item with accessPolicy
       security:
         - optionalAuth: [ ]
@@ -6345,7 +6948,7 @@ paths:
         - lang: cURL
           label: get item with accessPolicy (delegator)
           source: |
-            curl --location --request GET 
+            curl --location --request GET
             'https://${HOSTNAME}/iudx/v2/cat/item/access?id=uuid&isDelegator=true&did=delegate-did' \
             --header 'Authorization: Bearer <token>'
   /iudx/v2/cat/organisation/asset:
@@ -8128,9 +8731,35 @@ paths:
                   "values": [80, 84]
                 }
               ],
-              "filter": ["id", "type", "organization", "itemCreatedAt", "dataReadiness", 
+              "filter": ["id", "type", "organization", "itemCreatedAt", "dataReadiness",
               "ownerUserId"]
             }'
+
+  /iudx/v2/dashboard/usage-summary:
+    get:
+      summary: Get usage summary for dashboard
+      description: Returns aggregated usage metrics (count and size) for different time windows used by the main dashboard.
+      operationId: get-dashboard-usage-summary
+      tags:
+        - Summary
+      responses:
+        '200':
+          description: List of admin activity logs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/dashboardUsageSummarySuccessResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Fetch Dashboard Usage Summary
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/dashboard/usage-summary'
 
   ## Central CAT apis
   /iudx/v2/central/cat/list:
@@ -8694,11 +9323,15 @@ paths:
         - authorization: [ ]
       description: >
         Retrieve a list of activity logs for the authenticated DX user.
-        This endpoint allows users to view their own activity and filter logs based on <b>assetType</b>, <b>operation</b> and a specified time range (time, endtime).
+        This endpoint allows users to view their own activity and filter logs based on <b>assetType</b>, <b>action</b>, <b>logType</b> a specified time range (time, endtime) and etc.
         Pagination is supported for large result sets.
       parameters:
         - $ref: '#/components/parameters/AssetTypeParam'
-        - $ref: '#/components/parameters/OperationParam'
+        - $ref: '#/components/parameters/AssetAccessPolicyParam'
+        - $ref: '#/components/parameters/ActionParam'
+        - $ref: '#/components/parameters/OrganizationIdParam'
+        - $ref: '#/components/parameters/LogTypeParam'
+        - $ref: '#/components/parameters/SandboxTypeParam'
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
         - $ref: '#/components/parameters/TimeRelParam'
@@ -8738,9 +9371,9 @@ paths:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
       x-codeSamples:
         - lang: cURL
-          label: Fetch Admin Activity Logs
+          label: Fetch consumer Activity Logs
           source: |
-            curl --location 'https://${HOSTNAME}/dx/auditing/consumer/activity?starttime=2025-04-24T16%3A07%3A54.00&endtime=2025-06-24T16%3A07%3A54.00&page=1&size=1' \
+            curl --location 'https://${HOSTNAME}/iudx/v2/auditing/consumer/activity?page=1&size=10' \
             --header 'Authorization: Bearer <your-token>'
 
 
@@ -8753,13 +9386,16 @@ paths:
         - authorization: [ ]
       summary: Admin Activity
       description: >
-        Retrieve a list of activity logs for DX users.
-        This endpoint allows filtering activity logs based on <b>userId</b>,<b>assetType</b>, <b>operation</b> and a specified time range (time, endtime).
+        **Platform admins** (`cos_admin`) can access all activity logs, while **organization admins** (`cos_org`) can access logs only for their own organization.
+        This endpoint also allows filtering activity logs based on <b>userId</b>,<b>assetType</b>, <b>action</b> and a specified time range (time, endtime).
         Use this API to get detailed audit records for administrative purposes, including pagination support for large result sets.</br>
       parameters:
         - $ref: '#/components/parameters/UserIdParam'
         - $ref: '#/components/parameters/AssetTypeParam'
-        - $ref: '#/components/parameters/OperationParam'
+        - $ref: '#/components/parameters/AssetAccessPolicyParam'
+        - $ref: '#/components/parameters/ActionParam'
+        - $ref: '#/components/parameters/LogTypeParam'
+        - $ref: '#/components/parameters/SandboxTypeParam'
         - $ref: '#/components/parameters/OrganizationIdParam'
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
@@ -8802,7 +9438,7 @@ paths:
         - lang: cURL
           label: Fetch Admin Activity Logs
           source: |
-            curl --location 'https://${HOSTNAME}/dx/auditing/admin/activity?starttime=2025-05-24T16%3A07%3A54.00&endtime=2025-06-24T16%3A07%3A54.00&page=1&size=1' \
+            curl --location 'https://${HOSTNAME}/iudx/v2/auditing/admin/activity?page=1&size=10' \
             --header 'Authorization: Bearer <your-token>'
 
 
@@ -8822,7 +9458,10 @@ paths:
       parameters:
         - $ref: '#/components/parameters/UserIdParam'
         - $ref: '#/components/parameters/AssetTypeParam'
-        - $ref: '#/components/parameters/OperationParam'
+        - $ref: '#/components/parameters/AssetAccessPolicyParam'
+        - $ref: '#/components/parameters/ActionParam'
+        - $ref: '#/components/parameters/LogTypeParam'
+        - $ref: '#/components/parameters/SandboxTypeParam'
         - $ref: '#/components/parameters/OrganizationIdParam'
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
@@ -8863,7 +9502,7 @@ paths:
         - lang: cURL
           label: Admin Csv Activity Logs
           source: |
-            curl --location 'https://${HOSTNAME}/dx/auditing/reportactivity/admin' \
+            curl --location 'https://${HOSTNAME}//iudx/v2/auditing/reportactivity/admin?page=1&size=10' \
             --header 'Authorization: Bearer <your-token>'
 
 
@@ -8879,7 +9518,11 @@ paths:
         - authorization: [ ]
       parameters:
         - $ref: '#/components/parameters/AssetTypeParam'
-        - $ref: '#/components/parameters/OperationParam'
+        - $ref:  '#/components/parameters/AssetAccessPolicyParam'
+        - $ref: '#/components/parameters/ActionParam'
+        - $ref: '#/components/parameters/LogTypeParam'
+        - $ref: '#/components/parameters/SandboxTypeParam'
+        - $ref: '#/components/parameters/OrganizationIdParam'
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
         - $ref: '#/components/parameters/TimeRelParam'
@@ -8918,7 +9561,7 @@ paths:
         - lang: cURL
           label: Admin Csv Activity Logs
           source: |
-            curl --location 'https://${HOSTNAME}/dx/auditing/reportactivity/consumer' \
+            curl --location 'https://${HOSTNAME}/iudx/v2/auditing/reportactivity/consumer?page=1&size=10' \
             --header 'Authorization: Bearer <your-token>'
 
 
@@ -9191,171 +9834,6 @@ paths:
 
       deprecated: false
 
-  /iudx/v2/bookmarks:
-    post:
-      tags:
-        - Bookmarks
-      summary: Create a bookmark
-      operationId: post-bookmark
-      security:
-        - authorization: [ ]
-      description: >
-        Creates a bookmark for a supported entity.
-        The operation is idempotent.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PostBookmarkRequest'
-
-      responses:
-        '200':
-          description: Bookmark created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BookmarkResponse'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericBadRequestResponse'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UnauthorizedResponse'
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ForbiddenResponse'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InternalServerErrorResponse'
-      x-codeSamples:
-        - lang: cURL
-          label: Create Bookmark
-          source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/bookmarks' \
-            --header 'Authorization: Bearer <token>' \
-            --header 'Content-Type: application/json' \
-            --data '{
-              "entityId": "7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9",
-              "entityType": "DATABANK"
-            }'
-
-    get:
-      tags:
-        - Bookmarks
-      summary: Get user bookmarks
-      operationId: get-bookmarks
-      security:
-        - authorization: [ ]
-      description: >
-        Retrieve all bookmarks created by the authenticated user.
-        The user is identified from the access token.
-      parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParam'
-      responses:
-        "200":
-          description: Successfully retrieved bookmarks for the authenticated user
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GetBookmarksSuccessResponse'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericBadRequestResponse'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UnauthorizedResponse'
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ForbiddenResponse'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InternalServerErrorResponse'
-      x-codeSamples:
-        - lang: cURL
-          label: Get Bookmarks
-          source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/bookmarks' \
-            --header 'Authorization: Bearer <token>'
-  /iudx/v2/bookmarks/{entityId}:
-    delete:
-      tags:
-        - Bookmarks
-      summary: Delete a bookmark
-      operationId: delete-bookmark
-      security:
-        - authorization: [ ]
-      description: >
-        Remove a bookmark for the authenticated user.
-        If the bookmark does not exist, the operation still succeeds.
-      parameters:
-        - name: entityId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: Unique identifier of the bookmarked entity
-      responses:
-        "204":
-          description: Bookmark deleted successfully
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UnauthorizedResponse'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericBadRequestResponse'
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ForbiddenResponse'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InternalServerErrorResponse'
-      x-codeSamples:
-        - lang: cURL
-          label: Delete Bookmark
-          source: |
-            curl --location --request DELETE \
-            'https://${HOSTNAME}/iudx/v2/bookmarks/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9' \
-            --header 'Authorization: Bearer <token>'
-
   /iudx/v2/auth/app:
     post:
       tags:
@@ -9412,7 +9890,7 @@ paths:
             --header 'Authorization: Bearer <token>' \
             --header 'Content-Type: application/json' \
             --data '{
-              "expiryAt": "2026-12-31T23:59:59Z"
+              "expiry_at": "2026-12-31T23:59:59Z"
             }'
 
 
@@ -9584,8 +10062,748 @@ paths:
                     "appId": "550e8400-e29b-41d4-a716-446655440000",
                       "appSecret": "u7YkKq9vZxP1"
                     }'
+  
+  
+
+  ## Leaderboard apis
+  /iudx/v2/leaderboard/asset:
+    get:
+      tags:
+        - Leaderboard
+      summary: Get leaderboard for assets
+      description: >
+        Retrieve the leaderboard for assets based on various criteria such as most viewed, most downloaded, highest rated, etc.
+      operationId: get-asset-leaderboard
+      parameters:
+        - name: assetType
+          in: query
+          description: Filter by asset types (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [ DATABANK, AI_MODEL, USECASE ]
+        - name: accessPolicy
+          in: query
+          description: Filter by access policy (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [RESTRICTED,OPEN,PRIVATE,PII]
+        - name: organizationType
+          in: query
+          description: Filter by aorganizationType (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [Private, Public, Academic, Institution, NGO/Non-profit", "NA"]
+        - $ref: '#/components/parameters/TimeParam'
+        - $ref: '#/components/parameters/EndTimeParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+      responses:
+        '200':
+          description: Successfully retrieved asset leaderboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaderBoardResponseAsset'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Get Asset Leaderboard
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/asset?time=2026-01-15T12%3A30%3A00&timerel=between&endtime=2026-01-20T12%3A30%3A00&assetType=DATABANK&assetType=AI_MODEL&page=1&size=2&sort=downloads%3Adesc'
+
+  /iudx/v2/leaderboard/provider:
+    get:
+      tags:
+        - Leaderboard
+      summary: Get leaderboard for providers
+      description: >
+        Retrieve the leaderboard for data providers based on various criteria such as most viewed, most downloaded, highest rated, etc.
+      operationId: get-provider-leaderboard
+      parameters:
+        - name: assetType
+          in: query
+          description: Filter by asset types (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [ DATABANK, AI_MODEL, USECASE ]
+        - name: organizationType
+          in: query
+          description: Filter by aorganizationType (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [ Private, Public, Academic, Institution, NGO/Non-profit", NA ]
+        - $ref: '#/components/parameters/TimeParam'
+        - $ref: '#/components/parameters/EndTimeParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+
+      responses:
+        '200':
+          description: Successfully retrieved provider leaderboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaderBoardProvider'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Get Provider Leaderboard
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/provider?organizationType=Public&assetType=DATABANK&time=2026-01-10T12%3A30%3A00&timerel=between&endtime=2026-01-20T12%3A30%3A00&page=1&sort=likes%3Adesc&size=1'
 
 
+  /iudx/v2/leaderboard/organization:
+    get:
+      tags:
+        - Leaderboard
+      summary: Get leaderboard for organisations
+      description: >
+        Retrieve the leaderboard for data providers based on various criteria such as most viewed, most downloaded, highest rated, etc.
+      operationId: get-organisation-leaderboard
+      parameters:
+        - name: organizationType
+          in: query
+          description: Filter by aorganizationType (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [ Private, Public, Academic, Institution, NGO/Non-profit", "NA" ]
+        - name: assetType
+          in: query
+          description: Filter asset type (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [ DATABANK, AI_MODEL, USECASE ]
+        - $ref: '#/components/parameters/TimeParam'
+        - $ref: '#/components/parameters/EndTimeParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+
+      responses:
+        '200':
+          description: Successfully retrieved provider leaderboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaderBoardOrg'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Get organisation Leaderboard
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/leaderboard/organization?organizationType=Public&assetType=DATABANK&time=2026-01-10T12%3A30%3A00&timerel=between&endtime=2026-01-20T12%3A30%3A00&page=1&size=2&sort=contribution%3Adesc'
+
+
+
+  /iudx/v2/user/interactions:
+    post:
+      tags:
+        - User Interactions
+      operationId: post-user-intraction
+      summary: Create or update user interaction (like, dislike, bookmark)
+      description: >
+        Allows a user to like, dislike, bookmark, or remove an interaction on an entity.
+        Uses a single unified endpoint for all interaction types.
+      security:
+        - authorization: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserInteractionRequest'
+            examples:
+              like:
+                summary: Like an entity
+                value:
+                  assetId: "e74112d5-b58b-401e-a799-712b473279ea"
+                  assetType: "DATABANK"
+                  actionType: "LIKE"
+              dislike:
+                summary: Dislike an entity
+                value:
+                  assetId: "e74112d5-b58b-401e-a799-712b473279ea"
+                  assetType: "DATABANK"
+                  actionType: "DISLIKE"
+              bookmark:
+                summary: Bookmark an entity
+                value:
+                  assetId: "e74112d5-b58b-401e-a799-712b473279ea"
+                  assetType: "DATABANK"
+                  actionType: "BOOKMARK"
+              removeVote:
+                summary: Remove vote (neutral)
+                value:
+                  assetId: "e74112d5-b58b-401e-a799-712b473279ea"
+                  assetType: "DATABANK"
+                  actionType: "NEUTRAL"
+              removeBookmark:
+                summary: Remove bookmark
+                value:
+                  assetId: "e74112d5-b58b-401e-a799-712b473279ea"
+                  assetType: "DATABANK"
+                  actionType: "UNBOOKMARK"
+      responses:
+        '200':
+          description: Interaction recorded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InteractionResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+      x-codeSamples:
+        - lang: cURL
+          label: submit interaction
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/interactions' \
+            --header 'Authorization: Bearer <jwt token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+            "assetId": "e74112d5-b58b-401e-a799-712b473279ea",
+            "assetType": "DATABANK",
+            "actionType": "LIKE"
+            }'
+
+    get:
+      tags:
+        - User Interactions
+      operationId: get-user-interaction
+      summary: Get user interaction status for an entity
+      description: >
+        Returns a paginated list of entities the authenticated user has interacted with
+        (liked, disliked, bookmarked), including the interaction state per entity.
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: assetId
+          in: query
+          description: Unique identifier of the asset
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: assetType
+          in: query
+          description: Type of the asset
+          required: false
+          schema:
+            type: string
+            enum: [ DATABANK, AI_MODEL, USECASE ]
+        - name: actionType
+          in: query
+          description: Type of interaction action
+          required: false
+          schema:
+            type: string
+            enum: [ LIKE, DISLIKE, BOOKMARK ]
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Successfully retrieved user interaction status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInteractionResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+      x-codeSamples:
+        - lang: cURL
+          label: Get User Interaction Status
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/interactions' \
+            --header 'Content-Type: application/json' \
+            --header 'Authorization: Bearer <jwt token>'
+  /iudx/v2/user/interactions/sync:
+    get:
+      tags:
+        - User Interactions
+      operationId: sync-interaction-metrics
+      summary: Sync aggregated interaction metrics
+      description: >
+        Triggers synchronization of interaction metrics (likes, dislikes, bookmarks)
+        into aggregated stores for analytics or leaderboard usage.
+
+        **Authorization:** This API can be invoked only by users with the `cos_admin` role.
+      security:
+        - authorization: [ ]
+      responses:
+        '200':
+          description: Interaction metrics synced successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInteractionSyncResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+      x-codeSamples:
+        - lang: cURL
+          label: Get User Interaction Status
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/interactions/sync' \
+            --header 'Content-Type: application/json' \
+            --header 'Authorization: Bearer <jwt token>'
+
+
+  /iudx/v2/user/feedback:
+    post:
+      tags:
+        - User Interactions
+      summary: Post user feedback on entity
+      description: >
+        Submit user feedback for a specific data asset, including an optional
+        star rating (1-5) and/or a structured action subtype with associated data.
+        User should be the one who has already interacted with the asset before.
+      operationId: post-user-feedback
+      security:
+        - authorization: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - asset_id
+              properties:
+                asset_id:
+                  type: string
+                  format: uuid
+                  description: UUID of the asset
+                entity_rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                action_subtype:
+                  type: string
+                action_subdata:
+                  type: object
+      responses:
+        '200':
+          description: Feedback successfully recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+    get:
+      tags:
+        - User Interactions
+      summary: Get user feedback
+      description: >
+        Retrieve paginated user feedback with optional filters by user, asset, or action subtype.
+      operationId: get-user-feedback
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: user_id
+          in: query
+          description: Filter by user UUID
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: asset_id
+          in: query
+          description: Filter by asset UUID
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: action_subtype
+          in: query
+          description: Filter by action subtype (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Successfully retrieved user feedback
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserFeedbackPaginatedResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Get user feedback
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback?asset_id=811e9876-9381-4a25-8ad1-e8b289616ab8&action_subtype=bookmark&page=1&size=10'
+
+    delete:
+      tags:
+        - User Interactions
+      summary: Delete user feedback
+      description: >
+        Clears the feedback fields (entity_rating, action_subtype, action_subdata)
+        for a specific feedback entry. The record itself is retained. User should
+        be the one who has already interacted with the asset before.
+      operationId: delete-user-feedback
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: id
+          in: query
+          description: UUID of the asset entry to delete
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Feedback fields cleared successfully
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Delete user feedback
+          source: |
+            curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/user/feedback?id=811e9876-9381-4a25-8ad1-e8b289616ab8' --header 'Authorization: Bearer ${TOKEN}'
+
+  /iudx/v2/provider/feedback:
+    post:
+      tags:
+        - User Interactions
+      summary: Post provider feedback on entity
+      description: |
+        Submit provider feedback for a specific data asset, including an optional star rating (1-5) and/or a structured action subtype with associated data. User should be the one who has already interacted with the asset before.
+      operationId: post-provider-feedback
+      security:
+        - authorization: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - asset_id
+              properties:
+                asset_id:
+                  type: string
+                  format: uuid
+                  description: UUID of the asset
+                type:
+                  type: string
+                data:
+                  type: object
+      responses:
+        '200':
+          description: Feedback successfully recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+    get:
+      tags:
+        - User Interactions
+      summary: Get provider feedback
+      description: |
+        Retrieve paginated provider feedback with optional filters by user, asset, or type.
+      operationId: get-provider-feedback
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: user_id
+          in: query
+          description: Filter by user UUID
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: asset_id
+          in: query
+          description: Filter by asset UUID
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: type
+          in: query
+          description: Filter by action subtype (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Successfully retrieved Provider feedback
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderFeedbackPaginatedResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Get user feedback
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/provider/feedback?asset_id=811e9876-9381-4a25-8ad1-e8b289616ab8&type=bookmark&page=1&size=10'
+    delete:
+      tags:
+        - User Interactions
+      summary: Delete provider feedback
+      description: |
+        Clears the feedback fields (data, type) for a specific feedback entry. User should be the one who has already interacted with the asset before.
+      operationId: delete-provider-feedback
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: id
+          in: query
+          description: UUID of the asset entry to delete
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Feedback fields cleared successfully
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Delete provider feedback
+          source: |
+            curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/provider/feedback?id=811e9876-9381-4a25-8ad1-e8b289616ab8' --header 'Authorization: Bearer ${TOKEN}'
 tags:
   - name: Activity Logs
     x-displayName: "Activity Logs"
@@ -9593,80 +10811,96 @@ tags:
       APIs for managing activity logs in the platform.
       These APIs allow users to retrieve their own activity logs as well as administrative logs for auditing purposes.
       The endpoints support filtering by time range and pagination, and they also provide CSV export functionality for both consumer and admin activity logs.
-
   - name: Activity Report
     x-displayName: "Activity Report"
     description: >
       APIs for generating CSV reports of activity logs.
       These endpoints allow administrators and consumers to download activity logs in CSV format for offline analysis and reporting.
-
   - name: Resource Servers
     description: |
       Manage resource server configurations used for data provisioning and ingestion.
       These APIs allow creation, listing, retrieval, and deletion of resource servers and are
       restricted to administrative users (`cos_admin` and `org_admin`).
-
   - name: CAT Entity
-    x-displayName: CAT Entity
     description: |
       Manage catalogue entities and perform Create/Update/Read/Delete operations on them.
       These apis are intended to be used by DX(Data Exchange) Data *Providers*.
-
-  # 🔹 NEW — Central CAT filters
-  - name: List Available Central CAT Filters
-    description: |
-      APIs that expose available filter values for indexed fields from the Central Catalogue.
-      These endpoints are used by UI clients to dynamically populate filter options
-      for centrally published catalogue entities such as DataBank, AI Model, and Apps.
-
+    x-displayName: CAT Entity
   - name: List Available Filters
     description: |
       APIs that expose available filter values for indexed catalogue fields.
       These endpoints are primarily used by UI clients to dynamically populate filter options
       based on the selected entity type (e.g., DataBank, AI Model, Apps).
-
-  # 🔹 NEW — Central CAT public discovery
-  - name: Central CAT Discovery – Public
-    description: |
-      Public discovery APIs backed by the Central Catalogue.
-      These APIs support global search and count operations over centrally published catalogue entities
-      and do not require ownership of the assets.
-
   - name: Discovery – Public
     description: |
       Public catalogue discovery APIs.
       These APIs support global search and count operations over published catalogue entities
       and do not require ownership of the assets.
-
   - name: Discovery – My Assets
     description: |
       Owner-specific discovery APIs.
       These APIs allow authenticated users to search and view assets owned by them including unpublished or draft entities.
-
   - name: Organisation Assets Management
     description: |
       APIs for managing assets owned by a specific organization.
       These endpoints are restricted to users with the `org_admin` role and allow organisation
       administrators to view and manage all assets belonging to their organisation, regardless
       of publication or data upload status.
-
   - name: Platform Assets Management
     description: |
       Platform-wide asset management APIs.
       These endpoints are restricted to users with the `cos_admin` role and allow viewing and
       managing all assets across the platform, irrespective of ownership or status.
-
   - name: Subscriptions
-    x-displayName: Subscriptions
     description: |
       NGSI-LD subscriptions apis.
       These apis are intended to be for the streaming purpose.
+    x-displayName: Subscriptions
 
-  - name: Bookmarks
+      #- name: Bookmarks
+      #description: >
+      #APIs for managing user bookmarks on `DATABANK`, `AI_MODEL`, `USECASE` and ,
+    #`APP`.
+    #x-displayName: Bookmarks
+
+    # - name: Vote
+    # description: >
+    #   APIs for casting votes on entities such as `DATABANK`, `AI_MODEL`, `USECASE`, and `APP`.
+    #  Users can express their preferences by voting `LIKE`, `DISLIKE`, or setting their vote to `NEUTRAL` to remove any existing vote.
+  # x-displayName: Vote
+  - name: Summary
+    description: |
+      APIs for retrieving summary datasets for dashboard visualizations.
+      These endpoints provide aggregated data insights for various dashboard components,
+      enabling users to gain quick insights into platform usage and trends.
+    x-displayName: Summary
+  - name: App
     description: >
-      APIs for managing user bookmarks on `DATABANK`, `AI_MODEL`, `USECASE` and ,
-      `APP`.
-    x-displayName: Bookmarks
+      APIs for managing application identifiers (appIds) for authenticated users.
+      These endpoints allow users to create, retrieve, and delete appIds, which can be used
+      for application-level authentication and authorization within the platform.
+    x-displayName: App
+  - name: Leaderboard
+    description: >
+      APIs under this tag provide leaderboard and ranking data for `Organization`,`Provider` and `Asset` such as `DATABANK`, `AI_MODEL`, and `USECASE`.
+      These endpoints support filtering, sorting, pagination,
+      and time-based queries to retrieve ranked results based on engagement metrics like
+      downloads, views, and likes.
+
+
+  - name: User Interactions
+    description: >
+      APIs under this tag allow users to manage their interactions with platform entities such as
+      `DATABANK`, `AI_MODEL`, and `USECASE`. These endpoints support actions including
+      `like`, `dislike`, `bookmark`, and `unbookmark`, and also allow retrieval of a user's interaction
+      state for specific entities. The APIs are designed to support user-centric engagement features
+      and provide a consistent interaction model across all entity types.
+
+      Note:
+        1. Voting and bookmarking functionalities have been consolidated into a single unified interaction endpoint.
+        2. The `NEUTRAL` action removes an existing vote (like/dislike).
+        3. The `UNBOOKMARK` action removes an existing bookmark.
+    x-displayName: User Engagement (Like, Dislike, Bookmark & Unbookmark)
 
 
 components:
@@ -9692,7 +10926,7 @@ components:
         pattern: '^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$'
 
     AssetTypeParam:
-      name: entityType
+      name: assetType
       in: query
       description: >
         The type of asset to filter the activity logs.
@@ -9700,25 +10934,37 @@ components:
       required: false
       schema:
         type: string
-
-    AssetNameParam:
-      name: assetname
+        enum:
+          - DATABANK
+          - AI_MODEL
+          - USECASE
+    SandboxTypeParam:
+      name: sandboxType
       in: query
       description: >
-        This asset name is used to filter the activity logs.
-        This parameter allows filtering by specific asset name.
+        Sandbox execution type used to filter audit logs.
+        Possible values indicate the compute environment.
       required: false
       schema:
         type: string
+        enum:
+          - cpu
+          - gpu
 
-    ApiParam:
-      name: api
+    AssetAccessPolicyParam:
+      name: accessPolicy
       in: query
       description: >
-        This parameter allows filtering by specific api endpoint name.
+        The access policy of the asset to filter the activity logs.
+        This parameter allows filtering by specific access policies such as `OPEN`, `RESTRICTED`, `PRIVATE`, `PII`.
       required: false
       schema:
         type: string
+        enum:
+          - OPEN
+          - RESTRICTED
+          - PRIVATE
+          - PII
 
     RoleParam:
       name: role
@@ -9729,12 +10975,21 @@ components:
       schema:
         type: string
 
-    OperationParam:
-      name: operation
+    ActionParam:
+      name: action
       in: query
       description: >
-        The type of operation to filter the activity logs.
-        This parameter allows filtering by specific operations, such as `View`, `created`, etc.
+        The type of action to filter the activity logs.
+        This parameter allows filtering by specific action, such as `View`, `Download`, `Upload`, `Update`,`Delete` etc.
+      required: false
+      schema:
+        type: string
+    LogTypeParam:
+      name: logType
+      in: query
+      description: >
+        The type of log to filter the activity logs.
+        This parameter allows filtering by specific log types, such as `ASSET`, `USER_ACTION`, and `COMPUTE`.
       required: false
       schema:
         type: string
@@ -9816,7 +11071,6 @@ components:
           - between
           - before
           - after
-          -
     OrgNameParam:
       name: name
       in: query
@@ -9855,6 +11109,278 @@ components:
       schema:
         type: string
   schemas:
+    UserInteractionRequest:
+      type: object
+      required:
+        - assetId
+        - assetType
+        - actionType
+      properties:
+        assetId:
+          type: string
+          format: uuid
+          description: ID of the entity being voted on
+          example: 7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9
+        assetType:
+          type: string
+          description: Type of entity being vote on
+          enum:
+            - DATABANK
+            - AI_MODEL
+            - USECASE
+          example: DATABANK
+        actionType:
+          type: string
+          description: Type of vote
+          enum:
+            - BOOKMARK
+            - UNBOOKMARK
+            - LIKE
+            - DISLIKE
+            - NEUTRAL
+          example: LIKE
+    InteractionResponse:
+      type: object
+      title: Response for internal datasets .
+      description: Example success response for getting internal datasets
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have
+            been triggered.
+        title:
+          description: A human readable title to the message response.
+        detail:
+          type: string
+      required:
+        - type
+      example:
+        type: 'dx:controlPlane:success'
+        title: 'Success'
+        detail: 'Interaction updated successfully'
+
+
+    UserFeedbackRequest:
+      type: object
+      required:
+        - asset_id
+      properties:
+        asset_id:
+          type: string
+          format: uuid
+          description: UUID of the asset being rated or acted upon
+        entity_rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: Star rating from 1 to 5
+        action_subtype:
+          type: string
+          description: Type of interaction action such as bookmark, like, dislike
+        action_subdata:
+          type: object
+          description: Additional structured data associated with the action
+
+    UserFeedbackPaginatedResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              user_id:
+                type: string
+                format: uuid
+              asset_id:
+                type: string
+                format: uuid
+              entity_rating:
+                type: integer
+                minimum: 1
+                maximum: 5
+              action_subtype:
+                type: string
+              action_subdata:
+                type: object
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+              example: 1
+            size:
+              type: integer
+              example: 10
+            total:
+              type: integer
+              example: 100
+            totalPages:
+              type: integer
+              example: 10
+
+    ProviderFeedbackPaginatedResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              user_id:
+                type: string
+                format: uuid
+              asset_id:
+                type: string
+                format: uuid
+              type:
+                type: string
+              data:
+                type: object
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+              example: 1
+            size:
+              type: integer
+              example: 10
+            total:
+              type: integer
+              example: 100
+            totalPages:
+              type: integer
+              example: 10
+
+    dashboardUsageSummarySuccessResponse:
+      type: object
+      title: Response for internal datasets .
+      description: Example success response for getting internal datasets
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have
+            been triggered.
+        title:
+          description: A human readable title to the message response.
+        results:
+          type: array
+          description: Results which matched the query. This is an array of objects.
+          items:
+            type: object
+      required:
+        - type
+      example:
+        type: 'dx:controlPlane:success'
+        title: Success
+        results: [
+          {
+            "description": "Total usage since the beginning",
+            "count": "1550856",
+            "size": "9124560508"
+          },
+          {
+            "description": "Total usage for the last 1 Year",
+            "count": "1145750",
+            "size": "6375184440"
+          },
+          {
+            "description": "Total usage for the last 6 months",
+            "count": "884251",
+            "size": "1091784668"
+          },
+          {
+            "description": "Total usage for the last 1 month",
+            "count": "863228",
+            "size": "625708328"
+          },
+          {
+            "description": "Total usage for the last 1 week",
+            "count": "287767",
+            "size": "189002738"
+          },
+          {
+            "description": "Total usage of Yesterday",
+            "count": "83404",
+            "size": "34228471"
+          }
+        ]
+    PostItemVoteRequest:
+      type: object
+      required:
+        - entityId
+        - entityType
+        - voteType
+      properties:
+        entityId:
+          type: string
+          format: uuid
+          description: ID of the entity being voted on
+          example: 7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9
+        entityType:
+          type: string
+          description: Type of entity being vote on
+          enum:
+            - DATABANK
+            - AI_MODEL
+            - USECASE
+            - APP
+
+          example: DATABANK
+        voteType:
+          type: string
+          description: Type of vote
+          enum:
+            - LIKE
+            - DISLIKE
+            - NEUTRAL
+    ItemVoteResponse:
+      type: object
+      title: Vote API Response
+      description: Success response for casting or updating a vote
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have
+            been triggered.
+        title:
+          description: A human readable title to the message response.
+        results:
+          type: array
+          description: Results which matched the query. This is an array of objects.
+          items:
+            type: object
+      required:
+        - type
+        - title
+        - results
+      example:
+        type: 'dx:controlPlane:success'
+        title: Success
+        results: [
+          {
+            "entityId": "e74112d5-b58b-401e-a799-712b473279ed",
+            "entityType": "DATABANK",
+            "voteType": "LIKE"
+          }
+
+        ]
     AppTokenRequest:
       type: object
       required:
@@ -9896,6 +11422,274 @@ components:
             - APP
 
           example: DATABANK
+    LeaderBoardResponseAsset:
+      type: object
+      required:
+        - type
+        - title
+        - result
+      properties:
+        type:
+          type: string
+          description: URN identifying the response category
+          example: urn:dx:ControlPlane:success
+        title:
+          type: string
+          description: Short response title
+          example: Success
+        result:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                type: object
+                properties:
+                  rank:
+                    type: integer
+                  id:
+                    type: string
+                    format: uuid
+                  name:
+                    type: string
+                  type:
+                    type: string
+                  shortDescription:
+                    type: string
+                  providerId:
+                    type: string
+                    format: uuid
+                  organizationId:
+                    type: string
+                    format: uuid
+                  organizationName:
+                    type: string
+                  downloads:
+                    type: integer
+                  likes:
+                    type: integer
+                  dislikes:
+                    type: integer
+                  views:
+                    type: integer
+                required:
+                  - rank
+                  - id
+                  - name
+            paginationInfo:
+              type: object
+              properties:
+                page:
+                  type: integer
+                size:
+                  type: integer
+                totalCount:
+                  type: integer
+                totalPages:
+                  type: integer
+                hasNext:
+                  type: boolean
+                hasPrevious:
+                  type: boolean
+      example:
+        type: urn:dx:ControlPlane:success
+        title: Success
+        result:
+          - rank: 1
+            id: 'ddddddd2-dddd-dddd-dddd-dddddddddddd'
+            name: 'AI Model 2'
+            type: 'AI_MODEL'
+            shortDescription: 'AI Model entity 2'
+            providerId: 'ccccccc1-cccc-cccc-cccc-ccccccccccc1'
+            organizationId: 'bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbb1'
+            organizationName: 'Org One'
+            downloads: 1
+            likes: 0
+            dislikes: 4
+            views: 0
+        paginationInfo:
+          page: 1
+          size: 1
+          totalCount: 1
+          totalPages: 1
+          hasNext: false
+          hasPrevious: false
+
+    LeaderBoardProvider:
+      type: object
+      required:
+        - type
+        - title
+        - result
+      properties:
+        type:
+          type: string
+          description: URN identifying the response category
+          example: 'dx:controlPlane:success'
+        title:
+          type: string
+          description: Short response title
+          example: 'Success'
+        result:
+          type: array
+          items:
+            type: object
+            properties:
+              rank:
+                type: integer
+              id:
+                type: string
+                format: uuid
+              username:
+                type: string
+              organizationId:
+                type: string
+                format: uuid
+              organizationName:
+                type: string
+              publishedDatabank:
+                type: integer
+              publishedAiModels:
+                type: integer
+              publishedUsecases:
+                type: integer
+              totalPublished:
+                type: integer
+              downloads:
+                type: integer
+              likes:
+                type: integer
+              dislikes:
+                type: integer
+            required:
+              - rank
+              - id
+              - username
+        paginationInfo:
+          type: object
+          properties:
+            page:
+              type: integer
+            size:
+              type: integer
+            totalCount:
+              type: integer
+            totalPages:
+              type: integer
+            hasNext:
+              type: boolean
+            hasPrevious:
+              type: boolean
+      example:
+        type: 'dx:controlPlane:success'
+        title: 'Success'
+        result:
+          - rank: 1
+            id: 'ccccccc1-cccc-cccc-cccc-ccccccccccc1'
+            username: 'provider name'
+            organizationId: 'bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbb1'
+            organizationName: 'Org One'
+            publishedDatabank: 1
+            publishedAiModels: 1
+            publishedUsecases: 0
+            totalPublished: 2
+            downloads: 2
+            likes: 8
+            dislikes: 4
+        paginationInfo:
+          page: 1
+          size: 1
+          totalCount: 3
+          totalPages: 3
+          hasNext: true
+          hasPrevious: false
+
+    LeaderBoardOrg:
+      type: object
+      required:
+        - type
+        - title
+        - result
+      properties:
+        type:
+          type: string
+          description: URN identifying the response category
+          example: 'dx:controlPlane:success'
+        title:
+          type: string
+          description: Short response title
+          example: 'Success'
+        result:
+          type: array
+          items:
+            type: object
+            properties:
+              rank:
+                type: integer
+              id:
+                type: string
+                format: uuid
+                description: Organization ID
+              organizationName:
+                type: string
+              members:
+                type: integer
+              publishedDatabanks:
+                type: integer
+              publishedAiModels:
+                type: integer
+              publishedUsecases:
+                type: integer
+              totalPublished:
+                type: integer
+              downloads:
+                type: integer
+              likes:
+                type: integer
+              dislikes:
+                type: integer
+            required:
+              - rank
+              - id
+              - organizationName
+        paginationInfo:
+          type: object
+          properties:
+            page:
+              type: integer
+            size:
+              type: integer
+            totalCount:
+              type: integer
+            totalPages:
+              type: integer
+            hasNext:
+              type: boolean
+            hasPrevious:
+              type: boolean
+      example:
+        type: 'dx:controlPlane:success'
+        title: 'Success'
+        result:
+          - rank: 1
+            id: 'bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbb1'
+            organizationName: 'Org One'
+            members: 0
+            publishedDatabanks: 1
+            publishedAiModels: 2
+            publishedUsecases: 0
+            totalPublished: 3
+            downloads: 2
+            likes: 8
+            dislikes: 4
+        paginationInfo:
+          page: 1
+          size: 1
+          totalCount: 2
+          totalPages: 2
+          hasNext: true
+          hasPrevious: false
+
     BookmarkResponse:
       type: object
       required:
@@ -9915,6 +11709,185 @@ components:
 
         result:
           $ref: '#/components/schemas/BookmarkResult'
+    BulkSyncFailure:
+      type: object
+      required:
+        - id
+        - reason
+        - message
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Document ID that failed to update
+        reason:
+          type: string
+          description: Elasticsearch failure reason code
+        message:
+          type: string
+          description: Detailed failure message from Elasticsearch
+    BulkSyncResult:
+      type: object
+      required:
+        - total
+        - successful
+        - failed
+        - failures
+      properties:
+        total:
+          type: integer
+          description: Total number of documents processed
+          example: 9
+        successful:
+          type: integer
+          description: Number of documents successfully updated
+          example: 7
+        failed:
+          type: integer
+          description: Number of documents that failed to update
+          example: 1
+        failures:
+          type: array
+          description: List of failed document updates
+          items:
+            $ref: '#/components/schemas/BulkSyncFailure'
+    UserInteractionSyncResponse:
+      type: object
+      required:
+        - type
+        - title
+        - detail
+        - result
+      properties:
+        type:
+          type: string
+          example: dx:controlPlane:success
+        title:
+          type: string
+          example: Success
+        detail:
+          type: string
+          example: Interaction metrics synced successfully
+        result:
+          $ref: '#/components/schemas/BulkSyncResult'
+    UserInteractionResponse:
+      type: object
+      required:
+        - type
+        - title
+        - result
+        - paginationInfo
+      properties:
+        type:
+          type: string
+          description: URN identifying the response category
+          example: urn:dx:ControlPlane:success
+
+        title:
+          type: string
+          description: Short response title
+          example: Success
+
+        result:
+          type: array
+          items:
+            type: object
+            required:
+              - asset
+              - userInteraction
+            properties:
+              asset:
+                $ref: '#/components/schemas/AssetSummary'
+
+              userInteraction:
+                $ref: '#/components/schemas/UserInteractionState'
+
+        paginationInfo:
+          $ref: '#/components/schemas/PaginationInfoResponse'
+    AssetSummary:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - accessPolicy
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        shortDescription:
+          type: string
+        type:
+          type: string
+          example: adex:DataBank
+        accessPolicy:
+          type: string
+          example: OPEN
+        ownerUserId:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        organizationName:
+          type: string
+        uploadedBy:
+          type: string
+        resourceServer:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              datasetType:
+                type: string
+              accessTypes:
+                type: array
+                items:
+                  type: string
+              queryTypes:
+                type: array
+                items:
+                  type: string
+              url:
+                type: string
+        fileFormat:
+          type: string
+        itemCreatedAt:
+          type: string
+          format: date-time
+        metrics:
+          type: object
+          properties:
+            downloads:
+              type: integer
+            views:
+              type: integer
+            likes:
+              type: integer
+            dislikes:
+              type: integer
+    UserInteractionState:
+      type: object
+      required:
+        - liked
+        - disliked
+        - bookmarked
+      properties:
+        liked:
+          type: boolean
+          description: Whether the user has liked the asset
+        disliked:
+          type: boolean
+          description: Whether the user has disliked the asset
+        bookmarked:
+          type: boolean
+          description: Whether the user has bookmarked the asset
+
+
 
     BookmarkResult:
       type: object
@@ -10041,11 +12014,42 @@ components:
       required:
         - expiry_at
       properties:
-        expiryAt:
+        expiry_at:
           type: string
           pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
-          example: '2026-01-31T23:59:59'
-          description: Expiry timestamp for the appId
+
+        roles:
+          type: array
+          items:
+            type: object
+            required:
+              - role
+            properties:
+              role:
+                $ref: '#/components/schemas/DelegationRole'
+
+              constraints:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - scope
+                  properties:
+                    scope:
+                      $ref: '#/components/schemas/DelegationScope'
+
+                    entity_id:
+                      type: array
+                      nullable: true
+                      items:
+                        type: string
+                        format: uuid
+
+                    entity_type:
+                      $ref: '#/components/schemas/DelegationEntityType'
+                      nullable: true
+
+
 
     AppIdResponse:
       type: object
@@ -11355,7 +13359,7 @@ components:
           - policyId: aaaaaaaa-6473-3546-5436-8758aaaa5897
             itemId: cccccccc-6754-8958-2456-3452aaaa5436
             itemType: RESOURCE_GROUP
-            expiryAt: '2024-09-05T20:00:19'
+            expiryAt: '2026-09-05T20:00:19'
             constraints:
               access:
                 - sub
@@ -13719,6 +15723,11 @@ components:
             dataUploadStatus: false
             itemCreatedAt: "2025-12-15T05:16:43+0530"
             lastUpdated: "15 December, 2025 - 05:16 PM"
+            metrics:
+              views: 0
+              downloads: 0
+              likes: 0
+              dislikes: 0
         paginationInfo:
           page: 1
           size: 1
@@ -13959,6 +15968,11 @@ components:
             dataUploadStatus: false
             itemCreatedAt: "2024-01-05T02:09:10+0530"
             lastUpdated: "15 December, 2025 - 05:04 PM"
+            metrics:
+              views: 0
+              downloads: 0
+              likes: 0
+              dislikes: 0
         paginationInfo:
           page: 1
           size: 1
@@ -14165,6 +16179,11 @@ components:
             itemCreatedAt: '2024-01-05T02:09:10+0530'
             lastUpdated: '2024-01-10T11:30:00+0530'
             verifiedBy: 'Department of Agriculture'
+            metrics:
+              views: 0
+              downloads: 0
+              likes: 0
+              dislikes: 0
         paginationInfo:
           page: 1
           size: 1
@@ -14313,17 +16332,26 @@ components:
               lastUpdated:
                 type: string
                 description: Last updated timestamp (human-readable)
-              expiryAt:
-                type: string
-                description: If the fetched item is of RESTRICTED accessPolicy, then the response
-                  will include the expiry time of the policy
-              cons:
-                type: object
-                description: Constraints associated with the model
-                additionalProperties:
-                  type: array
-                  items:
-                    type: string
+              policies:
+                type: array
+                description: List of policies applicable to the item (present only for RESTRICTED accessPolicy)
+                items:
+                  type: object
+                  properties:
+                    policyId:
+                      type: string
+                      format: uuid
+                      description: Unique identifier of the policy
+
+                    expiryAt:
+                      type: string
+                      format: date-time
+                      description: Expiry timestamp of the policy (human-readable ISO format)
+
+                    cons:
+                      type: object
+                      description: Constraints associated with the policy
+                      additionalProperties: true
             required:
               - id
               - type
@@ -14374,9 +16402,23 @@ components:
             dataUploadStatus: false
             itemCreatedAt: "2025-12-15T05:16:43+0530"
             lastUpdated: "15 December, 2025 - 05:16 PM"
-            expiryAt: "2025-12-04T20:00:19"
-            cons:
-              access: [ 'sub' ]
+            policies:
+              - policyId: fc6eaf20-98e5-4ef0-b09b-f78d7c73b28c
+                expiryAt: "2026-09-05T20:00:19"
+                cons:
+                  subjects:
+                    allowedOrgIds:
+                      - 74e3b919-1d1b-44de-ace1-504f1887fcc1
+                      - 91c2d732-3cbb-4b9f-8f3e-8c2e4a9b1122
+                    allowedUserIds:
+                      - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                    allowedRoles:
+                      - consumer
+                  access:
+                    - accessType: sub
+                      expiry: 1735689600
+                      limits:
+                        apiHits: 100
         paginationInfo:
           page: 1
           size: 1
@@ -14535,17 +16577,26 @@ components:
               lastUpdated:
                 type: string
                 description: Last updated timestamp (human-readable)
-              expiryAt:
-                type: string
-                description: If the fetched item is of RESTRICTED accessPolicy, then the response
-                  will include the expiry time of the policy
-              cons:
-                type: object
-                description: Constraints associated with the model
-                additionalProperties:
-                  type: array
-                  items:
-                    type: string
+              policies:
+                type: array
+                description: List of policies applicable to the item (present only for RESTRICTED accessPolicy)
+                items:
+                  type: object
+                  properties:
+                    policyId:
+                      type: string
+                      format: uuid
+                      description: Unique identifier of the policy
+
+                    expiryAt:
+                      type: string
+                      format: date-time
+                      description: Expiry timestamp of the policy (human-readable ISO format)
+
+                    cons:
+                      type: object
+                      description: Constraints associated with the policy
+                      additionalProperties: true
             required:
               - id
               - type
@@ -14626,9 +16677,23 @@ components:
             dataUploadStatus: false
             itemCreatedAt: "2024-01-05T02:09:10+0530"
             lastUpdated: "15 December, 2025 - 05:04 PM"
-            expiryAt: "2025-12-04T20:00:19"
-            cons:
-              access: [ 'sub' ]
+            policies:
+              - policyId: fc6eaf20-98e5-4ef0-b09b-f78d7c73b28c
+                expiryAt: "2026-09-05T20:00:19"
+                cons:
+                  subjects:
+                    allowedOrgIds:
+                      - 74e3b919-1d1b-44de-ace1-504f1887fcc1
+                      - 91c2d732-3cbb-4b9f-8f3e-8c2e4a9b1122
+                    allowedUserIds:
+                      - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                    allowedRoles:
+                      - consumer
+                  access:
+                    - accessType: sub
+                      expiry: 1735689600
+                      limits:
+                        apiHits: 100
         paginationInfo:
           page: 1
           size: 1
@@ -14770,17 +16835,26 @@ components:
               verifiedBy:
                 type: string
                 description: Authority that verified the application
-              expiryAt:
-                type: string
-                description: If the fetched item is of RESTRICTED accessPolicy, then the response
-                  will include the expiry time of the policy
-              cons:
-                type: object
-                description: Constraints associated with the model
-                additionalProperties:
-                  type: array
-                  items:
-                    type: string
+              policies:
+                type: array
+                description: List of policies applicable to the item (present only for RESTRICTED accessPolicy)
+                items:
+                  type: object
+                  properties:
+                    policyId:
+                      type: string
+                      format: uuid
+                      description: Unique identifier of the policy
+
+                    expiryAt:
+                      type: string
+                      format: date-time
+                      description: Expiry timestamp of the policy (human-readable ISO format)
+
+                    cons:
+                      type: object
+                      description: Constraints associated with the policy
+                      additionalProperties: true
         paginationInfo:
           $ref: '#/components/schemas/PaginationInfo'
       example:
@@ -14848,9 +16922,23 @@ components:
             itemCreatedAt: '2024-01-05T02:09:10+0530'
             lastUpdated: '2024-01-10T11:30:00+0530'
             verifiedBy: 'Department of Agriculture'
-            expiryAt: "2025-12-04T20:00:19"
-            cons:
-              access: [ 'sub' ]
+            policies:
+              - policyId: fc6eaf20-98e5-4ef0-b09b-f78d7c73b28c
+                expiryAt: "2026-09-05T20:00:19"
+                cons:
+                  subjects:
+                    allowedOrgIds:
+                      - 74e3b919-1d1b-44de-ace1-504f1887fcc1
+                      - 91c2d732-3cbb-4b9f-8f3e-8c2e4a9b1122
+                    allowedUserIds:
+                      - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                    allowedRoles:
+                      - consumer
+                  access:
+                    - accessType: sub
+                      expiry: 1735689600
+                      limits:
+                        apiHits: 100
         paginationInfo:
           page: 1
           size: 1
@@ -16474,46 +18562,165 @@ components:
         id:
           type: string
           format: uuid
-          example: 4c9d066a-e2f7-46fd-a580-718d35f649bc
-        assetName:
-          type: string
-          example: AiSandBoxAiModelPrivate
-        assetType:
-          type: string
-          example: adex:AiModel
-        operation:
-          type: string
-          example: VIEWED
-        createdAt:
-          type: string
-          format: date-time
-          example: 2025-05-30T15:37:20.237353
-        assetId:
-          type: string
-          format: uuid
-          example: 0e889bb0-38f8-496c-ba85-02845ff5cf67
-        api:
-          type: string
-          example: /iudx/cat/v2/item
-        method:
-          type: string
-          example: POST
-        size:
-          type: integer
-          example: 0
-        role:
-          type: string
-          example: consumer
+          example: 7751ca4f-d7fb-40c6-9a48-de3f6e32c140
+
+        # -------------------
+        # User context
+        # -------------------
         userId:
           type: string
           format: uuid
-          example: e0782a4e-3bdb-43e3-be8c-7beafb89efd9
+          example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+
+        userName:
+          type: string
+          example: nivosat nivosat
+
+        role:
+          type: string
+          example: org_admin
+
+        orgId:
+          type: string
+          format: uuid
+          example: 2accd360-d791-4364-b18b-530b1b148cb9
+
+        orgName:
+          type: string
+          example: TestOrg1
+
+        orgType:
+          type: string
+          example: PUBLIC
+
+        # -------------------
+        # API metadata
+        # -------------------
+        api:
+          type: string
+          example: /iudx/v2/cat/item
+
+        method:
+          type: string
+          example: GET
+
+        action:
+          type: string
+          description: Audit operation (camel case)
+          example: View
+
         originServer:
           type: string
-          example: Catalogue
-        myactivityEnabled:
-          type: boolean
-          example: true
+          example: CATALOGUE
+
+        issuer:
+          type: string
+          example: https://v2.dev.keycloak.iudx.io/auth/realms/iudx-v2
+
+        # -------------------
+        # Asset context
+        # -------------------
+        assetId:
+          type: string
+          format: uuid
+          example: 19e3f6d6-4f93-4718-8395-2d76c13d60a5
+
+        assetName:
+          type: string
+          example: Traffic Density Databank
+
+        assetShortDescription:
+          type: string
+          example: Traffic sensor data for city roads
+
+        assetType:
+          type: string
+          example: DATABANK
+
+        assetAccessPolicy:
+          type: string
+          example: OPEN
+
+        assetOrgId:
+          type: string
+          format: uuid
+          example: 2accd360-d791-4364-b18b-530b1b148cb9
+
+        assetOrgName:
+          type: string
+          example: TestOrg1
+
+        assetOrgType:
+          type: string
+          example: PUBLIC
+
+        assetProviderId:
+          type: string
+          format: uuid
+          example: 64cb5154-6f8c-40ff-891f-baee2aac8b85
+
+        assetProviderName:
+          type: string
+          example: Org Admin
+
+        # -------------------
+        # Metrics / size
+        # -------------------
+        sizeBytes:
+          type: integer
+          format: int64
+          example: 10240
+
+        amount:
+          type: number
+          format: decimal
+          example: 12.50
+
+        # -------------------
+        # Classification
+        # -------------------
+        logType:
+          type: string
+          example: ASSET
+
+        requestId:
+          type: string
+          format: uuid
+          example: a3f3cbb4-6d79-4bfa-b9d6-3b7b0d1bbd55
+        sandboxType:
+          type: string
+          example: "cpu"
+
+        # -------------------
+        # Technical metadata
+        # -------------------
+        ipAddress:
+          type: string
+          example: 0:0:0:0:0:0:0:1
+
+        userAgent:
+          type: string
+          example: Mozilla/5.0 (X11; Ubuntu; Linux x86_64)
+
+        # -------------------
+        # Time
+        # -------------------
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-01-31T03:13:20.123
+
+            # -------------------
+            # Extensible context
+            # -------------------
+            #context:
+            # type: object
+            #additionalProperties: true
+            #example:
+            # via: ui
+            #page: 1
+          #size: 10
+
     PageInfo:
       type: object
       properties:
@@ -16540,7 +18747,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:auditing:notAuthorized
+          example: urn:dx:ControlPlane:notAuthorized
         title:
           type: string
           example: Not Authorized
@@ -16552,7 +18759,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:auditing:forbidden
+          example: urn:dx:ControlPlane:forbidden
         title:
           type: string
           example: Forbidden
@@ -16564,7 +18771,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:auditing:badRequest
+          example: urn:dx:ControlPlane:badRequest
         title:
           type: string
           example: Bad Request
@@ -16576,7 +18783,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:auditing:internalServerError
+          example: urn:dx:ControlPlane:internalServerError
         title:
           type: string
           example: Internal Server Error
@@ -16615,3 +18822,110 @@ components:
         - databank
         - aimodel
       description: Entity type for scoped delegation
+
+    CustomRoleResponse:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        result:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomRoleItem'
+        paginationInfo:
+          $ref: '#/components/schemas/PaginationInfoResponse'
+
+
+    CustomRoleItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        role:
+          type: string
+        scope:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        tableName:
+          type: string
+
+    Success:
+      type: object
+      properties:
+        type:
+          type: string
+          example: urn:dx:ControlPlane:success
+        title:
+          type: string
+          example: Success
+        result:
+          type: string
+          example: Operation completed successfully
+      required:
+        - type
+        - title
+
+    BadRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          example: urn:dx:ControlPlane:bad_request
+        title:
+          type: string
+          example: Bad Request
+        detail:
+          type: string
+          example: Either requestId or (userId and scope) is required
+      required:
+        - type
+        - title
+        - detail
+
+    Forbidden:
+      type: object
+      properties:
+        type:
+          type: string
+          example: urn:dx:ControlPlane:forbidden
+        title:
+          type: string
+          example: Forbidden
+        detail:
+          type: string
+          example: You are not authorized to perform this action
+      required:
+        - type
+        - title
+        - detail
+
+    NotFound:
+      type: object
+      properties:
+        type:
+          type: string
+          example: urn:dx:ControlPlane:not_found
+        title:
+          type: string
+          example: Not Found
+        detail:
+          type: string
+          example: Requested resource does not exist
+      required:
+        - type
+        - title
+        - detail
+
