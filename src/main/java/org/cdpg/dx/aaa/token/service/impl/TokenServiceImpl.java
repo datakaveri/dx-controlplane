@@ -267,7 +267,9 @@ public class TokenServiceImpl implements TokenService {
 
         JsonArray resultArray = response.getResponse().getJsonArray("results");
         JsonObject item = resultArray.getJsonObject(0);
+        LOGGER.info("Item info: {}",item);
         ItemInfo info = ItemInfo.fromJson(item);
+        LOGGER.info("Item info to json: {}",info.toJson());
         LOGGER.info("Item {} exists for user Id (direct access)", itemId);
         return Future.succeededFuture(info);
 

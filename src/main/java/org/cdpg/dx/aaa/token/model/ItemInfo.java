@@ -12,14 +12,14 @@ public record ItemInfo(
   JsonArray resourceServer,
   JsonArray drl,
   String did,
-  JsonObject constraints,
   String expiryAt,
+  JsonArray policies,
   String iid) {
 
   public static ItemInfo fromJson(JsonObject response) {
 
     if (response == null) {
-      return new ItemInfo(null, null, null, null, null, new JsonArray(), new JsonArray(), null, new JsonObject(),null,null);
+      return new ItemInfo(null, null, null, null, null, new JsonArray(), new JsonArray(), null,null,new JsonArray(),null);
     }
 
     JsonObject item = response;
@@ -41,6 +41,7 @@ public record ItemInfo(
     String did = item.getString("did");
     String iid = item.getString("id");
     String expiryAt = item.getString("expiryAt");
+    JsonArray policies = item.getJsonArray("policies",new JsonArray());
 
     JsonArray drl=null;
     Object drlObj = item.getValue("drl");
@@ -54,7 +55,7 @@ public record ItemInfo(
       drl = (JsonArray) drlObj;
     }
 
-    JsonObject constraints = item.getJsonObject("cons", new JsonObject());
+//    JsonObject constraints = item.getJsonObject("cons", new JsonObject());
 
     return new ItemInfo(
       type,
@@ -65,8 +66,9 @@ public record ItemInfo(
       resourceServer,
       drl,
       did,
-      constraints,
+//      constraints,
       expiryAt,
+      policies,
       iid);
   }
 
@@ -80,8 +82,9 @@ public record ItemInfo(
       .put("resourceServer", resourceServer)
       .put("drl", drl)
       .put("did", did)
-      .put("cons", constraints)
+//      .put("cons", constraints)
       .put("expiryAt",expiryAt)
+      .put("policies",policies)
       .put("iid",iid);
   }
 }
