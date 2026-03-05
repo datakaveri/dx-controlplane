@@ -138,12 +138,12 @@ public class AssetHandler {
     User dxUser = ctx.user();
     JsonObject userJson = dxUser.principal();
 
-    AccessValidator.validate(
-      userJson,
-      List.of( // primary roles (no scope check)
-        DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.COS_ADMIN_ACCESS.getScope())
-    );
+//    AccessValidator.validate(
+//      userJson,
+//      List.of( // primary roles (no scope check)
+//        DxRole.COS_ADMIN.getRole()),
+//      List.of(DxScope.COS_ADMIN_ACCESS.getScope())
+//    );
 
     PaginatedRequest request = PaginationRequestBuilder.from(ctx)
       .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_ASSET_REQUEST)
@@ -194,13 +194,13 @@ public class AssetHandler {
     UUID userId = UUID.fromString(user.subject());
 
     JsonObject userJson = user.principal();
-
-    AccessValidator.validate(
-      userJson,
-      List.of( // primary roles (no scope check)
-        DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.COS_ADMIN_ACCESS.getScope())
-    );
+//
+//    AccessValidator.validate(
+//      userJson,
+//      List.of( // primary roles (no scope check)
+//        DxRole.COS_ADMIN.getRole()),
+//      List.of(DxScope.COS_ADMIN_ACCESS.getScope())
+//    );
 
 
     Status status;

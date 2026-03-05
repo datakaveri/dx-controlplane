@@ -128,6 +128,23 @@ public class AppCredentialsHandler {
         .onFailure(ctx::fail);
   }
 
+  public void changeAppStatus(RoutingContext ctx) {
+    LOGGER.trace("deleteAppCredentials() handler started");
+    UUID userId = UUID.fromString(ctx.user().subject());
+    UUID appId = UUID.fromString(ctx.pathParam("appId"));
+
+    String status = ctx.queryParam("status").stream().findFirst().orElse(null);
+
+    appCredentialsService
+      .changeAppStatus(userId, appId,status)
+      .onSuccess(
+        handler -> {
+          LOGGER.info("AppCredentials status updated for userId: {} and appId : {}  with status: {}", userId, appId,status);
+          ResponseBuilder.sendSuccess(ctx, "Updated app id status successfully" ,urnGenerator);
+        })
+      .onFailure(ctx::fail);
+  }
+
   public Set<String> extractRoles(User user) {
     Set<String> roles = new HashSet<>();
     JsonObject principal = user.principal();

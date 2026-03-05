@@ -145,6 +145,11 @@ public class AdminHandler {
     }).onFailure(ctx::fail);
   }
 
+  private String maskEmail(String email) {
+    if (email == null || !email.contains("@")) return email;
+    return email.substring(0, email.indexOf('@')) + "@xxxxxxx";
+  }
+
   public void getAllUsersInfoKeycloak(RoutingContext ctx) {
 
     PaginatedRequest request = PaginationRequestBuilder.from(ctx).build();
@@ -153,12 +158,19 @@ public class AdminHandler {
     keycloakUserService.getTotalCount(name)
       .compose(totalCount ->
         keycloakUserService
-          .getUsersInfo(request.page(), request.size(), name) // returns List<UserInfo>
+          .getUsersInfo(request.page(), request.size(), name)
           .map(users -> {
 
             JsonArray array = new JsonArray();
             for (UserInfo user : users) {
-              array.add(user.toJson());
+              JsonObject userJson = user.toJson();
+              if (userJson.containsKey("email")) {
+                userJson.put("email", maskEmail(userJson.getString("email")));
+              }
+              if (userJson.containsKey("preferredUsername")) {
+                userJson.put("preferredUsername", maskEmail(userJson.getString("preferredUsername")));
+              }
+              array.add(userJson);
             }
 
             int totalPages = (int) Math.ceil((double) totalCount / request.size());
@@ -201,9 +213,6 @@ public class AdminHandler {
       })
       .onFailure(ctx::fail);
   }
-
-
-
 
   public void updateDxUserInfo(RoutingContext ctx) {
     User user = ctx.user();

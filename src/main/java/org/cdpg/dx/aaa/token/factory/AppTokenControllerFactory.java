@@ -51,6 +51,7 @@ public class AppTokenControllerFactory {
             provider,
             keycloakUserService,
             appCredentialsService,
+            itemService,
             issuer,
             tokenExpirationMinutes,
             vertx);

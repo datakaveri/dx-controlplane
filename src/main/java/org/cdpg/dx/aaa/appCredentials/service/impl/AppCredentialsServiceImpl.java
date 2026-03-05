@@ -263,6 +263,31 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
             });
   }
 
+
+  @Override
+  public Future<Boolean> changeAppStatus(UUID userId, UUID appId, String status) {
+
+    Map<String, Object> inFilter = Map.of(
+      USER_ID, userId.toString(),
+      APP_ID, appId.toString()
+    );
+
+    Map<String, Object> updateFilter = Map.of(
+      STATUS, status
+    );
+
+    return appCredentialsDAO
+      .update(inFilter, updateFilter)
+      .compose(apps -> {
+        if (apps == null) {
+          return Future.failedFuture(
+            new DxNotFoundException(
+              "No appCredentials found for userId " + userId + " and appId " + appId));
+        }
+        return Future.succeededFuture(true);
+      });
+  }
+
   @Override
   public Future<AppCredentials> getAppById(UUID appId) {
     Map<String, Object> filter = Map.of(APP_ID, appId.toString());
@@ -276,5 +301,20 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
               }
               return Future.succeededFuture(apps.stream().findFirst().get());
             });
+  }
+
+  @Override
+  public Future<List<AppConstraints>> getAppConstraintsById(UUID appId) {
+    Map<String, Object> filter = Map.of(APP_ID, appId.toString());
+
+    return appConstraintsDAO
+      .getAllWithFilters(filter)
+      .compose(
+        apps -> {
+          if (apps.isEmpty()) {
+            return Future.failedFuture(new DxNotFoundException("Invalid appId or appSecret"));
+          }
+          return Future.succeededFuture(apps);
+        });
   }
 }
