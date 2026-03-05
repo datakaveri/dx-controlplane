@@ -152,14 +152,14 @@ public class OrganizationJoinRequestHandler {
     String orgIdparam = ctx.pathParam("id");
     UUID delegatorId = delegatorStr != null ? UUID.fromString(delegatorStr) : null;
 
-    AccessValidator.validate(
-      userJson,
-      List.of(DxRole.ORG_ADMIN.getRole()),
-      List.of(
-        DxScope.USER_MANAGEMENT.getScope(),
-        DxScope.ORG_ADMIN_ACCESS.getScope()));
+//    AccessValidator.validate(
+//      userJson,
+//      List.of(DxRole.ORG_ADMIN.getRole()),
+//      List.of(
+//        DxScope.USER_MANAGEMENT.getScope(),
+//        DxScope.ORG_ADMIN_ACCESS.getScope()));
 
-    UUID userId = UUID.fromString(user.subject());
+//    UUID userId = UUID.fromString(user.subject());
 
     // -------- Resolve orgId --------
     Future<UUID> orgIdFuture;
@@ -278,6 +278,8 @@ public class OrganizationJoinRequestHandler {
       .onFailure(ctx::fail);
   }
 
+  //TODO: scopes for user , refactor
+
 
 
   public void getUserJoinOrganisationRequests(RoutingContext ctx) {
@@ -392,14 +394,14 @@ public class OrganizationJoinRequestHandler {
     UUID delegatorId = delegatorStr != null ? UUID.fromString(delegatorStr) : null;
 
     // delegation requirement
-    AccessValidator.validate(
-      userJson,
-      List.of(DxRole.ORG_ADMIN.getRole()),
-      List.of(
-        DxScope.USER_MANAGEMENT.getScope(),
-        DxScope.ORG_ADMIN_ACCESS.getScope()
-      )
-    );
+//    AccessValidator.validate(
+//      userJson,
+//      List.of(DxRole.ORG_ADMIN.getRole()),
+//      List.of(
+//        DxScope.USER_MANAGEMENT.getScope(),
+//        DxScope.ORG_ADMIN_ACCESS.getScope()
+//      )
+//    );
 
     JsonObject orgRequestJson = ctx.body().asJsonObject();
     UUID requestId = RequestHelper.getPathParamAsUUID(ctx, "req_id");

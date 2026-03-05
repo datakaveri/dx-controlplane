@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.token.controller;
 
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -33,6 +34,10 @@ public class AppTokenController implements ApiController {
   }
 
   private void handleCreateToken(RoutingContext ctx) {
+
+    JsonObject body = ctx.body().asJsonObject();
+
+    String itemId= body.getString("itemId")!=null?body.getString("itemId"):null;
     AppTokenRequest request;
     try {
       request = AppTokenRequestBuilder.fromContext(ctx);
@@ -42,7 +47,7 @@ public class AppTokenController implements ApiController {
     }
 
     appTokenService
-        .createToken(request)
+        .createToken(request,itemId)
         .onSuccess(token -> ResponseBuilder.sendSuccess(ctx, token, urnGenerator))
         .onFailure(
             err -> {

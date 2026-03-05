@@ -40,5 +40,10 @@ public class AppCredentialsController implements ApiController {
         .handler(authorizationHandler)
         .handler(appCredentialsHandler::deleteApp);
 
+    builder
+      .operation(OperationIds.OP_UPDATE_STATUS_APPID)
+      .handler(authorizationHandler)
+      .handler(appCredentialsHandler::changeAppStatus);
+
   }
 }

@@ -145,13 +145,13 @@ public class OrganizationCreateRequestHandler {
 
     JsonObject OrgRequestJson = ctx.body().asJsonObject();
     User user = ctx.user();
-    JsonObject userJson = user.principal();
-
-    AccessValidator.validate(
-        userJson,
-        List.of( // primary roles (no scope check)
-            DxRole.COS_ADMIN.getRole()),
-        List.of(DxScope.COS_ADMIN_ACCESS.getScope()));
+//    JsonObject userJson = user.principal();
+//
+//    AccessValidator.validate(
+//        userJson,
+//        List.of( // primary roles (no scope check)
+//            DxRole.COS_ADMIN.getRole()),
+//        List.of(DxScope.COS_ADMIN_ACCESS.getScope()));
 
     UUID requestId = UUID.fromString(OrgRequestJson.getString("req_id"));
     Status status = Status.fromString(OrgRequestJson.getString("status"));
@@ -279,11 +279,11 @@ public class OrganizationCreateRequestHandler {
     User user = ctx.user();
     JsonObject userJson = user.principal();
 
-    AccessValidator.validate(
-        userJson,
-        List.of( // primary roles (no scope check)
-            DxRole.COS_ADMIN.getRole()),
-        List.of(DxScope.COS_ADMIN_ACCESS.getScope()));
+//    AccessValidator.validate(
+//        userJson,
+//        List.of( // primary roles (no scope check)
+//            DxRole.COS_ADMIN.getRole()),
+//        List.of(DxScope.COS_ADMIN_ACCESS.getScope()));
 
     PaginatedRequest request =
         PaginationRequestBuilder.from(ctx)

@@ -60,12 +60,12 @@ public class OrganizationUserHandler {
 
     User user = ctx.user();
     JsonObject userJson = user.principal();
-
-    AccessValidator.validate(
-        userJson,
-        List.of( // primary roles (no scope check)
-            DxRole.ORG_ADMIN.getRole()),
-        List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope()));
+//
+//    AccessValidator.validate(
+//        userJson,
+//        List.of( // primary roles (no scope check)
+//            DxRole.ORG_ADMIN.getRole()),
+//        List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope()));
 
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
@@ -94,11 +94,11 @@ public class OrganizationUserHandler {
     User user = ctx.user();
     JsonObject userJson = user.principal();
 
-    AccessValidator.validate(
-        userJson,
-        List.of( // primary roles (no scope check)
-            DxRole.ORG_ADMIN.getRole()),
-        List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope()));
+//    AccessValidator.validate(
+//        userJson,
+//        List.of( // primary roles (no scope check)
+//            DxRole.ORG_ADMIN.getRole()),
+//        List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope()));
 
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
 
@@ -147,11 +147,11 @@ public class OrganizationUserHandler {
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
 
-    AccessValidator.validate(
-      userJson,
-      List.of( // primary roles (no scope check)
-        DxRole.ORG_ADMIN.getRole()),
-      List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope()));
+//    AccessValidator.validate(
+//      userJson,
+//      List.of( // primary roles (no scope check)
+//        DxRole.ORG_ADMIN.getRole()),
+//      List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope()));
 
     organizationService
         .updateUserRole(orgId, userId, role)
@@ -200,11 +200,11 @@ public class OrganizationUserHandler {
 
    UUID finalorgAdminId = orgAdminId;
 
-    AccessValidator.validate(
-      userJson,
-      List.of( // primary roles (no scope check)
-        DxRole.ORG_ADMIN.getRole()),
-      List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope()));
+//    AccessValidator.validate(
+//      userJson,
+//      List.of( // primary roles (no scope check)
+//        DxRole.ORG_ADMIN.getRole()),
+//      List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope()));
 
     userService
         .getUserInfoByID(userId)

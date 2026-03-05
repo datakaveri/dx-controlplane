@@ -7,6 +7,7 @@ import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import java.util.List;
 import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxUnauthorizedException;
 
@@ -69,6 +70,71 @@ public class AuthorizationHandler {
         } else {
           ctx.fail(new DxForbiddenException("User does not have the required role.")); // HTTP 403
         }
+      }
+    };
+  }
+
+  public static Handler<RoutingContext> forDelegationScopes(DxScope... scopes) {
+
+    Set<String> allowed =
+      Arrays.stream(scopes)
+        .map(DxScope::getScope)
+        .map(String::toLowerCase)
+        .collect(Collectors.toSet());
+
+    return ctx -> {
+      User user = ctx.user();
+      if (user == null) {
+        ctx.fail(new DxUnauthorizedException("User not authenticated."));
+        return;
+      }
+
+      JsonObject principal = user.principal();
+
+      // If primary user (has realm_access.roles), skip delegation scope check
+      JsonArray realmRoles = principal
+        .getJsonObject("realm_access", new JsonObject())
+        .getJsonArray("roles", new JsonArray());
+
+      boolean isPrimaryUser = realmRoles.stream()
+        .map(Object::toString)
+        .anyMatch(role -> !role.equalsIgnoreCase("delegate"));
+
+      if (isPrimaryUser) {
+        System.out.println("Skipping delegation scope check");
+        ctx.next();
+        return;
+      }
+
+      // Delegate user — check delegation_scope
+      JsonArray delegationScopes = principal.getJsonArray("delegation_scope");
+
+      if (delegationScopes == null) {
+        ctx.fail(new DxForbiddenException("No delegation scope assigned to the user."));
+        return;
+      }
+
+      boolean delegationPresent =
+        delegationScopes.stream()
+          .map(Object::toString)
+          .map(String::toLowerCase)
+          .anyMatch(allowed::contains);
+
+      List<String> matchedScopes =
+        delegationScopes.stream()
+          .map(Object::toString)
+          .map(String::toLowerCase)
+          .filter(allowed::contains)
+          .collect(Collectors.toList());
+
+      if (!matchedScopes.isEmpty()) {
+        ctx.put("allowedScopes", matchedScopes);
+      }
+
+      if (delegationPresent) {
+        ctx.next();
+      } else {
+        ctx.fail(new DxForbiddenException("User does not have the required scope."));
       }
     };
   }

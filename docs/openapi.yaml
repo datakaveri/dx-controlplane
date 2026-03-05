@@ -9452,6 +9452,69 @@ paths:
 
 
 
+
+    patch:
+      tags:
+        - App
+      summary: Update appId status(active/disable)
+      operationId: update-appId-status
+      security:
+        - authorization: [ ]
+      description: >
+        Change/Update appId status owned by the authenticated user.
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique identifier of the appId
+        - name: status
+          in: query
+          required: true
+          schema:
+            type: string
+            description: status of the appId
+            enum:
+              - active
+              - disable
+      responses:
+        '204':
+          description: AppId status updated successfully
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Update AppId Status
+          source: |
+            curl --location --request PATCH \
+            'https://${HOSTNAME}/iudx/v2/app/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9?status=disable' \
+            --header 'Authorization: Bearer <token>'
+
+
   /iudx/auth/v2/app/token:
     post:
       tags:
@@ -10124,6 +10187,12 @@ paths:
                   description: UUID of the asset
                 type:
                   type: string
+                  enum:
+                    - FAQ
+                    - FEEDBACK
+                    - INFO
+                    - DATA_DESCRIPTION
+                  description: Type of feedback
                 data:
                   type: object
       responses:
@@ -10848,6 +10917,12 @@ components:
           minLength: 16
           description: >
             Plaintext app secret issued during app creation.
+
+        itemId:
+          type: string
+          format: uuid
+          description: >
+            Unique identifier of the item (item_id).
 
     PostBookmarkRequest:
       type: object
@@ -18268,8 +18343,9 @@ components:
       enum:
         - org
         - provider
-        - databank
-        - aimodel
+        - adex:AiModel
+        - adex:DataBank
+        - adex:Apps
       description: Entity type for scoped delegation
 
     CustomRoleResponse:

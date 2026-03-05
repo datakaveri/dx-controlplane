@@ -10,23 +10,27 @@ public enum RoleScopeMapping {
     "asset_management",
     "compute_management",
     "user_management",
-    "data_access"
+    "credit_management",
+    "publish_assets"
   )),
 
   ORG_ADMIN("org_admin", List.of(
     "org_admin_access",
     "asset_management",
-    "data_access",
-    "user_management"
+    "user_management",
+    "publish_assets"
   )),
 
   PROVIDER("provider", List.of(
-    "asset_management",
-    "data_access"
+    "asset_management"
   )),
 
   CONSUMER("consumer", List.of(
     "data_access"
+  )),
+
+  COMPUTE("compute", List.of(
+    "compute_access"
   ));
 
   private final String role;

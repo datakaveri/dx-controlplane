@@ -42,7 +42,7 @@ public class ProviderFeedbackDaoImpl extends AbstractBaseDAO<ProviderFeedback>
     JsonObject feedbackJson =  providerFeedback.toJson();
     String userId = feedbackJson.getString("user_id");
     String assetId = feedbackJson.getString("asset_id");
-    String feedbackType = feedbackJson.getString("feedback_type");
+    String feedbackType = feedbackJson.getString("type");
 
     var map = providerFeedback.toNonEmptyFieldsMap();
 
@@ -53,7 +53,7 @@ public class ProviderFeedbackDaoImpl extends AbstractBaseDAO<ProviderFeedback>
         List.of(
           new Condition("user_id", Condition.Operator.EQUALS, List.of(userId)),
           new Condition("asset_id", Condition.Operator.EQUALS, List.of(assetId)),
-          new Condition("feedback_type",Condition.Operator.EQUALS, List.of(feedbackType))
+          new Condition("type",Condition.Operator.EQUALS, List.of(feedbackType))
         ),
         Condition.LogicalOperator.AND
       );
@@ -123,7 +123,7 @@ public class ProviderFeedbackDaoImpl extends AbstractBaseDAO<ProviderFeedback>
 
     applyFilter.accept("user_id", filters.get("user_id"));
     applyFilter.accept("asset_id", filters.get("asset_id"));
-    applyFilter.accept("feedback_type", filters.get("feedback_type"));
+    applyFilter.accept("type", filters.get("type"));
 
     int limitIndex = index.getAndIncrement();
     int offsetIndex = index.getAndIncrement();
@@ -134,7 +134,7 @@ public class ProviderFeedbackDaoImpl extends AbstractBaseDAO<ProviderFeedback>
           id,
           user_id,
           asset_id,
-          feedback_type,
+          type,
           data,
           created_at,
           updated_at,
@@ -169,7 +169,7 @@ public class ProviderFeedbackDaoImpl extends AbstractBaseDAO<ProviderFeedback>
                   UUID.fromString(r.getString("id")),
                   UUID.fromString(r.getString("user_id")),
                   UUID.fromString(r.getString("asset_id")),
-                  ProviderFeedbackType.valueOf(r.getString("feedback_type")),
+                  ProviderFeedbackType.valueOf(r.getString("type")),
                   r.getJsonObject("data"),
                   r.getString("created_at") != null ? LocalDateTime.parse(r.getString("created_at")) : null,
                   r.getString("updated_at") != null ? LocalDateTime.parse(r.getString("updated_at")) : null
