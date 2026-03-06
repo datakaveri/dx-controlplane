@@ -19,4 +19,12 @@ public class KeycloakClientProvider {
         }
         return keycloakInstance;
     }
+
+    // For testing only — allows resetting the singleton
+    static void reset() {
+        if (keycloakInstance != null) {
+            keycloakInstance.close();
+            keycloakInstance = null;
+        }
+    }
 }

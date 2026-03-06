@@ -25,6 +25,11 @@ public class RabbitWebClient {
   private String username;
   private String password;
 
+  // For testing only — allows resetting the static WebClient
+  static void resetWebClient() {
+      webClient = null;
+  }
+
   public RabbitWebClient(Vertx vertx, WebClientOptions webClientOptions, JsonObject propJson) {
     this.username = propJson.getString("username");
     this.password = propJson.getString("password");

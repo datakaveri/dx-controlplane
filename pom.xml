@@ -27,7 +27,7 @@
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
         <restassured.version>5.4.0</restassured.version>
         <openjdk.version>21</openjdk.version>
-        <keycloak.version>24.0.4</keycloak.version>
+        <keycloak.version>26.0.0</keycloak.version>
         <elastic-search-rest-client>8.17.3</elastic-search-rest-client>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <exec.mainClass>org.cdpg.dx.deploy.Deployer</exec.mainClass>
@@ -314,6 +314,18 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>elasticsearch</artifactId>
+            <version>1.19.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.dasniko</groupId>
+            <artifactId>testcontainers-keycloak</artifactId>
+            <version>3.4.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>rabbitmq</artifactId>
             <version>1.19.0</version>
             <scope>test</scope>
         </dependency>

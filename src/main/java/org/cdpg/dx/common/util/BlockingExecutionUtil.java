@@ -19,6 +19,14 @@ public class BlockingExecutionUtil {
         }
     }
 
+    // For testing only — allows resetting the static executor
+    static void reset() {
+        if (executor != null) {
+            executor.close();
+            executor = null;
+        }
+    }
+
     public static <T> Future<T> runBlocking(Supplier<T> supplier) {
         return Future.future(promise ->
                 executor.executeBlocking(promise0 -> {
