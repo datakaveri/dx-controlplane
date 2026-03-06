@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 import static org.cdpg.dx.aaa.appCredentials.util.Constants.*;
 import static org.cdpg.dx.aaa.delegation.util.Constants.*;
 import static org.cdpg.dx.aaa.delegation.util.Constants.ENTITY_ID;
+import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
 import static org.cdpg.dx.common.util.DateTimeHelper.parseDateTime;
 
 
@@ -131,7 +132,7 @@ public class DelegationServiceImpl implements DelegationService{
       .put("scope", "*")
       .put("entity_id", "*")
       .put("entity_type", "*")
-      .put("expiry_at", expiry);
+      .put("expiry_at", expiry != null ? expiry.format(FORMATTER) : null);
 
     DelegationScopeConstraint constraint =
       DelegationScopeConstraint.fromJson(row);
@@ -540,7 +541,7 @@ public class DelegationServiceImpl implements DelegationService{
       .put("delegation_id", delegationId.toString())
       .put("role", role)
       .put("scope", "*")
-      .put("expiry_at", expiry)
+      .put("expiry_at", expiry != null ? expiry.format(FORMATTER) : null)
       .put(
         "entity_id", "*")
       .put(
