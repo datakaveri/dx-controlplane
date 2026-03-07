@@ -1,0 +1,54 @@
+{
+  "realm": "iudx",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": false,
+  "roles": {
+    "realm": [
+      { "name": "cos_admin", "description": "COS Administrator" },
+      { "name": "org_admin", "description": "Organization Administrator" },
+      { "name": "provider", "description": "Data Provider" },
+      { "name": "consumer", "description": "Data Consumer" },
+      { "name": "delegate", "description": "Delegate" },
+      { "name": "compute", "description": "Compute User" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "admin-cli",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "admin-secret",
+      "serviceAccountsEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "fullScopeAllowed": true
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-admin-cli",
+      "enabled": true,
+      "serviceAccountClientId": "admin-cli",
+      "realmRoles": ["default-roles-iudx"],
+      "clientRoles": {
+        "realm-management": [
+          "manage-users",
+          "view-users",
+          "manage-clients",
+          "view-clients",
+          "manage-realm",
+          "view-realm",
+          "query-users",
+          "query-clients"
+        ]
+      }
+    }
+  ]
+}

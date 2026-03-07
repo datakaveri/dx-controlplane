@@ -1,0 +1,189 @@
+{
+  "version": "1.0",
+  "zookeepers": ["localhost:2181"],
+  "clusterId": "dx-dev-cluster",
+  "postgresOptions": {
+    "databaseIP": "127.0.0.1",
+    "databasePort": 5433,
+    "databaseName": "iudx_db",
+    "databaseSchema": "aaa, public",
+    "databaseUserName": "postgres",
+    "databasePassword": "postgres",
+    "poolSize": 10
+  },
+  "commonOptions": {
+    "controlPlaneDomain": "localhost",
+    "dxApiBasePath": "/dx",
+    "cosDomain": "localhost",
+    "dataPlaneUrl": "http://localhost:8080",
+    "tokenExpirationMinutes": 60,
+    "clientId": "admin-cli",
+    "clientSecret": "admin-secret",
+    "supportEmail": "support@localhost",
+    "baseUrl": "http://localhost:8080",
+    "apdURL": "http://localhost:8444",
+    "tenantPrefix": "iudx-v2",
+    "kycRequired": false,
+    "jwtIgnoreExpiry": true,
+    "routingKey": "##",
+    "cosAdminUserId": "cos-admin",
+    "initialCreditBalance": 1000,
+    "uploadedBy": "",
+    "corsAllowedOrigin": ["*", "http://localhost:4007", "http://localhost:3000"],
+    "publisherPanelUrl": "http://localhost:4007",
+    "docIndex": "iudx-docs",
+    "docUserIndex": "doc_user_index",
+    "vocContext": "https://voc.dev.iudx.io",
+    "defaultExpiryDays": 12
+  },
+  "emailOptions": {
+    "emailSender": "no-reply@localhost",
+    "platformName": "DX Dev",
+    "cosAdminEmailId": "admin@localhost",
+    "TGDxUrl": "http://localhost:8080"
+  },
+  "emailConfig": {
+    "emailSender": "no-reply@localhost",
+    "emailSupport": ["support@localhost"],
+    "publisherPanelUrl": "http://localhost:4007",
+    "emailNotification": {
+      "emailQueue": "email-queue",
+      "emailExchange": "Email",
+      "emailRoutingKey": "##"
+    },
+    "senderName": "DX Dev"
+  },
+  "keycloakOptions": {
+    "keycloakRealm": "iudx",
+    "keycloakUrl": "http://localhost:8180",
+    "keycloakAdminClientId": "admin-cli",
+    "keycloakAdminClientSecret": "admin-secret",
+    "keycloakAdminPoolSize": "10",
+    "adminUsername": "admin",
+    "adminPassword": "admin",
+    "authPorvider": [],
+    "issuers": {
+      "jwtIgnoreExpiry": true,
+      "leeway": 30,
+      "jwksRefreshIntervalMs": 21600000,
+      "localhost": {
+        "type": "internal",
+        "audience": []
+      }
+    }
+  },
+  "KYCOptions": {
+    "digilockerTokenUrl": "https://digilocker.dev/token",
+    "digilockerAadhaarUrl": "https://digilocker.dev/aadhaar",
+    "clientId": "kyc-client-id",
+    "clientSecret": "kyc-client-secret",
+    "redirectUri": "http://localhost:8080/kyc"
+  },
+  "jwtKeystoreOptions": {
+    "keystorePath": "configs/keystore.jks",
+    "keystorePassword": "keystore-password"
+  },
+  "databrokerOptions": {
+    "dataBrokerIP": "127.0.0.1",
+    "dataBrokerPort": 15672,
+    "prodVhost": "/prod",
+    "internalVhost": "/internal",
+    "externalVhost": "/external",
+    "dataBrokerUserName": "admin",
+    "dataBrokerPassword": "admin",
+    "dataBrokerManagementPort": 15672,
+    "connectionTimeout": 6000,
+    "requestedHeartbeat": 60,
+    "handshakeTimeout": 6000,
+    "requestedChannelMax": 5,
+    "networkRecoveryInterval": 500,
+    "automaticRecoveryEnabled": "true",
+    "brokerAmqpIp": "127.0.0.1",
+    "brokerAmqpPort": 5672,
+    "publishExchange": "rpc-adapter-requests"
+  },
+  "auditOptions": {
+    "auditingExchange": "auditing",
+    "auditingRoutingKey": "##",
+    "auditingQueue": "dummy-auditing",
+    "isRemoteAudit": false
+  },
+  "modules": [
+    {
+      "id": "org.cdpg.dx.database.postgres.verticle.PostgresVerticle",
+      "verticleInstances": 1,
+      "isWorkerVerticle": false,
+      "required": ["postgresOptions", "commonOptions"]
+    },
+    {
+      "id": "org.cdpg.dx.email.verticle.EmailVerticle",
+      "verticleInstances": 1,
+      "isWorkerVerticle": true,
+      "threadPoolName": "emailVerticleThreadPool",
+      "threadPoolSize": 5,
+      "required": ["commonOptions", "databrokerOptions", "keycloakOptions", "emailOptions", "emailConfig"],
+      "emailHostName": "localhost",
+      "emailPort": 1025,
+      "emailUserName": "",
+      "emailPassword": "",
+      "notifyByEmail": false
+    },
+    {
+      "id": "org.cdpg.dx.catalogueService.CatalogueVerticle",
+      "isWorkerVerticle": false,
+      "verticleInstances": 1,
+      "dxCatalogueBasePath": "/catalogue",
+      "catServerHost": "localhost",
+      "catServerPort": 8080,
+      "required": ["commonOptions"]
+    },
+    {
+      "id": "org.cdpg.dx.databroker.DataBrokerVerticle",
+      "isWorkerVerticle": false,
+      "verticleInstances": 1,
+      "required": ["databrokerOptions", "auditOptions", "emailNotification"]
+    },
+    {
+      "id": "org.cdpg.dx.database.elastic.ElasticsearchVerticle",
+      "isWorkerVerticle": false,
+      "verticleInstances": 1,
+      "tenantPrefix": "iudx-v2",
+      "databaseIP": "127.0.0.1",
+      "databasePort": 9200,
+      "databaseUser": "elastic",
+      "databasePassword": "elastic-password"
+    },
+    {
+      "id": "org.cdpg.dx.aaa.apiserver.ApiServerVerticle",
+      "verticleInstances": 1,
+      "isWorkerVerticle": false,
+      "httpPort": 8080,
+      "required": ["postgresOptions", "commonOptions", "keycloakOptions", "KYCOptions", "emailOptions", "emailConfig", "jwtKeystoreOptions", "databrokerOptions", "auditOptions"],
+      "urnPrefix": "dx:controlPlane:",
+      "serverTimeoutMs": 30000,
+      "corsRegexString": ".*"
+    },
+    {
+      "id": "org.cdpg.dx.acl.apiserver.ApdApiServerVerticle",
+      "verticleInstances": 1,
+      "isWorkerVerticle": false,
+      "httpPort": 8444,
+      "required": ["postgresOptions", "commonOptions", "keycloakOptions", "KYCOptions", "emailOptions", "emailConfig", "jwtKeystoreOptions", "databrokerOptions", "auditOptions"],
+      "serverTimeoutMs": 30000,
+      "corsRegexString": ".*",
+      "urnPrefix": "dx:aclApd:"
+    },
+    {
+      "id": "org.cdpg.dx.scheduler.verticle.SchedulerVerticle",
+      "verticleInstances": 1,
+      "isWorkerVerticle": true,
+      "schedulerTimeIntervalInMinutes": 30,
+      "threadPoolSize": 3
+    },
+    {
+      "id": "org.cdpg.dx.aaa.delegation.DelegationVerticle",
+      "verticleInstances": 1,
+      "isWorkerVerticle": false
+    }
+  ]
+}
