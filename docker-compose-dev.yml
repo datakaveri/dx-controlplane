@@ -132,6 +132,29 @@ services:
       - dx-dev-net
 
   # ──────────────────────────────────────────────
+  # Flyway — Database migrations
+  # ──────────────────────────────────────────────
+  flyway:
+    image: flyway/flyway:9.22
+    profiles: [infra, full]
+    command: >
+      -url=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-iudx_db}
+      -user=${POSTGRES_USER:-postgres}
+      -password=${POSTGRES_PASSWORD:-postgres}
+      -schemas=public
+      -placeholders.authUser=${POSTGRES_USER:-postgres}
+      -connectRetries=5
+      migrate
+    volumes:
+      - ./src/main/resources/db/migration:/flyway/sql
+      - ./dev/flyway-callbacks/beforeEachMigrate.sql:/flyway/sql/beforeEachMigrate.sql
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - dx-dev-net
+
+  # ──────────────────────────────────────────────
   # Application (full profile only)
   # ──────────────────────────────────────────────
   app:
@@ -151,8 +174,8 @@ services:
       - ./dev/config-docker.json:/usr/share/app/configs/config.json
       - ./dev/keystore.jks:/usr/share/app/configs/keystore.jks
     depends_on:
-      postgres:
-        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
       keycloak:
         condition: service_healthy
       rabbitmq:
