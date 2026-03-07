@@ -85,7 +85,7 @@
   },
   "databrokerOptions": {
     "dataBrokerIP": "rabbitmq",
-    "dataBrokerPort": 15672,
+    "dataBrokerPort": 5672,
     "prodVhost": "/prod",
     "internalVhost": "/internal",
     "externalVhost": "/external",

@@ -149,6 +149,7 @@ services:
       - "9000:9000"
     volumes:
       - ./dev/config-docker.json:/usr/share/app/configs/config.json
+      - ./dev/keystore.jks:/usr/share/app/configs/keystore.jks
     depends_on:
       postgres:
         condition: service_healthy
