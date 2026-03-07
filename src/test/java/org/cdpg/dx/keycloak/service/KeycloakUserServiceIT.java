@@ -463,6 +463,206 @@ class KeycloakUserServiceIT extends KeycloakTestBase {
                         })));
   }
 
+  // ─── EDGE CASE TESTS ──────────────────────────────────────────────────────
+
+  @Test
+  @Order(50)
+  void getUserById_returnsUserWithScopes(VertxTestContext ctx) {
+    // testUser1 should have delegation_scope set from order(40)
+    keycloakUserService
+        .getUserById(testUser1Id)
+        .onComplete(
+            ctx.succeeding(
+                user ->
+                    ctx.verify(
+                        () -> {
+                          assertThat(user).isNotNull();
+                          assertThat(user.scopes()).isNotNull();
+                          ctx.completeNow();
+                        })));
+  }
+
+  @Test
+  @Order(51)
+  void getUsers_withNameFilter(VertxTestContext ctx) {
+    keycloakUserService
+        .getUsers(1, 10, "testuser1")
+        .onComplete(
+            ctx.succeeding(
+                users ->
+                    ctx.verify(
+                        () -> {
+                          assertThat(users).isNotEmpty();
+                          assertThat(users.stream().anyMatch(u -> u.preferredUsername().equals("testuser1")))
+                              .isTrue();
+                          ctx.completeNow();
+                        })));
+  }
+
+  @Test
+  @Order(52)
+  void getUsers_withNonExistentNameFilter(VertxTestContext ctx) {
+    keycloakUserService
+        .getUsers(1, 10, "nonexistentuser12345")
+        .onComplete(
+            ctx.succeeding(
+                users ->
+                    ctx.verify(
+                        () -> {
+                          assertThat(users).isEmpty();
+                          ctx.completeNow();
+                        })));
+  }
+
+  @Test
+  @Order(53)
+  void getTotalCount_withNonMatchingSearch(VertxTestContext ctx) {
+    keycloakUserService
+        .getTotalCount("absolutelynonexistentuser999")
+        .onComplete(
+            ctx.succeeding(
+                count ->
+                    ctx.verify(
+                        () -> {
+                          assertThat(count).isEqualTo(0);
+                          ctx.completeNow();
+                        })));
+  }
+
+  @Test
+  @Order(54)
+  void getUsersInfo_containsCorrectFields(VertxTestContext ctx) {
+    keycloakUserService
+        .getUsersInfo(1, 10, "testuser1")
+        .onComplete(
+            ctx.succeeding(
+                users ->
+                    ctx.verify(
+                        () -> {
+                          assertThat(users).isNotEmpty();
+                          UserInfo info = users.get(0);
+                          assertThat(info.sub()).isNotNull();
+                          assertThat(info.email()).isEqualTo("test1@example.com");
+                          assertThat(info.preferredUsername()).isEqualTo("testuser1");
+                          ctx.completeNow();
+                        })));
+  }
+
+  @Test
+  @Order(55)
+  void updateUserAttributes_preservesExistingAttrs(VertxTestContext ctx) {
+    // Set attr A, then set attr B, verify A is still present
+    Map<String, String> attrsA = new HashMap<>();
+    attrsA.put("test_attr_a", "valueA");
+
+    Map<String, String> attrsB = new HashMap<>();
+    attrsB.put("test_attr_b", "valueB");
+
+    keycloakUserService
+        .updateUserAttributes(testUser2Id, attrsA)
+        .compose(r -> keycloakUserService.updateUserAttributes(testUser2Id, attrsB))
+        .onComplete(
+            ctx.succeeding(
+                result ->
+                    ctx.verify(
+                        () -> {
+                          UserRepresentation user =
+                              adminClient.realm("master").users()
+                                  .get(testUser2Id.toString()).toRepresentation();
+                          var userAttrs = user.getAttributes();
+                          assertThat(userAttrs).isNotNull();
+                          assertThat(userAttrs.get("test_attr_a").get(0)).isEqualTo("valueA");
+                          assertThat(userAttrs.get("test_attr_b").get(0)).isEqualTo("valueB");
+                          ctx.completeNow();
+                        })));
+  }
+
+  @Test
+  @Order(56)
+  void setDelegationScopes_deduplicates(VertxTestContext ctx) {
+    UUID delegatorId = UUID.randomUUID();
+    List<String> scopes = List.of("read", "write");
+
+    // Set scopes, then set overlapping scopes again
+    keycloakUserService
+        .setDelegationScopes(testUser1Id, scopes, delegatorId)
+        .compose(r -> keycloakUserService.setDelegationScopes(
+            testUser1Id, List.of("write", "subscribe"), delegatorId))
+        .onComplete(
+            ctx.succeeding(
+                result ->
+                    ctx.verify(
+                        () -> {
+                          UserRepresentation user =
+                              adminClient.realm("master").users()
+                                  .get(testUser1Id.toString()).toRepresentation();
+                          var userAttrs = user.getAttributes();
+                          String scopeStr = userAttrs.get("delegation_scope").get(0);
+                          // Should contain all three without duplicates
+                          assertThat(scopeStr).contains("read").contains("write").contains("subscribe");
+                          ctx.completeNow();
+                        })));
+  }
+
+  @Test
+  @Order(57)
+  void clearDelegationScopes_clearingAllRemovesDid(VertxTestContext ctx) {
+    UUID delegatorId = UUID.randomUUID();
+    List<String> scopes = List.of("scope1");
+
+    // Create a temp user for this test to avoid interference with other delegation tests
+    UserRepresentation tempUser = new UserRepresentation();
+    tempUser.setUsername("tempuser-scope-clear");
+    tempUser.setEmail("scopeclear@example.com");
+    tempUser.setEnabled(true);
+    tempUser.setEmailVerified(true);
+    tempUser.setFirstName("Temp");
+    tempUser.setLastName("ScopeClear");
+    adminClient.realm("master").users().create(tempUser);
+    List<UserRepresentation> found =
+        adminClient.realm("master").users().search("tempuser-scope-clear", true);
+    UUID tempUserId = UUID.fromString(found.get(0).getId());
+
+    keycloakUserService
+        .setDelegationScopes(tempUserId, scopes, delegatorId)
+        .compose(r -> keycloakUserService.clearDelegationScopes(tempUserId, Set.of("scope1")))
+        .onComplete(
+            ctx.succeeding(
+                result ->
+                    ctx.verify(
+                        () -> {
+                          assertThat(result).isTrue();
+                          UserRepresentation user =
+                              adminClient.realm("master").users()
+                                  .get(tempUserId.toString()).toRepresentation();
+                          var userAttrs = user.getAttributes();
+                          String scopeStr = userAttrs.get("delegation_scope").get(0);
+                          assertThat(scopeStr).isEqualTo("[]");
+                          // Clean up
+                          adminClient.realm("master").users().get(tempUserId.toString()).remove();
+                          ctx.completeNow();
+                        })));
+  }
+
+  @Test
+  @Order(58)
+  void getUserById_returnsCorrectToJson(VertxTestContext ctx) {
+    keycloakUserService
+        .getUserById(testUser1Id)
+        .onComplete(
+            ctx.succeeding(
+                user ->
+                    ctx.verify(
+                        () -> {
+                          var json = user.toJson();
+                          assertThat(json.getString("sub")).isEqualTo(testUser1Id.toString());
+                          assertThat(json.getString("email")).isEqualTo("test1@example.com");
+                          assertThat(json.getJsonArray("roles")).isNotNull();
+                          assertThat(json.getBoolean("emailVerified")).isTrue();
+                          ctx.completeNow();
+                        })));
+  }
+
   @Test
   @Order(100)
   void deleteUser_removesUser(VertxTestContext ctx) {

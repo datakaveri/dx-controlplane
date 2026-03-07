@@ -217,6 +217,133 @@ class DataBrokerServiceIT extends RabbitMQTestBase {
                         })));
   }
 
+  // ─── EDGE CASE TESTS ──────────────────────────────────────────────────────
+
+  @Test
+  @Order(12)
+  void updatePermission_addsWritePermission(VertxTestContext ctx) {
+    dataBrokerService
+        .updatePermission(
+            TEST_USER_ID, TEST_EXCHANGE, PermissionOpType.ADD_WRITE, Vhosts.IUDX_PROD)
+        .onComplete(
+            ctx.succeeding(
+                result -> ctx.verify(ctx::completeNow)));
+  }
+
+  @Test
+  @Order(13)
+  void registerExchange_inExternalVhost(VertxTestContext ctx) {
+    String extExchange = "ext-exchange-" + UUID.randomUUID().toString().substring(0, 8);
+    String extUserId = "ext-user-" + UUID.randomUUID().toString().substring(0, 8);
+
+    dataBrokerService
+        .registerExchange(extUserId, extExchange, Vhosts.IUDX_EXTERNAL)
+        .onComplete(
+            ctx.succeeding(
+                result ->
+                    ctx.verify(
+                        () -> {
+                          assertThat(result).isNotNull();
+                          assertThat(result.getExchangeName()).isEqualTo(extExchange);
+                          assertThat(result.getUserId()).isEqualTo(extUserId);
+                          assertThat(result.getApiKey()).isNotNull();
+                          ctx.completeNow();
+                        })));
+  }
+
+  @Test
+  @Order(14)
+  void registerQueue_inInternalVhost(VertxTestContext ctx) {
+    String intQueue = "int-queue-" + UUID.randomUUID().toString().substring(0, 8);
+    String intUserId = "int-user-" + UUID.randomUUID().toString().substring(0, 8);
+
+    dataBrokerService
+        .registerQueue(intUserId, intQueue, Vhosts.IUDX_INTERNAL)
+        .onComplete(
+            ctx.succeeding(
+                result ->
+                    ctx.verify(
+                        () -> {
+                          assertThat(result).isNotNull();
+                          assertThat(result.getQueueName()).isEqualTo(intQueue);
+                          assertThat(result.getUserId()).isEqualTo(intUserId);
+                          ctx.completeNow();
+                        })));
+  }
+
+  @Test
+  @Order(15)
+  void listExchange_afterBinding_showsDestinations(VertxTestContext ctx) {
+    // TEST_EXCHANGE already has a binding to TEST_QUEUE from order(5)
+    dataBrokerService
+        .listExchange(TEST_EXCHANGE, Vhosts.IUDX_PROD)
+        .onComplete(
+            ctx.succeeding(
+                response ->
+                    ctx.verify(
+                        () -> {
+                          assertThat(response.getSubscribers()).isNotEmpty();
+                          // Serialization to JSON should work
+                          JsonObject json = response.toJson();
+                          assertThat(json.isEmpty()).isFalse();
+                          ctx.completeNow();
+                        })));
+  }
+
+  @Test
+  @Order(16)
+  void deleteExchange_nonExistent_fails(VertxTestContext ctx) {
+    dataBrokerService
+        .deleteExchange("non-existent-exchange-xyz", "some-user", Vhosts.IUDX_PROD)
+        .onComplete(
+            ctx.failing(
+                err ->
+                    ctx.verify(
+                        () -> {
+                          assertThat(err.getMessage()).isNotNull();
+                          ctx.completeNow();
+                        })));
+  }
+
+  @Test
+  @Order(17)
+  void registerExchange_verifyModelFields(VertxTestContext ctx) {
+    String exchange = "model-test-" + UUID.randomUUID().toString().substring(0, 8);
+    String userId = "model-user-" + UUID.randomUUID().toString().substring(0, 8);
+
+    dataBrokerService
+        .registerExchange(userId, exchange, Vhosts.IUDX_PROD)
+        .onComplete(
+            ctx.succeeding(
+                result ->
+                    ctx.verify(
+                        () -> {
+                          assertThat(result.getUrl()).isNotNull();
+                          assertThat(result.getPort()).isGreaterThan(0);
+                          assertThat(result.getvHost()).isNotNull();
+                          // toJson round-trip
+                          JsonObject json = result.toJson();
+                          assertThat(json.getString("id")).isEqualTo(exchange);
+                          assertThat(json.getString("username")).isEqualTo(userId);
+                          ctx.completeNow();
+                        })));
+  }
+
+  @Test
+  @Order(18)
+  void queueBinding_withWildcard(VertxTestContext ctx) {
+    String wQueue = "wildcard-queue-" + UUID.randomUUID().toString().substring(0, 8);
+    String wUser = "wc-user-" + UUID.randomUUID().toString().substring(0, 8);
+
+    dataBrokerService
+        .registerQueue(wUser, wQueue, Vhosts.IUDX_PROD)
+        .compose(q -> dataBrokerService.queueBinding(
+            TEST_EXCHANGE, wQueue, "*.routing.#", Vhosts.IUDX_PROD))
+        .onComplete(
+            ctx.succeeding(
+                result -> ctx.verify(ctx::completeNow)));
+  }
+
   @Test
   @Order(50)
   void deleteQueue_removesQueue(VertxTestContext ctx) {
