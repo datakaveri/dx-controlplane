@@ -8,10 +8,16 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
 import java.util.concurrent.TimeUnit;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.database.postgres.verticle.PostgresVerticle;
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.callback.Callback;
+import org.flywaydb.core.api.callback.Context;
+import org.flywaydb.core.api.callback.Event;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +42,7 @@ public abstract class PostgresTestBase {
   protected static final PostgreSQLContainer<?> PG =
       new PostgreSQLContainer<>("postgres:15-alpine")
           .withDatabaseName("testdb")
-          .withUsername("testuser")
+          .withUsername("postgres")
           .withPassword("testpass");
 
   protected PostgresService postgresService;
@@ -44,13 +50,49 @@ public abstract class PostgresTestBase {
 
   @BeforeAll
   void setUp(Vertx vertx, VertxTestContext ctx) throws Exception {
-    // 1. Run Flyway migrations against the container
+    // 1. Create prerequisites that migrations expect (schemas, search_path)
+    String jdbcUrl = PG.getJdbcUrl();
+    try (Connection conn = DriverManager.getConnection(jdbcUrl, PG.getUsername(), PG.getPassword());
+        Statement stmt = conn.createStatement()) {
+      stmt.execute("CREATE SCHEMA IF NOT EXISTS aaa");
+    }
+
+    // 2. Run Flyway migrations against the container
+    //    Use a callback to set search_path before each migration so cross-schema references resolve
+    Callback searchPathCallback =
+        new Callback() {
+          @Override
+          public boolean supports(Event event, Context context) {
+            return event == Event.BEFORE_EACH_MIGRATE;
+          }
+
+          @Override
+          public boolean canHandleInTransaction(Event event, Context context) {
+            return true;
+          }
+
+          @Override
+          public void handle(Event event, Context context) {
+            try (Statement stmt = context.getConnection().createStatement()) {
+              stmt.execute("SET search_path TO aaa, public");
+            } catch (Exception e) {
+              throw new RuntimeException("Failed to set search_path", e);
+            }
+          }
+
+          @Override
+          public String getCallbackName() {
+            return "setSearchPath";
+          }
+        };
+
     Flyway flyway =
         Flyway.configure()
-            .dataSource(PG.getJdbcUrl(), PG.getUsername(), PG.getPassword())
+            .dataSource(jdbcUrl, PG.getUsername(), PG.getPassword())
             .locations("classpath:db/migration")
-            .placeholders(java.util.Map.of("authUser", "testuser"))
+            .placeholders(java.util.Map.of("authUser", "postgres"))
             .schemas("public")
+            .callbacks(searchPathCallback)
             .load();
     flyway.migrate();
 
@@ -62,7 +104,7 @@ public abstract class PostgresTestBase {
             .put("databaseName", PG.getDatabaseName())
             .put("databaseUserName", PG.getUsername())
             .put("databasePassword", PG.getPassword())
-            .put("databaseSchema", "public")
+            .put("databaseSchema", "aaa, public")
             .put("poolSize", 5);
 
     DeploymentOptions opts = new DeploymentOptions().setConfig(pgConfig);
@@ -95,7 +137,7 @@ public abstract class PostgresTestBase {
             + "bookmarks, "
             + "app_constraints, "
             + "app_credentials, "
-            + "subscription, "
+            + "subscriptions, "
             + "credit_transactions, "
             + "credit_requests, "
             + "user_credits, "

@@ -197,7 +197,7 @@ class PostgresServiceIT extends PostgresTestBase {
               String id = insertResult.getRows().getJsonObject(0).getString("id");
               // Select via raw SQL
               String selectSql = "SELECT * FROM " + TABLE + " WHERE id = $1";
-              JsonArray selectParams = new JsonArray().add(UUID.fromString(id));
+              JsonArray selectParams = new JsonArray().add(id);
               return postgresService.executeQuery(selectSql, selectParams);
             })
         .onComplete(
