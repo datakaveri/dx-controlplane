@@ -30,6 +30,7 @@ import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.URNGenerator;
+import org.cdpg.dx.common.util.DelegatorResolver;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.request.PaginatedRequest;
@@ -180,8 +181,7 @@ public class OrganizationUserHandler {
     // delegation table has the org_id
     // get actual org admin id from the delegation table
 
-    String delegatorIdStr = ctx.queryParams().get("delegatorId");
-    UUID delegatorId = delegatorIdStr!=null? UUID.fromString(delegatorIdStr):null;
+    UUID delegatorId = DelegatorResolver.getDelegatorId(ctx);
 
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
@@ -192,13 +192,7 @@ public class OrganizationUserHandler {
       return;
     }
 
-    UUID orgAdminId = UUID.fromString(ctx.user().subject());
-    if(delegatorId!=null)
-    {
-       orgAdminId = delegatorId;
-    }
-
-   UUID finalorgAdminId = orgAdminId;
+    UUID orgAdminId = delegatorId != null ? delegatorId : UUID.fromString(ctx.user().subject());
 
 //    AccessValidator.validate(
 //      userJson,
@@ -220,7 +214,7 @@ public class OrganizationUserHandler {
 
               Future<Boolean> deletionFuture;
               if (user.roles().contains("provider")) {
-                deletionFuture = organizationService.deleteProviderUser(userId, finalorgAdminId, orgId);
+                deletionFuture = organizationService.deleteProviderUser(userId, orgAdminId, orgId);
               } else {
                 deletionFuture = organizationService.deleteOrganizationUser(orgId, userId);
               }

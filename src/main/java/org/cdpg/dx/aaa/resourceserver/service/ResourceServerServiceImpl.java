@@ -8,10 +8,8 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.resourceserver.dao.ResourceServerDAO;
 import org.cdpg.dx.aaa.resourceserver.models.ResourceServer;
 import org.cdpg.dx.acl.accessRequest.controller.AccessRequestController;
-import org.cdpg.dx.common.exception.BaseDxException;
-import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.DxUnauthorizedException;
-import org.cdpg.dx.common.exception.NoRowFoundException;
+import org.cdpg.dx.common.util.ServiceErrorHelper;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
 
@@ -37,39 +35,18 @@ public class ResourceServerServiceImpl implements ResourceServerService {
   @Override
   public Future<ResourceServer> get(UUID id) {
       return dao.get(id)
-              .recover(err -> {
-                  BaseDxException dxEx = BaseDxException.from(err);
-                  if (dxEx instanceof NoRowFoundException) {
-                      LOGGER.debug("True");
-                      return Future.failedFuture(new DxNotFoundException("No matching requestId found in resource table", dxEx));
-                  }
-                  return Future.failedFuture(dxEx);
-              });
+              .recover(ServiceErrorHelper.mapNotFound("No matching requestId found in resource table"));
   }
 
   @Override
   public Future<List<ResourceServer>> getAllByRole(String userRole, UUID userId) {
     LOGGER.debug("Getting resource servers by role: {} for user: {}", userRole, userId);
     if ("cos_admin".equals(userRole)) {
-      return dao.getAll().recover(err -> {
-          BaseDxException dxEx = BaseDxException.from(err);
-          if (dxEx instanceof NoRowFoundException) {
-              LOGGER.debug("True");
-              return Future.failedFuture(new DxNotFoundException("No matching requestId found in resource table", dxEx));
-          }
-          return Future.failedFuture(dxEx);
-      });
+      return dao.getAll().recover(ServiceErrorHelper.mapNotFound("No matching requestId found in resource table"));
     } else {
       // ORG admin can only see resource servers they created
       Map<String, Object> filters = Map.of("owner_id", userId.toString());
-      return dao.getAllWithFilters(filters).recover(err -> {
-          BaseDxException dxEx = BaseDxException.from(err);
-          if (dxEx instanceof NoRowFoundException) {
-              LOGGER.debug("True");
-              return Future.failedFuture(new DxNotFoundException("No matching requestId found in resource table", dxEx));
-          }
-          return Future.failedFuture(dxEx);
-      });
+      return dao.getAllWithFilters(filters).recover(ServiceErrorHelper.mapNotFound("No matching requestId found in resource table"));
     }
   }
 
@@ -78,24 +55,10 @@ public class ResourceServerServiceImpl implements ResourceServerService {
     LOGGER.debug("Deleting resource server by role: {} for user: {}", userRole, userId);
     
     if ("cos_admin".equals(userRole)) {
-      return dao.delete(id).recover(err -> {
-          BaseDxException dxEx = BaseDxException.from(err);
-          if (dxEx instanceof NoRowFoundException) {
-              LOGGER.debug("True");
-              return Future.failedFuture(new DxNotFoundException("No matching requestId found in resource table", dxEx));
-          }
-          return Future.failedFuture(dxEx);
-      });
+      return dao.delete(id).recover(ServiceErrorHelper.mapNotFound("No matching requestId found in resource table"));
     } else if ("org_admin".equals(userRole)) {
       return dao.get(id)
-          .recover(err -> {
-              BaseDxException dxEx = BaseDxException.from(err);
-              if (dxEx instanceof NoRowFoundException) {
-                  LOGGER.debug("True");
-                  return Future.failedFuture(new DxNotFoundException("No matching requestId found in resource table", dxEx));
-              }
-              return Future.failedFuture(dxEx);
-          })
+          .recover(ServiceErrorHelper.mapNotFound("No matching requestId found in resource table"))
           .compose(resourceServer -> {
 
             if (resourceServer.ownerId() != null && resourceServer.ownerId().equals(userId)) {

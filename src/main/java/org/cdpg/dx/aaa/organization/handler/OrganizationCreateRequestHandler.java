@@ -25,6 +25,7 @@ import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.URNGenerator;
+import org.cdpg.dx.common.util.DelegatorResolver;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
@@ -179,15 +180,7 @@ public class OrganizationCreateRequestHandler {
   public void deleteOrganizationCreateRequest(RoutingContext ctx) {
     UUID requestId = UUID.fromString(ctx.pathParam("id"));
     User user = ctx.user();
-    UUID userId = UUID.fromString(user.subject());
-
-    String delegatorIdStr = ctx.queryParams().get("delegatorId");
-    UUID delegatorId = delegatorIdStr!=null?UUID.fromString(delegatorIdStr):null;
-
-    if(delegatorId!=null)
-      userId = delegatorId;
-
-    UUID finalUserId = userId;
+    UUID userId = DelegatorResolver.resolveActingUserId(ctx);
 
     organizationService
         .getOrganizationCreateRequestById(requestId)
@@ -205,7 +198,7 @@ public class OrganizationCreateRequestHandler {
                     new DxBadRequestException("Only pending requests can be deleted"));
               }
 
-              if (!request.requestedBy().equals(finalUserId)) {
+              if (!request.requestedBy().equals(userId)) {
                 ctx.fail(new DxForbiddenException("User is not authorized to delete this request"));
                 return Future.failedFuture(
                     new DxForbiddenException("User is not authorized to delete this request"));
@@ -236,15 +229,8 @@ public class OrganizationCreateRequestHandler {
 
   public void getUserOrganisationRequest(RoutingContext ctx) {
     User user = ctx.user();
-    UUID userId = UUID.fromString(user.subject());
+    UUID userId = DelegatorResolver.resolveActingUserId(ctx);
 
-    String delegatorIdStr = ctx.queryParams().get("delegatorId");
-    UUID delegatorId = delegatorIdStr!=null?UUID.fromString(delegatorIdStr):null;
-
-    if(delegatorId!=null)
-      userId = delegatorId;
-
-    UUID finalUserId = userId;
     organizationService
         .getOrganizationCreateRequestsByUserId(userId)
         .compose(
@@ -268,7 +254,7 @@ public class OrganizationCreateRequestHandler {
             err -> {
               LOGGER.error(
                   "Failed to fetch organization requests for user {}: {}",
-                  finalUserId,
+                  userId,
                   err.getMessage());
               ctx.fail(err);
             });

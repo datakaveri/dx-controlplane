@@ -33,6 +33,7 @@ import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
+import org.cdpg.dx.common.util.DelegatorResolver;
 import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.util.RoutingContextHelper;
@@ -148,9 +149,8 @@ public class OrganizationJoinRequestHandler {
     User user = ctx.user();
     JsonObject userJson = user.principal();
 
-    String delegatorStr = ctx.queryParams().get("delegatorId");
     String orgIdparam = ctx.pathParam("id");
-    UUID delegatorId = delegatorStr != null ? UUID.fromString(delegatorStr) : null;
+    UUID delegatorId = DelegatorResolver.getDelegatorId(ctx);
 
 //    AccessValidator.validate(
 //      userJson,
@@ -162,65 +162,7 @@ public class OrganizationJoinRequestHandler {
 //    UUID userId = UUID.fromString(user.subject());
 
     // -------- Resolve orgId --------
-    Future<UUID> orgIdFuture;
-
-    if (delegatorId == null) {
-
-      String orgIdStr = ctx.user()
-        .principal()
-        .getString("organisation_id");
-
-      if (orgIdStr == null || orgIdStr.trim().isEmpty()) {
-        ctx.fail(
-          new DxBadRequestException(
-            "The user is acting as a delegate. Please specify the delegatorId in the request")
-        );
-        orgIdFuture = Future.failedFuture("Missing organisationId");
-      } else if (!Objects.equals(orgIdStr, orgIdparam)) {
-        ctx.fail(
-          new DxBadRequestException(
-            "The org id of the user and the query parameter are not same")
-        );
-        orgIdFuture = Future.failedFuture("Wrong organisationId");
-      } else {
-        orgIdFuture = Future.succeededFuture(UUID.fromString(orgIdStr));
-      }
-
-    } else {
-      orgIdFuture =
-        userService
-          .getUserInfoByID(delegatorId)
-          .compose(res -> {
-
-            if (res == null) {
-              ctx.fail(
-                new DxBadRequestException(
-                  "Delegator is not valid")
-              );
-              return Future.failedFuture("Delegator not valid");
-            }
-
-            String orgIdStr = res.organisationId();
-
-            if (orgIdStr == null || orgIdStr.trim().isEmpty()) {
-              ctx.fail(
-                new DxBadRequestException(
-                  "Delegator is not part of any organisation")
-              );
-              return Future.failedFuture("Delegator has no organisation");
-            }
-
-            if (!Objects.equals(orgIdStr, orgIdparam)) {
-              ctx.fail(
-                new DxBadRequestException(
-                  "The org id of the delegator and the query parameter are not same")
-              );
-              return Future.failedFuture("Wrong organisationId");
-            }
-
-            return Future.succeededFuture(UUID.fromString(orgIdStr));
-          });
-    }
+    Future<UUID> orgIdFuture = DelegatorResolver.resolveOrgId(ctx, userService, orgIdparam);
 
     // -------- Ownership + pagination + fetch --------
     orgIdFuture
@@ -286,18 +228,10 @@ public class OrganizationJoinRequestHandler {
 
 
     User user = ctx.user();
-    UUID userId = UUID.fromString(ctx.user().subject());
-
-    String delegatorIdStr = ctx.queryParams().get("delegatorId");
-    UUID delegatorId = delegatorIdStr!=null?UUID.fromString(delegatorIdStr):null;
-
-    if(delegatorId!=null)
-      userId = delegatorId;
-
-    UUID finalUserId = userId;
+    UUID userId = DelegatorResolver.resolveActingUserId(ctx);
 
     organizationService
-        .getOrganizationJoinRequestsByUser(finalUserId)
+        .getOrganizationJoinRequestsByUser(userId)
         .compose(
             requests -> {
               List<JsonObject> result =
@@ -319,7 +253,7 @@ public class OrganizationJoinRequestHandler {
             err -> {
               LOGGER.error(
                   "Failed to fetch join organisation requests for user {}: {}",
-                  finalUserId,
+                  userId,
                   err.getMessage());
               ctx.fail(err);
             });
@@ -328,14 +262,7 @@ public class OrganizationJoinRequestHandler {
   public void deleteUserJoinOrganisationRequests(RoutingContext ctx) {
 
     User user = ctx.user();
-    UUID userId = UUID.fromString(user.subject());
-    String delegatorIdStr = ctx.queryParams().get("delegatorId");
-    UUID delegatorId = delegatorIdStr!=null?UUID.fromString(delegatorIdStr):null;
-
-    if(delegatorId!=null)
-      userId = delegatorId;
-
-    UUID finalUserId = userId;
+    UUID userId = DelegatorResolver.resolveActingUserId(ctx);
 
     UUID requestId = UUID.fromString(ctx.pathParam("id"));
 
@@ -355,7 +282,7 @@ public class OrganizationJoinRequestHandler {
                     new DxBadRequestException("Only pending requests can be deleted"));
               }
 
-              if (!request.userId().equals(finalUserId)) {
+              if (!request.userId().equals(userId)) {
                 ctx.fail(new DxForbiddenException("User is not authorized to delete this request"));
                 return Future.failedFuture(
                     new DxForbiddenException("User is not authorized to delete this request"));
@@ -390,8 +317,6 @@ public class OrganizationJoinRequestHandler {
     JsonObject userJson = user.principal();
 
     String orgIdparam = ctx.pathParam("org_id");
-    String delegatorStr = ctx.queryParams().get("delegatorId");
-    UUID delegatorId = delegatorStr != null ? UUID.fromString(delegatorStr) : null;
 
     // delegation requirement
 //    AccessValidator.validate(
@@ -409,61 +334,7 @@ public class OrganizationJoinRequestHandler {
 
     UUID userId = UUID.fromString(user.subject());
 
-    Future<UUID> orgIdFuture;
-    if (delegatorId == null) {
-
-      String orgIdStr = ctx.user()
-        .principal()
-        .getString("organisation_id");
-
-      if (orgIdStr == null || orgIdStr.trim().isEmpty()) {
-        ctx.fail(
-          new DxBadRequestException(
-            "The user is acting as a delegate. Please specify the delegatorId in the request")
-        );
-        orgIdFuture = Future.failedFuture("Missing organisationId");
-      } else if (!Objects.equals(orgIdStr, orgIdparam)) {
-        ctx.fail(
-          new DxBadRequestException(
-            "The org id of the user and the query parameter are not same")
-        );
-        orgIdFuture = Future.failedFuture("Wrong organisationId");
-      } else {
-        orgIdFuture = Future.succeededFuture(UUID.fromString(orgIdStr));
-      }
-
-
-    } else {
-      orgIdFuture =
-        userService
-          .getUserInfoByID(delegatorId)
-          .compose(res -> {
-
-            String orgIdStr = res.organisationId();
-
-            if (orgIdStr == null || orgIdStr.trim().isEmpty()) {
-              ctx.fail(
-                new DxBadRequestException(
-                  "Delegator is not part of any organisation")
-              );
-              return Future.failedFuture("Delegator has no organisation");
-            }
-
-            if (!Objects.equals(orgIdStr, orgIdparam)) {
-              ctx.fail(
-                new DxBadRequestException(
-                  "The org id of the delegator and the query parameter are not same")
-              );
-              return Future.failedFuture("Wrong organisationId");
-            }
-
-
-            LOGGER.info("Resolved orgId: {}", orgIdStr);
-            return Future.succeededFuture(UUID.fromString(orgIdStr));
-          });
-    }
-
-    orgIdFuture
+    DelegatorResolver.resolveOrgId(ctx, userService, orgIdparam)
       .compose(
         orgId ->
           organizationService
@@ -502,33 +373,28 @@ public class OrganizationJoinRequestHandler {
     User user = ctx.user();
     JsonObject userJson = user.principal();
 
-    UUID userId = UUID.fromString(user.subject());
+    UUID userId = DelegatorResolver.resolveActingUserId(ctx);
+    UUID delegatorId = DelegatorResolver.getDelegatorId(ctx);
     UUID orgJoinReqId = UUID.fromString(ctx.pathParam("id"));
-
-    String delegatorStr = ctx.queryParams().get("delegatorId");
-    UUID delegatorId = delegatorStr != null ? UUID.fromString(delegatorStr) : null;
 
     Future<Void> validationFuture;
 
     if (delegatorId != null) {
 
-      userId = delegatorId;
       validationFuture =
         userService
           .getUserInfoByID(delegatorId)
           .compose(res -> {
 
             if (res == null) {
-              ctx.fail(new DxBadRequestException("Delegator is not valid"));
-              return Future.failedFuture("Delegator invalid");
+              return Future.failedFuture(
+                new DxBadRequestException("Delegator is not valid"));
             }
 
             String orgIdStr = res.organisationId();
             if (orgIdStr == null || orgIdStr.isBlank()) {
-              ctx.fail(
-                new DxBadRequestException("Delegator is not part of any organisation")
-              );
-              return Future.failedFuture("Delegator has no organisation");
+              return Future.failedFuture(
+                new DxBadRequestException("Delegator is not part of any organisation"));
             }
 
             UUID orgId = UUID.fromString(orgIdStr);
@@ -539,11 +405,9 @@ public class OrganizationJoinRequestHandler {
               .compose(request -> {
 
                 if (!request.organizationId().equals(orgId)) {
-                  ctx.fail(
+                  return Future.failedFuture(
                     new DxBadRequestException(
-                      "The delegate does not have access to withdraw the join request as the delegator is not the owner of the organization")
-                  );
-                  return Future.failedFuture("Delegator-org mismatch");
+                      "The delegate does not have access to withdraw the join request as the delegator is not the owner of the organization"));
                 }
 
                 return Future.succeededFuture();
@@ -555,9 +419,7 @@ public class OrganizationJoinRequestHandler {
       validationFuture = Future.succeededFuture();
     }
 
-    UUID finalUserId = userId;
-
-    validationFuture.compose(v -> organizationService.withdrawJoinRequest(finalUserId, orgJoinReqId))
+    validationFuture.compose(v -> organizationService.withdrawJoinRequest(userId, orgJoinReqId))
       .onSuccess(res -> {
 
         UserActivityAuditLogBuilder auditLogBuilder =
