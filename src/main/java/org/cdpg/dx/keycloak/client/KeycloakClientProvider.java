@@ -5,26 +5,32 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 
 public class KeycloakClientProvider {
-    private static Keycloak keycloakInstance;
+    private static volatile Keycloak keycloakInstance;
 
     public static Keycloak getInstance(JsonObject config) {
         if (keycloakInstance == null) {
-            keycloakInstance = KeycloakBuilder.builder()
-                    .serverUrl(config.getString("keycloakUrl"))
-                    .realm(config.getString("keycloakRealm")) // Auth realm to log in as admin
-                    .clientId(config.getString("keycloakAdminClientId"))
-                    .clientSecret(config.getString("keycloakAdminClientSecret"))
-                    .grantType("client_credentials")
-                    .build();
+            synchronized (KeycloakClientProvider.class) {
+                if (keycloakInstance == null) {
+                    keycloakInstance = KeycloakBuilder.builder()
+                            .serverUrl(config.getString("keycloakUrl"))
+                            .realm(config.getString("keycloakRealm"))
+                            .clientId(config.getString("keycloakAdminClientId"))
+                            .clientSecret(config.getString("keycloakAdminClientSecret"))
+                            .grantType("client_credentials")
+                            .build();
+                }
+            }
         }
         return keycloakInstance;
     }
 
     // For testing only — allows resetting the singleton
     static void reset() {
-        if (keycloakInstance != null) {
-            keycloakInstance.close();
-            keycloakInstance = null;
+        synchronized (KeycloakClientProvider.class) {
+            if (keycloakInstance != null) {
+                keycloakInstance.close();
+                keycloakInstance = null;
+            }
         }
     }
 }

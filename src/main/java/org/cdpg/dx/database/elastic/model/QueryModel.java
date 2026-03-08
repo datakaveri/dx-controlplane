@@ -390,7 +390,7 @@ public class QueryModel {
    * @throws UnsupportedOperationException if the query type is not supported.
    */
   public Query toElasticsearchQuery() {
-    LOGGER.debug("Converting QueryModel to Elasticsearch Query " + queryType);
+    LOGGER.debug("Converting QueryModel to Elasticsearch Query: {}", queryType);
 
     if (this.queryType == null) {
       LOGGER.error("Query type is null for QueryModel: {}", this.toJson());
@@ -739,7 +739,7 @@ public class QueryModel {
    * @return Elasticsearch Script object, or null if no script configuration is available.
    */
   public Script toElasticsearchScript() {
-    LOGGER.debug("Converting QueryModel to Elasticsearch Script "+scriptSource);
+    LOGGER.debug("Converting QueryModel to Elasticsearch Script: {}", scriptSource);
     // Check if the QueryModel contains the necessary script-related properties
     if (scriptSource != null && !scriptSource.isEmpty()) {
       Script.Builder scriptBuilder = new Script.Builder();

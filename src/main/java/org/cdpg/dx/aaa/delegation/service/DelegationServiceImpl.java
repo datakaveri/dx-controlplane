@@ -2,7 +2,6 @@
 
 package org.cdpg.dx.aaa.delegation.service;
 
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -174,43 +173,22 @@ public class DelegationServiceImpl implements DelegationService{
 
   @Override
   public Future<List<JsonObject>> getAllDelegationsByDelegator(String userIdStr) {
+    return getDelegationsWithConstraints(Map.of(DELEGATOR_ID, userIdStr));
+  }
 
-    Map<String, Object> conditionMap = Map.of(DELEGATOR_ID, userIdStr);
+  @Override
+  public Future<List<JsonObject>> getAllDelegationsOfDelegate(String userIdStr) {
+    return getDelegationsWithConstraints(Map.of(DELEGATE_ID, userIdStr));
+  }
 
-    return delegationGrantDAO.getAllWithFilters(conditionMap)
-      .compose(delegations -> {
-        List<Future<JsonObject>> enrichedFutures = delegations.stream()
-          .map(delegation -> {
-            UUID delegationId = delegation.delegationId();
-            Map<String, Object> scopeCondition = Map.of("delegation_id", delegationId.toString());
-
-            return scopeConstraintDAO.getAllWithFilters(scopeCondition)
-              .map(constraints -> {
-                JsonObject delegationJson = delegation.toJson();
-                JsonArray constraintsArray = new JsonArray(
-                  constraints.stream()
-                    .map(c -> {
-                      JsonObject json = c.toJson();
-                      json.remove("id");
-                      json.remove("delegation_id");
-                      return json;
-                    })
-                    .toList()
-                );
-                delegationJson.put("constraints", constraintsArray);
-                return delegationJson;
-              })
-              .recover(err -> {
-                JsonObject delegationJson = delegation.toJson();
-                delegationJson.put("constraints", new JsonArray());
-                return Future.succeededFuture(delegationJson);
-              });
-          })
-          .toList();
-
-        return Future.all(enrichedFutures)
-          .map(cf -> cf.<JsonObject>list());
-      })
+  /**
+   * Shared helper that fetches delegation grants by filter, enriches each with its scope
+   * constraints, and returns a list of enriched JSON objects. Returns an empty list instead
+   * of failing when no delegations are found.
+   */
+  private Future<List<JsonObject>> getDelegationsWithConstraints(Map<String, Object> filterMap) {
+    return delegationGrantDAO.getAllWithFilters(filterMap)
+      .compose(this::enrichDelegationsWithConstraints)
       .recover(err -> {
         BaseDxException dxEx = BaseDxException.from(err);
         if (dxEx instanceof DxNotFoundException) {
@@ -220,54 +198,45 @@ public class DelegationServiceImpl implements DelegationService{
       });
   }
 
-  @Override
-  public Future<List<JsonObject>> getAllDelegationsOfDelegate(String userIdStr) {
+  /**
+   * Enriches a list of delegation grants with their scope constraints. For each delegation,
+   * the constraints are fetched and merged into the delegation JSON. If constraint lookup
+   * fails for any delegation, an empty constraints array is used as a safe default.
+   */
+  private Future<List<JsonObject>> enrichDelegationsWithConstraints(
+      List<DelegationGrant> delegations) {
 
-    Map<String, Object> conditionMap = Map.of(DELEGATE_ID, userIdStr);
+    List<Future<JsonObject>> enrichedFutures = delegations.stream()
+      .map(delegation -> {
+        UUID delegationId = delegation.delegationId();
+        Map<String, Object> scopeCondition = Map.of("delegation_id", delegationId.toString());
 
-    return delegationGrantDAO.getAllWithFilters(conditionMap)
-      .compose(delegations -> {
-        List<Future<JsonObject>> enrichedFutures = delegations.stream()
-          .map(delegation -> {
-            UUID delegationId = delegation.delegationId();
-            Map<String, Object> scopeCondition = Map.of("delegation_id", delegationId.toString());
-
-            return scopeConstraintDAO.getAllWithFilters(scopeCondition)
-              .map(constraints -> {
-                JsonObject delegationJson = delegation.toJson();
-                JsonArray constraintsArray = new JsonArray(
-                  constraints.stream()
-                    .map(c -> {
-                      JsonObject json = c.toJson();
-                      json.remove("id");
-                      json.remove("delegation_id");
-                      return json;
-                    })
-                    .toList()
-                );
-                delegationJson.put("constraints", constraintsArray);
-                return delegationJson;
-              })
-              .recover(err -> {
-                // If no constraints found, return delegation without constraints
-                JsonObject delegationJson = delegation.toJson();
-                delegationJson.put("constraints", new JsonArray());
-                return Future.succeededFuture(delegationJson);
-              });
+        return scopeConstraintDAO.getAllWithFilters(scopeCondition)
+          .map(constraints -> {
+            JsonObject delegationJson = delegation.toJson();
+            JsonArray constraintsArray = new JsonArray(
+              constraints.stream()
+                .map(c -> {
+                  JsonObject json = c.toJson();
+                  json.remove("id");
+                  json.remove("delegation_id");
+                  return json;
+                })
+                .toList()
+            );
+            delegationJson.put("constraints", constraintsArray);
+            return delegationJson;
           })
-          .toList();
-
-        return Future.all(enrichedFutures)
-          .map(cf -> cf.<JsonObject>list());
+          .recover(err -> {
+            JsonObject delegationJson = delegation.toJson();
+            delegationJson.put("constraints", new JsonArray());
+            return Future.succeededFuture(delegationJson);
+          });
       })
-      .recover(err -> {
-        BaseDxException dxEx = BaseDxException.from(err);
-        if (dxEx instanceof DxNotFoundException) {
-          // Return empty list instead of failing
-          return Future.succeededFuture(List.of());
-        }
-        return Future.failedFuture(dxEx);
-      });
+      .toList();
+
+    return Future.all(enrichedFutures)
+      .map(cf -> cf.<JsonObject>list());
   }
 
 
@@ -362,7 +331,7 @@ public class DelegationServiceImpl implements DelegationService{
       return Future.succeededFuture();
     }
 
-    List<Future> insertFutures = new ArrayList<>();
+    List<Future<Void>> insertFutures = new ArrayList<>();
 
     for (Object roleObj : roles) {
       JsonObject roleJson = (JsonObject) roleObj;
@@ -398,7 +367,7 @@ public class DelegationServiceImpl implements DelegationService{
       }
     }
 
-    return CompositeFuture.all(insertFutures).mapEmpty();
+    return Future.all(insertFutures).mapEmpty();
   }
 
   private Future<Void> createScopeConstraint(
@@ -569,7 +538,7 @@ public class DelegationServiceImpl implements DelegationService{
             })
             .toList();
 
-        return CompositeFuture.all(new ArrayList<>(scopeFutures))
+        return Future.all(new ArrayList<>(scopeFutures))
           .map(cf -> {
 
             Set<String> allowedItems = new HashSet<>();

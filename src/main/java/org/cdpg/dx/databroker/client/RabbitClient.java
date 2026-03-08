@@ -105,7 +105,7 @@ public class RabbitClient {
     LOGGER.trace("Info : RabbitClient#deleteQueue() started");
     Promise<Void> promise = Promise.promise();
     if (queueName != null && !queueName.isEmpty()) {
-      LOGGER.debug("Info : queueName" + queueName);
+      LOGGER.debug("Info : queueName: {}", queueName);
       String url = "/api/queues/" + vhost + "/" + encodeValue(queueName);
       rabbitWebClient
           .requestAsync(REQUEST_DELETE, url)
@@ -134,7 +134,7 @@ public class RabbitClient {
     LOGGER.trace("Info : RabbitClient#listQueueSubscribers() started");
     Promise<List<String>> promise = Promise.promise();
     if (queueName != null && !queueName.isEmpty()) {
-      List<String> oroutingKeys = new ArrayList<String>();
+      List<String> oroutingKeys = new ArrayList<>();
       String url = "/api/queues/" + vhost + "/" + encodeValue(queueName) + "/bindings";
       rabbitWebClient
           .requestAsync(REQUEST_GET, url)
@@ -144,7 +144,7 @@ public class RabbitClient {
                   HttpResponse<Buffer> response = ar.result();
                   if (response != null && !response.equals(" ")) {
                     int status = response.statusCode();
-                    LOGGER.debug("Info : statusCode " + status);
+                    LOGGER.debug("Info : statusCode: {}", status);
                     if (status == HttpStatus.SC_OK) {
                       Buffer body = response.body();
                       if (body != null) {
@@ -164,7 +164,7 @@ public class RabbitClient {
                     }
                   }
                 } else {
-                  LOGGER.error("Error : Listing of Queue failed - " + ar.cause());
+                  LOGGER.error("Error : Listing of Queue failed", ar.cause());
                   promise.fail(new DxRabbitMqException(QUEUE_LIST_ERROR));
                 }
               });
@@ -193,7 +193,7 @@ public class RabbitClient {
                           promise.complete(result);
                         } else {
                           LOGGER.error(
-                              "Error : Error in user creation. Cause : " + handler.cause());
+                              "Error : Error in user creation", handler.cause());
                           promise.fail(new DxRabbitMqException(USER_CREATION_ERROR));
                         }
                       });
@@ -205,11 +205,11 @@ public class RabbitClient {
                   userResponse.setPassword(API_KEY_MESSAGE);
                   promise.complete(userResponse);
                 } else {
-                  LOGGER.error("Error : Something went wrong while finding user " + reply.cause());
+                  LOGGER.error("Error : Something went wrong while finding user", reply.cause());
                   promise.fail(new DxRabbitMqException(USER_CREATION_ERROR));
                 }
               } else {
-                LOGGER.error("Error : Something went wrong while finding user " + reply.cause());
+                LOGGER.error("Error : Something went wrong while finding user", reply.cause());
                 promise.fail(new DxRabbitMqException(USER_CREATION_ERROR));
               }
             });
@@ -252,7 +252,7 @@ public class RabbitClient {
                       });
                 } else {
                   LOGGER.error(
-                      "Error : createUser method - Some network error. cause" + ar.cause());
+                      "Error : createUser method - Some network error", ar.cause());
                   promise.fail(new DxRabbitMqException(NETWORK_ISSUE));
                 }
               } else {
@@ -282,31 +282,22 @@ public class RabbitClient {
             handler -> {
               if (handler.succeeded()) {
                   LOGGER.debug(vhostPermissions);
-                LOGGER.debug("setVhost status code " + handler.result().statusCode() + " " + handler.result().bodyAsString());
+                LOGGER.debug("setVhost status code: {} {}", handler.result().statusCode(), handler.result().bodyAsString());
                 if (handler.result().statusCode() == HttpStatus.SC_CREATED) {
                   LOGGER.debug(
-                      "Success :write permission set for user [ "
-                          + shaUsername
-                          + " ] in vHost [ "
-                          + vhost
-                          + "]");
+                      "Success: write permission set for user [{}] in vHost [{}]",
+                          shaUsername, vhost);
                   promise.complete();
                 } else {
                   LOGGER.error(
-                      "Error : error in write permission set for user [ "
-                          + shaUsername
-                          + " ] in vHost [ "
-                          + vhost
-                          + " ]" + handler.cause());
+                      "Error: error in write permission set for user [{}] in vHost [{}]",
+                          shaUsername, vhost, handler.cause());
                   promise.fail(new DxInternalServerErrorException(INTERNAL_SERVER_ERROR));
                 }
               } else {
                 LOGGER.error(
-                    "Error : error in write permission set for user [ "
-                        + shaUsername
-                        + " ] in vHost [ "
-                        + vhost
-                        + " ]");
+                    "Error: error in write permission set for user [{}] in vHost [{}]",
+                        shaUsername, vhost);
                 promise.fail(new DxRabbitMqException(VHOST_PERMISSION_SET_ERROR));
               }
             });
@@ -332,7 +323,7 @@ public class RabbitClient {
               ar -> {
                 if (ar.succeeded()) {
                   HttpResponse<Buffer> response = ar.result();
-                  LOGGER.debug("status code:" + +response.statusCode());
+                  LOGGER.debug("status code: {}", response.statusCode());
                   if (response != null && !response.equals(" ")) {
                     int status = response.statusCode();
                     if (status == HttpStatus.SC_CREATED) {
@@ -379,7 +370,7 @@ public class RabbitClient {
                   HttpResponse<Buffer> response = ar.result();
                   if (response != null && !response.equals(" ")) {
                     int status = response.statusCode();
-                    LOGGER.info("Info : Binding " + topic + " Status is " + status);
+                    LOGGER.info("Info : Binding {} Status is {}", topic, status);
                     if (status == HttpStatus.SC_CREATED) {
                       promise.complete();
                     } else if (status == HttpStatus.SC_NOT_FOUND) {
@@ -447,7 +438,7 @@ public class RabbitClient {
 
                 if (rmqResponse.statusCode() == HttpStatus.SC_OK) {
                   JsonArray permissionArray = new JsonArray(rmqResponse.body().toString());
-                  LOGGER.trace("permissionArray " + permissionArray);
+                  LOGGER.trace("permissionArray: {}", permissionArray);
                   promise.complete(permissionArray.getJsonObject(0));
                 } else if (handler.result().statusCode() == HttpStatus.SC_NOT_FOUND) {
                   promise.fail(new DxRabbitMqException("user not exist."));
@@ -538,7 +529,7 @@ public class RabbitClient {
               if (requestHandler.succeeded()) {
                 HttpResponse<Buffer> response = requestHandler.result();
                 int statusCode = response.statusCode();
-                LOGGER.debug("status code in delete Exchange " + statusCode);
+                LOGGER.debug("status code in delete Exchange: {}", statusCode);
                 if (statusCode == HttpStatus.SC_NO_CONTENT) {
                   promise.complete();
                 } else {
@@ -546,7 +537,7 @@ public class RabbitClient {
                   promise.fail(new ExchangeNotFoundException(EXCHANGE_NOT_FOUND));
                 }
               } else {
-                LOGGER.error("Error : " + EXCHANGE_DELETE_ERROR);
+                LOGGER.error("Error: {}", EXCHANGE_DELETE_ERROR);
                 promise.fail(new DxRabbitMqException(EXCHANGE_DELETE_ERROR));
               }
             });
@@ -607,7 +598,7 @@ public class RabbitClient {
                                         return existing;
                                       }));
 
-                      LOGGER.debug("Info : exchange subscribers : " + jsonBody);
+                      LOGGER.debug("Info : exchange subscribers : {}", jsonBody);
                       ExchangeSubscribersResponse finalResponse =
                           new ExchangeSubscribersResponse(res);
                       promise.complete(finalResponse);
@@ -633,7 +624,7 @@ public class RabbitClient {
     arg.put(PASSWORD, password);
     arg.put(TAGS, NONE);
     String url = "/api/users/" + userid;
-    LOGGER.debug("url : " + url);
+    LOGGER.debug("url: {}", url);
     rabbitWebClient
         .requestAsync(REQUEST_PUT, url, arg)
         .onComplete(
@@ -676,7 +667,7 @@ public class RabbitClient {
             })
         .onFailure(
             publishFailure -> {
-              LOGGER.error("publishMessage failure " + publishFailure);
+              LOGGER.error("publishMessage failure", publishFailure);
               promise.fail(new DxRabbitMqException(INTERNAL_SERVER_ERROR));
             });
     return promise.future();
@@ -703,7 +694,7 @@ public class RabbitClient {
             })
         .onFailure(
             failure -> {
-              LOGGER.error("Fail : " + failure.getMessage());
+              LOGGER.error("Fail: {}", failure.getMessage());
               promise.fail(new DxRabbitMqException(INTERNAL_SERVER_ERROR));
             });
     return promise.future();

@@ -18,7 +18,7 @@ public class GetIdFromParams implements Handler<RoutingContext> {
         LOGGER.debug("Info : path {}", RoutingContextHelper.getRequestPath(routingContext));
         String id = getIdFromParam(routingContext);
         if (id != null) {
-            LOGGER.info("id :" + id);
+            LOGGER.info("id: {}", id);
             RoutingContextHelper.setId(routingContext, id);
             routingContext.next();
         } else {

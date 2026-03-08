@@ -55,7 +55,7 @@ public class DataBrokerServiceImpl implements DataBrokerService {
             })
         .onFailure(
             failureHandler -> {
-              LOGGER.error("failed ::" + failureHandler);
+              LOGGER.error("failed ::", failureHandler);
               promise.fail(failureHandler);
             });
 
@@ -88,7 +88,7 @@ public class DataBrokerServiceImpl implements DataBrokerService {
             })
         .onFailure(
             failure -> {
-              LOGGER.error("fail:: " + failure.getMessage());
+              LOGGER.error("fail:: {}", failure.getMessage());
               promise.fail(failure);
             });
 
@@ -109,7 +109,7 @@ public class DataBrokerServiceImpl implements DataBrokerService {
             })
         .onFailure(
             failure -> {
-              LOGGER.error("fail:: " + failure);
+              LOGGER.error("fail:: ", failure);
               promise.fail(failure);
             });
     return promise.future();
@@ -141,7 +141,7 @@ public class DataBrokerServiceImpl implements DataBrokerService {
             })
         .onFailure(
             failure -> {
-              LOGGER.error("Adaptor creation Failed" + failure);
+              LOGGER.error("Adaptor creation Failed", failure);
               promise.fail(failure);
             });
 
@@ -185,7 +185,7 @@ public class DataBrokerServiceImpl implements DataBrokerService {
             promise.complete(resultHandler.result());
           }
           if (resultHandler.failed()) {
-            LOGGER.error("deleteAdaptor - resultHandler failed : " + resultHandler.cause());
+            LOGGER.error("deleteAdaptor - resultHandler failed : ", resultHandler.cause());
             promise.fail(resultHandler.cause());
           }
         });
@@ -233,7 +233,7 @@ public class DataBrokerServiceImpl implements DataBrokerService {
                 LOGGER.debug(resultHandler.result());
                 promise.complete(resultHandler.result());
               } else {
-                LOGGER.error("failed ::" + resultHandler.cause());
+                LOGGER.error("failed ::", resultHandler.cause());
                 promise.fail(resultHandler.cause());
               }
             });
@@ -272,7 +272,7 @@ public class DataBrokerServiceImpl implements DataBrokerService {
             })
         .onFailure(
             failureHandler -> {
-              LOGGER.error("failed :" + failureHandler);
+              LOGGER.error("failed :", failureHandler);
               promise.fail(failureHandler);
             });
     return promise.future();

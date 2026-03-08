@@ -34,7 +34,7 @@ public class GetIdForIngestionEntityHandler implements Handler<RoutingContext> {
             }
 
             if (entityIds.size() == 1) {
-                LOGGER.debug("All entity IDs match: " + entityIds.iterator().next());
+                LOGGER.debug("All entity IDs match: {}", entityIds.iterator().next());
                 JsonObject body = routingContext.body().asJsonArray().getJsonObject(0);
                 String id = body.getJsonArray(JSON_ENTITIES).getString(0);
                 if (id != null) {

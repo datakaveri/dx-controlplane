@@ -28,7 +28,7 @@ public class ResourceServerServiceImpl implements ResourceServerService {
 
   @Override
   public Future<ResourceServer> create(ResourceServer rs) {
-      LOGGER.debug("Creating Resource Server: " + rs);
+      LOGGER.debug("Creating Resource Server: {}", rs);
     return dao.create(rs);
   }
 

@@ -113,7 +113,7 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
     }
 
     SearchRequest request = requestBuilder.build();
-    LOGGER.debug("Request: " + request.toString());
+    LOGGER.debug("Request: {}", request);
 
     asyncClient
         .search(request, ObjectNode.class)
@@ -306,7 +306,7 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
                 }
               } else {
                 try {
-                  LOGGER.debug("COUNT: " + response);
+                  LOGGER.debug("COUNT: {}", response);
                   Integer count = Math.toIntExact(response.count());
                   LOGGER.debug("Total document count: {}", count);
                   promise.complete(count);
@@ -484,12 +484,12 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
                 LOGGER.error("bulk index failed");
                 promise.fail(new RuntimeException("Bulk index error"));
               } else {
-                LOGGER.debug("bulk Response " + bulkResponse);
+                LOGGER.debug("bulk Response: {}", bulkResponse);
                 List<String> ids =
                     bulkResponse.items().stream()
                         .map(BulkResponseItem::id)
                         .collect(Collectors.toList());
-                LOGGER.debug("ids: " + ids);
+                LOGGER.debug("ids: {}", ids);
                 promise.complete(ids);
               }
             });

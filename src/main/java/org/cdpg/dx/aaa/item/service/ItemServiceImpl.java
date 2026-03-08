@@ -438,7 +438,7 @@ public class ItemServiceImpl implements ItemService {
     } else {
       return Future.failedFuture(new DxForbiddenException("User role not permitted to patch item"));
     }
-    LOGGER.debug("query: " + queryModel.getQueries().toElasticsearchQuery());
+    LOGGER.debug("query: {}", queryModel.getQueries().toElasticsearchQuery());
     String id = patchItemRequest.getItemId();
     elasticsearchService
         .getSingleDocument(docIndex, queryModel.getQueries())

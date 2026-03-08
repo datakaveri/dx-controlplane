@@ -99,10 +99,10 @@ public class Deployer {
         deploymentOptions,
         ar -> {
           if (ar.succeeded()) {
-            LOGGER.info("Deployed " + moduleName);
+            LOGGER.info("Deployed {}", moduleName);
             recursiveDeploy(vertx, mergedConfigs, i + 1);
           } else {
-            LOGGER.fatal("Failed to deploy " + moduleName + " cause:", ar.cause());
+            LOGGER.fatal("Failed to deploy {} cause:", moduleName, ar.cause());
           }
         });
   }
@@ -138,7 +138,7 @@ public class Deployer {
         new DeploymentOptions().setInstances(numInstances).setConfig(config);
     boolean isWorkerVerticle = config.getBoolean("isWorkerVerticle");
     if (isWorkerVerticle) {
-      LOGGER.info("worker verticle : " + config.getString("id"));
+      LOGGER.info("worker verticle : {}", config.getString("id"));
       deploymentOptions.setWorkerPoolName(config.getString("threadPoolName"));
       deploymentOptions.setWorkerPoolSize(config.getInteger("threadPoolSize"));
       deploymentOptions.setThreadingModel(ThreadingModel.WORKER);
@@ -151,11 +151,11 @@ public class Deployer {
         deploymentOptions,
         ar -> {
           if (ar.succeeded()) {
-            LOGGER.info("Deployed " + moduleName);
+            LOGGER.info("Deployed {}", moduleName);
             modules.remove(0);
             recursiveDeploy(vertx, configs, modules);
           } else {
-            LOGGER.fatal("Failed to deploy " + moduleName + " cause:", ar.cause());
+            LOGGER.fatal("Failed to deploy {} cause:", moduleName, ar.cause());
           }
         });
   }
@@ -360,17 +360,17 @@ public class Deployer {
     CountDownLatch latchVerticles = new CountDownLatch(deployIdSet.size());
     CountDownLatch latchCluster = new CountDownLatch(1);
     CountDownLatch latchVertx = new CountDownLatch(1);
-    LOGGER.debug("number of verticles being undeployed are:" + deployIdSet.size());
+    LOGGER.debug("number of verticles being undeployed are: {}", deployIdSet.size());
     // shutdown verticles
     for (String deploymentId : deployIdSet) {
       vertxInstance.undeploy(
           deploymentId,
           handler -> {
             if (handler.succeeded()) {
-              LOGGER.debug(deploymentId + " verticle  successfully Undeployed");
+              LOGGER.debug("{} verticle  successfully Undeployed", deploymentId);
               latchVerticles.countDown();
             } else {
-              LOGGER.warn(deploymentId + "Undeploy failed!");
+              LOGGER.warn("{} Undeploy failed!", deploymentId);
             }
           });
     }
@@ -394,7 +394,7 @@ public class Deployer {
               LOGGER.info("vertx closed succesfully");
               latchVertx.countDown();
             } else {
-              LOGGER.warn("Vertx didn't close properly, reason:" + handler.cause());
+              LOGGER.warn("Vertx didn't close properly, reason:", handler.cause());
             }
           });
     } catch (Exception e) {

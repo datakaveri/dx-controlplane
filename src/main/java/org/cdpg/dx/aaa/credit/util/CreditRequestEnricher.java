@@ -1,12 +1,10 @@
 package org.cdpg.dx.aaa.credit.util;
 
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.credit.models.CreditRequest;
@@ -39,16 +37,15 @@ public final class CreditRequestEnricher {
    * @param creditService  the credit service for balance/expiry lookups
    * @return a future containing the enriched list of JSON objects
    */
-  @SuppressWarnings("rawtypes")
   public static Future<List<JsonObject>> enrichWithBalanceAndExpiry(
       List<CreditRequest> creditRequests, CreditService creditService) {
 
-    List<Future> futures =
+    List<Future<JsonObject>> futures =
         creditRequests.stream()
             .map(cr -> enrichSingle(cr, creditService))
-            .collect(Collectors.toList());
+            .toList();
 
-    return CompositeFuture.all(futures).map(CompositeFuture::list);
+    return Future.all(futures).map(cf -> cf.<JsonObject>list());
   }
 
   private static Future<JsonObject> enrichSingle(
@@ -69,7 +66,7 @@ public final class CreditRequestEnricher {
             .map(res -> new JsonObject().put("expirationDate", res.expirationDate().toString()))
             .otherwise(new JsonObject().put("expirationDate", (String) null));
 
-    CompositeFuture.all(balanceFuture, expiryFuture)
+    Future.all(balanceFuture, expiryFuture)
         .onSuccess(
             cf -> {
               JsonObject creditRequestJson =

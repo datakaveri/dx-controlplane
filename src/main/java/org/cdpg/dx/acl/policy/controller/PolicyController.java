@@ -137,7 +137,7 @@ public class PolicyController implements ApdApiController {
         handleFailureResponse(ctx, failureMessage.encode());
       }
     }
-    LOGGER.debug("request: " + request);
+    LOGGER.debug("request: {}", request);
     JsonArray policyList = request.getJsonArray("request");
     List<CreatePolicyRequest> requests =
         CreatePolicyRequest.jsonArrayToList(policyList, request.getLong("defaultExpiryDays"));

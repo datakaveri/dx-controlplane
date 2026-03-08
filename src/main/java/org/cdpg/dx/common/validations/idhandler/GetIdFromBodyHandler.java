@@ -36,7 +36,7 @@ public class GetIdFromBodyHandler implements Handler<RoutingContext> {
     LOGGER.debug("Info : path {}", RoutingContextHelper.getRequestPath(routingContext));
     String id = getIdFromBody(routingContext);
     if (id != null) {
-      LOGGER.info("id :" + id);
+      LOGGER.info("id: {}", id);
       RoutingContextHelper.setId(routingContext, id);
       routingContext.next();
     } else {

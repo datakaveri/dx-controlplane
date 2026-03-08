@@ -50,7 +50,7 @@ public class KYCHandler {
 
     JsonObject OrgRequestJson = ctx.body().asJsonObject();
 
-    LOGGER.debug("orgRequestJson: " + OrgRequestJson);
+    LOGGER.debug("orgRequestJson: {}", OrgRequestJson);
 
     String code = OrgRequestJson.getString("auth_code");
     String codeVerifier = OrgRequestJson.getString("code_verifier");

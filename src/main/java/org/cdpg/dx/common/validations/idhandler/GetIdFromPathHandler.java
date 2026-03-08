@@ -31,12 +31,12 @@ public class GetIdFromPathHandler implements Handler<RoutingContext> {
     private String getIdFromPath(RoutingContext routingContext) {
         StringBuilder id = null;
         Map<String, String> pathParams = routingContext.pathParams();
-        LOGGER.debug("path params :" + pathParams);
+        LOGGER.debug("path params: {}", pathParams);
         if (pathParams != null && !pathParams.isEmpty()) {
             if (pathParams.containsKey(ID)) {
                 id = new StringBuilder(pathParams.get(ID));
                 LOGGER.info("API is : {} and path param is : {}", RoutingContextHelper.getRequestPath(routingContext), pathParams);
-                LOGGER.debug("id :" + id);
+                LOGGER.debug("id: {}", id);
             } else if (pathParams.containsKey(USER_ID) && pathParams.containsKey(JSON_ALIAS)) {
                 id = new StringBuilder();
                 LOGGER.info("User id and alias name are present : {}, {}", routingContext.request().path(), pathParams);
