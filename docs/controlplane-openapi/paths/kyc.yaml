@@ -1,0 +1,49 @@
+/iudx/v2/auth/kyc/verify:
+  post:
+    summary: Verify KYC
+    tags:
+    - KYC APIs
+    responses:
+      '200':
+        description: OK
+    operationId: post-auth-v2-kyc-verify
+    security:
+    - authorization: []
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              auth_code:
+                type: string
+              code_verifier:
+                type: string
+/iudx/v2/auth/kyc/confirm/{id}:
+  get:
+    summary: Confirm KYC verification
+    tags:
+    - KYC APIs
+    responses:
+      '200':
+        description: OK
+    operationId: get-auth-v2-kyc-confirm
+    parameters:
+    - schema:
+        type: string
+      name: id
+      in: path
+      required: true
+    security:
+    - authorization: []
+/iudx/v2/auth/kyc/revoke:
+  post:
+    summary: Revoke KYC Verification
+    tags:
+    - KYC APIs
+    responses:
+      '200':
+        description: OK
+    operationId: post-auth-v2-kyc-revoke
+    security:
+    - authorization: []

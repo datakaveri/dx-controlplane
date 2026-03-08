@@ -75,7 +75,7 @@ public class ApdApiServerVerticle extends AbstractVerticle {
     String supportEmail = config().getString("supportEmail", "support@datakaveri.org");
 
     // Load the OpenAPI spec
-    String yamlContent = vertx.fileSystem().readFileBlocking("docs/openapi2.yaml").toString(
+    String yamlContent = vertx.fileSystem().readFileBlocking("docs/acl-openapi.yaml").toString(
         StandardCharsets.UTF_8);
 
     /* Initialize api spec buffer - since configured hostname support_email needs to be in it */

@@ -1,0 +1,1321 @@
+/iudx/v2/auth/organisations/{id}/users/{user_id}:
+  parameters:
+  - name: id
+    in: path
+    required: true
+    description: UUID of the organisation
+    schema:
+      type: string
+      format: uuid
+  - name: user_id
+    in: path
+    required: true
+    description: UUID of the user
+    schema:
+      type: string
+      format: uuid
+  - name: delegatorId
+    in: query
+    description: Unique ID of the delegator
+    schema:
+      type: string
+      format: uuid
+      pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+  delete:
+    summary: 'AAA-012-OrgAdmin: Delete User by ID'
+    description: 'This API allows an organization administrator to delete a specific user from their organization, identified
+      by the user''s `user_id` and the organization''s `id` in the path parameters. A successful response indicates that the
+      user has been deleted from the organization.
+
+      **Log Type:** `USER_ACTION`
+
+      '
+    tags:
+    - Organisation APIs
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  description: URN type of the response.
+                title:
+                  type: string
+                  description: A human-readable title for the message response.
+                detail:
+                  type: string
+                  description: Details about the deletion operation.
+              x-examples:
+                Example 1:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  detail: Deleted Organisation User
+            examples:
+              Example 1:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  detail: Deleted Organisation User
+    operationId: delete-auth-v2-organisations-users-id
+    security:
+    - authorization: []
+  put:
+    summary: 'AAA-013-OrgAdmin: Update Organization User Role'
+    description: 'This API allows an organization administrator to update the role of a specific user within their organization.
+      The user is identified by their `user_id` and the organization by its `id` in the path parameters. The request body
+      should contain the new role for the user. A successful response indicates that the user''s role has been updated.
+
+      **Log Type:** `USER_ACTION`
+
+      '
+    tags:
+    - Organisation APIs
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  description: URN type of the response.
+                title:
+                  type: string
+                  description: A human-readable title for the message response.
+                detail:
+                  type: string
+                  description: Details about the update operation.
+              x-examples:
+                Example 1:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  detail: Updated Organisation User Role
+            examples:
+              Example 1:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  detail: Updated Organisation User Role
+    operationId: put-auth-v2-organization-users-role
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              role:
+                type: string
+                description: New role for the user within the organization. Valid value is admin.
+          examples:
+            Example 1:
+              value:
+                role: admin
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: UUID of the organisation
+      schema:
+        type: string
+        format: uuid
+    - name: user_id
+      in: path
+      required: true
+      description: UUID of the User
+      schema:
+        type: string
+        format: uuid
+    security:
+    - authorization: []
+  get:
+    summary: (Org Admin) Get User Information
+    tags:
+    - Role APIs
+    responses:
+      '200':
+        description: OK
+    operationId: get-auth-v2-organisations-id-users-user_id
+    security:
+    - authorization: []
+/iudx/v2/auth/user/custom/role:
+  post:
+    operationId: post-auth-v2-custom-role
+    summary: Create custom role and scopes
+    description: 'Creates a custom role and optional scopes for a particular user
+
+      '
+    tags:
+    - Role APIs
+    security:
+    - authorization: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - user_id
+            properties:
+              user_id:
+                type: string
+                description: UUID of the userID
+                example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+              scope:
+                type: array
+                description: Optional array of scopes associated with the role
+                items:
+                  type: string
+                nullable: true
+                example:
+                - scope1
+                - scope2
+    responses:
+      '201':
+        description: Custom role created successfully
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/role.yaml#/CustomRoleResponse
+            example:
+              id: 550e8400-e29b-41d4-a716-446655440000
+              userId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+              scope:
+              - scope1
+              - scope2
+              createdAt: '2026-02-03T10:15:30'
+              updatedAt: '2026-02-03T10:15:30'
+      '400':
+        description: Invalid request (missing mandatory role or malformed scope)
+      '403':
+        description: Forbidden (e.g., constraints not met or role already exists)
+  get:
+    summary: Get Custom Roles and Scopes
+    tags:
+    - Role APIs
+    operationId: get-auth-v2-custom-role
+    parameters:
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    - name: role
+      in: query
+      description: Filter by role name
+      schema:
+        type: string
+    - name: userId
+      in: query
+      description: Filter by user UUID
+      schema:
+        type: string
+        format: uuid
+    security:
+    - authorization: []
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/role.yaml#/CustomRoleResponse
+            examples:
+              Example 1:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                  - id: a12b34cd-5678-90ef-1234-567890abcdef
+                    userId: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                    role: custom_role
+                    scope:
+                    - scope1
+                    - scope2
+                    createdAt: '2025-06-03T16:01:59.532782'
+                    updatedAt: '2025-06-03T16:01:59.532782'
+                    tableName: custom_user_role
+                  paginationInfo:
+                    page: 1
+                    size: 1
+                    totalCount: 12
+                    totalPages: 12
+                    hasNext: true
+                    hasPrevious: false
+      '401':
+        description: Unauthorized – Token invalid or expired, or caller lacks permission
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+  delete:
+    summary: Delete Custom Role Scope or Request
+    description: 'Deletes a custom role scope or an entire custom role request. Either requestId OR (userId and scope) must
+      be provided. Only the original requester or COS_ADMIN is allowed.
+
+      '
+    tags:
+    - Role APIs
+    operationId: delete-auth-v2-custom-role
+    security:
+    - authorization: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              requestId:
+                type: string
+                format: uuid
+                description: Custom role request ID
+              userId:
+                type: string
+                format: uuid
+                description: Target user ID
+              scope:
+                type: string
+                description: Scope to be removed
+            oneOf:
+            - required:
+              - requestId
+            - required:
+              - userId
+              - scope
+    responses:
+      '200':
+        description: Successfully deleted custom role or scope
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Success
+      '400':
+        description: Bad Request – Invalid input
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/BadRequest
+      '401':
+        description: Unauthorized – Token invalid or expired
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden – Not the requester or admin
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
+      '404':
+        description: Not Found – Request or scope does not exist
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/NotFound
+/auth/v2/custom-role/requester:
+  get:
+    summary: Get Custom Roles and Scopes created by the requester
+    description: 'Returns all custom role requests created by the authenticated requester. Accessible only to ORG_ADMIN and
+      COS_ADMIN.
+
+      '
+    tags:
+    - Role APIs
+    operationId: get-auth-v2-custom-role-requester
+    parameters:
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    security:
+    - authorization: []
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/role.yaml#/CustomRoleResponse
+      '401':
+        description: Unauthorized – Token invalid or expired
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden (e.g., constraints not met or role already exists)
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
+/iudx/v2/auth/user:
+  get:
+    summary: (User) Get User Information
+    tags:
+    - Role APIs
+    description: 'Retrieves the profile and account details of the currently authenticated user.
+
+      **Log Type:** `USER_ACTION`
+
+      '
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema:
+              type: object
+              x-examples:
+                Example 1:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                    roles:
+                    - offline_access
+                    - compute
+                    - consumer
+                    - default-roles-myrealm
+                    - uma_authorization
+                    organisationId: ''
+                    organisationName: ''
+                    sub: 436cb796-5826-458b-a914-a54721f70997
+                    emailVerified: true
+                    kycVerified: false
+                    name: test test
+                    preferredUsername: test
+                    givenName: test
+                    familyName: test
+                    email: testing@gmail.com
+                    pendingRoles: []
+                    organisation:
+                      id: 98e74f31-4e40-4615-85b8-61256f0bc7c4
+                      organisationId: e87246e2-5da5-40b0-973c-690d2f48f879
+                      userId: 436cb796-5826-458b-a914-a54721f70997
+                      userName: test test
+                      status: granted
+                      jobTitle: Employee
+                      empId: EMP8790
+                      requestedAt: '2025-06-04T06:13:58.917342'
+                      processedAt: '2025-06-04T06:13:58.917342'
+                      request_type: organisation_join
+                    createdAt: '2025-06-04T06:12:48.991'
+                    kycData: {}
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: object
+                  properties:
+                    roles:
+                      type: array
+                      items:
+                        type: string
+                    organisationId:
+                      type: string
+                    organisationName:
+                      type: string
+                    sub:
+                      type: string
+                    emailVerified:
+                      type: boolean
+                    kycVerified:
+                      type: boolean
+                    name:
+                      type: string
+                    preferredUsername:
+                      type: string
+                    givenName:
+                      type: string
+                    familyName:
+                      type: string
+                    email:
+                      type: string
+                    pendingRoles:
+                      type: array
+                      items:
+                        type: object
+                    organisation:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        organisationId:
+                          type: string
+                        userId:
+                          type: string
+                        userName:
+                          type: string
+                        status:
+                          type: string
+                        jobTitle:
+                          type: string
+                        empId:
+                          type: string
+                        requestedAt:
+                          type: string
+                        processedAt:
+                          type: string
+                        request_type:
+                          type: string
+                    createdAt:
+                      type: string
+                    kycData:
+                      type: object
+            examples:
+              Example 1:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                    roles:
+                    - offline_access
+                    - compute
+                    - consumer
+                    - default-roles-myrealm
+                    - uma_authorization
+                    organisationId: ''
+                    organisationName: ''
+                    sub: 436cb796-5826-458b-a914-a54721f70997
+                    emailVerified: true
+                    kycVerified: false
+                    name: test test
+                    preferredUsername: test
+                    givenName: test
+                    familyName: test
+                    email: testing@gmail.com
+                    pendingRoles: []
+                    organisation:
+                      id: 98e74f31-4e40-4615-85b8-61256f0bc7c4
+                      organisationId: e87246e2-5da5-40b0-973c-690d2f48f879
+                      userId: 436cb796-5826-458b-a914-a54721f70997
+                      userName: test test
+                      status: granted
+                      jobTitle: Employee
+                      empId: EMP8790
+                      requestedAt: '2025-06-04T06:13:58.917342'
+                      processedAt: '2025-06-04T06:13:58.917342'
+                      request_type: organisation_join
+                    createdAt: '2025-06-04T06:12:48.991'
+                    kycData: {}
+    operationId: get-auth-v2-user
+    security:
+    - authorization: []
+  put:
+    summary: (User) Update First Name, Last Name, Social Media Information
+    tags:
+    - Role APIs
+    description: 'Updates the first name, last name, and social media information of the currently authenticated user.
+
+      **Log Type:** `USER_ACTION`
+
+      '
+    responses:
+      '200':
+        description: OK
+    operationId: put-auth-v2-user
+    security:
+    - authorization: []
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              first_name:
+                type: string
+                x-stoplight:
+                  id: pdtm28py9tigj
+              last_name:
+                type: string
+                x-stoplight:
+                  id: l8unuppdsu8n6
+              twitter_account:
+                type: string
+                x-stoplight:
+                  id: dxe1oy55b3ovw
+              linkedin_account:
+                type: string
+                x-stoplight:
+                  id: gvxoaj47lbpib
+              github_account:
+                type: string
+                x-stoplight:
+                  id: 66hcqj28wo7vu
+/iudx/v2/auth/user/password:
+  put:
+    summary: (User) Change Password
+    description: 'Allows the logged-in user to change their password.
+
+      Only the new password needs to be provided.
+
+      '
+    tags:
+    - Role APIs
+    operationId: put-auth-v2-user-password
+    security:
+    - authorization: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - new_password
+            properties:
+              new_password:
+                type: string
+                description: 'Password must be 8–20 characters long and include at least one uppercase letter, one lowercase
+                  letter, one number, and one special character.
+
+                  '
+                minLength: 8
+                maxLength: 20
+                pattern: ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,20}$
+                example: Strong@123
+    responses:
+      '200':
+        description: Password changed successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: urn:dx:ControlPlane:success
+                title:
+                  type: string
+                  example: Password Change Successful
+                result:
+                  type: string
+                  example: Password updated successfully.
+      '400':
+        description: Bad Request - Failed password policy validation
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: urn:dx:ControlPlane:error
+                title:
+                  type: string
+                  example: Password Change Failed
+                detail:
+                  type: string
+                  example: New password does not meet policy requirements.
+      '401':
+        description: Unauthorized - Missing or invalid authentication token
+      '500':
+        description: Internal Server Error
+/iudx/v2/auth/admin/user/{id}:
+  parameters:
+  - schema:
+      type: string
+    name: id
+    in: path
+    required: true
+  get:
+    summary: (COS Admin) Get User Information
+    tags:
+    - Role APIs
+    description: 'Retrieves the profile and account details of a user. Accessible only by COS Admin.
+
+      **Log Type:** `USER_ACTION`
+
+      '
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: object
+                  properties:
+                    roles:
+                      type: array
+                      items:
+                        type: string
+                    organisationId:
+                      type: string
+                    organisationName:
+                      type: string
+                    sub:
+                      type: string
+                    emailVerified:
+                      type: boolean
+                    kycVerified:
+                      type: boolean
+                    name:
+                      type: string
+                    preferredUsername:
+                      type: string
+                    givenName:
+                      type: string
+                    familyName:
+                      type: string
+                    email:
+                      type: string
+                    pendingRoles:
+                      type: array
+                      items:
+                        type: object
+                        properties: {}
+                    organisation:
+                      type: object
+                      properties: {}
+                    createdAt:
+                      type: string
+                    kycData:
+                      type: object
+                      properties: {}
+              x-examples:
+                Example 1:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                    roles:
+                    - cos_admin
+                    - offline_access
+                    - default-roles-myrealm
+                    - uma_authorization
+                    organisationId: ''
+                    organisationName: ''
+                    sub: a2899137-8458-40a6-9be8-084cfd1890e5
+                    emailVerified: false
+                    kycVerified: false
+                    name: User user
+                    preferredUsername: user
+                    givenName: User
+                    familyName: user
+                    email: user@gmail.com
+                    pendingRoles: []
+                    organisation: {}
+                    createdAt: '2025-05-21T09:33:12.073'
+                    kycData: {}
+    operationId: get-auth-v2-user-id-admin
+    parameters:
+    - schema:
+        type: string
+      in: query
+      name: id
+      description: UUID of userId
+    security:
+    - authorization: []
+/iudx/v2/auth/admin/user:
+  get:
+    summary: (COS Admin) Get All Users Info
+    description: 'Retrieves the profile and account details of all users. Accessible only by COS Admin.
+
+      **Log Type:** `USER_ACTION`
+
+      '
+    tags:
+    - Role APIs
+    responses:
+      '200':
+        description: Get All users info
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              x-examples:
+                Example 1:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                  - organisationId: org-123
+                    organisationName: ''
+                    sub: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                    emailVerified: false
+                    kycVerified: true
+                    name: test test
+                    preferredUsername: testuser
+                    givenName: test
+                    familyName: test
+                    email: test@gmail.com
+                    pending_roles: []
+                    organisation:
+                      id: 4202493c-7c64-49b0-8f61-2000ca3d147c
+                      requestedBy: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                      name: Quants Sandbox
+                      logoPath: /logos/ai.png
+                      entityType: Private
+                      orgSector: Technology
+                      websiteLink: https://ai.example.com
+                      address: 123 Quant Labs, Bangalore, India
+                      certificatePath: /documents/certificate.pdf
+                      pancardPath: /documents/pancard.pdf
+                      status: pending
+                      userName: test test
+                      empId: EMP12345
+                      jobTitle: Manager
+                      orgManagerphoneNo: +91-9876543210
+                      createdAt: '2025-06-03T16:25:25.167724'
+                      updatedAt: '2025-06-03T16:25:25.167724'
+                      request_type: organisation_create
+                    createdAt: null
+                    kycInformation: {}
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      organisationId:
+                        type: string
+                      organisationName:
+                        type: string
+                      sub:
+                        type: string
+                      emailVerified:
+                        type: boolean
+                      kycVerified:
+                        type: boolean
+                      name:
+                        type: string
+                      preferredUsername:
+                        type: string
+                      givenName:
+                        type: string
+                      familyName:
+                        type: string
+                      email:
+                        type: string
+                      pending_roles:
+                        type: array
+                        items:
+                          type: object
+                      organisation:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          requestedBy:
+                            type: string
+                          name:
+                            type: string
+                          logoPath:
+                            type: string
+                          entityType:
+                            type: string
+                          orgSector:
+                            type: string
+                          websiteLink:
+                            type: string
+                          address:
+                            type: string
+                          certificatePath:
+                            type: string
+                          pancardPath:
+                            type: string
+                          status:
+                            type: string
+                          userName:
+                            type: string
+                          empId:
+                            type: string
+                          jobTitle:
+                            type: string
+                          orgManagerphoneNo:
+                            type: string
+                          createdAt:
+                            type: string
+                          updatedAt:
+                            type: string
+                          request_type:
+                            type: string
+                      createdAt:
+                        type: string
+                      kycInformation:
+                        type: object
+                paginationInfo:
+                  type: object
+                  x-stoplight:
+                    id: q5nv96hnpwunm
+                  properties:
+                    page:
+                      type: integer
+                      x-stoplight:
+                        id: qr8qhteoqy2g9
+                    size:
+                      type: integer
+                      x-stoplight:
+                        id: ogsnoc6zb4i5r
+                    totalPages:
+                      type: integer
+                      x-stoplight:
+                        id: qyz4oigpr2pld
+                    totalCount:
+                      type: integer
+                      x-stoplight:
+                        id: wn8hfnis26t2t
+                    hasNext:
+                      type: boolean
+                      x-stoplight:
+                        id: lzh9xiuynbj2d
+                    hasPrevious:
+                      type: boolean
+                      x-stoplight:
+                        id: cbvofwsy8sllb
+            examples:
+              Example 1:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                  - organisationId: org-123
+                    organisationName: ''
+                    sub: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                    emailVerified: false
+                    kycVerified: true
+                    name: test test
+                    preferredUsername: testuser
+                    givenName: test
+                    familyName: test
+                    email: test@gmail.com
+                    pending_roles: []
+                    organisation:
+                      id: 4202493c-7c64-49b0-8f61-2000ca3d147c
+                      requestedBy: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                      name: Quants Sandbox
+                      logoPath: /logos/ai.png
+                      entityType: Private
+                      orgSector: Technology
+                      websiteLink: https://ai.example.com
+                      address: 123 Quant Labs, Bangalore, India
+                      certificatePath: /documents/certificate.pdf
+                      pancardPath: /documents/pancard.pdf
+                      status: pending
+                      userName: test test
+                      empId: EMP12345
+                      jobTitle: Manager
+                      orgManagerphoneNo: +91-9876543210
+                      createdAt: '2025-06-03T16:25:25.167724'
+                      updatedAt: '2025-06-03T16:25:25.167724'
+                      request_type: organisation_create
+                    createdAt: null
+                    kycInformation: {}
+          application/postscript:
+            schema:
+              type: object
+              properties: {}
+    operationId: get-auth-v2-admin-user
+    security:
+    - authorization: []
+/iudx/v2/auth/user/basic:
+  get:
+    summary: (All Users) Get basic user information
+    description: 'Returns paginated list of users with UUID, name, username, and email.
+
+      **Log Type:** `USER_ACTION`
+
+      '
+    tags:
+    - Role APIs
+    operationId: get-auth-v2-user-search
+    security:
+    - authorization: []
+    responses:
+      '200':
+        description: Successfully retrieved user information
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: urn:dx:ControlPlane:success
+                title:
+                  type: string
+                  example: Success
+                result:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      sub:
+                        type: string
+                        format: uuid
+                        example: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                      name:
+                        type: string
+                        example: test test
+                      preferredUsername:
+                        type: string
+                        example: testuser
+                      givenName:
+                        type: string
+                        example: test
+                      familyName:
+                        type: string
+                        example: test
+                      email:
+                        type: string
+                        format: email
+                        example: test@gmail.com
+                paginationInfo:
+                  $ref: ../components/schemas/pagination.yaml#/PaginationInfoResponse
+/iudx/v2/auth/user/update:
+  post:
+    summary: (User) Deactivate User Account
+    description: 'Deactivates the currently authenticated user''s account.
+
+      **Log Type:** `USER_ACTION`
+
+      '
+    tags:
+    - Role APIs
+    requestBody:
+      description: Status type - Activate or Deactivate
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            properties:
+              status:
+                type: string
+            required:
+            - status
+    responses:
+      '200':
+        description: OK
+    operationId: post-auth-v2-user-update
+    security:
+    - authorization: []
+/iudx/v2/auth/admin/{id}/update:
+  post:
+    summary: (Admin) Deactivate/Activate User Account
+    description: 'Deactivates or activates a user account by ID. Accessible only by Admin.
+
+      **Log Type:** `USER_ACTION`
+
+      '
+    tags:
+    - Role APIs
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: UUID of the user
+      schema:
+        type: string
+        format: uuid
+    requestBody:
+      description: Status type - Activate or Deactivate
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            properties:
+              status:
+                type: string
+            required:
+            - status
+    responses:
+      '200':
+        description: OK
+    operationId: post-auth-v2-admin-id-update
+    security:
+    - authorization: []
+/iudx/v2/auth/user/delete:
+  delete:
+    summary: (User) Delete User Account
+    tags:
+    - Role APIs
+    responses:
+      '200':
+        description: OK
+    operationId: delete-auth-v2-user
+    description: 'Permanently deletes the currently authenticated user''s account.
+
+      **Log Type:** `USER_ACTION`
+
+      '
+    security:
+    - authorization: []
+/iudx/v2/auth/user/description/info:
+  post:
+    summary: (ADARV) Add user info
+    tags:
+    - Role APIs
+    operationId: post-auth-v2-user-info
+    security:
+    - authorization: []
+    requestBody:
+      description: This endpoint allows adding user information.
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              about:
+                type: string
+                description: Short description about the user
+                example: Lorem ipsum, dolor sit amet consectetur adipisicing elit...
+              experience:
+                type: array
+                description: List of work experiences
+                items:
+                  type: object
+                  properties:
+                    role:
+                      type: string
+                      example: ICMR Researcher
+                    time:
+                      type: string
+                      example: Jan 2020–present (4yrs)
+                    location:
+                      type: string
+                      example: Delhi
+              education:
+                type: array
+                description: Educational qualifications
+                items:
+                  type: object
+                  properties:
+                    institute:
+                      type: string
+                      example: IIT Delhi
+                    time:
+                      type: string
+                      example: 2016–2020
+                    location:
+                      type: string
+                      example: Delhi
+              projects:
+                type: array
+                description: List of projects completed by the user
+                items:
+                  type: object
+                  properties:
+                    institute:
+                      type: string
+                      example: ICMR
+                    time:
+                      type: string
+                      example: '2021'
+                    location:
+                      type: string
+                      example: Delhi
+                    about:
+                      type: string
+                      example: Developed a system for secure data sharing
+              publications:
+                type: array
+                description: List of publications by the user
+                items:
+                  type: object
+                  properties:
+                    institute:
+                      type: string
+                      example: ICMR
+                    time:
+                      type: string
+                      example: '2021'
+                    location:
+                      type: string
+                      example: Delhi
+                    about:
+                      type: string
+                      example: Paper on privacy-preserving IoT data sharing
+              skills:
+                type: array
+                description: List of user skills
+                items:
+                  type: string
+                  example: React
+    responses:
+      '201':
+        description: User information created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: success
+                title:
+                  type: string
+                  example: User Information created successfully
+                result:
+                  type: object
+  patch:
+    summary: (ADARV)Update user info
+    tags:
+    - Role APIs
+    operationId: patch-auth-v2-user-info
+    security:
+    - authorization: []
+    requestBody:
+      description: This endpoint allows updating user information partially. Only fields included in the request will be updated.
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              about:
+                type: string
+                description: Short description about the user
+                example: Updated description about the user
+              experience:
+                type: array
+                description: List of work experiences to update
+                items:
+                  type: object
+                  properties:
+                    role:
+                      type: string
+                      example: Senior ICMR Researcher
+                    time:
+                      type: string
+                      example: Jan 2020–present (5yrs)
+                    location:
+                      type: string
+                      example: Delhi
+              education:
+                type: array
+                description: Educational qualifications to update
+                items:
+                  type: object
+                  properties:
+                    institute:
+                      type: string
+                      example: IIT Delhi
+                    time:
+                      type: string
+                      example: 2016–2020
+                    location:
+                      type: string
+                      example: Delhi
+              projects:
+                type: array
+                description: List of projects to update
+                items:
+                  type: object
+                  properties:
+                    institute:
+                      type: string
+                      example: ICMR
+                    time:
+                      type: string
+                      example: '2021'
+                    location:
+                      type: string
+                      example: Delhi
+                    about:
+                      type: string
+                      example: Improved secure data sharing system
+              publications:
+                type: array
+                description: List of publications to update
+                items:
+                  type: object
+                  properties:
+                    institute:
+                      type: string
+                      example: ICMR
+                    time:
+                      type: string
+                      example: '2021'
+                    location:
+                      type: string
+                      example: Delhi
+                    about:
+                      type: string
+                      example: Paper on privacy-preserving IoT data sharing
+              skills:
+                type: array
+                description: List of user skills to update
+                items:
+                  type: string
+                  example: React
+    responses:
+      '200':
+        description: User info updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: success
+                title:
+                  type: string
+                  example: User info updated
+                result:
+                  type: object
+                  properties:
+                    about:
+                      type: string
+                      example: Updated description about the user
+                    skills:
+                      type: array
+                      items:
+                        type: string
+                      example:
+                      - React
+                      - Angular
+  get:
+    summary: (ADARV) Get user info
+    tags:
+    - Role APIs
+    operationId: get-auth-v2-user-info
+    security:
+    - authorization: []
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: success
+                title:
+                  type: string
+                  example: Fetched user info
+                result:
+                  type: object
+                  properties:
+                    about:
+                      type: string
+                      example: Lorem ipsum...
+                    skills:
+                      type: array
+                      items:
+                        type: string
+                      example:
+                      - React
+                      - Angular

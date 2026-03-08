@@ -1,0 +1,95 @@
+/iudx/acl/apd/v2/verify:
+  post:
+    tags:
+    - Verify
+    summary: Verify Policy
+    description: 'This endpoint checks if a policy exists for the specified item and owner in the APD server. It returns the
+      policy constraints if a policy is found.
+
+
+      `Note` : This endpoint is exclusive for internal use. The DX authentication server will invoke it before issuing access
+      tokens to ensure the presence of a valid policy for the consumer and the requested resource.
+
+      '
+    operationId: get-auth-v1-verify
+    parameters:
+    - in: header
+      name: Authorization
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        example: Bearer <JWT>
+    requestBody:
+      description: The request body is a JSON object that contains information about the user, owner, and item.The user's
+        ID, name, and email, as well as the owner's ID, name, and email, are provided.Additionally, information about the
+        item, including its ID and type, is included.
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas.yaml#/requestBodyForVerify
+          examples:
+            Request body for Verify Policy:
+              value:
+                user:
+                  id: b58da193-23d9-43eb-b98a-a103d4b6103c
+                  name:
+                    firstName: demo
+                    lastName: name
+                  email: test_user_1@example.com
+                owner:
+                  id: b2c27f3f-2524-4a84-816e-91f9ab23f837
+                  name:
+                    firstName: test
+                    lastName: provider
+                  email: test@provider.com
+                item:
+                  itemId: b58da193-23d9-43eb-b98a-a103d4b6103c
+                  itemType: DATABANK
+    responses:
+      '200':
+        description: Policy verification successful
+        content:
+          application/json:
+            example:
+              type: urn:dx:apdServerPanel:success
+              title: Success
+              result:
+                type: urn:apd:Allow
+                constraints:
+                  subjects:
+                    allowedOrgIds:
+                    - <uuid>
+                    - <uuid>
+                    allowedUserIds:
+                    - <uuid>
+                    allowedRoles:
+                    - consumer
+                  access:
+                  - accessType: sub
+                    expiry: 1735689600
+                expiryAt: '2026-08-04T20:00:19'
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            example:
+              type: urn:dx:acl:badRequest
+              title: Bad Request
+              detail: Bad Request
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            example:
+              type: urn:apd:Deny
+              title: Policy does not exist
+              detail: Invalid request format/Incorrect request
+    security:
+    - authorization: []
+    x-codeSamples:
+    - lang: cURL
+      label: Verify policy
+      source: "curl --location --request POST ''https://${HOSTNAME}/iudx/acl/apd/v2/verify' \\\n--header 'Authorization: bearer\
+        \ <tokenValue>' \\\n--header 'Content-Type: application/json' \\\n  --data-raw '<payload>'\n"

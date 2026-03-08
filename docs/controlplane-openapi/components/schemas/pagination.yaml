@@ -1,0 +1,114 @@
+PaginationInfo:
+  type: object
+  description: Pagination metadata for paged responses
+  properties:
+    page:
+      type: integer
+      description: Current page number
+    size:
+      type: integer
+      description: Number of items per page
+    totalCount:
+      type: integer
+      description: Total number of items across all pages
+    totalPages:
+      type: integer
+      description: Total number of pages available
+    hasNext:
+      type: boolean
+      description: Indicates if more pages are available
+    hasPrevious:
+      type: boolean
+      description: Indicates if previous pages exist
+  required:
+  - page
+  - size
+  - totalCount
+  - totalPages
+  - hasNext
+  - hasPrevious
+PaginationInfoResponse:
+  type: object
+  description: Pagination metadata for paged responses
+  required:
+  - page
+  - size
+  - totalCount
+  - totalPages
+  - hasNext
+  - hasPrevious
+  properties:
+    page:
+      type: integer
+      description: Current page number (1-based)
+      example: 1
+    size:
+      type: integer
+      description: Number of items per page
+      example: 10
+    totalCount:
+      type: integer
+      description: Total number of items across all pages
+      example: 1
+    totalPages:
+      type: integer
+      description: Total number of pages available
+      example: 1
+    hasNext:
+      type: boolean
+      description: Indicates whether a next page exists
+      example: false
+    hasPrevious:
+      type: boolean
+      description: Indicates whether a previous page exists
+      example: fals
+GetPaginationInfo:
+  type: object
+  description: Pagination metadata for list responses
+  required:
+  - page
+  - size
+  - totalCount
+  - totalPages
+  - hasNext
+  - hasPrevious
+  properties:
+    page:
+      type: integer
+      example: 1
+    size:
+      type: integer
+      example: 1
+    totalCount:
+      type: integer
+      example: 1
+    totalPages:
+      type: integer
+      example: 1
+    hasNext:
+      type: boolean
+      example: false
+    hasPrevious:
+      type: boolean
+      example: false
+PageInfo:
+  type: object
+  properties:
+    page:
+      type: integer
+      example: 1
+    size:
+      type: integer
+      example: 1
+    totalCount:
+      type: integer
+      example: 346
+    totalPages:
+      type: integer
+      example: 346
+    hasNext:
+      type: boolean
+      example: true
+    hasPrevious:
+      type: boolean
+      example: false

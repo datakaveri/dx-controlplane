@@ -1,0 +1,571 @@
+/iudx/v2/user/interactions:
+  post:
+    tags:
+    - User Interactions
+    operationId: post-user-intraction
+    summary: Create or update user interaction (like, dislike, bookmark)
+    description: 'Allows a user to like, dislike, bookmark, or remove an interaction on an entity. Uses a single unified endpoint
+      for all interaction types.
+
+      '
+    security:
+    - authorization: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/interaction.yaml#/UserInteractionRequest
+          examples:
+            like:
+              summary: Like an entity
+              value:
+                assetId: e74112d5-b58b-401e-a799-712b473279ea
+                assetType: DATABANK
+                actionType: LIKE
+            dislike:
+              summary: Dislike an entity
+              value:
+                assetId: e74112d5-b58b-401e-a799-712b473279ea
+                assetType: DATABANK
+                actionType: DISLIKE
+            bookmark:
+              summary: Bookmark an entity
+              value:
+                assetId: e74112d5-b58b-401e-a799-712b473279ea
+                assetType: DATABANK
+                actionType: BOOKMARK
+            removeVote:
+              summary: Remove vote (neutral)
+              value:
+                assetId: e74112d5-b58b-401e-a799-712b473279ea
+                assetType: DATABANK
+                actionType: NEUTRAL
+            removeBookmark:
+              summary: Remove bookmark
+              value:
+                assetId: e74112d5-b58b-401e-a799-712b473279ea
+                assetType: DATABANK
+                actionType: UNBOOKMARK
+    responses:
+      '200':
+        description: Interaction recorded successfully
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/interaction.yaml#/InteractionResponse
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    x-codeSamples:
+    - lang: cURL
+      label: submit interaction
+      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/user/interactions'' \
+
+        --header ''Authorization: Bearer <jwt token>'' \
+
+        --header ''Content-Type: application/json'' \
+
+        --data ''{
+
+        "assetId": "e74112d5-b58b-401e-a799-712b473279ea",
+
+        "assetType": "DATABANK",
+
+        "actionType": "LIKE"
+
+        }''
+
+        '
+  get:
+    tags:
+    - User Interactions
+    operationId: get-user-interaction
+    summary: Get user interaction status for an entity
+    description: 'Returns a paginated list of entities the authenticated user has interacted with (liked, disliked, bookmarked),
+      including the interaction state per entity.
+
+      '
+    security:
+    - authorization: []
+    parameters:
+    - name: assetId
+      in: query
+      description: Unique identifier of the asset
+      required: false
+      schema:
+        type: string
+        format: uuid
+    - name: assetType
+      in: query
+      description: Type of the asset
+      required: false
+      schema:
+        type: string
+        enum:
+        - DATABANK
+        - AI_MODEL
+        - USECASE
+    - name: actionType
+      in: query
+      description: Type of interaction action
+      required: false
+      schema:
+        type: string
+        enum:
+        - LIKE
+        - DISLIKE
+        - BOOKMARK
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    responses:
+      '200':
+        description: Successfully retrieved user interaction status
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/interaction.yaml#/UserInteractionResponse
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Get User Interaction Status
+      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/user/interactions'' \
+
+        --header ''Content-Type: application/json'' \
+
+        --header ''Authorization: Bearer <jwt token>''
+
+        '
+/iudx/v2/user/interactions/sync:
+  get:
+    tags:
+    - User Interactions
+    operationId: sync-interaction-metrics
+    summary: Sync aggregated interaction metrics
+    description: 'Triggers synchronization of interaction metrics (likes, dislikes, bookmarks) into aggregated stores for
+      analytics or leaderboard usage.
+
+      **Authorization:** This API can be invoked only by users with the `cos_admin` role.
+
+      '
+    security:
+    - authorization: []
+    responses:
+      '200':
+        description: Interaction metrics synced successfully
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/interaction.yaml#/UserInteractionSyncResponse
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Get User Interaction Status
+      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/user/interactions/sync'' \
+
+        --header ''Content-Type: application/json'' \
+
+        --header ''Authorization: Bearer <jwt token>''
+
+        '
+/iudx/v2/user/feedback:
+  post:
+    tags:
+    - User Interactions
+    summary: Post user feedback on entity
+    description: 'Submit user feedback for a specific data asset, including an optional star rating (1-5) and/or a structured
+      action subtype with associated data. User should be the one who has already interacted with the asset before.
+
+      '
+    operationId: post-user-feedback
+    security:
+    - authorization: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - asset_id
+            properties:
+              asset_id:
+                type: string
+                format: uuid
+                description: UUID of the asset
+              entity_rating:
+                type: integer
+                minimum: 1
+                maximum: 5
+              action_subtype:
+                type: string
+              action_subdata:
+                type: object
+    responses:
+      '200':
+        description: Feedback successfully recorded
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                message:
+                  type: string
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+  get:
+    tags:
+    - User Interactions
+    summary: Get user feedback
+    description: 'Retrieve paginated user feedback with optional filters by user, asset, or action subtype.
+
+      '
+    operationId: get-user-feedback
+    security:
+    - authorization: []
+    parameters:
+    - name: user_id
+      in: query
+      description: Filter by user UUID
+      required: false
+      schema:
+        type: string
+        format: uuid
+    - name: asset_id
+      in: query
+      description: Filter by asset UUID
+      required: false
+      schema:
+        type: string
+        format: uuid
+    - name: action_subtype
+      in: query
+      description: Filter by action subtype (repeatable)
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    responses:
+      '200':
+        description: Successfully retrieved user feedback
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/interaction.yaml#/UserFeedbackPaginatedResponse
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Get user feedback
+      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/user/feedback?asset_id=811e9876-9381-4a25-8ad1-e8b289616ab8&action_subtype=bookmark&page=1&size=10''
+
+        '
+  delete:
+    tags:
+    - User Interactions
+    summary: Delete user feedback
+    description: 'Clears the feedback fields (entity_rating, action_subtype, action_subdata) for a specific feedback entry.
+      The record itself is retained. User should be the one who has already interacted with the asset before.
+
+      '
+    operationId: delete-user-feedback
+    security:
+    - authorization: []
+    parameters:
+    - name: id
+      in: query
+      description: UUID of the asset entry to delete
+      required: true
+      schema:
+        type: string
+        format: uuid
+    responses:
+      '200':
+        description: Feedback fields cleared successfully
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Delete user feedback
+      source: 'curl --location --request DELETE ''https://${HOSTNAME}/iudx/v2/user/feedback?id=811e9876-9381-4a25-8ad1-e8b289616ab8''
+        --header ''Authorization: Bearer ${TOKEN}''
+
+        '
+/iudx/v2/provider/feedback:
+  post:
+    tags:
+    - User Interactions
+    summary: Post provider feedback on entity
+    description: 'Submit provider feedback for a specific data asset, including an optional star rating (1-5) and/or a structured
+      action subtype with associated data. User should be the one who has already interacted with the asset before.
+
+      '
+    operationId: post-provider-feedback
+    security:
+    - authorization: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - asset_id
+            properties:
+              asset_id:
+                type: string
+                format: uuid
+                description: UUID of the asset
+              type:
+                type: string
+                enum:
+                - FAQ
+                - FEEDBACK
+                - INFO
+                - DATA_DESCRIPTION
+                description: Type of feedback
+              data:
+                type: object
+    responses:
+      '200':
+        description: Feedback successfully recorded
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                message:
+                  type: string
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+  get:
+    tags:
+    - User Interactions
+    summary: Get provider feedback
+    description: 'Retrieve paginated provider feedback with optional filters by user, asset, or type.
+
+      '
+    operationId: get-provider-feedback
+    security:
+    - authorization: []
+    parameters:
+    - name: user_id
+      in: query
+      description: Filter by user UUID
+      required: false
+      schema:
+        type: string
+        format: uuid
+    - name: asset_id
+      in: query
+      description: Filter by asset UUID
+      required: false
+      schema:
+        type: string
+        format: uuid
+    - name: type
+      in: query
+      description: Filter by action subtype (repeatable)
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    responses:
+      '200':
+        description: Successfully retrieved Provider feedback
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/interaction.yaml#/ProviderFeedbackPaginatedResponse
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Get user feedback
+      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/provider/feedback?asset_id=811e9876-9381-4a25-8ad1-e8b289616ab8&type=bookmark&page=1&size=10''
+
+        '
+  delete:
+    tags:
+    - User Interactions
+    summary: Delete provider feedback
+    description: 'Clears the feedback fields (data, type) for a specific feedback entry. User should be the one who has already
+      interacted with the asset before.
+
+      '
+    operationId: delete-provider-feedback
+    security:
+    - authorization: []
+    parameters:
+    - name: id
+      in: query
+      description: UUID of the asset entry to delete
+      required: true
+      schema:
+        type: string
+        format: uuid
+    responses:
+      '200':
+        description: Feedback fields cleared successfully
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Delete provider feedback
+      source: 'curl --location --request DELETE ''https://${HOSTNAME}/iudx/v2/provider/feedback?id=811e9876-9381-4a25-8ad1-e8b289616ab8''
+        --header ''Authorization: Bearer ${TOKEN}''
+
+        '

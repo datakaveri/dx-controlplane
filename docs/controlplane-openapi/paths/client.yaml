@@ -1,0 +1,60 @@
+/iudx/v2/auth/client:
+  post:
+    tags:
+    - Client APIs
+    description: 'Create a new client in the system.
+
+      Requires a valid authorization token.
+
+      The client will be created with a unique ID and secret.
+
+      '
+    operationId: post-create-client-secret
+    security:
+    - authorization: []
+    responses:
+      '201':
+        description: Client credentials created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                result:
+                  type: object
+                  properties:
+                    userId:
+                      type: string
+                      format: uuid
+                      example: e0782a4e-3bdb-43e3-be8c-7beafb89efc8
+                    clientId:
+                      type: string
+                      format: uuid
+                      example: b321c4a8-7183-425b-9942-6b6b668c628c
+                    clientSecret:
+                      type: string
+                      example: 9a9c944dfb215e444135d76c6baa8c6e51272a33
+                    createdAt:
+                      type: string
+                      format: date-time
+                      example: '2025-09-12T07:43:54.999972'
+                    updatedAt:
+                      type: string
+                      format: date-time
+                      example: '2025-10-29T11:38:48.246431'
+      '401':
+        description: Unauthorized – missing or invalid token
+    x-codeSamples:
+    - lang: curl
+      label: Example request
+      source: 'curl --location --request POST ''https://${HOSTNAME}/iudx/v2/auth/client'' \
+
+        --header ''Authorization: Bearer <token>''
+
+        '

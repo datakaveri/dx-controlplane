@@ -1,0 +1,782 @@
+/iudx/v2/auth/user/credit/balance:
+  get:
+    operationId: get-auth-v2-user-credit-balance
+    summary: Get the specified user's credit balance
+    description: "Returns the credit balance for the specified user (KYC-verified).\n\n **Log Type:** `COMPUTE`\n"
+    tags:
+    - Credit APIs
+    security:
+    - authorization: []
+    responses:
+      '200':
+        description: User credit balance retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                balance:
+                  type: number
+                  format: double
+      '401':
+        description: Unauthorized or KYC not verified
+      '404':
+        description: User credit record not found
+      '500':
+        description: Internal server error
+/iudx/v2/auth/admin/user/credit/balance/{id}:
+  parameters:
+  - name: id
+    in: path
+    required: true
+    description: UUID of the User
+    schema:
+      type: string
+      format: uuid
+  get:
+    operationId: get-auth-v2-admin-user-credit-balance
+    summary: Get the specified user's credit balance (COS ADMIN)
+    description: "Returns the credit balance for the specified user (KYC-verified).\n\n **Log Type:** `COMPUTE`\n"
+    tags:
+    - Credit APIs
+    security:
+    - authorization: []
+    responses:
+      '200':
+        description: User credit balance retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                balance:
+                  type: number
+                  format: double
+      '401':
+        description: Unauthorized or KYC not verified
+      '404':
+        description: User credit record not found
+      '500':
+        description: Internal server error
+/iudx/v2/auth/user/credit/request:
+  get:
+    summary: 'User: Get all pending credit requests'
+    description: 'Get all the pending credit requests of the user
+
+      **Log Type:** `COMPUTE`
+
+      '
+    tags:
+    - Credit APIs
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema:
+              type: object
+              x-examples:
+                Example 1:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                  - id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
+                    userId: 436cb796-5826-458b-a914-a54721f70997
+                    userName: test test
+                    amount: 10000
+                    status: pending
+                    requestedAt: '2025-06-04T09:47:27.323861'
+                    processedAt: '2025-06-04T09:47:27.323861'
+                    tableName: credit_requests
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      userId:
+                        type: string
+                      userName:
+                        type: string
+                      amount:
+                        type: integer
+                      status:
+                        type: string
+                      requestedAt:
+                        type: string
+                      processedAt:
+                        type: string
+                      tableName:
+                        type: string
+                paginationInfo:
+                  type: object
+                  x-stoplight:
+                    id: my3px3mqewfgl
+                  properties:
+                    page:
+                      type: integer
+                      x-stoplight:
+                        id: 9goqrkh1sslar
+                    size:
+                      type: integer
+                      x-stoplight:
+                        id: ilgv9t0luge3z
+                    totalPages:
+                      type: integer
+                      x-stoplight:
+                        id: wuibbpgtxgiua
+                    totalCount:
+                      type: integer
+                      x-stoplight:
+                        id: 9v8m5zcqo3hz8
+                    hasNext:
+                      type: boolean
+                      x-stoplight:
+                        id: 6grp7j6i0idak
+                    hasPrevious:
+                      type: boolean
+                      x-stoplight:
+                        id: jerroo5o1sohq
+            examples:
+              Example 1:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                  - id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
+                    userId: 436cb796-5826-458b-a914-a54721f70997
+                    userName: test test
+                    amount: 10000
+                    status: pending
+                    requestedAt: '2025-06-04T09:47:27.323861'
+                    processedAt: '2025-06-04T09:47:27.323861'
+                    tableName: credit_requests
+                  'null': null
+                  paginationInfo:
+                    page: 1
+                    size: 1
+                    totalCount: 346
+                    totalPages: 346
+                    hasNext: true
+                    hasPrevious: false
+    operationId: get-auth-v2-user-credit
+    security:
+    - authorization: []
+/iudx/v2/auth/user/credit/request/{id}:
+  delete:
+    tags:
+    - Credit APIs
+    summary: 'User: Delete Pending Credit Request'
+    description: 'delete the pending credit requests made by the user calling the API.
+
+      **Log Type:** `COMPUTE`
+
+      '
+    operationId: delete-auth-v2-user-credit
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: Unique ID of the credit request
+      schema:
+        type: string
+        format: uuid
+        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+    responses:
+      '200':
+        description: OK - Successfully deleted asset request.
+      '400':
+        description: Bad Request – Schema validation failed or incorrect query parameters
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/updateNotificationBadRequest
+      '401':
+        description: Unauthorized – Token invalid or expired, or caller lacks permission
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+    security:
+    - authorization: []
+/iudx/v2/auth/credit/request:
+  get:
+    summary: Get all credit requests by status (COS ADMIN)
+    description: 'Get all the credit requests.
+
+      **Log Type:** `COMPUTE`
+
+      '
+    tags:
+    - Credit APIs
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema:
+              type: object
+              x-examples:
+                Example 1:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                  - id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
+                    userId: 436cb796-5826-458b-a914-a54721f70997
+                    userName: test test
+                    amount: 10000
+                    status: pending
+                    requestedAt: '2025-06-04T09:47:27.323861'
+                    processedAt: '2025-06-04T09:47:27.323861'
+                    tableName: credit_requests
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      userId:
+                        type: string
+                      userName:
+                        type: string
+                      amount:
+                        type: integer
+                      status:
+                        type: string
+                      requestedAt:
+                        type: string
+                      processedAt:
+                        type: string
+                      tableName:
+                        type: string
+                paginationInfo:
+                  type: object
+                  x-stoplight:
+                    id: my3px3mqewfgl
+                  properties:
+                    page:
+                      type: integer
+                      x-stoplight:
+                        id: 9goqrkh1sslar
+                    size:
+                      type: integer
+                      x-stoplight:
+                        id: ilgv9t0luge3z
+                    totalPages:
+                      type: integer
+                      x-stoplight:
+                        id: wuibbpgtxgiua
+                    totalCount:
+                      type: integer
+                      x-stoplight:
+                        id: 9v8m5zcqo3hz8
+                    hasNext:
+                      type: boolean
+                      x-stoplight:
+                        id: 6grp7j6i0idak
+                    hasPrevious:
+                      type: boolean
+                      x-stoplight:
+                        id: jerroo5o1sohq
+            examples:
+              Example 1:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                  - id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
+                    userId: 436cb796-5826-458b-a914-a54721f70997
+                    userName: test test
+                    amount: 10000
+                    status: pending
+                    requestedAt: '2025-06-04T09:47:27.323861'
+                    processedAt: '2025-06-04T09:47:27.323861'
+                    tableName: credit_requests
+                  'null': null
+                  paginationInfo:
+                    page: 1
+                    size: 1
+                    totalCount: 346
+                    totalPages: 346
+                    hasNext: true
+                    hasPrevious: false
+    operationId: get-auth-v2-credit
+    security:
+    - authorization: []
+  post:
+    summary: Create Credit Request
+    tags:
+    - Credit APIs
+    description: 'This api helps users create credit request. The cos admin can then review and take action on those requests.
+
+      **Log Type:** `COMPUTE`
+
+      '
+    requestBody:
+      description: '- `additional_info` : Optional extra details about requester and intent
+
+        '
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            properties:
+              additional_info:
+                description: 'Used to define additional information to access data for educational, research, testing, non-commercial,
+                  or academic purposes.
+
+                  '
+                type: object
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    userId:
+                      type: string
+                    userName:
+                      type: string
+                    status:
+                      type: string
+                    requestedAt:
+                      type: string
+                    processedAt:
+                      type: string
+                    tableName:
+                      type: string
+              x-examples:
+                Example 1:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                    id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
+                    userId: 436cb796-5826-458b-a914-a54721f70997
+                    userName: test test
+                    status: pending
+                    requestedAt: '2025-06-04T09:47:27.323861'
+                    processedAt: '2025-06-04T09:47:27.323861'
+                    tableName: credit_requests
+            examples:
+              Example 1:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                    id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
+                    userId: 436cb796-5826-458b-a914-a54721f70997
+                    userName: test test
+                    status: pending
+                    requestedAt: '2025-06-04T09:47:27.323861'
+                    processedAt: '2025-06-04T09:47:27.323861'
+                    tableName: credit_requests
+    operationId: post-auth-v2-credit-request
+    security:
+    - authorization: []
+  put:
+    summary: Update Credit Request Status (COS ADMIN)
+    description: 'This api helps COS ADMIN to update the credit requests and add credits or reject the request of the users.
+
+      **Log Type:** `COMPUTE`
+
+      '
+    tags:
+    - Credit APIs
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    userId:
+                      type: string
+                    amount:
+                      type: integer
+                    transactedBy:
+                      type: string
+                    transactionStatus:
+                      type: string
+                    transactionType:
+                      type: string
+                    createdAt:
+                      type: string
+                    requestedAt:
+                      type: string
+                    updatedBalance:
+                      type: integer
+                    tableName:
+                      type: string
+              x-examples:
+                Example 1:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                    id: 8e6d2003-88ae-47ee-9779-c21d9c3a4091
+                    userId: 436cb796-5826-458b-a914-a54721f70997
+                    amount: 10000
+                    transactedBy: a2899137-8458-40a6-9be8-084cfd1890e5
+                    transactionStatus: success
+                    transactionType: credit
+                    createdAt: '2025-06-04T10:45:06.361576'
+                    requestedAt: '2025-06-04T09:47:27.323861'
+                    updatedBalance: 20000
+                    tableName: credit_transactions
+            examples:
+              Example 1:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                    id: 8e6d2003-88ae-47ee-9779-c21d9c3a4091
+                    userId: 436cb796-5826-458b-a914-a54721f70997
+                    amount: 10000
+                    transactedBy: a2899137-8458-40a6-9be8-084cfd1890e5
+                    transactionStatus: success
+                    transactionType: credit
+                    createdAt: '2025-06-04T10:45:06.361576'
+                    requestedAt: '2025-06-04T09:47:27.323861'
+                    updatedBalance: 20000
+                    tableName: credit_transactions
+    operationId: put-auth-v2-credit-request
+    security:
+    - authorization: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            oneOf:
+            - type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  description: ID of the credit request to be updated.
+                status:
+                  type: string
+                  enum:
+                  - granted
+                amount:
+                  type: number
+                  format: double
+                expiration_date:
+                  type: string
+                  description: ISO-8601 LocalDateTime (no timezone)
+                  pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
+              required:
+              - status
+              - amount
+              - expiration_date
+              - id
+              additionalProperties: false
+            - type: object
+              properties:
+                status:
+                  type: string
+                  enum:
+                  - rejected
+                id:
+                  type: string
+                  format: uuid
+                  description: ID of the credit request to be updated
+              required:
+              - status
+              - id
+              additionalProperties: false
+          examples:
+            Example 1:
+              value:
+                id: ac1e0e2d-c4cc-4008-951f-62916f0d06e7
+                status: granted
+                amount: 10000.0
+                expiration_date: '2025-12-31T23:59:59'
+/iudx/v2/auth/admin/user/credit/deduct:
+  put:
+    summary: Deduct User Credit (COS ADMIN)
+    description: 'This api helps COS ADMIN to deduct the credits of a user.
+
+      **Log Type:** `COMPUTE`
+
+      '
+    tags:
+    - Credit APIs
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    userId:
+                      type: string
+                    amount:
+                      type: integer
+                    transactedBy:
+                      type: string
+                    transactionStatus:
+                      type: string
+                    transactionType:
+                      type: string
+                    createdAt:
+                      type: string
+                    requestedAt:
+                      type: string
+                    updatedBalance:
+                      type: integer
+                    tableName:
+                      type: string
+              x-examples:
+                Example 1:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                    id: bbc203ba-b7e2-43aa-9533-da2dee243bc7
+                    userId: 436cb796-5826-458b-a914-a54721f70997
+                    amount: 50.0
+                    transactedBy: a2899137-8458-40a6-9be8-084cfd1890e5
+                    transactionStatus: success
+                    transactionType: debit
+                    createdAt: '2025-06-04T10:51:42.343373'
+                    requestedAt: '2025-05-29T19:07:00'
+                    updatedBalance: 19950
+                    tableName: credit_transactions
+    operationId: put-auth-v2-user-credit
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              amount:
+                type: number
+                format: double
+                description: Amount to be deducted from the user's credit balance.
+              user_id:
+                type: string
+                format: uuid
+                description: User id of the user whose credit is to be deducted.
+              requested_at:
+                type: string
+                description: ISO-8601 LocalDateTime (no timezone)
+                pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
+            required:
+            - amount
+            - user_id
+            - requested_at
+          examples:
+            Example 1:
+              value:
+                amount: 50.0
+                user_id: 436cb796-5826-458b-a914-a54721f70997
+                requested_at: '2025-05-29T19:07:00'
+    security:
+    - authorization: []
+/iudx/v2/auth/admin/user/credit/add:
+  put:
+    operationId: put-auth-v2-user-credit-add
+    summary: Add credits to user's balance amount
+    description: 'Adds credits to the specified user''s balance.
+
+      **Log Type:** `COMPUTE`
+
+      '
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              amount:
+                type: number
+                format: double
+                description: Amount to be added to the user's credit balance.
+              requested_at:
+                type: string
+                description: ISO-8601 LocalDateTime (no timezone)
+                pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
+              user_id:
+                type: string
+                format: uuid
+                description: UUID of the user whose credit balance is to be updated.
+            required:
+            - amount
+            - user_id
+            - requested_at
+          examples:
+            Example 1:
+              value:
+                amount: 50.0
+                user_id: 436cb796-5826-458b-a914-a54721f70997
+                requested_at: '2025-05-29T19:07:00'
+    tags:
+    - Credit APIs
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    userId:
+                      type: string
+                    amount:
+                      type: integer
+                    transactedBy:
+                      type: string
+                    transactionStatus:
+                      type: string
+                    transactionType:
+                      type: string
+                    createdAt:
+                      type: string
+                    requestedAt:
+                      type: string
+                    updatedBalance:
+                      type: integer
+                    tableName:
+                      type: string
+            x-examples:
+              Example 1:
+                type: urn:dx:ControlPlane:success
+                title: Success
+                result:
+                  id: bbc203ba-b7e2-43aa-9533-da2dee243bc7
+                  userId: 436cb796-5826-458b-a914-a54721f70997
+                  amount: 50.0
+                  transactedBy: a2899137-8458-40a6-9be8-084cfd1890e5
+                  transactionStatus: success
+                  transactionType: credit
+                  createdAt: '2025-06-04T10:51:42.343373'
+                  requestedAt: '2025-05-29T19:07:00'
+                  updatedBalance: 19950
+                  tableName: credit_transactions
+      '400':
+        description: Bad Request – Schema validation or missing/invalid fields
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/generalBadRequest
+            examples:
+              Example:
+                value:
+                  type: urn:dx:asset:badRequest
+                  title: Bad Request
+                  detail: Request could not be created, as the assetId or type is invalid
+      '401':
+        description: Unauthorized – Token invalid/expired or user not authorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden – User cannot do the transaction
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/createNotificationForbidden
+    security:
+    - authorization: []
+/iudx/v2/auth/user/compute/requests/{id}:
+  delete:
+    tags:
+    - Credit APIs
+    summary: 'User: Delete Pending Compute Request'
+    description: 'delete the pending compute requests made by the user calling the API.
+
+      **Log Type:** `COMPUTE`
+
+      '
+    operationId: delete-auth-v2-user-compute-role-request
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: Unique ID of the compute request
+      schema:
+        type: string
+        format: uuid
+        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+    responses:
+      '200':
+        description: OK - Successfully deleted compute request.
+      '400':
+        description: Bad Request – Schema validation failed or incorrect query parameters
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/updateNotificationBadRequest
+      '401':
+        description: Unauthorized – Token invalid or expired, or caller lacks permission
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+    security:
+    - authorization: []
+/iudx/v2/auth/credit/request/report:
+  get:
+    summary: Get Report for Credit Requests
+    description: Csv file for a list of activity logs for Credit Request.
+    tags:
+    - Credit APIs
+    responses:
+      '200':
+        description: OK
+    operationId: get-auth-v2-credit-request-report
+    security:
+    - authorization: []

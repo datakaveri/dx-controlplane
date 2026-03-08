@@ -1,0 +1,231 @@
+/iudx/v2/leaderboard/asset:
+  get:
+    tags:
+    - Leaderboard
+    summary: Get leaderboard for assets
+    description: 'Retrieve the leaderboard for assets based on various criteria such as most viewed, most downloaded, highest
+      rated, etc.
+
+      '
+    operationId: get-asset-leaderboard
+    parameters:
+    - name: assetType
+      in: query
+      description: Filter by asset types (repeatable)
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+          - DATABANK
+          - AI_MODEL
+          - USECASE
+    - name: accessPolicy
+      in: query
+      description: Filter by access policy (repeatable)
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+          - RESTRICTED
+          - OPEN
+          - PRIVATE
+          - PII
+    - name: organizationType
+      in: query
+      description: Filter by aorganizationType (repeatable)
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+          - Private
+          - Public
+          - Academic
+          - Institution
+          - NGO/Non-profit"
+          - NA
+    - $ref: ../components/parameters.yaml#/TimeParam
+    - $ref: ../components/parameters.yaml#/EndTimeParam
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    responses:
+      '200':
+        description: Successfully retrieved asset leaderboard
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/leaderboard.yaml#/LeaderBoardResponseAsset
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Get Asset Leaderboard
+      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/leaderboard/asset?time=2026-01-15T12%3A30%3A00&timerel=between&endtime=2026-01-20T12%3A30%3A00&assetType=DATABANK&assetType=AI_MODEL&page=1&size=2&sort=downloads%3Adesc''
+
+        '
+/iudx/v2/leaderboard/provider:
+  get:
+    tags:
+    - Leaderboard
+    summary: Get leaderboard for providers
+    description: 'Retrieve the leaderboard for data providers based on various criteria such as most viewed, most downloaded,
+      highest rated, etc.
+
+      '
+    operationId: get-provider-leaderboard
+    parameters:
+    - name: assetType
+      in: query
+      description: Filter by asset types (repeatable)
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+          - DATABANK
+          - AI_MODEL
+          - USECASE
+    - name: organizationType
+      in: query
+      description: Filter by aorganizationType (repeatable)
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+          - Private
+          - Public
+          - Academic
+          - Institution
+          - NGO/Non-profit"
+          - NA
+    - $ref: ../components/parameters.yaml#/TimeParam
+    - $ref: ../components/parameters.yaml#/EndTimeParam
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    responses:
+      '200':
+        description: Successfully retrieved provider leaderboard
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/leaderboard.yaml#/LeaderBoardProvider
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Get Provider Leaderboard
+      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/leaderboard/provider?organizationType=Public&assetType=DATABANK&time=2026-01-10T12%3A30%3A00&timerel=between&endtime=2026-01-20T12%3A30%3A00&page=1&sort=likes%3Adesc&size=1''
+
+        '
+/iudx/v2/leaderboard/organization:
+  get:
+    tags:
+    - Leaderboard
+    summary: Get leaderboard for organisations
+    description: 'Retrieve the leaderboard for data providers based on various criteria such as most viewed, most downloaded,
+      highest rated, etc.
+
+      '
+    operationId: get-organisation-leaderboard
+    parameters:
+    - name: organizationType
+      in: query
+      description: Filter by aorganizationType (repeatable)
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+          - Private
+          - Public
+          - Academic
+          - Institution
+          - NGO/Non-profit"
+          - NA
+    - name: assetType
+      in: query
+      description: Filter asset type (repeatable)
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+          - DATABANK
+          - AI_MODEL
+          - USECASE
+    - $ref: ../components/parameters.yaml#/TimeParam
+    - $ref: ../components/parameters.yaml#/EndTimeParam
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    responses:
+      '200':
+        description: Successfully retrieved provider leaderboard
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/leaderboard.yaml#/LeaderBoardOrg
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Get organisation Leaderboard
+      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/leaderboard/organization?organizationType=Public&assetType=DATABANK&time=2026-01-10T12%3A30%3A00&timerel=between&endtime=2026-01-20T12%3A30%3A00&page=1&size=2&sort=contribution%3Adesc''
+
+        '

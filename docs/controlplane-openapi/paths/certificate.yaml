@@ -1,0 +1,208 @@
+/iudx/v2/auth/jwks:
+  get:
+    operationId: get-auth-v2-jwks
+    summary: Get public key in JWKS format.
+    tags:
+    - Certificate API
+    responses:
+      '200':
+        description: Successfully generated the public key in JWKS format.
+        headers:
+          Content-Type:
+            schema:
+              type: string
+            description: application/json
+        content:
+          application/json:
+            schema:
+              description: ''
+              type: object
+              properties:
+                keys:
+                  type: array
+                  uniqueItems: true
+                  minItems: 1
+                  items:
+                    required:
+                    - kty
+                    - x5t#S256
+                    - crv
+                    - kid
+                    - x5c
+                    - x
+                    - y
+                    properties:
+                      kty:
+                        type: string
+                        minLength: 1
+                      x5t#S256:
+                        type: array
+                        minLength: 1
+                      crv:
+                        type: string
+                        minLength: 1
+                      kid:
+                        type: string
+                        minLength: 1
+                      x5c:
+                        type: string
+                        minLength: 1
+                      x:
+                        type: string
+                        minLength: 1
+                      y:
+                        type: string
+                        minLength: 1
+              required:
+              - keys
+              x-examples:
+                example-1: null
+                keys:
+                - kty: EC
+                  x5t#S256: tCrGI3X7KS4WhHwGqR89Z6lWwPidOAb_CFYCzQpQN3M
+                  crv: P-256
+                  kid: ES256
+                  x5c:
+                  - MIIBnDCCAT+gAwIBAgIEEC1BXTAMBggqhkjOPQQDAgUAMEIxCTAHBgNVBAYTADEJMAcGA1UECBMAMQkwBwYDVQQHEwAxCTAHBgNVBAoTADEJMAcGA1UECxMAMQkwBwYDVQQDEwAwHhcNMjMwNjA1MDUwODQ4WhcNMjQwNjA0MDUwODQ4WjBCMQkwBwYDVQQGEwAxCTAHBgNVBAgTADEJMAcGA1UEBxMAMQkwBwYDVQQKEwAxCTAHBgNVBAsTADEJMAcGA1UEAxMAMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAErVwOLOln7NhUdfZOQFfTOtJ62AgdKUeYZm8DgWCWJHaaXT95dipr94zJM+inSuqohVFCTxjajdTH8/O9JO43rKMhMB8wHQYDVR0OBBYEFNH2u8eeqj3509HAFJQS4F5NF4TQMAwGCCqGSM49BAMCBQADSQAwRgIhAL7zHYdN6PFTccFm1y07X0t2mJxNfgOaxihTi2tA9D8AAiEAomGmBvXA72X1gfhK3dhaDSd52BN1fUP/ALYNiyuXHg0=
+                  x: rVwOLOln7NhUdfZOQFfTOtJ62AgdKUeYZm8DgWCWJHY
+                  y: ml0_eXYqa_eMyTPop0rqqIVRQk8Y2o3Ux_PzvSTuN6w
+            examples:
+              Certificate:
+                value:
+                  keys:
+                  - kty: EC
+                    x5t#S256: tCrGI3X7KS4WhHwGqR89Z6lWwPidOAb_CFYCzQpQN3M
+                    crv: P-256
+                    kid: ES256
+                    x5c:
+                    - MIIBnDCCAT+gAwIBAgIEEC1BXTAMBggqhkjOPQQDAgUAMEIxCTAHBgNVBAYTADEJMAcGA1UECBMAMQkwBwYDVQQHEwAxCTAHBgNVBAoTADEJMAcGA1UECxMAMQkwBwYDVQQDEwAwHhcNMjMwNjA1MDUwODQ4WhcNMjQwNjA0MDUwODQ4WjBCMQkwBwYDVQQGEwAxCTAHBgNVBAgTADEJMAcGA1UEBxMAMQkwBwYDVQQKEwAxCTAHBgNVBAsTADEJMAcGA1UEAxMAMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAErVwOLOln7NhUdfZOQFfTOtJ62AgdKUeYZm8DgWCWJHaaXT95dipr94zJM+inSuqohVFCTxjajdTH8/O9JO43rKMhMB8wHQYDVR0OBBYEFNH2u8eeqj3509HAFJQS4F5NF4TQMAwGCCqGSM49BAMCBQADSQAwRgIhAL7zHYdN6PFTccFm1y07X0t2mJxNfgOaxihTi2tA9D8AAiEAomGmBvXA72X1gfhK3dhaDSd52BN1fUP/ALYNiyuXHg0=
+                    x: rVwOLOln7NhUdfZOQFfTOtJ62AgdKUeYZm8DgWCWJHY
+                    y: ml0_eXYqa_eMyTPop0rqqIVRQk8Y2o3Ux_PzvSTuN6w
+    x-codeSamples:
+    - lang: curl
+      label: Example request
+      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/auth/jwks''
+
+        '
+    description: Get the public key in JWKS format to authenticate/validate the generated JWT using `/auth/v2/token`
+/iudx/v2/auth/token:
+  parameters: []
+  post:
+    summary: Create Token
+    operationId: post-auth-v2-token
+    tags:
+    - token
+    parameters:
+    - in: header
+      name: clientId
+      required: true
+      schema:
+        type: string
+        format: uuid
+        minLength: 36
+        maxLength: 36
+    - in: header
+      name: clientSecret
+      required: true
+      schema:
+        type: string
+        minLength: 10
+        maxLength: 100
+    responses:
+      '200':
+        description: Success
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: urn:dx:controlPanel:success
+                title:
+                  type: string
+                  example: Success
+                result:
+                  type: object
+                  properties:
+                    access_token:
+                      type: string
+                      description: The issued JWT access token
+                      example: eyJ0eXAiOiJKv2QiLCJhbGciOiJFUzI1NiJ9...
+                    token_type:
+                      type: string
+                      example: jwt
+                    expires_in_minutes:
+                      type: integer
+                      example: 60
+    x-codeSamples:
+    - lang: curl
+      label: Identity token request
+      source: "curl --location --request POST 'https://${HOSTNAME}/iudx/v2/auth/token' \\\n      --header 'clientId: dd0f645d-e286-40f5-ba73-1d3a06aaaa1e'\
+        \ \\\n      --header 'clientSecret: dd45b0da4c3614249b8cfcb2e8a418b2b0293cfb'\n"
+    - lang: curl
+      label: Access token request
+      source: "curl --location 'https://${HOSTNAME}/iudx/v2/auth/token' \\\n    --header 'clientId: dd0f645d-e286-40f5-ba73-1d3a06aaaa1e'\
+        \ \\\n    --header 'clientSecret: dd45b0da4c3614249b8cfcb2e8a418b2b0293cfb' \\\n    --header 'Content-Type: application/json'\
+        \ \\\n    --data '{\n            \"itemId\":\"74436122-e6f6-45bf-be53-7ee2c257826b\"\n          }'\n"
+    - lang: curl
+      label: Delegate Access token request
+      source: "curl --location 'https://${HOSTNAME}/iudx/v2/auth/token' \\\n    --header 'clientId: dd0f645d-e286-40f5-ba73-1d3a06aaaa1e'\
+        \ \\\n    --header 'clientSecret: dd45b0da4c3614249b8cfcb2e8a418b2b0293cfb' \\\n    --header 'delegationId: 66e5c06f-d318-4522-9f23-26b327bd307b'\
+        \ \\\n    --header 'Content-Type: application/json' \\\n    --data '{\n            \"itemId\":\"74436122-e6f6-45bf-be53-7ee2c257826b\"\
+        \n          }'\n"
+/iudx/auth/v2/app/token:
+  post:
+    tags:
+    - token
+    summary: Generate App Token
+    description: 'Generate an application token for a registered resource servers.
+
+      '
+    operationId: post-auth-v2-app-token
+    requestBody:
+      description: Request body containing appId and appSecret
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/app.yaml#/AppTokenRequest
+    responses:
+      '200':
+        description: Success
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: urn:dx:controlPanel:success
+                title:
+                  type: string
+                  example: Success
+                result:
+                  type: object
+                  properties:
+                    access_token:
+                      type: string
+                      description: The issued JWT access token
+                      example: eyJ0eXAiOiJKv2QiLCJhbGciOiJFUzI1NiJ9...
+                    token_type:
+                      type: string
+                      example: jwt
+                    expires_in_minutes:
+                      type: integer
+                      example: 60
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Generate App Token
+      source: "curl --location --request POST 'https://${HOSTNAME}/iudx/auth/v2/app/token' \\\n--header 'Authorization: Bearer\
+        \ <your-admin-token>' \\\n--header 'Content-Type: application/json' \\\n--data '{\n        \"appId\": \"550e8400-e29b-41d4-a716-446655440000\"\
+        ,\n          \"appSecret\": \"u7YkKq9vZxP1\"\n        }'\n"

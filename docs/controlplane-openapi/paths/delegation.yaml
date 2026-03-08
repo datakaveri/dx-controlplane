@@ -1,0 +1,438 @@
+/iudx/v2/auth/delegation:
+  post:
+    summary: Grant Delegation to another User
+    tags:
+    - Delegation APIs
+    operationId: post-auth-v2-delegation
+    security:
+    - authorization: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - delegate_id
+            - justification
+            - expiry_at
+            properties:
+              delegate_id:
+                type: string
+                format: uuid
+              justification:
+                type: string
+              expiry_at:
+                type: string
+                pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
+              roles:
+                type: array
+                items:
+                  type: object
+                  required:
+                  - role
+                  properties:
+                    role:
+                      $ref: ../components/schemas/delegation.yaml#/DelegationRole
+                    constraints:
+                      type: array
+                      items:
+                        type: object
+                        required:
+                        - scope
+                        properties:
+                          scope:
+                            $ref: ../components/schemas/delegation.yaml#/DelegationScope
+                          entity_id:
+                            type: array
+                            nullable: true
+                            items:
+                              type: string
+                              format: uuid
+                          entity_type:
+                            allOf:
+                            - $ref: ../components/schemas/delegation.yaml#/DelegationEntityType
+                            nullable: true
+                          expiry_at:
+                            type: string
+                            pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
+          examples:
+            minimal:
+              summary: Minimal - Delegate all roles
+              value:
+                delegate_id: ba6a3947-0080-4cbf-bdde-0578bc817d42
+                justification: Granting user cos admin role access while the owner is on leave
+                expiry_at: '2026-01-31T23:59:59'
+            role_with_simple_scope:
+              summary: Role with simple scope constraint
+              value:
+                delegate_id: ba6a3947-0080-4cbf-bdde-0578bc817d42
+                justification: Granting user cos admin role access while the owner is on leave
+                expiry_at: '2026-01-31T23:59:59'
+                roles:
+                - role: org_admin
+                  constraints:
+                  - scope: org_admin_access
+                    expiry_at: '2026-01-31T23:59:59'
+            role_with_entity_constraints:
+              summary: Role with entity-specific constraints
+              value:
+                delegate_id: ba6a3947-0080-4cbf-bdde-0578bc817d42
+                justification: Granting user cos admin role access while the owner is on leave
+                expiry_at: '2026-01-31T23:59:59'
+                roles:
+                - role: org_admin
+                  constraints:
+                  - scope: user_management
+                    expiry_at: '2026-01-31T23:59:59'
+                  - scope: data_access
+                    entity_id:
+                    - xyz-uuid-123
+                    entity_type: data_bank
+                    expiry_at: '2026-01-31T23:59:59'
+    responses:
+      '201':
+        description: Delegation created successfully
+      '400':
+        description: Invalid request
+      '401':
+        description: Unauthorized
+      '404':
+        description: Delegate user not found
+/iudx/v2/auth/delegation/delegate:
+  get:
+    summary: Get All Delegations of the Delegate
+    operationId: get-auth-v2-delegation-delegate
+    tags:
+    - Delegation APIs
+    security:
+    - authorization: []
+    responses:
+      '200':
+        description: Delegation grants fetched successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                delegation_id:
+                  type: string
+                  format: uuid
+                  description: Unique ID for the delegation grant
+                  example: c84d49b1-1f22-4e2a-b8a9-87c1d65b7d13
+                delegator_id:
+                  type: string
+                  format: uuid
+                  description: ID of the user who created the delegation
+                  example: 22b96e3b-88c4-4e14-a4e2-41cc0b34c3c2
+                delegate_id:
+                  type: string
+                  format: uuid
+                  description: ID of the user who received the delegation
+                  example: a5cdd22e-7c0a-4a8d-bb3a-1d1f87b7b221
+                justification:
+                  type: string
+                  description: Reason for granting delegation
+                  example: Temporary org admin backup
+                expiry_at:
+                  type: string
+                  pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
+                  description: Global expiry timestamp for this delegation
+                  example: '2025-12-31T23:59:59'
+                status:
+                  type: string
+                  description: Current status of the delegation
+                  example: approved
+                created_at:
+                  type: string
+                  format: date-time
+                  description: Timestamp when the delegation was created
+                  example: '2025-01-15T10:20:30Z'
+                revoked_at:
+                  type: string
+                  format: date-time
+                  nullable: true
+                  description: Timestamp when revoked
+                  example: '2025-07-01T09:00:00Z'
+    x-codeSamples:
+    - lang: cURL
+      label: get all delegation grants cURL
+      source: 'curl --location ''https://localhost:8080/iudx/v2/auth/delegation/delegate'' \
+
+        --header ''Authorization: Bearer <keycloak_token>''
+
+        '
+/iudx/v2/auth/delegation/delegator:
+  get:
+    summary: Get All Delegations of the Delegator
+    operationId: get-auth-v2-delegation-delegator
+    tags:
+    - Delegation APIs
+    security:
+    - authorization: []
+    responses:
+      '200':
+        description: Delegation grants fetched successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                delegation_id:
+                  type: string
+                  format: uuid
+                  description: Unique ID for the delegation grant
+                  example: c84d49b1-1f22-4e2a-b8a9-87c1d65b7d13
+                delegator_id:
+                  type: string
+                  format: uuid
+                  description: ID of the user who created the delegation
+                  example: 22b96e3b-88c4-4e14-a4e2-41cc0b34c3c2
+                delegate_id:
+                  type: string
+                  format: uuid
+                  description: ID of the user who received the delegation
+                  example: a5cdd22e-7c0a-4a8d-bb3a-1d1f87b7b221
+                justification:
+                  type: string
+                  description: Reason for granting delegation
+                  example: Temporary org admin backup
+                expiry_at:
+                  type: string
+                  pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
+                  description: Global expiry timestamp for this delegation
+                  example: '2025-12-31T23:59:59'
+                status:
+                  type: string
+                  description: Current status of the delegation
+                  example: approved
+                created_at:
+                  type: string
+                  format: date-time
+                  description: Timestamp when the delegation was created
+                  example: '2025-01-15T10:20:30Z'
+                revoked_at:
+                  type: string
+                  format: date-time
+                  nullable: true
+                  description: Timestamp when revoked
+                  example: '2025-07-01T09:00:00Z'
+    x-codeSamples:
+    - lang: cURL
+      label: get all delegation grants cURL
+      source: 'curl --location ''https://localhost:8443/iudx/v2/auth/delegation/delegator'' \
+
+        --header ''Authorization: Bearer <keycloak_token>''
+
+        '
+/iudx/v2/auth/delegation/{id}:
+  parameters:
+  - schema:
+      type: string
+    name: id
+    in: path
+    required: true
+    description: UUID of the delegation_id
+  get:
+    summary: Get Delegation Grant by ID
+    operationId: get-auth-v2-delegation-id
+    tags:
+    - Delegation APIs
+    security:
+    - authorization: []
+    responses:
+      '200':
+        description: Delegation grant fetched successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: success
+                title:
+                  type: string
+                  example: Delegation grant retrieved
+                result:
+                  type: object
+                  properties:
+                    delegation_id:
+                      type: string
+                      format: uuid
+                      example: c84d49b1-1f22-4e2a-b8a9-87c1d65b7d13
+                    delegator_id:
+                      type: string
+                      format: uuid
+                      example: 22b96e3b-88c4-4e14-a4e2-41cc0b34c3c2
+                    delegate_id:
+                      type: string
+                      format: uuid
+                      example: a5cdd22e-7c0a-4a8d-bb3a-1d1f87b7b221
+                    justification:
+                      type: string
+                      example: Temporary org admin backup
+                    expiry_at:
+                      type: string
+                      pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
+                      example: '2025-12-31T23:59:59'
+                    status:
+                      type: string
+                      example: approved
+                    created_at:
+                      type: string
+                      format: date-time
+                      example: '2025-01-15T10:20:30Z'
+                    revoked_at:
+                      type: string
+                      format: date-time
+                      nullable: true
+                      example: '2025-07-01T09:00:00Z'
+      '404':
+        description: Delegation grant not found
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: error
+                title:
+                  type: string
+                  example: Delegation grant not found
+                detail:
+                  type: string
+                  example: No record found for delegation_id provided
+    x-codeSamples:
+    - lang: cURL
+      label: get delegation grant by ID cURL
+      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/auth/delegation/{delegation_id}'' \
+
+        --header ''Authorization: Bearer <keycloak_token>''
+
+        '
+  delete:
+    summary: Delete a Delegation Grant
+    description: Revoke a delegation grant. Only the delegator (user who granted the delegation) can delete it. This will
+      remove all associated scopes from the delegate user in Keycloak.
+    tags:
+    - Delegation APIs
+    operationId: delete-auth-v2-delegation-id
+    security:
+    - authorization: []
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: UUID of the delegation grant to delete
+      schema:
+        type: string
+        format: uuid
+      example: 292b8526-29f1-4893-a0aa-f72cec65c6fc
+    responses:
+      '200':
+        description: Delegation deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: urn:dx:auth:Success
+                title:
+                  type: string
+                  example: Success
+                detail:
+                  type: string
+                  example: Delegation deleted successfully
+            example:
+              type: urn:dx:auth:Success
+              title: Success
+              detail: Delegation deleted successfully
+      '400':
+        description: Invalid delegation ID format
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                detail:
+                  type: string
+            example:
+              type: urn:dx:auth:BadRequest
+              title: Bad Request
+              detail: Invalid delegation ID format
+      '401':
+        description: Unauthorized - Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                detail:
+                  type: string
+            example:
+              type: urn:dx:auth:Unauthorized
+              title: Unauthorized
+              detail: Authentication token required
+      '403':
+        description: Forbidden - User is not the delegator of this delegation
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                detail:
+                  type: string
+            example:
+              type: urn:dx:auth:Forbidden
+              title: Forbidden
+              detail: This user cannot delete the delegation as it is not the delegator
+      '404':
+        description: Delegation grant not found
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                detail:
+                  type: string
+            example:
+              type: urn:dx:auth:NotFound
+              title: Not Found
+              detail: Delegation grant not found
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                detail:
+                  type: string
+            example:
+              type: urn:dx:auth:InternalServerError
+              title: Internal Server Error
+              detail: An error occurred while deleting the delegation

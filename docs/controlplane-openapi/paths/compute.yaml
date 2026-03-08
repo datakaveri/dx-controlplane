@@ -1,0 +1,360 @@
+/iudx/v2/auth/user/compute/requests:
+  get:
+    summary: 'User: Get All ComputeRole Requests'
+    description: 'This api helps a user to check all compute requests made by them.
+
+      **Log Type:** `COMPUTE`
+
+      '
+    tags:
+    - Compute APIs
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema:
+              type: object
+              x-examples:
+                Example 1:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                  - id: 25fcafb9-d65e-454f-9196-8648dcf08854
+                    userId: 436cb796-5826-458b-a914-a54721f70997
+                    userName: test test
+                    status: pending
+                    approvedBy: null
+                    createdAt: '2025-06-04T10:54:53.301846'
+                    updatedAt: '2025-06-04T10:54:53.301846'
+                    tableName: compute_role
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      userId:
+                        type: string
+                      userName:
+                        type: string
+                      status:
+                        type: string
+                      approvedBy:
+                        type: string
+                      createdAt:
+                        type: string
+                      updatedAt:
+                        type: string
+                      tableName:
+                        type: string
+                paginationInfo:
+                  type: object
+                  x-stoplight:
+                    id: dvchbrtielggu
+                  properties:
+                    page:
+                      type: integer
+                      x-stoplight:
+                        id: jsb48m8i9u6tf
+                    size:
+                      type: integer
+                      x-stoplight:
+                        id: kvq43ldkz27sd
+                    totalPages:
+                      type: integer
+                      x-stoplight:
+                        id: q0k9gr696ttcb
+                    totalCount:
+                      type: integer
+                      x-stoplight:
+                        id: 35bjtleqjjbku
+                    hasNext:
+                      type: boolean
+                      x-stoplight:
+                        id: sxydke5qcz876
+                    hasPrevious:
+                      type: boolean
+                      x-stoplight:
+                        id: bxo6cgx6zpp4r
+            examples:
+              Example 1:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                  - id: 25fcafb9-d65e-454f-9196-8648dcf08854
+                    userId: 436cb796-5826-458b-a914-a54721f70997
+                    userName: test test
+                    status: pending
+                    approvedBy: null
+                    createdAt: '2025-06-04T10:54:53.301846'
+                    updatedAt: '2025-06-04T10:54:53.301846'
+                    tableName: compute_role
+                  paginationInfo:
+                    page: 1
+                    size: 1
+                    totalCount: 346
+                    totalPages: 346
+                    hasNext: true
+                    hasPrevious: false
+    operationId: get-auth-v2-user-compute-role-request
+    security:
+    - authorization: []
+/iudx/v2/auth/compute/requests:
+  get:
+    summary: Get All Pending ComputeRole Requests (COS ADMIN)
+    description: 'This api helps COS ADMIN get all the pending compute role requests.
+
+      **Log Type:** `COMPUTE`
+
+      '
+    tags:
+    - Compute APIs
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema:
+              type: object
+              x-examples:
+                Example 1:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                  - id: 25fcafb9-d65e-454f-9196-8648dcf08854
+                    userId: 436cb796-5826-458b-a914-a54721f70997
+                    userName: test test
+                    status: pending
+                    approvedBy: null
+                    createdAt: '2025-06-04T10:54:53.301846'
+                    updatedAt: '2025-06-04T10:54:53.301846'
+                    tableName: compute_role
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      userId:
+                        type: string
+                      userName:
+                        type: string
+                      status:
+                        type: string
+                      approvedBy:
+                        type: string
+                      createdAt:
+                        type: string
+                      updatedAt:
+                        type: string
+                      tableName:
+                        type: string
+                paginationInfo:
+                  type: object
+                  x-stoplight:
+                    id: dvchbrtielggu
+                  properties:
+                    page:
+                      type: integer
+                      x-stoplight:
+                        id: jsb48m8i9u6tf
+                    size:
+                      type: integer
+                      x-stoplight:
+                        id: kvq43ldkz27sd
+                    totalPages:
+                      type: integer
+                      x-stoplight:
+                        id: q0k9gr696ttcb
+                    totalCount:
+                      type: integer
+                      x-stoplight:
+                        id: 35bjtleqjjbku
+                    hasNext:
+                      type: boolean
+                      x-stoplight:
+                        id: sxydke5qcz876
+                    hasPrevious:
+                      type: boolean
+                      x-stoplight:
+                        id: bxo6cgx6zpp4r
+            examples:
+              Example 1:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                  - id: 25fcafb9-d65e-454f-9196-8648dcf08854
+                    userId: 436cb796-5826-458b-a914-a54721f70997
+                    userName: test test
+                    status: pending
+                    approvedBy: null
+                    createdAt: '2025-06-04T10:54:53.301846'
+                    updatedAt: '2025-06-04T10:54:53.301846'
+                    tableName: compute_role
+                  paginationInfo:
+                    page: 1
+                    size: 1
+                    totalCount: 346
+                    totalPages: 346
+                    hasNext: true
+                    hasPrevious: false
+    operationId: get-auth-v2-compute-role-request
+    security:
+    - authorization: []
+  post:
+    summary: Create Compute Role Request (USER)
+    tags:
+    - Compute APIs
+    description: 'This api helps user to create request to get a compute role.
+
+      **Log Type:** `COMPUTE`
+
+      '
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    userId:
+                      type: string
+                    userName:
+                      type: string
+                    status:
+                      type: string
+                    approvedBy:
+                      type: string
+                    createdAt:
+                      type: string
+                    updatedAt:
+                      type: string
+                    tableName:
+                      type: string
+              x-examples:
+                Example 1:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                    id: 25fcafb9-d65e-454f-9196-8648dcf08854
+                    userId: 436cb796-5826-458b-a914-a54721f70997
+                    userName: test test
+                    status: pending
+                    approvedBy: null
+                    createdAt: '2025-06-04T10:54:53.301846'
+                    updatedAt: '2025-06-04T10:54:53.301846'
+                    tableName: compute_role
+            examples:
+              Example 1:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                    id: 25fcafb9-d65e-454f-9196-8648dcf08854
+                    userId: 436cb796-5826-458b-a914-a54721f70997
+                    userName: test test
+                    status: pending
+                    approvedBy: null
+                    createdAt: '2025-06-04T10:54:53.301846'
+                    updatedAt: '2025-06-04T10:54:53.301846'
+                    tableName: compute_role
+    operationId: post-auth-v2-compute-role-request
+    security:
+    - authorization: []
+/iudx/v2/auth/compute/requests/{id}:
+  parameters:
+  - name: id
+    in: path
+    required: true
+    description: UUID of the request
+    schema:
+      type: string
+      format: uuid
+  put:
+    summary: Update Compute Roles (COS ADMIN)
+    tags:
+    - Compute APIs
+    description: 'This api helps COS ADMIN to update the users with compute role by granting/rejecting the compute role request.
+
+      **Log Type:** `COMPUTE`
+
+      '
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                detail:
+                  type: string
+              x-examples:
+                Example 1:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  detail: 'Updated Resquest '
+            examples:
+              Example 1:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  detail: 'Updated Resquest '
+    operationId: put-auth-v2-compute-role-request
+    security:
+    - authorization: []
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+            required:
+            - status
+          examples:
+            Example 1:
+              value:
+                status: granted
+/iudx/v2/auth/compute/requests/report:
+  get:
+    summary: Get Report for Compute Requests
+    description: Csv file for a list of activity logs for Compute Request.
+    tags:
+    - Compute APIs
+    responses:
+      '200':
+        description: OK
+    operationId: get-auth-v2-compute-requests-report
+    security:
+    - authorization: []
