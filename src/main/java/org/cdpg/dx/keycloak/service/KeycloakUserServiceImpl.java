@@ -119,8 +119,6 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
         LOGGER.info("page and size,{},{}",page,size);
         return BlockingExecutionUtil.runBlocking(() -> {
             try {
-                //System.out.println("Fetching users from Keycloak: page=" + page + ", size=" + size + ", enabled=" + enabled);
-
               List<UserRepresentation> reps = usersResource().search(
                         name,          // search string
                         (page-1) * size,   // first (offset)
@@ -144,8 +142,6 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
     LOGGER.info("page and size,{},{}",page,size);
     return BlockingExecutionUtil.runBlocking(() -> {
       try {
-        //System.out.println("Fetching users from Keycloak: page=" + page + ", size=" + size + ", enabled=" + enabled);
-
         List<UserRepresentation> reps = usersResource().search(
           name,          // search string
           (page-1) * size,   // first (offset)
@@ -395,7 +391,7 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
     aadhaarJson.put("txn", txn);
 
     attributes.put(KeycloakConstants.AADHAAR_KYC_DATA, aadhaarJson.encode());
-    System.out.println("attributes = " + attributes);
+    LOGGER.debug("Setting KYC attributes for user: {}", attributes);
     return updateUserAttributes(userId, attributes);
     }
 

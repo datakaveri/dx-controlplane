@@ -55,17 +55,6 @@
                         minLength: 1
               required:
               - keys
-              x-examples:
-                example-1: null
-                keys:
-                - kty: EC
-                  x5t#S256: tCrGI3X7KS4WhHwGqR89Z6lWwPidOAb_CFYCzQpQN3M
-                  crv: P-256
-                  kid: ES256
-                  x5c:
-                  - MIIBnDCCAT+gAwIBAgIEEC1BXTAMBggqhkjOPQQDAgUAMEIxCTAHBgNVBAYTADEJMAcGA1UECBMAMQkwBwYDVQQHEwAxCTAHBgNVBAoTADEJMAcGA1UECxMAMQkwBwYDVQQDEwAwHhcNMjMwNjA1MDUwODQ4WhcNMjQwNjA0MDUwODQ4WjBCMQkwBwYDVQQGEwAxCTAHBgNVBAgTADEJMAcGA1UEBxMAMQkwBwYDVQQKEwAxCTAHBgNVBAsTADEJMAcGA1UEAxMAMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAErVwOLOln7NhUdfZOQFfTOtJ62AgdKUeYZm8DgWCWJHaaXT95dipr94zJM+inSuqohVFCTxjajdTH8/O9JO43rKMhMB8wHQYDVR0OBBYEFNH2u8eeqj3509HAFJQS4F5NF4TQMAwGCCqGSM49BAMCBQADSQAwRgIhAL7zHYdN6PFTccFm1y07X0t2mJxNfgOaxihTi2tA9D8AAiEAomGmBvXA72X1gfhK3dhaDSd52BN1fUP/ALYNiyuXHg0=
-                  x: rVwOLOln7NhUdfZOQFfTOtJ62AgdKUeYZm8DgWCWJHY
-                  y: ml0_eXYqa_eMyTPop0rqqIVRQk8Y2o3Ux_PzvSTuN6w
             examples:
               Certificate:
                 value:
@@ -92,10 +81,14 @@
     operationId: post-auth-v2-token
     tags:
     - token
+    description: 'Issue a JWT access token using client credentials. Supports three modes: (1) **Identity token** - provide only clientId and clientSecret to get an identity token, (2) **Access token** - additionally provide an `itemId` in the request body to get an access token scoped to a specific resource, (3) **Delegate access token** - additionally provide a `delegationId` header to act on behalf of a delegator. The token is signed using ES256 and can be validated using the public key from `/auth/v2/jwks`.
+
+      '
     parameters:
     - in: header
       name: clientId
       required: true
+      description: UUID of the client obtained from the client registration API
       schema:
         type: string
         format: uuid
@@ -104,10 +97,18 @@
     - in: header
       name: clientSecret
       required: true
+      description: Secret key associated with the clientId
       schema:
         type: string
         minLength: 10
         maxLength: 100
+    - in: header
+      name: delegationId
+      required: false
+      description: UUID of the delegation grant. Required when requesting a delegate access token on behalf of a delegator.
+      schema:
+        type: string
+        format: uuid
     responses:
       '200':
         description: Success
@@ -134,7 +135,26 @@
                       example: jwt
                     expires_in_minutes:
                       type: integer
+                      description: Token validity period in minutes
                       example: 60
+      '400':
+        description: Bad Request - Missing or invalid parameters
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '401':
+        description: Unauthorized - Invalid client credentials
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
     x-codeSamples:
     - lang: curl
       label: Identity token request

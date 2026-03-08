@@ -1,6 +1,11 @@
 /iudx/v2/auth/delegation:
   post:
-    summary: Grant Delegation to another User
+    summary: Grant delegation to another user (Delegator)
+    description: 'Creates a delegation grant that allows another user (the delegate) to act on behalf of the caller (the delegator). The delegation can optionally be scoped to specific roles and constraints with per-constraint expiry. Requires an authenticated user token.
+
+      **Log Type:** `USER_ACTION`
+
+      '
     tags:
     - Delegation APIs
     operationId: post-auth-v2-delegation
@@ -94,14 +99,25 @@
       '201':
         description: Delegation created successfully
       '400':
-        description: Invalid request
+        description: Bad Request - Invalid request body, missing required fields, or malformed UUIDs
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/generalBadRequest
       '401':
-        description: Unauthorized
+        description: Unauthorized - Token invalid or expired
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller does not have permission to create delegations
       '404':
-        description: Delegate user not found
+        description: Delegate user not found - The specified delegate_id does not correspond to an existing user
 /iudx/v2/auth/delegation/delegate:
   get:
-    summary: Get All Delegations of the Delegate
+    summary: Get all delegations where the current user is the delegate
+    description: 'Returns a list of all delegation grants where the currently authenticated user is the delegate (i.e., the user who was granted delegation rights). Requires an authenticated user token.'
     operationId: get-auth-v2-delegation-delegate
     tags:
     - Delegation APIs
@@ -154,6 +170,12 @@
                   nullable: true
                   description: Timestamp when revoked
                   example: '2025-07-01T09:00:00Z'
+      '401':
+        description: Unauthorized - Token invalid or expired
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
     x-codeSamples:
     - lang: cURL
       label: get all delegation grants cURL
@@ -164,7 +186,8 @@
         '
 /iudx/v2/auth/delegation/delegator:
   get:
-    summary: Get All Delegations of the Delegator
+    summary: Get all delegations where the current user is the delegator
+    description: 'Returns a list of all delegation grants where the currently authenticated user is the delegator (i.e., the user who created the delegation). Requires an authenticated user token.'
     operationId: get-auth-v2-delegation-delegator
     tags:
     - Delegation APIs
@@ -217,6 +240,12 @@
                   nullable: true
                   description: Timestamp when revoked
                   example: '2025-07-01T09:00:00Z'
+      '401':
+        description: Unauthorized - Token invalid or expired
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
     x-codeSamples:
     - lang: cURL
       label: get all delegation grants cURL
@@ -234,7 +263,8 @@
     required: true
     description: UUID of the delegation_id
   get:
-    summary: Get Delegation Grant by ID
+    summary: Get a delegation grant by ID
+    description: 'Returns the details of a specific delegation grant identified by its UUID. Requires an authenticated user token. Only the delegator or delegate of this grant can view it.'
     operationId: get-auth-v2-delegation-id
     tags:
     - Delegation APIs
@@ -288,6 +318,12 @@
                       format: date-time
                       nullable: true
                       example: '2025-07-01T09:00:00Z'
+      '401':
+        description: Unauthorized - Token invalid or expired
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
       '404':
         description: Delegation grant not found
         content:

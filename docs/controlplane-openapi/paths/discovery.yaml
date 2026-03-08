@@ -371,20 +371,7 @@
                     type: object
                     additionalProperties: true
                 paginationInfo:
-                  type: object
-                  properties:
-                    page:
-                      type: integer
-                    size:
-                      type: integer
-                    totalCount:
-                      type: integer
-                    totalPages:
-                      type: integer
-                    hasNext:
-                      type: boolean
-                    hasPrevious:
-                      type: boolean
+                  $ref: ../components/schemas/pagination.yaml#/PaginationInfo
             example:
               type: dx:controlPlane:success
               title: Success

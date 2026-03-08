@@ -1,7 +1,8 @@
 UserIdParam:
   name: userId
   in: query
-  description: id of the user(UUID) for whom to fetch activity logs
+  description: UUID of the user for whom to fetch activity logs. Must be a valid v4 UUID.
+  required: false
   schema:
     type: string
     format: uuid
@@ -9,9 +10,7 @@ UserIdParam:
 AssetTypeParam:
   name: assetType
   in: query
-  description: 'The type of asset to filter the activity logs. This parameter allows filtering by specific asset types.
-
-    '
+  description: Filter results by asset type. Use this to narrow down responses to a specific category of asset.
   required: false
   schema:
     type: string
@@ -22,9 +21,7 @@ AssetTypeParam:
 SandboxTypeParam:
   name: sandboxType
   in: query
-  description: 'Sandbox execution type used to filter audit logs. Possible values indicate the compute environment.
-
-    '
+  description: Filter audit logs by sandbox compute environment type (CPU or GPU).
   required: false
   schema:
     type: string
@@ -34,10 +31,7 @@ SandboxTypeParam:
 AssetAccessPolicyParam:
   name: accessPolicy
   in: query
-  description: 'The access policy of the asset to filter the activity logs. This parameter allows filtering by specific access
-    policies such as `OPEN`, `RESTRICTED`, `PRIVATE`, `PII`.
-
-    '
+  description: Filter results by the access policy of the asset. Allowed values are `OPEN` (publicly accessible), `RESTRICTED` (requires approval), `PRIVATE` (owner-only), and `PII` (contains personally identifiable information).
   required: false
   schema:
     type: string
@@ -49,39 +43,29 @@ AssetAccessPolicyParam:
 RoleParam:
   name: role
   in: query
-  description: 'This parameter allows filtering by specific role.
-
-    '
+  description: Filter results by a specific user role (e.g., `consumer`, `provider`, `org_admin`, `cos_admin`).
   required: false
   schema:
     type: string
 ActionParam:
   name: action
   in: query
-  description: 'The type of action to filter the activity logs. This parameter allows filtering by specific action, such as
-    `View`, `Download`, `Upload`, `Update`,`Delete` etc.
-
-    '
+  description: Filter activity logs by action type. Common values include `View`, `Download`, `Upload`, `Update`, and `Delete`.
   required: false
   schema:
     type: string
 LogTypeParam:
   name: logType
   in: query
-  description: 'The type of log to filter the activity logs. This parameter allows filtering by specific log types, such as
-    `ASSET`, `USER_ACTION`, and `COMPUTE`.
-
-    '
+  description: Filter activity logs by log category. Common values are `ASSET` (asset-related events), `USER_ACTION` (user management events), and `COMPUTE` (compute/sandbox events).
   required: false
   schema:
     type: string
 OrganizationIdParam:
   name: orgId
   in: query
-  description: 'The unique identifier (UUID) of the organization for which to fetch activity logs. Use this parameter to filter
-    activity logs belonging to a specific organization.
-
-    '
+  description: UUID of the organization to filter results by. Use this to scope activity logs or other data to a specific organization.
+  required: false
   schema:
     type: string
     format: uuid
@@ -89,7 +73,7 @@ OrganizationIdParam:
 PageParam:
   name: page
   in: query
-  description: Page number for pagination
+  description: Page number for pagination (1-based). The first page is `1`. If omitted, defaults to `1`.
   required: false
   schema:
     type: integer
@@ -98,50 +82,51 @@ PageParam:
 SizeParam:
   name: size
   in: query
-  description: Page size for pagination
+  description: Number of items to return per page. Defaults to `1000`. A recommended value for most use cases is between 10 and 25. Maximum allowed value is `1000`.
   required: false
   schema:
     type: integer
     default: 1000
     minimum: 1
+    maximum: 1000
 SizeParamReport:
   name: size
   in: query
-  description: Page size for pagination , used as limit for query request
+  description: Number of items to return per page for report endpoints. Acts as a limit on the query. Defaults to `1000`. Maximum allowed value is `1000`.
   required: false
   schema:
     type: integer
     default: 1000
     minimum: 1
+    maximum: 1000
 SortingParam:
   name: sort
   in: query
-  description: 'This parameter allows sorting the results by up to 3 fields, separated by a semicolon (`;`). The format for
-    each field is `fieldName:asc` or `fieldName:desc`. For example: `createdAt:desc;assetType:asc;userId:desc` will sort by
-    creation date (descending), then asset type (ascending), then user ID (descending).'
+  description: 'Sort results by up to 3 fields, separated by a semicolon (`;`). Each field uses the format `fieldName:asc` or `fieldName:desc`. Common sortable fields include `createdAt`, `updatedAt`, `status`, and `name`. Example: `createdAt:desc;status:asc` sorts by creation date descending, then by status ascending.'
   required: false
   schema:
     type: string
+  example: createdAt:desc;status:asc
 TimeParam:
   name: time
   in: query
-  description: This parameter specifies the <b>start time</b> for the temporal-query in `ISO8601` format.
+  description: Start time for temporal filtering in ISO 8601 format (e.g., `2025-01-01T00:00:00`). Used together with `timerel` to define a time range.
+  required: false
   schema:
     type: string
+    format: date-time
 EndTimeParam:
   name: endtime
   in: query
-  description: This parameter specifies the <b>endtime</b> for the temporal-query in `ISO8601` format.
+  description: End time for temporal filtering in ISO 8601 format (e.g., `2025-12-31T23:59:59`). Required when `timerel=between`.
+  required: false
   schema:
     type: string
+    format: date-time
 TimeRelParam:
   name: timerel
   in: query
-  description: 'The temporal relation type to be applied for the time filter. Must be one of: <b>between</b>, <b>before</b>,
-    or <b>after</b>. <b>between</b> must be used with both `time` and `endtime`. <b>before</b> or <b>after</b> must be used
-    with only `time`.
-
-    '
+  description: 'Temporal relation for time-based filtering. Use `between` with both `time` and `endtime` to define a range. Use `before` or `after` with only `time` to filter records before or after a point in time.'
   required: false
   schema:
     type: string
@@ -152,34 +137,49 @@ TimeRelParam:
 OrgNameParam:
   name: name
   in: query
-  description: 'The name of the organization sector to filter by.
-
-    This parameter is used to filter entities based on their organizational sector.
-
-    '
+  description: Filter organizations by name. Performs a case-insensitive partial match on the organization name.
   required: false
   schema:
     type: string
 EntityTypeParam:
   name: entity_type
   in: query
-  description: The type of entity to filter by. This parameter is used to filter entities based on their type.
+  description: Filter by organization entity type (e.g., `Private`, `Public`, `Government`, `Startup`, `Academic`).
   required: false
   schema:
     type: string
 OrgSectorParam:
   name: org_sector
   in: query
-  description: The sector of the organization to filter by. This parameter is used to filter entities based on their organizational
-    sector.
+  description: Filter by organization sector (e.g., `Technology`, `Healthcare`, `Education`, `Research & Development`).
   required: false
   schema:
     type: string
 StatusParam:
   name: status
   in: query
-  description: The status of the asset request to filter by. This parameter is used to filter asset requests based on their
-    status such as 'pending' , 'granted' and 'rejected'.
+  description: Filter requests by their current processing status. Use `pending` for unprocessed requests, `granted` for approved requests, or `rejected` for denied requests.
   required: false
   schema:
     type: string
+    enum:
+    - pending
+    - granted
+    - rejected
+SearchTermParam:
+  name: search_term
+  in: query
+  description: Free-text search term to filter list results. Performs a case-insensitive partial match across key fields such as name, email, or title.
+  required: false
+  schema:
+    type: string
+  example: quantum
+DelegatorIdParam:
+  name: delegatorId
+  in: query
+  description: UUID of the delegator. When a delegate (a user who has been granted delegation rights) performs an action on behalf of another user, this parameter identifies the original delegating user. Required when acting under delegation.
+  required: false
+  schema:
+    type: string
+    format: uuid
+    pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$

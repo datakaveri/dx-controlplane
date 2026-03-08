@@ -139,6 +139,7 @@
         - BOOKMARK
     - $ref: ../components/parameters.yaml#/PageParam
     - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
     responses:
       '200':
         description: Successfully retrieved user interaction status
@@ -240,8 +241,7 @@
     tags:
     - User Interactions
     summary: Post user feedback on entity
-    description: 'Submit user feedback for a specific data asset, including an optional star rating (1-5) and/or a structured
-      action subtype with associated data. User should be the one who has already interacted with the asset before.
+    description: 'Submit user feedback for a specific data asset, including an optional star rating (1-5) and/or a structured action subtype with associated data. The user must have already interacted with the asset (e.g., via download or API access). Requires an authenticated user token.
 
       '
     operationId: post-user-feedback
@@ -259,15 +259,18 @@
               asset_id:
                 type: string
                 format: uuid
-                description: UUID of the asset
+                description: UUID of the asset to provide feedback on
               entity_rating:
                 type: integer
                 minimum: 1
                 maximum: 5
+                description: Star rating from 1 (lowest) to 5 (highest)
               action_subtype:
                 type: string
+                description: Structured feedback category (e.g., data quality, documentation)
               action_subdata:
                 type: object
+                description: Additional structured data associated with the feedback
     responses:
       '200':
         description: Feedback successfully recorded
@@ -286,6 +289,12 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
       '500':
         description: Internal Server Error
         content:
@@ -296,7 +305,7 @@
     tags:
     - User Interactions
     summary: Get user feedback
-    description: 'Retrieve paginated user feedback with optional filters by user, asset, or action subtype.
+    description: 'Retrieve paginated user feedback with optional filters by user, asset, or action subtype. Requires an authenticated user token.
 
       '
     operationId: get-user-feedback
@@ -406,8 +415,7 @@
     tags:
     - User Interactions
     summary: Post provider feedback on entity
-    description: 'Submit provider feedback for a specific data asset, including an optional star rating (1-5) and/or a structured
-      action subtype with associated data. User should be the one who has already interacted with the asset before.
+    description: 'Submit provider feedback for a specific data asset, including an optional star rating (1-5) and/or a structured action subtype with associated data. The user must be the asset owner or a provider who has interacted with the asset. Requires an authenticated user token with `provider` or `org_admin` role.
 
       '
     operationId: post-provider-feedback
@@ -436,6 +444,7 @@
                 description: Type of feedback
               data:
                 type: object
+                description: Structured feedback data (content varies by feedback type)
     responses:
       '200':
         description: Feedback successfully recorded
@@ -454,6 +463,12 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
       '500':
         description: Internal Server Error
         content:
@@ -464,7 +479,7 @@
     tags:
     - User Interactions
     summary: Get provider feedback
-    description: 'Retrieve paginated provider feedback with optional filters by user, asset, or type.
+    description: 'Retrieve paginated provider feedback with optional filters by user, asset, or type. Requires an authenticated user token.
 
       '
     operationId: get-provider-feedback
@@ -510,6 +525,12 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
       '500':
         description: Internal Server Error
         content:
@@ -518,7 +539,7 @@
               $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
     x-codeSamples:
     - lang: cURL
-      label: Get user feedback
+      label: Get provider feedback
       source: 'curl --location ''https://${HOSTNAME}/iudx/v2/provider/feedback?asset_id=811e9876-9381-4a25-8ad1-e8b289616ab8&type=bookmark&page=1&size=10''
 
         '

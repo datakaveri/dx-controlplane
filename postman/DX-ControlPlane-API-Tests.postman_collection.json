@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "0ca3d4e3-11c6-4ee2-b31c-ae6121461bbc",
+    "_postman_id": "a06e2be2-4319-487e-8e4c-d2685c43eac8",
     "name": "DX Control Plane API Tests",
     "description": "Comprehensive API test suite for DX Control Plane and ACL APD.\n\nCovers all 130+ endpoints with role-based authentication via Keycloak.\n\n## Setup\n1. Import the matching environment file (local-docker or deployed)\n2. Run folder '00 \u2013 Auth & Token' first to populate tokens\n3. Run folders sequentially \u2014 later folders depend on IDs created by earlier ones\n\n## Roles\n- **cosadmin**: COS Administrator (full platform access)\n- **orgadmin**: Organisation Administrator\n- **provider**: Data Provider (publishes assets)\n- **consumer**: Data Consumer (accesses assets)\n- **delegate**: Delegate (acts on behalf of others)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -1085,7 +1085,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/iudx/v2/auth/organisations/requests",
+              "raw": "{{base_url}}/iudx/v2/auth/organisations/requests?page=0&size=10&sort=createdAt&delegatorId=",
               "host": [
                 "{{base_url}}"
               ],
@@ -1095,6 +1095,24 @@
                 "auth",
                 "organisations",
                 "requests"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt"
+                },
+                {
+                  "key": "delegatorId",
+                  "value": ""
+                }
               ]
             }
           },
@@ -1286,7 +1304,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/iudx/v2/auth/organisations",
+              "raw": "{{base_url}}/iudx/v2/auth/organisations?page=0&size=10&sort=createdAt",
               "host": [
                 "{{base_url}}"
               ],
@@ -1295,6 +1313,20 @@
                 "v2",
                 "auth",
                 "organisations"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt"
+                }
               ]
             }
           },
@@ -1570,7 +1602,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/iudx/v2/auth/organisations/{{org_id}}/users",
+              "raw": "{{base_url}}/iudx/v2/auth/organisations/{{org_id}}/users?page=0&size=10&sort=createdAt",
               "host": [
                 "{{base_url}}"
               ],
@@ -1581,6 +1613,20 @@
                 "organisations",
                 "{{org_id}}",
                 "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt"
+                }
               ]
             }
           },
@@ -1772,7 +1818,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/iudx/v2/auth/organisations/{{org_id}}/join_requests",
+              "raw": "{{base_url}}/iudx/v2/auth/organisations/{{org_id}}/join_requests?page=0&size=10&sort=createdAt&delegatorId=",
               "host": [
                 "{{base_url}}"
               ],
@@ -1783,6 +1829,24 @@
                 "organisations",
                 "{{org_id}}",
                 "join_requests"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt"
+                },
+                {
+                  "key": "delegatorId",
+                  "value": ""
+                }
               ]
             }
           },
@@ -1968,7 +2032,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/iudx/v2/auth/user/organisations/requests",
+              "raw": "{{base_url}}/iudx/v2/auth/user/organisations/requests?page=0&size=10&sort=createdAt",
               "host": [
                 "{{base_url}}"
               ],
@@ -1979,6 +2043,20 @@
                 "user",
                 "organisations",
                 "requests"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt"
+                }
               ]
             }
           },
@@ -2061,7 +2139,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/iudx/v2/auth/user/organisations/join_requests",
+              "raw": "{{base_url}}/iudx/v2/auth/user/organisations/join_requests?page=0&size=10&sort=createdAt",
               "host": [
                 "{{base_url}}"
               ],
@@ -2072,6 +2150,20 @@
                 "user",
                 "organisations",
                 "join_requests"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt"
+                }
               ]
             }
           },
@@ -2264,7 +2356,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/iudx/v2/auth/organization/user/provider_requests",
+              "raw": "{{base_url}}/iudx/v2/auth/organization/user/provider_requests?page=0&size=10&sort=createdAt",
               "host": [
                 "{{base_url}}"
               ],
@@ -2275,6 +2367,20 @@
                 "organization",
                 "user",
                 "provider_requests"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt"
+                }
               ]
             }
           },
@@ -3145,7 +3251,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/iudx/v2/auth/admin/user?email=provider1@test.com",
+              "raw": "{{base_url}}/iudx/v2/auth/admin/user?email=provider1@test.com&search_term=&page=0&size=10&sort=createdAt",
               "host": [
                 "{{base_url}}"
               ],
@@ -3160,6 +3266,22 @@
                 {
                   "key": "email",
                   "value": "provider1@test.com"
+                },
+                {
+                  "key": "search_term",
+                  "value": ""
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt"
                 }
               ]
             }
@@ -4348,7 +4470,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/iudx/v2/auth/credit/request",
+              "raw": "{{base_url}}/iudx/v2/auth/credit/request?page=0&size=10&sort=createdAt&status=pending",
               "host": [
                 "{{base_url}}"
               ],
@@ -4358,6 +4480,24 @@
                 "auth",
                 "credit",
                 "request"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt"
+                },
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
               ]
             }
           },
@@ -4935,7 +5075,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/iudx/v2/auth/user/credit/request",
+              "raw": "{{base_url}}/iudx/v2/auth/user/credit/request?page=0&size=10&sort=createdAt&status=",
               "host": [
                 "{{base_url}}"
               ],
@@ -4946,6 +5086,24 @@
                 "user",
                 "credit",
                 "request"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt"
+                },
+                {
+                  "key": "status",
+                  "value": ""
+                }
               ]
             }
           },
@@ -5328,7 +5486,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/iudx/v2/auth/user/compute/requests",
+              "raw": "{{base_url}}/iudx/v2/auth/user/compute/requests?page=0&size=10&sort=createdAt&status=",
               "host": [
                 "{{base_url}}"
               ],
@@ -5339,6 +5497,24 @@
                 "user",
                 "compute",
                 "requests"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt"
+                },
+                {
+                  "key": "status",
+                  "value": ""
+                }
               ]
             }
           },
@@ -5421,7 +5597,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/iudx/v2/auth/compute/requests",
+              "raw": "{{base_url}}/iudx/v2/auth/compute/requests?page=0&size=10&sort=createdAt&status=pending",
               "host": [
                 "{{base_url}}"
               ],
@@ -5431,6 +5607,24 @@
                 "auth",
                 "compute",
                 "requests"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt"
+                },
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
               ]
             }
           },

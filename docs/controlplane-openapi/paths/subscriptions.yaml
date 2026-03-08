@@ -3,7 +3,7 @@
     tags:
     - Subscriptions
     summary: Create subscription
-    description: Create a new subscription to do streaming, used as consumer api's.
+    description: 'Create a new data subscription for streaming. This is a consumer API that allows users to subscribe to entities for real-time data streaming. Requires an authenticated user token with consumer role.'
     operationId: postSubscriptions
     security:
     - authorization: []
@@ -53,21 +53,21 @@
   get:
     tags:
     - Subscriptions
-    summary: List of all subscription queues (based on user id)
+    summary: List all subscriptions for the current user
     operationId: getAllSubscriptionQueues
     security:
     - authorization: []
     parameters:
     - name: limit
       in: query
-      description: Limit the no of data to be shown
+      description: Maximum number of subscription records to return per request. Default is 100.
       schema:
         type: integer
         minimum: 1
         default: 100
     - name: offset
       in: query
-      description: Offset to see more data
+      description: Number of records to skip before returning results. Use with `limit` for pagination.
       schema:
         type: integer
         minimum: 0
@@ -91,8 +91,7 @@
           application/json:
             schema:
               $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse500
-    description: 'This API could be used by a consumer to get the list of all the data subscription under the given user.
-      The API could be used by the subscriber by providing the user access token.
+    description: 'Returns a list of all data subscriptions for the currently authenticated user. Use `limit` and `offset` for pagination. Requires an authenticated user token with consumer role.
 
       '
 /iudx/v2/subscriptions/{subscriptionId}:
@@ -169,7 +168,7 @@
       schema:
         type: string
     requestBody:
-      description: ''
+      description: Updated subscription entity list or expiry configuration
       content:
         application/json:
           schema:

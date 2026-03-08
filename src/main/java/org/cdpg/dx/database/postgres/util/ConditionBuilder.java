@@ -53,7 +53,7 @@ public class ConditionBuilder {
         String time = tr.time();
         String end = tr.endtime();
 
-        System.out.printf("temporalRequests::" + temporalRequests);
+        LOGGER.debug("Processing temporal requests: {}", temporalRequests);
 
         if (field == null || rel == null) continue;
 

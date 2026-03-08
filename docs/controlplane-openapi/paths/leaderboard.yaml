@@ -3,8 +3,7 @@
     tags:
     - Leaderboard
     summary: Get leaderboard for assets
-    description: 'Retrieve the leaderboard for assets based on various criteria such as most viewed, most downloaded, highest
-      rated, etc.
+    description: 'Retrieve the leaderboard for assets ranked by various criteria such as most viewed, most downloaded, or highest rated. Supports filtering by asset type, access policy, organization type, and time range. No authentication required.
 
       '
     operationId: get-asset-leaderboard
@@ -40,7 +39,7 @@
           - PII
     - name: organizationType
       in: query
-      description: Filter by aorganizationType (repeatable)
+      description: Filter by organization type (repeatable)
       required: false
       style: form
       explode: true
@@ -53,7 +52,7 @@
           - Public
           - Academic
           - Institution
-          - NGO/Non-profit"
+          - NGO/Non-profit
           - NA
     - $ref: ../components/parameters.yaml#/TimeParam
     - $ref: ../components/parameters.yaml#/EndTimeParam
@@ -90,8 +89,7 @@
     tags:
     - Leaderboard
     summary: Get leaderboard for providers
-    description: 'Retrieve the leaderboard for data providers based on various criteria such as most viewed, most downloaded,
-      highest rated, etc.
+    description: 'Retrieve the leaderboard for data providers ranked by various criteria such as most viewed, most downloaded, or highest rated. Supports filtering by asset type, organization type, and time range. No authentication required.
 
       '
     operationId: get-provider-leaderboard
@@ -112,7 +110,7 @@
           - USECASE
     - name: organizationType
       in: query
-      description: Filter by aorganizationType (repeatable)
+      description: Filter by organization type (repeatable)
       required: false
       style: form
       explode: true
@@ -125,7 +123,7 @@
           - Public
           - Academic
           - Institution
-          - NGO/Non-profit"
+          - NGO/Non-profit
           - NA
     - $ref: ../components/parameters.yaml#/TimeParam
     - $ref: ../components/parameters.yaml#/EndTimeParam
@@ -162,15 +160,14 @@
     tags:
     - Leaderboard
     summary: Get leaderboard for organisations
-    description: 'Retrieve the leaderboard for data providers based on various criteria such as most viewed, most downloaded,
-      highest rated, etc.
+    description: 'Retrieve the leaderboard for organisations ranked by various criteria such as contribution, most viewed, or most downloaded. Supports filtering by organization type, asset type, and time range. No authentication required.
 
       '
     operationId: get-organisation-leaderboard
     parameters:
     - name: organizationType
       in: query
-      description: Filter by aorganizationType (repeatable)
+      description: Filter by organization type (repeatable)
       required: false
       style: form
       explode: true
@@ -183,7 +180,7 @@
           - Public
           - Academic
           - Institution
-          - NGO/Non-profit"
+          - NGO/Non-profit
           - NA
     - name: assetType
       in: query

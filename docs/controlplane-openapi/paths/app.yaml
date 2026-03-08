@@ -58,12 +58,13 @@
     operationId: get-appId
     security:
     - authorization: []
-    description: 'Retrieve all appIds created by the authenticated user.
+    description: 'Retrieve all appIds created by the authenticated user. Supports pagination via `page` and `size` query parameters. Requires an authenticated user token.
 
       '
     parameters:
     - $ref: ../components/parameters.yaml#/PageParam
     - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
     responses:
       '200':
         description: Successfully retrieved apps

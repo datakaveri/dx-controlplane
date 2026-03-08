@@ -76,20 +76,7 @@
                     type: object
                     additionalProperties: true
                 paginationInfo:
-                  type: object
-                  properties:
-                    page:
-                      type: integer
-                    size:
-                      type: integer
-                    totalCount:
-                      type: integer
-                    totalPages:
-                      type: integer
-                    hasNext:
-                      type: boolean
-                    hasPrevious:
-                      type: boolean
+                  $ref: ../components/schemas/pagination.yaml#/PaginationInfo
             example:
               type: dx:controlPlane:success
               title: Success
@@ -138,16 +125,6 @@
                 totalPages: 77
                 hasNext: true
                 hasPrevious: false
-      '401':
-        description: Missing or invalid authentication token
-        content:
-          application/json:
-            schema:
-              $ref: ../components/schemas/common.yaml#/ErrorResponse
-            example:
-              type: dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing Bearer token
       '400':
         description: Invalid request parameters
         content:
@@ -158,6 +135,22 @@
               type: dx:controlPlane:badRequest
               title: Bad Request
               detail: 'Invalid sort format: itemCreatedAt-desc. Expected field:order'
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing Bearer token
+      '403':
+        description: Forbidden - User does not have the org_admin role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
     x-codeSamples:
     - lang: cURL
       label: get organisation assets
@@ -297,16 +290,6 @@
                     totalPages: 1
                     hasNext: false
                     hasPrevious: false
-      '401':
-        description: Missing or invalid authentication token
-        content:
-          application/json:
-            schema:
-              $ref: ../components/schemas/common.yaml#/ErrorResponse
-            example:
-              type: dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing Bearer token
       '400':
         description: Invalid request parameters
         content:
@@ -326,9 +309,25 @@
                   type: dx:controlPlane:badRequest
                   title: Bad Request
                   detail: Missing or malformed request
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing Bearer token
+      '403':
+        description: Forbidden - User does not have the org_admin role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
     x-codeSamples:
     - lang: cURL
-      label: get organisation assets
+      label: get organisation assets with filters
       source: "curl --location --request POST 'https://example\n.com/iudx/v2/cat/organisation/asset?size=100&page=1' \\\n\
         \  --header 'Content-Type: application/json' \\\n  --data '{\n    \"searchCriteria\": [\n      {\n        \"searchType\"\
         : \"term\",\n        \"field\": \"publishStatus\",\n        \"values\": [\"PENDING\"]\n      }\n    ],\n    \"filter\"\

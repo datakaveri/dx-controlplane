@@ -1,7 +1,7 @@
 /iudx/v2/dashboard/usage-summary:
   get:
     summary: Get usage summary for dashboard
-    description: Returns aggregated usage metrics (count and size) for different time windows used by the main dashboard.
+    description: 'Returns aggregated usage metrics (count and size) for different time windows used by the main dashboard. Provides data for total usage, last year, last 6 months, last month, last week, and yesterday. No authentication required.'
     operationId: get-dashboard-usage-summary
     tags:
     - Summary

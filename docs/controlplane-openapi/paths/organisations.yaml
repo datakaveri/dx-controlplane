@@ -1,10 +1,10 @@
 /iudx/v2/auth/organisations/requests:
   get:
-    summary: 'AAA-001-PF Admin: Get Organisation Creation requests'
+    summary: Get all organisation creation requests (COS Admin)
     tags:
     - Organisation APIs
     operationId: get-auth-v2-organisations-request
-    description: 'Returns a paginated list of organisation creation requests.
+    description: 'Returns a paginated list of organisation creation requests. Supports filtering by entity type, status, name, and sector. Requires `cos_admin` role.
 
       **Log Type:** `USER_ACTION`
 
@@ -17,6 +17,7 @@
     - $ref: ../components/parameters.yaml#/StatusParam
     - $ref: ../components/parameters.yaml#/OrgNameParam
     - $ref: ../components/parameters.yaml#/OrgSectorParam
+    - $ref: ../components/parameters.yaml#/SearchTermParam
     responses:
       '200':
         description: OK
@@ -24,99 +25,90 @@
           application/json:
             schema:
               type: object
-              x-examples:
-                Example 1:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  result:
-                  - id: 41290efb-057b-4296-872c-a764f6ff5615
-                    requestedBy: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                    name: Quant Sandbox
-                    logoPath: /logos/ai.png
-                    entityType: Private
-                    orgSector: Technology
-                    websiteLink: https://ai.example.com
-                    address: 123 Quant Labs, Bangalore, India
-                    certificatePath: /documents/certificate.pdf
-                    pancardPath: /documents/pancard.pdf
-                    relevantDocPath: null
-                    status: pending
-                    userName: test test
-                    empId: EMP12345
-                    jobTitle: Manager
-                    orgManagerphoneNo: +91-9876543210
-                    managerEmail: manager@gmail.com
-                    orgDocuments: null
-                    createdAt: '2025-06-03T16:01:59.532782'
-                    updatedAt: '2025-06-03T16:01:59.532782'
-                    tableName: organization_create_requests
               properties:
                 type:
                   type: string
+                  description: URN indicating the response status
                 title:
                   type: string
+                  description: Human-readable response title
                 result:
                   type: array
+                  description: List of organisation creation request records
                   items:
                     type: object
                     properties:
                       id:
                         type: string
+                        format: uuid
+                        description: Unique identifier of the creation request
                       requestedBy:
                         type: string
+                        format: uuid
+                        description: UUID of the user who submitted the request
                       name:
                         type: string
+                        description: Name of the organisation
                       logoPath:
                         type: string
+                        description: Path to the organisation logo
                       entityType:
                         type: string
+                        description: Type of the organisation (e.g., Private, Public, Startup)
                       orgSector:
                         type: string
+                        description: Sector of the organisation (e.g., Technology, Healthcare)
                       websiteLink:
                         type: string
+                        description: Website URL of the organisation
                       address:
                         type: string
+                        description: Physical address of the organisation
                       certificatePath:
                         type: string
+                        description: Path to the organisation certificate document
                       pancardPath:
                         type: string
+                        description: Path to the PAN card document
                       relevantDocPath:
                         type: string
+                        nullable: true
+                        description: Path to any relevant supporting document
                       status:
                         type: string
+                        description: Current status of the request (pending, granted, rejected)
                       userName:
                         type: string
+                        description: Display name of the requesting user
                       empId:
                         type: string
+                        description: Employee ID of the requesting user
                       jobTitle:
                         type: string
+                        description: Job title of the requesting user
                       orgManagerphoneNo:
                         type: string
+                        description: Phone number of the organisation manager
                       managerEmail:
                         type: string
+                        description: Email of the organisation manager
                       orgDocuments:
                         type: string
+                        nullable: true
+                        description: Path to organisation documents
                       createdAt:
                         type: string
+                        format: date-time
+                        description: Timestamp when the request was created
                       updatedAt:
                         type: string
+                        format: date-time
+                        description: Timestamp when the request was last updated
                       tableName:
                         type: string
+                        description: Internal table name for the record
                 paginationInfo:
-                  type: object
-                  properties:
-                    page:
-                      type: integer
-                    size:
-                      type: integer
-                    totalCount:
-                      type: integer
-                    totalPages:
-                      type: integer
-                    hasNext:
-                      type: boolean
-                    hasPrevious:
-                      type: boolean
+                  $ref: ../components/schemas/pagination.yaml#/PaginationInfo
             examples:
               Example 1:
                 value:
@@ -152,18 +144,24 @@
                     hasNext: true
                     hasPrevious: false
       '401':
-        description: Unauthorized – Token invalid/expired or user not authorized
+        description: Unauthorized - Token invalid/expired or user not authorized
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller does not have `cos_admin` role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/createNotificationForbidden
     security:
     - authorization: []
   post:
-    summary: 'AAA-002-New User: New organisation creation request'
+    summary: Submit a new organisation creation request (User)
     tags:
     - Organisation APIs
-    description: 'Submits a new organisation creation request by the authenticated user.
+    description: 'Submits a new organisation creation request by the authenticated user. The request will be reviewed by a COS Admin who can approve or reject it. Requires an authenticated user token.
 
       **Log Type:** `USER_ACTION`
 
@@ -391,10 +389,8 @@
     - authorization: []
 /iudx/v2/auth/organisations/requests/approve:
   post:
-    summary: 'AAA-003-PF Admin: Approve creation of new organisation'
-    description: 'This API allows an AAA-003-PF Admin to approve or reject a pending organization creation request. The request
-      body must include the `req_id` of the organization request and the `status` (granted or rejected). A successful response
-      indicates that the organization request has been updated.
+    summary: Approve or reject an organisation creation request (COS Admin)
+    description: 'Approves or rejects a pending organisation creation request. The request body must include the `req_id` and the `status` (`granted` or `rejected`). Requires `cos_admin` role.
 
       **Log Type:** `USER_ACTION`
 
@@ -436,11 +432,6 @@
                   type: string
                 detail:
                   type: string
-              x-examples:
-                Example 1:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  detail: Updated Sucessfully
             examples:
               Example 1:
                 value:
@@ -485,8 +476,14 @@
                   type: urn:dx:as:InvalidAuthenticationToken
                   title: Token authentication failed
                   detail: Inactive Token
+      '403':
+        description: Forbidden - Caller does not have `cos_admin` role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/createNotificationForbidden
       '409':
-        description: Conflict
+        description: Conflict - Organisation with the same name already exists
         content:
           application/json:
             schema:
@@ -496,21 +493,21 @@
                   type: string
                 title:
                   type: string
-                ? ''
-                : type: string
+                detail:
+                  type: string
             examples:
-              Example 1:
+              conflict:
                 value:
                   type: urn:dx:ControlPlane:conflict
                   title: Conflict
                   detail: 'ERROR: duplicate key value violates unique constraint "organizations_name_key" (23505)'
 /iudx/v2/auth/user/organisations/requests:
   get:
-    summary: 'User: Get its Organisation Creation requests'
+    summary: Get the current user's organisation creation requests
     tags:
     - Organisation APIs
     operationId: get-auth-v2-user-organisations-request
-    description: 'This request lists all the organisation creation requests made by that user.
+    description: 'Returns a list of organisation creation requests submitted by the currently authenticated user. Requires an authenticated user token.
 
       **Log Type:** `USER_ACTION`
 
@@ -522,32 +519,6 @@
           application/json:
             schema:
               type: object
-              x-examples:
-                Example 1:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  result:
-                  - id: 41290efb-057b-4296-872c-a764f6ff5615
-                    requestedBy: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                    name: Quant Sandbox
-                    logoPath: /logos/ai.png
-                    entityType: Private
-                    orgSector: Technology
-                    websiteLink: https://ai.example.com
-                    address: 123 Quant Labs, Bangalore, India
-                    certificatePath: /documents/certificate.pdf
-                    pancardPath: /documents/pancard.pdf
-                    relevantDocPath: null
-                    status: pending
-                    userName: test test
-                    empId: EMP12345
-                    jobTitle: Manager
-                    orgManagerphoneNo: +91-9876543210
-                    managerEmail: manager@gmail.com
-                    orgDocuments: null
-                    createdAt: '2025-06-03T16:01:59.532782'
-                    updatedAt: '2025-06-03T16:01:59.532782'
-                    tableName: organization_create_requests
               properties:
                 type:
                   type: string
@@ -674,20 +645,20 @@
     - authorization: []
 /iudx/v2/auth/user/organisations/join_requests:
   get:
-    summary: 'User: Get all Join requests for an organisation'
-    description: 'This API allows a user to view all its organization join requests made by it. **Log Type:** `USER_ACTION`
+    summary: Get the current user's organisation join requests
+    description: 'Returns a list of organisation join requests submitted by the currently authenticated user. Requires an authenticated user token.
+
+      **Log Type:** `USER_ACTION`
 
       '
     tags:
     - Organisation APIs
     parameters:
-    - name: delegatorId
-      in: query
-      description: Unique ID of the delegator
-      schema:
-        type: string
-        format: uuid
-        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+    - $ref: ../components/parameters.yaml#/DelegatorIdParam
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    - $ref: ../components/parameters.yaml#/StatusParam
     responses:
       '200':
         description: OK
@@ -695,23 +666,6 @@
           application/json:
             schema:
               type: object
-              x-examples:
-                Example 1:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  result:
-                  - id: 5fc228bb-9a20-4052-968e-427c733d2264
-                    organizationId: e87246e2-5da5-40b0-973c-690d2f48f879
-                    userId: ac2f3390-c7b0-4d4e-bb72-0bb8d9170309
-                    userName: coder coder
-                    status: pending
-                    jobTitle: Employee
-                    empId: EMP8790
-                    officialEmail: member@gmail.com
-                    requestedAt: '2025-06-03T16:35:48.404509'
-                    processedAt: '2025-06-03T16:35:48.404509'
-                    roles: []
-                    tableName: organization_join_requests
               properties:
                 type:
                   type: string
@@ -847,7 +801,7 @@
       format: uuid
       pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
   get:
-    summary: 'AAA-004-Org Admin: Get all Join requests for an organisation'
+    summary: Get all join requests for an organisation (Org Admin)
     description: 'This API allows an organization administrator to retrieve all join requests for a specific organization,
       identified by its `id` in the path parameter. Requests can optionally be filtered by their `status` (e.g., pending,
       granted, rejected). It provides details about each join request, including the user who requested to join, their current
@@ -868,6 +822,10 @@
         - pending
         - granted
         - rejected
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    - $ref: ../components/parameters.yaml#/SearchTermParam
     tags:
     - Organisation APIs
     responses:
@@ -877,23 +835,6 @@
           application/json:
             schema:
               type: object
-              x-examples:
-                Example 1:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  result:
-                  - id: 5fc228bb-9a20-4052-968e-427c733d2264
-                    organizationId: e87246e2-5da5-40b0-973c-690d2f48f879
-                    userId: ac2f3390-c7b0-4d4e-bb72-0bb8d9170309
-                    userName: coder coder
-                    status: pending
-                    jobTitle: Employee
-                    empId: EMP8790
-                    officialEmail: member@gmail.com
-                    requestedAt: '2025-06-03T16:35:48.404509'
-                    processedAt: '2025-06-03T16:35:48.404509'
-                    roles: []
-                    tableName: organization_join_requests
               properties:
                 type:
                   type: string
@@ -994,7 +935,7 @@
     security:
     - authorization: []
   post:
-    summary: 'AAA-005-Consumer: Create Request to Join an Organisation'
+    summary: Submit a request to join an organisation (User)
     description: 'This API allows an authenticated user to submit a request to join a specific organization, identified by
       its `id` in the path parameter. The request includes the user''s job title and employee ID. The organization administrator
       will then review and process this join request.
@@ -1049,13 +990,8 @@
                   type: string
                 detail:
                   type: string
-              x-examples:
-                Example 1:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  detail: Created Join request
             examples:
-              Example 1:
+              success:
                 value:
                   type: urn:dx:ControlPlane:success
                   title: Success
@@ -1071,8 +1007,8 @@
                   type: string
                 title:
                   type: string
-                ? ''
-                : type: string
+                detail:
+                  type: string
             examples:
               Example 1:
                 value:
@@ -1116,19 +1052,12 @@
                   type: string
                 detail:
                   type: string
-              x-examples:
-                Example 1:
-                  type: urn:dx:ControlPlane:conflict
-                  title: Conflict
-                  detail: 'ERROR: duplicate key value violates unique constraint "organization_join_requests_user_id_key"
-                    (23505)'
             examples:
-              Example 1:
+              conflict:
                 value:
                   type: urn:dx:ControlPlane:conflict
                   title: Conflict
-                  detail: 'ERROR: duplicate key value violates unique constraint "organization_join_requests_user_id_key"
-                    (23505)'
+                  detail: 'ERROR: duplicate key value violates unique constraint "organization_join_requests_user_id_key" (23505)'
     operationId: post-auth-v2-organisations-join-requests
     security:
     - authorization: []
@@ -1156,7 +1085,7 @@
       format: uuid
     description: UUID of the organization
   put:
-    summary: 'AAA-006-OrgAdmin: Approve or update status of a join request'
+    summary: Approve or reject a join request (Org Admin)
     description: 'This API allows an organization administrator to approve or reject a specific join request for their organization.
       The organization is identified by `id` and the join request by `req_id` in the path parameters. This operation updates
       the status of an existing join request.
@@ -1202,13 +1131,8 @@
                   type: string
                 detail:
                   type: string
-              x-examples:
-                Example 1:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  detail: Approved Organisation Join Request
             examples:
-              Example 1:
+              success:
                 value:
                   type: urn:dx:ControlPlane:success
                   title: Success
@@ -1239,17 +1163,18 @@
                   type: string
                 detail:
                   type: string
-              x-examples:
-                Example 1:
-                  type: urn:dx:ControlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Unauthorized
             examples:
-              Example 1:
+              unauthorized:
                 value:
                   type: urn:dx:ControlPlane:notAuthorized
                   title: Not Authorized
                   detail: Unauthorized
+      '403':
+        description: Forbidden - Caller is not the organisation admin
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/createNotificationForbidden
       '404':
         description: Join request not found
 /iudx/v2/auth/organisation/join-request/{id}:
@@ -1371,7 +1296,7 @@
     - authorization: []
 /iudx/v2/auth/organisations:
   get:
-    summary: 'AAA-007-Consumer: List All Organisations'
+    summary: List all organisations (Authenticated User)
     description: 'This API allows authenticated users to retrieve a list of all registered organizations. It provides details
       such as the organization''s name, logo, entity type, sector, and website. Pagination information is also included in
       the response. This endpoint does not require a request body.
@@ -1381,6 +1306,13 @@
       '
     tags:
     - Organisation APIs
+    parameters:
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    - $ref: ../components/parameters.yaml#/SearchTermParam
+    - $ref: ../components/parameters.yaml#/EntityTypeParam
+    - $ref: ../components/parameters.yaml#/OrgSectorParam
     responses:
       '200':
         description: OK - Successfully fetched all organizations.
@@ -1465,32 +1397,6 @@
                     hasPrevious:
                       type: boolean
                       description: Indicates if previous pages exist.
-              x-examples:
-                Example 1:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  result:
-                  - id: e87246e2-5da5-40b0-973c-690d2f48f879
-                    orgName: Quant Sandbox
-                    orgLogo: /logos/ai.png
-                    entityType: Private
-                    orgSector: Technology
-                    websiteLink: https://ai.example.com
-                    address: 123 Quant Labs, Bangalore, India
-                    certificatePath: /documents/certificate.pdf
-                    pancardPath: /documents/pancard.pdf
-                    relevantDocPath: null
-                    orgDocuments: null
-                    createdAt: '2025-06-03T16:28:24.205541'
-                    updatedAt: '2025-06-03T16:28:24.205541'
-                    tableName: organizations
-                  paginationInfo:
-                    page: 1
-                    size: 1
-                    totalCount: 346
-                    totalPages: 346
-                    hasNext: true
-                    hasPrevious: false
     operationId: get-auth-v2-org
     security:
     - authorization: []
@@ -1510,7 +1416,7 @@
       format: uuid
       pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
   delete:
-    summary: 'AAA-008-PFAdmin: Delete organisation by ID'
+    summary: Delete an organisation by ID (COS Admin)
     description: 'This API allows an PFAdmin to delete an organization by its unique identifier (ID). The ID of the organization
       to be deleted is provided as a path parameter. A successful response indicates that the organization has been deleted.
 
@@ -1526,7 +1432,7 @@
     security:
     - authorization: []
   put:
-    summary: AAA-009-OrgAdmin:Update Organisation by ID
+    summary: Update organisation details by ID (Org Admin)
     description: 'This API allows updating the details of an existing organization identified by its unique ID. The ID of
       the organization to be updated is provided as a path parameter. The request body should contain the updated organization
       details. A successful response indicates that the organization has been updated.
@@ -1550,11 +1456,8 @@
               name:
                 type: string
                 description: Name of the organization.
-            x-examples:
-              Example 1:
-                name: Etimes4
           examples:
-            Example 1:
+            updateName:
               value:
                 name: Etimes4
     responses:
@@ -1600,27 +1503,8 @@
                       type: string
                     tableName:
                       type: string
-              x-examples:
-                Example 1:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  result:
-                    id: e87246e2-5da5-40b0-973c-690d2f48f879
-                    orgName: Etimes4
-                    orgLogo: /logos/ai.png
-                    entityType: Private
-                    orgSector: Technology
-                    websiteLink: https://ai.example.com
-                    address: 123 Quant Labs, Bangalore, India
-                    certificatePath: /documents/certificate.pdf
-                    pancardPath: /documents/pancard.pdf
-                    relevantDocPath: null
-                    orgDocuments: null
-                    createdAt: '2025-06-03T16:28:24.205541'
-                    updatedAt: '2025-06-03T16:28:24.205541'
-                    tableName: organizations
             examples:
-              Example 1:
+              success:
                 value:
                   type: urn:dx:ControlPlane:success
                   title: Success
@@ -1641,7 +1525,7 @@
                     tableName: organizations
     operationId: put-auth-v2-organisations-id
   get:
-    summary: 'AAA-010-PFAdmin: Get Organisation By ID'
+    summary: Get organisation details by ID (COS Admin)
     description: 'This API allows retrieving the details of a specific organization by its unique identifier (ID). The ID
       of the organization to be retrieved is provided as a path parameter. A successful response includes the organization''s
       details such as name, logo, entity type, sector, and website.
@@ -1666,22 +1550,6 @@
           application/json:
             schema:
               type: object
-              x-examples:
-                Example 1:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  result:
-                    id: e87246e2-5da5-40b0-973c-690d2f48f879
-                    name: Quant Sandbox
-                    logo_path: /logos/ai.png
-                    entity_type: Private
-                    org_sector: Technology
-                    website_link: https://ai.example.com
-                    address: 123 Quant Labs, Bangalore, India
-                    certificate_path: /documents/certificate.pdf
-                    pancard_path: /documents/pancard.pdf
-                    created_at: '2025-06-03T16:28:24.205541'
-                    updated_at: '2025-06-03T16:28:24.205541'
               properties:
                 type:
                   type: string
@@ -1781,7 +1649,7 @@
       type: string
       format: uuid
   get:
-    summary: 'AAA-011-OrgAdmin: List organisation Users'
+    summary: List organisation users (Org Admin)
     description: 'This API allows an organization administrator to retrieve a list of all users associated with a specific
       organization, identified by its `id` in the path parameter. The response includes details about each user, such as their
       role within the organization, job title, employee ID, official email, and account status. Pagination information is
@@ -1792,6 +1660,12 @@
       '
     tags:
     - Organisation APIs
+    parameters:
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    - $ref: ../components/parameters.yaml#/SearchTermParam
+    - $ref: ../components/parameters.yaml#/DelegatorIdParam
     responses:
       '200':
         description: OK
@@ -1799,25 +1673,6 @@
           application/json:
             schema:
               type: object
-              x-examples:
-                Example 1:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  result:
-                  - id: 81980801-85b6-4b7d-ae54-5df38a3535bd
-                    organizationId: e87246e2-5da5-40b0-973c-690d2f48f879
-                    userId: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                    userName: test test
-                    role: ADMIN
-                    jobTitle: Manager
-                    empId: EMP12345
-                    orgManagerPhoneNo: +91-9876543210
-                    officialEmail: user@gmail.com
-                    createdAt: '2025-06-03T16:28:24.852025'
-                    updatedAt: '2025-06-03T16:28:24.852025'
-                    roles: []
-                    tableName: organization_users
-                    accountEnabled: true
               properties:
                 type:
                   type: string
@@ -2079,7 +1934,7 @@
     - authorization: []
 /iudx/v2/auth/organization/user/provider_role/requests:
   post:
-    summary: AAA-015-Any User:Create a Provider Role Request
+    summary: Create a provider role request (User)
     description: 'This API allows a user to submit a role upgrade request from Consumer to Provider within their organization.
       Once the organization administrator(`org_admin`) approves the request, the user will be granted the Provider role for
       the respective organization. A successful response indicates that the request has been successfully submitted.
@@ -2106,19 +1961,14 @@
                   type: string
                 detail:
                   type: string
-              x-examples:
-                Example 1:
-                  type: urn:dx:controlPanel:success
-                  title: Success
-                  detail: Created request
             examples:
-              Example 1:
+              success:
                 value:
                   type: urn:dx:controlPanel:success
                   title: Success
                   detail: Created request
   get:
-    summary: 'AAA-014-OrgAdmin: Get All pending provider role requests'
+    summary: Get all pending provider role requests (Org Admin)
     description: 'This API allows a org admin to retrieve all pending provider role requests from users in its organization.
       A successful response returns a list of pending requests with details such as user ID, user name, organization ID, organization
       name, status, and timestamps.
@@ -2172,7 +2022,7 @@
     - authorization: []
 /iudx/v2/auth/organization/user/provider_role/requests/{id}:
   put:
-    summary: 'AAA-016-OrgAdmin: Update a Provider Role Request'
+    summary: Update a provider role request (Org Admin)
     description: 'This API allows a organization administrator to update the status of a specific provider role request. The
       request is identified by its `id` in the path parameter. The request body should contain the new status for the provider
       role request. A successful response indicates that the provider role request has been updated.
@@ -2211,13 +2061,8 @@
                   type: string
                 detail:
                   type: string
-              x-examples:
-                Example 1:
-                  type: urn:dx:controlPanel:success
-                  title: Success
-                  detail: Provider role updated
             examples:
-              Example 1:
+              success:
                 value:
                   type: urn:dx:controlPanel:success
                   title: Success
@@ -2271,7 +2116,7 @@
 /iudx/v2/auth/organization/user/provider:
   post:
     operationId: post-auth-v2-organization-user-provider
-    summary: 'AAA-017-OrgAdmin: Grant provider role to user'
+    summary: Grant provider role to a user (Org Admin)
     description: 'This endpoint allows organization admin grants provider role to user in its organization.
 
       **Log Type:** `USER_ACTION`

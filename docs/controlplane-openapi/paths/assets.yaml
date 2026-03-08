@@ -89,8 +89,7 @@
     tags:
     - Asset APIs
     summary: List Org Admin User Asset Requests
-    description: 'Lists all the latest asset requests made by the org admin user calling the API, regardless of the request
-      status.
+    description: 'Lists all the latest asset requests made by the org admin user calling the API, regardless of the request status. Supports pagination, sorting, and temporal filtering. Requires an authenticated user token with `org_admin` role.
 
       **Log Type:** `USER_ACTION`
 
@@ -147,11 +146,17 @@
             schema:
               $ref: ../components/schemas/common.yaml#/updateNotificationBadRequest
       '401':
-        description: Unauthorized – Token invalid or expired, or caller lacks permission
+        description: Unauthorized - Token invalid or expired, or caller lacks permission
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - User does not have the org_admin role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
     security:
     - authorization: []
 /iudx/v2/auth/asset/request/{id}:
@@ -231,7 +236,7 @@
     tags:
     - Asset APIs
     summary: Delete User Asset Request
-    description: 'delete the pending asset requests made by the user calling the API.
+    description: 'Delete a pending asset request made by the authenticated user. Only requests in `PENDING` status can be deleted. Requires an authenticated user token.
 
       **Log Type:** `USER_ACTION`
 
@@ -256,10 +261,18 @@
             schema:
               $ref: ../components/schemas/common.yaml#/updateNotificationBadRequest
       '401':
-        description: Unauthorized – Token invalid or expired, or caller lacks permission
+        description: Unauthorized - Token invalid or expired, or caller lacks permission
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - User cannot delete this asset request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+      '404':
+        description: Not Found - Asset request not found or not in deletable state
     security:
     - authorization: []

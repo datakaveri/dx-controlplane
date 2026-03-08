@@ -1,10 +1,8 @@
 package org.cdpg.dx.aaa.credit.service;
 
-import co.elastic.clients.elasticsearch.ingest.Local;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
-import jakarta.ws.rs.ForbiddenException;
 import org.cdpg.dx.aaa.credit.dao.*;
 import org.cdpg.dx.aaa.credit.models.*;
 import org.cdpg.dx.aaa.organization.config.Constants;
@@ -162,7 +160,7 @@ public class CreditServiceImpl implements CreditService {
   public Future<CreditTransaction> addCredits(CreditTransaction creditTransaction)
   {
     LocalDateTime reqAt = creditTransaction.requestedAt();
-    System.out.println("Request at: " + reqAt);
+    LOGGER.debug("Processing credit transaction at: {}", reqAt);
     UUID userId = creditTransaction.userId();
 
     if (creditTransaction.amount() == null) {
@@ -206,7 +204,7 @@ public class CreditServiceImpl implements CreditService {
   @Override
   public Future<CreditTransaction> deductCredits(CreditTransaction creditTransaction) {
     LocalDateTime reqAt = creditTransaction.requestedAt();
-    System.out.println("Request at: " + reqAt);
+    LOGGER.debug("Processing credit transaction at: {}", reqAt);
     UUID userId = creditTransaction.userId();
 
     if (creditTransaction.amount() == null) {

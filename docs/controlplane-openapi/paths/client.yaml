@@ -2,11 +2,7 @@
   post:
     tags:
     - Client APIs
-    description: 'Create a new client in the system.
-
-      Requires a valid authorization token.
-
-      The client will be created with a unique ID and secret.
+    description: 'Create a new client credential (clientId and clientSecret) for the authenticated user. The generated credentials can be used to obtain access tokens via the `/auth/v2/token` endpoint. Requires a valid authorization token.
 
       '
     operationId: post-create-client-secret
@@ -48,8 +44,30 @@
                       type: string
                       format: date-time
                       example: '2025-10-29T11:38:48.246431'
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
       '401':
-        description: Unauthorized – missing or invalid token
+        description: Unauthorized - Missing or invalid token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+      '403':
+        description: Forbidden - Insufficient permissions
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
     x-codeSamples:
     - lang: curl
       label: Example request

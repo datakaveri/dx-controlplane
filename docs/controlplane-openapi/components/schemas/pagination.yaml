@@ -61,7 +61,7 @@ PaginationInfoResponse:
     hasPrevious:
       type: boolean
       description: Indicates whether a previous page exists
-      example: fals
+      example: false
 GetPaginationInfo:
   type: object
   description: Pagination metadata for list responses

@@ -22,7 +22,7 @@
       format: uuid
       pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
   delete:
-    summary: 'AAA-012-OrgAdmin: Delete User by ID'
+    summary: Delete a user from an organisation (Org Admin)
     description: 'This API allows an organization administrator to delete a specific user from their organization, identified
       by the user''s `user_id` and the organization''s `id` in the path parameters. A successful response indicates that the
       user has been deleted from the organization.
@@ -49,13 +49,8 @@
                 detail:
                   type: string
                   description: Details about the deletion operation.
-              x-examples:
-                Example 1:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  detail: Deleted Organisation User
             examples:
-              Example 1:
+              success:
                 value:
                   type: urn:dx:ControlPlane:success
                   title: Success
@@ -64,7 +59,7 @@
     security:
     - authorization: []
   put:
-    summary: 'AAA-013-OrgAdmin: Update Organization User Role'
+    summary: Update a user's role within an organisation (Org Admin)
     description: 'This API allows an organization administrator to update the role of a specific user within their organization.
       The user is identified by their `user_id` and the organization by its `id` in the path parameters. The request body
       should contain the new role for the user. A successful response indicates that the user''s role has been updated.
@@ -91,13 +86,8 @@
                 detail:
                   type: string
                   description: Details about the update operation.
-              x-examples:
-                Example 1:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  detail: Updated Organisation User Role
             examples:
-              Example 1:
+              success:
                 value:
                   type: urn:dx:ControlPlane:success
                   title: Success
@@ -370,41 +360,6 @@
           application/json:
             schema:
               type: object
-              x-examples:
-                Example 1:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  result:
-                    roles:
-                    - offline_access
-                    - compute
-                    - consumer
-                    - default-roles-myrealm
-                    - uma_authorization
-                    organisationId: ''
-                    organisationName: ''
-                    sub: 436cb796-5826-458b-a914-a54721f70997
-                    emailVerified: true
-                    kycVerified: false
-                    name: test test
-                    preferredUsername: test
-                    givenName: test
-                    familyName: test
-                    email: testing@gmail.com
-                    pendingRoles: []
-                    organisation:
-                      id: 98e74f31-4e40-4615-85b8-61256f0bc7c4
-                      organisationId: e87246e2-5da5-40b0-973c-690d2f48f879
-                      userId: 436cb796-5826-458b-a914-a54721f70997
-                      userName: test test
-                      status: granted
-                      jobTitle: Employee
-                      empId: EMP8790
-                      requestedAt: '2025-06-04T06:13:58.917342'
-                      processedAt: '2025-06-04T06:13:58.917342'
-                      request_type: organisation_join
-                    createdAt: '2025-06-04T06:12:48.991'
-                    kycData: {}
               properties:
                 type:
                   type: string
@@ -530,24 +485,19 @@
             properties:
               first_name:
                 type: string
-                x-stoplight:
-                  id: pdtm28py9tigj
+                description: Updated first name
               last_name:
                 type: string
-                x-stoplight:
-                  id: l8unuppdsu8n6
+                description: Updated last name
               twitter_account:
                 type: string
-                x-stoplight:
-                  id: dxe1oy55b3ovw
+                description: Twitter/X profile URL or handle
               linkedin_account:
                 type: string
-                x-stoplight:
-                  id: gvxoaj47lbpib
+                description: LinkedIn profile URL
               github_account:
                 type: string
-                x-stoplight:
-                  id: 66hcqj28wo7vu
+                description: GitHub profile URL or username
 /iudx/v2/auth/user/password:
   put:
     summary: (User) Change Password
@@ -685,30 +635,6 @@
                     kycData:
                       type: object
                       properties: {}
-              x-examples:
-                Example 1:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  result:
-                    roles:
-                    - cos_admin
-                    - offline_access
-                    - default-roles-myrealm
-                    - uma_authorization
-                    organisationId: ''
-                    organisationName: ''
-                    sub: a2899137-8458-40a6-9be8-084cfd1890e5
-                    emailVerified: false
-                    kycVerified: false
-                    name: User user
-                    preferredUsername: user
-                    givenName: User
-                    familyName: user
-                    email: user@gmail.com
-                    pendingRoles: []
-                    organisation: {}
-                    createdAt: '2025-05-21T09:33:12.073'
-                    kycData: {}
     operationId: get-auth-v2-user-id-admin
     parameters:
     - schema:
@@ -720,58 +646,26 @@
     - authorization: []
 /iudx/v2/auth/admin/user:
   get:
-    summary: (COS Admin) Get All Users Info
-    description: 'Retrieves the profile and account details of all users. Accessible only by COS Admin.
+    summary: Get all users (COS Admin)
+    description: 'Returns a paginated list of all users with their profile and account details. Supports filtering by search term. Requires `cos_admin` role.
 
       **Log Type:** `USER_ACTION`
 
       '
     tags:
     - Role APIs
+    parameters:
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    - $ref: ../components/parameters.yaml#/SearchTermParam
     responses:
       '200':
-        description: Get All users info
+        description: All users info retrieved successfully
         content:
-          application/x-www-form-urlencoded:
+          application/json:
             schema:
               type: object
-              x-examples:
-                Example 1:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  result:
-                  - organisationId: org-123
-                    organisationName: ''
-                    sub: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                    emailVerified: false
-                    kycVerified: true
-                    name: test test
-                    preferredUsername: testuser
-                    givenName: test
-                    familyName: test
-                    email: test@gmail.com
-                    pending_roles: []
-                    organisation:
-                      id: 4202493c-7c64-49b0-8f61-2000ca3d147c
-                      requestedBy: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                      name: Quants Sandbox
-                      logoPath: /logos/ai.png
-                      entityType: Private
-                      orgSector: Technology
-                      websiteLink: https://ai.example.com
-                      address: 123 Quant Labs, Bangalore, India
-                      certificatePath: /documents/certificate.pdf
-                      pancardPath: /documents/pancard.pdf
-                      status: pending
-                      userName: test test
-                      empId: EMP12345
-                      jobTitle: Manager
-                      orgManagerphoneNo: +91-9876543210
-                      createdAt: '2025-06-03T16:25:25.167724'
-                      updatedAt: '2025-06-03T16:25:25.167724'
-                      request_type: organisation_create
-                    createdAt: null
-                    kycInformation: {}
               properties:
                 type:
                   type: string
@@ -850,34 +744,7 @@
                       kycInformation:
                         type: object
                 paginationInfo:
-                  type: object
-                  x-stoplight:
-                    id: q5nv96hnpwunm
-                  properties:
-                    page:
-                      type: integer
-                      x-stoplight:
-                        id: qr8qhteoqy2g9
-                    size:
-                      type: integer
-                      x-stoplight:
-                        id: ogsnoc6zb4i5r
-                    totalPages:
-                      type: integer
-                      x-stoplight:
-                        id: qyz4oigpr2pld
-                    totalCount:
-                      type: integer
-                      x-stoplight:
-                        id: wn8hfnis26t2t
-                    hasNext:
-                      type: boolean
-                      x-stoplight:
-                        id: lzh9xiuynbj2d
-                    hasPrevious:
-                      type: boolean
-                      x-stoplight:
-                        id: cbvofwsy8sllb
+                  $ref: ../components/schemas/pagination.yaml#/PaginationInfo
             examples:
               Example 1:
                 value:
@@ -916,17 +783,25 @@
                       request_type: organisation_create
                     createdAt: null
                     kycInformation: {}
-          application/postscript:
+      '401':
+        description: Unauthorized - Token invalid or expired
+        content:
+          application/json:
             schema:
-              type: object
-              properties: {}
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller does not have `cos_admin` role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/createNotificationForbidden
     operationId: get-auth-v2-admin-user
     security:
     - authorization: []
 /iudx/v2/auth/user/basic:
   get:
-    summary: (All Users) Get basic user information
-    description: 'Returns paginated list of users with UUID, name, username, and email.
+    summary: Get basic user information (All Users)
+    description: 'Returns a paginated list of users with basic details (UUID, name, username, email). Supports text search across user fields. Requires an authenticated user token.
 
       **Log Type:** `USER_ACTION`
 
@@ -936,6 +811,11 @@
     operationId: get-auth-v2-user-search
     security:
     - authorization: []
+    parameters:
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    - $ref: ../components/parameters.yaml#/SearchTermParam
     responses:
       '200':
         description: Successfully retrieved user information

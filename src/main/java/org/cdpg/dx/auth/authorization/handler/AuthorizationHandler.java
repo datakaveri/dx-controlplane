@@ -6,6 +6,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.exception.DxForbiddenException;
@@ -16,6 +18,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class AuthorizationHandler {
+  private static final Logger LOGGER = LogManager.getLogger(AuthorizationHandler.class);
 
   public static Handler<RoutingContext> forRoles(DxRole... roles) {
     Set<String> allowed =
@@ -101,7 +104,7 @@ public class AuthorizationHandler {
         .anyMatch(role -> !role.equalsIgnoreCase("delegate"));
 
       if (isPrimaryUser) {
-        System.out.println("Skipping delegation scope check");
+        LOGGER.debug("Skipping delegation scope check for primary user");
         ctx.next();
         return;
       }

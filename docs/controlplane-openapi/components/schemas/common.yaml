@@ -1420,16 +1420,6 @@ successResponseWithObjects:
       description: A human readable title to the message response.
   required:
   - type
-  x-examples:
-    Example 1:
-      type: dx:controlPlane:success
-      title: Success
-      totalHits: 10
-      results:
-      - id: uuid
-        name: wifi-location
-        type:
-        - iudx:Resource
   example:
     type: dx:controlPlane:success
     title: Success

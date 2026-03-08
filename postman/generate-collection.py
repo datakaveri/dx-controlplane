@@ -341,6 +341,7 @@ def folder_02():
     items.append(make_request(
         "GET /organisations/requests – List (cos_admin)", "GET",
         f"{AUTH}/organisations/requests", "cosadmin_token",
+        query_params={"page": "0", "size": "10", "sort": "createdAt", "delegatorId": ""},
         status=200, prereq_role="cosadmin"
     ))
 
@@ -356,6 +357,7 @@ def folder_02():
     items.append(make_request(
         "GET /organisations – List All", "GET",
         f"{AUTH}/organisations", "cosadmin_token",
+        query_params={"page": "0", "size": "10", "sort": "createdAt"},
         status=200,
         extra_test='''pm.test("Save org id", function () {
     const body = pm.response.json();
@@ -385,6 +387,7 @@ def folder_02():
     items.append(make_request(
         "GET /organisations/:id/users – List Users", "GET",
         f"{AUTH}/organisations/{{{{org_id}}}}/users", "orgadmin_token",
+        query_params={"page": "0", "size": "10", "sort": "createdAt"},
         status=200, prereq_role="orgadmin"
     ))
 
@@ -407,6 +410,7 @@ def folder_02():
     items.append(make_request(
         "GET /organisations/:id/join_requests – List Join Requests", "GET",
         f"{AUTH}/organisations/{{{{org_id}}}}/join_requests", "orgadmin_token",
+        query_params={"page": "0", "size": "10", "sort": "createdAt", "delegatorId": ""},
         status=200, prereq_role="orgadmin"
     ))
 
@@ -422,6 +426,7 @@ def folder_02():
     items.append(make_request(
         "GET /user/organisations/requests – My Org Requests", "GET",
         f"{AUTH}/user/organisations/requests", "orgadmin_token",
+        query_params={"page": "0", "size": "10", "sort": "createdAt"},
         status=200, prereq_role="orgadmin"
     ))
 
@@ -429,6 +434,7 @@ def folder_02():
     items.append(make_request(
         "GET /user/organisations/join_requests – My Join Requests", "GET",
         f"{AUTH}/user/organisations/join_requests", "provider_token",
+        query_params={"page": "0", "size": "10", "sort": "createdAt"},
         status=200, prereq_role="provider"
     ))
 
@@ -451,6 +457,7 @@ def folder_02():
     items.append(make_request(
         "GET /organization/user/provider_requests – List Provider Requests", "GET",
         f"{AUTH}/organization/user/provider_requests", "orgadmin_token",
+        query_params={"page": "0", "size": "10", "sort": "createdAt"},
         status=200, prereq_role="orgadmin"
     ))
 
@@ -527,7 +534,7 @@ def folder_03():
     items.append(make_request(
         "GET /admin/user – Search Users (cos_admin)", "GET",
         f"{AUTH}/admin/user", "cosadmin_token",
-        query_params={"email": "provider1@test.com"},
+        query_params={"email": "provider1@test.com", "search_term": "", "page": "0", "size": "10", "sort": "createdAt"},
         status=200, prereq_role="cosadmin"
     ))
 
@@ -644,6 +651,7 @@ def folder_05():
     items.append(make_request(
         "GET /credit/request – List Credit Requests (cos_admin)", "GET",
         f"{AUTH}/credit/request", "cosadmin_token",
+        query_params={"page": "0", "size": "10", "sort": "createdAt", "status": "pending"},
         status=200, prereq_role="cosadmin"
     ))
 
@@ -683,6 +691,7 @@ def folder_05():
     items.append(make_request(
         "GET /user/credit/request – My Credit Requests", "GET",
         f"{AUTH}/user/credit/request", "consumer_token",
+        query_params={"page": "0", "size": "10", "sort": "createdAt", "status": ""},
         status=200, prereq_role="consumer"
     ))
 
@@ -724,12 +733,14 @@ def folder_06():
     items.append(make_request(
         "GET /user/compute/requests – My Compute Requests", "GET",
         f"{AUTH}/user/compute/requests", "consumer_token",
+        query_params={"page": "0", "size": "10", "sort": "createdAt", "status": ""},
         status=200, prereq_role="consumer"
     ))
 
     items.append(make_request(
         "GET /compute/requests – All Compute Requests (cos_admin)", "GET",
         f"{AUTH}/compute/requests", "cosadmin_token",
+        query_params={"page": "0", "size": "10", "sort": "createdAt", "status": "pending"},
         status=200, prereq_role="cosadmin"
     ))
 
