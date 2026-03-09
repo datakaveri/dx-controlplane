@@ -14,7 +14,7 @@ public class VerifyPolicyDto {
     if (json == null) {
       return;
     }
-    this.type = json.getString("policyId");
+    this.policyId = json.getString("policyId");
     this.type = json.getString("type");
     this.constraints = json.getJsonObject("constraints");
     this.expiryAt = json.getString("expiryAt");
