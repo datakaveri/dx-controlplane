@@ -137,7 +137,8 @@ public final class Constants {
     "organizationId", ORGANIZATION_ID,
     "userId", USER_ID,
     "userName", USER_NAME,
-    "role", ROLE
+    "role", ROLE,
+    "delegatorId" , "delegatorId"
   );
 
   public static final Map<String, String> API_TO_DB_ORG_USERS = Map.ofEntries(

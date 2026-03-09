@@ -108,12 +108,12 @@ public class CreditHandler {
     User dxUser = ctx.user();
     JsonObject userJson = dxUser.principal();
 
-    AccessValidator.validate(
-      userJson,
-      List.of( // primary roles (no scope check)
-        DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.CREDIT_MANAGEMENT.getScope(),DxScope.COS_ADMIN_ACCESS.getScope())
-    );
+//    AccessValidator.validate(
+//      userJson,
+//      List.of( // primary roles (no scope check)
+//        DxRole.COS_ADMIN.getRole()),
+//      List.of(DxScope.CREDIT_MANAGEMENT.getScope(),DxScope.COS_ADMIN_ACCESS.getScope())
+//    );
 
     PaginatedRequest request = PaginationRequestBuilder.from(ctx)
       .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_CREDIT_REQUEST)
@@ -198,12 +198,12 @@ public class CreditHandler {
     User dxUser = ctx.user();
     JsonObject userJson = dxUser.principal();
 
-    AccessValidator.validate(
-      userJson,
-      List.of( // primary roles (no scope check)
-        DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.CREDIT_MANAGEMENT.getScope(),DxScope.COS_ADMIN_ACCESS.getScope())
-    );
+//    AccessValidator.validate(
+//      userJson,
+//      List.of( // primary roles (no scope check)
+//        DxRole.COS_ADMIN.getRole()),
+//      List.of(DxScope.CREDIT_MANAGEMENT.getScope(),DxScope.COS_ADMIN_ACCESS.getScope())
+//    );
 
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "id");
     creditService.getBalance(userId)
@@ -226,12 +226,12 @@ public class CreditHandler {
     User dxUser = ctx.user();
     JsonObject userJson = dxUser.principal();
 
-    AccessValidator.validate(
-      userJson,
-      List.of( // primary roles (no scope check)
-        DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.CREDIT_MANAGEMENT.getScope(),DxScope.COS_ADMIN_ACCESS.getScope())
-    );
+//    AccessValidator.validate(
+//      userJson,
+//      List.of( // primary roles (no scope check)
+//        DxRole.COS_ADMIN.getRole()),
+//      List.of(DxScope.CREDIT_MANAGEMENT.getScope(),DxScope.COS_ADMIN_ACCESS.getScope())
+//    );
 
     JsonObject creditRequestJson = ctx.body().asJsonObject();
 
@@ -297,12 +297,12 @@ public class CreditHandler {
     User dxUser = ctx.user();
     JsonObject userJson = dxUser.principal();
 
-    AccessValidator.validate(
-      userJson,
-      List.of( // primary roles (no scope check)
-        DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.CREDIT_MANAGEMENT.getScope(),DxScope.COS_ADMIN_ACCESS.getScope())
-    );
+//    AccessValidator.validate(
+//      userJson,
+//      List.of( // primary roles (no scope check)
+//        DxRole.COS_ADMIN.getRole()),
+//      List.of(DxScope.CREDIT_MANAGEMENT.getScope(),DxScope.COS_ADMIN_ACCESS.getScope())
+//    );
 
     JsonObject creditDeductionJson = ctx.body().asJsonObject();
 
@@ -336,12 +336,12 @@ public class CreditHandler {
     User dxUser = ctx.user();
     JsonObject userJson = dxUser.principal();
 
-    AccessValidator.validate(
-      userJson,
-      List.of( // primary roles (no scope check)
-        DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.CREDIT_MANAGEMENT.getScope(),DxScope.COS_ADMIN_ACCESS.getScope())
-    );
+//    AccessValidator.validate(
+//      userJson,
+//      List.of( // primary roles (no scope check)
+//        DxRole.COS_ADMIN.getRole()),
+//      List.of(DxScope.CREDIT_MANAGEMENT.getScope(),DxScope.COS_ADMIN_ACCESS.getScope())
+//    );
 
     JsonObject creditAdditionJson = ctx.body().asJsonObject();
 
@@ -500,13 +500,13 @@ public class CreditHandler {
 
     User dxUser = ctx.user();
     JsonObject userJson = dxUser.principal();
-
-    AccessValidator.validate(
-      userJson,
-      List.of( // primary roles (no scope check)
-        DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.COMPUTE_MANAGEMENT.getScope(),DxScope.COS_ADMIN_ACCESS.getScope())
-    );
+//
+//    AccessValidator.validate(
+//      userJson,
+//      List.of( // primary roles (no scope check)
+//        DxRole.COS_ADMIN.getRole()),
+//      List.of(DxScope.COMPUTE_MANAGEMENT.getScope(),DxScope.COS_ADMIN_ACCESS.getScope())
+//    );
 
     JsonObject creditRequestJson = ctx.body().asJsonObject();
 

@@ -9,30 +9,22 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.audit.util.AuditingHelper;
 import org.cdpg.dx.aaa.delegation.DelegationHandlerValidator;
 import org.cdpg.dx.aaa.delegation.UpdatedGrantResponse;
-import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
-import org.cdpg.dx.aaa.delegation.models.DelegationUpdateRequest;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
+import org.cdpg.dx.common.util.resolver.DelegatorStrategyFactory;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.AuditLog;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
-import org.cdpg.dx.common.request.PaginatedRequest;
-import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
-import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
-import java.time.LocalDateTime;
 import java.util.*;
 
 import static org.cdpg.dx.aaa.delegation.util.Constants.*;
-import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
-import static org.cdpg.dx.common.util.DateTimeHelper.parseDateTime;
-import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
 public class DelegationHandler {
 
@@ -43,10 +35,11 @@ public class DelegationHandler {
   private final UserService userService;
   private final KeycloakUserService keycloakUserService;
   private final DelegationHandlerValidator delegationHandlerValidator;
+  private final DelegatorStrategyFactory delegatorStrategyFactory;
 //  private final UpdatedGrantResponse updatedGrantResponse;
 
 
-  public DelegationHandler(DelegationService delegationService, EmailComposer emailComposer, UserService userService, URNGenerator urnGenerator,KeycloakUserService keycloakUserService)
+  public DelegationHandler(DelegationService delegationService, EmailComposer emailComposer, UserService userService, DelegatorStrategyFactory delegatorStrategyFactory,URNGenerator urnGenerator,KeycloakUserService keycloakUserService)
   {
     this.delegationService = delegationService;
     this.emailComposer = emailComposer;
@@ -54,6 +47,7 @@ public class DelegationHandler {
     this.urnGenerator = urnGenerator;
     this.keycloakUserService = keycloakUserService;
     this.delegationHandlerValidator = new DelegationHandlerValidator();
+    this.delegatorStrategyFactory = delegatorStrategyFactory;
   }
 
   public void getDelegationGrant(RoutingContext ctx) {
@@ -286,6 +280,29 @@ public class DelegationHandler {
     delegationService.getDelegationRequestsByDelegationId(delegationId.toString())
       .onSuccess(requests -> {
         ResponseBuilder.sendSuccess(ctx, requests, urnGenerator);
+      })
+      .onFailure(ctx::fail);
+  }
+
+  public void resolveUserId(RoutingContext ctx) {
+    delegatorStrategyFactory
+      .create(ctx)
+      .resolveUserId(ctx)
+      .onSuccess(resolvedUserId -> {
+        ctx.put("resolvedUserId", resolvedUserId);   // stash for next handler
+        ctx.next();                                   // proceed in chain
+      })
+      .onFailure(ctx::fail);
+  }
+
+  public void resolveOrgId(RoutingContext ctx) {
+    String orgIdParam = ctx.pathParam("id");
+    delegatorStrategyFactory
+      .create(ctx)
+      .resolveOrgId(ctx, orgIdParam)
+      .onSuccess(resolvedOrgId -> {
+        ctx.put("resolvedOrgId", resolvedOrgId);
+        ctx.next();
       })
       .onFailure(ctx::fail);
   }

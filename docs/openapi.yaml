@@ -872,6 +872,14 @@ paths:
       tags:
         - Organisation APIs
       operationId: get-auth-v2-user-organisations-request
+      parameters:
+      - name: delegatorId
+        in: query
+        description: Unique ID of the delegator
+        schema:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       description: >
         This request lists all the organisation creation requests made by that user.
 
@@ -1012,6 +1020,13 @@ paths:
           in: path
           required: true
           description: Unique ID of the organization request
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+        - name: delegatorId
+          in: query
+          description: Unique ID of the delegator
           schema:
             type: string
             format: uuid
@@ -1529,6 +1544,14 @@ paths:
       operationId: put-auth-v2-organisations-join-requests
       security:
         - authorization: [ ]
+      parameters:
+        - name: delegatorId
+          in: query
+          description: Unique ID of the delegator
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       requestBody:
         description: >
           The request body contains the new status for the join request.
@@ -1886,6 +1909,14 @@ paths:
         '200':
           description: OK - Successfully deleted organization.
       operationId: delete-auth-v2-organisations-id
+      parameters:
+      - name: delegatorId
+        in: query
+        description: Unique ID of the delegator
+        schema:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       security:
         - authorization: [ ]
     put:
@@ -1901,6 +1932,14 @@ paths:
         - Organisation APIs
       security:
         - authorization: [ ]
+      parameters:
+      - name: delegatorId
+        in: query
+        description: Unique ID of the delegator
+        schema:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       requestBody:
         description: >
           The request body specifies the entries which need to be updated by the user.They are optional.
@@ -2020,6 +2059,13 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: delegatorId
+          in: query
+          description: Unique ID of the delegator
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       responses:
         '200':
           description: OK
@@ -2141,6 +2187,13 @@ paths:
         schema:
           type: string
           format: uuid
+      - name: delegatorId
+        in: query
+        description: Unique ID of the delegator
+        schema:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
     get:
       summary: 'AAA-011-OrgAdmin: List organisation Users'
       description: >
@@ -2373,6 +2426,14 @@ paths:
         **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
+      parameters:
+        - name: delegatorId
+          in: query
+          description: Unique ID of the delegator
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       responses:
         '200':
           description: OK
@@ -2472,6 +2533,13 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: delegatorId
+          in: query
+          description: Unique ID of the delegator
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       security:
         - authorization: [ ]
     get:
@@ -4054,13 +4122,6 @@ paths:
           schema:
             type: string
             format: uuid
-        - name: delegatorId
-          in: query
-          description: Unique ID of the delegator
-          schema:
-            type: string
-            format: uuid
-            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       responses:
         '200':
           description: OK

@@ -93,6 +93,7 @@ public class OrganizationUserHandler {
 
     User user = ctx.user();
     JsonObject userJson = user.principal();
+    UUID resolvedOrgId = ctx.get("resolvedOrgId");
 
 //    AccessValidator.validate(
 //        userJson,
@@ -100,13 +101,13 @@ public class OrganizationUserHandler {
 //            DxRole.ORG_ADMIN.getRole()),
 //        List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope()));
 
-    UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
+//    UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
 
     PaginatedRequest request =
         PaginationRequestBuilder.from(ctx)
             .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_ORG_USERS)
             .apiToDbMap(API_TO_DB_ORG_USERS)
-            .additionalFilters(Map.of(ORGANIZATION_ID, orgId.toString()))
+            .additionalFilters(Map.of(ORGANIZATION_ID, resolvedOrgId.toString()))
             .allowedTimeFields(Set.of(CREATED_AT))
             .defaultTimeField(CREATED_AT)
             .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
@@ -147,6 +148,9 @@ public class OrganizationUserHandler {
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
 
+    UUID resolvedOrgId = ctx.get("resolvedOrgId");
+    UUID resolvedUserId = ctx.get("resolvedUserId");
+
 //    AccessValidator.validate(
 //      userJson,
 //      List.of( // primary roles (no scope check)
@@ -154,13 +158,13 @@ public class OrganizationUserHandler {
 //      List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope()));
 
     organizationService
-        .updateUserRole(orgId, userId, role)
+        .updateUserRole(resolvedOrgId, resolvedUserId, role)
         .onSuccess(
             updated -> {
               if (updated) {
                 UserActivityAuditLogBuilder auditLogBuilder =
                   OrganizationAuditHelper.buildOrganisationAudit(
-                    ctx, new JsonObject().put(ID,userId.toString()), OrganisationAuditOperation.UPDATE_USER_INFO);
+                    ctx, new JsonObject().put(ID,resolvedUserId.toString()), OrganisationAuditOperation.UPDATE_USER_INFO);
                 RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
                 ResponseBuilder.sendSuccess(ctx, "Updated Organisation User Role", urnGenerator);
@@ -180,25 +184,17 @@ public class OrganizationUserHandler {
     // delegation table has the org_id
     // get actual org admin id from the delegation table
 
-    String delegatorIdStr = ctx.queryParams().get("delegatorId");
-    UUID delegatorId = delegatorIdStr!=null? UUID.fromString(delegatorIdStr):null;
 
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
-    JsonObject userJson = ctx.user().principal();
+
 
     if (orgId == null || userId == null) {
       ctx.fail(new DxNotFoundException("Organization ID or User ID is missing"));
       return;
     }
 
-    UUID orgAdminId = UUID.fromString(ctx.user().subject());
-    if(delegatorId!=null)
-    {
-       orgAdminId = delegatorId;
-    }
-
-   UUID finalorgAdminId = orgAdminId;
+    UUID resolvedUserId = ctx.get("resolvedUserId");
 
 //    AccessValidator.validate(
 //      userJson,
@@ -220,7 +216,7 @@ public class OrganizationUserHandler {
 
               Future<Boolean> deletionFuture;
               if (user.roles().contains("provider")) {
-                deletionFuture = organizationService.deleteProviderUser(userId, finalorgAdminId, orgId);
+                deletionFuture = organizationService.deleteProviderUser(userId, resolvedUserId, orgId);
               } else {
                 deletionFuture = organizationService.deleteOrganizationUser(orgId, userId);
               }

@@ -44,6 +44,7 @@ import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.delegation.ItemOwnershipValidator;
 import org.cdpg.dx.aaa.delegation.OrgOwnershipValidator;
 import org.cdpg.dx.aaa.delegation.factory.DelegationControllerFactory;
+import org.cdpg.dx.aaa.delegation.handler.DelegationHandler;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.email.factory.EmailComposerFactory;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
@@ -64,6 +65,7 @@ import org.cdpg.dx.aaa.list.factory.ListControllerFactory;
 import org.cdpg.dx.aaa.organization.controller.OrganizationReportController;
 import org.cdpg.dx.aaa.organization.factory.OrganizationControllerFactory;
 import org.cdpg.dx.aaa.organization.factory.OrganizationReportControllerFactory;
+import org.cdpg.dx.common.util.resolver.DelegatorStrategyFactory;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.publicKey.controller.PublicController;
 import org.cdpg.dx.aaa.publicKey.factory.PublicKeycontrllerFactory;
@@ -183,9 +185,7 @@ public class ControllerFactory {
             urnGenerator,
             isKycRequired);
 
-    ApiController delegationApiController =
-        DelegationControllerFactory.create(
-            delegationService, emailComposer, userService, urnGenerator, keycloakUserService);
+
 
     ApiController userController = UserControllerFactory.create(userService, urnGenerator);
 
@@ -194,6 +194,11 @@ public class ControllerFactory {
     ApiController kycController = new KYCController(kycHandler, auditingHandler);
 
     OrgOwnershipValidator orgOwnershipValidator = new OrgOwnershipValidator(organizationService);
+
+    DelegatorStrategyFactory delegatorStrategyFactory = new DelegatorStrategyFactory(userService,orgOwnershipValidator);
+
+    DelegationHandler delegationHandler = new DelegationHandler(delegationService,emailComposer,userService,delegatorStrategyFactory,urnGenerator,keycloakUserService);
+
 
     ApiController organizationController =
         OrganizationControllerFactory.create(
@@ -204,12 +209,17 @@ public class ControllerFactory {
             esService,
             keycloakUserService,
             urnGenerator,
-            delegationService,
             orgOwnershipValidator,
+            delegationHandler,
             webClient,
             isKycRequired,
             docIndex,
             apdURL);
+
+    ApiController delegationApiController =
+      DelegationControllerFactory.create(
+        delegationService, emailComposer, userService, delegatorStrategyFactory,urnGenerator, keycloakUserService);
+
 
     OrganizationReportController organizationReportController =
         OrganizationReportControllerFactory.create(vertx, pgService);
