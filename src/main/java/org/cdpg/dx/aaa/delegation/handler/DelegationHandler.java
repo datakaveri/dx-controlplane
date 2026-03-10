@@ -125,6 +125,32 @@ public class DelegationHandler {
 
   }
 
+  public void getDelegatorRoles(RoutingContext ctx) {
+
+    User user = ctx.user();
+    UUID userId = UUID.fromString(user.subject());
+
+    UUID delegatorId = UUID.fromString(ctx.queryParams().get("delegatorId"));
+
+    delegationService.getDelegatorRoles(userId.toString(),delegatorId.toString())
+      .onSuccess(res -> {
+        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
+          RoutingContextHelper.getRequestPath(ctx), "GET", "Get All Delegations made by the user who is the delegator");
+
+        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        if(res==null || res.isEmpty())
+        {
+          ResponseBuilder.sendSuccess(ctx,"No delegation found for this user" ,urnGenerator);
+        }
+
+        ResponseBuilder.sendSuccess(ctx, res ,urnGenerator);
+
+
+      })
+      .onFailure(ctx::fail);
+
+  }
+
 
 
   public void deleteDelegationGrant(RoutingContext ctx)

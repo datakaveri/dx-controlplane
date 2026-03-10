@@ -2554,6 +2554,70 @@ paths:
       security:
         - authorization: [ ]
 
+  /iudx/v2/auth/delegator/roles:
+    get:
+      operationId: get-auth-v2-delegator-roles
+      summary: Get roles of a delegator
+      description: Returns the roles of a delegator if a valid delegation exists between the delegate and delegator
+      tags:
+        - Role APIs
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: delegatorId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The UUID of the delegator
+      responses:
+        '200':
+          description: Successfully retrieved delegator roles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  delegation_access:
+                    type: object
+                    properties:
+                      roles:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - manage-account
+                          - manage-account-links
+                          - view-profile
+                          - cos_admin
+                          - consumer
+        '400':
+          description: Bad Request – Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: Unauthorized – Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden – Not the requester or admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+        '404':
+          description: Not Found – Request or scope does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+
+
   /iudx/v2/auth/user/custom/role:
     post:
       operationId: post-auth-v2-custom-role

@@ -6,6 +6,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.ws.rs.ForbiddenException;
 import org.apache.logging.log4j.LogManager;
+import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
 import org.cdpg.dx.aaa.delegation.util.RoleScopeMapping;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
@@ -284,6 +285,96 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
     return Future.succeededFuture(true);
   }
 
+  @Override
+  public Future<DelegationGrant> publishScopesAndRolesToKeycloak(
+    DelegationGrant created,
+    JsonArray roles,
+    String highestRole,
+    Set<String> delegatorRoles
+  ) {
+
+    // Fetch user ONCE
+    UserRepresentation user = usersResource().get(created.delegateId().toString()).toRepresentation();
+    Map<String, List<String>> attrs = user.getAttributes();
+    if (attrs == null) {
+      attrs = new HashMap<>();
+    }
+
+    // -------------------- SCOPES --------------------
+    List<String> newScopes = new ArrayList<>();
+
+    if (roles == null || roles.isEmpty()) {
+      RoleScopeMapping roleMapping = RoleScopeMapping.fromString(highestRole);
+      LOGGER.info(
+        "Wildcard delegation detected, expanding scopes for role: {} and scopes: {}",
+        roleMapping.getRole(),
+        roleMapping.getAllowedScopes()
+      );
+      newScopes = roleMapping.getAllowedScopes().stream().toList();
+
+    } else {
+      for (Object r : roles) {
+        JsonObject roleObj = (JsonObject) r;
+        String role = roleObj.getString("role");
+        JsonArray constraints = roleObj.getJsonArray("constraints");
+
+        if (constraints != null) {
+          for (Object c : constraints) {
+            newScopes.add(((JsonObject) c).getString("scope"));
+          }
+        } else {
+          RoleScopeMapping roleMapping = RoleScopeMapping.fromString(role);
+          LOGGER.info(
+            "No subset constraint found, expanding scopes for role: {} and scopes: {}",
+            roleMapping.getRole(),
+            roleMapping.getAllowedScopes()
+          );
+          newScopes = roleMapping.getAllowedScopes().stream().toList();
+        }
+      }
+    }
+
+    // Merge with existing scopes — no duplicates
+    Set<String> mergedScopes = new LinkedHashSet<>();
+    String existingScopes = attrs.getOrDefault(KeycloakConstants.SCOPES, List.of("[]")).get(0);
+    try {
+      new JsonArray(existingScopes).forEach(s -> mergedScopes.add(s.toString()));
+    } catch (Exception e) {
+      LOGGER.warn("Failed to parse existing scopes, starting fresh: {}", e.getMessage());
+    }
+    mergedScopes.addAll(newScopes);
+
+    JsonArray scopesArray = new JsonArray();
+    mergedScopes.forEach(scopesArray::add);
+    attrs.put(KeycloakConstants.SCOPES, List.of(scopesArray.encode()));
+    attrs.put(KeycloakConstants.DID, List.of(created.delegatorId().toString()));
+
+    // -------------------- ROLES --------------------
+    // Merge with existing roles — no duplicates
+    Set<String> mergedRoles = new LinkedHashSet<>();
+    String existingRoles = attrs.getOrDefault(KeycloakConstants.DELEGATION_ROLES, List.of("[]")).get(0);
+    try {
+      new JsonArray(existingRoles).forEach(r -> mergedRoles.add(r.toString()));
+    } catch (Exception e) {
+      LOGGER.warn("Failed to parse existing roles, starting fresh: {}", e.getMessage());
+    }
+    mergedRoles.addAll(delegatorRoles);
+
+    JsonArray rolesArray = new JsonArray();
+    mergedRoles.forEach(rolesArray::add);
+    attrs.put(KeycloakConstants.DELEGATION_ROLES, List.of(rolesArray.encode()));
+
+    // Single update
+    user.setAttributes(attrs);
+    usersResource().get(created.delegateId().toString()).update(user);
+
+    LOGGER.info("Scopes saved: {}", scopesArray.encode());
+    LOGGER.info("Roles saved: {}", rolesArray.encode());
+    LOGGER.info("Readback: {}",
+      usersResource().get(created.delegateId().toString()).toRepresentation().getAttributes());
+
+    return Future.succeededFuture(created);
+  }
 
 
   @Override

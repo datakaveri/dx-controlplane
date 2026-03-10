@@ -24,7 +24,9 @@ import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.util.DateTimeHelper;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
+import org.cdpg.dx.keycloak.config.KeycloakConstants;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,6 +79,7 @@ public class DelegationServiceImpl implements DelegationService{
     LOGGER.info("Delegation Grant body is {}",delegationGrantBody);
 
     UUID delegatorId = UUID.fromString(delegationGrantBody.getString(DELEGATOR_ID));
+    UUID delegateId = UUID.fromString(delegationGrantBody.getString(DELEGATE_ID));
 
     DelegationGrant delegationGrant = DelegationGrant.fromJson(delegationGrantBody);
 
@@ -113,7 +116,8 @@ public class DelegationServiceImpl implements DelegationService{
           .map(v -> created)
       )
       .compose(created ->
-        publishScopesToKeycloak(created, roleConstraints,highestRole).map(DelegationGrant::toJson)
+        keycloakUserService.publishScopesAndRolesToKeycloak(created, roleConstraints, highestRole, delegatorRoles)
+          .map(DelegationGrant::toJson)
       )
       .recover(err -> Future.failedFuture(BaseDxException.from(err)));
   }
@@ -253,7 +257,6 @@ public class DelegationServiceImpl implements DelegationService{
         return Future.succeededFuture(all);
       });
   }
-
 
   @Override
   public Future<List<JsonObject>> getAllDelegationsByDelegator(String userIdStr) {
@@ -637,6 +640,38 @@ public class DelegationServiceImpl implements DelegationService{
         created.delegatorId()
       )
       .map(v -> created);
+  }
+
+  public Future<JsonObject> getDelegatorRoles(String userId, String delegatorId) {
+
+    Map<String, Object> filters = Map.of(
+      DELEGATOR_ID, delegatorId,
+      DELEGATE_ID, userId
+    );
+
+    return delegationGrantDAO.getAllWithFilters(filters)
+      .compose(grants -> {
+
+        if (grants.isEmpty()) {
+          return Future.failedFuture(
+            new DxBadRequestException("Delegation doesn't exist for delegator and delegate"));
+        }
+
+        // Fetch DELEGATOR's DxUser
+        return keycloakUserService.getUserById(UUID.fromString(delegatorId));
+      })
+      .compose(dxUser -> {
+
+        List<String> roles = dxUser.roles() != null ? dxUser.roles() : List.of();
+
+        JsonObject result = new JsonObject()
+          .put("delegation_access", new JsonObject()
+            .put("roles", new JsonArray(roles)));
+
+        LOGGER.info("Delegator {} roles for delegate {} → {}", delegatorId, userId, result.encode());
+
+        return Future.succeededFuture(result);
+      });
   }
 
   @Override

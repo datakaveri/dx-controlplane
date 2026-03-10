@@ -1,7 +1,9 @@
 package org.cdpg.dx.keycloak.service;
 
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
 import org.cdpg.dx.aaa.delegation.util.RoleScopeMapping;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
@@ -35,6 +37,12 @@ public interface KeycloakUserService {
     Future<Boolean> addCustomRoleToUser(UUID userId,String role);
     Future<Boolean> clearDelegationScopes(    UUID userId,
                                               Set<String> scopesToRemove);
+    Future<DelegationGrant> publishScopesAndRolesToKeycloak(
+    DelegationGrant created,
+    JsonArray roles,
+    String highestRole,
+    Set<String> delegatorRoles
+  );
 //    Future<Boolean> addScopesToUser(UUID userId, List<String> scopes);
 }
 
