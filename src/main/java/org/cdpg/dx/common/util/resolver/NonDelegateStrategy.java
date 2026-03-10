@@ -1,13 +1,21 @@
 package org.cdpg.dx.common.util.resolver;
 
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.organization.handler.OrganizationCommandHandler;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 
 import java.util.Objects;
 import java.util.UUID;
 
 public class NonDelegateStrategy implements DelegatorStrategy {
+
+  private static final Logger LOGGER = LogManager.getLogger(NonDelegateStrategy.class);
+
 
   @Override
   public Future<UUID> resolveUserId(RoutingContext ctx) {
@@ -18,6 +26,19 @@ public class NonDelegateStrategy implements DelegatorStrategy {
   @Override
   public Future<UUID> resolveOrgId(RoutingContext ctx, String orgIdParam) {
     String orgIdStr = ctx.user().principal().getString("organisation_id");
+
+    JsonObject realmAccess = ctx.user().principal().getJsonObject("realm_access");
+    JsonArray roles = realmAccess != null ? realmAccess.getJsonArray("roles") : new JsonArray();
+
+    LOGGER.info("orgIdParam is:{}" ,orgIdParam);
+    LOGGER.info("orgIdStr is:{}" ,orgIdStr);
+
+
+    boolean isCosAdmin = roles != null && roles.contains("cos_admin");
+
+    if (isCosAdmin) {
+      return Future.succeededFuture(UUID.fromString(orgIdParam));
+    }
 
     if (orgIdStr == null || orgIdStr.isBlank()) {
       return Future.failedFuture(
