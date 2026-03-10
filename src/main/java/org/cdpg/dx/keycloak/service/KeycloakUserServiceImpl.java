@@ -5,15 +5,13 @@ import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.NotFoundException;
 import org.apache.logging.log4j.LogManager;
 import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
 import org.cdpg.dx.aaa.delegation.util.RoleScopeMapping;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
-import org.cdpg.dx.common.exception.BaseDxException;
-import org.cdpg.dx.common.exception.DxForbiddenException;
-import org.cdpg.dx.common.exception.DxNotFoundException;
-import org.cdpg.dx.common.exception.KeycloakServiceException;
+import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.model.UserInfo;
 import org.cdpg.dx.common.util.BlockingExecutionUtil;
 import org.cdpg.dx.keycloak.client.KeycloakClientProvider;
@@ -164,19 +162,28 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
     });
   }
 
-    @Override
-    public Future<DxUser> getUserById(UUID userId) {
-        return BlockingExecutionUtil.runBlocking(() -> {
-            try {
-                UserRepresentation user = usersResource().get(userId.toString()).toRepresentation();
-                List<RoleRepresentation> roles = usersResource().get(userId.toString()).roles().realmLevel().listEffective();
-                return DxUserMapper.fromUserRepresentation(user, roles);
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw new KeycloakServiceException("Failed to retrieve user with ID: " + userId, e);
-            }
-        });
-    }
+  @Override
+  public Future<DxUser> getUserById(UUID userId) {
+    return BlockingExecutionUtil.runBlocking(() -> {
+      try {
+        UserRepresentation user = usersResource().get(userId.toString()).toRepresentation();
+
+        if (user == null) {
+          throw new DxBadRequestException("User is not valid");
+        }
+
+        List<RoleRepresentation> roles = usersResource().get(userId.toString()).roles().realmLevel().listEffective();
+        return DxUserMapper.fromUserRepresentation(user, roles);
+
+      } catch (DxBadRequestException e) {
+        throw e;
+      } catch (NotFoundException e) {
+        throw new DxBadRequestException("User is not valid");
+      } catch (Exception e) {
+        throw new KeycloakServiceException("Failed to retrieve user with ID: " + userId, e);
+      }
+    });
+  }
 
 
 

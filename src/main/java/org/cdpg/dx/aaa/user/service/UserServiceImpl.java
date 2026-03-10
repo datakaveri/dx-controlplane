@@ -124,7 +124,14 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public Future<DxUser> getUserInfoByID(UUID userId) {
-    return keycloakUserService.getUserById(userId).compose(this::getUserInfo);
+    return keycloakUserService.getUserById(userId)
+      .compose(res -> {
+        if (res == null) {
+          return Future.failedFuture(
+            new DxBadRequestException("User is not valid/present in Keycloak"));
+        }
+        return getUserInfo(res);
+      });
   }
 
   @Override
