@@ -178,16 +178,7 @@ public class OrganizationCreateRequestHandler {
 
   public void deleteOrganizationCreateRequest(RoutingContext ctx) {
     UUID requestId = UUID.fromString(ctx.pathParam("id"));
-    User user = ctx.user();
-    UUID userId = UUID.fromString(user.subject());
-
-    String delegatorIdStr = ctx.queryParams().get("delegatorId");
-    UUID delegatorId = delegatorIdStr!=null?UUID.fromString(delegatorIdStr):null;
-
-    if(delegatorId!=null)
-      userId = delegatorId;
-
-    UUID finalUserId = userId;
+    UUID resolvedUserId = ctx.get("resolvedUserId");
 
     organizationService
         .getOrganizationCreateRequestById(requestId)
@@ -205,7 +196,7 @@ public class OrganizationCreateRequestHandler {
                     new DxBadRequestException("Only pending requests can be deleted"));
               }
 
-              if (!request.requestedBy().equals(finalUserId)) {
+              if (!request.requestedBy().equals(resolvedUserId)) {
                 ctx.fail(new DxForbiddenException("User is not authorized to delete this request"));
                 return Future.failedFuture(
                     new DxForbiddenException("User is not authorized to delete this request"));
@@ -235,18 +226,10 @@ public class OrganizationCreateRequestHandler {
   }
 
   public void getUserOrganisationRequest(RoutingContext ctx) {
-    User user = ctx.user();
-    UUID userId = UUID.fromString(user.subject());
+    UUID resolvedUserId = ctx.get("resolvedUserId");
 
-    String delegatorIdStr = ctx.queryParams().get("delegatorId");
-    UUID delegatorId = delegatorIdStr!=null?UUID.fromString(delegatorIdStr):null;
-
-    if(delegatorId!=null)
-      userId = delegatorId;
-
-    UUID finalUserId = userId;
     organizationService
-        .getOrganizationCreateRequestsByUserId(userId)
+        .getOrganizationCreateRequestsByUserId(resolvedUserId)
         .compose(
             requests -> {
               List<JsonObject> result =
@@ -268,7 +251,7 @@ public class OrganizationCreateRequestHandler {
             err -> {
               LOGGER.error(
                   "Failed to fetch organization requests for user {}: {}",
-                  finalUserId,
+                  resolvedUserId,
                   err.getMessage());
               ctx.fail(err);
             });

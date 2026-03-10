@@ -8,6 +8,7 @@ import org.cdpg.dx.aaa.credit.handler.CreditHandler;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.authorization.model.DxScope;
 
 public class CreditController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(CreditController.class);
@@ -34,6 +35,7 @@ public class CreditController implements ApiController {
       .operation("get-auth-v2-credit")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
+      .handler(AuthorizationHandler.forDelegationScopes(DxScope.COS_ADMIN_ACCESS,DxScope.CREDIT_MANAGEMENT))
       .handler(creditHandler::getCreditRequests);
 
     routerBuilder
@@ -53,18 +55,21 @@ public class CreditController implements ApiController {
       .operation("put-auth-v2-credit-request")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
+      .handler(AuthorizationHandler.forDelegationScopes(DxScope.COS_ADMIN_ACCESS,DxScope.CREDIT_MANAGEMENT))
       .handler(creditHandler::updateCreditRequestStatus);
 
     routerBuilder
       .operation("put-auth-v2-user-credit")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
+      .handler(AuthorizationHandler.forDelegationScopes(DxScope.COS_ADMIN_ACCESS,DxScope.CREDIT_MANAGEMENT))
       .handler(creditHandler::deductCredits);
 
     routerBuilder
       .operation("put-auth-v2-user-credit-add")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
+      .handler(AuthorizationHandler.forDelegationScopes(DxScope.COS_ADMIN_ACCESS,DxScope.CREDIT_MANAGEMENT))
       .handler(creditHandler::addCredits);
 
     routerBuilder
@@ -96,12 +101,14 @@ public class CreditController implements ApiController {
       .operation("put-auth-v2-compute-role-request")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
+      .handler(AuthorizationHandler.forDelegationScopes(DxScope.COS_ADMIN_ACCESS,DxScope.CREDIT_MANAGEMENT))
       .handler(creditHandler::updateComputeRoleStatus);
 
     routerBuilder
       .operation("get-auth-v2-admin-user-credit-balance")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
+      .handler(AuthorizationHandler.forDelegationScopes(DxScope.COS_ADMIN_ACCESS,DxScope.CREDIT_MANAGEMENT))
       .handler(creditHandler::getBalanceofUser);
 
     routerBuilder

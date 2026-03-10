@@ -5,6 +5,7 @@ import io.vertx.codegen.annotations.ProxyGen;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
@@ -48,4 +49,6 @@ public interface DelegationService {
   Future<List<JsonObject>> getAllDelegationScopeConstraints(String itemId);
 
   Future<JsonObject> checkItemAccess(String delegatorId, String delegateId);
+
+  Future<JsonObject> getDelegatorRoles(String userId, String delegatorId);
 }

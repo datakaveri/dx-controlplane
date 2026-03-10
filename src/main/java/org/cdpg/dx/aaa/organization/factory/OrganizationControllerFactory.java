@@ -4,7 +4,7 @@ import io.vertx.ext.web.client.WebClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.delegation.OrgOwnershipValidator;
-import org.cdpg.dx.aaa.delegation.service.DelegationService;
+import org.cdpg.dx.aaa.delegation.handler.DelegationHandler;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
@@ -41,8 +41,8 @@ public class OrganizationControllerFactory {
       ElasticsearchService esService,
       KeycloakUserService keycloakUserService,
       URNGenerator urnGenerator,
-      DelegationService delegationService,
       OrgOwnershipValidator orgOwnershipValidator,
+      DelegationHandler delegationHandler,
       WebClient webClient,
       Boolean kycRequired,
       String docIndex,
@@ -110,6 +110,7 @@ public class OrganizationControllerFactory {
         userHandler,
         providerRoleHandler,
         auditingHandler,
+        delegationHandler,
         kycRequired);
   }
 
