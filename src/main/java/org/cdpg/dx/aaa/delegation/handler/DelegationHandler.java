@@ -323,6 +323,10 @@ public class DelegationHandler {
 
   public void resolveOrgId(RoutingContext ctx) {
     String orgIdParam = ctx.pathParam("id");
+    if(orgIdParam==null)
+    {
+      orgIdParam = ctx.pathParam("org_id");
+    }
     delegatorStrategyFactory
       .create(ctx)
       .resolveOrgId(ctx, orgIdParam)

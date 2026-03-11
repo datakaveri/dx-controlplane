@@ -2,6 +2,8 @@ package org.cdpg.dx.common.util.resolver;
 
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.delegation.OrgOwnershipValidator;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.common.exception.DxBadRequestException;
@@ -11,6 +13,9 @@ import java.util.Objects;
 import java.util.UUID;
 
 public class DelegateStrategy implements DelegatorStrategy {
+
+  private static final Logger LOGGER = LogManager.getLogger(DelegateStrategy.class);
+
 
   private final UserService userService;
   private final OrgOwnershipValidator orgOwnershipValidator;
@@ -46,6 +51,9 @@ public class DelegateStrategy implements DelegatorStrategy {
           return Future.failedFuture(
             new DxBadRequestException("Delegator is not part of any organisation"));
         }
+
+        LOGGER.info("orgIdParam is:{}" ,orgIdParam);
+        LOGGER.info("orgIdStr is:{}" ,orgIdStr);
 
         if (!Objects.equals(orgIdStr, orgIdParam)) {
           return Future.failedFuture(
