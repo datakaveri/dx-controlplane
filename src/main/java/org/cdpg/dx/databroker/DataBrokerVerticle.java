@@ -27,8 +27,8 @@ import org.cdpg.dx.auditing.v2.enrichment.AuditEnrichmentService;
 import org.cdpg.dx.auditing.v2.enrichment.UserEnrichmentService;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
-import org.cdpg.dx.databroker.client.RabbitClient;
-import org.cdpg.dx.databroker.client.RabbitWebClient;
+import org.cdpg.dx.databroker.RabbitClient;
+import org.cdpg.dx.databroker.RabbitWebClient;
 import org.cdpg.dx.databroker.listeners.AuditMessageConsumer;
 import org.cdpg.dx.databroker.listeners.EmailMessageConsumer;
 import org.cdpg.dx.databroker.listeners.LeaderboardConsumer;
@@ -131,7 +131,7 @@ public class DataBrokerVerticle extends AbstractVerticle {
     iudxRabbitMqClient = RabbitMQClient.create(vertx, iudxConfig);
     iudxInternalRabbitMqClient = RabbitMQClient.create(vertx, iudxInternalConfig);
     rabbitClient =
-        new RabbitClient(rabbitWebClient, iudxInternalRabbitMqClient, iudxRabbitMqClient);
+        new RabbitClient(vertx, rabbitWebClient, iudxInternalRabbitMqClient, iudxRabbitMqClient);
     binder = new ServiceBinder(vertx);
 
     PostgresService postgresService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);

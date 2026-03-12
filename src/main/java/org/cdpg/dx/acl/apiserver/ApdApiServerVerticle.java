@@ -113,7 +113,10 @@ public class ApdApiServerVerticle extends AbstractVerticle {
 
                 // JWKS resolver with issuers config
                 JwksResolver jwksResolver =
-                    new JwksResolver(vertx, config().getJsonObject("issuers"), publicService);
+                    new JwksResolver(
+                        vertx,
+                        config().getJsonObject("issuers"),
+                        () -> io.vertx.core.Future.succeededFuture(publicService.generateJwks()));
 
                 // Handlers (multi-issuer)
                 MultiIssuerJwtAuthHandler authHandler = new MultiIssuerJwtAuthHandler(jwksResolver);

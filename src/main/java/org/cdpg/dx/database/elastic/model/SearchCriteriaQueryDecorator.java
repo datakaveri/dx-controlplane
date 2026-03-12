@@ -25,7 +25,7 @@ public class SearchCriteriaQueryDecorator implements ElasticsearchQueryDecorator
 
   @Override
   public Map<FilterType, List<QueryModel>> add() {
-    if (request.getSearchCriteria() == null) {
+    if (request == null || request.getSearchCriteria() == null) {
       return queryMap;
     }
     List<SearchCriteriaDTO> criteria = request.getSearchCriteria();

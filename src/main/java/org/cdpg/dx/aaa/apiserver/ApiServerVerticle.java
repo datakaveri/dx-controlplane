@@ -122,7 +122,10 @@ public class ApiServerVerticle extends AbstractVerticle {
 
                 // Create JWKS resolver (reads config -> jwks URLs / internal)
                 JwksResolver jwksResolver =
-                    new JwksResolver(vertx, config().getJsonObject("issuers"), publicService);
+                    new JwksResolver(
+                        vertx,
+                        config().getJsonObject("issuers"),
+                        () -> io.vertx.core.Future.succeededFuture(publicService.generateJwks()));
 
                 // Our single unified handlers
                 MultiIssuerJwtAuthHandler authHandler = new MultiIssuerJwtAuthHandler(jwksResolver);

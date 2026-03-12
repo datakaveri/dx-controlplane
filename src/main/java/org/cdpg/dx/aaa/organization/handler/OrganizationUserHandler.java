@@ -37,6 +37,7 @@ import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RequestHelper;
+import org.cdpg.dx.common.util.CpRoutingContextHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.config.KeycloakConstants;
 
@@ -80,7 +81,7 @@ public class OrganizationUserHandler {
               UserActivityAuditLogBuilder auditLogBuilder =
                 OrganizationAuditHelper.buildOrganisationAudit(
                   ctx, users.toJson(), OrganisationAuditOperation.GET_USER_INFO);
-              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
               ResponseBuilder.sendSuccess(ctx, users, urnGenerator);
             })
@@ -126,7 +127,7 @@ public class OrganizationUserHandler {
               UserActivityAuditLogBuilder auditLogBuilder =
                 OrganizationAuditHelper.buildOrganisationAudit(
                   ctx, new JsonObject(), OrganisationAuditOperation.GET_USERS);
-              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
               ResponseBuilder.sendSuccess(ctx, entry.getKey(), entry.getValue(), urnGenerator);
             })
@@ -162,7 +163,7 @@ public class OrganizationUserHandler {
                 UserActivityAuditLogBuilder auditLogBuilder =
                   OrganizationAuditHelper.buildOrganisationAudit(
                     ctx, new JsonObject().put(ID,userId.toString()), OrganisationAuditOperation.UPDATE_USER_INFO);
-                RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+                CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
                 ResponseBuilder.sendSuccess(ctx, "Updated Organisation User Role", urnGenerator);
 
@@ -251,7 +252,7 @@ public class OrganizationUserHandler {
                               UserActivityAuditLogBuilder auditLogBuilder =
                                 OrganizationAuditHelper.buildOrganisationAudit(
                                   ctx, new JsonObject().put(ID,userId.toString()) , OrganisationAuditOperation.DELETE_USER);
-                              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+                              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
 
 //                              RoutingContextHelper.setAuditingLogNew(ctx, audit);

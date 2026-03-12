@@ -52,6 +52,7 @@ import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RequestHelper;
+import org.cdpg.dx.common.util.CpRoutingContextHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.service.DataBrokerService;
@@ -173,7 +174,7 @@ public class AccessRequestController implements ApdApiController {
               UserActivityAuditLogBuilder auditLog =
                   AccessRequestAuditLogHelper.buildAudit(
                       routingContext, accessRequestDto, AccessRequestAuditOperation.WITHDRAW);
-              RoutingContextHelper.setAuditingLogV2(routingContext, auditLog);
+              CpRoutingContextHelper.setAuditingLogV2(routingContext, auditLog);
               ResponseBuilder.sendSuccess(
                   routingContext, "Request updated successfully", urnGenerator);
             })
@@ -341,7 +342,7 @@ public class AccessRequestController implements ApdApiController {
                           UserActivityAuditLogBuilder auditLog =
                               AccessRequestAuditLogHelper.buildAudit(
                                   ctx, accessRequestDto, AccessRequestAuditOperation.GRANT);
-                          RoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+                          CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
                           ResponseBuilder.sendSuccess(
                               ctx, "Request updated successfully", urnGenerator);
                           JsonObject jsonObject =
@@ -381,7 +382,7 @@ public class AccessRequestController implements ApdApiController {
                           UserActivityAuditLogBuilder auditLog =
                               AccessRequestAuditLogHelper.buildAudit(
                                   ctx, accessRequestDto, AccessRequestAuditOperation.REJECT);
-                          RoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+                          CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
                           // RoutingContextHelper.setAuditingLog(ctx, auditLog);
                           ResponseBuilder.sendSuccess(
                               ctx, "Request updated successfully", urnGenerator);
@@ -434,7 +435,7 @@ public class AccessRequestController implements ApdApiController {
               UserActivityAuditLogBuilder auditLog =
                   AccessRequestAuditLogHelper.buildAudit(
                       ctx, accessRequestDto, AccessRequestAuditOperation.REQUEST);
-              RoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
               // RoutingContextHelper.setAuditingLog(ctx, auditLog);
               ResponseBuilder.sendSuccess(ctx, "Request inserted successfully!", urnGenerator);
               JsonObject jsonObject =

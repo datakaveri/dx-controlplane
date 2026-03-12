@@ -34,6 +34,7 @@ import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
+import org.cdpg.dx.common.util.CpRoutingContextHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
@@ -133,7 +134,7 @@ public class OrganizationCreateRequestHandler {
           OrganizationAuditHelper.buildOrganisationAudit(
             ctx, requests.toJson(), OrganisationAuditOperation.REQUEST_ORG_CREATE);
 
-        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
         ResponseBuilder.sendSuccess(ctx, requests, urnGenerator);
         emailComposer.sendEmailForCreatingOrg(requests, user);
@@ -168,7 +169,7 @@ public class OrganizationCreateRequestHandler {
                 OrganizationAuditHelper.buildOrganisationAudit(
                   ctx, new JsonObject().put(ID,requestId.toString()), OrganisationAuditOperation.UPDATE_ORG_CREATE_REQUEST);
 
-              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
               ResponseBuilder.sendSuccess(ctx, "Updated Sucessfully", urnGenerator);
               Future<Void> future =
@@ -217,7 +218,7 @@ public class OrganizationCreateRequestHandler {
                           OrganizationAuditHelper.buildOrganisationAudit(
                             ctx, new JsonObject().put(ID,requestId.toString()), OrganisationAuditOperation.DELETE_PENDING_ORG_CREATE_REQUEST);
 
-                        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+                        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
                         ResponseBuilder.sendSuccess(
                             ctx, "Organization request deleted successfully", urnGenerator);
@@ -247,7 +248,7 @@ public class OrganizationCreateRequestHandler {
               UserActivityAuditLogBuilder auditLogBuilder =
                 OrganizationAuditHelper.buildOrganisationAudit(
                   ctx, new JsonObject(), OrganisationAuditOperation.GET);
-              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
               ResponseBuilder.sendSuccess(ctx, result, urnGenerator);
             })
         .onFailure(
@@ -288,7 +289,7 @@ public class OrganizationCreateRequestHandler {
               UserActivityAuditLogBuilder auditLogBuilder =
                 OrganizationAuditHelper.buildOrganisationAudit(
                   ctx, new JsonObject(), OrganisationAuditOperation.GET);
-              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
               ResponseBuilder.sendSuccess(ctx, res.data(), res.paginationInfo(), urnGenerator);
             })
         .onFailure(ctx::fail);

@@ -24,6 +24,7 @@ import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RequestHelper;
+import org.cdpg.dx.common.util.CpRoutingContextHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
@@ -107,7 +108,7 @@ public class ComputeRoleHandler {
                     CreditRequestAuditLogHelper.buildAudit(
                       ctx, requests.toJson(), CreditRequestAuditOperation.REQUEST_COMPUTE);
 
-                  RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+                  CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
                   ResponseBuilder.sendSuccess(ctx, requests, this.urnGenerator);
                   emailComposer.sendEmailForComputeRole(computeRoleRequest, user);
@@ -173,7 +174,7 @@ public class ComputeRoleHandler {
         UserActivityAuditLogBuilder auditLogBuilder =
           CreditRequestAuditLogHelper.buildAudit(
             ctx,new JsonObject(), CreditRequestAuditOperation.GET_COMPUTE_REQUESTS);
-        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
         ResponseBuilder.sendSuccess(ctx, entry.getKey(), entry.getValue(), this.urnGenerator);
       }).onFailure(ctx::fail);
 
@@ -209,7 +210,7 @@ public class ComputeRoleHandler {
           CreditRequestAuditLogHelper.buildAudit(
             ctx, new JsonObject().put(ID,requestId.toString()), CreditRequestAuditOperation.UPDATE);
 
-        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
         ResponseBuilder.sendSuccess(ctx, "Compute Role Status " + status.getStatus(), this.urnGenerator);
         Future<Void> future = emailComposer.sendUserEmailForComputeRoleApproval(requestId, status);
@@ -264,7 +265,7 @@ public class ComputeRoleHandler {
           CreditRequestAuditLogHelper.buildAudit(
             ctx, enriched , CreditRequestAuditOperation.GET_COMPUTE_REQUESTS);
 
-        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
         ResponseBuilder.sendSuccess(ctx, enriched, this.urnGenerator);
       })
       .onFailure(err -> {
@@ -308,7 +309,7 @@ public class ComputeRoleHandler {
           CreditRequestAuditLogHelper.buildAudit(
             ctx, new JsonObject().put(ID,requestIdStr) , CreditRequestAuditOperation.DELETE);
 
-        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
         ResponseBuilder.sendSuccess(ctx, "Pending Compute Request deleted successfully", urnGenerator);
       })

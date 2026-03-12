@@ -202,7 +202,7 @@ public class UserServiceImpl implements UserService {
 
     elasticsearchService.getSingleDocument(docUserIndex, termQuery)
       .onSuccess(result -> {
-        if (result == null || result.getTotalHits() < 1) {
+        if (result == null || result.getDocId() == null) {
           LOGGER.debug("User info with userId {} not found for update", userId);
           promise.fail(new DxNotFoundException("User info not found"));
           return;

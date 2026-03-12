@@ -16,6 +16,7 @@ import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RequestHelper;
+import org.cdpg.dx.common.util.CpRoutingContextHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
@@ -48,7 +49,7 @@ public class CreditBalanceHandler {
           CreditRequestAuditLogHelper.buildAudit(
             ctx, balance, CreditRequestAuditOperation.GET_BALANCE);
 
-        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
         ResponseBuilder.sendSuccess(ctx, balance, this.urnGenerator);
       })
@@ -75,7 +76,7 @@ public class CreditBalanceHandler {
           CreditRequestAuditLogHelper.buildAudit(
             ctx, res, CreditRequestAuditOperation.GET_BALANCE);
 
-        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
         ResponseBuilder.sendSuccess(ctx,res, this.urnGenerator);
       })
       .onFailure(ctx::fail);
@@ -115,7 +116,7 @@ public class CreditBalanceHandler {
           CreditRequestAuditLogHelper.buildAudit(
             ctx, res.toJson(), CreditRequestAuditOperation.DEBIT);
 
-        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
         ResponseBuilder.sendSuccess(ctx, res, this.urnGenerator);
       })
@@ -153,7 +154,7 @@ public class CreditBalanceHandler {
           CreditRequestAuditLogHelper.buildAudit(
             ctx, res.toJson(), CreditRequestAuditOperation.CREDIT);
 
-        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
         ResponseBuilder.sendSuccess(ctx, res, this.urnGenerator);
       })

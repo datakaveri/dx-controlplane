@@ -20,6 +20,9 @@ public class TextSearchQueryDecorator implements ElasticsearchQueryDecorator {
 
   @Override
   public Map<FilterType, List<QueryModel>> add() {
+    if (request == null) {
+      return queryMap;
+    }
     if (request.q() == null || request.q().isBlank()) {
       throw new DxEsException("bad text query values");
     }

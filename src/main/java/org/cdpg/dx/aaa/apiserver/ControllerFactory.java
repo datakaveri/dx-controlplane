@@ -5,7 +5,6 @@ import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
 import static org.cdpg.dx.aaa.common.Constants.IS_CENTRAL_CATALOGUE_ENABLED;
 import static org.cdpg.dx.aaa.common.Constants.UPLOADED_BY;
 import static org.cdpg.dx.aaa.common.Constants.VOC_CONTEXT;
-import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.CENTRAL_ELASTIC_SERVICE_ADDRESS;
 import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
 
 import io.vertx.core.Vertx;
@@ -64,7 +63,6 @@ import org.cdpg.dx.aaa.token.factory.AppTokenControllerFactory;
 import org.cdpg.dx.aaa.token.factory.TokenControllerFactory;
 import org.cdpg.dx.aaa.user.factory.UserControllerFactory;
 import org.cdpg.dx.common.URNGenerator;
-import org.cdpg.dx.database.elastic.central.service.CentralElasticsearchService;
 
 /**
  * Creates and wires all API controllers for the application.
@@ -81,11 +79,13 @@ public class ControllerFactory {
   public static List<ApiController> createControllers(
       Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
 
+    // ── Config values ──
+    boolean isCentralCatEnabled = config.getBoolean(IS_CENTRAL_CATALOGUE_ENABLED, false);
+
     // ── Infrastructure & shared services ──
-    InfrastructureServices infra = InfrastructureServices.create(vertx);
+    InfrastructureServices infra = InfrastructureServices.create(vertx, isCentralCatEnabled);
     SharedServices shared = SharedServices.create(infra, config);
 
-    // ── Config values ──
     final String docIndex = config.getString(DOC_INDEX);
     final String centralCatDocIndex = config.getString(CENTRAL_CAT_DOC_INDEX);
     final String vocContext = config.getString(VOC_CONTEXT);
@@ -96,7 +96,6 @@ public class ControllerFactory {
     final String controlPlaneDomain = config.getString("controlPlaneDomain");
     final String ogcDataPlaneUrl = config.getString("ogcDataPlaneUrl");
     final Boolean isKycRequired = config.getBoolean("kycRequired", false);
-    boolean isCentralCatEnabled = config.getBoolean(IS_CENTRAL_CATALOGUE_ENABLED, false);
     boolean isEdgeCatalogue = config.getBoolean("isEdgeCatalogue", false);
     boolean isStandalone = config.getBoolean("isStandalone", false);
 
@@ -195,21 +194,18 @@ public class ControllerFactory {
     controllers.add(searchController);
 
     // Central catalogue (optional)
-    CentralElasticsearchService centralEsService = null;
     if (isCentralCatEnabled) {
       LOGGER.debug("Central catalogue mode enabled.");
-      centralEsService =
-          CentralElasticsearchService.createProxy(vertx, CENTRAL_ELASTIC_SERVICE_ADDRESS);
 
       CentralSearchController centralSearchController =
           CentralSearchControllerFactory.createSearchController(
-              centralEsService, shared.keycloakUserService(), shared.auditingHandler(),
+              infra.centralEsService(), shared.keycloakUserService(), shared.auditingHandler(),
               centralCatDocIndex, urnGenerator);
       controllers.add(centralSearchController);
 
       CentralListController centralListController =
           CentralListControllerFactory.createListController(
-              centralEsService, shared.keycloakUserService(), shared.auditingHandler(),
+              infra.centralEsService(), shared.keycloakUserService(), shared.auditingHandler(),
               centralCatDocIndex, urnGenerator);
       controllers.add(centralListController);
     }
@@ -218,7 +214,7 @@ public class ControllerFactory {
         ItemControllerFactory.createCrudController(
             shared.auditingHandler(),
             infra.esService(),
-            centralEsService,
+            infra.centralEsService(),
             infra.pgService(),
             shared.keycloakUserService(),
             itemOwnershipValidator,

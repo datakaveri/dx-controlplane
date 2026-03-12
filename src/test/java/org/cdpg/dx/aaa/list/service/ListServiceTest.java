@@ -17,6 +17,7 @@ import java.util.List;
 import org.cdpg.dx.aaa.common.ResponseModel;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
+import org.cdpg.dx.database.elastic.model.ElasticsearchSearchResult;
 import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
 import org.cdpg.dx.database.elastic.model.QueryModel;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
@@ -108,9 +109,11 @@ class ListServiceTest {
       ElasticsearchResponse esResponse =
           new ElasticsearchResponse("doc1", new JsonObject().put("type", "resource"));
       List<ElasticsearchResponse> esResults = List.of(esResponse);
+      JsonObject aggregations = new JsonObject().put("type", new JsonObject().put("buckets", List.of()));
+      ElasticsearchSearchResult searchResult = new ElasticsearchSearchResult(esResults, 1, aggregations);
 
       when(elasticsearchService.search(eq(DOC_INDEX), any(QueryModel.class), eq("AGGREGATION_LIST")))
-          .thenReturn(Future.succeededFuture(esResults));
+          .thenReturn(Future.succeededFuture(searchResult));
 
       Future<ResponseModel> future = listService.getAvailableFilters(requestDTO);
 
@@ -132,8 +135,10 @@ class ListServiceTest {
           new QueryDecoderRequestDTO(
               null, null, null, null, filters, null, null, null, null, null, null, "search");
 
+      ElasticsearchSearchResult searchResult = new ElasticsearchSearchResult(Collections.emptyList(), 0, new JsonObject());
+
       when(elasticsearchService.search(eq(DOC_INDEX), any(QueryModel.class), eq("AGGREGATION_LIST")))
-          .thenReturn(Future.succeededFuture(Collections.emptyList()));
+          .thenReturn(Future.succeededFuture(searchResult));
 
       Future<ResponseModel> future = listService.getAvailableFilters(requestDTO);
 

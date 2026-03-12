@@ -21,7 +21,7 @@ public class InstanceFilterQueryDecorator implements ElasticsearchQueryDecorator
 
   @Override
   public Map<FilterType, List<QueryModel>> add() {
-    if (request.getInstance() != null && !request.getInstance().isEmpty()) {
+    if (request != null && request.getInstance() != null && !request.getInstance().isEmpty()) {
       String instanceId = request.getInstance();
       LOGGER.info("Adding instance filter query decorator {}", instanceId);
       QueryModel instanceFilter =

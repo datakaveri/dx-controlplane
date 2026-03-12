@@ -15,8 +15,8 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.concurrent.TimeUnit;
-import org.cdpg.dx.databroker.client.RabbitClient;
-import org.cdpg.dx.databroker.client.RabbitWebClient;
+import org.cdpg.dx.databroker.RabbitClient;
+import org.cdpg.dx.databroker.RabbitWebClient;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.databroker.service.DataBrokerServiceImpl;
 import org.junit.jupiter.api.AfterAll;
@@ -107,7 +107,7 @@ public abstract class RabbitMQTestBase {
     propObj.put("password", RMQ_PASS);
 
     RabbitWebClient rabbitWebClient = new RabbitWebClient(vertx, webConfig, propObj);
-    rabbitClient = new RabbitClient(rabbitWebClient, internalRmqClient, prodRmqClient);
+    rabbitClient = new RabbitClient(vertx, rabbitWebClient, internalRmqClient, prodRmqClient);
 
     dataBrokerService =
         new DataBrokerServiceImpl(
@@ -175,7 +175,7 @@ public abstract class RabbitMQTestBase {
   /** Reset RabbitWebClient's static WebClient via reflection. */
   private void resetRabbitWebClient() {
     try {
-      Class<?> clazz = Class.forName("org.cdpg.dx.databroker.client.RabbitWebClient");
+      Class<?> clazz = Class.forName("org.cdpg.dx.databroker.RabbitWebClient");
       Method resetMethod = clazz.getDeclaredMethod("resetWebClient");
       resetMethod.setAccessible(true);
       resetMethod.invoke(null);

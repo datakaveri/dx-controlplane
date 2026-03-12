@@ -22,6 +22,7 @@ import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
+import org.cdpg.dx.common.util.CpRoutingContextHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
@@ -77,7 +78,7 @@ public class CreditRequestHandler {
           CreditRequestAuditLogHelper.buildAudit(
             ctx, requests.toJson(), CreditRequestAuditOperation.REQUEST_CREDITS);
 
-        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
         ResponseBuilder.sendSuccess(ctx, requests, this.urnGenerator);
 
         emailComposer.sendEmailForCreditRequest(user);
@@ -117,7 +118,7 @@ public class CreditRequestHandler {
             UserActivityAuditLogBuilder auditLogBuilder =
               CreditRequestAuditLogHelper.buildAudit(
                 ctx, new JsonObject(), CreditRequestAuditOperation.GET_CREDIT_REQUESTS);
-            RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+            CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
             ResponseBuilder.sendSuccess(ctx, enrichedList, result.paginationInfo(), this.urnGenerator);
           })
           .onFailure(ctx::fail);
@@ -149,7 +150,7 @@ public class CreditRequestHandler {
             UserActivityAuditLogBuilder auditLogBuilder =
               CreditRequestAuditLogHelper.buildAudit(
                 ctx, new JsonObject(), CreditRequestAuditOperation.GET_CREDIT_REQUESTS);
-            RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+            CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
             ResponseBuilder.sendSuccess(ctx, enrichedList, this.urnGenerator);
           })
           .onFailure(ctx::fail);
@@ -222,7 +223,7 @@ public class CreditRequestHandler {
           CreditRequestAuditLogHelper.buildAudit(
             ctx, transaction.toJson(), CreditRequestAuditOperation.UPDATE);
 
-        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
         ResponseBuilder.sendSuccess(ctx, transaction, this.urnGenerator);
         emailComposer.sendUserEmailForCreditApproval(requestId, status);
@@ -267,7 +268,7 @@ public class CreditRequestHandler {
           CreditRequestAuditLogHelper.buildAudit(
             ctx,new JsonObject().put(ID,requestIdStr), CreditRequestAuditOperation.DELETE);
 
-        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
         ResponseBuilder.sendSuccess(ctx, "Pending Credit Request deleted successfully", urnGenerator);
       })

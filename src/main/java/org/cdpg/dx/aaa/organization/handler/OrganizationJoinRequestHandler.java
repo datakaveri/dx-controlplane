@@ -36,6 +36,7 @@ import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.DelegatorResolver;
 import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.URNGenerator;
+import org.cdpg.dx.common.util.CpRoutingContextHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
@@ -135,7 +136,7 @@ public class OrganizationJoinRequestHandler {
         UserActivityAuditLogBuilder auditLogBuilder =
           OrganizationAuditHelper.buildOrganisationAudit(
             ctx, createdRequest.toJson(), OrganisationAuditOperation.REQUEST_ORG_JOIN);
-        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
         ResponseBuilder.sendSuccess(ctx, "Created Join request", urnGenerator);
 
         emailComposer.sendEmailForJoiningOrg(createdRequest, user);
@@ -209,7 +210,7 @@ public class OrganizationJoinRequestHandler {
         UserActivityAuditLogBuilder auditLogBuilder =
           OrganizationAuditHelper.buildOrganisationAudit(
             ctx, new JsonObject(), OrganisationAuditOperation.GET);
-        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
         ResponseBuilder.sendSuccess(
           ctx,
@@ -245,7 +246,7 @@ public class OrganizationJoinRequestHandler {
               UserActivityAuditLogBuilder auditLogBuilder =
                 OrganizationAuditHelper.buildOrganisationAudit(
                   ctx, new JsonObject(), OrganisationAuditOperation.GET);
-              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
               ResponseBuilder.sendSuccess(ctx, result, urnGenerator);
             })
@@ -301,7 +302,7 @@ public class OrganizationJoinRequestHandler {
                         UserActivityAuditLogBuilder auditLogBuilder =
                           OrganizationAuditHelper.buildOrganisationAudit(
                             ctx, new JsonObject().put(ID,requestId.toString()), OrganisationAuditOperation.DELETE_PENDING_ORG_JOIN_REQUEST);
-                        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+                        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
                         ResponseBuilder.sendSuccess(
                             ctx, "Join organisation request deleted successfully", urnGenerator);
@@ -350,7 +351,7 @@ public class OrganizationJoinRequestHandler {
                 UserActivityAuditLogBuilder auditLogBuilder =
                   OrganizationAuditHelper.buildOrganisationAudit(
                     ctx, new JsonObject().put(ID,requestId.toString()), OrganisationAuditOperation.UPDATE_ORG_JOIN_REQUEST);
-                RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+                CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
                 emailComposer
                   .sendUserEmailForOrgJoinRequestApproval(
@@ -425,7 +426,7 @@ public class OrganizationJoinRequestHandler {
         UserActivityAuditLogBuilder auditLogBuilder =
           OrganizationAuditHelper.buildOrganisationAudit(
             ctx, new JsonObject().put(ID,orgJoinReqId.toString()), OrganisationAuditOperation.WITHDRAW_PENDING_ORG_JOIN_REQUEST);
-        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
         ResponseBuilder.sendSuccess(
           ctx,

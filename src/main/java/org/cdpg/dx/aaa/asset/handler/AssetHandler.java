@@ -28,6 +28,7 @@ import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
+import org.cdpg.dx.common.util.CpRoutingContextHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
@@ -121,7 +122,7 @@ public class AssetHandler {
             AssetAuthAuditLogHelper.buildAudit(
               ctx, requests.toJson(),AssetAuthAuditOperation.CREATE);
 
-          RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+          CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
           ResponseBuilder.sendSuccess(ctx, "Created Asset Request", urnGenerator);
         }).onFailure(ctx::fail);
 
@@ -175,7 +176,7 @@ public class AssetHandler {
           AssetAuthAuditLogHelper.buildAudit(
             ctx, new JsonObject(),AssetAuthAuditOperation.GET);
 
-        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
         ResponseBuilder.sendSuccess(
           ctx,
@@ -236,7 +237,7 @@ public class AssetHandler {
         AssetAuthAuditLogHelper.buildAudit(
           ctx, new JsonObject().put(ASSET_REQUEST_ID,requestId.toString()),AssetAuthAuditOperation.UPDATE);
 
-      RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+      CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
       ResponseBuilder.sendSuccess(ctx, "Asset Request updated", urnGenerator);
 
     }).onFailure(err -> {
@@ -262,7 +263,7 @@ public class AssetHandler {
                 AssetAuthAuditLogHelper.buildAudit(
                   ctx, new JsonObject().put(ASSET_REQUEST_ID,assetRequestId.toString()),AssetAuthAuditOperation.DELETE);
 
-              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
               ResponseBuilder.sendSuccess(ctx, "Asset Request deleted successfully", urnGenerator);
             })
             .onFailure(ctx::fail);

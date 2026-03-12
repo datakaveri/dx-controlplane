@@ -11,20 +11,21 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.central.catalogue.search.util.ResponseModel;
 import org.cdpg.dx.common.exception.DxBadRequestException;
-import org.cdpg.dx.database.elastic.central.service.CentralElasticsearchService;
+import org.cdpg.dx.database.elastic.model.ElasticsearchSearchResult;
 import org.cdpg.dx.database.elastic.model.OrderBy;
 import org.cdpg.dx.database.elastic.model.QueryDecoder;
 import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
 import org.cdpg.dx.database.elastic.model.QueryModel;
+import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 
 public class CentralSearchServiceImpl implements CentralSearchService {
   private static final Logger LOGGER = LogManager.getLogger(CentralSearchServiceImpl.class);
 
-  private final CentralElasticsearchService centralElasticsearchService;
+  private final ElasticsearchService centralElasticsearchService;
   private final QueryDecoder queryDecoder;
   private final String docIndex;
 
-  public CentralSearchServiceImpl(CentralElasticsearchService centralElasticsearchService, String docIndex) {
+  public CentralSearchServiceImpl(ElasticsearchService centralElasticsearchService, String docIndex) {
     this.centralElasticsearchService = centralElasticsearchService;
     this.queryDecoder = new QueryDecoder();
     this.docIndex = docIndex;
@@ -36,8 +37,15 @@ public class CentralSearchServiceImpl implements CentralSearchService {
       QueryModel queryModel = buildQueryModel(requestDTO);
       applySorting(queryModel, requestDTO);
 
-      return centralElasticsearchService.search(docIndex, queryModel, SOURCE_ONLY)
-              .map(results -> new ResponseModel(results, requestDTO.getSize(), requestDTO.getPage()))
+      return centralElasticsearchService
+              .search(docIndex, queryModel, SOURCE_ONLY)
+              .map(
+                  searchResult ->
+                      new ResponseModel(
+                          searchResult.getResults(),
+                          requestDTO.getSize(),
+                          requestDTO.getPage(),
+                          searchResult.getTotalHits()))
               .onFailure(err -> LOGGER.error("Search execution failed: {}", err.getMessage()));
 
     } catch (Exception e) {
@@ -87,7 +95,9 @@ public class CentralSearchServiceImpl implements CentralSearchService {
       // Run ES query
       return centralElasticsearchService
           .search(docIndex, queryModel, COUNT_AGGREGATION_ONLY)
-          .map(ResponseModel::new)
+          .map(
+              searchResult ->
+                  new ResponseModel(searchResult.getResults(), searchResult.getAggregations()))
           .onFailure(err -> LOGGER.error("Count execution failed: {}", err.getMessage()));
     } catch (Exception e) {
       LOGGER.error("Error during postCount: {}", e.getMessage(), e);

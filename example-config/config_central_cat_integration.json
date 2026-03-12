@@ -184,7 +184,8 @@
       "databasePassword": ""
     },
     {
-      "id": "org.cdpg.dx.database.elastic.central.CentralElasticsearchVerticle",
+      "id": "org.cdpg.dx.database.elastic.ElasticsearchVerticle",
+      "serviceAddress": "org.cdpg.dx.database.elastic.central.service",
       "isWorkerVerticle": false,
       "verticleInstances": 1,
       "tenantPrefix": "",

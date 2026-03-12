@@ -88,7 +88,7 @@ public class SubscriptionAuthorizationHandler implements Handler<RoutingContext>
       String bearerToken;
       try {
         itemId = RoutingContextHelper.getId(context);
-        bearerToken = RoutingContextHelper.getToken(context);
+        bearerToken = RoutingContextHelper.getTokenOrThrow(context);
       } catch (Exception e) {
         LOGGER.error("Error extracting request parameters", e);
         context.fail(e);

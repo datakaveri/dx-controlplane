@@ -16,11 +16,12 @@ import java.util.Collections;
 import java.util.List;
 import org.cdpg.dx.aaa.central.catalogue.search.util.ResponseModel;
 import org.cdpg.dx.common.exception.DxBadRequestException;
-import org.cdpg.dx.database.elastic.central.service.CentralElasticsearchService;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
+import org.cdpg.dx.database.elastic.model.ElasticsearchSearchResult;
 import org.cdpg.dx.database.elastic.model.OrderBy;
 import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
 import org.cdpg.dx.database.elastic.model.QueryModel;
+import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -33,7 +34,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @DisplayName("CentralSearchServiceImpl Tests")
 class CentralSearchServiceTest {
 
-  @Mock private CentralElasticsearchService centralElasticsearchService;
+  @Mock private ElasticsearchService centralElasticsearchService;
 
   private CentralSearchServiceImpl centralSearchService;
 
@@ -72,9 +73,10 @@ class CentralSearchServiceTest {
       ElasticsearchResponse esResponse =
           new ElasticsearchResponse("doc1", new JsonObject().put("name", "test-asset"));
       List<ElasticsearchResponse> esResults = List.of(esResponse);
+      ElasticsearchSearchResult searchResult = new ElasticsearchSearchResult(esResults, 1, null);
 
       when(centralElasticsearchService.search(eq(DOC_INDEX), any(QueryModel.class), eq("SOURCE")))
-          .thenReturn(Future.succeededFuture(esResults));
+          .thenReturn(Future.succeededFuture(searchResult));
 
       Future<ResponseModel> future = centralSearchService.postSearch(requestDTO);
 
@@ -106,8 +108,10 @@ class CentralSearchServiceTest {
               null,
               "search");
 
+      ElasticsearchSearchResult searchResult = new ElasticsearchSearchResult(Collections.emptyList(), 0, null);
+
       when(centralElasticsearchService.search(eq(DOC_INDEX), any(QueryModel.class), eq("SOURCE")))
-          .thenReturn(Future.succeededFuture(Collections.emptyList()));
+          .thenReturn(Future.succeededFuture(searchResult));
 
       Future<ResponseModel> future = centralSearchService.postSearch(requestDTO);
 
@@ -205,9 +209,10 @@ class CentralSearchServiceTest {
       ElasticsearchResponse esResponse =
           new ElasticsearchResponse("doc1", new JsonObject().put("name", "sorted-asset"));
       List<ElasticsearchResponse> esResults = List.of(esResponse);
+      ElasticsearchSearchResult searchResult = new ElasticsearchSearchResult(esResults, 1, null);
 
       when(centralElasticsearchService.search(eq(DOC_INDEX), any(QueryModel.class), eq("SOURCE")))
-          .thenReturn(Future.succeededFuture(esResults));
+          .thenReturn(Future.succeededFuture(searchResult));
 
       Future<ResponseModel> future = centralSearchService.postSearch(requestDTO);
 
@@ -237,9 +242,10 @@ class CentralSearchServiceTest {
 
       ElasticsearchResponse esResponse =
           new ElasticsearchResponse("doc1", new JsonObject().put("name", "org-asset"));
+      ElasticsearchSearchResult searchResult = new ElasticsearchSearchResult(List.of(esResponse), 1, null);
 
       when(centralElasticsearchService.search(eq(DOC_INDEX), any(QueryModel.class), eq("SOURCE")))
-          .thenReturn(Future.succeededFuture(List.of(esResponse)));
+          .thenReturn(Future.succeededFuture(searchResult));
 
       Future<ResponseModel> future = centralSearchService.postSearch(requestDTO);
 
@@ -262,9 +268,10 @@ class CentralSearchServiceTest {
 
       ElasticsearchResponse esResponse =
           new ElasticsearchResponse("doc1", new JsonObject().put("name", "platform-asset"));
+      ElasticsearchSearchResult searchResult = new ElasticsearchSearchResult(List.of(esResponse), 1, null);
 
       when(centralElasticsearchService.search(eq(DOC_INDEX), any(QueryModel.class), eq("SOURCE")))
-          .thenReturn(Future.succeededFuture(List.of(esResponse)));
+          .thenReturn(Future.succeededFuture(searchResult));
 
       Future<ResponseModel> future = centralSearchService.postSearch(requestDTO);
 
@@ -307,10 +314,12 @@ class CentralSearchServiceTest {
       ElasticsearchResponse esResponse =
           new ElasticsearchResponse("doc1", new JsonObject().put("count", 42));
       List<ElasticsearchResponse> esResults = List.of(esResponse);
+      JsonObject aggregations = new JsonObject().put("count", 42);
+      ElasticsearchSearchResult searchResult = new ElasticsearchSearchResult(esResults, 1, aggregations);
 
       when(centralElasticsearchService.search(
               eq(DOC_INDEX), any(QueryModel.class), eq("COUNT_AGGREGATION")))
-          .thenReturn(Future.succeededFuture(esResults));
+          .thenReturn(Future.succeededFuture(searchResult));
 
       Future<ResponseModel> future = centralSearchService.postCount(requestDTO);
 
@@ -342,9 +351,11 @@ class CentralSearchServiceTest {
               null,
               "search");
 
+      ElasticsearchSearchResult searchResult = new ElasticsearchSearchResult(Collections.emptyList(), 0, new JsonObject());
+
       when(centralElasticsearchService.search(
               eq(DOC_INDEX), any(QueryModel.class), eq("COUNT_AGGREGATION")))
-          .thenReturn(Future.succeededFuture(Collections.emptyList()));
+          .thenReturn(Future.succeededFuture(searchResult));
 
       Future<ResponseModel> future = centralSearchService.postCount(requestDTO);
 

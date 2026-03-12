@@ -23,6 +23,9 @@ public class ResponseFilterDecorator implements ElasticsearchQueryDecorator {
   @Override
   public Map<FilterType, List<QueryModel>> add() {
     LOGGER.info("Adding response filter query decorator DTO {}", request);
+    if (request == null) {
+      return queryMap;
+    }
     String searchType = request.getSearchType();
     if (searchType == null || !searchType.matches(RESPONSE_FILTER_REGEX)) {
       return queryMap;

@@ -29,6 +29,7 @@ import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
+import org.cdpg.dx.common.util.CpRoutingContextHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 
 public class UserInteractionV2Controller implements ApiController {
@@ -130,7 +131,7 @@ public class UserInteractionV2Controller implements ApiController {
                 if (auditAction != null) {
                   UserActivityAuditLogBuilder auditLog =
                       InteractionAuditLogHelper.buildItemAudit(ctx, delta.entityId(), auditAction);
-                  RoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+                  CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
                 }
 
                 ResponseBuilder.sendSuccess(ctx, "Interaction recorded successfully", urnGenerator);

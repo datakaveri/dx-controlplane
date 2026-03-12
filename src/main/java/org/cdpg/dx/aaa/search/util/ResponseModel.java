@@ -16,33 +16,33 @@ public class ResponseModel {
   private int totalHits;
   private PaginationInfo paginationInfo;
 
-  public ResponseModel(List<ElasticsearchResponse> elasticsearchResponses, int size, int page) {
+  public ResponseModel(
+      List<ElasticsearchResponse> elasticsearchResponses, int size, int page, int totalHits) {
     this.response = new JsonObject();
     this.response.put(RESULTS, elasticsearchResponses);
-    setTotalHits(ElasticsearchResponse.getTotalHits());
+    setTotalHits(totalHits);
     this.elasticsearchResponses =
         getJsonObjectList(Objects.requireNonNullElse(elasticsearchResponses, List.of()));
     setPaginationInfo(page, size);
     setResponseJson();
   }
 
-  public ResponseModel(List<ElasticsearchResponse> elasticsearchResponses) {
+  public ResponseModel(
+      List<ElasticsearchResponse> elasticsearchResponses, JsonObject aggregations) {
     this.elasticsearchResponses =
         getJsonObjectList(Objects.requireNonNullElse(elasticsearchResponses, List.of()));
     this.response = new JsonObject();
-    this.response.put(RESULTS, setAggregationsList());
+    this.response.put(RESULTS, setAggregationsList(aggregations));
   }
 
-  public ResponseModel(ElasticsearchResponse elasticsearchResponse) {
+  public ResponseModel(ElasticsearchResponse elasticsearchResponse, int totalHits) {
     this.response = new JsonObject();
     this.response.put(RESULTS, elasticsearchResponse.getSource());
-    setTotalHits(ElasticsearchResponse.getTotalHits());
+    setTotalHits(totalHits);
   }
 
-  private JsonArray setAggregationsList() {
+  private JsonArray setAggregationsList(JsonObject aggregations) {
     JsonArray results = new JsonArray();
-    // Fetch all aggregations from the response JSON
-    JsonObject aggregations = ElasticsearchResponse.getAggregations();
     results.add(aggregations);
     return results;
   }
