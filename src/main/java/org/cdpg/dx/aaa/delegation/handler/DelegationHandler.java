@@ -322,11 +322,12 @@ public class DelegationHandler {
   }
 
   public void resolveOrgId(RoutingContext ctx) {
-    String orgIdParam = ctx.pathParam("id");
-    if(orgIdParam==null)
-    {
-      orgIdParam = ctx.pathParam("org_id");
-    }
+    String orgIdParam = Optional.ofNullable(ctx.pathParam("id"))
+      .orElseGet(() -> Optional.ofNullable(ctx.pathParam("org_id"))
+        .orElseGet(() -> ctx.user() != null
+          ? ctx.user().principal().getString("organisation_id")
+          : null));
+
     delegatorStrategyFactory
       .create(ctx)
       .resolveOrgId(ctx, orgIdParam)
@@ -334,6 +335,7 @@ public class DelegationHandler {
         ctx.put("resolvedOrgId", resolvedOrgId);
         ctx.next();
       })
+
       .onFailure(ctx::fail);
   }
 
