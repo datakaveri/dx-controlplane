@@ -18,7 +18,7 @@ import org.cdpg.dx.aaa.central.catalogue.search.util.ResponseModel;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.database.elastic.model.ElasticsearchSearchResult;
-import org.cdpg.dx.database.elastic.model.OrderBy;
+import org.cdpg.dx.database.postgres.models.OrderBy;
 import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
 import org.cdpg.dx.database.elastic.model.QueryModel;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;

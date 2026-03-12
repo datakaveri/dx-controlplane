@@ -1,6 +1,7 @@
 package org.cdpg.dx.database.elastic.model;
 
 import java.util.List;
+import org.cdpg.dx.database.postgres.models.OrderBy;
 
 public class QueryDecoderRequestDTO {
   private final String requestType;

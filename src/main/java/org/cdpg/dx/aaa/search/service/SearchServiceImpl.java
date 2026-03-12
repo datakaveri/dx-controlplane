@@ -13,7 +13,7 @@ import org.cdpg.dx.aaa.search.util.ResponseModel;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxEsException;
 import org.cdpg.dx.database.elastic.model.ElasticsearchSearchResult;
-import org.cdpg.dx.database.elastic.model.OrderBy;
+import org.cdpg.dx.database.postgres.models.OrderBy;
 import org.cdpg.dx.database.elastic.model.QueryDecoder;
 import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
 import org.cdpg.dx.database.elastic.model.QueryModel;
