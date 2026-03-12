@@ -28,26 +28,124 @@ public class SubscriptionAuthorizationHandler implements Handler<RoutingContext>
     this.checkItemAndFilterUrl = controlPlaneDomain + "/iudx/v2/cat/item/access";
   }
 
-  private Future<Boolean> hasAccess(JsonObject principal, String accessType) {
-    Promise<Boolean> promise = Promise.promise();
+  private static JsonObject normalizeItem(JsonObject input) {
+    if (input == null) {
+      return new JsonObject();
+    }
+    Object resultObj = input.getValue("result");
+    if (resultObj instanceof JsonArray resultArray
+        && !resultArray.isEmpty()
+        && resultArray.getValue(0) instanceof JsonObject) {
+      return resultArray.getJsonObject(0);
+    }
+    return input;
+  }
 
-    JsonObject cons = principal.getJsonObject("cons");
-    if (cons == null) {
-      promise.fail("cons not found");
-      return promise.future();
+  private static boolean accessArrayHas(JsonArray accessArray, String accessType) {
+    if (accessArray == null || accessArray.isEmpty() || accessType == null) {
+      return false;
+    }
+    for (int i = 0; i < accessArray.size(); i++) {
+      Object entry = accessArray.getValue(i);
+      if (entry instanceof String s) {
+        if (s.equalsIgnoreCase(accessType)) {
+          return true;
+        }
+      } else if (entry instanceof JsonObject obj) {
+        String type = obj.getString("accessType", null);
+        if (type != null && type.equalsIgnoreCase(accessType)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private static boolean accessArrayHasAny(JsonArray accessArray, JsonArray allowedTypes) {
+    if (accessArray == null
+        || accessArray.isEmpty()
+        || allowedTypes == null
+        || allowedTypes.isEmpty()) {
+      return false;
+    }
+    for (int i = 0; i < allowedTypes.size(); i++) {
+      String type = allowedTypes.getString(i);
+      if (type != null && accessArrayHas(accessArray, type)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static String getPolicyExpiryAt(JsonObject principal, String accessType) {
+    JsonObject item = normalizeItem(principal);
+    String directExpiry = item.getString("expiryAt", null);
+    if (directExpiry != null) {
+      return directExpiry;
     }
 
-    JsonArray accessArray = cons.getJsonArray("access");
+    JsonArray policies = item.getJsonArray("policies");
+    if (policies == null || policies.isEmpty()) {
+      return null;
+    }
 
-    if (accessArray == null || accessArray.isEmpty()) {
+    String fallbackExpiry = null;
+    for (int i = 0; i < policies.size(); i++) {
+      JsonObject policy = policies.getJsonObject(i);
+      if (policy == null) {
+        continue;
+      }
+      String expiry = policy.getString("expiryAt", null);
+      if (fallbackExpiry == null && expiry != null) {
+        fallbackExpiry = expiry;
+      }
+      if (accessType == null) {
+        continue;
+      }
+      JsonObject policyCons = policy.getJsonObject("cons");
+      if (policyCons == null) {
+        continue;
+      }
+      JsonArray accessArray = policyCons.getJsonArray("access");
+      if (accessArrayHas(accessArray, accessType)) {
+        return expiry;
+      }
+    }
+    return fallbackExpiry;
+  }
+
+  private static boolean isPublicAccess(JsonObject item) {
+    String accessPolicy = item.getString("accessPolicy", "");
+    return accessPolicy.equalsIgnoreCase("open") || accessPolicy.equalsIgnoreCase("public");
+  }
+
+  private Future<Boolean> hasAccess(JsonObject principal, JsonArray allowedTypes) {
+    Promise<Boolean> promise = Promise.promise();
+
+    JsonObject item = normalizeItem(principal);
+
+    JsonArray policies = item.getJsonArray("policies");
+    if (policies != null && !policies.isEmpty()) {
+      for (int i = 0; i < policies.size(); i++) {
+        JsonObject policy = policies.getJsonObject(i);
+        if (policy == null) {
+          continue;
+        }
+        JsonObject policyCons = policy.getJsonObject("cons");
+        if (policyCons == null) {
+          continue;
+        }
+        JsonArray accessArray = policyCons.getJsonArray("access");
+        if (accessArrayHasAny(accessArray, allowedTypes)) {
+          promise.complete(true);
+          return promise.future();
+        }
+      }
       promise.complete(false);
       return promise.future();
     }
 
-    boolean match =
-        accessArray.stream().map(String.class::cast).anyMatch(accessType::equalsIgnoreCase);
-
-    promise.complete(match);
+    promise.fail("policies not found");
     return promise.future();
   }
 
@@ -55,21 +153,32 @@ public class SubscriptionAuthorizationHandler implements Handler<RoutingContext>
   public void handle(RoutingContext context) {
     LOGGER.info("Starting SubscriptionAuthorizationHandler");
 
-    if (context.user().principal().containsKey("cons")) {
+    JsonObject principal = context.user().principal();
+    JsonArray allowedAccessTypes = new JsonArray().add("sub").add("file").add("api");
+    if (principal.containsKey("policies") || principal.containsKey("result")) {
       LOGGER.debug("Processing access token");
 
-      JsonObject principal = context.user().principal();
-      hasAccess(principal, "sub")
+      JsonObject item = normalizeItem(principal);
+      if (isPublicAccess(item)) {
+        LOGGER.debug("Public access policy, skipping subscription check");
+        RoutingContextHelper.setItemMetaData(context, item);
+        RoutingContextHelper.setPolicyExpiryAt(context, getPolicyExpiryAt(item, "sub"));
+        RoutingContextHelper.setProviderId(context, item.getString("ownerUserId", null));
+        context.next();
+        return;
+      }
+
+      hasAccess(principal, allowedAccessTypes)
           .onSuccess(
               access -> {
                 if (!access) {
-                  context.fail(new DxBadRequestException("User does not have 'sub' access"));
+                  context.fail(new DxBadRequestException("User does not have required access"));
                   return;
                 } else {
-                  LOGGER.debug("User has 'sub' access");
-                  RoutingContextHelper.setItemMetaData(context, context.user().principal());
+                  LOGGER.debug("User has required access");
+                  RoutingContextHelper.setItemMetaData(context, item);
                   RoutingContextHelper.setPolicyExpiryAt(
-                      context, principal.getString("expiryAt", null));
+                      context, getPolicyExpiryAt(principal, "sub"));
                   RoutingContextHelper.setProviderId(
                       context, principal.getString("ownerUserId", null));
                   context.next();
@@ -97,31 +206,28 @@ public class SubscriptionAuthorizationHandler implements Handler<RoutingContext>
       getApplicableFilter(itemId, bearerToken)
           .compose(
               result -> {
-                if (result.containsKey("accessPolicy")
-                    && result.getString("accessPolicy").equalsIgnoreCase("Open")) {
+                if (isPublicAccess(result)) {
                   LOGGER.debug("Public access policy, skipping subscription check");
                   RoutingContextHelper.setItemMetaData(context, result);
-                  RoutingContextHelper.setPolicyExpiryAt(
-                      context, result.getString("expiryAt", null));
+                  RoutingContextHelper.setPolicyExpiryAt(context, getPolicyExpiryAt(result, "sub"));
                   RoutingContextHelper.setProviderId(
                       context, result.getString("ownerUserId", null));
                   return Future.succeededFuture(true);
                 } else {
                   RoutingContextHelper.setItemMetaData(context, result);
-                  RoutingContextHelper.setPolicyExpiryAt(
-                      context, result.getString("expiryAt", null));
+                  RoutingContextHelper.setPolicyExpiryAt(context, getPolicyExpiryAt(result, "sub"));
                   RoutingContextHelper.setProviderId(
                       context, result.getString("ownerUserId", null));
-                  return hasAccess(result, "sub");
+                  return hasAccess(result, allowedAccessTypes);
                 }
               })
           .onSuccess(
               sucesss -> {
                 if (!sucesss) {
-                  context.fail(new DxBadRequestException("User does not have 'sub' access"));
+                  context.fail(new DxBadRequestException("User does not have required access"));
                   return;
                 } else {
-                  LOGGER.debug("User has 'sub' access");
+                  LOGGER.debug("User has required access");
                   context.next();
                   return;
                 }
