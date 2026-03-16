@@ -238,11 +238,20 @@ public class AccessRequestServiceImpl implements AccessRequestService {
 
               // Provider constraints are authoritative.
               // If null → derive from allowedAccessTypes.
-              final JsonObject requestedConstraints =
-                  constraints != null
-                      ? constraints
-                      : new JsonObject()
-                          .put("access", new JsonArray(new ArrayList<>(allowedAccessTypes)));
+              final JsonObject requestedConstraints;
+
+              if (constraints != null) {
+                requestedConstraints = constraints;
+              } else {
+
+                JsonArray accessArray = new JsonArray();
+
+                for (String type : allowedAccessTypes) {
+                  accessArray.add(new JsonObject().put("accessType", type));
+                }
+
+                requestedConstraints = new JsonObject().put("access", accessArray);
+              }
 
               // validate; throws DxValidationException on invalid constraints
               validateAccessConstraints(requestedConstraints, allowedAccessTypes);
@@ -304,7 +313,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
                                 itemId,
                                 UUID.fromString(req.getProviderId()),
                                 requestedConstraints,
-                            String.valueOf(expiryAt))
+                                String.valueOf(expiryAt))
                             .recover(
                                 err -> {
                                   LOGGER.error("Access rule creation failed", err);
@@ -354,13 +363,16 @@ public class AccessRequestServiceImpl implements AccessRequestService {
   private void validateAccessConstraints(JsonObject constraints, Set<String> allowedAccessTypes) {
 
     if (constraints == null || !constraints.containsKey("access")) {
-      return; // no constraints to validate
+      return;
     }
 
     JsonArray requested = constraints.getJsonArray("access", new JsonArray());
 
     for (int i = 0; i < requested.size(); i++) {
-      String type = requested.getJsonObject(0).getString("accessType");
+
+      JsonObject accessObj = requested.getJsonObject(i);
+      String type = accessObj.getString("accessType");
+
       if (!allowedAccessTypes.contains(type)) {
         throw new DxValidationException(
             "Requested access type '" + type + "' is not allowed for this resource");
