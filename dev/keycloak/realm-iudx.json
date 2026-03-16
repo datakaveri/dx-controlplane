@@ -39,6 +39,29 @@
       "implicitFlowEnabled": false,
       "fullScopeAllowed": true,
       "protocol": "openid-connect"
+    },
+    {
+      "clientId": "angular-client",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "fullScopeAllowed": true,
+      "protocol": "openid-connect",
+      "redirectUris": [
+        "http://localhost:4001/*",
+        "http://localhost:4002/*",
+        "http://localhost:4003/*"
+      ],
+      "webOrigins": [
+        "http://localhost:4001",
+        "http://localhost:4002",
+        "http://localhost:4003"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
     }
   ],
   "users": [

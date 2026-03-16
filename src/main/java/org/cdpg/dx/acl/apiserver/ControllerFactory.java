@@ -30,7 +30,7 @@ public class ControllerFactory {
 
   private ControllerFactory() {}
 
-  public static List<ApdApiController> createControllers(
+  public static List<org.cdpg.dx.apiserver.ApiController> createControllers(
       Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
 
     final String docIndex = config.getString(DOC_INDEX);

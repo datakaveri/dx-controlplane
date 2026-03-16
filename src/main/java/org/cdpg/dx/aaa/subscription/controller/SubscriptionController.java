@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.apiserver.ApiController;
+import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.aaa.subscription.service.SubscriptionService;
 import org.cdpg.dx.aaa.subscription.util.GetDid;
 import org.cdpg.dx.aaa.subscription.util.SubscriptionAuditHelper;

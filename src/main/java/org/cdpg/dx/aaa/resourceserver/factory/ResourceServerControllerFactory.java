@@ -1,6 +1,6 @@
 package org.cdpg.dx.aaa.resourceserver.factory;
 
-import org.cdpg.dx.aaa.apiserver.ApiController;
+import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.aaa.resourceserver.controller.ResourceServerController;
 import org.cdpg.dx.aaa.resourceserver.dao.impl.ResourceServerDAOImpl;
 import org.cdpg.dx.aaa.resourceserver.service.ResourceServerService;

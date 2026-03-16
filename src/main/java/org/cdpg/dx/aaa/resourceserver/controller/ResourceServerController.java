@@ -7,7 +7,7 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.apiserver.ApiController;
+import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.aaa.apiserver.config.ApiConstants;
 import org.cdpg.dx.aaa.resourceserver.models.ResourceServer;
 import org.cdpg.dx.aaa.resourceserver.service.ResourceServerService;

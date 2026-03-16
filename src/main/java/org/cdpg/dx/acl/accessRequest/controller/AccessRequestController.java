@@ -35,7 +35,7 @@ import org.cdpg.dx.acl.accessRequest.dao.model.Status;
 import org.cdpg.dx.acl.accessRequest.model.AccessRequestAuditOperation;
 import org.cdpg.dx.acl.accessRequest.service.AccessRequestService;
 import org.cdpg.dx.acl.accessRequest.util.AccessRequestAuditLogHelper;
-import org.cdpg.dx.acl.apiserver.ApdApiController;
+import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.acl.policy.util.UserAccessHandler;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
@@ -58,7 +58,7 @@ import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
-public class AccessRequestController implements ApdApiController {
+public class AccessRequestController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(AccessRequestController.class);
 
   private final AccessRequestService accessRequestService;

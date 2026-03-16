@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.apiserver.ApiController;
+import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.aaa.apiserver.OperationIds;
 import org.cdpg.dx.aaa.leaderboard.model.*;
 import org.cdpg.dx.aaa.leaderboard.service.LeaderboardService;
