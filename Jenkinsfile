@@ -16,15 +16,19 @@ pipeline {
 
     stage('Conditional Execution') {
       when {
-        anyOf {
-          changeset "docker/**"
-          changeset "docs/**"
-          changeset "pom.xml"
-          changeset "src/main/**"
-          triggeredBy cause: 'UserIdCause'
+        allOf {
+          anyOf {
+            changeset "docker/**"
+            changeset "docs/**"
+            changeset "pom.xml"
+            changeset "src/main/**"
+            triggeredBy cause: 'UserIdCause'
+        }
+        expression {
+          return env.GIT_BRANCH == 'origin/stable/v2.2'
         }
       }
-
+    }
       stages {
 
         stage('Trivy Code Scan (Dependencies)') {
