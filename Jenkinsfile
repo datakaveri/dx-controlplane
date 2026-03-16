@@ -14,22 +14,68 @@ pipeline {
 
   stages {
 
-    stage('Building images') {
-      steps{
-        script {
-          echo 'Pulled - ' + env.GIT_BRANCH
-          devImage = docker.build(devRegistry, "-f ./docker/dev.dockerfile .")
+    stage('Conditional Execution') {
+      when {
+        anyOf {
+          changeset "docker/**"
+          changeset "docs/**"
+          changeset "pom.xml"
+          changeset "src/main/**"
+          triggeredBy cause: 'UserIdCause'
         }
       }
-    }
 
-    stage('Push Images') {
-      steps {
-        script {
-          docker.withRegistry(registryUri, registryCredential) {
-            devImage.push("v2.2.RC1-${env.GIT_HASH}")
+      stages {
+
+        stage('Trivy Code Scan (Dependencies)') {
+          steps {
+            script {
+              sh '''
+                trivy fs --scanners vuln,secret,misconfig --output trivy-fs-report.txt .
+              '''
+            }
           }
         }
+
+        stage('Building images') {
+          steps{
+            script {
+              echo 'Pulled - ' + env.GIT_BRANCH
+              devImage = docker.build(devRegistry, "-f ./docker/dev.dockerfile .")
+            }
+          }
+        }
+
+        stage('Trivy Docker Image Scan and Report') {
+          steps {
+            script {
+              sh "trivy image --output trivy-dev-image-report.txt ${devImage.imageName()}"
+            }
+          }
+          post {
+            always {
+              archiveArtifacts artifacts: 'trivy-*.txt', allowEmptyArchive: true
+              publishHTML(target: [
+                allowMissing: true,
+                keepAll: true,
+                reportDir: '.',
+                reportFiles: 'trivy-fs-report.txt, trivy-dev-image-report.txt',
+                reportName: 'Trivy Reports'
+              ])
+            }
+          }
+        }
+
+        stage('Push Images') {
+          steps {
+            script {
+              docker.withRegistry(registryUri, registryCredential) {
+                devImage.push("v2.2.RC1-${env.GIT_HASH}")
+              }
+            }
+          }
+        }
+
       }
     }
 
