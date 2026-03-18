@@ -5,7 +5,7 @@
     <groupId>datakaveri.org</groupId>
     <artifactId>iudx.aaa.server</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-
+ 
     <properties>
         <vertx.version>4.5.11</vertx.version>
         <hazelcast.version>4.0.2</hazelcast.version>
