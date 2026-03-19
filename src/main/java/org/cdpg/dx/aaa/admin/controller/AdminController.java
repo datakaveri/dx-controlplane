@@ -58,5 +58,10 @@ public class AdminController implements ApiController {
         .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
         .handler(adminHandler::updateDxUserStatusById);
 
+      routerBuilder
+        .operation("get-activity-log-types")
+        .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+        .handler(adminHandler::getActivityTypeLogs);
+
     }
 }

@@ -9702,6 +9702,50 @@ paths:
 
 
 
+
+  /iudx/v2/auditing/type:
+    get:
+      tags:
+        - Activity Logs
+      summary: Get activity log types
+      operationId: get-activity-log-types
+      security:
+        - authorization: [ ]
+      description: >
+        Retrieve all available activity log types categorised by
+        user_action, compute and asset.
+      responses:
+        '200':
+          description: Successfully retrieved activity log types
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetActivityLogTypesSuccessResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Get Activity Log Types
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/auditing/type' \
+            --header 'Authorization: Bearer <token>'
+
 ## Leaderboard apis
   /iudx/v2/leaderboard/asset:
     get:
@@ -18487,6 +18531,40 @@ components:
         paginationInfo:
           $ref: '#/components/schemas/PaginationInfoResponse'
 
+    GetActivityLogTypesSuccessResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          example: "urn:dx:controlPanel:success"
+        title:
+          type: string
+          example: "Success"
+        results:
+          type: object
+          properties:
+            user_action:
+              type: object
+              additionalProperties:
+                type: string
+              example:
+                UPDATE_ORG_CREATE_REQUEST: "Update organisation creation request status"
+                UPDATE_ORG_JOIN_REQUEST: "Update organisation join request status"
+                GET_USER_INFO: "Get user info"
+            compute:
+              type: object
+              additionalProperties:
+                type: string
+              example:
+                CREATE_COMPUTE: "Create compute resource"
+                DELETE_COMPUTE: "Delete compute resource"
+            asset:
+              type: object
+              additionalProperties:
+                type: string
+              example:
+                CREATE_ASSET: "Create asset"
+                DELETE_ASSET: "Delete asset"
 
     CustomRoleItem:
       type: object

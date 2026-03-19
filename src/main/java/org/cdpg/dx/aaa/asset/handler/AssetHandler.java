@@ -173,7 +173,7 @@ public class AssetHandler {
       .onSuccess(entry -> {
         UserActivityAuditLogBuilder auditLogBuilder =
           AssetAuthAuditLogHelper.buildAudit(
-            ctx, new JsonObject(),AssetAuthAuditOperation.GET);
+            ctx, new JsonObject(),AssetAuthAuditOperation.GET_DATA_INGESTION_TYPE);
 
         RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 

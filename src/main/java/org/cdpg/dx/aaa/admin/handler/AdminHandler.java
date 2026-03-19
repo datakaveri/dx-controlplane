@@ -14,11 +14,13 @@ import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.AuditLog;
+import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxBadRequestException;
+import org.cdpg.dx.common.model.AuditAction;
 import org.cdpg.dx.common.model.UserInfo;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
@@ -457,5 +459,19 @@ public class AdminHandler {
           ctx.fail(err);
         });
     }
+  }
+
+  public void getActivityTypeLogs(RoutingContext ctx) {
+    JsonObject response = new JsonObject();
+
+    Arrays.stream(AuditAction.values())
+      .forEach(category -> {
+        JsonObject categoryActions = new JsonObject();
+        category.getActions()
+          .forEach(categoryActions::put);
+        response.put(category.name().toLowerCase(), categoryActions);
+      });
+
+    ResponseBuilder.sendSuccess(ctx, response, urnGenerator);
   }
 }
