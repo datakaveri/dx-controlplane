@@ -25,7 +25,7 @@ pipeline {
             triggeredBy cause: 'UserIdCause'
         }
         expression {
-          return env.GIT_BRANCH == 'origin/stable/v2.2'
+          return env.BRANCH_NAME == 'stable/v2.2'
         }
       }
     }
