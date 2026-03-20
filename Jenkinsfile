@@ -33,6 +33,25 @@ pipeline {
       }
     }
 
+    stage('Trivy Scan - High and Critical') {
+      steps {
+        script {
+          try {
+            sh """
+            trivy image \\
+              --exit-code 1 \\
+              --severity HIGH,CRITICAL \\
+              --ignore-unfixed \\
+              ${devImage.imageName()}
+            """
+          } catch (Exception e) {
+            echo "Trivy scan failed due to high or critical vulnerabilities."
+            throw e
+          }
+        }
+      }
+    }
+
     stage('Trivy Docker Image Scan and Report') {
       steps {
         script {
