@@ -107,7 +107,7 @@ pipeline {
   post{
     failure{
       script{
-        if (env.BRANCH_NAME == 'dev')
+        if (env.BRANCH_NAME == 'stable/v2.2')
         emailext recipientProviders: [buildUser(), developers()],
         to: '$AAA_RECIPIENTS, $DEFAULT_RECIPIENTS',
         subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!',
