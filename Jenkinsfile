@@ -25,7 +25,7 @@ pipeline {
             triggeredBy cause: 'UserIdCause'
           }
           expression {
-            return env.GIT_BRANCH == 'origin/dev';
+            return env.BRANCH_NAME == 'dev';
           }
         }
       }
@@ -141,7 +141,7 @@ pipeline {
   post{
     failure{
       script{
-        if (env.GIT_BRANCH == 'origin/dev')
+        if (env.BRANCH_NAME == 'dev')
         emailext recipientProviders: [buildUser(), developers()],
         to: '$AAA_RECIPIENTS, $DEFAULT_RECIPIENTS',
         subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!',
