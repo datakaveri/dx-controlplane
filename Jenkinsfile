@@ -86,7 +86,7 @@ pipeline {
               sh "ssh azureuser@docker-swarm 'docker service update iudx-v2-controlplane_controlplane-iudx-v2 --image ghcr.io/datakaveri/controlplane-dev:1.0.0-${env.GIT_HASH}'"
               sh 'sleep 15'
               sh '''#!/bin/bash 
-              response_code=$(curl -s -o /dev/null -w \'%{http_code}\\n\' --connect-timeout 5 --retry 5 --retry-connrefused -XGET https://authvertx.iudx.io/apis)
+              response_code=$(curl -s -o /dev/null -w \'%{http_code}\\n\' --connect-timeout 5 --retry 5 --retry-connrefused -XGET https://v2.dev.controlplane.iudx.io/apis)
 
               if [[ "$response_code" -ne "200" ]]
               then
