@@ -65,41 +65,61 @@ public class ActivityController implements ApiController {
     Map<String, Object> additionalFilters = Map.of(USER_ID, user.subject());
 
     PaginatedRequest request =
-        PaginationRequestBuilder.from(context)
-            .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_CONSUMER_V2)
-            .additionalFilters(additionalFilters)
-            .apiToDbMap(API_TO_DB_FIELD_MAP_V2)
-            .allowedTimeFields(Set.of(CREATED_AT))
-            .defaultTimeField(CREATED_AT)
-            .defaultSort(DEFAULT_SORTING_FIELD, DEFAULT_SORTING_ORDER)
-            .allowedSortFields(ALLOWED_SORT_FIELDS_V2)
-            .build();
+      PaginationRequestBuilder.from(context)
+        .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_CONSUMER_V2)
+        .additionalFilters(additionalFilters)
+        .apiToDbMap(API_TO_DB_FIELD_MAP_V2)
+        .allowedTimeFields(Set.of(CREATED_AT))
+        .defaultTimeField(CREATED_AT)
+        .defaultSort(DEFAULT_SORTING_FIELD, DEFAULT_SORTING_ORDER)
+        .allowedSortFields(ALLOWED_SORT_FIELDS_V2)
+        .build();
 
     LOGGER.info("PaginatedRequest created for getActivityLogForUser:  {}", request);
 
     userActivityAuditLogService
-        .getUserActivityLogForConsumer(request)
-        .onSuccess(
-            pagedResult -> {
-              LOGGER.info("Successfully fetched activity logs for user: {}", user.subject());
-              if (pagedResult.data().isEmpty()) {
-                LOGGER.info("No activity logs found for user: {}", user.subject());
-                ResponseBuilder.sendNoContent(context, urnGenerator);
-                return;
-              }
-              LOGGER.info("Paged Result: {}", pagedResult.data().get(0).toJson());
+      .getUserActivityLogForConsumer(request)
+      .onSuccess(
+        pagedResult -> {
+          LOGGER.info("Successfully fetched activity logs for user: {}", user.subject());
+          if (pagedResult.data().isEmpty()) {
+            LOGGER.info("No activity logs found for user: {}", user.subject());
+            ResponseBuilder.sendNoContent(context, urnGenerator);
+            return;
+          }
 
-              JsonArray resultArr = new JsonArray();
-              pagedResult.data().forEach(item -> resultArr.add(item.toJson()));
+          LOGGER.info("Paged Result: {}", pagedResult.data().get(0).toJson());
 
-              ResponseBuilder.sendSuccess(
-                  context, resultArr, pagedResult.paginationInfo(), urnGenerator);
-            })
-        .onFailure(
-            failure -> {
-              LOGGER.error("Failed to fetch activity logs: {}", failure.getMessage(), failure);
-              context.fail(failure);
-            });
+          JsonArray resultArr = new JsonArray();
+          pagedResult.data().stream()
+            .map(item -> item.toJson())
+            .filter(
+              json -> {
+                boolean hasAssetId = json.getValue("assetName") != null;
+                boolean hasAssetType = json.getValue("assetType") != null;
+                if (!hasAssetId || !hasAssetType) {
+                  LOGGER.info(
+                    "Skipping entry due to null assetId or assetType: {}", json);
+                }
+                return hasAssetId && hasAssetType;
+              })
+            .forEach(resultArr::add);
+
+          if (resultArr.isEmpty()) {
+            LOGGER.info(
+              "No valid activity logs found after filtering for user: {}", user.subject());
+            ResponseBuilder.sendNoContent(context, urnGenerator);
+            return;
+          }
+
+          ResponseBuilder.sendSuccess(
+            context, resultArr, pagedResult.paginationInfo(), urnGenerator);
+        })
+      .onFailure(
+        failure -> {
+          LOGGER.error("Failed to fetch activity logs: {}", failure.getMessage(), failure);
+          context.fail(failure);
+        });
   }
 
   private void handleGetAllActivityLogsForAdmin(RoutingContext context) {
@@ -112,33 +132,60 @@ public class ActivityController implements ApiController {
     LOGGER.info("Allowed Filters for admin: {}", allowedFilters);
 
     PaginatedRequest request =
-        PaginationRequestBuilder.from(context)
-            .allowedFiltersDbMap(allowedFilters)
-            .additionalFilters(additionalFilter)
-            .apiToDbMap(API_TO_DB_FIELD_MAP_V2)
-            .allowedTimeFields(Set.of(CREATED_AT))
-            .defaultTimeField(CREATED_AT)
-            .defaultSort(DEFAULT_SORTING_FIELD, DEFAULT_SORTING_ORDER)
-            .allowedSortFields(ALLOWED_SORT_FIELDS_V2)
-            .build();
+      PaginationRequestBuilder.from(context)
+        .allowedFiltersDbMap(allowedFilters)
+        .additionalFilters(additionalFilter)
+        .apiToDbMap(API_TO_DB_FIELD_MAP_V2)
+        .allowedTimeFields(Set.of(CREATED_AT))
+        .defaultTimeField(CREATED_AT)
+        .defaultSort(DEFAULT_SORTING_FIELD, DEFAULT_SORTING_ORDER)
+        .allowedSortFields(ALLOWED_SORT_FIELDS_V2)
+        .build();
 
     LOGGER.debug("PaginatedRequest created for handleGetAllActivityLogsForAdmin:  {}", request);
 
     userActivityAuditLogService
-        .getAllActivityLogsForAdmin(request)
-        .onSuccess(
-            pagedResult -> {
-              LOGGER.info("Successfully fetched all activity logs for admin");
-              JsonArray resultArr = new JsonArray();
-              pagedResult.data().forEach(item -> resultArr.add(item.toJson()));
+      .getAllActivityLogsForAdmin(request)
+      .onSuccess(
+        pagedResult -> {
+          LOGGER.info("Successfully fetched all activity logs for admin");
 
-              ResponseBuilder.sendSuccess(
-                  context, resultArr, pagedResult.paginationInfo(), urnGenerator);
-            })
-        .onFailure(
-            failure -> {
-              LOGGER.error("Failed to fetch activity logs: {}", failure.getMessage(), failure);
-              context.fail(failure);
-            });
+          if (pagedResult.data().isEmpty()) {
+            LOGGER.info("No activity logs found for admin");
+            ResponseBuilder.sendNoContent(context, urnGenerator);
+            return;
+          }
+
+          LOGGER.info("Paged Result: {}", pagedResult.data().get(0).toJson());
+
+          JsonArray resultArr = new JsonArray();
+          pagedResult.data().stream()
+            .map(item -> item.toJson())
+            .filter(
+              json -> {
+                boolean hasAssetId = json.getValue("assetName") != null;
+                boolean hasAssetType = json.getValue("assetType") != null;
+                if (!hasAssetId || !hasAssetType) {
+                  LOGGER.info(
+                    "Skipping entry due to null assetId or assetType: {}", json);
+                }
+                return hasAssetId && hasAssetType;
+              })
+            .forEach(resultArr::add);
+
+          if (resultArr.isEmpty()) {
+            LOGGER.info("No valid activity logs found after filtering for admin");
+            ResponseBuilder.sendNoContent(context, urnGenerator);
+            return;
+          }
+
+          ResponseBuilder.sendSuccess(
+            context, resultArr, pagedResult.paginationInfo(), urnGenerator);
+        })
+      .onFailure(
+        failure -> {
+          LOGGER.error("Failed to fetch activity logs: {}", failure.getMessage(), failure);
+          context.fail(failure);
+        });
   }
 }
