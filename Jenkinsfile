@@ -23,12 +23,13 @@ pipeline {
             changeset "pom.xml"
             changeset "src/main/**"
             triggeredBy cause: 'UserIdCause'
-        }
-        expression {
-          return env.BRANCH_NAME == 'stable/v2.2'
+          }
+          expression {
+            return env.BRANCH_NAME == 'stable/v2.2'
+          }
         }
       }
-    }
+
       stages {
 
         stage('Trivy Code Scan (Dependencies)') {
