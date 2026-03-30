@@ -3,6 +3,7 @@ package org.cdpg.dx.acl.accessRequest.controller;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.CHECK_ACCESS_REQUEST_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.CREATE_ACCESS_REQUEST_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_ACCESS_REQUEST_CONSUMER_API;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_ACCESS_REQUEST_FOR_COS_ADMIN_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_ACCESS_REQUEST_FOR_ORG_ADMIN_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_ACCESS_REQUEST_PROVIDER_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.UPDATE_ACCESS_REQUEST_API;
@@ -110,6 +111,7 @@ public class AccessRequestController implements ApdApiController {
 
   @Override
   public void register(RouterBuilder builder) {
+    Handler<RoutingContext> cosAdminAccessHandler = AuthorizationHandler.forRoles(DxRole.COS_ADMIN);
     Handler<RoutingContext> orgAdminAccessHandler = AuthorizationHandler.forRoles(DxRole.ORG_ADMIN);
     Handler<RoutingContext> providerAndOrgAdminAccessHandler =
         AuthorizationHandler.forRoles(DxRole.PROVIDER, DxRole.ORG_ADMIN);
@@ -136,6 +138,12 @@ public class AccessRequestController implements ApdApiController {
         .handler(auditingHandler::handleApiAudit)
         .handler(orgAdminAccessHandler)
         .handler(this::getOrganizationAccessRequestHandler);
+
+    builder
+        .operation(GET_ACCESS_REQUEST_FOR_COS_ADMIN_API)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(cosAdminAccessHandler)
+        .handler(this::getPlatformAccessRequestHandler);
 
     builder
         .operation(GET_ACCESS_REQUEST_PROVIDER_API)
@@ -259,6 +267,49 @@ public class AccessRequestController implements ApdApiController {
             pagedResult -> {
               LOGGER.info(
                   "Successfully fetched access requests for org admin user: {}", user.subject());
+              ResponseBuilder.sendSuccess(
+                  ctx,
+                  pagedResult.data().stream()
+                      .map(AccessRequestDto::toJson)
+                      .collect(Collectors.toList()),
+                  pagedResult.paginationInfo(),
+                  urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Error fetching access requests: {}", err.getMessage(), err);
+              ctx.fail(err);
+            });
+  }
+
+  private void getPlatformAccessRequestHandler(RoutingContext ctx) {
+    LOGGER.info("Handling getOrganizationAccessRequestHandler request...");
+    User user = ctx.user();
+
+    Map<String, String> allowedFilters =
+        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE);
+    Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
+    Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
+
+    PaginatedRequest request =
+        PaginationRequestBuilder.from(ctx)
+            .allowedFiltersDbMap(allowedFilters)
+            .apiToDbMap(API_TO_DB_MAP)
+            .allowedTimeFields(allowedTimeFields)
+            .defaultTimeField(DB_CREATED_AT)
+            .defaultSort(DB_UPDATED_AT, DEFAULT_SORTING_ORDER)
+            .allowedSortFields(allowedSortFields)
+            .build();
+
+    LOGGER.info(
+        "PaginatedRequest getPlatformAccessRequestHandler for cos admin :  {}", request);
+
+    accessRequestService
+        .listAccessRequestForProvider(request)
+        .onSuccess(
+            pagedResult -> {
+              LOGGER.info(
+                  "Successfully fetched access requests for cos admin user: {}", user.subject());
               ResponseBuilder.sendSuccess(
                   ctx,
                   pagedResult.data().stream()

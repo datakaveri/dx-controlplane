@@ -1022,7 +1022,7 @@ paths:
         - lang: cURL
           label: Get access requests
           source: 'curl --location --request GET 
-        ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/provider''
+        ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/organisation''
           \
 
           '
@@ -1030,7 +1030,7 @@ paths:
         - lang: cURL
           label: Get access request with status
           source: 'curl --location --request GET 
-          ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/provider?requestStatus=GRANTED''
+          ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/organisation?requestStatus=GRANTED''
           \
 
           '
@@ -1038,7 +1038,158 @@ paths:
         - lang: cURL
           label: With pagination query params
           source: 'curl --location --request GET 
-          ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/provider?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
+          ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/organisation?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
+          \
+
+          '
+          --header 'Authorization: <tokenValue>'
+  /iudx/acl/apd/v2/access_request/platform:
+    get:
+      tags:
+        - Access Request
+      summary: List Platform Access Requests (COS Admin)
+      description: |
+        Lists all the latest access requests for assets across the DX platform,
+        regardless of their current state.
+
+        This endpoint is accessible only to users with the `cos_admin` role and
+        provides a platform-wide view of access requests across all organizations.
+
+        <br>
+        <br>
+
+        `Note:` The response includes access requests from all organizations on the platform.
+        Optionally, results can be filtered using query parameters such as requestStatus,
+        assetType, and temporal filters.
+      operationId: get-auth-v2-access-requests-platform
+      parameters:
+        - name: requestStatus
+          in: query
+          description: Status of the access request. Displays all the access requests
+            if status is not specified
+          required: false
+          schema:
+            type: string
+            enum:
+              - PENDING
+              - GRANTED
+              - REJECTED
+              - WITHDRAWN
+        - name: assetType
+          in: query
+          description: Type of the asset for which the access request is made. Displays
+            all the access requests if assetType is not specified
+          required: false
+          schema:
+            type: string
+            enum:
+              - adex:DataBank
+              - adex:AiModel
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+        - $ref: '#/components/parameters/TimeParam'
+        - $ref: '#/components/parameters/EndTimeParam'
+        - $ref: '#/components/parameters/TimeRelParam'
+      responses:
+        '200':
+          description: 'OK
+
+            - Successfully fetched all the access requests of consumers across the platform'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessRequest'
+              examples:
+                ListResults:
+                  value:
+                    type: urn:dx:AclApd:success
+                    title: Success
+                    results:
+                      - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
+                        requestStatus: GRANTED
+                        requestType: DOWNLOAD
+                        additionalInfo:
+                          name: Miles Morales,
+                          email: miles.morales@acmecorp.org,
+                          phoneNo: 9876543210,
+                          purpose: academia,
+                          description: AI model would be used for non-commercial, academia
+                            purposes to test the application abcd
+                        user:
+                          consumerId: a13eb955-c691-4fd3-b200-f18bc78810b5
+                          consumerFirstName: Plutonian
+                          consumerLastName: Resident
+                          consumerEmail: scroopy@noopers.com
+                          consumerOrganization: Scroopy Noopers Corp
+                        asset:
+                          itemId: 316cd4eb-71b3-42c2-beb2-785a77999321
+                          assetName: Ice Estimation Model
+                          assetType: adex:AiModel
+                          shortDescription: This is a test AI model for estimating percentage
+                            of ice on Pluto
+                        expiryAt: '3000-03-05T20:00:19'
+                        updatedAt: '2025-06-04T07:25:08.663637'
+                        createdAt: '2025-06-04T09:10:57.267564'
+                    paginationInfo:
+                      page: 1
+                      size: 1
+                      totalCount: 3
+                      totalPages: 3
+                      hasNext: true
+                      hasPrevious: false
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+        '400':
+          description: Bad Request- Schema validation, missing or incorrect fields
+            & values
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/updateNotificationBadRequest'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+        '401':
+          description: '- Unauthorized - `token` invalid/expired'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+      security:
+        - authorization: [ ]
+      x-codeSamples:
+        - lang: cURL
+          label: Get access requests
+          source: 'curl --location --request GET 
+        ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/platform''
+          \
+
+          '
+          --header 'Authorization: <tokenValue>'
+        - lang: cURL
+          label: Get access request with status
+          source: 'curl --location --request GET 
+          ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/platform?requestStatus=GRANTED''
+          \
+
+          '
+          --header 'Authorization: <tokenValue>'
+        - lang: cURL
+          label: With pagination query params
+          source: 'curl --location --request GET 
+          ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/platform?requestStatus=PENDING
+          &timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
           \
 
           '
