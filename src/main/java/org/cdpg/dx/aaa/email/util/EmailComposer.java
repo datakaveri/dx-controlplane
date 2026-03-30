@@ -466,7 +466,7 @@ public class EmailComposer {
                         String htmlBody = getHtmlBody(emailTemplate, emailDetails);
 
                         MailMessage mailMessage =
-                            createMailMessage(senderEmail, "srishti.mittal@datakaveri.org", htmlBody, subject);
+                            createMailMessage(senderEmail, emailId, htmlBody, subject);
 
                         return emailService
                             .sendEmail(mailMessage)
