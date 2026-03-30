@@ -428,18 +428,27 @@ public class EmailComposer {
                       userInfo -> {
                         String emailId = userInfo.email();
                         String userName = userInfo.name();
-                        String subject = "Compute Role Request Status Update";
+                        String platformName = config.getString("platformName");
+                        String subject = "Compute Role Access Request – " + status.getStatus() + " | " + platformName + " Platform";
                         String senderEmail = config.getString("emailSender");
                         String adminPortalUrl = config.getString("TGDxUrl");
                         String senderName = config.getString("senderName");
-                        String platformName = config.getString("platformName");
 
                         String approvedMessage = "";
                         if (status.equals(Status.GRANTED)) {
                           approvedMessage =
-                              String.format(
-                                  "You can now access the system and use your compute privileges in the the %s platform.%n%n",
-                                  platformName);
+                            "To proceed, please complete the 'Credit Request Form' available within your account:<br/><br/>"
+                              + "<strong>Profile &rarr; Dashboard &rarr; My Projects</strong><br/><br/>"
+                              + "Once submitted, your request will be reviewed and the allocated credits will be confirmed through a separate notification email.<br/><br/>"
+                              + "For guidance on navigating the platform, please refer to the User Manual:<br/>"
+                              + "<a href=\"https://mahaagx.maharashtra.gov.in/user-manual\">https://mahaagx.maharashtra.gov.in/user-manual</a><br/><br/>"
+                              + "For any queries related to the platform or its datasets, please reach out to us via:<br/>"
+                              + "<a href=\"https://mahaagx.maharashtra.gov.in/contact-us\">https://mahaagx.maharashtra.gov.in/contact-us</a><br/><br/>"
+                              + "Thank you for your interest in the " + platformName + " platform. We look forward to supporting your work on the platform.";
+                        } else if (status.equals(Status.REJECTED)) {
+                          approvedMessage =
+                            "For any queries related to the platform or its datasets, please reach out to us via:<br/>"
+                              + "<a href=\"https://mahaagx.maharashtra.gov.in/contact-us\">https://mahaagx.maharashtra.gov.in/contact-us</a>";
                         }
                         Map<String, String> emailDetails =
                             Map.of(
@@ -448,6 +457,7 @@ public class EmailComposer {
                                 "SENDER_NAME", senderName,
                                 "STATUS", status.getStatus(),
                                 "APPROVED_MESSAGE", approvedMessage,
+                                "PLATFORM_NAME", platformName,
                                 "SUBJECT", subject);
 
                         String emailTemplate =
@@ -456,7 +466,7 @@ public class EmailComposer {
                         String htmlBody = getHtmlBody(emailTemplate, emailDetails);
 
                         MailMessage mailMessage =
-                            createMailMessage(senderEmail, emailId, htmlBody, subject);
+                            createMailMessage(senderEmail, "srishti.mittal@datakaveri.org", htmlBody, subject);
 
                         return emailService
                             .sendEmail(mailMessage)
