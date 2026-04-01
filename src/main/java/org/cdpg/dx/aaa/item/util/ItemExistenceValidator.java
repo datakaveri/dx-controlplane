@@ -27,12 +27,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
-import java.util.Locale;
 import java.util.TimeZone;
 import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
@@ -58,25 +53,9 @@ public class ItemExistenceValidator {
 
   /** Generates timestamp with timezone +05:30. */
   public static String getUtcDatetimeAsString() {
-    DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssZ");
+    DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
     df.setTimeZone(TimeZone.getTimeZone("IST"));
     return df.format(new Date());
-  }
-
-  public static String getPrettyLastUpdatedForUI() {
-    DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
-    DateTimeFormatter outputFormatter =
-        DateTimeFormatter.ofPattern("dd MMMM, yyyy - hh:mm a", Locale.ENGLISH);
-
-    // Format the current date in IST
-    ZonedDateTime nowIst = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
-    String istTime = nowIst.format(inputFormatter);
-
-    // Parse using OffsetDateTime (handles the +0530 format correctly)
-    OffsetDateTime offsetDateTime = OffsetDateTime.parse(istTime, inputFormatter);
-
-    // Format to the desired output
-    return offsetDateTime.format(outputFormatter);
   }
 
   private Future<Boolean> itemExists(ItemService service, String itemType, String name) {
@@ -411,7 +390,7 @@ public class ItemExistenceValidator {
   }
 
   private void setCommonFields(JsonObject request, String method) {
-    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getPrettyLastUpdatedForUI());
+    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getUtcDatetimeAsString());
 
     if (REQUEST_POST.equalsIgnoreCase(method)) {
       request.put(ITEM_CREATED_AT, getUtcDatetimeAsString());
