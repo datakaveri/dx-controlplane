@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.item.controller;
 
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.CHECK_ITEM_NAME_AVAILABILITY;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.CONTEXT;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.CREATE_ITEM;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.DELETE_ITEM;
@@ -157,11 +158,50 @@ public class ItemController implements ApiController {
         .handler(this::handleGetItemWithAccess);
 
     builder
+        .operation(CHECK_ITEM_NAME_AVAILABILITY)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(this::handleVerifyItemNameAvailability);
+
+    builder
         .operation(DOWNLOAD_SCRIPT)
         .handler(auditingHandler::handleApiAudit)
         .handler(this::handleDownloadScript);
 
     LOGGER.debug("Item Controller registered");
+  }
+
+  private void handleVerifyItemNameAvailability(RoutingContext ctx) {
+    LOGGER.debug("Handling item name availability check");
+
+    try {
+      String name = ctx.queryParams().get(NAME);
+      if (name == null || name.isBlank()) {
+        ctx.fail(new DxBadRequestException("Query param 'name' is required"));
+        return;
+      }
+
+      itemService
+          .isItemNameExists(name)
+          .onSuccess(
+              exists -> {
+                if (Boolean.TRUE.equals(exists)) {
+                  //  Already exists → 409
+                  ctx.fail(new DxConflictException("Asset name Already Exists"));
+                } else {
+                  //  Available → 200
+                  ResponseBuilder.sendSuccess(ctx, "Asset name is available", this.urnGenerator);
+                }
+              })
+          .onFailure(
+              err -> {
+                LOGGER.error("Error while checking name availability", err);
+                ctx.fail(new DxInternalServerErrorException(err.getMessage()));
+              });
+
+    } catch (Exception e) {
+      LOGGER.error("Unexpected error in name availability check", e);
+      ctx.fail(new DxBadRequestException(e.getMessage()));
+    }
   }
 
   private void handleCreateOrUpdateItem(RoutingContext ctx) {

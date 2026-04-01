@@ -44,4 +44,6 @@ public interface ItemService {
             int delta
     );
     Future<BulkSyncResult> bulkSyncMetrics(List<InteractionAggregate> aggregates);
+
+    Future<Boolean> isItemNameExists(String name);
 }

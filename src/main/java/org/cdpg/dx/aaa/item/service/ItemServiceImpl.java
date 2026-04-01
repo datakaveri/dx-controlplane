@@ -30,14 +30,11 @@ import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
-
 import java.util.*;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.asset.models.AssetRequest;
 import org.cdpg.dx.aaa.asset.models.AssetRequestResponse;
-import org.cdpg.dx.database.elastic.model.BulkSyncResult;
 import org.cdpg.dx.aaa.common.ResponseModel;
 import org.cdpg.dx.aaa.interaction.model.InteractionAggregate;
 import org.cdpg.dx.aaa.item.model.Item;
@@ -56,6 +53,7 @@ import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.DxUnauthorizedException;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.database.elastic.model.BulkScriptUpdate;
+import org.cdpg.dx.database.elastic.model.BulkSyncResult;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.database.elastic.model.QueryDecoder;
 import org.cdpg.dx.database.elastic.model.QueryModel;
@@ -834,4 +832,24 @@ public class ItemServiceImpl implements ItemService {
     return promise.future();
   }
 
+  @Override
+  public Future<Boolean> isItemNameExists(String name) {
+
+    if (name == null || name.isBlank()) {
+      return Future.failedFuture("Name cannot be null or empty");
+    }
+
+    QueryModel queryModel = new QueryModel(QueryType.TERM);
+    queryModel.setQueryParameters(Map.of(FIELD, "name.keyword", VALUE, name));
+
+    return elasticsearchService
+        .getSingleDocument(docIndex, queryModel)
+        .map(res -> ElasticsearchResponse.getTotalHits() > 0)
+        .recover(
+            err -> {
+              LOGGER.error(
+                  "Error while checking item name existence '{}': {}", name, err.getMessage());
+              return Future.failedFuture("Failed to check item name existence");
+            });
+  }
 }
