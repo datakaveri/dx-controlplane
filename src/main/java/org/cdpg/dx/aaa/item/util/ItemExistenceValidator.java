@@ -58,7 +58,7 @@ public class ItemExistenceValidator {
 
   /** Generates timestamp with timezone +05:30. */
   public static String getUtcDatetimeAsString() {
-    DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssZ");
+    DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
     df.setTimeZone(TimeZone.getTimeZone("IST"));
     return df.format(new Date());
   }
