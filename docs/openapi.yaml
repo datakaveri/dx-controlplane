@@ -1141,6 +1141,94 @@ paths:
           source: |
             curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/cat/item?id=uuid' \
             --header 'token: <token>'
+  /iudx/v2/cat/item/available-name:
+    get:
+      tags:
+        - CAT Entity
+      description: >
+        Check if a given asset name is available for creating a new catalogue item.
+        
+        This API is intended for UI clients to perform a pre-validation before
+        submitting a create request.
+        
+        The validation checks whether any existing item already uses the same name.
+        
+        By default, the check considers items in both ACTIVE and PENDING states
+        to prevent duplicate entries during approval workflows.
+      operationId: validate item name availability
+      security:
+        - optionalAuth: [ ]
+      parameters:
+        - name: name
+          in: query
+          description: Name of the asset to validate
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Name availability result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  detail:
+                    type: string
+                    example: Asset name is available
+
+
+        '409':
+          description: Conflict | Asset Name Already Exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                InvalidToken:
+                  summary: Conflict - Asset Name Already Exists
+                  value:
+                    type: "urn:dx:ControlPlane:conflict"
+                    title: "Conflict"
+                    detail: "Asset name Already Exists"
+
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/invalidIdErrorResponse'
+              example:
+                type: "dx:controlPlane:badRequest"
+                title: "Bad Request"
+                detail: "Missing or invalid query parameters"
+
+        '401':
+          description: Missing or invalid authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                InvalidToken:
+                  summary: Invalid token format
+                  value:
+                    type: "dx:controlPlane:notAuthorized"
+                    title: "Not Authorized"
+                    detail: "Invalid token format"
+
+      x-codeSamples:
+        - lang: cURL
+          label: validate item name
+          source: |
+            curl --location --request GET 'https://${HOSTNAME}/iudx/v2/cat/item/validate?name= 
+            sandbox item'
   /items/scripts/download/{filename}:
     get:
       tags:

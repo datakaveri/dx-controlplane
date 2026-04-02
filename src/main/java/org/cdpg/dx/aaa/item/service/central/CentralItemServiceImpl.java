@@ -518,8 +518,11 @@ public class CentralItemServiceImpl implements ItemService {
             resourceSvrTermQuery,
             cosTermQuery));
 
+    QueryModel queryModel = new QueryModel();
+    queryModel.setQueries(boolQuery);
+
     centralElasticsearchService
-        .count(docIndex, boolQuery)
+        .count(docIndex, queryModel)
         .compose(
             totalHits -> {
               if (totalHits > 1) {
@@ -901,4 +904,26 @@ public class CentralItemServiceImpl implements ItemService {
 
     return promise.future();
   }
+
+  @Override
+  public Future<Boolean> isItemNameExists(String name) {
+
+    if (name == null || name.isBlank()) {
+      return Future.failedFuture("Name cannot be null or empty");
+    }
+
+    QueryModel queryModel = new QueryModel(QueryType.TERM);
+    queryModel.setQueryParameters(Map.of(FIELD, "name.keyword", VALUE, name));
+
+    return centralElasticsearchService
+        .getSingleDocument(docIndex, queryModel)
+        .map(res -> res.getDocId() != null)
+        .recover(
+            err -> {
+              LOGGER.error(
+                  "Error while checking item name existence '{}': {}", name, err.getMessage());
+              return Future.failedFuture("Failed to check item name existence");
+            });
+  }
+
 }
