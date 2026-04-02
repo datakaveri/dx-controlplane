@@ -513,9 +513,11 @@ public class ItemServiceImpl implements ItemService {
             providerTermQuery,
             resourceSvrTermQuery,
             cosTermQuery));
+    QueryModel queryModel = new QueryModel();
+    queryModel.setQueries(boolQuery);
 
     elasticsearchService
-        .count(docIndex, boolQuery)
+        .count(docIndex, queryModel)
         .compose(
             totalHits -> {
               if (totalHits > 1) {

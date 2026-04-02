@@ -518,8 +518,11 @@ public class CentralItemServiceImpl implements ItemService {
             resourceSvrTermQuery,
             cosTermQuery));
 
+    QueryModel queryModel = new QueryModel();
+    queryModel.setQueries(boolQuery);
+
     centralElasticsearchService
-        .count(docIndex, boolQuery)
+        .count(docIndex, queryModel)
         .compose(
             totalHits -> {
               if (totalHits > 1) {
