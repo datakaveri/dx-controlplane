@@ -32,6 +32,19 @@ pipeline {
 
       stages {
 
+        stage('Build dx-common Dependency') {
+          steps {
+            script {
+              dir('dx-common') {
+                git branch: 'origin/dev', 
+                    url: 'https://github.com/datakaveri/dx-common.git'
+                
+                sh 'mvn clean install -Dmaven.test.skip=true'
+              }
+            }
+          }
+        }
+
         stage('Trivy Code Scan (Dependencies)') {
           steps {
             script {
