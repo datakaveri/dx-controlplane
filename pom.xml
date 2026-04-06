@@ -45,7 +45,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <!--  log4j2 bom to keep org.apache.logging.log4j artifacts version in sync -->
+            <!--  log4j2 bom to keep org.apache.logging.log4j artifacts ho version in sync -->
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-bom</artifactId>
@@ -55,6 +55,15 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <!-- git repo -->
+    <repositories>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/datakaveri/dx-common</url>
+        </repository>
+    </repositories>
 
     <dependencies>
         <!-- DX Common shared module -->
@@ -78,11 +87,11 @@
             <artifactId>json</artifactId>
             <version>20180813</version>
         </dependency>
-        <dependency>
+        <!--<dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-rabbitmq-client</artifactId>
             <version>${vertx.version}</version>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-service-discovery</artifactId>
@@ -131,11 +140,11 @@
             <artifactId>vertx-junit5</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
+       <!-- <dependency>
             <artifactId>keycloak-admin-client</artifactId>
             <groupId>org.keycloak</groupId>
             <version>${keycloak.version}</version>
-        </dependency>
+        </dependency>-->
         <!-- need bouncy castle for EC key parsing by nimbus-jose-jwt -->
         <dependency>
             <groupId>com.nimbusds</groupId>
@@ -167,7 +176,7 @@
             <version>42.7.2</version>
         </dependency>
 
-        <dependency>
+      <!--  <dependency>
             <groupId>org.elasticsearch.client</groupId>
             <artifactId>elasticsearch-rest-client</artifactId>
             <version>${elastic-search-rest-client}</version>
@@ -177,7 +186,7 @@
             <groupId>co.elastic.clients</groupId>
             <artifactId>elasticsearch-java</artifactId>
             <version>${elastic-search-rest-client}</version>
-        </dependency>
+        </dependency>-->
 
         <!-- Packages for Vertx metrics through micrometer  -->
         <dependency>
@@ -672,7 +681,7 @@
                             <version>${vertx.version}</version>
                         </path>
                     </annotationProcessorPaths>
-                    <generatedSourcesDirectory>${project.basedir}/src/main/generated</generatedSourcesDirectory>
+                   <!-- <generatedSourcesDirectory>${project.basedir}/src/main/generated</generatedSourcesDirectory>-->
                 </configuration>
             </plugin>
         </plugins>
