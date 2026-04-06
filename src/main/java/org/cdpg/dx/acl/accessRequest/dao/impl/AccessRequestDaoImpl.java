@@ -86,9 +86,9 @@ public class AccessRequestDaoImpl extends AbstractBaseDAO<AccessRequestDto>
         .onSuccess(
             accessRequestDto -> {
               boolean doesProviderOrganizationMatch =
-                  accessRequestDto.getItemOrganization() != null
+                  accessRequestDto.getItemOrganizationId() != null
                       && accessRequestDto
-                          .getItemOrganization()
+                          .getItemOrganizationId()
                           .equals(providerOrganizationId.toString());
               boolean doesProviderIdMatch =
                   accessRequestDto.getProviderId() != null

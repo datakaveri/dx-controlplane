@@ -31,6 +31,9 @@ public interface AccessRequestService {
 
   Future<PaginatedResult<AccessRequestDto>> listAccessRequestForProvider(PaginatedRequest paginatedRequest);
 
+  Future<PaginatedResult<AccessRequestDto>> enrichAccessRequestsWithItemDetails(
+      PaginatedResult<AccessRequestDto> pagedResult);
+
   Future<AccessRequestDto> updateAccessRequestForConsumer(UUID consumerId, UUID requestId);
 
 

@@ -32,7 +32,8 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
   private String consumerEmail;
   private String consumerFirstName;
   private String consumerLastName;
-  private String itemOrganization;
+  private String itemOrganizationId;
+  private String itemOrganizationName;
   private String shortDescription;
 
   public AccessRequestDto() {}
@@ -52,7 +53,7 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
     setConsumerEmail(request.getString(DB_CONSUMER_EMAIL));
     setConsumerFirstName(request.getString(DB_CONSUMER_FIRST_NAME));
     setConsumerLastName(request.getString(DB_CONSUMER_LAST_NAME));
-    setItemOrganization(
+    setItemOrganizationId(
         request.getString(
             DB_ASSET_ORGANIZATION_ID)); // TODO: change the reference to the appropriate column name
     setShortDescription(request.getString(DB_SHORT_DESCRIPTION));
@@ -83,7 +84,7 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
     dto.setConsumerEmail(entries.getString(DB_CONSUMER_EMAIL));
     dto.setConsumerFirstName(entries.getString(DB_CONSUMER_FIRST_NAME));
     dto.setConsumerLastName(entries.getString(DB_CONSUMER_LAST_NAME));
-    dto.setItemOrganization(
+    dto.setItemOrganizationId(
         entries.getString(
             DB_ASSET_ORGANIZATION_ID)); // TODO: change the reference to the appropriate column name
     dto.setShortDescription(entries.getString(DB_SHORT_DESCRIPTION));
@@ -116,7 +117,7 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
     EntityUtil.putIfPresent(fieldsMap, DB_ASSET_TYPE, getAssetType());
     EntityUtil.putIfPresent(fieldsMap, DB_ITEM_ID, getItemId());
     EntityUtil.putIfPresent(fieldsMap, DB_SHORT_DESCRIPTION, getShortDescription());
-    EntityUtil.putIfPresent(fieldsMap, DB_ASSET_ORGANIZATION_ID, getItemOrganization());
+    EntityUtil.putIfPresent(fieldsMap, DB_ASSET_ORGANIZATION_ID, getItemOrganizationId());
 
     return fieldsMap;
   }
@@ -145,7 +146,8 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
                     .put(ITEM_ID, getItemId())
                     .put(ASSET_NAME, getAssetName())
                     .put(ASSET_TYPE, getAssetType())
-                    .put(SHORT_DESCRIPTION, getShortDescription()))
+                    .put(SHORT_DESCRIPTION, getShortDescription())
+                    .put(ORGANIZATION, getItemOrganizationName()))
             .put(CREATED_AT, getCreatedAt())
             .put(UPDATED_AT, getUpdatedAt())
             .put(EXPIRY_AT, getExpiryAt());
@@ -310,13 +312,21 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
     return this;
   }
 
-  public String getItemOrganization() {
-    return itemOrganization;
+  public String getItemOrganizationId() {
+    return itemOrganizationId;
   }
 
-  public AccessRequestDto setItemOrganization(String providerOrganization) {
-    this.itemOrganization = providerOrganization;
+  public AccessRequestDto setItemOrganizationId(String providerOrganization) {
+    this.itemOrganizationId = providerOrganization;
     return this;
+  }
+
+  public String getItemOrganizationName() {
+    return itemOrganizationName;
+  }
+
+  public void setItemOrganizationName(String itemOrganizationName) {
+    this.itemOrganizationName = itemOrganizationName;
   }
 
   public String getShortDescription() {
@@ -376,7 +386,7 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
         + consumerLastName
         + '\''
         + ", itemOrganization='"
-        + itemOrganization
+        + itemOrganizationId
         + '\''
         + ", shortDescription='"
         + shortDescription
