@@ -226,7 +226,7 @@ public class EmailComposer {
 
                 return newEmail()
                   .template("templates/approved-compute-role.html")
-                  .to("srishti.mittal@datakaveri.org")
+                  .to(emailId)
                   .subject(subject)
                   .variable("USER_FIRST_NAME", userName)
                   .variable("ADMIN_PORTAL_URL", adminPortalUrl)
