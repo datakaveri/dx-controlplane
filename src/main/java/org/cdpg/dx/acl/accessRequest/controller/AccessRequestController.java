@@ -217,6 +217,7 @@ public class AccessRequestController implements ApdApiController {
 
     accessRequestService
         .listAccessRequestForProvider(request)
+        .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
         .onSuccess(
             pagedResult -> {
               LOGGER.info(
@@ -263,6 +264,7 @@ public class AccessRequestController implements ApdApiController {
 
     accessRequestService
         .listAccessRequestForProvider(request)
+        .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
         .onSuccess(
             pagedResult -> {
               LOGGER.info(
@@ -306,6 +308,7 @@ public class AccessRequestController implements ApdApiController {
 
     accessRequestService
         .listAccessRequestForProvider(request)
+        .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
         .onSuccess(
             pagedResult -> {
               LOGGER.info(
@@ -537,6 +540,7 @@ public class AccessRequestController implements ApdApiController {
 
     accessRequestService
         .listAccessRequestForConsumer(request)
+        .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
         .onSuccess(
             pagedResult -> {
               LOGGER.info("Successfully fetched access requests for user: {}", user.subject());

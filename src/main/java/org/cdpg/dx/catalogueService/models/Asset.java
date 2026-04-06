@@ -12,6 +12,7 @@ public class Asset {
   String assetName;
   String assetType;
   String organizationId;
+  String organizationName;
   String shortDescription;
 
   public Asset() {
@@ -33,6 +34,7 @@ public class Asset {
     this.assetName = other.getAssetName();
     this.assetType = other.getAssetType();
     this.organizationId = other.getOrganizationId();
+    this.organizationName = other.getOrganizationName();
     this.shortDescription = other.getShortDescription();
   }
 
@@ -87,6 +89,15 @@ public class Asset {
 
   public Asset setShortDescription(String shortDescription) {
     this.shortDescription = shortDescription;
+    return this;
+  }
+
+  public String getOrganizationName() {
+    return organizationName;
+  }
+
+  public Asset setOrganizationName(String organizationName) {
+    this.organizationName = organizationName;
     return this;
   }
 

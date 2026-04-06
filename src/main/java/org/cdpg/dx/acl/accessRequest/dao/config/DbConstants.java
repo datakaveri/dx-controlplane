@@ -53,6 +53,7 @@ public class DbConstants {
   public static final String ASSET_TYPE = "assetType";
   public static final String PROVIDER_ORGANIZATION = "providerOrganization";
   public static final String SHORT_DESCRIPTION = "shortDescription";
+  public static final String ORGANIZATION = "organization";
   public static final String ASSET_PERMISSION = "assetPermission";
   public static final String RESOURCE_SERVER_URL = "resourceServerUrl";
   public static final String EXPIRY_AT = "expiryAt";
