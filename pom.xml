@@ -57,13 +57,13 @@
     </dependencyManagement>
 
     <!-- git repo -->
-    <repositories>
+ <!--   <repositories>
         <repository>
             <id>github</id>
             <name>GitHub Packages</name>
             <url>https://maven.pkg.github.com/datakaveri/dx-common</url>
         </repository>
-    </repositories>
+    </repositories>-->
 
     <dependencies>
         <!-- DX Common shared module -->
