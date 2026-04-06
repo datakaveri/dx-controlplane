@@ -4,7 +4,10 @@ import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+
+import io.vertx.ext.mail.MailMessage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.credit.models.ComputeRole;
@@ -180,33 +183,59 @@ public class EmailComposer {
   }
 
   public Future<Void> sendUserEmailForComputeRoleApproval(UUID reqId, Status status) {
-    return creditService.getComputeRequestById(reqId)
-        .compose(computeReq -> {
-          UUID userId = computeReq.userId();
+
+    return creditService
+      .getComputeRequestById(reqId)
+      .compose(
+        ar -> {
+          UUID userId = ar.userId();
+
           if (userId == null) {
             return Future.failedFuture(
-                "User ID is null for compute role request with ID: " + reqId);
+              "User ID is null for compute role request with ID: " + reqId);
           }
-          return userService.getUserInfoByID(userId)
-              .compose(userInfo -> {
-                String subject = "Compute Role Request Status Update";
-                String approvedMsg = status.equals(Status.GRANTED)
-                    ? String.format(
-                        "You can now access the system and use your compute privileges in the the %s platform.%n%n",
-                        platformName)
-                    : "";
+
+          return userService
+            .getUserInfoByID(userId)
+            .compose(
+              userInfo -> {
+
+                String emailId = userInfo.email();
+                String userName = userInfo.name();
+                String platformName = config.getString("platformName");
+                String subject = "Compute Role Access Request – " + status.getStatus() + " | " + platformName + " Platform";
+                String adminPortalUrl = config.getString("TGDxUrl");
+                String senderName = config.getString("senderName");
+
+                String approvedMessage = "";
+                if (status.equals(Status.GRANTED)) {
+                  approvedMessage =
+                    "To proceed, please complete the 'Credit Request Form' available within your account:<br/><br/>"
+                      + "<strong>Profile &rarr; Dashboard &rarr; My Projects</strong><br/><br/>"
+                      + "Once submitted, your request will be reviewed and the allocated credits will be confirmed through a separate notification email.<br/><br/>"
+                      + "For guidance on navigating the platform, please refer to the User Manual:<br/>"
+                      + "<a href=\"https://mahaagx.maharashtra.gov.in/user-manual\">https://mahaagx.maharashtra.gov.in/user-manual</a><br/><br/>"
+                      + "For any queries related to the platform or its datasets, please reach out to us via:<br/>"
+                      + "<a href=\"https://mahaagx.maharashtra.gov.in/contact-us\">https://mahaagx.maharashtra.gov.in/contact-us</a><br/><br/>"
+                      + "Thank you for your interest in the " + platformName + " platform. We look forward to supporting your work on the platform.";
+                } else if (status.equals(Status.REJECTED)) {
+                  approvedMessage =
+                    "For any queries related to the platform or its datasets, please reach out to us via:<br/>"
+                      + "<a href=\"https://mahaagx.maharashtra.gov.in/contact-us\">https://mahaagx.maharashtra.gov.in/contact-us</a>";
+                }
 
                 return newEmail()
-                    .template("templates/approved-compute-role.html")
-                    .to(userInfo.email())
-                    .subject(subject)
-                    .variable("USER_FIRST_NAME", userInfo.name())
-                    .variable("ADMIN_PORTAL_URL", adminPortalUrl)
-                    .variable("SENDER_NAME", senderName)
-                    .variable("STATUS", status.getStatus())
-                    .variable("APPROVED_MESSAGE", approvedMsg)
-                    .variable("SUBJECT", subject)
-                    .send();
+                  .template("templates/approved-compute-role.html")
+                  .to("srishti.mittal@datakaveri.org")
+                  .subject(subject)
+                  .variable("USER_FIRST_NAME", userName)
+                  .variable("ADMIN_PORTAL_URL", adminPortalUrl)
+                  .variable("SENDER_NAME", senderName)
+                  .variable("STATUS", status.getStatus())
+                  .variable("APPROVED_MESSAGE", approvedMessage)
+                  .variable("PLATFORM_NAME", platformName)
+                  .variable("SUBJECT", subject)
+                  .send();
               });
         });
   }
