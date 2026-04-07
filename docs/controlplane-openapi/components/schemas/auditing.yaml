@@ -1,0 +1,119 @@
+AuditActivitySuccessResponse:
+  type: object
+  properties:
+    type:
+      type: string
+      example: urn:dx:auditing:success
+    title:
+      type: string
+      example: Success
+    result:
+      type: array
+      items:
+        $ref: '#/AuditActivityLogItem'
+    paginationInfo:
+      $ref: pagination.yaml#/PageInfo
+AuditActivityLogItem:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      example: 7751ca4f-d7fb-40c6-9a48-de3f6e32c140
+    userId:
+      type: string
+      format: uuid
+      example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+    userName:
+      type: string
+      example: nivosat nivosat
+    role:
+      type: string
+      example: org_admin
+    orgId:
+      type: string
+      format: uuid
+      example: 2accd360-d791-4364-b18b-530b1b148cb9
+    orgName:
+      type: string
+      example: TestOrg1
+    orgType:
+      type: string
+      example: PUBLIC
+    api:
+      type: string
+      example: /iudx/v2/cat/item
+    method:
+      type: string
+      example: GET
+    action:
+      type: string
+      description: Audit operation (camel case)
+      example: View
+    originServer:
+      type: string
+      example: CATALOGUE
+    issuer:
+      type: string
+      example: https://v2.dev.keycloak.iudx.io/auth/realms/iudx-v2
+    assetId:
+      type: string
+      format: uuid
+      example: 19e3f6d6-4f93-4718-8395-2d76c13d60a5
+    assetName:
+      type: string
+      example: Traffic Density Databank
+    assetShortDescription:
+      type: string
+      example: Traffic sensor data for city roads
+    assetType:
+      type: string
+      example: DATABANK
+    assetAccessPolicy:
+      type: string
+      example: OPEN
+    assetOrgId:
+      type: string
+      format: uuid
+      example: 2accd360-d791-4364-b18b-530b1b148cb9
+    assetOrgName:
+      type: string
+      example: TestOrg1
+    assetOrgType:
+      type: string
+      example: PUBLIC
+    assetProviderId:
+      type: string
+      format: uuid
+      example: 64cb5154-6f8c-40ff-891f-baee2aac8b85
+    assetProviderName:
+      type: string
+      example: Org Admin
+    sizeBytes:
+      type: integer
+      format: int64
+      example: 10240
+    amount:
+      type: number
+      format: decimal
+      example: 12.5
+    logType:
+      type: string
+      example: ASSET
+    requestId:
+      type: string
+      format: uuid
+      example: a3f3cbb4-6d79-4bfa-b9d6-3b7b0d1bbd55
+    sandboxType:
+      type: string
+      example: cpu
+    ipAddress:
+      type: string
+      example: 0:0:0:0:0:0:0:1
+    userAgent:
+      type: string
+      example: Mozilla/5.0 (X11; Ubuntu; Linux x86_64)
+    createdAt:
+      type: string
+      format: date-time
+      example: 2026-01-31 03:13:20.123000

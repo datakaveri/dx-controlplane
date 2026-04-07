@@ -30,12 +30,14 @@ import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.URNGenerator;
+import org.cdpg.dx.common.util.DelegatorResolver;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RequestHelper;
+import org.cdpg.dx.common.util.CpRoutingContextHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.config.KeycloakConstants;
 
@@ -79,7 +81,7 @@ public class OrganizationUserHandler {
               UserActivityAuditLogBuilder auditLogBuilder =
                 OrganizationAuditHelper.buildOrganisationAudit(
                   ctx, users.toJson(), OrganisationAuditOperation.GET_USER_INFO);
-              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
               ResponseBuilder.sendSuccess(ctx, users, urnGenerator);
             })
@@ -93,7 +95,6 @@ public class OrganizationUserHandler {
 
     User user = ctx.user();
     JsonObject userJson = user.principal();
-    UUID resolvedOrgId = ctx.get("resolvedOrgId");
 
 //    AccessValidator.validate(
 //        userJson,
@@ -101,13 +102,13 @@ public class OrganizationUserHandler {
 //            DxRole.ORG_ADMIN.getRole()),
 //        List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope()));
 
-//    UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
+    UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
 
     PaginatedRequest request =
         PaginationRequestBuilder.from(ctx)
             .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_ORG_USERS)
             .apiToDbMap(API_TO_DB_ORG_USERS)
-            .additionalFilters(Map.of(ORGANIZATION_ID, resolvedOrgId.toString()))
+            .additionalFilters(Map.of(ORGANIZATION_ID, orgId.toString()))
             .allowedTimeFields(Set.of(CREATED_AT))
             .defaultTimeField(CREATED_AT)
             .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
@@ -126,7 +127,7 @@ public class OrganizationUserHandler {
               UserActivityAuditLogBuilder auditLogBuilder =
                 OrganizationAuditHelper.buildOrganisationAudit(
                   ctx, new JsonObject(), OrganisationAuditOperation.GET_USERS);
-              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
               ResponseBuilder.sendSuccess(ctx, entry.getKey(), entry.getValue(), urnGenerator);
             })
@@ -148,9 +149,6 @@ public class OrganizationUserHandler {
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
 
-    UUID resolvedOrgId = ctx.get("resolvedOrgId");
-    UUID resolvedUserId = ctx.get("resolvedUserId");
-
 //    AccessValidator.validate(
 //      userJson,
 //      List.of( // primary roles (no scope check)
@@ -158,14 +156,14 @@ public class OrganizationUserHandler {
 //      List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope()));
 
     organizationService
-        .updateUserRole(resolvedOrgId, resolvedUserId, role)
+        .updateUserRole(orgId, userId, role)
         .onSuccess(
             updated -> {
               if (updated) {
                 UserActivityAuditLogBuilder auditLogBuilder =
                   OrganizationAuditHelper.buildOrganisationAudit(
-                    ctx, new JsonObject().put(ID,resolvedUserId.toString()), OrganisationAuditOperation.UPDATE_USER_INFO);
-                RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+                    ctx, new JsonObject().put(ID,userId.toString()), OrganisationAuditOperation.UPDATE_USER_INFO);
+                CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
                 ResponseBuilder.sendSuccess(ctx, "Updated Organisation User Role", urnGenerator);
 
@@ -184,17 +182,18 @@ public class OrganizationUserHandler {
     // delegation table has the org_id
     // get actual org admin id from the delegation table
 
+    UUID delegatorId = DelegatorResolver.getDelegatorId(ctx);
 
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
-
+    JsonObject userJson = ctx.user().principal();
 
     if (orgId == null || userId == null) {
       ctx.fail(new DxNotFoundException("Organization ID or User ID is missing"));
       return;
     }
 
-    UUID resolvedUserId = ctx.get("resolvedUserId");
+    UUID orgAdminId = delegatorId != null ? delegatorId : UUID.fromString(ctx.user().subject());
 
 //    AccessValidator.validate(
 //      userJson,
@@ -216,7 +215,7 @@ public class OrganizationUserHandler {
 
               Future<Boolean> deletionFuture;
               if (user.roles().contains("provider")) {
-                deletionFuture = organizationService.deleteProviderUser(userId, resolvedUserId, orgId);
+                deletionFuture = organizationService.deleteProviderUser(userId, orgAdminId, orgId);
               } else {
                 deletionFuture = organizationService.deleteOrganizationUser(orgId, userId);
               }
@@ -253,7 +252,7 @@ public class OrganizationUserHandler {
                               UserActivityAuditLogBuilder auditLogBuilder =
                                 OrganizationAuditHelper.buildOrganisationAudit(
                                   ctx, new JsonObject().put(ID,userId.toString()) , OrganisationAuditOperation.DELETE_USER);
-                              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+                              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
 
 //                              RoutingContextHelper.setAuditingLogNew(ctx, audit);

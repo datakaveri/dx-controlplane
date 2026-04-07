@@ -33,8 +33,10 @@ import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
+import org.cdpg.dx.common.util.DelegatorResolver;
 import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.URNGenerator;
+import org.cdpg.dx.common.util.CpRoutingContextHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
 
@@ -100,7 +102,7 @@ public class ProviderRoleHandler {
           UserActivityAuditLogBuilder auditLogBuilder =
             OrganizationAuditHelper.buildOrganisationAudit(
               ctx, requests.toJson(), OrganisationAuditOperation.REQUEST_PROVIDER_ROLE);
-          RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+          CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
           ResponseBuilder.sendSuccess(ctx, "Created Request", urnGenerator);
           Future<Void> future =
@@ -112,26 +114,62 @@ public class ProviderRoleHandler {
 
   public void updateProviderRequest(RoutingContext ctx) {
 
-    // resolveOrgId already validated in chain — not needed here
+    User user = ctx.user();
+    JsonObject userJson = user.principal();
+
+//    AccessValidator.validate(
+//      userJson,
+//      List.of(DxRole.ORG_ADMIN.getRole()),
+//      List.of(
+//        DxScope.USER_MANAGEMENT.getScope(),
+//        DxScope.ORG_ADMIN_ACCESS.getScope()
+//      )
+//    );
+
+    UUID delegatorId = DelegatorResolver.getDelegatorId(ctx);
+
+    JsonObject orgRequestJson = ctx.body().asJsonObject();
     UUID reqId = RequestHelper.getPathParamAsUUID(ctx, "id");
-    Status status = Status.fromString(ctx.body().asJsonObject().getString("status"));
+    Status status = Status.fromString(orgRequestJson.getString("status"));
 
-    organizationService
-      .updateProviderRequestStatus(reqId, status)
-      .onSuccess(v -> {
-        UserActivityAuditLogBuilder auditLogBuilder =
-          OrganizationAuditHelper.buildOrganisationAudit(
+    UUID userId = UUID.fromString(user.subject());
+
+    DelegatorResolver.resolveOrgId(ctx, userService, null)
+      // ownership validation (only for delegation)
+      .compose(
+        orgId -> {
+          if (delegatorId != null) {
+            return orgOwnershipValidator
+              .validateOrgOwnership(
+                delegatorId, List.of(orgId.toString()))
+              .map(v -> orgId);
+          }
+          return Future.succeededFuture(orgId);
+        })
+      // update request status
+      .compose(
+        orgId ->
+          organizationService
+            .updateProviderRequestStatus(reqId, status)
+            .map(v -> orgId))
+      .onSuccess(
+        orgId -> {
+
+          UserActivityAuditLogBuilder auditLogBuilder =
+            OrganizationAuditHelper.buildOrganisationAudit(
+              ctx, new JsonObject().put(ID,reqId.toString()), OrganisationAuditOperation.UPDATE_PROVIDER_REQUEST);
+          CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+
+          emailComposer
+            .sendUserEmailForProviderRoleApproval(reqId, status)
+            .onFailure(
+              err -> LOGGER.error("Email send failed", err));
+
+          ResponseBuilder.sendSuccess(
             ctx,
-            new JsonObject().put(ID, reqId.toString()),
-            OrganisationAuditOperation.UPDATE_PROVIDER_REQUEST);
-        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
-
-        emailComposer
-          .sendUserEmailForProviderRoleApproval(reqId, status)
-          .onFailure(err -> LOGGER.error("Email send failed", err));
-
-        ResponseBuilder.sendSuccess(ctx, "Provider role updated", urnGenerator);
-      })
+            "Provider role updated",
+            urnGenerator);
+        })
       .onFailure(ctx::fail);
   }
 
@@ -140,84 +178,105 @@ public class ProviderRoleHandler {
 
   public void getProviderRequest(RoutingContext ctx) {
 
-    UUID resolvedOrgId = ctx.get("resolvedOrgId");    // already validated
+    User user = ctx.user();
+    JsonObject userJson = user.principal();
 
-    PaginatedRequest request =
-      PaginationRequestBuilder.from(ctx)
-        .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_PROVIDER_ROLE_REQUEST)
-        .apiToDbMap(API_TO_DB_PROVIDER_ROLE_REQUEST)
-        .additionalFilters(Map.of(ORGANIZATION_ID, resolvedOrgId.toString()))
-        .allowedTimeFields(Set.of(CREATED_AT))
-        .defaultTimeField(CREATED_AT)
-        .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
-        .allowedSortFields(API_TO_DB_PROVIDER_ROLE_REQUEST.keySet())
-        .build();
+    LOGGER.info("userInfo: {}", userJson);
+    UUID userId = UUID.fromString(user.subject());
 
-    organizationService
-      .getAllPendingProviderRoleRequests(request)
-      .compose(providerResult ->
-        organizationService
-          .getOrganizationJoinRequestsByOrgId(resolvedOrgId)
-          .map(joinRequests -> Map.entry(providerResult, joinRequests))
-      )
+    DelegatorResolver.resolveOrgId(ctx, userService, null)
+      .compose(resOrgId -> {
+
+        PaginatedRequest request =
+          PaginationRequestBuilder.from(ctx)
+            .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_PROVIDER_ROLE_REQUEST)
+            .apiToDbMap(API_TO_DB_PROVIDER_ROLE_REQUEST)
+            .additionalFilters(Map.of(ORGANIZATION_ID, resOrgId.toString()))
+            .allowedTimeFields(Set.of(CREATED_AT))
+            .defaultTimeField(CREATED_AT)
+            .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
+            .allowedSortFields(API_TO_DB_PROVIDER_ROLE_REQUEST.keySet())
+            .build();
+
+        return organizationService.getAllPendingProviderRoleRequests(request)
+          .map(providerResult -> Map.entry(providerResult, resOrgId));
+      })
+      .compose(entry -> {
+
+        PaginatedResult<ProviderRoleRequest> providerResult = entry.getKey();
+        UUID orgId = entry.getValue();
+
+        return organizationService.getOrganizationJoinRequestsByOrgId(orgId)
+          .map(joinRequests -> Map.entry(providerResult, joinRequests));
+      })
       .compose(entry -> {
 
         PaginatedResult<ProviderRoleRequest> providerResult = entry.getKey();
         List<OrganizationJoinRequest> joinRequests = entry.getValue();
 
-        Map<UUID, OrganizationJoinRequest> joinRequestMap = joinRequests.stream()
-          .collect(Collectors.toMap(
-            OrganizationJoinRequest::userId,
-            Function.identity()));
+        Map<UUID, OrganizationJoinRequest> joinRequestMap =
+          joinRequests.stream()
+            .collect(Collectors.toMap(
+              OrganizationJoinRequest::userId,
+              Function.identity()
+            ));
 
-        return userService
-          .enrichWithUserRoles(
-            providerResult.data(),
-            ProviderRoleRequest::userId,
-            ProviderRoleRequest::toJson)
-          .map(enriched -> {
+        return userService.enrichWithUserRoles(
+          providerResult.data(),
+          ProviderRoleRequest::userId,
+          ProviderRoleRequest::toJson
+        ).map(enriched -> {
 
-            List<JsonObject> finalResponse = enriched.stream()
-              .map(json -> {
-                UUID uid = UUID.fromString(json.getString("user_id"));
-                OrganizationJoinRequest joinReq = joinRequestMap.get(uid);
+          List<JsonObject> finalResponse = enriched.stream()
+            .map(json -> {
+              LOGGER.info("The json is : {}",json);
+              UUID uid = UUID.fromString(json.getString("user_id"));
+              OrganizationJoinRequest joinReq = joinRequestMap.get(uid);
 
-                if (joinReq != null) {
-                  json.put("userName", joinReq.userName());
-                  json.put("jobTitle", joinReq.jobTitle());
-                  json.put("empId", joinReq.empId());
-                }
+              if (joinReq != null) {
+                json.put("userName", joinReq.userName());
+                json.put("jobTitle", joinReq.jobTitle());
+                json.put("empId", joinReq.empId());
+              }
 
-                return json;
-              })
-              .toList();
+              return json;
+            })
+            .toList();
 
-            return Map.entry(finalResponse, providerResult.paginationInfo());
-          });
+          return Map.entry(finalResponse, providerResult.paginationInfo());
+        });
       })
-      .onSuccess(entry -> {
+      .onSuccess(entry ->
+        {
+
         UserActivityAuditLogBuilder auditLogBuilder =
-          OrganizationAuditHelper.buildOrganisationAudit(
-            ctx, new JsonObject(), OrganisationAuditOperation.GET_PROVIDER_REQS);
-        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        OrganizationAuditHelper.buildOrganisationAudit(
+          ctx,new JsonObject(), OrganisationAuditOperation.GET_PROVIDER_REQS);
+        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
-        ResponseBuilder.sendSuccess(ctx, entry.getKey(), entry.getValue(), urnGenerator);
-      })
+        ResponseBuilder.sendSuccess(
+          ctx,
+          entry.getKey(),
+          entry.getValue(),
+          urnGenerator
+        );
+        }
+      )
       .onFailure(ctx::fail);
-  }
+}
 
     public void deleteUserProviderRoleRequest(RoutingContext ctx) {
 
-    UUID resolvedUserId = ctx.get("resolvedUserId");
+    UUID userId = DelegatorResolver.resolveActingUserId(ctx);
 
     organizationService
-        .getProviderRoleRequestByUserId(resolvedUserId)
+        .getProviderRoleRequestByUserId(userId)
         .compose(
             request -> {
               if (request == null) {
                 return Future.failedFuture(
                     new DxNotFoundException(
-                        "No provider role request found for userId: " + resolvedUserId));
+                        "No provider role request found for userId: " + userId));
               }
 
               if (!Status.PENDING.getStatus().equalsIgnoreCase(request.status())) {
@@ -241,7 +300,7 @@ public class ProviderRoleHandler {
               UserActivityAuditLogBuilder auditLogBuilder =
                 OrganizationAuditHelper.buildOrganisationAudit(
                   ctx,new JsonObject().put(ID,request.id().toString()), OrganisationAuditOperation.DELETE_PENDING_PROVIDER_REQUEST);
-              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
               ResponseBuilder.sendSuccess(
                   ctx, "Provider Role Request deleted successfully", urnGenerator);
@@ -250,23 +309,24 @@ public class ProviderRoleHandler {
             err -> {
               LOGGER.error(
                   "Failed to delete provider role request for user {}: {}",
-                resolvedUserId,
+                  userId,
                   err.getMessage());
               ctx.fail(err);
             });
   }
 
   public void getProviderRoleRequest(RoutingContext ctx) {
-    UUID resolvedUserId = ctx.get("resolvedUserId");
+    UUID userId = DelegatorResolver.resolveActingUserId(ctx);
+    JsonObject userJson = ctx.user().principal();
 
     organizationService
-        .getProviderRoleRequestByUserId(resolvedUserId) // Future<ProviderRoleRequest>
+        .getProviderRoleRequestByUserId(userId) // Future<ProviderRoleRequest>
         .compose(
             request -> {
               if (request == null) {
                 return Future.failedFuture(
                     new DxNotFoundException(
-                        "No provider role request found for userId: " + resolvedUserId));
+                        "No provider role request found for userId: " + userId));
               }
 
               return userService
@@ -279,7 +339,7 @@ public class ProviderRoleHandler {
               UserActivityAuditLogBuilder auditLogBuilder =
                 OrganizationAuditHelper.buildOrganisationAudit(
                   ctx,enriched, OrganisationAuditOperation.GET_PROVIDER_REQS);
-              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
               if (enriched == null) {
                 ResponseBuilder.sendSuccess(ctx, new JsonObject(), this.urnGenerator);
@@ -291,7 +351,7 @@ public class ProviderRoleHandler {
             err -> {
               LOGGER.error(
                   "Failed to fetch provider role request for user {}: {}",
-                resolvedUserId,
+                  userId,
                   err.getMessage());
               ctx.fail(err);
             });
@@ -319,7 +379,7 @@ public class ProviderRoleHandler {
           UserActivityAuditLogBuilder auditLogBuilder =
             OrganizationAuditHelper.buildOrganisationAudit(
               ctx,new JsonObject(), OrganisationAuditOperation.REQUEST_PROVIDER_ROLE);
-          RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+          CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
           ResponseBuilder.sendSuccess(ctx, "Provider role granted successfully", urnGenerator);
         })

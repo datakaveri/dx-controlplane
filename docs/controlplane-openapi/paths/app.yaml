@@ -1,0 +1,226 @@
+/iudx/v2/auth/app:
+  post:
+    tags:
+    - App
+    summary: Create an appId
+    operationId: post-appId
+    security:
+    - authorization: []
+    description: 'Creates an appId for the authenticated user. The operation is idempotent.
+
+      '
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/app.yaml#/PostAppIdRequest
+    responses:
+      '200':
+        description: AppId created successfully
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/app.yaml#/AppIdResponse
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Create AppId
+      source: "curl --location 'https://${HOSTNAME}/iudx/v2/app' \\\n--header 'Authorization: Bearer <token>' \\\n--header\
+        \ 'Content-Type: application/json' \\\n--data '{\n  \"expiry_at\": \"2026-12-31T23:59:59Z\"\n}'\n"
+  get:
+    tags:
+    - App
+    summary: Get user's appIds
+    operationId: get-appId
+    security:
+    - authorization: []
+    description: 'Retrieve all appIds created by the authenticated user. Supports pagination via `page` and `size` query parameters. Requires an authenticated user token.
+
+      '
+    parameters:
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    responses:
+      '200':
+        description: Successfully retrieved apps
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/app.yaml#/GetAppsSuccessResponse
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Get AppIds
+      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/app'' \
+
+        --header ''Authorization: Bearer <token>''
+
+        '
+/iudx/v2/auth/app/{appId}:
+  delete:
+    tags:
+    - App
+    summary: Delete an appId
+    operationId: delete-appId
+    security:
+    - authorization: []
+    description: 'Remove an appId owned by the authenticated user.
+
+      '
+    parameters:
+    - name: appId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique identifier of the appId
+    responses:
+      '204':
+        description: AppId deleted successfully
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Delete AppId
+      source: 'curl --location --request DELETE \
+
+        ''https://${HOSTNAME}/iudx/v2/app/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9'' \
+
+        --header ''Authorization: Bearer <token>''
+
+        '
+  patch:
+    tags:
+    - App
+    summary: Update appId status(active/disable)
+    operationId: update-appId-status
+    security:
+    - authorization: []
+    description: 'Change/Update appId status owned by the authenticated user.
+
+      '
+    parameters:
+    - name: appId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique identifier of the appId
+    - name: status
+      in: query
+      required: true
+      schema:
+        type: string
+        description: status of the appId
+        enum:
+        - active
+        - disable
+    responses:
+      '204':
+        description: AppId status updated successfully
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Update AppId Status
+      source: 'curl --location --request PATCH \
+
+        ''https://${HOSTNAME}/iudx/v2/app/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9?status=disable'' \
+
+        --header ''Authorization: Bearer <token>''
+
+        '

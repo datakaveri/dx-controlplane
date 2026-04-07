@@ -1,0 +1,452 @@
+UserInteractionRequest:
+  type: object
+  required:
+  - assetId
+  - assetType
+  - actionType
+  properties:
+    assetId:
+      type: string
+      format: uuid
+      description: ID of the entity being voted on
+      example: 7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9
+    assetType:
+      type: string
+      description: Type of entity being vote on
+      enum:
+      - DATABANK
+      - AI_MODEL
+      - USECASE
+      example: DATABANK
+    actionType:
+      type: string
+      description: Type of vote
+      enum:
+      - BOOKMARK
+      - UNBOOKMARK
+      - LIKE
+      - DISLIKE
+      - NEUTRAL
+      example: LIKE
+InteractionResponse:
+  type: object
+  title: Response for internal datasets .
+  description: Example success response for getting internal datasets
+  properties:
+    type:
+      type: string
+      description: 'URN type of the response indicating if the query was successful or if any errors have
+
+        been triggered.
+
+        '
+    title:
+      description: A human readable title to the message response.
+    detail:
+      type: string
+  required:
+  - type
+  example:
+    type: dx:controlPlane:success
+    title: Success
+    detail: Interaction updated successfully
+UserFeedbackRequest:
+  type: object
+  required:
+  - asset_id
+  properties:
+    asset_id:
+      type: string
+      format: uuid
+      description: UUID of the asset being rated or acted upon
+    entity_rating:
+      type: integer
+      minimum: 1
+      maximum: 5
+      description: Star rating from 1 to 5
+    action_subtype:
+      type: string
+      description: Type of interaction action such as bookmark, like, dislike
+    action_subdata:
+      type: object
+      description: Additional structured data associated with the action
+UserFeedbackPaginatedResponse:
+  type: object
+  properties:
+    status:
+      type: string
+      example: success
+    data:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+          user_id:
+            type: string
+            format: uuid
+          asset_id:
+            type: string
+            format: uuid
+          entity_rating:
+            type: integer
+            minimum: 1
+            maximum: 5
+          action_subtype:
+            type: string
+          action_subdata:
+            type: object
+    pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        size:
+          type: integer
+          example: 10
+        total:
+          type: integer
+          example: 100
+        totalPages:
+          type: integer
+          example: 10
+ProviderFeedbackPaginatedResponse:
+  type: object
+  properties:
+    status:
+      type: string
+      example: success
+    data:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+          user_id:
+            type: string
+            format: uuid
+          asset_id:
+            type: string
+            format: uuid
+          type:
+            type: string
+          data:
+            type: object
+    pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        size:
+          type: integer
+          example: 10
+        total:
+          type: integer
+          example: 100
+        totalPages:
+          type: integer
+          example: 10
+PostItemVoteRequest:
+  type: object
+  required:
+  - entityId
+  - entityType
+  - voteType
+  properties:
+    entityId:
+      type: string
+      format: uuid
+      description: ID of the entity being voted on
+      example: 7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9
+    entityType:
+      type: string
+      description: Type of entity being vote on
+      enum:
+      - DATABANK
+      - AI_MODEL
+      - USECASE
+      - APP
+      example: DATABANK
+    voteType:
+      type: string
+      description: Type of vote
+      enum:
+      - LIKE
+      - DISLIKE
+      - NEUTRAL
+ItemVoteResponse:
+  type: object
+  title: Vote API Response
+  description: Success response for casting or updating a vote
+  properties:
+    type:
+      type: string
+      description: 'URN type of the response indicating if the query was successful or if any errors have
+
+        been triggered.
+
+        '
+    title:
+      description: A human readable title to the message response.
+    results:
+      type: array
+      description: Results which matched the query. This is an array of objects.
+      items:
+        type: object
+  required:
+  - type
+  - title
+  - results
+  example:
+    type: dx:controlPlane:success
+    title: Success
+    results:
+    - entityId: e74112d5-b58b-401e-a799-712b473279ed
+      entityType: DATABANK
+      voteType: LIKE
+PostBookmarkRequest:
+  type: object
+  required:
+  - entityId
+  - entityType
+  properties:
+    entityId:
+      type: string
+      format: uuid
+      description: Unique identifier of the entity to be bookmarked
+      example: 7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9
+    entityType:
+      type: string
+      description: Type of the entity being bookmarked
+      enum:
+      - DATABANK
+      - AI_MODEL
+      - USECASE
+      - APP
+      example: DATABANK
+BookmarkResponse:
+  type: object
+  required:
+  - type
+  - title
+  - result
+  properties:
+    type:
+      type: string
+      description: URN identifying the response category
+      example: urn:dx:ControlPlane:success
+    title:
+      type: string
+      description: Short response title
+      example: Success
+    result:
+      $ref: '#/BookmarkResult'
+BulkSyncFailure:
+  type: object
+  required:
+  - id
+  - reason
+  - message
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Document ID that failed to update
+    reason:
+      type: string
+      description: Elasticsearch failure reason code
+    message:
+      type: string
+      description: Detailed failure message from Elasticsearch
+BulkSyncResult:
+  type: object
+  required:
+  - total
+  - successful
+  - failed
+  - failures
+  properties:
+    total:
+      type: integer
+      description: Total number of documents processed
+      example: 9
+    successful:
+      type: integer
+      description: Number of documents successfully updated
+      example: 7
+    failed:
+      type: integer
+      description: Number of documents that failed to update
+      example: 1
+    failures:
+      type: array
+      description: List of failed document updates
+      items:
+        $ref: '#/BulkSyncFailure'
+UserInteractionSyncResponse:
+  type: object
+  required:
+  - type
+  - title
+  - detail
+  - result
+  properties:
+    type:
+      type: string
+      example: dx:controlPlane:success
+    title:
+      type: string
+      example: Success
+    detail:
+      type: string
+      example: Interaction metrics synced successfully
+    result:
+      $ref: '#/BulkSyncResult'
+UserInteractionResponse:
+  type: object
+  required:
+  - type
+  - title
+  - result
+  - paginationInfo
+  properties:
+    type:
+      type: string
+      description: URN identifying the response category
+      example: urn:dx:ControlPlane:success
+    title:
+      type: string
+      description: Short response title
+      example: Success
+    result:
+      type: array
+      items:
+        type: object
+        required:
+        - asset
+        - userInteraction
+        properties:
+          asset:
+            $ref: access.yaml#/AssetSummary
+          userInteraction:
+            $ref: '#/UserInteractionState'
+    paginationInfo:
+      $ref: pagination.yaml#/PaginationInfoResponse
+UserInteractionState:
+  type: object
+  required:
+  - liked
+  - disliked
+  - bookmarked
+  properties:
+    liked:
+      type: boolean
+      description: Whether the user has liked the asset
+    disliked:
+      type: boolean
+      description: Whether the user has disliked the asset
+    bookmarked:
+      type: boolean
+      description: Whether the user has bookmarked the asset
+BookmarkResult:
+  type: object
+  required:
+  - id
+  - userId
+  - entityId
+  - entityType
+  - createdAt
+  - tableName
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Internal bookmark identifier
+      example: 210e92ee-ab93-4593-a035-60e2620a8eb8
+    userId:
+      type: string
+      format: uuid
+      description: Identifier of the user who created the bookmark
+      example: 6effed2b-999c-44da-987a-f56a3aba96c2
+    entityId:
+      type: string
+      format: uuid
+      description: Identifier of the bookmarked entity
+      example: 7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9
+    entityType:
+      type: string
+      description: Type of the bookmarked entity
+      enum:
+      - DATABANK
+      - AI_MODEL
+      - USECASE
+      - APP
+      example: DATABANK
+    createdAt:
+      type: string
+      format: date-time
+      description: Timestamp when the bookmark was created
+      example: '2025-12-28T19:01:36.450176'
+GetBookmarksSuccessResponse:
+  type: object
+  required:
+  - type
+  - title
+  - result
+  - paginationInfo
+  properties:
+    type:
+      type: string
+      example: urn:dx:ControlPlane:success
+    title:
+      type: string
+      example: Success
+    result:
+      type: array
+      items:
+        $ref: '#/BookmarkSuccessResult'
+    paginationInfo:
+      $ref: pagination.yaml#/PaginationInfoResponse
+BookmarkSuccessResult:
+  type: object
+  required:
+  - id
+  - userId
+  - entityId
+  - entityType
+  - createdAt
+  properties:
+    id:
+      type: string
+      format: uuid
+    userId:
+      type: string
+      format: uuid
+    entityId:
+      type: string
+      format: uuid
+    entityType:
+      type: string
+      enum:
+      - DATABANK
+      - AI_MODEL
+      - USECASE
+      - APP
+    createdAt:
+      type: string
+      format: date-time
+    tableName:
+      type: string
+      example: bookmarks
+  example:
+    id: db2428e8-ee93-42c4-97c8-7b747cce6521
+    userId: 6effed2b-999c-44da-987a-f56a3aba96c2
+    entityId: 7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9
+    entityType: DATABANK
+    createdAt: '2025-12-29T09:50:21.718568'

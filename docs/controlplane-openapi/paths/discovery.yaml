@@ -1,0 +1,557 @@
+/iudx/v2/cat/search:
+  post:
+    tags:
+    - Discovery – Public
+    description: "Unified catalogue search query for discovering entities that meet complex criteria. The\n`/search` endpoint\
+      \ supports a rich combination of property-based (`term`, `flattenedTerm`),\nrange-based, and temporal-based searches\
+      \ using a common `searchCriteria` array format.\n\n### \U0001F4CC Visibility of Entities in Discovery\nThe `/search`\
+      \ API returns only entities that are fully published and available for\ndiscovery. An entity is included in results\
+      \ when:\n\n- `publishStatus` is `ACTIVE`\n- `dataUploadStatus` is `true`\n\n #### \U0001F510 Private Items (`accessPolicy\
+      \ = \"PRIVATE\"`)\nItems with `accessPolicy = \"PRIVATE\"` are **only visible to their owner** (based on the\nauthenticated\
+      \ user’s token). For all other users—authenticated or not—private items are\nexcluded from search results.\n\nThese\
+      \ visibility rules apply uniformly across all catalogue entity types such as\n`adex:DataBank`, `adex:AiModel`, and `adex:Apps`.\n\
+      \n\n#### \U0001F4CC `searchCriteria` Format (Unified)\nEach entry in `searchCriteria` must define:\n- `searchType`:\
+      \ Determines the type of search (e.g., `term`, `flattenedTerm`,\n`betweenRange`, `beforeTemporal`, etc.)\n- `field`:\
+      \ Field to search on (e.g., `type`, `dataReadiness`, `itemCreatedAt`)\n- `values`: Array of values (length depends on\
+      \ `searchType`)\n\n#### ✅ Supported `searchType` Values and Value Expectations:\n| `searchType`         | Description\
+      \                                         | Expected `values` Length |\n|----------------------|-----------------------------------------------------|---------------------------|\n\
+      | `term`               | Property-based (exact/approx match)                 | ≥ 1 values (OR logic)     |\n| `flattenedTerm`\
+      \      | Exact match inside JSON-like flattened fields       | ≥ 1 values (OR logic)     |\n| `betweenRange`       |\
+      \ Numeric field in a value range                      | 2 values (start, end)     |\n| `beforeRange`        | Numeric\
+      \ field before a value                        | 1 value                   |\n| `afterRange`         | Numeric field\
+      \ after a value                         | 1 value                   |\n| `betweenTemporal`    | Timestamp field between\
+      \ two dates                   | 2 ISO datetime strings    |\n| `beforeTemporal`     | Timestamp before a given date\
+      \                       | 1 ISO datetime string     |\n| `afterTemporal`      | Timestamp after a given date       \
+      \                 | 1 ISO datetime string     |\n\n#### \U0001F9E0 Term Search (Property-based)\nProperty search is\
+      \ allowed only on a predefined set of properties from the DX Schema Vocabulary, applicable to all subClasses of [IUDXEntity](https://voc.iudx.org.in/IUDXEntity).\n\
+      \n- Exact match: Supported for fields like `id`, `type`, `department`, `organizationType`, `modelType`. <br>\n\nExample:\n\
+      ```json\n{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"term\",\n      \"field\": \"type\",\n      \"values\"\
+      : [\"adex:DataBank\"]\n    },\n    {\n      \"searchType\": \"term\",\n      \"field\": \"organization\",\n      \"\
+      values\": [\"Health\", \"Environment\"]\n    }\n  ]\n}\n```\n\n#### \U0001F5C2️ Flattened Search\nFilters based on fields\
+      \ stored as `flattened` type in Elasticsearch.\nUse this when filtering within structured JSON-like attributes (e.g.,\
+      \ `resourceServer`).\n\n- Supported `searchType`: `flattenedTerm`\n- Expected values: One or more strings (OR logic\
+      \ between them).\n- Works for fields such as:\n  - `resourceServer.url`\n  - `resourceServer.name`\n  - `resourceServer.datasetType`\n\
+      \  - `resourceServer.accessTypes`\n\nExample:\n```json\n{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"\
+      flattenedTerm\",\n      \"field\": \"resourceServer.url\",\n      \"values\": [\"rs.forestdx.iudx.io\"]\n    }\n  ]\n\
+      }\n```\n\n#### \U0001F4C8 Range Search (Numeric)\nFilters based on numeric values and supports various relational conditions.\n\
+      - Supported `searchType` values:\n  - \"betweenRange\" → values: [min, max]\n  - \"beforeRange\" → values: [value] (less\
+      \ than)\n  - \"afterRange\" → values: [value] (greater than)\nExample:\n```json\n{\n  \"searchType\": \"betweenRange\"\
+      ,\n  \"field\": \"dataReadiness\",\n  \"values\": [50, 80]\n}\n```\n\n#### \U0001F552 Temporal Search\nFilters based\
+      \ on ISO 8601 timestamps for temporal fields.\n- Supported `searchType` values:\n  - \"betweenTemporal\" → values: [\"\
+      startTime\", \"endTime\"]\n  - \"beforeTemporal\" → values: [\"timestamp\"]\n  - \"afterTemporal\" → values: [\"timestamp\"\
+      ]\nTimestamps must be in ISO 8601 format (`YYYY-MM-DDTHH:mm:ss±hhmm`).\nExample:\n```json\n{\n  \"searchType\": \"beforeTemporal\"\
+      ,\n  \"field\": \"itemCreatedAt\",\n  \"values\": [\"2025-04-30T00:00:00+0530\"]\n}\n```\n\n#### Text Search\nA full-text\
+      \ fuzzy search over indexed fields.\n- Use the `q` field in the root body.\n- Optional flags: `autoComplete`, `fuzzy`.\n\
+      \n#### Complex Search\nMultiple search types—text, property-based (`term`), temporal, and numeric range—can be combined\
+      \ together in a single request using the `searchCriteria` array. Each object in `searchCriteria` must include a `searchType`,\
+      \ the `field` to query, and the appropriate `values` for that type.\n\nText-based search can be combined with structured\
+      \ filters. It supports full-text fuzzy matching across indexed fields.\n\n#### Supported fields for complex search:\n\
+      \n- `q`: A free-form text string to perform full-text search across indexed fields.\n- `fuzzy`: (Optional, boolean)\
+      \ Enables approximate/fuzzy matching.\n- `autoComplete`: (Optional, boolean) Enables search-as-you-type behavior.\n\n\
+      #### Supported `searchType` values in `searchCriteria`:\n\n- `term`: Property-based filtering using exact or fuzzy match.\
+      \ Accepts one or more\nvalues. (OR logic on values.)\n- `betweenTemporal`: Requires exactly **two** ISO 8601 datetime\
+      \ strings — interpreted as start and end time.\n- `beforeTemporal`: Requires exactly **one** ISO 8601 datetime string\
+      \ — filters entries before the given time.\n- `afterTemporal`: Requires exactly **one** ISO 8601 datetime string — filters\
+      \ entries after the given time.\n- `betweenRange`: Requires exactly **two** numeric values — interpreted as lower and\
+      \ upper bounds.\n- `beforeRange`: Requires exactly **one** numeric value — filters entries below the threshold.\n- `afterRange`:\
+      \ Requires exactly **one** numeric value — filters entries above the threshold.\n\nThis unified format supports rich\
+      \ multi-dimensional filtering with both structured and unstructured (text) data.\n\n#### Example:\n```json\n{\n  \"\
+      q\": \"satellite\",\n  \"fuzzy\": true,\n  \"autoComplete\": true,\n  \"searchCriteria\": [\n    {\n      \"searchType\"\
+      : \"term\",\n      \"field\": \"type\",\n      \"values\": [\"adex:DataBank\"]\n    },\n    {\n      \"searchType\"\
+      : \"betweenTemporal\",\n      \"field\": \"itemCreatedAt\",\n      \"values\": [\"2024-01-01T00:00:00+0530\", \"2025-01-01T00:00:00+0530\"\
+      ]\n    },\n    {\n       \"searchType\": \"afterRange\",\n       \"field\": \"dataReadiness\",\n       \"values\": [70]\n\
+      \    }\n  ]\n}\n```\n\n#### Limits and Filters\n- Pagination: Use `size` and `page` parameters to paginate results.\n\
+      \  For example, `size=100&page=2` returns 100 results starting from the 101st record (i.e., page 2).\n  Internally,\
+      \ the offset is calculated as `offset = size * (page - 1)`.\n- Field Filtering: Use the `filter` parameter to specify\
+      \ a subset of fields to return.\n  For example, `filter=[id]` returns only the `id` field for each result.\n- Limits:\
+      \ The sum of the internally calculated `offset` and `size` must be less than or equal to `10,000` to prevent overly\
+      \ large queries.\n"
+    operationId: search
+    security:
+    - optionalAuth: []
+    parameters:
+    - name: page
+      in: query
+      description: Page number for pagination
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    - name: size
+      in: query
+      description: Page size for pagination
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 100
+    - name: sort
+      in: query
+      description: 'This parameter allows sorting the results by up to 3 fields, separated by a semicolon (;). The format
+        for each field is `fieldName:asc` or `fieldName:desc`. For example: `itemCreatedAt:desc;dataReadiness:asc;name:desc`
+        will sort by creation date (descending), then dataReadiness (ascending), then name (descending).
+
+        '
+      required: false
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            anyOf:
+            - $ref: ../components/schemas/catalogue.yaml#/TextSearchRequest
+            - $ref: ../components/schemas/catalogue.yaml#/SearchCriteriaRequest
+            - $ref: ../components/schemas/catalogue.yaml#/AutocompleteFuzzyTextSearchRequest
+            - $ref: ../components/schemas/catalogue.yaml#/ComplexSearchRequest
+    responses:
+      '200':
+        description: All the query parameters yielded results.
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - $ref: ../components/schemas/common.yaml#/successResponseForAutocompleteFuzzyTextSearch
+              - $ref: ../components/schemas/common.yaml#/successResponseForSearchByItemType
+              - $ref: ../components/schemas/common.yaml#/successResponseForRangeSearch
+              - $ref: ../components/schemas/common.yaml#/successResponseForTemporalSearch
+              - $ref: ../components/schemas/common.yaml#/successResponseForComplexSearch
+              - $ref: ../components/schemas/common.yaml#/successResponseForFlattenedTermSearch
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/errorResponseForDiscovery
+            examples:
+              MissingOrMalformedRequest:
+                summary: Missing or malformed request
+                value:
+                  type: dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: Missing or malformed request
+              InvalidPaginationRange:
+                summary: Pagination limit exceeded
+                value:
+                  type: dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: Invalid pagination. The value of (page * size) must be between 1 and 10,000
+              InvalidSortFormat:
+                summary: Invalid sort format
+                value:
+                  type: dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: 'Invalid sort format: itemCreatedAt-desc. Expected field:order'
+    x-codeSamples:
+    - lang: cURL
+      label: search by item type
+      source: "curl --location --request POST\n'https://${HOSTNAME}/iudx/v2/cat/search?size=100&page=1' \\\n  --header 'Content-Type:\
+        \ application/json' \\\n  --data '{\n    \"searchCriteria\": [\n      {\n        \"searchType\": \"term\",\n     \
+        \   \"field\": \"type\",\n        \"values\": [\"adex:AiModel\"]\n      }\n    ],\n    \"filter\": [\"id\"]\n  }'\n"
+    - lang: cURL
+      label: flattened field search
+      source: "curl --location --request POST 'https://${HOSTNAME}/iudx/v2/cat/search?size=25&page=1' \\\n--header 'Content-Type:\
+        \ application/json' \\\n--data '{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"flattenedTerm\",\n    \
+        \  \"field\": \"resourceServer.url\",\n      \"values\": [\"rs.forestdx.iudx.io\"]\n    }\n  ],\n  \"filter\": [\"\
+        id\", \"type\", \"resourceServer\"]\n}'\n"
+    - lang: cURL
+      label: search by text
+      source: "curl --location --request POST\n'https://${HOSTNAME}/iudx/v2/cat/search?size=100&page=1' \\\n--header 'Content-Type:\
+        \ application/json' \\\n--data '{\n  \"q\": \"sat\",\n  \"autoComplete\": true,\n  \"fuzzy\": true,\n  \"filter\"\
+        : [\"id\", \"label\", \"name\", \"description\", \"tags\"]\n}'\n"
+    - lang: cURL
+      label: Temporal search
+      source: "curl --location --request POST 'https://${HOSTNAME}/iudx/v2/cat/search?size=50&page=1' \\\n--header 'Content-Type:\
+        \ application/json' \\\n--data '{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"betweenTemporal\",\n  \
+        \    \"field\": \"itemCreatedAt\",\n      \"values\": [\"2025-03-20T04:00:00+0530\", \"2025-05-02T09:15:27+0530\"\
+        ]\n    },\n    {\n      \"searchType\": \"term\",\n      \"field\": \"type\",\n      \"values\": [\"adex:AiModel\"\
+        ]\n    }\n  ],\n  \"filter\": [\"id\",\"tags\",\"itemCreatedAt\"]\n}'\n"
+    - lang: cURL
+      label: Range search
+      source: "curl --location --request POST 'https://${HOSTNAME}/iudx/v2/cat/search?size=25&page=1' \\\n--header 'Content-Type:\
+        \ application/json' \\\n--data '{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"beforeRange\",\n      \"\
+        field\": \"dataReadiness\",\n      \"values\": [85]\n    },\n    {\n      \"searchType\": \"term\",\n      \"field\"\
+        : \"type\",\n      \"values\": [\"adex:DataBank\"]\n    }\n  ],\n  \"filter\": [\"id\",\"dataReadiness\",\"tags\"\
+        ]\n}'\n"
+    - lang: cURL
+      label: complex search
+      source: "curl --location --request POST 'https://${HOSTNAME}/iudx/v2/cat/search?size=25&page=1' \\\n--header 'Content-Type:\
+        \ application/json' \\\n--data '{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"term\",\n      \"field\"\
+        : \"type\",\n      \"values\": [\"adex:DataBank\"]\n    },\n    {\n      \"searchType\": \"term\",\n      \"field\"\
+        : \"organization\",\n      \"values\": [\"Environment Forests Science and Technology\"]\n    },\n    {\n      \"searchType\"\
+        : \"betweenTemporal\",\n      \"field\": \"itemCreatedAt\",\n      \"values\": [\"2024-04-20T04:00:00+0530\", \"2025-05-02T09:15:27+0530\"\
+        ]\n    },\n    {\n      \"searchType\": \"betweenRange\",\n      \"field\": \"dataReadiness\",\n      \"values\":\
+        \ [80, 84]\n    }\n  ],\n  \"filter\": [\"id\", \"type\", \"organization\", \"itemCreatedAt\", \"dataReadiness\"]\n\
+        }'\n"
+/iudx/v2/cat/count:
+  post:
+    tags:
+    - Discovery – Public
+    summary: Count matching catalogue entities by type
+    description: 'Performs a count aggregation of catalogue entities based on the provided search filters.
+
+      This API returns counts grouped by `type.keyword`. Only items matching the search
+
+      criteria are counted. Typical use cases include dashboard count cards for Data Banks,
+
+      AI Models, and Applications.
+
+
+      Aggregation is always done on `type.keyword`. The response contains a `result` array
+
+      with type→count pairs.
+
+
+      The request body supports:
+
+      - **Text-only count search** (via `q`)
+
+      - **Text count with autocomplete and fuzzy matching**
+
+      - **Structured filter count search** (via `searchCriteria`)
+
+      - **Combined structured and text count search**
+
+      '
+    security:
+    - optionalAuth: []
+    operationId: count
+    requestBody:
+      description: Request body containing count search parameters
+      required: true
+      content:
+        application/json:
+          schema:
+            anyOf:
+            - $ref: ../components/schemas/catalogue.yaml#/TextOnly
+            - $ref: ../components/schemas/catalogue.yaml#/TextFuzzyAuto
+            - $ref: ../components/schemas/catalogue.yaml#/AttributesBasedFilteringCount
+            - $ref: ../components/schemas/catalogue.yaml#/ComplexRequestForCount
+          examples:
+            TextOnly:
+              summary: Full-text only
+              value:
+                q: test
+            TextFuzzyAuto:
+              summary: Full-text with autocomplete and fuzzy
+              value:
+                q: text
+                autoComplete: true
+                fuzzy: true
+            TagBased:
+              summary: filter by attributes
+              value:
+                searchCriteria:
+                - searchType: term
+                  field: tags
+                  values:
+                  - ai
+            Count Summary api - Summary API:
+              summary: Count Summary api | Filter by type
+              value:
+                searchCriteria:
+                - searchType: term
+                  field: type
+                  values:
+                  - adex:DataBank
+                  - adex:AiModel
+                  - adex:Apps
+            ComplexCount:
+              summary: Complex count search with text, fuzzy, and structured filters
+              value:
+                q: ai data
+                autoComplete: true
+                fuzzy: true
+                searchCriteria:
+                - searchType: term
+                  field: type
+                  values:
+                  - adex:DataBank
+                - searchType: betweenTemporal
+                  field: itemCreatedAt
+                  values:
+                  - 2025-03-20T04:00:00+0530
+                  - 2025-08-02T09:15:27+0530
+    responses:
+      '200':
+        description: Aggregated count results by `type`
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                result:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties:
+                      type: integer
+            examples:
+              CountAllTypes:
+                summary: Count results for all types
+                value:
+                  type: dx:controlPlane:success
+                  title: Success
+                  result:
+                  - adex:DataBank: 74
+                    adex:AiModel: 110
+                    adex:Apps: 76
+      '400':
+        description: Invalid input or unsupported search criteria
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            examples:
+              BadRequest:
+                summary: Bad Request
+                value:
+                  type: dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: Missing or malformed request
+/iudx/v2/cat/search/myassets:
+  get:
+    summary: Retrieve assets owned by the authenticated user | without filters
+    description: 'Returns assets owned by the current authenticated user. This endpoint automatically filters results to only
+      include items where `ownerUserId` matches the authenticated user''s `sub` value from the token, irrespective of publish
+      status or data upload status. No other filters are applied.
+
+      '
+    operationId: get myAssetsSearch
+    tags:
+    - Discovery – My Assets
+    security:
+    - authorization: []
+    parameters:
+    - name: sort
+      in: query
+      description: Sort order in the format `field:order` (e.g. `itemCreatedAt:desc`)
+      required: false
+      schema:
+        type: string
+    - name: page
+      in: query
+      description: Page number for pagination
+      required: false
+      schema:
+        type: integer
+        default: 1
+    - name: size
+      in: query
+      description: Number of results per page
+      required: false
+      schema:
+        type: integer
+        default: 10
+    responses:
+      '200':
+        description: Assets owned by the authenticated user
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                result:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+                paginationInfo:
+                  $ref: ../components/schemas/pagination.yaml#/PaginationInfo
+            example:
+              type: dx:controlPlane:success
+              title: Success
+              result:
+              - id: 674caec0-b39d-418b-8e23-167306751396
+                name: Subdistrict Weather Information for PM103
+                label: Subdistrict Weather Information
+                shortDescription: Daily aggregated temperature and rainfall data at subdistrict level.
+                description: Daily weather statistics at subdistrict level including temperature and rainfall metrics.
+                type:
+                - adex:DataBank
+                department: Test Org11
+                organizationId: 74e3b919-1d1b-44de-ace1-504f1887fcc1
+                organizationType: Public
+                industry: Environmental Monitoring
+                geoCoverage: Karnataka, India
+                tags:
+                - weather
+                - temperature
+                - rainfall
+                - environment
+                publishStatus: PENDING
+                itemStatus: ACTIVE
+                dataUploadStatus: false
+                uploadFrequency: Daily
+                yearRange: 2021-2024
+                license: CC-BY 4.0
+                fileFormat: xlsx
+                accessPolicy: RESTRICTED
+                ownerUserId: 2f945b8d-0cc8-4c5d-9a3e-53fa88e6e9b2
+                itemCreatedAt: 2025-12-12T01:31:54+0530
+                lastUpdated: 12 December, 2025 - 01:31 PM
+                resourceServer:
+                - name: NGSI-LD
+                  type: ngsi-ld
+                  datasetType: DATASET
+                  url: v2.dev.rs.iudx.io
+                  accessTypes:
+                  - api
+                  queryTypes:
+                  - ATTR
+              paginationInfo:
+                page: 1
+                size: 1
+                totalCount: 77
+                totalPages: 77
+                hasNext: true
+                hasPrevious: false
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing Bearer token
+      '400':
+        description: Invalid request parameters
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: dx:controlPlane:badRequest
+              title: Bad Request
+              detail: 'Invalid sort format: itemCreatedAt-desc. Expected field:order'
+  post:
+    summary: Search assets owned by the current authenticated user | with filters
+    description: 'Returns assets owned by the current authenticated user, using the same unified search format as the `/search`
+      endpoint. This endpoint automatically filters results to only include items where `ownerUserId` matches the authenticated
+      user''s `sub` value from the token.
+
+      Supports property-based, temporal, and numeric range filters, as well as full-text search.
+
+      '
+    operationId: post myAssetsSearch
+    tags:
+    - Discovery – My Assets
+    security:
+    - authorization: []
+    requestBody:
+      description: Request body containing unified search filters
+      required: true
+      content:
+        application/json:
+          schema:
+            anyOf:
+            - $ref: ../components/schemas/catalogue.yaml#/TextSearchRequest
+            - $ref: ../components/schemas/catalogue.yaml#/SearchCriteriaRequest
+            - $ref: ../components/schemas/catalogue.yaml#/AutocompleteFuzzyTextSearchRequest
+            - $ref: ../components/schemas/catalogue.yaml#/ComplexSearchRequest
+    responses:
+      '200':
+        description: All the query parameters yielded results.
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - $ref: ../components/schemas/common.yaml#/successResponseForMyAssetsTextSearch
+              - $ref: ../components/schemas/common.yaml#/successResponseForMyAssetsItemTypeSearch
+              - $ref: ../components/schemas/common.yaml#/successResponseForMyAssetsRangeSearch
+              - $ref: ../components/schemas/common.yaml#/successResponseForMyAssetsTemporalSearch
+              - $ref: ../components/schemas/common.yaml#/successResponseForMyAssetsComplexSearch
+              - $ref: ../components/schemas/common.yaml#/successResponseForMyAssetsFlattenedTermSearch
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/errorResponseForDiscovery
+            examples:
+              MissingOrMalformedRequest:
+                summary: Missing or malformed request
+                value:
+                  type: dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: Missing or malformed request
+              InvalidPaginationRange:
+                summary: Pagination limit exceeded
+                value:
+                  type: dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: Invalid pagination. The value of (page * size) must be between 1 and 10,000
+              InvalidSortFormat:
+                summary: Invalid sort format
+                value:
+                  type: dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: 'Invalid sort format: itemCreatedAt-desc. Expected field:order'
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing Bearer token
+    x-codeSamples:
+    - lang: cURL
+      label: search by item type
+      source: "curl --location --request POST\n'https://${HOSTNAME}/iudx/v2/cat/search/myassets?size=100&page=1' \\\n  --header\
+        \ 'Content-Type: application/json' \\\n  --data '{\n    \"searchCriteria\": [\n      {\n        \"searchType\": \"\
+        term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:AiModel\"]\n      }\n    ],\n    \"filter\": [\"\
+        id\", \"ownerUserId\"]\n  }'\n"
+    - lang: cURL
+      label: flattened field search
+      source: "curl --location --request POST 'https://${HOSTNAME}/iudx/v2/cat/search/myassets?size=25&page=1' \\\n--header\
+        \ 'Content-Type: application/json' \\\n--data '{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"flattenedTerm\"\
+        ,\n      \"field\": \"resourceServer.url\",\n      \"values\": [\"rs.forestdx.iudx.io\"]\n    }\n  ],\n  \"filter\"\
+        : [\"id\", \"type\", \"resourceServer\", \"ownerUserId\"]\n}'\n"
+    - lang: cURL
+      label: search by text
+      source: "curl --location --request POST\n'https://${HOSTNAME}/iudx/v2/cat/search/myassets?size=100&page=1' \\\n--header\
+        \ 'Content-Type: application/json' \\\n--data '{\n  \"q\": \"sat\",\n  \"autoComplete\": true,\n  \"fuzzy\": true,\n\
+        \  \"filter\": [\"id\", \"label\", \"name\", \"description\", \"tags\", \"ownerUserId\"]\n}'\n"
+    - lang: cURL
+      label: Temporal search
+      source: "curl --location --request POST 'https://${HOSTNAME}/iudx/v2/cat/search/myassets?size=50&page=1' \\\n--header\
+        \ 'Content-Type: application/json' \\\n--data '{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"betweenTemporal\"\
+        ,\n      \"field\": \"itemCreatedAt\",\n      \"values\": [\"2025-03-20T04:00:00+0530\", \"2025-05-02T09:15:27+0530\"\
+        ]\n    },\n    {\n      \"searchType\": \"term\",\n      \"field\": \"type\",\n      \"values\": [\"adex:AiModel\"\
+        ]\n    }\n  ],\n  \"filter\": [\"id\",\"tags\",\"itemCreatedAt\", \"ownerUserId\"]\n}'\n"
+    - lang: cURL
+      label: Range search
+      source: "curl --location --request POST 'https://${HOSTNAME}/iudx/v2/cat/search/myassets?size=25&page=1' \\\n--header\
+        \ 'Content-Type: application/json' \\\n--data '{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"beforeRange\"\
+        ,\n      \"field\": \"dataReadiness\",\n      \"values\": [85]\n    },\n    {\n      \"searchType\": \"term\",\n \
+        \     \"field\": \"type\",\n      \"values\": [\"adex:DataBank\"]\n    }\n  ],\n  \"filter\": [\"id\",\"dataReadiness\"\
+        ,\"tags\", \"ownerUserId\"]\n}'\n"
+    - lang: cURL
+      label: complex search
+      source: "curl --location --request POST 'https://${HOSTNAME}/iudx/v2/cat/search/myassets?size=25&page=1' \\\n--header\
+        \ 'Content-Type: application/json' \\\n--data '{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"term\",\n\
+        \      \"field\": \"type\",\n      \"values\": [\"adex:DataBank\"]\n    },\n    {\n      \"searchType\": \"term\"\
+        ,\n      \"field\": \"organization\",\n      \"values\": [\"Environment Forests Science and Technology\"]\n    },\n\
+        \    {\n      \"searchType\": \"betweenTemporal\",\n      \"field\": \"itemCreatedAt\",\n      \"values\": [\"2024-04-20T04:00:00+0530\"\
+        , \"2025-05-02T09:15:27+0530\"]\n    },\n    {\n      \"searchType\": \"betweenRange\",\n      \"field\": \"dataReadiness\"\
+        ,\n      \"values\": [80, 84]\n    }\n  ],\n  \"filter\": [\"id\", \"type\", \"organization\", \"itemCreatedAt\",\
+        \ \"dataReadiness\",\n  \"ownerUserId\"]\n}'\n"

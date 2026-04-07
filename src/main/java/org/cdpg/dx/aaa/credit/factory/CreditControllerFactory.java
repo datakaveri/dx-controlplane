@@ -6,7 +6,9 @@ import org.apache.logging.log4j.Logger;
 
 import org.cdpg.dx.aaa.credit.Controller.CreditController;
 import org.cdpg.dx.aaa.credit.dao.CreditDAOFactory;
-import org.cdpg.dx.aaa.credit.handler.CreditHandler;
+import org.cdpg.dx.aaa.credit.handler.ComputeRoleHandler;
+import org.cdpg.dx.aaa.credit.handler.CreditBalanceHandler;
+import org.cdpg.dx.aaa.credit.handler.CreditRequestHandler;
 import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.credit.service.CreditServiceImpl;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
@@ -22,12 +24,13 @@ public class CreditControllerFactory {
 
   private CreditControllerFactory() {}
 
-  public static CreditController create(CreditService creditService, EmailComposer emailCompose, UserService userService, OrganizationService organizationService, KeycloakUserService keycloakUserService, AuditingHandler auditingHandler,URNGenerator urnGenerator, Boolean isKycRequired) {
+  public static CreditController create(CreditService creditService, EmailComposer emailComposer, UserService userService, OrganizationService organizationService, KeycloakUserService keycloakUserService, AuditingHandler auditingHandler, URNGenerator urnGenerator, Boolean isKycRequired) {
 
+    CreditRequestHandler creditRequestHandler = new CreditRequestHandler(creditService, emailComposer, keycloakUserService, urnGenerator);
+    CreditBalanceHandler creditBalanceHandler = new CreditBalanceHandler(creditService, emailComposer, keycloakUserService, urnGenerator);
+    ComputeRoleHandler computeRoleHandler = new ComputeRoleHandler(creditService, emailComposer, userService, organizationService, keycloakUserService, urnGenerator);
 
-    CreditHandler creditHandler = new CreditHandler(creditService,emailCompose,userService, organizationService,keycloakUserService, urnGenerator);
-
-    return new CreditController(creditHandler, auditingHandler, isKycRequired);
+    return new CreditController(creditRequestHandler, creditBalanceHandler, computeRoleHandler, auditingHandler, isKycRequired);
   }
 
   public static CreditService createService(PostgresService pgService, KeycloakUserService keycloakUserService, JsonObject config) {

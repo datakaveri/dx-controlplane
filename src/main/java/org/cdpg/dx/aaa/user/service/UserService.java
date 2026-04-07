@@ -16,8 +16,11 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.IntStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public interface UserService {
+    Logger LOGGER = LoggerFactory.getLogger(UserService.class);
 
     Future<DxUser> getUserInfo(DxUser dxUser);
     Future<DxUser> getUserInfoByID(UUID userId);
@@ -44,7 +47,7 @@ public interface UserService {
                         getUserInfoByID(userIdExtractor.apply(item))
                                 .map(user -> {
                                     JsonObject enriched = baseJsonMapper.apply(item);
-                                    System.out.println("Fetching ORG ID!!!: " + user.organisationId());
+                                    LOGGER.debug("Enriching user roles for orgId: {}", user.organisationId());
                                     enriched.put("roles", user.roles());
                                     enriched.put("account_enabled", user.account_enabled());
                                     return enriched;

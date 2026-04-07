@@ -16,41 +16,26 @@ public class UserInfo {
   private List<JsonObject> publications;
   private List<String> skills;
 
-
-
   public static UserInfo fromJson(JsonObject json) {
     UserInfo user = new UserInfo();
 
     user.setUserId(json.getString("userId"));
     user.setAbout(json.getString("about"));
-    user.setExperience(json.getJsonArray("experience") != null
-      ? json.getJsonArray("experience").getList()
-      : Collections.emptyList());
-    user.setEducation(json.getJsonArray("education") != null
-      ? json.getJsonArray("education").getList()
-      : Collections.emptyList());
-    user.setProjects(json.getJsonArray("projects") != null
-      ? json.getJsonArray("projects").getList()
-      : Collections.emptyList());
-    user.setPublications(json.getJsonArray("publications") != null
-      ? json.getJsonArray("publications").getList()
-      : Collections.emptyList());
-    user.setSkills(json.getJsonArray("skills") != null
-      ? json.getJsonArray("skills").getList()
-      : Collections.emptyList());
-
-//    // Handle additional fields
-//    Set<String> knownKeys = new HashSet<>(Set.of(
-//      "userid", "about", "experience", "education", "projects", "publications", "skills"
-//    ));
-//
-//    JsonObject extras = new JsonObject();
-//    for (String key : json.fieldNames()) {
-//      if (!knownKeys.contains(key.toLowerCase())) {
-//        extras.put(key.toLowerCase(), json.getValue(key));
-//      }
-//    }
-//    user.setAdditionalFields(extras);
+    user.setExperience(Optional.ofNullable(json.getJsonArray("experience"))
+      .map(JsonArray::<JsonObject>getList)
+      .orElse(Collections.emptyList()));
+    user.setEducation(Optional.ofNullable(json.getJsonArray("education"))
+      .map(JsonArray::<JsonObject>getList)
+      .orElse(Collections.emptyList()));
+    user.setProjects(Optional.ofNullable(json.getJsonArray("projects"))
+      .map(JsonArray::<JsonObject>getList)
+      .orElse(Collections.emptyList()));
+    user.setPublications(Optional.ofNullable(json.getJsonArray("publications"))
+      .map(JsonArray::<JsonObject>getList)
+      .orElse(Collections.emptyList()));
+    user.setSkills(Optional.ofNullable(json.getJsonArray("skills"))
+      .map(JsonArray::<String>getList)
+      .orElse(Collections.emptyList()));
 
     return user;
   }
@@ -64,10 +49,6 @@ public class UserInfo {
     json.put("projects", new JsonArray(projects));
     json.put("publications", new JsonArray(publications));
     json.put("skills", new JsonArray(skills));
-
-//    if (additionalFields != null) {
-//      json.mergeIn(additionalFields, true);
-//    }
 
     return json;
   }
@@ -89,7 +70,7 @@ public class UserInfo {
   }
 
   public List<JsonObject> getExperience() {
-    return experience;
+    return Collections.unmodifiableList(experience);
   }
 
   public void setExperience(List<JsonObject> experience) {
@@ -97,7 +78,7 @@ public class UserInfo {
   }
 
   public List<JsonObject> getEducation() {
-    return education;
+    return Collections.unmodifiableList(education);
   }
 
   public void setEducation(List<JsonObject> education) {
@@ -105,7 +86,7 @@ public class UserInfo {
   }
 
   public List<JsonObject> getProjects() {
-    return projects;
+    return Collections.unmodifiableList(projects);
   }
 
   public void setProjects(List<JsonObject> projects) {
@@ -113,7 +94,7 @@ public class UserInfo {
   }
 
   public List<JsonObject> getPublications() {
-    return publications;
+    return Collections.unmodifiableList(publications);
   }
 
   public void setPublications(List<JsonObject> publications) {
@@ -121,18 +102,10 @@ public class UserInfo {
   }
 
   public List<String> getSkills() {
-    return skills;
+    return Collections.unmodifiableList(skills);
   }
 
   public void setSkills(List<String> skills) {
     this.skills = skills;
   }
-
-//  public JsonObject getAdditionalFields() {
-//    return additionalFields;
-//  }
-//
-//  public void setAdditionalFields(JsonObject additionalFields) {
-//    this.additionalFields = additionalFields;
-//  }
 }

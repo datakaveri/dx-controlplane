@@ -5,7 +5,7 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.apiserver.ApiController;
+import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.aaa.apiserver.OperationIds;
 import org.cdpg.dx.aaa.asset.controller.AssetController;
 import org.cdpg.dx.aaa.bookmarks.handler.BookmarksHandler;
