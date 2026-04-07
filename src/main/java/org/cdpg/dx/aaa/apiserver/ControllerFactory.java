@@ -68,9 +68,8 @@ import org.cdpg.dx.common.URNGenerator;
 /**
  * Creates and wires all API controllers for the application.
  *
- * <p>Uses {@link InfrastructureServices} for low-level service proxies and
- * {@link SharedServices} for domain services, eliminating the need to pass
- * dozens of individual parameters.
+ * <p>Uses {@link InfrastructureServices} for low-level service proxies and {@link SharedServices}
+ * for domain services, eliminating the need to pass dozens of individual parameters.
  */
 public class ControllerFactory {
   private static final Logger LOGGER = LogManager.getLogger(ControllerFactory.class);
@@ -134,7 +133,6 @@ public class ControllerFactory {
             infra.esService(),
             shared.keycloakUserService(),
             urnGenerator,
-            shared.delegationService(),
             orgOwnershipValidator,
             infra.webClient(),
             isKycRequired,
@@ -184,14 +182,20 @@ public class ControllerFactory {
     // Catalogue (list, search, item CRUD)
     ListController listController =
         ListControllerFactory.createListController(
-            infra.esService(), shared.keycloakUserService(), shared.auditingHandler(),
-            docIndex, urnGenerator);
+            infra.esService(),
+            shared.keycloakUserService(),
+            shared.auditingHandler(),
+            docIndex,
+            urnGenerator);
     controllers.add(listController);
 
     SearchController searchController =
         SearchControllerFactory.createSearchController(
-            infra.esService(), shared.keycloakUserService(), shared.auditingHandler(),
-            docIndex, urnGenerator);
+            infra.esService(),
+            shared.keycloakUserService(),
+            shared.auditingHandler(),
+            docIndex,
+            urnGenerator);
     controllers.add(searchController);
 
     // Central catalogue (optional)
@@ -200,14 +204,20 @@ public class ControllerFactory {
 
       CentralSearchController centralSearchController =
           CentralSearchControllerFactory.createSearchController(
-              infra.centralEsService(), shared.keycloakUserService(), shared.auditingHandler(),
-              centralCatDocIndex, urnGenerator);
+              infra.centralEsService(),
+              shared.keycloakUserService(),
+              shared.auditingHandler(),
+              centralCatDocIndex,
+              urnGenerator);
       controllers.add(centralSearchController);
 
       CentralListController centralListController =
           CentralListControllerFactory.createListController(
-              infra.centralEsService(), shared.keycloakUserService(), shared.auditingHandler(),
-              centralCatDocIndex, urnGenerator);
+              infra.centralEsService(),
+              shared.keycloakUserService(),
+              shared.auditingHandler(),
+              centralCatDocIndex,
+              urnGenerator);
       controllers.add(centralListController);
     }
 
@@ -248,8 +258,14 @@ public class ControllerFactory {
     // Token
     TokenController tokenController =
         TokenControllerFactory.create(
-            infra.pgService(), infra.esService(), config, vertx, infra.webClient(),
-            shared.policyDao(), shared.delegationService(), urnGenerator);
+            infra.pgService(),
+            infra.esService(),
+            config,
+            vertx,
+            infra.webClient(),
+            shared.policyDao(),
+            shared.delegationService(),
+            urnGenerator);
     controllers.add(tokenController);
 
     // Public keys
@@ -261,14 +277,20 @@ public class ControllerFactory {
     // Delegation
     controllers.add(
         DelegationControllerFactory.create(
-            shared.delegationService(), shared.emailComposer(), shared.userService(),
-            urnGenerator, shared.keycloakUserService()));
+            shared.delegationService(),
+            shared.emailComposer(),
+            shared.userService(),
+            urnGenerator,
+            shared.keycloakUserService()));
 
     // Subscription
     controllers.add(
         SubscriptionControllerFactory.create(
-            shared.auditingHandler(), infra.dataBrokerService(), infra.pgService(),
-            urnGenerator, controlPlaneDomain));
+            shared.auditingHandler(),
+            infra.dataBrokerService(),
+            infra.pgService(),
+            urnGenerator,
+            controlPlaneDomain));
 
     // App credentials & tokens
     controllers.add(
@@ -277,8 +299,13 @@ public class ControllerFactory {
 
     controllers.add(
         AppTokenControllerFactory.create(
-            infra.pgService(), shared.keycloakUserService(), shared.organizationService(),
-            shared.itemService(), urnGenerator, config, vertx));
+            infra.pgService(),
+            shared.keycloakUserService(),
+            shared.organizationService(),
+            shared.itemService(),
+            urnGenerator,
+            config,
+            vertx));
 
     // Summary / dashboard
     controllers.add(SummaryControllerFactory.create(infra.pgService(), urnGenerator));
