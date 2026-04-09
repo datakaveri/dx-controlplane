@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.item.controller;
 
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.CHECK_ITEM_NAME_AVAILABILITY;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.CONTEXT;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.CREATE_ITEM;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.DELETE_ITEM;
@@ -41,7 +42,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.apiserver.ApiController;
+import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.aaa.common.VerifyItemTypeAndRole;
 import org.cdpg.dx.aaa.delegation.ItemOwnershipValidator;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
@@ -67,6 +68,7 @@ import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.DxUnauthorizedException;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.response.ResponseBuilder;
+import org.cdpg.dx.common.util.CpRoutingContextHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
@@ -157,11 +159,50 @@ public class ItemController implements ApiController {
         .handler(this::handleGetItemWithAccess);
 
     builder
+        .operation(CHECK_ITEM_NAME_AVAILABILITY)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(this::handleVerifyItemNameAvailability);
+
+    builder
         .operation(DOWNLOAD_SCRIPT)
         .handler(auditingHandler::handleApiAudit)
         .handler(this::handleDownloadScript);
 
     LOGGER.debug("Item Controller registered");
+  }
+
+  private void handleVerifyItemNameAvailability(RoutingContext ctx) {
+    LOGGER.debug("Handling item name availability check");
+
+    try {
+      String name = ctx.queryParams().get(NAME);
+      if (name == null || name.isBlank()) {
+        ctx.fail(new DxBadRequestException("Query param 'name' is required"));
+        return;
+      }
+
+      itemService
+          .isItemNameExists(name)
+          .onSuccess(
+              exists -> {
+                if (Boolean.TRUE.equals(exists)) {
+                  //  Already exists → 409
+                  ctx.fail(new DxConflictException("Asset name Already Exists"));
+                } else {
+                  //  Available → 200
+                  ResponseBuilder.sendSuccess(ctx, "Asset name is available", this.urnGenerator);
+                }
+              })
+          .onFailure(
+              err -> {
+                LOGGER.error("Error while checking name availability", err);
+                ctx.fail(new DxInternalServerErrorException(err.getMessage()));
+              });
+
+    } catch (Exception e) {
+      LOGGER.error("Unexpected error in name availability check", e);
+      ctx.fail(new DxBadRequestException(e.getMessage()));
+    }
   }
 
   private void handleCreateOrUpdateItem(RoutingContext ctx) {
@@ -285,7 +326,7 @@ public class ItemController implements ApiController {
               JsonObject itemJson = elasticsearchResponse.getSource();
               UserActivityAuditLogBuilder auditLogBuilder =
                   ItemAuditLogHelper.buildItemAudit(ctx, itemJson, ItemAuditOperation.UPDATE);
-              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
               ResponseBuilder.sendSuccess(
                   ctx,
                   "Success: Item patched successfully",
@@ -421,7 +462,7 @@ public class ItemController implements ApiController {
                 UserActivityAuditLogBuilder auditLogBuilder =
                     ItemAuditLogHelper.buildItemAudit(
                         ctx, item.toJson(), ItemAuditOperation.CREATE);
-                RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+                CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
                 ResponseBuilder.sendCreated(
                     ctx, "Success: Item created", item.toJson(), this.urnGenerator);
@@ -487,7 +528,7 @@ public class ItemController implements ApiController {
                         UserActivityAuditLogBuilder auditLogBuilder =
                             ItemAuditLogHelper.buildItemAudit(
                                 ctx, item.toJson(), ItemAuditOperation.UPDATE);
-                        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+                        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
                         ResponseBuilder.sendSuccess(ctx, item.toJson(), urnGenerator);
                       });
@@ -505,7 +546,7 @@ public class ItemController implements ApiController {
 
     // Extract required data from RoutingContext
     String userId = ctx.user().principal().getString(SUB);
-    String token = RoutingContextHelper.getToken(ctx);
+    String token = RoutingContextHelper.getTokenOrThrow(ctx);
     JsonObject dataDescriptor =
         ctx.getBodyAsJson().getJsonObject("dataDescriptor", new JsonObject());
 
@@ -520,7 +561,7 @@ public class ItemController implements ApiController {
               LOGGER.debug("DataBank item created successfully with integrations");
               UserActivityAuditLogBuilder auditLogBuilder =
                   ItemAuditLogHelper.buildItemAudit(ctx, item.toJson(), ItemAuditOperation.CREATE);
-              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
               ResponseBuilder.sendSuccess(ctx, response.toJson(), this.urnGenerator);
             })
         .onFailure(err -> ctx.fail(err));
@@ -645,7 +686,7 @@ public class ItemController implements ApiController {
                   res -> {
                     UserActivityAuditLogBuilder auditLogBuilder =
                         ItemAuditLogHelper.buildItemAudit(ctx, itemJson, ItemAuditOperation.DELETE);
-                    RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+                    CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
                     ResponseBuilder.sendSuccess(
                         ctx, "Success: Item deleted successfully", this.urnGenerator);
                   });
@@ -689,7 +730,7 @@ public class ItemController implements ApiController {
                 if (ctx.user() != null) {
                   UserActivityAuditLogBuilder auditLogBuilder =
                       ItemAuditLogHelper.buildItemAudit(ctx, itemJson, ItemAuditOperation.VIEW);
-                  RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+                  CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
                 }
 
                 ResponseBuilder.sendSuccess(
@@ -714,7 +755,7 @@ public class ItemController implements ApiController {
   private void handleGetItemWithAccess(RoutingContext routingContext) {
     String token = null;
     try {
-      token = RoutingContextHelper.getToken(routingContext);
+      token = RoutingContextHelper.getTokenOrThrow(routingContext);
     } catch (Exception e) {
       LOGGER.warn("No token present or invalid token, may be anonymous access");
     }

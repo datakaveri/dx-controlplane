@@ -1,0 +1,121 @@
+/iudx/v2/auth/kyc/verify:
+  post:
+    summary: Verify KYC
+    tags:
+    - KYC APIs
+    description: 'Initiate KYC verification for the authenticated user by providing an authorization code and a code verifier obtained from the KYC provider. On success, the user''s KYC status is updated. Requires an authenticated user token.
+
+      '
+    responses:
+      '200':
+        description: KYC verification initiated successfully
+      '400':
+        description: Bad Request - Invalid or missing auth_code or code_verifier
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '401':
+        description: Unauthorized - Missing or invalid token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    operationId: post-auth-v2-kyc-verify
+    security:
+    - authorization: []
+    requestBody:
+      description: Authorization code and code verifier from the KYC provider
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              auth_code:
+                type: string
+                description: Authorization code received from the KYC provider
+              code_verifier:
+                type: string
+                description: PKCE code verifier used during the KYC authorization flow
+            required:
+            - auth_code
+            - code_verifier
+/iudx/v2/auth/kyc/confirm/{id}:
+  get:
+    summary: Confirm KYC verification
+    tags:
+    - KYC APIs
+    description: 'Confirm a pending KYC verification by its unique identifier. This is typically called after the initial KYC verification request has been processed. Requires an authenticated user token.
+
+      '
+    responses:
+      '200':
+        description: KYC verification confirmed successfully
+      '400':
+        description: Bad Request - Invalid KYC verification ID
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '401':
+        description: Unauthorized - Missing or invalid token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+      '404':
+        description: Not Found - KYC verification not found
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    operationId: get-auth-v2-kyc-confirm
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: Unique identifier of the KYC verification to confirm
+      schema:
+        type: string
+    security:
+    - authorization: []
+/iudx/v2/auth/kyc/revoke:
+  post:
+    summary: Revoke KYC Verification
+    tags:
+    - KYC APIs
+    description: 'Revoke a previously completed KYC verification for the authenticated user. This resets the user''s KYC status. Requires an authenticated user token with appropriate privileges.
+
+      '
+    responses:
+      '200':
+        description: KYC verification revoked successfully
+      '401':
+        description: Unauthorized - Missing or invalid token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+      '403':
+        description: Forbidden - Insufficient permissions to revoke KYC
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    operationId: post-auth-v2-kyc-revoke
+    security:
+    - authorization: []

@@ -1,0 +1,26 @@
+/iudx/v2/dashboard/usage-summary:
+  get:
+    summary: Get usage summary for dashboard
+    description: 'Returns aggregated usage metrics (count and size) for different time windows used by the main dashboard. Provides data for total usage, last year, last 6 months, last month, last week, and yesterday. No authentication required.'
+    operationId: get-dashboard-usage-summary
+    tags:
+    - Summary
+    responses:
+      '200':
+        description: List of admin activity logs
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/dashboardUsageSummarySuccessResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Fetch Dashboard Usage Summary
+      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/dashboard/usage-summary''
+
+        '

@@ -1,0 +1,98 @@
+PageParam:
+  name: page
+  in: query
+  description: Page number for pagination
+  required: false
+  schema:
+    type: integer
+    default: 1
+    minimum: 1
+SizeParam:
+  name: size
+  in: query
+  description: Page size for pagination
+  required: false
+  schema:
+    type: integer
+    default: 1000
+    minimum: 1
+SizeParamReport:
+  name: size
+  in: query
+  description: Page size for pagination , used as limit for query request
+  required: false
+  schema:
+    type: integer
+    default: 1000
+    minimum: 1
+SortingParam:
+  name: sort
+  in: query
+  description: 'This parameter allows sorting the results by up to 3 fields, separated by a semicolon (`;`). The format for
+    each field is `fieldName:asc` or `fieldName:desc`. For example: `createdAt:desc;assetType:asc;userId:desc` will sort by
+    creation date (descending), then asset type (ascending), then user ID (descending).'
+  required: false
+  schema:
+    type: string
+TimeParam:
+  name: time
+  in: query
+  description: This parameter specifies the <b>start time</b> for the temporal-query in `ISO8601` format.
+  schema:
+    type: string
+EndTimeParam:
+  name: endtime
+  in: query
+  description: This parameter specifies the <b>endtime</b> for the temporal-query in `ISO8601` format.
+  schema:
+    type: string
+TimeRelParam:
+  name: timerel
+  in: query
+  description: 'The temporal relation type to be applied for the time filter. Must be one of: <b>between</b>, <b>before</b>,
+    or <b>after</b>. <b>between</b> must be used with both `time` and `endtime`. <b>before</b> or <b>after</b> must be used
+    with only `time`.
+
+    '
+  required: false
+  schema:
+    type: string
+    enum:
+    - between
+    - before
+    - after
+    - null
+OrgNameParam:
+  name: name
+  in: query
+  description: 'The name of the organization sector to filter by.
+
+    This parameter is used to filter entities based on their organizational sector.
+
+    '
+  required: false
+  schema:
+    type: string
+EntityTypeParam:
+  name: entity_type
+  in: query
+  description: The type of entity to filter by. This parameter is used to filter entities based on their type.
+  required: false
+  schema:
+    type: string
+OrgSectorParam:
+  name: org_sector
+  in: query
+  description: The sector of the organization to filter by. This parameter is used to filter entities based on their organizational
+    sector.
+  required: false
+  schema:
+    type: string
+StatusParam:
+  name: status
+  in: query
+  description: The status of the asset request to filter by. This parameter is used to filter asset requests based on their
+    status such as 'pending' , 'granted' and 'rejected'.
+  required: false
+  schema:
+    type: string

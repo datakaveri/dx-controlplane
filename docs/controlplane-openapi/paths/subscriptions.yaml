@@ -1,0 +1,265 @@
+/iudx/v2/subscriptions:
+  post:
+    tags:
+    - Subscriptions
+    summary: Create subscription
+    description: 'Create a new data subscription for streaming. This is a consumer API that allows users to subscribe to entities for real-time data streaming. Requires an authenticated user token with consumer role.'
+    operationId: postSubscriptions
+    security:
+    - authorization: []
+    requestBody:
+      description: Create Subscription details
+      required: true
+      content:
+        application/json:
+          schema:
+            anyOf:
+            - $ref: ../components/schemas/common.yaml#/createastreamingsubscriptionrequest
+            - $ref: ../components/schemas/common.yaml#/createastreamingsubscriptionrequest2
+            - $ref: ../components/schemas/common.yaml#/createastreamingsubscriptionrequest3
+            - $ref: ../components/schemas/common.yaml#/createastreamingsubscriptionrequest4
+            - $ref: ../components/schemas/common.yaml#/createastreamingsubscriptionrequest5
+    responses:
+      '201':
+        description: Subscription created successfully
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionResponse
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse400
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse401
+      '409':
+        description: Conflict - Subscription already exists
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse409
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse500
+  get:
+    tags:
+    - Subscriptions
+    summary: List all subscriptions for the current user
+    operationId: getAllSubscriptionQueues
+    security:
+    - authorization: []
+    parameters:
+    - name: limit
+      in: query
+      description: Maximum number of subscription records to return per request. Default is 100.
+      schema:
+        type: integer
+        minimum: 1
+        default: 100
+    - name: offset
+      in: query
+      description: Number of records to skip before returning results. Use with `limit` for pagination.
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    responses:
+      200:
+        description: Successfully retrieving list of all subscription queues
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/catalogue.yaml#/Allqueue
+      401:
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse401
+      500:
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse500
+    description: 'Returns a list of all data subscriptions for the currently authenticated user. Use `limit` and `offset` for pagination. Requires an authenticated user token with consumer role.
+
+      '
+/iudx/v2/subscriptions/{subscriptionId}:
+  get:
+    tags:
+    - Subscriptions
+    summary: Retrieve subscription details
+    operationId: getstreamingsubscription
+    security:
+    - authorization: []
+    parameters:
+    - name: subscriptionId
+      in: path
+      description: Subscription ID obtained during registration.
+      required: true
+      style: simple
+      schema:
+        type: string
+    responses:
+      200:
+        description: Successful retrieval of streaming subscription
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/catalogue.yaml#/Allqueue
+      400:
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse400
+      401:
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse401
+      500:
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse500
+      404:
+        description: Subscription details not found
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse404
+    deprecated: false
+    description: 'Retrieve Subscription API allows a subscriber to fetch the list of `entities` subscribed. Based on the input
+      provided, the API validates the access control of the user with DX(Data exchange) Auth server to allow or deny access
+      to the API.
+
+
+      #### Retrieve Subscription Details
+
+      To retrieve subscriber list, the provider must present the `subscriptionId` and `token`.
+
+      '
+  patch:
+    tags:
+    - Subscriptions
+    summary: Update subscription
+    operationId: updatestreamingsubscription
+    security:
+    - authorization: []
+    parameters:
+    - name: subscriptionId
+      in: path
+      description: Subscription ID obtained during registration.
+      required: true
+      style: simple
+      schema:
+        type: string
+    requestBody:
+      description: Updated subscription entity list or expiry configuration
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/common.yaml#/createastreamingsubscriptionrequest3
+      required: true
+    responses:
+      204:
+        description: Successful updated of streaming subscription
+      400:
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse400
+      401:
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse401
+      500:
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse500
+      404:
+        description: Subscription details not found
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse404
+    description: 'Update Subscription API allows a subscriber to update expiry of the subscriptions. Based on the input provided,
+      the API validates the access control of the user with DX(Data exchange) Auth server to allow or deny access to the API.
+
+
+      #### Update Subscription
+
+      To replace the subscriber list, the provider must present the `subscriptionId` and `token` along with the list of `entities`.
+
+      '
+    deprecated: false
+  delete:
+    tags:
+    - Subscriptions
+    summary: Delete subscription
+    operationId: deleteasubscription
+    security:
+    - authorization: []
+    parameters:
+    - name: subscriptionId
+      in: path
+      description: Subscription ID obtained during registration.
+      required: true
+      style: simple
+      schema:
+        type: string
+    responses:
+      204:
+        description: Successful deletion of streaming subscription
+      400:
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse400
+      401:
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse401
+      500:
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse500
+      404:
+        description: Subscription details not found
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse404
+    description: 'Delete Subscription API allows a subscriber to delete the subscription. Based on the input provided, the
+      API validates the access control of the user with DX(Data exchange) Auth server to allow or deny access to the API.
+
+
+      #### Delete Subscription
+
+      To delete the subscription list, the provider must present the `subscriptionId` and `token`.
+
+      '
+    deprecated: false

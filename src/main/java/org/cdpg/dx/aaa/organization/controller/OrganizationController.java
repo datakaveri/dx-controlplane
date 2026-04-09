@@ -5,8 +5,7 @@ import static org.cdpg.dx.aaa.apiserver.OperationIds.*;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.apiserver.ApiController;
-import org.cdpg.dx.aaa.delegation.handler.DelegationHandler;
+import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.aaa.organization.handler.*;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
@@ -24,7 +23,6 @@ public class OrganizationController implements ApiController {
   private final OrganizationUserHandler userHandler;
   private final ProviderRoleHandler providerRoleHandler;
   private final AuditingHandler auditingHandler;
-  private final DelegationHandler delegationHandler;
   private final Boolean isKycRequired;
 
   public OrganizationController(
@@ -35,7 +33,6 @@ public class OrganizationController implements ApiController {
       OrganizationUserHandler userHandler,
       ProviderRoleHandler providerRoleHandler,
       AuditingHandler auditingHandler,
-      DelegationHandler delegationHandler,
       Boolean isKycRequired) {
 
     this.commandHandler = commandHandler;
@@ -44,7 +41,6 @@ public class OrganizationController implements ApiController {
     this.joinRequestHandler = joinRequestHandler;
     this.userHandler = userHandler;
     this.providerRoleHandler = providerRoleHandler;
-    this.delegationHandler = delegationHandler;
     this.auditingHandler = auditingHandler;
     this.isKycRequired = isKycRequired;
   }
@@ -69,7 +65,6 @@ public class OrganizationController implements ApiController {
         .operation(OP_GET_USER_ORG_CREATE_REQUESTS)
         .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER, DxRole.DELEGATE))
-        .handler(delegationHandler::resolveUserId)
         .handler(createRequestHandler::getUserOrganisationRequest);
 
     //todo: delegatorId
@@ -78,7 +73,6 @@ public class OrganizationController implements ApiController {
         .operation(OP_DELETE_USER_ORG_CREATE_REQUEST)
         .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER,DxRole.DELEGATE))
-        .handler(delegationHandler::resolveUserId)
         .handler(createRequestHandler::deleteOrganizationCreateRequest);
 
     //todo: refactor code
@@ -112,7 +106,6 @@ public class OrganizationController implements ApiController {
         .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN, DxRole.DELEGATE))
         .handler(AuthorizationHandler.forDelegationScopes(DxScope.USER_MANAGEMENT,DxScope.ORG_ADMIN_ACCESS))
-        .handler(delegationHandler::resolveOrgId)
         .handler(joinRequestHandler::getJoinOrganisationRequests);
 
     // todo : delegatorId
@@ -121,7 +114,6 @@ public class OrganizationController implements ApiController {
         .operation(OP_GET_USER_ORG_JOIN_REQUESTS)
         .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER,DxRole.DELEGATE))
-        .handler(delegationHandler::resolveUserId)
         .handler(joinRequestHandler::getUserJoinOrganisationRequests);
 
     routerBuilder
@@ -136,7 +128,6 @@ public class OrganizationController implements ApiController {
         .operation(OP_DELETE_USER_ORG_JOIN_REQUEST)
         .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER,DxRole.DELEGATE))
-        .handler(delegationHandler::resolveUserId)
         .handler(joinRequestHandler::deleteUserJoinOrganisationRequests);
 
     routerBuilder
@@ -144,7 +135,6 @@ public class OrganizationController implements ApiController {
         .handler(auditingHandler::handleApiAudit) // Done
         .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN, DxRole.DELEGATE))
         .handler(AuthorizationHandler.forDelegationScopes(DxScope.USER_MANAGEMENT,DxScope.ORG_ADMIN_ACCESS))
-        .handler(delegationHandler::resolveOrgId)
         .handler(joinRequestHandler::approveJoinOrganisationRequests);
 
     /* =========================
@@ -158,8 +148,7 @@ public class OrganizationController implements ApiController {
 
     routerBuilder
         .operation(OP_GET_ORGANISATION_BY_ID)
-        .handler(auditingHandler::handleApiAudit)
-        .handler(delegationHandler::resolveOrgId)
+        .handler(auditingHandler::handleApiAudit) // done
         .handler(queryHandler::getOrganizationById);
 
     routerBuilder
@@ -167,7 +156,6 @@ public class OrganizationController implements ApiController {
         .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN, DxRole.DELEGATE))
         .handler(AuthorizationHandler.forDelegationScopes(DxScope.USER_MANAGEMENT,DxScope.COS_ADMIN_ACCESS))
-        .handler(delegationHandler::resolveOrgId)
         .handler(commandHandler::updateOrganisationById);
 
     //TODO: check orgId and userId same
@@ -177,7 +165,6 @@ public class OrganizationController implements ApiController {
         .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN, DxRole.ORG_ADMIN, DxRole.DELEGATE))
         .handler(AuthorizationHandler.forDelegationScopes(DxScope.USER_MANAGEMENT,DxScope.COS_ADMIN_ACCESS,DxScope.ORG_ADMIN_ACCESS))
-        .handler(delegationHandler::resolveOrgId)
         .handler(commandHandler::deleteOrganisationById);
 
     /* =========================
@@ -189,7 +176,6 @@ public class OrganizationController implements ApiController {
         .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN, DxRole.DELEGATE))
         .handler(AuthorizationHandler.forDelegationScopes(DxScope.USER_MANAGEMENT,DxScope.ORG_ADMIN_ACCESS))
-        .handler(delegationHandler::resolveOrgId)
         .handler(userHandler::getOrganisationUsers);
 
     routerBuilder
@@ -206,7 +192,6 @@ public class OrganizationController implements ApiController {
         .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN , DxRole.DELEGATE))
         .handler(AuthorizationHandler.forDelegationScopes(DxScope.USER_MANAGEMENT,DxScope.ORG_ADMIN_ACCESS))
-        .handler(delegationHandler::resolveUserId)
         .handler(userHandler::deleteOrganisationUserById);
 
     routerBuilder
@@ -214,7 +199,6 @@ public class OrganizationController implements ApiController {
         .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN , DxRole.DELEGATE))
         .handler(AuthorizationHandler.forDelegationScopes(DxScope.USER_MANAGEMENT,DxScope.ORG_ADMIN_ACCESS))
-        .handler(delegationHandler::resolveOrgId)
         .handler(userHandler::updateOrganisationUserRole);
 
     /* =========================
@@ -230,7 +214,6 @@ public class OrganizationController implements ApiController {
         .operation(OP_GET_PROVIDER_REQUEST)
         .handler(auditingHandler::handleApiAudit)
         .handler(AuthorizationHandler.forRoles(DxRole.ORG_ADMIN, DxRole.DELEGATE))
-        .handler(delegationHandler::resolveOrgId)
         .handler(providerRoleHandler::getProviderRequest);
 
     routerBuilder
@@ -246,7 +229,6 @@ public class OrganizationController implements ApiController {
         .operation(OP_GET_USER_PROVIDER_REQUESTS)
         .handler(auditingHandler::handleApiAudit)
         .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER, DxRole.DELEGATE))
-        .handler(delegationHandler::resolveUserId)
         .handler(providerRoleHandler::getProviderRoleRequest);
 
     //todo:delegatorId
@@ -255,7 +237,6 @@ public class OrganizationController implements ApiController {
         .operation(OP_DELETE_USER_PROVIDER_REQUEST)
         .handler(auditingHandler::handleApiAudit) // done
         .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER, DxRole.DELEGATE))
-        .handler(delegationHandler::resolveUserId)
         .handler(providerRoleHandler::deleteUserProviderRoleRequest);
 
     //todo : scopes

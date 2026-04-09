@@ -42,7 +42,6 @@ public class OrganizationControllerFactory {
       KeycloakUserService keycloakUserService,
       URNGenerator urnGenerator,
       OrgOwnershipValidator orgOwnershipValidator,
-      DelegationHandler delegationHandler,
       WebClient webClient,
       Boolean kycRequired,
       String docIndex,
@@ -110,7 +109,6 @@ public class OrganizationControllerFactory {
         userHandler,
         providerRoleHandler,
         auditingHandler,
-        delegationHandler,
         kycRequired);
   }
 

@@ -15,7 +15,6 @@ import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.common.URNGenerator;
-import org.cdpg.dx.database.elastic.central.service.CentralElasticsearchService;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
@@ -25,7 +24,7 @@ public class ItemControllerFactory {
   public static ItemController createCrudController(
       AuditingHandler auditingHandler,
       ElasticsearchService elasticsearchService,
-      CentralElasticsearchService centralElasticsearchService,
+      ElasticsearchService centralElasticsearchService,
       PostgresService pgService,
       KeycloakUserService keycloakUserService,
       ItemOwnershipValidator itemOwnershipValidator,

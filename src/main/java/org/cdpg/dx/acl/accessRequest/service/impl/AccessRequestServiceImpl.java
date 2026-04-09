@@ -4,6 +4,7 @@ import static org.cdpg.dx.aaa.common.Constants.IN_ACTIVE;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ORGANIZATION;
 import static org.cdpg.dx.catalogueService.config.Constants.ASSET_NAME_KEY;
 import static org.cdpg.dx.catalogueService.config.Constants.ORGANIZATION_ID;
 import static org.cdpg.dx.catalogueService.config.Constants.OWNER_ID;
@@ -142,7 +143,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
                             .setAssetType(asset.getAssetType())
                             .setAssetName(asset.getAssetName())
                             .setProviderId(asset.getProviderId())
-                            .setItemOrganization(asset.getOrganizationId())
+                            .setItemOrganizationId(asset.getOrganizationId())
                             .setShortDescription(asset.getShortDescription())
                             .setItemId(asset.getItemId());
 
@@ -576,6 +577,47 @@ public class AccessRequestServiceImpl implements AccessRequestService {
   }
 
   @Override
+  public Future<PaginatedResult<AccessRequestDto>> enrichAccessRequestsWithItemDetails(
+      PaginatedResult<AccessRequestDto> pagedResult) {
+
+    List<Future<?>> futures = new ArrayList<>();
+
+    for (AccessRequestDto dto : pagedResult.data()) {
+
+      if (dto.getItemId() == null) continue;
+
+      GetItemRequest request = new GetItemRequest(dto.getItemId(), "");
+
+      Future<Void> future =
+          itemService.getItem(request)
+              .onSuccess(response -> {
+                if (!response.getElasticsearchResponses().isEmpty()) {
+
+                  JsonObject itemJson = response.getElasticsearchResponses().getFirst();
+                  Asset asset = parseAndGetAsset(itemJson, dto.getItemId());
+
+                  // Override DB values with catalogue values
+                  dto.setAssetName(asset.getAssetName());
+                  dto.setAssetType(asset.getAssetType());
+                  dto.setShortDescription(asset.getShortDescription());
+                  dto.setItemOrganizationId(asset.getOrganizationId());
+                  dto.setItemOrganizationName(asset.getOrganizationName());
+                  dto.setProviderId(asset.getProviderId());
+                }
+              })
+              .onFailure(err -> {
+                LOGGER.warn("Failed to fetch item {}: {}", dto.getItemId(), err.getMessage());
+                // fallback: keep DB values
+              })
+              .mapEmpty();
+
+      futures.add(future);
+    }
+
+    return Future.all(futures).map(v -> pagedResult);
+  }
+
+  @Override
   public Future<AccessRequestDto> updateAccessRequestForConsumer(UUID consumerId, UUID requestId) {
     return accessRequestDao
         .get(requestId)
@@ -624,6 +666,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
       String provider = result.getString(OWNER_ID);
       String organizationId = result.getString(ORGANIZATION_ID);
       String shortDescription = result.getString(SHORT_DESCRIPTION, "").trim();
+      String organizationName = result.getString(ORGANIZATION, "");
 
       AssetType catAssetType = null;
       JsonArray typeArray = result.getJsonArray(TYPE);
@@ -655,6 +698,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
           .setItemId(id)
           .setProviderId(provider)
           .setOrganizationId(organizationId)
+          .setOrganizationName(organizationName)
           .setAssetType(catAssetType.getAssetType())
           .setAssetName(assetName)
           .setShortDescription(shortDescription);

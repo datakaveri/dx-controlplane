@@ -3,6 +3,7 @@ package org.cdpg.dx.acl.accessRequest.controller;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.CHECK_ACCESS_REQUEST_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.CREATE_ACCESS_REQUEST_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_ACCESS_REQUEST_CONSUMER_API;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_ACCESS_REQUEST_FOR_COS_ADMIN_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_ACCESS_REQUEST_FOR_ORG_ADMIN_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_ACCESS_REQUEST_PROVIDER_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.UPDATE_ACCESS_REQUEST_API;
@@ -35,8 +36,8 @@ import org.cdpg.dx.acl.accessRequest.dao.model.Status;
 import org.cdpg.dx.acl.accessRequest.model.AccessRequestAuditOperation;
 import org.cdpg.dx.acl.accessRequest.service.AccessRequestService;
 import org.cdpg.dx.acl.accessRequest.util.AccessRequestAuditLogHelper;
-import org.cdpg.dx.acl.apiserver.ApdApiController;
 import org.cdpg.dx.acl.policy.util.UserAccessHandler;
+import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
@@ -51,13 +52,14 @@ import org.cdpg.dx.common.model.RequestType;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
+import org.cdpg.dx.common.util.CpRoutingContextHelper;
 import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
-public class AccessRequestController implements ApdApiController {
+public class AccessRequestController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(AccessRequestController.class);
 
   private final AccessRequestService accessRequestService;
@@ -110,6 +112,7 @@ public class AccessRequestController implements ApdApiController {
 
   @Override
   public void register(RouterBuilder builder) {
+    Handler<RoutingContext> cosAdminAccessHandler = AuthorizationHandler.forRoles(DxRole.COS_ADMIN);
     Handler<RoutingContext> orgAdminAccessHandler = AuthorizationHandler.forRoles(DxRole.ORG_ADMIN);
     Handler<RoutingContext> providerAndOrgAdminAccessHandler =
         AuthorizationHandler.forRoles(DxRole.PROVIDER, DxRole.ORG_ADMIN);
@@ -136,6 +139,12 @@ public class AccessRequestController implements ApdApiController {
         .handler(auditingHandler::handleApiAudit)
         .handler(orgAdminAccessHandler)
         .handler(this::getOrganizationAccessRequestHandler);
+
+    builder
+        .operation(GET_ACCESS_REQUEST_FOR_COS_ADMIN_API)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(cosAdminAccessHandler)
+        .handler(this::getPlatformAccessRequestHandler);
 
     builder
         .operation(GET_ACCESS_REQUEST_PROVIDER_API)
@@ -173,7 +182,7 @@ public class AccessRequestController implements ApdApiController {
               UserActivityAuditLogBuilder auditLog =
                   AccessRequestAuditLogHelper.buildAudit(
                       routingContext, accessRequestDto, AccessRequestAuditOperation.WITHDRAW);
-              RoutingContextHelper.setAuditingLogV2(routingContext, auditLog);
+              CpRoutingContextHelper.setAuditingLogV2(routingContext, auditLog);
               ResponseBuilder.sendSuccess(
                   routingContext, "Request updated successfully", urnGenerator);
             })
@@ -189,7 +198,8 @@ public class AccessRequestController implements ApdApiController {
     User user = ctx.user();
 
     Map<String, String> allowedFilters =
-        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE);
+        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE, "organizationId",
+            DB_ASSET_ORGANIZATION_ID);
     Map<String, Object> additionalFilters = Map.of("provider_id", user.subject());
     Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
     Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
@@ -209,6 +219,7 @@ public class AccessRequestController implements ApdApiController {
 
     accessRequestService
         .listAccessRequestForProvider(request)
+        .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
         .onSuccess(
             pagedResult -> {
               LOGGER.info(
@@ -234,7 +245,8 @@ public class AccessRequestController implements ApdApiController {
 
     String organizationId = RoutingContextHelper.fromPrincipal(ctx).organisationId();
     Map<String, String> allowedFilters =
-        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE);
+        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE, "organizationId",
+            DB_ASSET_ORGANIZATION_ID);
     Map<String, Object> additionalFilters = Map.of(DB_ASSET_ORGANIZATION_ID, organizationId);
     Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
     Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
@@ -255,10 +267,55 @@ public class AccessRequestController implements ApdApiController {
 
     accessRequestService
         .listAccessRequestForProvider(request)
+        .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
         .onSuccess(
             pagedResult -> {
               LOGGER.info(
                   "Successfully fetched access requests for org admin user: {}", user.subject());
+              ResponseBuilder.sendSuccess(
+                  ctx,
+                  pagedResult.data().stream()
+                      .map(AccessRequestDto::toJson)
+                      .collect(Collectors.toList()),
+                  pagedResult.paginationInfo(),
+                  urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Error fetching access requests: {}", err.getMessage(), err);
+              ctx.fail(err);
+            });
+  }
+
+  private void getPlatformAccessRequestHandler(RoutingContext ctx) {
+    LOGGER.info("Handling getPlatformAccessRequestHandler request...");
+    User user = ctx.user();
+
+    Map<String, String> allowedFilters =
+        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE, "organizationId",
+            DB_ASSET_ORGANIZATION_ID);
+    Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
+    Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
+
+    PaginatedRequest request =
+        PaginationRequestBuilder.from(ctx)
+            .allowedFiltersDbMap(allowedFilters)
+            .apiToDbMap(API_TO_DB_MAP)
+            .allowedTimeFields(allowedTimeFields)
+            .defaultTimeField(DB_CREATED_AT)
+            .defaultSort(DB_UPDATED_AT, DEFAULT_SORTING_ORDER)
+            .allowedSortFields(allowedSortFields)
+            .build();
+
+    LOGGER.info("PaginatedRequest getPlatformAccessRequestHandler for cos admin :  {}", request);
+
+    accessRequestService
+        .listAccessRequestForProvider(request)
+        .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
+        .onSuccess(
+            pagedResult -> {
+              LOGGER.info(
+                  "Successfully fetched access requests for cos admin user: {}", user.subject());
               ResponseBuilder.sendSuccess(
                   ctx,
                   pagedResult.data().stream()
@@ -341,7 +398,7 @@ public class AccessRequestController implements ApdApiController {
                           UserActivityAuditLogBuilder auditLog =
                               AccessRequestAuditLogHelper.buildAudit(
                                   ctx, accessRequestDto, AccessRequestAuditOperation.GRANT);
-                          RoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+                          CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
                           ResponseBuilder.sendSuccess(
                               ctx, "Request updated successfully", urnGenerator);
                           JsonObject jsonObject =
@@ -381,7 +438,7 @@ public class AccessRequestController implements ApdApiController {
                           UserActivityAuditLogBuilder auditLog =
                               AccessRequestAuditLogHelper.buildAudit(
                                   ctx, accessRequestDto, AccessRequestAuditOperation.REJECT);
-                          RoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+                          CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
                           // RoutingContextHelper.setAuditingLog(ctx, auditLog);
                           ResponseBuilder.sendSuccess(
                               ctx, "Request updated successfully", urnGenerator);
@@ -434,7 +491,7 @@ public class AccessRequestController implements ApdApiController {
               UserActivityAuditLogBuilder auditLog =
                   AccessRequestAuditLogHelper.buildAudit(
                       ctx, accessRequestDto, AccessRequestAuditOperation.REQUEST);
-              RoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
               // RoutingContextHelper.setAuditingLog(ctx, auditLog);
               ResponseBuilder.sendSuccess(ctx, "Request inserted successfully!", urnGenerator);
               JsonObject jsonObject =
@@ -466,7 +523,8 @@ public class AccessRequestController implements ApdApiController {
     User user = ctx.user();
 
     Map<String, String> allowedFilters =
-        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE);
+        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE, "organizationId",
+            DB_ASSET_ORGANIZATION_ID);
     Map<String, Object> additionalFilters = Map.of("consumer_id", user.subject());
     Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
     Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
@@ -486,6 +544,7 @@ public class AccessRequestController implements ApdApiController {
 
     accessRequestService
         .listAccessRequestForConsumer(request)
+        .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
         .onSuccess(
             pagedResult -> {
               LOGGER.info("Successfully fetched access requests for user: {}", user.subject());

@@ -1,0 +1,607 @@
+openapi: 3.0.2
+info:
+  title: Dx- Control Plane - Catalogue - Authentication , Authorization and Accounting (AAA) Server
+  version: 1.1.0
+  description: "\n# About DX AAA\n\n Dx Control Plane **Auth Server (AAA)**  is a core component of the Dx Control Plane responsible\
+    \ for validating JWT tokens and enforcing **Role-Based Access Control (RBAC)** on incoming API requests. The **Keycloak\
+    \ Server** acts as the **Identity Provider (IdP)** and issues signed JWT tokens upon successful user login or registration.\
+    \ The AAA validates the token by verifying its signature, expiration, and integrity, and extracts user roles from the\
+    \ token claims.\nThis enables secure access to platform services such as organization management, credit management, compute\
+    \ APIs, and KYC check APIs. Users can be assigned roles such as `compute`, `publisher`, `org_admin`, and `cos_admin`,\
+    \ which determine the API operations they are authorized to perform.\nThe Auth Server ensures that only authorized users\
+    \ can perform actions according to their role, by matching the required role for each API with the roles present in the\
+    \ user's JWT. Additionally, audit logging tracks authentication and authorization events for security and troubleshooting\
+    \ purposes. \n\n# About DX Catalogue\n The DX Catalogue is a core component of the Dx Control Plane responsible for  dataset\
+    \ discovery portal and metadata store.It enables *Providers* of datasources to describe them with DX  based annotations\
+    \ to make discovery and consumption of data both automatable and semantically describable. For search and discovery, it\
+    \ allows users to search through text and geo-based queries.  The catalogue is a [JSON-LD](https://json-ld.org/) document\
+    \ stored and based on the  [RDF](https://www.w3.org/RDF/) information exchange model. \n#  Configurations\n- **Server**:\
+    \ \n  - In the doc, we display the server url to be https://${HOSTNAME} with the hostname as ${HOSTNAME}\n  - This could\
+    \ be configured according to the deployment\n- **Base path**:\n     - Base path is the path on which API is served, relative\
+    \ to the host\n     - It is the initial part of the API\n     - These base path values could be configured according to\
+    \ the deployment\n     - The base path for [DX AAA Server](https://github.com/datakaveri/iudx-aaa-server) is set to `/iudx/v2/auth`\n\
+    \     - The base path for [DX Catalogue Server](https://github.com/datakaveri/iudx-catalogue-server) is set to `/iudx/v2/cat`\n\
+    \ - **Request Samples**:\n  - The `<tokenValue>` in the header of request sample could be replaced with respective token\
+    \ value [Also refer Tokens section [here](#section/Tokens)]\n  - The `<payload>` in the request sample could be replaced\
+    \ with the payload given adjacent to the request sample    \n\n# API HTTP Responses\n Apart from the response codes specified\
+    \ in each API, the API server may respond with certain 4xx and 5xx error codes which are related to common API Gateway\
+    \ behaviours.\n The application should address them accordingly.\n\n   "
+  contact:
+    name: For support contact CDPG Team at
+    email: ${SUPPORT_EMAIL}
+    url: https://dataforpublicgood.org.in/
+  license:
+    name: Apache 2.0
+servers:
+- url: https://${HOSTNAME}
+  description: dynamic server url
+paths:
+  /iudx/v2/auth/app:
+    $ref: ../controlplane-openapi/paths/app.yaml#/~1iudx~1v2~1auth~1app
+  /iudx/v2/auth/app/{appId}:
+    $ref: ../controlplane-openapi/paths/app.yaml#/~1iudx~1v2~1auth~1app~1{appId}
+  /iudx/v2/auth/asset/request:
+    $ref: ../controlplane-openapi/paths/assets.yaml#/~1iudx~1v2~1auth~1asset~1request
+  /iudx/v2/auth/asset/request/{id}:
+    $ref: ../controlplane-openapi/paths/assets.yaml#/~1iudx~1v2~1auth~1asset~1request~1{id}
+  /iudx/v2/auditing/consumer/activity:
+    $ref: ../controlplane-openapi/paths/auditing.yaml#/~1iudx~1v2~1auditing~1consumer~1activity
+  /iudx/v2/auditing/admin/activity:
+    $ref: ../controlplane-openapi/paths/auditing.yaml#/~1iudx~1v2~1auditing~1admin~1activity
+  /iudx/v2/auditing/reportactivity/admin:
+    $ref: ../controlplane-openapi/paths/auditing.yaml#/~1iudx~1v2~1auditing~1reportactivity~1admin
+  /iudx/v2/auditing/reportactivity/consumer:
+    $ref: ../controlplane-openapi/paths/auditing.yaml#/~1iudx~1v2~1auditing~1reportactivity~1consumer
+  /iudx/v2/cat/item:
+    $ref: ../controlplane-openapi/paths/catalogue.yaml#/~1iudx~1v2~1cat~1item
+  /items/scripts/download/{filename}:
+    $ref: ../controlplane-openapi/paths/catalogue.yaml#/~1items~1scripts~1download~1{filename}
+  /iudx/v2/cat/item/access:
+    $ref: ../controlplane-openapi/paths/catalogue.yaml#/~1iudx~1v2~1cat~1item~1access
+  /iudx/v2/auth/jwks:
+    $ref: ../controlplane-openapi/paths/certificate.yaml#/~1iudx~1v2~1auth~1jwks
+  /iudx/v2/auth/token:
+    $ref: ../controlplane-openapi/paths/certificate.yaml#/~1iudx~1v2~1auth~1token
+  /iudx/auth/v2/app/token:
+    $ref: ../controlplane-openapi/paths/certificate.yaml#/~1iudx~1auth~1v2~1app~1token
+  /iudx/v2/auth/client:
+    $ref: ../controlplane-openapi/paths/client.yaml#/~1iudx~1v2~1auth~1client
+  /iudx/v2/auth/user/compute/requests:
+    $ref: ../controlplane-openapi/paths/compute.yaml#/~1iudx~1v2~1auth~1user~1compute~1requests
+  /iudx/v2/auth/compute/requests:
+    $ref: ../controlplane-openapi/paths/compute.yaml#/~1iudx~1v2~1auth~1compute~1requests
+  /iudx/v2/auth/compute/requests/{id}:
+    $ref: ../controlplane-openapi/paths/compute.yaml#/~1iudx~1v2~1auth~1compute~1requests~1{id}
+  /iudx/v2/auth/compute/requests/report:
+    $ref: ../controlplane-openapi/paths/compute.yaml#/~1iudx~1v2~1auth~1compute~1requests~1report
+  /iudx/v2/auth/user/credit/balance:
+    $ref: ../controlplane-openapi/paths/credits.yaml#/~1iudx~1v2~1auth~1user~1credit~1balance
+  /iudx/v2/auth/admin/user/credit/balance/{id}:
+    $ref: ../controlplane-openapi/paths/credits.yaml#/~1iudx~1v2~1auth~1admin~1user~1credit~1balance~1{id}
+  /iudx/v2/auth/user/credit/request:
+    $ref: ../controlplane-openapi/paths/credits.yaml#/~1iudx~1v2~1auth~1user~1credit~1request
+  /iudx/v2/auth/user/credit/request/{id}:
+    $ref: ../controlplane-openapi/paths/credits.yaml#/~1iudx~1v2~1auth~1user~1credit~1request~1{id}
+  /iudx/v2/auth/credit/request:
+    $ref: ../controlplane-openapi/paths/credits.yaml#/~1iudx~1v2~1auth~1credit~1request
+  /iudx/v2/auth/admin/user/credit/deduct:
+    $ref: ../controlplane-openapi/paths/credits.yaml#/~1iudx~1v2~1auth~1admin~1user~1credit~1deduct
+  /iudx/v2/auth/admin/user/credit/add:
+    $ref: ../controlplane-openapi/paths/credits.yaml#/~1iudx~1v2~1auth~1admin~1user~1credit~1add
+  /iudx/v2/auth/user/compute/requests/{id}:
+    $ref: ../controlplane-openapi/paths/credits.yaml#/~1iudx~1v2~1auth~1user~1compute~1requests~1{id}
+  /iudx/v2/auth/credit/request/report:
+    $ref: ../controlplane-openapi/paths/credits.yaml#/~1iudx~1v2~1auth~1credit~1request~1report
+  /iudx/v2/auth/delegation:
+    $ref: ../controlplane-openapi/paths/delegation.yaml#/~1iudx~1v2~1auth~1delegation
+  /iudx/v2/auth/delegation/delegate:
+    $ref: ../controlplane-openapi/paths/delegation.yaml#/~1iudx~1v2~1auth~1delegation~1delegate
+  /iudx/v2/auth/delegation/delegator:
+    $ref: ../controlplane-openapi/paths/delegation.yaml#/~1iudx~1v2~1auth~1delegation~1delegator
+  /iudx/v2/auth/delegation/{id}:
+    $ref: ../controlplane-openapi/paths/delegation.yaml#/~1iudx~1v2~1auth~1delegation~1{id}
+  /iudx/v2/cat/search:
+    $ref: ../controlplane-openapi/paths/discovery.yaml#/~1iudx~1v2~1cat~1search
+  /iudx/v2/cat/count:
+    $ref: ../controlplane-openapi/paths/discovery.yaml#/~1iudx~1v2~1cat~1count
+  /iudx/v2/cat/search/myassets:
+    $ref: ../controlplane-openapi/paths/discovery.yaml#/~1iudx~1v2~1cat~1search~1myassets
+  /iudx/v2/cat/list:
+    $ref: ../controlplane-openapi/paths/filters.yaml#/~1iudx~1v2~1cat~1list
+  /iudx/v2/user/interactions:
+    $ref: ../controlplane-openapi/paths/interactions.yaml#/~1iudx~1v2~1user~1interactions
+  /iudx/v2/user/interactions/sync:
+    $ref: ../controlplane-openapi/paths/interactions.yaml#/~1iudx~1v2~1user~1interactions~1sync
+  /iudx/v2/user/feedback:
+    $ref: ../controlplane-openapi/paths/interactions.yaml#/~1iudx~1v2~1user~1feedback
+  /iudx/v2/provider/feedback:
+    $ref: ../controlplane-openapi/paths/interactions.yaml#/~1iudx~1v2~1provider~1feedback
+  /iudx/v2/auth/kyc/verify:
+    $ref: ../controlplane-openapi/paths/kyc.yaml#/~1iudx~1v2~1auth~1kyc~1verify
+  /iudx/v2/auth/kyc/confirm/{id}:
+    $ref: ../controlplane-openapi/paths/kyc.yaml#/~1iudx~1v2~1auth~1kyc~1confirm~1{id}
+  /iudx/v2/auth/kyc/revoke:
+    $ref: ../controlplane-openapi/paths/kyc.yaml#/~1iudx~1v2~1auth~1kyc~1revoke
+  /iudx/v2/leaderboard/asset:
+    $ref: ../controlplane-openapi/paths/leaderboard.yaml#/~1iudx~1v2~1leaderboard~1asset
+  /iudx/v2/leaderboard/provider:
+    $ref: ../controlplane-openapi/paths/leaderboard.yaml#/~1iudx~1v2~1leaderboard~1provider
+  /iudx/v2/leaderboard/organization:
+    $ref: ../controlplane-openapi/paths/leaderboard.yaml#/~1iudx~1v2~1leaderboard~1organization
+  /iudx/v2/cat/organisation/asset:
+    $ref: ../controlplane-openapi/paths/org-assets.yaml#/~1iudx~1v2~1cat~1organisation~1asset
+  /iudx/v2/auth/organisations/requests:
+    $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1organisations~1requests
+  /iudx/v2/auth/organisations/requests/approve:
+    $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1organisations~1requests~1approve
+  /iudx/v2/auth/user/organisations/requests:
+    $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1user~1organisations~1requests
+  /iudx/v2/auth/user/organisations/requests/{id}:
+    $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1user~1organisations~1requests~1{id}
+  /iudx/v2/auth/user/organisations/join_requests:
+    $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1user~1organisations~1join_requests
+  /iudx/v2/auth/user/organisations/join_requests/{id}:
+    $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1user~1organisations~1join_requests~1{id}
+  /iudx/v2/auth/organisations/{id}/join_requests:
+    $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1organisations~1{id}~1join_requests
+  /iudx/v2/auth/organisations/{org_id}/join_requests/{req_id}:
+    $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1organisations~1{org_id}~1join_requests~1{req_id}
+  /iudx/v2/auth/organisation/join-request/{id}:
+    $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1organisation~1join-request~1{id}
+  /iudx/v2/auth/organisations:
+    $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1organisations
+  /iudx/v2/auth/organisations/{id}:
+    $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1organisations~1{id}
+  /iudx/v2/auth/organisations/{id}/users:
+    $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1organisations~1{id}~1users
+  /iudx/v2/auth/organization/user/provider_requests:
+    $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1organization~1user~1provider_requests
+  /iudx/v2/auth/organization/user/provider-requests/{id}:
+    $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1organization~1user~1provider-requests~1{id}
+  /iudx/v2/auth/organization/user/provider_role/requests:
+    $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1organization~1user~1provider_role~1requests
+  /iudx/v2/auth/organization/user/provider_role/requests/{id}:
+    $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1organization~1user~1provider_role~1requests~1{id}
+  /iudx/v2/auth/organization/user/provider:
+    $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1organization~1user~1provider
+  /iudx/v2/auth/organisations/requests/report:
+    $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1organisations~1requests~1report
+  /iudx/v2/auth/organisations/report:
+    $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1organisations~1report
+  /iudx/v2/auth/organisations/{id}/join_requests/report:
+    $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1organisations~1{id}~1join_requests~1report
+  /iudx/v2/auth/organization/user/provider_role/requests/report:
+    $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1organization~1user~1provider_role~1requests~1report
+  /iudx/v2/cat/getAllAssets:
+    $ref: ../controlplane-openapi/paths/platform-assets.yaml#/~1iudx~1v2~1cat~1getAllAssets
+  /iudx/v2/resource_servers:
+    $ref: ../controlplane-openapi/paths/resource-servers.yaml#/~1iudx~1v2~1resource_servers
+  /iudx/v2/resource_servers/{id}:
+    $ref: ../controlplane-openapi/paths/resource-servers.yaml#/~1iudx~1v2~1resource_servers~1{id}
+  /iudx/v2/auth/organisations/{id}/users/{user_id}:
+    $ref: ../controlplane-openapi/paths/roles.yaml#/~1iudx~1v2~1auth~1organisations~1{id}~1users~1{user_id}
+  /iudx/v2/auth/user/custom/role:
+    $ref: ../controlplane-openapi/paths/roles.yaml#/~1iudx~1v2~1auth~1user~1custom~1role
+  /auth/v2/custom-role/requester:
+    $ref: ../controlplane-openapi/paths/roles.yaml#/~1auth~1v2~1custom-role~1requester
+  /iudx/v2/auth/user:
+    $ref: ../controlplane-openapi/paths/roles.yaml#/~1iudx~1v2~1auth~1user
+  /iudx/v2/auth/user/password:
+    $ref: ../controlplane-openapi/paths/roles.yaml#/~1iudx~1v2~1auth~1user~1password
+  /iudx/v2/auth/admin/user/{id}:
+    $ref: ../controlplane-openapi/paths/roles.yaml#/~1iudx~1v2~1auth~1admin~1user~1{id}
+  /iudx/v2/auth/admin/user:
+    $ref: ../controlplane-openapi/paths/roles.yaml#/~1iudx~1v2~1auth~1admin~1user
+  /iudx/v2/auth/user/basic:
+    $ref: ../controlplane-openapi/paths/roles.yaml#/~1iudx~1v2~1auth~1user~1basic
+  /iudx/v2/auth/user/update:
+    $ref: ../controlplane-openapi/paths/roles.yaml#/~1iudx~1v2~1auth~1user~1update
+  /iudx/v2/auth/admin/{id}/update:
+    $ref: ../controlplane-openapi/paths/roles.yaml#/~1iudx~1v2~1auth~1admin~1{id}~1update
+  /iudx/v2/auth/user/delete:
+    $ref: ../controlplane-openapi/paths/roles.yaml#/~1iudx~1v2~1auth~1user~1delete
+  /iudx/v2/auth/user/description/info:
+    $ref: ../controlplane-openapi/paths/roles.yaml#/~1iudx~1v2~1auth~1user~1description~1info
+  /iudx/v2/subscriptions:
+    $ref: ../controlplane-openapi/paths/subscriptions.yaml#/~1iudx~1v2~1subscriptions
+  /iudx/v2/subscriptions/{subscriptionId}:
+    $ref: ../controlplane-openapi/paths/subscriptions.yaml#/~1iudx~1v2~1subscriptions~1{subscriptionId}
+  /iudx/v2/dashboard/usage-summary:
+    $ref: ../controlplane-openapi/paths/summary.yaml#/~1iudx~1v2~1dashboard~1usage-summary
+  /iudx/v2/central/cat/list:
+    $ref: paths/central-catalogue.yaml#/~1iudx~1v2~1central~1cat~1list
+  /iudx/v2/central/cat/search:
+    $ref: paths/central-catalogue.yaml#/~1iudx~1v2~1central~1cat~1search
+  /iudx/v2/central/cat/count:
+    $ref: paths/central-catalogue.yaml#/~1iudx~1v2~1central~1cat~1count
+components:
+  securitySchemes:
+    $ref: ../controlplane-openapi/components/security-schemes.yaml
+  parameters:
+    UserIdParam:
+      $ref: ../controlplane-openapi/components/parameters.yaml#/UserIdParam
+    AssetTypeParam:
+      $ref: ../controlplane-openapi/components/parameters.yaml#/AssetTypeParam
+    SandboxTypeParam:
+      $ref: ../controlplane-openapi/components/parameters.yaml#/SandboxTypeParam
+    AssetAccessPolicyParam:
+      $ref: ../controlplane-openapi/components/parameters.yaml#/AssetAccessPolicyParam
+    RoleParam:
+      $ref: ../controlplane-openapi/components/parameters.yaml#/RoleParam
+    ActionParam:
+      $ref: ../controlplane-openapi/components/parameters.yaml#/ActionParam
+    LogTypeParam:
+      $ref: ../controlplane-openapi/components/parameters.yaml#/LogTypeParam
+    OrganizationIdParam:
+      $ref: ../controlplane-openapi/components/parameters.yaml#/OrganizationIdParam
+    PageParam:
+      $ref: ../controlplane-openapi/components/parameters.yaml#/PageParam
+    SizeParam:
+      $ref: ../controlplane-openapi/components/parameters.yaml#/SizeParam
+    SizeParamReport:
+      $ref: ../controlplane-openapi/components/parameters.yaml#/SizeParamReport
+    SortingParam:
+      $ref: ../controlplane-openapi/components/parameters.yaml#/SortingParam
+    TimeParam:
+      $ref: ../controlplane-openapi/components/parameters.yaml#/TimeParam
+    EndTimeParam:
+      $ref: ../controlplane-openapi/components/parameters.yaml#/EndTimeParam
+    TimeRelParam:
+      $ref: ../controlplane-openapi/components/parameters.yaml#/TimeRelParam
+    OrgNameParam:
+      $ref: ../controlplane-openapi/components/parameters.yaml#/OrgNameParam
+    EntityTypeParam:
+      $ref: ../controlplane-openapi/components/parameters.yaml#/EntityTypeParam
+    OrgSectorParam:
+      $ref: ../controlplane-openapi/components/parameters.yaml#/OrgSectorParam
+    StatusParam:
+      $ref: ../controlplane-openapi/components/parameters.yaml#/StatusParam
+  schemas:
+    AssetSummary:
+      $ref: ../controlplane-openapi/components/schemas/access.yaml#/AssetSummary
+    AssetRequest:
+      $ref: ../controlplane-openapi/components/schemas/access.yaml#/AssetRequest
+    UpdateAccessRequest:
+      $ref: ../controlplane-openapi/components/schemas/access.yaml#/UpdateAccessRequest
+    AccessRequest:
+      $ref: ../controlplane-openapi/components/schemas/access.yaml#/AccessRequest
+    AppTokenRequest:
+      $ref: ../controlplane-openapi/components/schemas/app.yaml#/AppTokenRequest
+    PostAppIdRequest:
+      $ref: ../controlplane-openapi/components/schemas/app.yaml#/PostAppIdRequest
+    AppIdResponse:
+      $ref: ../controlplane-openapi/components/schemas/app.yaml#/AppIdResponse
+    AppIdResult:
+      $ref: ../controlplane-openapi/components/schemas/app.yaml#/AppIdResult
+    GetAppsSuccessResponse:
+      $ref: ../controlplane-openapi/components/schemas/app.yaml#/GetAppsSuccessResponse
+    AuditActivitySuccessResponse:
+      $ref: ../controlplane-openapi/components/schemas/auditing.yaml#/AuditActivitySuccessResponse
+    AuditActivityLogItem:
+      $ref: ../controlplane-openapi/components/schemas/auditing.yaml#/AuditActivityLogItem
+    Allqueue:
+      $ref: ../controlplane-openapi/components/schemas/catalogue.yaml#/Allqueue
+    AutocompleteFuzzyTextSearchRequest:
+      $ref: ../controlplane-openapi/components/schemas/catalogue.yaml#/AutocompleteFuzzyTextSearchRequest
+    SearchCriteriaRequest:
+      $ref: ../controlplane-openapi/components/schemas/catalogue.yaml#/SearchCriteriaRequest
+    TextSearchRequest:
+      $ref: ../controlplane-openapi/components/schemas/catalogue.yaml#/TextSearchRequest
+    ComplexSearchRequest:
+      $ref: ../controlplane-openapi/components/schemas/catalogue.yaml#/ComplexSearchRequest
+    SearchCriteria:
+      $ref: ../controlplane-openapi/components/schemas/catalogue.yaml#/SearchCriteria
+    SearchResponse:
+      $ref: ../controlplane-openapi/components/schemas/catalogue.yaml#/SearchResponse
+    AttributesBasedFilteringCount:
+      $ref: ../controlplane-openapi/components/schemas/catalogue.yaml#/AttributesBasedFilteringCount
+    TextOnly:
+      $ref: ../controlplane-openapi/components/schemas/catalogue.yaml#/TextOnly
+    ComplexRequestForCount:
+      $ref: ../controlplane-openapi/components/schemas/catalogue.yaml#/ComplexRequestForCount
+    TextFuzzyAuto:
+      $ref: ../controlplane-openapi/components/schemas/catalogue.yaml#/TextFuzzyAuto
+    DataBankResourceCreateResult:
+      $ref: ../controlplane-openapi/components/schemas/catalogue.yaml#/DataBankResourceCreateResult
+    dashboardUsageSummarySuccessResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/dashboardUsageSummarySuccessResponse
+    GenericBadRequestResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/GenericBadRequestResponse
+    createastreamingsubscriptionrequest:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/createastreamingsubscriptionrequest
+    createastreamingsubscriptionrequest2:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/createastreamingsubscriptionrequest2
+    createastreamingsubscriptionrequest3:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/createastreamingsubscriptionrequest3
+    createastreamingsubscriptionrequest4:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/createastreamingsubscriptionrequest4
+    createastreamingsubscriptionrequest5:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/createastreamingsubscriptionrequest5
+    standardResourceAlreadyExistErrorResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/standardResourceAlreadyExistErrorResponse
+    standardInvalidTokenErrorResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/standardInvalidTokenErrorResponse
+    registeradapter:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/registeradapter
+    registeradapterrequest:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/registeradapterrequest
+    retrieveadapter:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/retrieveadapter
+    deleteadapter:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/deleteadapter
+    generalResourceNotFoundErrorResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/generalResourceNotFoundErrorResponse
+    ingestionEntityRequest:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/ingestionEntityRequest
+    adapterIngestionEntities:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/adapterIngestionEntities
+    standardInvalidTokenErrorResponseAllQueueAndExcahnge:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/standardInvalidTokenErrorResponseAllQueueAndExcahnge
+    standardResourceNotFoundErrorResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/standardResourceNotFoundErrorResponse
+    asyncBadRequestErrorResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/asyncBadRequestErrorResponse
+    getNotificationNotFoundResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/getNotificationNotFoundResponse
+    createNotificationForbiddenResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/createNotificationForbiddenResponse
+    updateNotificationForbiddenResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/updateNotificationForbiddenResponse
+    reportGenerationForbiddenResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/reportGenerationForbiddenResponse
+    updateNotificationNotFound:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/updateNotificationNotFound
+    updateNotificationBadRequest:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/updateNotificationBadRequest
+    reportGenerationBadRequest:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/reportGenerationBadRequest
+    updateNotificationConflict:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/updateNotificationConflict
+    getNotificationForbiddenResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/getNotificationForbiddenResponse
+    createNotificationSuccessResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/createNotificationSuccessResponse
+    checkAccessRequestSuccessResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/checkAccessRequestSuccessResponse
+    createNotificationResourceNotFoundResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/createNotificationResourceNotFoundResponse
+    checkAccessRequestNotFoundResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/checkAccessRequestNotFoundResponse
+    createNotificationForbidden:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/createNotificationForbidden
+    createNotificationConflictResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/createNotificationConflictResponse
+    getPolicySuccessResponseWithResourceType:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/getPolicySuccessResponseWithResourceType
+    getPolicySuccessResponseWithResourceGroup:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/getPolicySuccessResponseWithResourceGroup
+    deleteNotificationForbiddenResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/deleteNotificationForbiddenResponse
+    deleteNotificationNotFound:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/deleteNotificationNotFound
+    deleteNotificationBadRequest:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/deleteNotificationBadRequest
+    deleteNotification:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/deleteNotification
+    deletePolicy:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/deletePolicy
+    deletePolicyInvalidUserResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/deletePolicyInvalidUserResponse
+    getPolicyInvalidUserResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/getPolicyInvalidUserResponse
+    updateNotificationInvalidUserResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/updateNotificationInvalidUserResponse
+    policyNotFound:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/policyNotFound
+    deletePolicyErrorResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/deletePolicyErrorResponse
+    deletePolicyNotFoundErrorResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/deletePolicyNotFoundErrorResponse
+    Unauthorized:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/Unauthorized
+    createPolicyBadRequest:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/createPolicyBadRequest
+    createPolicyForbidden:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/createPolicyForbidden
+    createPolicySuccessResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/createPolicySuccessResponse
+    conflictResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/conflictResponse
+    generalBadRequest:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/generalBadRequest
+    name:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/name
+    user:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/user
+    owner:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/owner
+    item:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/item
+    requestBodyForVerify:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/requestBodyForVerify
+    successResponseWithObjects:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseWithObjects
+    successResponseForCount:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForCount
+    errorResponseForDiscovery:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/errorResponseForDiscovery
+    successResponseForGeoLocations:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForGeoLocations
+    listInstances:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/listInstances
+    ErrorResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/ErrorResponse
+    invalidIdErrorResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/invalidIdErrorResponse
+    errorResponseForGetEntity:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/errorResponseForGetEntity
+    exampleEntityWIdAIModel:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/exampleEntityWIdAIModel
+    exampleEntityWIdDataBankResource:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/exampleEntityWIdDataBankResource
+    successResponseForCreateAIModelEntity:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForCreateAIModelEntity
+    successResponseForCreateDataBankResourceEntity:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForCreateDataBankResourceEntity
+    successResponseForCreatePotentialAppsEntity:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForCreatePotentialAppsEntity
+    successResponseForUpdateAIModelEntity:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForUpdateAIModelEntity
+    successResponseForUpdateDataBankEntity:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForUpdateDataBankEntity
+    successResponseForUpdateAdexAppsEntity:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForUpdateAdexAppsEntity
+    successResponseForGetAIModelEntity:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForGetAIModelEntity
+    successResponseForGetDataBankEntity:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForGetDataBankEntity
+    successResponseForGetAdexAppsEntity:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForGetAdexAppsEntity
+    successResponseForGetAIModelEntityWithAccess:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForGetAIModelEntityWithAccess
+    successResponseForGetDataBankEntityWithAccess:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForGetDataBankEntityWithAccess
+    successResponseForGetAdexAppsEntityWithAccess:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForGetAdexAppsEntityWithAccess
+    successResponseForAutocompleteFuzzyTextSearch:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForAutocompleteFuzzyTextSearch
+    successResponseForComplexSearch:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForComplexSearch
+    successResponseForFlattenedTermSearch:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForFlattenedTermSearch
+    successResponseForSearchByItemType:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForSearchByItemType
+    successResponseForRangeSearch:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForRangeSearch
+    successResponseForTemporalSearch:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForTemporalSearch
+    successResponseForMyAssetsTextSearch:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForMyAssetsTextSearch
+    successResponseForMyAssetsComplexSearch:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForMyAssetsComplexSearch
+    successResponseForMyAssetsFlattenedTermSearch:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForMyAssetsFlattenedTermSearch
+    successResponseForMyAssetsRangeSearch:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForMyAssetsRangeSearch
+    successResponseForMyAssetsTemporalSearch:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForMyAssetsTemporalSearch
+    successResponseForMyAssetsItemTypeSearch:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/successResponseForMyAssetsItemTypeSearch
+    errorInvalidSchema:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/errorInvalidSchema
+    errorInvalidSchema2:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/errorInvalidSchema2
+    errorInvalidUUID:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/errorInvalidUUID
+    errorInvalidLinks:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/errorInvalidLinks
+    errorResponseWithObjects:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/errorResponseWithObjects
+    updateItemNotFound:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/updateItemNotFound
+    exampleEntityAIModel:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/exampleEntityAIModel
+    exampleEntityDataBank:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/exampleEntityDataBank
+    exampleEntityPotentialApps:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/exampleEntityPotentialApps
+    unAuthorizedAccess:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/unAuthorizedAccess
+    forbiddenAccess:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/forbiddenAccess
+    invalidResponseForWrongLimitValues:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/invalidResponseForWrongLimitValues
+    invalidResponseForWrongOffsetValues:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/invalidResponseForWrongOffsetValues
+    UnauthorizedResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/UnauthorizedResponse
+    ForbiddenResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/ForbiddenResponse
+    BadRequestResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/BadRequestResponse
+    InternalServerErrorResponse:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/InternalServerErrorResponse
+    Success:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/Success
+    BadRequest:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/BadRequest
+    Forbidden:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/Forbidden
+    NotFound:
+      $ref: ../controlplane-openapi/components/schemas/common.yaml#/NotFound
+    DelegationRole:
+      $ref: ../controlplane-openapi/components/schemas/delegation.yaml#/DelegationRole
+    DelegationScope:
+      $ref: ../controlplane-openapi/components/schemas/delegation.yaml#/DelegationScope
+    DelegationEntityType:
+      $ref: ../controlplane-openapi/components/schemas/delegation.yaml#/DelegationEntityType
+    UserInteractionRequest:
+      $ref: ../controlplane-openapi/components/schemas/interaction.yaml#/UserInteractionRequest
+    InteractionResponse:
+      $ref: ../controlplane-openapi/components/schemas/interaction.yaml#/InteractionResponse
+    UserFeedbackRequest:
+      $ref: ../controlplane-openapi/components/schemas/interaction.yaml#/UserFeedbackRequest
+    UserFeedbackPaginatedResponse:
+      $ref: ../controlplane-openapi/components/schemas/interaction.yaml#/UserFeedbackPaginatedResponse
+    ProviderFeedbackPaginatedResponse:
+      $ref: ../controlplane-openapi/components/schemas/interaction.yaml#/ProviderFeedbackPaginatedResponse
+    PostItemVoteRequest:
+      $ref: ../controlplane-openapi/components/schemas/interaction.yaml#/PostItemVoteRequest
+    ItemVoteResponse:
+      $ref: ../controlplane-openapi/components/schemas/interaction.yaml#/ItemVoteResponse
+    PostBookmarkRequest:
+      $ref: ../controlplane-openapi/components/schemas/interaction.yaml#/PostBookmarkRequest
+    BookmarkResponse:
+      $ref: ../controlplane-openapi/components/schemas/interaction.yaml#/BookmarkResponse
+    BulkSyncFailure:
+      $ref: ../controlplane-openapi/components/schemas/interaction.yaml#/BulkSyncFailure
+    BulkSyncResult:
+      $ref: ../controlplane-openapi/components/schemas/interaction.yaml#/BulkSyncResult
+    UserInteractionSyncResponse:
+      $ref: ../controlplane-openapi/components/schemas/interaction.yaml#/UserInteractionSyncResponse
+    UserInteractionResponse:
+      $ref: ../controlplane-openapi/components/schemas/interaction.yaml#/UserInteractionResponse
+    UserInteractionState:
+      $ref: ../controlplane-openapi/components/schemas/interaction.yaml#/UserInteractionState
+    BookmarkResult:
+      $ref: ../controlplane-openapi/components/schemas/interaction.yaml#/BookmarkResult
+    GetBookmarksSuccessResponse:
+      $ref: ../controlplane-openapi/components/schemas/interaction.yaml#/GetBookmarksSuccessResponse
+    BookmarkSuccessResult:
+      $ref: ../controlplane-openapi/components/schemas/interaction.yaml#/BookmarkSuccessResult
+    LeaderBoardResponseAsset:
+      $ref: ../controlplane-openapi/components/schemas/leaderboard.yaml#/LeaderBoardResponseAsset
+    LeaderBoardProvider:
+      $ref: ../controlplane-openapi/components/schemas/leaderboard.yaml#/LeaderBoardProvider
+    LeaderBoardOrg:
+      $ref: ../controlplane-openapi/components/schemas/leaderboard.yaml#/LeaderBoardOrg
+    PaginationInfo:
+      $ref: ../controlplane-openapi/components/schemas/pagination.yaml#/PaginationInfo
+    PaginationInfoResponse:
+      $ref: ../controlplane-openapi/components/schemas/pagination.yaml#/PaginationInfoResponse
+    GetPaginationInfo:
+      $ref: ../controlplane-openapi/components/schemas/pagination.yaml#/GetPaginationInfo
+    PageInfo:
+      $ref: ../controlplane-openapi/components/schemas/pagination.yaml#/PageInfo
+    ResourceServer:
+      $ref: ../controlplane-openapi/components/schemas/resource-server.yaml#/ResourceServer
+    ResourceServerCreateRequest:
+      $ref: ../controlplane-openapi/components/schemas/resource-server.yaml#/ResourceServerCreateRequest
+    ResourceServerResponse:
+      $ref: ../controlplane-openapi/components/schemas/resource-server.yaml#/ResourceServerResponse
+    CustomRoleResponse:
+      $ref: ../controlplane-openapi/components/schemas/role.yaml#/CustomRoleResponse
+    CustomRoleItem:
+      $ref: ../controlplane-openapi/components/schemas/role.yaml#/CustomRoleItem
+    NgsiLdSubscriptionResponse:
+      $ref: ../controlplane-openapi/components/schemas/subscription.yaml#/NgsiLdSubscriptionResponse
+    NgsiLdSubscriptionErrorResponse400:
+      $ref: ../controlplane-openapi/components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse400
+    NgsiLdSubscriptionErrorResponse404:
+      $ref: ../controlplane-openapi/components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse404
+    NgsiLdSubscriptionErrorResponse401:
+      $ref: ../controlplane-openapi/components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse401
+    NgsiLdSubscriptionErrorResponse409:
+      $ref: ../controlplane-openapi/components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse409
+    NgsiLdSubscriptionErrorResponse500:
+      $ref: ../controlplane-openapi/components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse500

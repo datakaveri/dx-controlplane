@@ -18,7 +18,7 @@
         <jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
         <guava.version>33.0.0-jre</guava.version>
         <checkstyle.version>10.14.0</checkstyle.version>
-        <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-shade-plugin.version>3.5.2</maven-shade-plugin.version>
         <maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
         <exec-maven-plugin.version>3.2.0</exec-maven-plugin.version>
@@ -27,7 +27,7 @@
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
         <restassured.version>5.4.0</restassured.version>
         <openjdk.version>21</openjdk.version>
-        <keycloak.version>24.0.4</keycloak.version>
+        <keycloak.version>26.0.0</keycloak.version>
         <elastic-search-rest-client>8.17.3</elastic-search-rest-client>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <exec.mainClass>org.cdpg.dx.deploy.Deployer</exec.mainClass>
@@ -45,7 +45,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <!--  log4j2 bom to keep org.apache.logging.log4j artifacts version in sync -->
+            <!--  log4j2 bom to keep the org.apache.logging.log4j artifacts ho version in sync -->
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-bom</artifactId>
@@ -56,7 +56,23 @@
         </dependencies>
     </dependencyManagement>
 
+    <!-- git repo -->
+ <!--   <repositories>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/datakaveri/dx-common</url>
+        </repository>
+    </repositories>-->
+
     <dependencies>
+        <!-- DX Common shared module -->
+        <dependency>
+            <groupId>org.cdpg.dx</groupId>
+            <artifactId>dx-common</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
+
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-codegen</artifactId>
@@ -71,11 +87,11 @@
             <artifactId>json</artifactId>
             <version>20180813</version>
         </dependency>
-        <dependency>
+        <!--<dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-rabbitmq-client</artifactId>
             <version>${vertx.version}</version>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-service-discovery</artifactId>
@@ -124,11 +140,11 @@
             <artifactId>vertx-junit5</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
+       <!-- <dependency>
             <artifactId>keycloak-admin-client</artifactId>
             <groupId>org.keycloak</groupId>
             <version>${keycloak.version}</version>
-        </dependency>
+        </dependency>-->
         <!-- need bouncy castle for EC key parsing by nimbus-jose-jwt -->
         <dependency>
             <groupId>com.nimbusds</groupId>
@@ -160,7 +176,7 @@
             <version>42.7.2</version>
         </dependency>
 
-        <dependency>
+      <!--  <dependency>
             <groupId>org.elasticsearch.client</groupId>
             <artifactId>elasticsearch-rest-client</artifactId>
             <version>${elastic-search-rest-client}</version>
@@ -170,7 +186,7 @@
             <groupId>co.elastic.clients</groupId>
             <artifactId>elasticsearch-java</artifactId>
             <version>${elastic-search-rest-client}</version>
-        </dependency>
+        </dependency>-->
 
         <!-- Packages for Vertx metrics through micrometer  -->
         <dependency>
@@ -305,6 +321,42 @@
             <artifactId>jakarta.ws.rs-api</artifactId>
             <version>3.1.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>3.25.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>elasticsearch</artifactId>
+            <version>1.19.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.dasniko</groupId>
+            <artifactId>testcontainers-keycloak</artifactId>
+            <version>3.4.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>rabbitmq</artifactId>
+            <version>1.19.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <version>9.22.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <version>4.2.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -405,7 +457,7 @@
                             <includes>
                                 <include>**/*IT.java</include>
                             </includes>
-                            <argLine>--enable-preview</argLine>
+                            <argLine>-Dnet.bytebuddy.experimental=true --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED</argLine>
                         </configuration>
                     </execution>
                 </executions>
@@ -607,7 +659,7 @@
                     <excludes>
                         <exclude>**/*IT.java</exclude>
                     </excludes>
-                    <argLine>--enable-preview</argLine>
+                    <argLine>-Dnet.bytebuddy.experimental=true --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED</argLine>
                 </configuration>
             </plugin>
             <plugin>
@@ -615,14 +667,21 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler-plugin.version}</version>
                 <configuration>
-                    <source>${openjdk.version}</source>
-                    <target>${openjdk.version}</target>
-                    <compilerArgs>
-                        <arg>--enable-preview</arg>
-                    </compilerArgs>
-                    <annotationProcessors>
-                        <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
-                    </annotationProcessors>
+                    <release>${openjdk.version}</release>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>io.vertx</groupId>
+                            <artifactId>vertx-codegen</artifactId>
+                            <version>${vertx.version}</version>
+                            <classifier>processor</classifier>
+                        </path>
+                        <path>
+                            <groupId>io.vertx</groupId>
+                            <artifactId>vertx-service-proxy</artifactId>
+                            <version>${vertx.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                   <!-- <generatedSourcesDirectory>${project.basedir}/src/main/generated</generatedSourcesDirectory>-->
                 </configuration>
             </plugin>
         </plugins>

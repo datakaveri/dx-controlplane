@@ -1,0 +1,265 @@
+LeaderBoardResponseAsset:
+  type: object
+  required:
+  - type
+  - title
+  - result
+  properties:
+    type:
+      type: string
+      description: URN identifying the response category
+      example: urn:dx:ControlPlane:success
+    title:
+      type: string
+      description: Short response title
+      example: Success
+    result:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              rank:
+                type: integer
+              id:
+                type: string
+                format: uuid
+              name:
+                type: string
+              type:
+                type: string
+              shortDescription:
+                type: string
+              providerId:
+                type: string
+                format: uuid
+              organizationId:
+                type: string
+                format: uuid
+              organizationName:
+                type: string
+              downloads:
+                type: integer
+              likes:
+                type: integer
+              dislikes:
+                type: integer
+              views:
+                type: integer
+            required:
+            - rank
+            - id
+            - name
+        paginationInfo:
+          type: object
+          properties:
+            page:
+              type: integer
+            size:
+              type: integer
+            totalCount:
+              type: integer
+            totalPages:
+              type: integer
+            hasNext:
+              type: boolean
+            hasPrevious:
+              type: boolean
+  example:
+    type: urn:dx:ControlPlane:success
+    title: Success
+    result:
+    - rank: 1
+      id: ddddddd2-dddd-dddd-dddd-dddddddddddd
+      name: AI Model 2
+      type: AI_MODEL
+      shortDescription: AI Model entity 2
+      providerId: ccccccc1-cccc-cccc-cccc-ccccccccccc1
+      organizationId: bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbb1
+      organizationName: Org One
+      downloads: 1
+      likes: 0
+      dislikes: 4
+      views: 0
+    paginationInfo:
+      page: 1
+      size: 1
+      totalCount: 1
+      totalPages: 1
+      hasNext: false
+      hasPrevious: false
+LeaderBoardProvider:
+  type: object
+  required:
+  - type
+  - title
+  - result
+  properties:
+    type:
+      type: string
+      description: URN identifying the response category
+      example: dx:controlPlane:success
+    title:
+      type: string
+      description: Short response title
+      example: Success
+    result:
+      type: array
+      items:
+        type: object
+        properties:
+          rank:
+            type: integer
+          id:
+            type: string
+            format: uuid
+          username:
+            type: string
+          organizationId:
+            type: string
+            format: uuid
+          organizationName:
+            type: string
+          publishedDatabank:
+            type: integer
+          publishedAiModels:
+            type: integer
+          publishedUsecases:
+            type: integer
+          totalPublished:
+            type: integer
+          downloads:
+            type: integer
+          likes:
+            type: integer
+          dislikes:
+            type: integer
+        required:
+        - rank
+        - id
+        - username
+    paginationInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+        size:
+          type: integer
+        totalCount:
+          type: integer
+        totalPages:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrevious:
+          type: boolean
+  example:
+    type: dx:controlPlane:success
+    title: Success
+    result:
+    - rank: 1
+      id: ccccccc1-cccc-cccc-cccc-ccccccccccc1
+      username: provider name
+      organizationId: bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbb1
+      organizationName: Org One
+      publishedDatabank: 1
+      publishedAiModels: 1
+      publishedUsecases: 0
+      totalPublished: 2
+      downloads: 2
+      likes: 8
+      dislikes: 4
+    paginationInfo:
+      page: 1
+      size: 1
+      totalCount: 3
+      totalPages: 3
+      hasNext: true
+      hasPrevious: false
+LeaderBoardOrg:
+  type: object
+  required:
+  - type
+  - title
+  - result
+  properties:
+    type:
+      type: string
+      description: URN identifying the response category
+      example: dx:controlPlane:success
+    title:
+      type: string
+      description: Short response title
+      example: Success
+    result:
+      type: array
+      items:
+        type: object
+        properties:
+          rank:
+            type: integer
+          id:
+            type: string
+            format: uuid
+            description: Organization ID
+          organizationName:
+            type: string
+          members:
+            type: integer
+          publishedDatabanks:
+            type: integer
+          publishedAiModels:
+            type: integer
+          publishedUsecases:
+            type: integer
+          totalPublished:
+            type: integer
+          downloads:
+            type: integer
+          likes:
+            type: integer
+          dislikes:
+            type: integer
+        required:
+        - rank
+        - id
+        - organizationName
+    paginationInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+        size:
+          type: integer
+        totalCount:
+          type: integer
+        totalPages:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrevious:
+          type: boolean
+  example:
+    type: dx:controlPlane:success
+    title: Success
+    result:
+    - rank: 1
+      id: bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbb1
+      organizationName: Org One
+      members: 0
+      publishedDatabanks: 1
+      publishedAiModels: 2
+      publishedUsecases: 0
+      totalPublished: 3
+      downloads: 2
+      likes: 8
+      dislikes: 4
+    paginationInfo:
+      page: 1
+      size: 1
+      totalCount: 2
+      totalPages: 2
+      hasNext: true
+      hasPrevious: false

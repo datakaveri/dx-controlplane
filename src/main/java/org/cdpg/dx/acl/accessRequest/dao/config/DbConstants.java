@@ -26,6 +26,7 @@ public class DbConstants {
   public static final String DB_EXPIRY_AT = "expiry_at";
   public static final String DB_ASSET_ORGANIZATION_ID = "item_organization_id";
   public static final String DB_SHORT_DESCRIPTION = "short_description";
+  public static final String ORGANIZATION = "organization";
   public static final String DB_CREATED_AT = "created_at";
   public static final String DB_UPDATED_AT = "updated_at";
   public static final String REQUEST_TABLE = "request";

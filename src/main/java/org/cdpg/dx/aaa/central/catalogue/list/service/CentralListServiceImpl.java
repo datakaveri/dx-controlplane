@@ -7,18 +7,19 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.common.ResponseModel;
 import org.cdpg.dx.common.exception.DxBadRequestException;
-import org.cdpg.dx.database.elastic.central.service.CentralElasticsearchService;
+import org.cdpg.dx.database.elastic.model.ElasticsearchSearchResult;
 import org.cdpg.dx.database.elastic.model.QueryDecoder;
 import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
 import org.cdpg.dx.database.elastic.model.QueryModel;
+import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 
 public class CentralListServiceImpl implements CentralListService {
   private static final Logger LOGGER = LogManager.getLogger(CentralListServiceImpl.class);
   private final QueryDecoder queryDecoder;
-  CentralElasticsearchService centralElasticsearchService;
+  ElasticsearchService centralElasticsearchService;
   String docIndex;
 
-  public CentralListServiceImpl(CentralElasticsearchService centralElasticsearchService, String docIndex) {
+  public CentralListServiceImpl(ElasticsearchService centralElasticsearchService, String docIndex) {
     this.centralElasticsearchService = centralElasticsearchService;
     this.queryDecoder = new QueryDecoder();
     this.docIndex = docIndex;
@@ -35,7 +36,9 @@ public class CentralListServiceImpl implements CentralListService {
     QueryModel queryModel = queryDecoder.listMultipleItemTypesQuery(queryDecoderRequestDTO);
     return centralElasticsearchService
         .search(docIndex, queryModel, AGGREGATION_LIST)
-        .map(ResponseModel::new)
+        .map(
+            searchResult ->
+                new ResponseModel(searchResult.getResults(), searchResult.getAggregations()))
         .onFailure(err -> LOGGER.error(new DxBadRequestException(err.getMessage())));
   }
 }

@@ -1,10 +1,8 @@
 package org.cdpg.dx.aaa.credit.service;
 
-import co.elastic.clients.elasticsearch.ingest.Local;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
-import jakarta.ws.rs.ForbiddenException;
 import org.cdpg.dx.aaa.credit.dao.*;
 import org.cdpg.dx.aaa.credit.models.*;
 import org.cdpg.dx.aaa.organization.config.Constants;
@@ -12,6 +10,7 @@ import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.request.PaginatedRequest;
+import org.cdpg.dx.common.util.ServiceErrorHelper;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.slf4j.Logger;
@@ -105,13 +104,7 @@ public class CreditServiceImpl implements CreditService {
           return Future.succeededFuture(null); // No transaction needed
         }
         return processCreditGrant(requestId, transactedBy, amount, expirationDate);
-      }).recover(err -> {
-        BaseDxException dxEx = BaseDxException.from(err);
-        if (dxEx instanceof NoRowFoundException) {
-          return Future.failedFuture(new DxNotFoundException("No request found with given ID", dxEx));
-        }
-        return Future.failedFuture(dxEx);
-      });
+      }).recover(ServiceErrorHelper.mapNotFound("No request found with given ID"));
 
     });
   }
@@ -167,7 +160,7 @@ public class CreditServiceImpl implements CreditService {
   public Future<CreditTransaction> addCredits(CreditTransaction creditTransaction)
   {
     LocalDateTime reqAt = creditTransaction.requestedAt();
-    System.out.println("Request at: " + reqAt);
+    LOGGER.debug("Processing credit transaction at: {}", reqAt);
     UUID userId = creditTransaction.userId();
 
     if (creditTransaction.amount() == null) {
@@ -205,19 +198,13 @@ public class CreditServiceImpl implements CreditService {
 
         });
       });
-    }).recover(err -> {
-      BaseDxException dxEx = BaseDxException.from(err);
-      if (dxEx instanceof NoRowFoundException) {
-        return Future.failedFuture(new DxNotFoundException("User entry not found", dxEx));
-      }
-      return Future.failedFuture(dxEx);
-    });
+    }).recover(ServiceErrorHelper.mapNotFound("User entry not found"));
   }
 
   @Override
   public Future<CreditTransaction> deductCredits(CreditTransaction creditTransaction) {
     LocalDateTime reqAt = creditTransaction.requestedAt();
-    System.out.println("Request at: " + reqAt);
+    LOGGER.debug("Processing credit transaction at: {}", reqAt);
     UUID userId = creditTransaction.userId();
 
     if (creditTransaction.amount() == null) {
@@ -258,13 +245,7 @@ public class CreditServiceImpl implements CreditService {
           return creditTransactionDAO.create(transaction);
         });
       });
-    }).recover(err -> {
-      BaseDxException dxEx = BaseDxException.from(err);
-      if (dxEx instanceof NoRowFoundException) {
-        return Future.failedFuture(new DxNotFoundException("User or balance entry not found", dxEx));
-      }
-      return Future.failedFuture(dxEx);
-    });
+    }).recover(ServiceErrorHelper.mapNotFound("User or balance entry not found"));
   }
 
   @Override
@@ -335,13 +316,7 @@ public class CreditServiceImpl implements CreditService {
 
         return Future.succeededFuture(true);
       });
-    }).recover(err -> {
-      BaseDxException dxEx = BaseDxException.from(err);
-      if (dxEx instanceof NoRowFoundException) {
-        return Future.failedFuture(new DxNotFoundException("No matching requestId found in computeRole table", dxEx));
-      }
-      return Future.failedFuture(dxEx);
-    });
+    }).recover(ServiceErrorHelper.mapNotFound("No matching requestId found in computeRole table"));
   }
 
   @Override
@@ -397,26 +372,14 @@ public class CreditServiceImpl implements CreditService {
   public Future<ComputeRole> getComputeRequestById(UUID requestId)
   {
     return computeRoleDAO.get(requestId)
-      .recover(err -> {
-        BaseDxException dxEx = BaseDxException.from(err);
-        if (dxEx instanceof NoRowFoundException) {
-          return Future.failedFuture(new DxNotFoundException("No matching requestId found in computeRole table", dxEx));
-        }
-        return Future.failedFuture(dxEx);
-      });
+      .recover(ServiceErrorHelper.mapNotFound("No matching requestId found in computeRole table"));
   }
 
   @Override
   public Future<CreditRequest> getCreditRequestById(UUID requestId)
   {
     return creditRequestDAO.get(requestId)
-      .recover(err -> {
-        BaseDxException dxEx = BaseDxException.from(err);
-        if (dxEx instanceof NoRowFoundException) {
-          return Future.failedFuture(new DxNotFoundException("No matching requestId found in creditRequest table", dxEx));
-        }
-        return Future.failedFuture(dxEx);
-      });
+      .recover(ServiceErrorHelper.mapNotFound("No matching requestId found in creditRequest table"));
   }
 
 
@@ -451,13 +414,7 @@ public class CreditServiceImpl implements CreditService {
         }));
       }
       return CompositeFuture.all(futures);
-    }).recover(err -> {
-      BaseDxException dxEx = BaseDxException.from(err);
-      if (dxEx instanceof NoRowFoundException) {
-        return Future.failedFuture(new DxNotFoundException("No matching requestId found in credit Request table", dxEx));
-      }
-      return Future.failedFuture(dxEx);
-    });
+    }).recover(ServiceErrorHelper.mapNotFound("No matching requestId found in credit Request table"));
     return Future.succeededFuture(true);
   }
 
@@ -482,13 +439,7 @@ public class CreditServiceImpl implements CreditService {
         }));
       }
       return CompositeFuture.all(futures);
-    }).recover(err -> {
-      BaseDxException dxEx = BaseDxException.from(err);
-      if (dxEx instanceof NoRowFoundException) {
-        return Future.failedFuture(new DxNotFoundException("No matching requestId found in compute request table", dxEx));
-      }
-      return Future.failedFuture(dxEx);
-    });
+    }).recover(ServiceErrorHelper.mapNotFound("No matching requestId found in compute request table"));
     return Future.succeededFuture(true);
   }
 
@@ -534,13 +485,7 @@ public class CreditServiceImpl implements CreditService {
         }
         return Future.succeededFuture(userCredits.get(0)); // Return the first matching UserCredit
       })
-      .recover(err -> {
-        BaseDxException dxEx = BaseDxException.from(err);
-        if (dxEx instanceof NoRowFoundException) {
-          return Future.failedFuture(new DxNotFoundException("No matching userId found in userCredit table", dxEx));
-        }
-        return Future.failedFuture(dxEx);
-      });
+      .recover(ServiceErrorHelper.mapNotFound("No matching userId found in userCredit table"));
   }
 
   @Override

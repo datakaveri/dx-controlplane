@@ -1,0 +1,282 @@
+Allqueue:
+  title: Get All subscriptions
+  type: object
+  properties:
+    results:
+      description: An array of objects
+      type: array
+      items:
+        type: object
+  example:
+  - id: 04XX5967-addf-4e96-XXXX-dcfa16c3e83b
+    queue_name: 50e82XXb-7b2b-494a-XXXX-7fbed559965a/sub-deced3d5
+    entityid: f6f265dd-XXX6-4191-9b67-3b88904cd93e
+    expiryat: '2026-11-22T15:56:02.762135'
+    created_at: '2025-11-22T10:26:04.932798'
+    updated_at: '2025-11-22T10:26:04.932798'
+    user_id: 50e82XXb-7b2b-494a-XXXX-7fbed559965a
+    delegator_id: 04d45967-addf-4e96-a1fb-dcfa16c3e83b
+    provider_id: 04d45967-addf-4e96-a1fb-dcfa16c3e83b
+AutocompleteFuzzyTextSearchRequest:
+  type: object
+  additionalProperties: false
+  properties:
+    q:
+      type: string
+      description: The search query string for autocomplete.
+    fuzzy:
+      type: boolean
+      description: Enables fuzzy matching for the search query.
+    autoComplete:
+      type: boolean
+      description: Enables autocomplete suggestions.
+    filter:
+      type: array
+      items:
+        type: string
+      description: List of properties to include in the response (e.g., id, label, name, description, tags).
+  required:
+  - q
+  example:
+    q: sat
+    autoComplete: true
+    fuzzy: true
+    filter:
+    - id
+    - label
+    - name
+    - description
+    - tags
+SearchCriteriaRequest:
+  type: object
+  additionalProperties: false
+  properties:
+    searchCriteria:
+      type: array
+      items:
+        $ref: '#/SearchCriteria'
+    filter:
+      type: array
+      items:
+        type: string
+      description: List of fields to return
+  required:
+  - searchCriteria
+TextSearchRequest:
+  type: object
+  additionalProperties: false
+  properties:
+    q:
+      type: string
+      description: The search query string.
+    fuzzy:
+      type: boolean
+      description: Enables fuzzy matching.
+    autoComplete:
+      type: boolean
+      description: Enables autocomplete suggestions.
+  required:
+  - q
+ComplexSearchRequest:
+  type: object
+  additionalProperties: false
+  properties:
+    q:
+      type: string
+      description: The search query string.
+    fuzzy:
+      type: boolean
+      description: Enables fuzzy matching.
+    autoComplete:
+      type: boolean
+      description: Enables autocomplete suggestions.
+    searchCriteria:
+      type: array
+      items:
+        $ref: '#/SearchCriteria'
+      description: List of property-based search criteria.
+    filter:
+      type: array
+      items:
+        type: string
+      description: List of properties to include in the response (e.g., id, label, name, description, tags).
+  required:
+  - q
+  - searchCriteria
+SearchCriteria:
+  type: object
+  additionalProperties: false
+  required:
+  - field
+  - searchType
+  - values
+  properties:
+    field:
+      type: string
+      description: Name of the property to filter.
+    searchType:
+      type: string
+      enum:
+      - term
+      - flattenedTerm
+      - betweenTemporal
+      - beforeTemporal
+      - afterTemporal
+      - betweenRange
+      - beforeRange
+      - afterRange
+      description: "Type of search to apply. Valid types:\n- `term`: Exact match on keyword/text fields. Typically used for\
+        \ top-level fields like `tags`, `fileFormat`, or other catalog properties.\n- `flattenedTerm`: Exact match on fields\
+        \ stored as `flattened` type in\n               Elasticsearch mappings. Use this for matching inside JSON-like fields\n\
+        \               such as `resourceServer.url` or `resourceServer.name`, where the\n               property is indexed\
+        \ as a keyword without `.keyword` suffix.\n- betweenTemporal: ISO datetime range\n- beforeTemporal: Before datetime\n\
+        - afterTemporal: After datetime\n- betweenRange: Numeric range\n- beforeRange: Less than value\n- afterRange: Greater\
+        \ than value\n"
+    values:
+      type: array
+      items:
+        oneOf:
+        - type: string
+        - type: number
+      description: 'Values for the selected `searchType`. Required value format:
+
+        - `term`: One or more strings
+
+        - `flattenedTerm`: One or more strings (matching exact values in flattened fields)
+
+        - `betweenTemporal`: Two ISO date-time strings
+
+        - `beforeTemporal` / `afterTemporal`: One ISO date-time string
+
+        - `betweenRange`: Two numbers
+
+        - `beforeRange` / `afterRange`: One number
+
+        '
+SearchResponse:
+  type: object
+  properties:
+    type:
+      type: string
+      example: dx:controlPlane:success
+    title:
+      type: string
+      example: Success
+    result:
+      type: array
+      items:
+        type: object
+        description: Search result item.
+  required:
+  - type
+  - title
+  - result
+AttributesBasedFilteringCount:
+  type: object
+  additionalProperties: false
+  properties:
+    searchCriteria:
+      type: array
+      items:
+        $ref: '#/SearchCriteria'
+  required:
+  - searchCriteria
+TextOnly:
+  type: object
+  additionalProperties: false
+  properties:
+    q:
+      type: string
+      description: The search query string.
+  required:
+  - q
+  example:
+    q: text
+ComplexRequestForCount:
+  type: object
+  additionalProperties: true
+  properties:
+    q:
+      type: string
+      description: The search query string.
+    autoComplete:
+      type: boolean
+      description: Enables autocomplete suggestions.
+    searchCriteria:
+      type: array
+      items:
+        $ref: '#/SearchCriteria'
+      description: List of property-based search criteria.
+  required:
+  - q
+  - searchCriteria
+TextFuzzyAuto:
+  type: object
+  additionalProperties: false
+  properties:
+    q:
+      type: string
+      description: The search query string for autocomplete.
+    fuzzy:
+      type: boolean
+      description: Enables fuzzy matching for the search query.
+    autoComplete:
+      type: boolean
+      description: Enables autocomplete suggestions.
+  required:
+  - q
+  example:
+    q: sat
+    autoComplete: true
+    fuzzy: true
+DataBankResourceCreateResult:
+  type: object
+  description: Result payload for successful Data Bank Resource creation
+  required:
+  - itemId
+  - itemType
+  - itemName
+  - resourceServers
+  properties:
+    itemId:
+      type: string
+      format: uuid
+      description: Unique identifier of the created Data Bank Resource item
+    itemType:
+      type: array
+      description: Type tags from the ADeX vocabulary
+      items:
+        type: string
+        example: adex:DataBank
+    itemName:
+      type: string
+      description: Name of the Data Bank Resource item
+    resourceServers:
+      type: object
+      description: Resource server–specific provisioning details
+      additionalProperties:
+        type: object
+        required:
+        - data
+        properties:
+          data:
+            type: object
+            description: Resource server response payload
+            additionalProperties: true
+  example:
+    itemId: 8bc9543d-7474-4f18-87ba-6bab02ab47e3
+    itemType:
+    - adex:DataBank
+    itemName: Subdistrict Weather Information for Postman test
+    resourceServers:
+      NGSI-LD:
+        data:
+          username: 2f945b8d-0cc8-4c5d-9a3e-53fa88e6e9b2
+          apiKey: Use the apiKey returned on registration, if lost please use /resetPassword API
+          id: 8bc9543d-7474-4f18-87ba-6bab02ab47e3
+          URL: databroker.iudx.io
+          port: 24567
+          vHost: IUDX-V2
+      FILE:
+        data:
+          status: created

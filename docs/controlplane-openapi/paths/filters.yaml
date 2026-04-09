@@ -1,0 +1,208 @@
+/iudx/v2/cat/list:
+  post:
+    tags:
+    - List Available Filters
+    summary: List available filters values
+    description: "Retrieves the list of available filter values for specific indexed fields in the catalogue.\nThis API is\
+      \ used by user interfaces to populate dynamic filter dropdowns based on the\nselected entity type (e.g., `adex:DataBank`,\
+      \ `adex:AiModel`, `adex:Apps`).\n\nThe API supports:\n- Filtering by entity type using `searchCriteria` (e.g., `\"type\"\
+      : \"adex:DataBank\"`).\n- Returning only those filter values that are relevant to the selected entity type.\n- Returning\
+      \ UI-specific filters for each entity category:\n    - adex:DataBank → `concepts`, `tags`, `fileFormat`, `organizationType`,\
+      \ `accessPolicy`,\n                      `resourceServer.url`, `department`, `industry`\n    - adex:AiModel → `department`,\
+      \ `organizationType`, `industry`, `fileFormat`,\n                     `accessPolicy`, `modelType`\n    - adex:Apps →\
+      \ `department`, `organizationType`\n\nThe `filter` array determines which fields to return values for. Filters must\
+      \ be\nindexed fields in Elasticsearch and supported by the catalogue.\n"
+    operationId: listAvailableFilters
+    security:
+    - optionalAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            properties:
+              searchCriteria:
+                type: array
+                description: Criteria used to narrow down filters (e.g., type of entity).
+                items:
+                  type: object
+                  required:
+                  - searchType
+                  - field
+                  - values
+                  additionalProperties: false
+                  properties:
+                    searchType:
+                      type: string
+                      example: term
+                      description: The value should be 'term'.
+                    field:
+                      type: string
+                      example: type
+                      description: Indexed field name to filter by.
+                    values:
+                      type: array
+                      items:
+                        type: string
+                      example:
+                      - adex:DataBank
+              filter:
+                type: array
+                description: List of indexed fields for which values should be listed.
+                items:
+                  type: string
+                example:
+                - concepts
+                - tags
+                - fileFormat
+                - organizationType
+                - accessPolicy
+                - resourceServer.url
+                - organization
+                - industry
+    responses:
+      '200':
+        description: Success
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                results:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties:
+                      type: array
+                      items:
+                        type: string
+            examples:
+              DataBankFilters:
+                summary: Filter values for adex:DataBank
+                value:
+                  type: dx:controlPlane:success
+                  title: Success
+                  results:
+                  - concepts:
+                    - Mobility
+                    - Climate
+                    - Public Safety
+                  - tags:
+                    - Transport
+                    - Healthcare
+                    - Satellite
+                  - fileFormat:
+                    - csv
+                    - pdf
+                    - zip
+                  - organizationType:
+                    - Public
+                    - Private
+                    - Academic Institution
+                  - accessPolicy:
+                    - OPEN
+                    - RESTRICTED
+                  - resourceServer.url:
+                    - datakaveri.org
+                    - geoserver.gov
+                  - department:
+                    - Health
+                    - Industries
+                    - Environment
+                  - industry:
+                    - Agriculture
+                    - Transport
+                    - Healthcare
+              AiModelFilters:
+                summary: Filter values for adex:AiModel
+                value:
+                  type: dx:controlPlane:success
+                  title: Success
+                  results:
+                  - department:
+                    - IT
+                    - Health
+                  - organizationType:
+                    - Government
+                    - Private
+                  - industry:
+                    - Finance
+                    - Retail
+                  - fileFormat:
+                    - onnx
+                    - pickle
+                  - accessPolicy:
+                    - OPEN
+                    - RESTRICTED
+                  - modelType:
+                    - classification
+                    - regression
+                    - nlp
+              AppsFilters:
+                summary: Filter values for adex:Apps
+                value:
+                  type: dx:controlPlane:success
+                  title: Success
+                  results:
+                  - department:
+                    - Tourism
+                    - Transport
+                  - organizationType:
+                    - NGO/Non-profit
+                    - Private
+      '400':
+        description: Bad Request – Malformed request, missing required fields, or unsupported searchType.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:badRequest
+                title:
+                  type: string
+                  example: Bad Request
+                detail:
+                  type: string
+                  example: 'Unsupported searchType: fjjo'
+            examples:
+              unsupportedSearchType:
+                summary: Invalid or unsupported searchType
+                value:
+                  type: dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: 'Unsupported searchType: fjjo'
+              missingFields:
+                summary: Missing searchType or malformed searchCriteria
+                value:
+                  type: dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: Missing or malformed request
+    x-codeSamples:
+    - lang: cURL
+      label: List filter values for adex:DataBank
+      source: "curl --location 'https://${HOSTNAME}/iudx/v2/cat/list' \\\n--header 'Content-Type: application/json' \\\n--data\
+        \ '{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"term\",\n      \"field\": \"type\",\n      \"values\"\
+        : [\"adex:DataBank\"]\n    }\n  ],\n  \"filter\": [\n    \"concepts\",\n    \"tags\",\n    \"fileFormat\",\n    \"\
+        organizationType\",\n    \"accessPolicy\",\n    \"resourceServer.url\",\n    \"organization\",\n    \"industry\"\n\
+        \  ]\n}'\n"
+    - lang: cURL
+      label: List filter values for adex:AiModel
+      source: "curl --location 'https://${HOSTNAME}/iudx/v2/cat/list' \\\n--header 'Content-Type: application/json' \\\n--data\
+        \ '{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"term\",\n      \"field\": \"type\",\n      \"values\"\
+        : [\"adex:AiModel\"]\n    }\n  ],\n  \"filter\": [\n    \"organization\",\n    \"organizationType\",\n    \"industry\"\
+        ,\n    \"fileFormat\",\n    \"accessPolicy\",\n    \"modelType\"\n  ]\n}'\n"
+    - lang: cURL
+      label: List filter values for adex:Apps
+      source: "curl --location 'https://${HOSTNAME}/iudx/v2/cat/list' \\\n--header 'Content-Type: application/json' \\\n--data\
+        \ '{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"term\",\n      \"field\": \"type\",\n      \"values\"\
+        : [\"adex:Apps\"]\n    }\n  ],\n  \"filter\": [\n    \"organization\",\n    \"organizationType\"\n  ]\n}'\n"
