@@ -1,5 +1,6 @@
 package org.cdpg.dx.acl.accessRequest.dao.model;
 
+import static org.cdpg.dx.aaa.common.Constants.ORGANIZATION_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.*;
 
 import io.vertx.core.json.JsonObject;
@@ -147,7 +148,8 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
                     .put(ASSET_NAME, getAssetName())
                     .put(ASSET_TYPE, getAssetType())
                     .put(SHORT_DESCRIPTION, getShortDescription())
-                    .put(ORGANIZATION, getItemOrganizationName()))
+                    .put(ORGANIZATION, getItemOrganizationName())
+                    .put(ORGANIZATION_ID, getItemOrganizationId()))
             .put(CREATED_AT, getCreatedAt())
             .put(UPDATED_AT, getUpdatedAt())
             .put(DB_EXPIRY_AT, getExpiryAt());

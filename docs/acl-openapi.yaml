@@ -615,6 +615,7 @@ paths:
                           assetType: adex:AiModel
                           shortDescription: This is a test AI model for estimating percentage of ice on Pluto
                           organization: CDPG, IISC
+                          organizationId: 74e3b919-1d1b-44de-ace1-504f1887fdd3
                         expiryAt: '3000-03-05T20:00:19'
                         updatedAt: '2025-06-04T07:25:08.663637'
                         createdAt: '2025-06-04T09:10:57.267564'
@@ -959,6 +960,7 @@ paths:
                           assetType: adex:AiModel
                           shortDescription: This is a test AI model for estimating percentage of ice on Pluto
                           organization: CDPG, IISC
+                          organizationId: 74e3b919-1d1b-44de-ace1-504f1887fdd3
                         expiryAt: '3000-03-05T20:00:19'
                         updatedAt: '2025-06-04T07:25:08.663637'
                         createdAt: '2025-06-04T09:10:57.267564'
@@ -1106,6 +1108,7 @@ paths:
                           shortDescription: This is a test AI model for estimating percentage
                             of ice on Pluto
                           organization: CDPG, IISC
+                          organizationId: 74e3b919-1d1b-44de-ace1-504f1887fdd3
                         expiryAt: '3000-03-05T20:00:19'
                         updatedAt: '2025-06-04T07:25:08.663637'
                         createdAt: '2025-06-04T09:10:57.267564'
@@ -1246,6 +1249,7 @@ paths:
                           assetType: adex:AiModel
                           shortDescription: This is a test AI model for estimating percentage of ice on Pluto
                           organization: CDPG, IISC
+                          organizationId: 74e3b919-1d1b-44de-ace1-504f1887fdd3
                         expiryAt: '3000-03-05T20:00:19'
                         updatedAt: '2025-06-04T07:25:08.663637'
                         createdAt: '2025-06-04T09:10:57.267564'
