@@ -218,6 +218,7 @@ public class AccessRequestController implements ApiController {
 
     accessRequestService
         .listAccessRequestForProvider(request)
+        .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
         .onSuccess(
             pagedResult -> {
               LOGGER.info(
@@ -264,6 +265,7 @@ public class AccessRequestController implements ApiController {
 
     accessRequestService
         .listAccessRequestForProvider(request)
+        .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
         .onSuccess(
             pagedResult -> {
               LOGGER.info(
@@ -284,7 +286,7 @@ public class AccessRequestController implements ApiController {
   }
 
   private void getPlatformAccessRequestHandler(RoutingContext ctx) {
-    LOGGER.info("Handling getOrganizationAccessRequestHandler request...");
+    LOGGER.info("Handling getPlatformAccessRequestHandler request...");
     User user = ctx.user();
 
     Map<String, String> allowedFilters =
@@ -306,6 +308,7 @@ public class AccessRequestController implements ApiController {
 
     accessRequestService
         .listAccessRequestForProvider(request)
+        .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
         .onSuccess(
             pagedResult -> {
               LOGGER.info(
@@ -537,6 +540,7 @@ public class AccessRequestController implements ApiController {
 
     accessRequestService
         .listAccessRequestForConsumer(request)
+        .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
         .onSuccess(
             pagedResult -> {
               LOGGER.info("Successfully fetched access requests for user: {}", user.subject());
