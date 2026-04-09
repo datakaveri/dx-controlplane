@@ -15,7 +15,7 @@ RUN cd /dx-common && mvn clean install -DskipTests
 COPY pom.xml .
 COPY src src
 
-# Build the main project
+# Build the source code to generate the fatjar
 RUN mvn clean package -Dmaven.test.skip=true
 
 
