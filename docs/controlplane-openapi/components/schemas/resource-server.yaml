@@ -1,0 +1,108 @@
+ResourceServer:
+  type: object
+  properties:
+    name:
+      type: string
+      example: Data Kaveri
+      enum:
+      - NGSI-LD
+      - GATEWAY
+      - OGC
+      - FILE
+    url:
+      type: string
+      example: datakaveri.org
+    visibility:
+      type: string
+      enum:
+      - PUBLIC
+      - PRIVATE
+    query_type:
+      type: array
+      items:
+        type: string
+      example:
+      - ATTR
+    injection_type:
+      type: string
+      example: api
+ResourceServerCreateRequest:
+  type: object
+  description: Payload to register a new Resource Server
+  properties:
+    name:
+      type: string
+      description: Logical name of the resource server
+      enum:
+      - NGSI-LD
+      - GATEWAY
+      - OGC
+      - FILE
+    url:
+      type: string
+      description: Resource server endpoint or host name
+      example: datakaveri.org
+    type:
+      type: string
+      description: Backend adapter or implementation identifier
+      example: file testing
+    visibility:
+      type: string
+      enum:
+      - PUBLIC
+      - PRIVATE
+    query_type:
+      type: array
+      description: Supported query capabilities
+      items:
+        type: string
+        example:
+        - ATTR
+        - TEMPORAL
+        - FEATURES
+    injection_type:
+      type: string
+      description: Data ingestion mechanism
+      example: api
+  required:
+  - name
+  - url
+  - visibility
+  - query_type
+  - injection_type
+ResourceServerResponse:
+  type: object
+  description: Resource Server entity
+  properties:
+    id:
+      type: string
+      format: uuid
+    name:
+      type: string
+    url:
+      type: string
+    type:
+      type: string
+    owner_id:
+      type: string
+      format: uuid
+    visibility:
+      type: string
+    status:
+      type: string
+      example:
+      - PENDING
+      - ACTIVE
+      - INACTIVE
+    query_type:
+      type: array
+      items:
+        type: string
+    injection_type:
+      type: string
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time

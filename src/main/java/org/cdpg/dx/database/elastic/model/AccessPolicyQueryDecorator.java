@@ -23,8 +23,8 @@ public class AccessPolicyQueryDecorator implements ElasticsearchQueryDecorator {
   @Override
   public Map<FilterType, List<QueryModel>> add() {
     LOGGER.info("Adding access policy query decorator DTO {}", request);
-    String sub = request.getSub();
-    boolean isMyAssetsRequest = Boolean.TRUE.equals(request.getMyAssetsReq());
+    String sub = request != null ? request.getSub() : null;
+    boolean isMyAssetsRequest = request != null && Boolean.TRUE.equals(request.getMyAssetsReq());
 
     if (sub != null && !sub.isEmpty()) {
       if (isMyAssetsRequest) {

@@ -25,6 +25,7 @@ import org.cdpg.dx.auth.authentication.util.AccessValidator;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.URNGenerator;
+import org.cdpg.dx.common.util.DelegatorResolver;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
@@ -33,6 +34,7 @@ import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
+import org.cdpg.dx.common.util.CpRoutingContextHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
@@ -132,7 +134,7 @@ public class OrganizationCreateRequestHandler {
           OrganizationAuditHelper.buildOrganisationAudit(
             ctx, requests.toJson(), OrganisationAuditOperation.REQUEST_ORG_CREATE);
 
-        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
         ResponseBuilder.sendSuccess(ctx, requests, urnGenerator);
         emailComposer.sendEmailForCreatingOrg(requests, user);
@@ -167,7 +169,7 @@ public class OrganizationCreateRequestHandler {
                 OrganizationAuditHelper.buildOrganisationAudit(
                   ctx, new JsonObject().put(ID,requestId.toString()), OrganisationAuditOperation.UPDATE_ORG_CREATE_REQUEST);
 
-              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
               ResponseBuilder.sendSuccess(ctx, "Updated Sucessfully", urnGenerator);
               Future<Void> future =
@@ -178,7 +180,8 @@ public class OrganizationCreateRequestHandler {
 
   public void deleteOrganizationCreateRequest(RoutingContext ctx) {
     UUID requestId = UUID.fromString(ctx.pathParam("id"));
-    UUID resolvedUserId = ctx.get("resolvedUserId");
+    User user = ctx.user();
+    UUID userId = DelegatorResolver.resolveActingUserId(ctx);
 
     organizationService
         .getOrganizationCreateRequestById(requestId)
@@ -196,7 +199,7 @@ public class OrganizationCreateRequestHandler {
                     new DxBadRequestException("Only pending requests can be deleted"));
               }
 
-              if (!request.requestedBy().equals(resolvedUserId)) {
+              if (!request.requestedBy().equals(userId)) {
                 ctx.fail(new DxForbiddenException("User is not authorized to delete this request"));
                 return Future.failedFuture(
                     new DxForbiddenException("User is not authorized to delete this request"));
@@ -215,7 +218,7 @@ public class OrganizationCreateRequestHandler {
                           OrganizationAuditHelper.buildOrganisationAudit(
                             ctx, new JsonObject().put(ID,requestId.toString()), OrganisationAuditOperation.DELETE_PENDING_ORG_CREATE_REQUEST);
 
-                        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+                        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
                         ResponseBuilder.sendSuccess(
                             ctx, "Organization request deleted successfully", urnGenerator);
@@ -226,10 +229,11 @@ public class OrganizationCreateRequestHandler {
   }
 
   public void getUserOrganisationRequest(RoutingContext ctx) {
-    UUID resolvedUserId = ctx.get("resolvedUserId");
+    User user = ctx.user();
+    UUID userId = DelegatorResolver.resolveActingUserId(ctx);
 
     organizationService
-        .getOrganizationCreateRequestsByUserId(resolvedUserId)
+        .getOrganizationCreateRequestsByUserId(userId)
         .compose(
             requests -> {
               List<JsonObject> result =
@@ -244,14 +248,14 @@ public class OrganizationCreateRequestHandler {
               UserActivityAuditLogBuilder auditLogBuilder =
                 OrganizationAuditHelper.buildOrganisationAudit(
                   ctx, new JsonObject(), OrganisationAuditOperation.GET);
-              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
               ResponseBuilder.sendSuccess(ctx, result, urnGenerator);
             })
         .onFailure(
             err -> {
               LOGGER.error(
                   "Failed to fetch organization requests for user {}: {}",
-                  resolvedUserId,
+                  userId,
                   err.getMessage());
               ctx.fail(err);
             });
@@ -285,7 +289,7 @@ public class OrganizationCreateRequestHandler {
               UserActivityAuditLogBuilder auditLogBuilder =
                 OrganizationAuditHelper.buildOrganisationAudit(
                   ctx, new JsonObject(), OrganisationAuditOperation.GET);
-              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
               ResponseBuilder.sendSuccess(ctx, res.data(), res.paginationInfo(), urnGenerator);
             })
         .onFailure(ctx::fail);

@@ -212,8 +212,6 @@ public class KYCServiceImpl implements KYCService {
   private JsonObject parseKYCxml(String xmlData) {
     try {
       JSONObject jsonObject = XML.toJSONObject(xmlData);
-      //System.out.println("jsonObject: " + jsonObject); // For debugging purposes
-      // For debugging purposes
       Map<String, Object> map = jsonObject.toMap();
 
       JsonObject root = new JsonObject(map);

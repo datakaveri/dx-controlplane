@@ -1,7 +1,7 @@
 package org.cdpg.dx.aaa.kyc.controller;
 
 import io.vertx.ext.web.openapi.RouterBuilder;
-import org.cdpg.dx.aaa.apiserver.ApiController;
+import org.cdpg.dx.apiserver.ApiController;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

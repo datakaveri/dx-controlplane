@@ -1,0 +1,250 @@
+/iudx/v2/auditing/consumer/activity:
+  get:
+    tags:
+    - Activity Logs
+    operationId: get-ActivityLogs-for-consumer
+    summary: Consumer Activity
+    security:
+    - authorization: []
+    description: 'Retrieve a list of activity logs for the authenticated DX user. This endpoint allows users to view their
+      own activity and filter logs based on <b>assetType</b>, <b>action</b>, <b>logType</b> a specified time range (time,
+      endtime) and etc. Pagination is supported for large result sets.
+
+      '
+    parameters:
+    - $ref: ../components/parameters.yaml#/AssetTypeParam
+    - $ref: ../components/parameters.yaml#/AssetAccessPolicyParam
+    - $ref: ../components/parameters.yaml#/ActionParam
+    - $ref: ../components/parameters.yaml#/OrganizationIdParam
+    - $ref: ../components/parameters.yaml#/LogTypeParam
+    - $ref: ../components/parameters.yaml#/SandboxTypeParam
+    - $ref: ../components/parameters.yaml#/TimeParam
+    - $ref: ../components/parameters.yaml#/EndTimeParam
+    - $ref: ../components/parameters.yaml#/TimeRelParam
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    responses:
+      '200':
+        description: List of consumer activity logs
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/auditing.yaml#/AuditActivitySuccessResponse
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/BadRequestResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Fetch consumer Activity Logs
+      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/auditing/consumer/activity?page=1&size=10'' \
+
+        --header ''Authorization: Bearer <your-token>''
+
+        '
+/iudx/v2/auditing/admin/activity:
+  get:
+    tags:
+    - Activity Logs
+    operationId: get-activityLogs-for-admin
+    security:
+    - authorization: []
+    summary: Admin Activity
+    description: '**Platform admins** (`cos_admin`) can access all activity logs, while **organization admins** (`cos_org`)
+      can access logs only for their own organization. This endpoint also allows filtering activity logs based on <b>userId</b>,<b>assetType</b>,
+      <b>action</b> and a specified time range (time, endtime). Use this API to get detailed audit records for administrative
+      purposes, including pagination support for large result sets.</br>
+
+      '
+    parameters:
+    - $ref: ../components/parameters.yaml#/UserIdParam
+    - $ref: ../components/parameters.yaml#/AssetTypeParam
+    - $ref: ../components/parameters.yaml#/AssetAccessPolicyParam
+    - $ref: ../components/parameters.yaml#/ActionParam
+    - $ref: ../components/parameters.yaml#/LogTypeParam
+    - $ref: ../components/parameters.yaml#/SandboxTypeParam
+    - $ref: ../components/parameters.yaml#/OrganizationIdParam
+    - $ref: ../components/parameters.yaml#/TimeParam
+    - $ref: ../components/parameters.yaml#/EndTimeParam
+    - $ref: ../components/parameters.yaml#/TimeRelParam
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    responses:
+      '200':
+        description: List of admin activity logs
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/auditing.yaml#/AuditActivitySuccessResponse
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/BadRequestResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Fetch Admin Activity Logs
+      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/auditing/admin/activity?page=1&size=10'' \
+
+        --header ''Authorization: Bearer <your-token>''
+
+        '
+/iudx/v2/auditing/reportactivity/admin:
+  get:
+    tags:
+    - Activity Report
+    operationId: get-admin-report
+    summary: Admin report
+    description: Csv file for a list of activity logs for admin. **Platform admins** (`cos_admin`) can access all activity
+      logs, while **organization admins** (`cos_org`) can access logs only for their own organization.
+    security:
+    - authorization: []
+    parameters:
+    - $ref: ../components/parameters.yaml#/UserIdParam
+    - $ref: ../components/parameters.yaml#/AssetTypeParam
+    - $ref: ../components/parameters.yaml#/AssetAccessPolicyParam
+    - $ref: ../components/parameters.yaml#/ActionParam
+    - $ref: ../components/parameters.yaml#/LogTypeParam
+    - $ref: ../components/parameters.yaml#/SandboxTypeParam
+    - $ref: ../components/parameters.yaml#/OrganizationIdParam
+    - $ref: ../components/parameters.yaml#/TimeParam
+    - $ref: ../components/parameters.yaml#/EndTimeParam
+    - $ref: ../components/parameters.yaml#/TimeRelParam
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    responses:
+      '200':
+        description: Csv file generation success
+        content:
+          text/csv:
+            schema:
+              type: string
+              format: binary
+      '400':
+        description: Bad request. No data available for CSV generation
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Admin Csv Activity Logs
+      source: 'curl --location ''https://${HOSTNAME}//iudx/v2/auditing/reportactivity/admin?page=1&size=10'' \
+
+        --header ''Authorization: Bearer <your-token>''
+
+        '
+/iudx/v2/auditing/reportactivity/consumer:
+  get:
+    tags:
+    - Activity Report
+    operationId: get-consumer-report
+    summary: Consumer report
+    description: Csv file for a list of activity logs for consumer.
+    security:
+    - authorization: []
+    parameters:
+    - $ref: ../components/parameters.yaml#/AssetTypeParam
+    - $ref: ../components/parameters.yaml#/AssetAccessPolicyParam
+    - $ref: ../components/parameters.yaml#/ActionParam
+    - $ref: ../components/parameters.yaml#/LogTypeParam
+    - $ref: ../components/parameters.yaml#/SandboxTypeParam
+    - $ref: ../components/parameters.yaml#/OrganizationIdParam
+    - $ref: ../components/parameters.yaml#/TimeParam
+    - $ref: ../components/parameters.yaml#/EndTimeParam
+    - $ref: ../components/parameters.yaml#/TimeRelParam
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    responses:
+      '200':
+        description: Csv file generation success
+        content:
+          text/csv:
+            schema:
+              type: string
+              format: binary
+      '400':
+        description: Bad request. No data available for CSV generation
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Admin Csv Activity Logs
+      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/auditing/reportactivity/consumer?page=1&size=10'' \
+
+        --header ''Authorization: Bearer <your-token>''
+
+        '

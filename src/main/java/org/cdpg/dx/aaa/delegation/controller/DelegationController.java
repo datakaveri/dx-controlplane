@@ -3,7 +3,7 @@ package org.cdpg.dx.aaa.delegation.controller;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.apiserver.ApiController;
+import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.aaa.delegation.handler.DelegationHandler;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
@@ -47,10 +47,10 @@ public class DelegationController implements ApiController {
       .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))   //both delegate and delegator can view the requests
       .handler(delegationHandler::getAllDelegationsByDelegator);
 
-    routerBuilder
+   /* routerBuilder
       .operation("get-auth-v2-delegator-roles")
       .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))   //both delegate and delegator can view the requests
-      .handler(delegationHandler::getDelegatorRoles);
+      .handler(delegationHandler::getDelegatorRoles);*/
 
 //    routerBuilder
 //      .operation("get-auth-v2-user-delegation")

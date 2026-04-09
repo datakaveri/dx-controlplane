@@ -1,0 +1,71 @@
+{
+  "realm": "test-realm",
+  "enabled": true,
+  "roles": {
+    "realm": [
+      { "name": "cos_admin", "description": "COS Admin role" },
+      { "name": "org_admin", "description": "Organization Admin role" },
+      { "name": "provider", "description": "Provider role" },
+      { "name": "consumer", "description": "Consumer role" },
+      { "name": "delegate", "description": "Delegate role" },
+      { "name": "compute", "description": "Compute role" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "test-admin-client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "test-admin-secret",
+      "serviceAccountsEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false
+    },
+    {
+      "clientId": "test-client-id",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "redirectUris": ["*"]
+    }
+  ],
+  "users": [
+    {
+      "username": "testuser1",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Test",
+      "lastName": "UserOne",
+      "email": "test1@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["consumer"]
+    },
+    {
+      "username": "testuser2",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Test",
+      "lastName": "UserTwo",
+      "email": "test2@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": []
+    }
+  ]
+}

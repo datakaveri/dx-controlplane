@@ -1,0 +1,476 @@
+/iudx/v2/central/cat/list:
+  post:
+    tags:
+    - List Available Central CAT Filters
+    summary: List available filter values from the Central Catalogue
+    description: "This API assists user interfaces by listing current values from the central catalogue Elasticsearch index.\n\
+      \nRetrieves the list of available filter values for specific indexed fields in the catalogue.\nThis API is used by user\
+      \ interfaces to populate dynamic filter dropdowns based on the\nselected entity type (e.g., `adex:DataBank`, `adex:AiModel`,\
+      \ `adex:Apps`).\n\nThe API supports:\n- Filtering by entity type using `searchCriteria` (e.g., `\"type\": \"adex:DataBank\"\
+      `).\n- Returning only those filter values that are relevant to the selected entity type.\n- Returning UI-specific filters\
+      \ for each entity category:\n    - adex:DataBank → `concepts`, `tags`, `fileFormat`, `organizationType`, `accessPolicy`,\n\
+      \                      `resourceServer.url`, `department`, `industry`\n    - adex:AiModel → `department`, `organizationType`,\
+      \ `industry`, `fileFormat`,\n                     `accessPolicy`, `modelType`\n    - adex:Apps → `department`, `organizationType`\n\
+      \nThe `filter` array determines which fields to return values for. Filters must be\nindexed fields in Elasticsearch\
+      \ and supported by the catalogue.\n"
+    operationId: listAvailableCentralCatFilters
+    security:
+    - optionalAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            properties:
+              searchCriteria:
+                type: array
+                description: Criteria used to narrow down filters (e.g., type of entity).
+                items:
+                  type: object
+                  required:
+                  - searchType
+                  - field
+                  - values
+                  additionalProperties: false
+                  properties:
+                    searchType:
+                      type: string
+                      example: term
+                      description: The value should be 'term'.
+                    field:
+                      type: string
+                      example: type
+                      description: Indexed field name to filter by.
+                    values:
+                      type: array
+                      items:
+                        type: string
+                      example:
+                      - adex:DataBank
+              filter:
+                type: array
+                description: List of indexed fields for which values should be listed.
+                items:
+                  type: string
+                example:
+                - concepts
+                - tags
+                - fileFormat
+                - organizationType
+                - accessPolicy
+                - resourceServer.url
+                - organization
+                - industry
+    responses:
+      '200':
+        description: Success
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                results:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties:
+                      type: array
+                      items:
+                        type: string
+            examples:
+              DataBankFilters:
+                summary: Filter values for adex:DataBank
+                value:
+                  type: dx:controlPlane:success
+                  title: Success
+                  results:
+                  - concepts:
+                    - Mobility
+                    - Climate
+                    - Public Safety
+                  - tags:
+                    - Transport
+                    - Healthcare
+                    - Satellite
+                  - fileFormat:
+                    - csv
+                    - pdf
+                    - zip
+                  - organizationType:
+                    - Public
+                    - Private
+                    - Academic Institution
+                  - accessPolicy:
+                    - OPEN
+                    - RESTRICTED
+                  - resourceServer.url:
+                    - datakaveri.org
+                    - geoserver.gov
+                  - department:
+                    - Health
+                    - Industries
+                    - Environment
+                  - industry:
+                    - Agriculture
+                    - Transport
+                    - Healthcare
+              AiModelFilters:
+                summary: Filter values for adex:AiModel
+                value:
+                  type: dx:controlPlane:success
+                  title: Success
+                  results:
+                  - department:
+                    - IT
+                    - Health
+                  - organizationType:
+                    - Government
+                    - Private
+                  - industry:
+                    - Finance
+                    - Retail
+                  - fileFormat:
+                    - onnx
+                    - pickle
+                  - accessPolicy:
+                    - OPEN
+                    - RESTRICTED
+                  - modelType:
+                    - classification
+                    - regression
+                    - nlp
+              AppsFilters:
+                summary: Filter values for adex:Apps
+                value:
+                  type: dx:controlPlane:success
+                  title: Success
+                  results:
+                  - department:
+                    - Tourism
+                    - Transport
+                  - organizationType:
+                    - NGO/Non-profit
+                    - Private
+      '400':
+        description: Bad Request – Malformed request, missing required fields, or unsupported searchType.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:badRequest
+                title:
+                  type: string
+                  example: Bad Request
+                detail:
+                  type: string
+                  example: 'Unsupported searchType: fjjo'
+            examples:
+              unsupportedSearchType:
+                summary: Invalid or unsupported searchType
+                value:
+                  type: dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: 'Unsupported searchType: fjjo'
+              missingFields:
+                summary: Missing searchType or malformed searchCriteria
+                value:
+                  type: dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: Missing or malformed request
+    x-codeSamples:
+    - lang: cURL
+      label: List filter values for adex:DataBank
+      source: "curl --location 'https://${HOSTNAME}/iudx/v2/central/cat/list' \\\n--header 'Content-Type: application/json'\
+        \ \\\n--data '{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"term\",\n      \"field\": \"type\",\n   \
+        \   \"values\": [\"adex:DataBank\"]\n    }\n  ],\n  \"filter\": [\n    \"concepts\",\n    \"tags\",\n    \"fileFormat\"\
+        ,\n    \"organizationType\",\n    \"accessPolicy\",\n    \"resourceServer.url\",\n    \"organization\",\n    \"industry\"\
+        \n  ]\n}'\n"
+    - lang: cURL
+      label: List filter values for adex:AiModel
+      source: "curl --location 'https://${HOSTNAME}/iudx/v2/central/cat/list' \\\n--header 'Content-Type: application/json'\
+        \ \\\n--data '{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"term\",\n      \"field\": \"type\",\n   \
+        \   \"values\": [\"adex:AiModel\"]\n    }\n  ],\n  \"filter\": [\n    \"organization\",\n    \"organizationType\"\
+        ,\n    \"industry\",\n    \"fileFormat\",\n    \"accessPolicy\",\n    \"modelType\"\n  ]\n}'\n"
+    - lang: cURL
+      label: List filter values for adex:Apps
+      source: "curl --location 'https://${HOSTNAME}/iudx/v2/central/cat/list' \\\n--header 'Content-Type: application/json'\
+        \ \\\n--data '{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"term\",\n      \"field\": \"type\",\n   \
+        \   \"values\": [\"adex:Apps\"]\n    }\n  ],\n  \"filter\": [\n    \"organization\",\n    \"organizationType\"\n \
+        \ ]\n}'\n"
+/iudx/v2/central/cat/search:
+  post:
+    tags:
+    - Central CAT Discovery – Public
+    description: 'Central Catalogue Search API.
+
+      Behaves identically to `/iudx/v2/cat/search` but operates on the
+
+      Central Catalogue Elasticsearch instance.
+
+
+      All request/response schemas, filters, and search types remain identical.
+
+      '
+    operationId: centralSearch
+    security:
+    - optionalAuth: []
+    parameters:
+    - name: page
+      in: query
+      description: Page number for pagination
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    - name: size
+      in: query
+      description: Page size for pagination
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 100
+    - name: sort
+      in: query
+      description: 'This parameter allows sorting the results by up to 3 fields, separated by a semicolon (;). The format
+        for each field is `fieldName:asc` or `fieldName:desc`. For example: `itemCreatedAt:desc;dataReadiness:asc;name:desc`
+        will sort by creation date (descending), then dataReadiness (ascending), then name (descending).
+
+        '
+      required: false
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            anyOf:
+            - $ref: ../../controlplane-openapi/components/schemas/catalogue.yaml#/TextSearchRequest
+            - $ref: ../../controlplane-openapi/components/schemas/catalogue.yaml#/SearchCriteriaRequest
+            - $ref: ../../controlplane-openapi/components/schemas/catalogue.yaml#/AutocompleteFuzzyTextSearchRequest
+            - $ref: ../../controlplane-openapi/components/schemas/catalogue.yaml#/ComplexSearchRequest
+    responses:
+      '200':
+        description: All the query parameters yielded results.
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - $ref: ../../controlplane-openapi/components/schemas/common.yaml#/successResponseForAutocompleteFuzzyTextSearch
+              - $ref: ../../controlplane-openapi/components/schemas/common.yaml#/successResponseForSearchByItemType
+              - $ref: ../../controlplane-openapi/components/schemas/common.yaml#/successResponseForRangeSearch
+              - $ref: ../../controlplane-openapi/components/schemas/common.yaml#/successResponseForTemporalSearch
+              - $ref: ../../controlplane-openapi/components/schemas/common.yaml#/successResponseForComplexSearch
+              - $ref: ../../controlplane-openapi/components/schemas/common.yaml#/successResponseForFlattenedTermSearch
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../../controlplane-openapi/components/schemas/common.yaml#/errorResponseForDiscovery
+            examples:
+              MissingOrMalformedRequest:
+                summary: Missing or malformed request
+                value:
+                  type: dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: Missing or malformed request
+              InvalidPaginationRange:
+                summary: Pagination limit exceeded
+                value:
+                  type: dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: Invalid pagination. The value of (page * size) must be between 1 and 10,000
+              InvalidSortFormat:
+                summary: Invalid sort format
+                value:
+                  type: dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: 'Invalid sort format: itemCreatedAt-desc. Expected field:order'
+    x-codeSamples:
+    - lang: cURL
+      label: search by item type
+      source: "curl --location --request POST\n'https://${HOSTNAME}/iudx/v2/central/cat/search?size=100&page=1' \\\n  --header\
+        \ 'Content-Type: application/json' \\\n  --data '{\n    \"searchCriteria\": [\n      {\n        \"searchType\": \"\
+        term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:AiModel\"]\n      }\n    ],\n    \"filter\": [\"\
+        id\"]\n  }'\n"
+    - lang: cURL
+      label: flattened field search
+      source: "curl --location --request POST 'https://${HOSTNAME}/iudx/v2/central/cat/search?size=25&page=1' \\\n--header\
+        \ 'Content-Type: application/json' \\\n--data '{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"flattenedTerm\"\
+        ,\n      \"field\": \"resourceServer.url\",\n      \"values\": [\"rs.forestdx.iudx.io\"]\n    }\n  ],\n  \"filter\"\
+        : [\"id\", \"type\", \"resourceServer\"]\n}'\n"
+    - lang: cURL
+      label: search by text
+      source: "curl --location --request POST\n'https://${HOSTNAME}/iudx/v2/central/cat/search?size=100&page=1' \\\n--header\
+        \ 'Content-Type: application/json' \\\n--data '{\n  \"q\": \"sat\",\n  \"autoComplete\": true,\n  \"fuzzy\": true,\n\
+        \  \"filter\": [\"id\", \"label\", \"name\", \"description\", \"tags\"]\n}'\n"
+    - lang: cURL
+      label: Temporal search
+      source: "curl --location --request POST 'https://${HOSTNAME}/iudx/v2/central/cat/search?size=50&page=1' \\\n--header\
+        \ 'Content-Type: application/json' \\\n--data '{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"betweenTemporal\"\
+        ,\n      \"field\": \"itemCreatedAt\",\n      \"values\": [\"2025-03-20T04:00:00+0530\", \"2025-05-02T09:15:27+0530\"\
+        ]\n    },\n    {\n      \"searchType\": \"term\",\n      \"field\": \"type\",\n      \"values\": [\"adex:AiModel\"\
+        ]\n    }\n  ],\n  \"filter\": [\"id\",\"tags\",\"itemCreatedAt\"]\n}'\n"
+    - lang: cURL
+      label: Range search
+      source: "curl --location --request POST 'https://${HOSTNAME}/iudx/v2/central/cat/search?size=25&page=1' \\\n--header\
+        \ 'Content-Type: application/json' \\\n--data '{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"beforeRange\"\
+        ,\n      \"field\": \"dataReadiness\",\n      \"values\": [85]\n    },\n    {\n      \"searchType\": \"term\",\n \
+        \     \"field\": \"type\",\n      \"values\": [\"adex:DataBank\"]\n    }\n  ],\n  \"filter\": [\"id\",\"dataReadiness\"\
+        ,\"tags\"]\n}'\n"
+    - lang: cURL
+      label: complex search
+      source: "curl --location --request POST 'https://${HOSTNAME}/iudx/v2/central/cat/search?size=25&page=1' \\\n--header\
+        \ 'Content-Type: application/json' \\\n--data '{\n  \"searchCriteria\": [\n    {\n      \"searchType\": \"term\",\n\
+        \      \"field\": \"type\",\n      \"values\": [\"adex:DataBank\"]\n    },\n    {\n      \"searchType\": \"term\"\
+        ,\n      \"field\": \"organization\",\n      \"values\": [\"Environment Forests Science and Technology\"]\n    },\n\
+        \    {\n      \"searchType\": \"betweenTemporal\",\n      \"field\": \"itemCreatedAt\",\n      \"values\": [\"2024-04-20T04:00:00+0530\"\
+        , \"2025-05-02T09:15:27+0530\"]\n    },\n    {\n      \"searchType\": \"betweenRange\",\n      \"field\": \"dataReadiness\"\
+        ,\n      \"values\": [80, 84]\n    }\n  ],\n  \"filter\": [\"id\", \"type\", \"organization\", \"itemCreatedAt\",\
+        \ \"dataReadiness\"]\n}'\n"
+/iudx/v2/central/cat/count:
+  post:
+    tags:
+    - Central CAT Discovery – Public
+    summary: Count matching catalogue entities by type
+    description: 'Performs a count aggregation of catalogue entities based on the provided search filters.
+
+      This API returns counts grouped by `type.keyword`. Only items matching the search
+
+      criteria are counted. Typical use cases include dashboard count cards for Data Banks,
+
+      AI Models, and Applications.
+
+
+      Aggregation is always done on `type.keyword`. The response contains a `result` array
+
+      with type→count pairs.
+
+
+      The request body supports:
+
+      - **Text-only count search** (via `q`)
+
+      - **Text count with autocomplete and fuzzy matching**
+
+      - **Structured filter count search** (via `searchCriteria`)
+
+      - **Combined structured and text count search**
+
+      '
+    security:
+    - optionalAuth: []
+    operationId: count-across-central-catalogue
+    requestBody:
+      description: Request body containing count search parameters
+      required: true
+      content:
+        application/json:
+          schema:
+            anyOf:
+            - $ref: ../../controlplane-openapi/components/schemas/catalogue.yaml#/TextOnly
+            - $ref: ../../controlplane-openapi/components/schemas/catalogue.yaml#/TextFuzzyAuto
+            - $ref: ../../controlplane-openapi/components/schemas/catalogue.yaml#/AttributesBasedFilteringCount
+            - $ref: ../../controlplane-openapi/components/schemas/catalogue.yaml#/ComplexRequestForCount
+          examples:
+            TextOnly:
+              summary: Full-text only
+              value:
+                q: test
+            TextFuzzyAuto:
+              summary: Full-text with autocomplete and fuzzy
+              value:
+                q: text
+                autoComplete: true
+                fuzzy: true
+            TagBased:
+              summary: filter by attributes
+              value:
+                searchCriteria:
+                - searchType: term
+                  field: tags
+                  values:
+                  - ai
+            Count Summary api - Summary API:
+              summary: Count Summary api | Filter by type
+              value:
+                searchCriteria:
+                - searchType: term
+                  field: type
+                  values:
+                  - adex:DataBank
+                  - adex:AiModel
+                  - adex:Apps
+            ComplexCount:
+              summary: Complex count search with text, fuzzy, and structured filters
+              value:
+                q: ai data
+                autoComplete: true
+                fuzzy: true
+                searchCriteria:
+                - searchType: term
+                  field: type
+                  values:
+                  - adex:DataBank
+                - searchType: betweenTemporal
+                  field: itemCreatedAt
+                  values:
+                  - 2025-03-20T04:00:00+0530
+                  - 2025-08-02T09:15:27+0530
+    responses:
+      '200':
+        description: Aggregated count results by `type`
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                result:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties:
+                      type: integer
+            examples:
+              CountAllTypes:
+                summary: Count results for all types
+                value:
+                  type: dx:controlPlane:success
+                  title: Success
+                  result:
+                  - adex:DataBank: 74
+                    adex:AiModel: 110
+                    adex:Apps: 76
+      '400':
+        description: Invalid input or unsupported search criteria
+        content:
+          application/json:
+            schema:
+              $ref: ../../controlplane-openapi/components/schemas/common.yaml#/ErrorResponse
+            examples:
+              BadRequest:
+                summary: Bad Request
+                value:
+                  type: dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: Missing or malformed request

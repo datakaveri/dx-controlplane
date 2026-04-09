@@ -5,7 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.credit.Controller.CreditController;
 import org.cdpg.dx.aaa.credit.dao.CreditDAOFactory;
-import org.cdpg.dx.aaa.credit.handler.CreditHandler;
+
 import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.credit.service.CreditServiceImpl;
 import org.cdpg.dx.aaa.email.util.EmailComposer;

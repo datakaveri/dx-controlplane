@@ -326,6 +326,9 @@
       "itemModifiedAt": {
         "type": "date"
       },
+      "lastUpdated": {
+        "type": "date"
+      },
       "itemStatus": {
         "type": "text",
         "fields": {

@@ -1,0 +1,251 @@
+openapi: 3.0.2
+info:
+  title: Dx- ACL APD Server
+  version: 1.1.0
+  description: "\n# About DX ACL APD\n\n  **List (ACL APD) Server** are designed for creating and managing policies for consumers\
+    \ and consumer delegates.\nThis allows providers and provider delegates to control access to their resources by consumers\
+    \ and consumer delegates.\nThis API specification for ACL APD requires a bearer token from the **Data Exchange (DX) Keycloak**\
+    \ for authentication purposes.\n\n# Configurations\n- **Server**: \n  - In the doc, we display the server url to be https://${HOSTNAME}\
+    \ with the hostname as ${HOSTNAME}\n  - This could be configured according to the deployment\n- **Base path**:\n     -\
+    \ Base path is the path on which API is served, relative to the host\n     - It is the initial part of the API\n     -\
+    \ These base path values could be configured according to the deployment\n - All the APIs except `/verify` endpoint contain\
+    \ `/iudx/acl/apd/v2` as it's base path\n- **Request Samples**:\n  - The `<tokenValue>` in the header of request sample\
+    \ could be replaced with respective token value [Also refer Tokens section [here](#section/Tokens)]\n  - The `<payload>`\
+    \ in the request sample could be replaced with the payload given adjacent to the request sample    \n\n# Tokens\n - All\
+    \ the endpoints should contain valid DX Identity token in the request header\n\n| Endpoint | Token Type | Users |\n|----------|------------|--------|\n\
+    | [(GET) /access_request/provider](#operation/get-auth-v2-access-requests-provider)  | DX Keycloak Token | Provider, Org\
+    \ Admin |\n| [(GET) /access_request/consumer](#operation/get-auth-v2-access-requests-consumer)  | DX Keycloak Token |\
+    \ Consumer, Provider,Cos Admin,Org Admin,user with compute|\n| [(POST) /access_request](#operation/post-auth-v2-access-requests)\
+    \  | DX Keycloak Token | Consumer, Provider,Cos Admin,Org Admin,user with compute |\n| [(PUT) /access_request](#operation/put-auth-v2-access-requests)\
+    \  | DX Keycloak Token | Provider,Org Admin |\n| [(POST) /access_request/has_access](#operation/post-auth-v2-access-requests-has-access)\
+    \  | DX Keycloak Token | Consumer, Provider,Cos Admin,Org Admin,user with compute |\n| [(GET) /access_request/provider/report](#operation/get-auth-v2-access-requests-provider-report)\
+    \  | DX Keycloak Token | Provider |\n| [(GET) /access_request/organisation/report](#operation/get-auth-v2-access-requests-org-admin-report)\
+    \ | DX Keycloak Token | Org  Admin |\n| [(GET) /access_request/organisation](#operation/get-auth-v2-access-requests-organisation)\
+    \ | DX Keycloak Token | Org Admin | \n\n# API HTTP Responses\n Apart from the response codes specified in each API, the\
+    \ API server may respond with certain 4xx and 5xx error codes which are related to common API Gateway behaviours.\n The\
+    \ application should address them accordingly.\n\n\n   "
+  contact:
+    name: For support contact CDPG Team at
+    email: ${SUPPORT_EMAIL}
+    url: https://dataforpublicgood.org.in/
+  license:
+    name: Apache 2.0
+servers:
+- url: https://${HOSTNAME}
+  description: dynamic server url
+paths:
+  /iudx/acl/apd/v2/access_request:
+    $ref: paths/access-request.yaml#/~1iudx~1acl~1apd~1v2~1access_request
+  /iudx/acl/apd/v2/access_request/{id}:
+    $ref: paths/access-request.yaml#/~1iudx~1acl~1apd~1v2~1access_request~1{id}
+  /iudx/acl/apd/v2/access_request/provider:
+    $ref: paths/access-request.yaml#/~1iudx~1acl~1apd~1v2~1access_request~1provider
+  /iudx/acl/apd/v2/access_request/provider/report:
+    $ref: paths/access-request.yaml#/~1iudx~1acl~1apd~1v2~1access_request~1provider~1report
+  /iudx/acl/apd/v2/access_request/organisation/report:
+    $ref: paths/access-request.yaml#/~1iudx~1acl~1apd~1v2~1access_request~1organisation~1report
+  /iudx/acl/apd/v2/access_request/organisation:
+    $ref: paths/access-request.yaml#/~1iudx~1acl~1apd~1v2~1access_request~1organisation
+  /iudx/acl/apd/v2/access_request/consumer:
+    $ref: paths/access-request.yaml#/~1iudx~1acl~1apd~1v2~1access_request~1consumer
+  /iudx/acl/apd/v2/access_request/has_access:
+    $ref: paths/access-request.yaml#/~1iudx~1acl~1apd~1v2~1access_request~1has_access
+  /iudx/acl/apd/v2/policy:
+    $ref: paths/policy.yaml#/~1iudx~1acl~1apd~1v2~1policy
+  /iudx/acl/apd/v2/verify:
+    $ref: paths/verify.yaml#/~1iudx~1acl~1apd~1v2~1verify
+components:
+  securitySchemes:
+    $ref: components/security-schemes.yaml
+  parameters:
+    PageParam:
+      $ref: components/parameters.yaml#/PageParam
+    SizeParam:
+      $ref: components/parameters.yaml#/SizeParam
+    SizeParamReport:
+      $ref: components/parameters.yaml#/SizeParamReport
+    SortingParam:
+      $ref: components/parameters.yaml#/SortingParam
+    TimeParam:
+      $ref: components/parameters.yaml#/TimeParam
+    EndTimeParam:
+      $ref: components/parameters.yaml#/EndTimeParam
+    TimeRelParam:
+      $ref: components/parameters.yaml#/TimeRelParam
+    OrgNameParam:
+      $ref: components/parameters.yaml#/OrgNameParam
+    EntityTypeParam:
+      $ref: components/parameters.yaml#/EntityTypeParam
+    OrgSectorParam:
+      $ref: components/parameters.yaml#/OrgSectorParam
+    StatusParam:
+      $ref: components/parameters.yaml#/StatusParam
+  schemas:
+    AssetRequest:
+      $ref: components/schemas.yaml#/AssetRequest
+    getNotificationNotFoundResponse:
+      $ref: components/schemas.yaml#/getNotificationNotFoundResponse
+    createNotificationForbiddenResponse:
+      $ref: components/schemas.yaml#/createNotificationForbiddenResponse
+    updateNotificationForbiddenResponse:
+      $ref: components/schemas.yaml#/updateNotificationForbiddenResponse
+    reportGenerationForbiddenResponse:
+      $ref: components/schemas.yaml#/reportGenerationForbiddenResponse
+    updateNotificationNotFound:
+      $ref: components/schemas.yaml#/updateNotificationNotFound
+    updateNotificationBadRequest:
+      $ref: components/schemas.yaml#/updateNotificationBadRequest
+    reportGenerationBadRequest:
+      $ref: components/schemas.yaml#/reportGenerationBadRequest
+    updateNotificationConflict:
+      $ref: components/schemas.yaml#/updateNotificationConflict
+    UpdateAccessRequest:
+      $ref: components/schemas.yaml#/UpdateAccessRequest
+    getNotificationForbiddenResponse:
+      $ref: components/schemas.yaml#/getNotificationForbiddenResponse
+    createNotificationSuccessResponse:
+      $ref: components/schemas.yaml#/createNotificationSuccessResponse
+    checkAccessRequestSuccessResponse:
+      $ref: components/schemas.yaml#/checkAccessRequestSuccessResponse
+    createNotificationResourceNotFoundResponse:
+      $ref: components/schemas.yaml#/createNotificationResourceNotFoundResponse
+    checkAccessRequestNotFoundResponse:
+      $ref: components/schemas.yaml#/checkAccessRequestNotFoundResponse
+    createNotificationForbidden:
+      $ref: components/schemas.yaml#/createNotificationForbidden
+    createNotificationConflictResponse:
+      $ref: components/schemas.yaml#/createNotificationConflictResponse
+    getPolicySuccessResponseWithResourceType:
+      $ref: components/schemas.yaml#/getPolicySuccessResponseWithResourceType
+    getPolicySuccessResponseWithResourceGroup:
+      $ref: components/schemas.yaml#/getPolicySuccessResponseWithResourceGroup
+    deleteNotificationForbiddenResponse:
+      $ref: components/schemas.yaml#/deleteNotificationForbiddenResponse
+    deleteNotificationNotFound:
+      $ref: components/schemas.yaml#/deleteNotificationNotFound
+    deleteNotificationBadRequest:
+      $ref: components/schemas.yaml#/deleteNotificationBadRequest
+    deleteNotification:
+      $ref: components/schemas.yaml#/deleteNotification
+    deletePolicy:
+      $ref: components/schemas.yaml#/deletePolicy
+    deletePolicyInvalidUserResponse:
+      $ref: components/schemas.yaml#/deletePolicyInvalidUserResponse
+    getPolicyInvalidUserResponse:
+      $ref: components/schemas.yaml#/getPolicyInvalidUserResponse
+    updateNotificationInvalidUserResponse:
+      $ref: components/schemas.yaml#/updateNotificationInvalidUserResponse
+    policyNotFound:
+      $ref: components/schemas.yaml#/policyNotFound
+    deletePolicyErrorResponse:
+      $ref: components/schemas.yaml#/deletePolicyErrorResponse
+    deletePolicyNotFoundErrorResponse:
+      $ref: components/schemas.yaml#/deletePolicyNotFoundErrorResponse
+    Unauthorized:
+      $ref: components/schemas.yaml#/Unauthorized
+    createPolicyBadRequest:
+      $ref: components/schemas.yaml#/createPolicyBadRequest
+    createPolicyForbidden:
+      $ref: components/schemas.yaml#/createPolicyForbidden
+    createPolicySuccessResponse:
+      $ref: components/schemas.yaml#/createPolicySuccessResponse
+    conflictResponse:
+      $ref: components/schemas.yaml#/conflictResponse
+    generalBadRequest:
+      $ref: components/schemas.yaml#/generalBadRequest
+    AccessRequest:
+      $ref: components/schemas.yaml#/AccessRequest
+    name:
+      $ref: components/schemas.yaml#/name
+    user:
+      $ref: components/schemas.yaml#/user
+    owner:
+      $ref: components/schemas.yaml#/owner
+    item:
+      $ref: components/schemas.yaml#/item
+    requestBodyForVerify:
+      $ref: components/schemas.yaml#/requestBodyForVerify
+    successResponseWithObjects:
+      $ref: components/schemas.yaml#/successResponseWithObjects
+    successResponseForCount:
+      $ref: components/schemas.yaml#/successResponseForCount
+    errorResponseForDiscovery:
+      $ref: components/schemas.yaml#/errorResponseForDiscovery
+    successResponseForGeoLocations:
+      $ref: components/schemas.yaml#/successResponseForGeoLocations
+    listInstances:
+      $ref: components/schemas.yaml#/listInstances
+    AutocompleteFuzzyTextSearchRequest:
+      $ref: components/schemas.yaml#/AutocompleteFuzzyTextSearchRequest
+    SearchCriteriaRequest:
+      $ref: components/schemas.yaml#/SearchCriteriaRequest
+    TextSearchRequest:
+      $ref: components/schemas.yaml#/TextSearchRequest
+    ComplexSearchRequest:
+      $ref: components/schemas.yaml#/ComplexSearchRequest
+    SearchCriteria:
+      $ref: components/schemas.yaml#/SearchCriteria
+    SearchResponse:
+      $ref: components/schemas.yaml#/SearchResponse
+    ErrorResponse:
+      $ref: components/schemas.yaml#/ErrorResponse
+    invalidIdErrorResponse:
+      $ref: components/schemas.yaml#/invalidIdErrorResponse
+    errorResponseForGetEntity:
+      $ref: components/schemas.yaml#/errorResponseForGetEntity
+    exampleEntityWIdAIModel:
+      $ref: components/schemas.yaml#/exampleEntityWIdAIModel
+    exampleEntityWIdDataBankResource:
+      $ref: components/schemas.yaml#/exampleEntityWIdDataBankResource
+    successResponseForCreateAIModelEntity:
+      $ref: components/schemas.yaml#/successResponseForCreateAIModelEntity
+    successResponseForCreateDataBankResourceEntity:
+      $ref: components/schemas.yaml#/successResponseForCreateDataBankResourceEntity
+    successResponseForCreatePotentialAppsEntity:
+      $ref: components/schemas.yaml#/successResponseForCreatePotentialAppsEntity
+    successResponseForUpdateAIModelEntity:
+      $ref: components/schemas.yaml#/successResponseForUpdateAIModelEntity
+    successResponseForUpdateDataBankEntity:
+      $ref: components/schemas.yaml#/successResponseForUpdateDataBankEntity
+    successResponseForUpdateAdexAppsEntity:
+      $ref: components/schemas.yaml#/successResponseForUpdateAdexAppsEntity
+    successResponseForGetAIModelEntity:
+      $ref: components/schemas.yaml#/successResponseForGetAIModelEntity
+    successResponseForGetDataBankEntity:
+      $ref: components/schemas.yaml#/successResponseForGetDataBankEntity
+    successResponseForGetAdexAppsEntity:
+      $ref: components/schemas.yaml#/successResponseForGetAdexAppsEntity
+    successResponseForAutocompleteFuzzyTextSearch:
+      $ref: components/schemas.yaml#/successResponseForAutocompleteFuzzyTextSearch
+    successResponseForComplexSearch:
+      $ref: components/schemas.yaml#/successResponseForComplexSearch
+    successResponseForSearchByItemType:
+      $ref: components/schemas.yaml#/successResponseForSearchByItemType
+    successResponseForRangeSearch:
+      $ref: components/schemas.yaml#/successResponseForRangeSearch
+    successResponseForTemporalSearch:
+      $ref: components/schemas.yaml#/successResponseForTemporalSearch
+    errorInvalidSchema:
+      $ref: components/schemas.yaml#/errorInvalidSchema
+    errorInvalidSchema2:
+      $ref: components/schemas.yaml#/errorInvalidSchema2
+    errorInvalidUUID:
+      $ref: components/schemas.yaml#/errorInvalidUUID
+    errorInvalidLinks:
+      $ref: components/schemas.yaml#/errorInvalidLinks
+    errorResponseWithObjects:
+      $ref: components/schemas.yaml#/errorResponseWithObjects
+    updateItemNotFound:
+      $ref: components/schemas.yaml#/updateItemNotFound
+    exampleEntityAIModel:
+      $ref: components/schemas.yaml#/exampleEntityAIModel
+    exampleEntityDataBank:
+      $ref: components/schemas.yaml#/exampleEntityDataBank
+    exampleEntityPotentialApps:
+      $ref: components/schemas.yaml#/exampleEntityPotentialApps
+    unAuthorizedAccess:
+      $ref: components/schemas.yaml#/unAuthorizedAccess
+    invalidResponseForWrongLimitValues:
+      $ref: components/schemas.yaml#/invalidResponseForWrongLimitValues
+    invalidResponseForWrongOffsetValues:
+      $ref: components/schemas.yaml#/invalidResponseForWrongOffsetValues

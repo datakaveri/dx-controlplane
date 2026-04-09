@@ -1,69 +1,43 @@
 package org.cdpg.dx.aaa.email.factory;
 
-import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
-import static org.cdpg.dx.aaa.common.Constants.DOC_USER_INDEX;
-import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
-
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.WebClient;
-import org.cdpg.dx.aaa.credit.dao.CreditDAOFactory;
-import org.cdpg.dx.aaa.credit.service.CreditServiceImpl;
+import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
-import org.cdpg.dx.aaa.item.service.ItemService;
-import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
-import org.cdpg.dx.aaa.organization.dao.OrganizationDAOFactory;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
-import org.cdpg.dx.aaa.organization.service.OrganizationServiceImpl;
-import org.cdpg.dx.aaa.user.dao.CustomRoleDAO;
-import org.cdpg.dx.aaa.user.dao.impl.CustomRoleDAOImpl;
-import org.cdpg.dx.aaa.user.service.UserServiceImpl;
-import org.cdpg.dx.acl.policy.dao.PolicyDao;
-import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
-import org.cdpg.dx.database.elastic.service.ElasticsearchService;
-import org.cdpg.dx.database.postgres.service.PostgresService;
+import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.email.service.EmailService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
+/**
+ * Factory for creating {@link EmailComposer} instances.
+ *
+ * <p>Accepts pre-built service instances to avoid creating duplicate service objects. Previously
+ * this factory constructed its own OrganizationServiceImpl, ItemServiceImpl, CreditServiceImpl,
+ * and UserServiceImpl — completely separate from the instances in ControllerFactory. Now it shares
+ * the same service instances used by the rest of the application.
+ */
 public class EmailComposerFactory {
 
   private EmailComposerFactory() {}
 
+  /**
+   * Create an {@link EmailComposer} using shared service instances.
+   *
+   * @param emailService the email sending service
+   * @param keycloakUserService the Keycloak user service
+   * @param config application configuration
+   * @param organizationService the shared organization service
+   * @param userService the shared user service
+   * @param creditService the shared credit service
+   * @return a configured EmailComposer
+   */
   public static EmailComposer create(
       EmailService emailService,
       KeycloakUserService keycloakUserService,
-      PostgresService pgService,
-      ElasticsearchService esService,
-      WebClient webClient,
-      JsonObject config) {
-    String docIndex = config.getString(DOC_INDEX);
-    final String apdURL = config.getString(APD_URL);
-    OrganizationDAOFactory organizationDAOFactory = new OrganizationDAOFactory(pgService);
-
-    PolicyDao policyDao = new PolicyDaoImpl(pgService);
-
-    ItemService itemService =
-        new ItemServiceImpl(
-            esService, keycloakUserService, pgService, policyDao, webClient, docIndex, apdURL);
-
-    OrganizationService organizationService =
-        new OrganizationServiceImpl(organizationDAOFactory, keycloakUserService, itemService);
-
-    CreditDAOFactory creditDAOFactory = new CreditDAOFactory(pgService);
-    CreditServiceImpl creditService =
-        new CreditServiceImpl(creditDAOFactory, keycloakUserService, config);
-
-    final String docUserIndex = config.getString(DOC_USER_INDEX);
-
-    CustomRoleDAO customRoleDAO = new CustomRoleDAOImpl(pgService);
-
-    UserServiceImpl userService =
-        new UserServiceImpl(
-            keycloakUserService,
-            organizationService,
-            creditService,
-            esService,
-            customRoleDAO,
-            docUserIndex);
+      JsonObject config,
+      OrganizationService organizationService,
+      UserService userService,
+      CreditService creditService) {
 
     return new EmailComposer(
         emailService, keycloakUserService, config, organizationService, userService, creditService);

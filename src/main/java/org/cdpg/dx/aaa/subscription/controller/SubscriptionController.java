@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.apiserver.ApiController;
+import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.aaa.subscription.service.SubscriptionService;
 import org.cdpg.dx.aaa.subscription.util.GetDid;
 import org.cdpg.dx.aaa.subscription.util.SubscriptionAuditHelper;
@@ -26,6 +26,7 @@ import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxValidationException;
+import org.cdpg.dx.common.util.CpRoutingContextHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.common.validations.idhandler.GetIdFromBodyHandler;
 import org.cdpg.dx.common.validations.itemcheck.SubscriptionAuthorizationHandler;
@@ -232,7 +233,7 @@ public class SubscriptionController implements ApiController {
             v -> {
               UserActivityAuditLogBuilder auditLogBuilder =
                   SubscriptionAuditHelper.buildCreateSubscriptionAudit(routingContext, entitiesId);
-              RoutingContextHelper.setAuditingLogV2(routingContext, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(routingContext, auditLogBuilder);
 
               routingContext
                   .response()
@@ -265,7 +266,7 @@ public class SubscriptionController implements ApiController {
             v -> {
               UserActivityAuditLogBuilder auditLogBuilder =
                   SubscriptionAuditHelper.buildUpdateSubscriptionAudit(routingContext, entities);
-              RoutingContextHelper.setAuditingLogV2(routingContext, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(routingContext, auditLogBuilder);
 
               routingContext
                   .response()
@@ -291,7 +292,7 @@ public class SubscriptionController implements ApiController {
             getResult -> {
               UserActivityAuditLogBuilder auditLogBuilder =
                   SubscriptionAuditHelper.buildUListSubscriptionAudit(routingContext);
-              RoutingContextHelper.setAuditingLogV2(routingContext, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(routingContext, auditLogBuilder);
               routingContext
                   .response()
                   .putHeader("Content-Type", "application/json")
@@ -319,7 +320,7 @@ public class SubscriptionController implements ApiController {
             getResult -> {
               UserActivityAuditLogBuilder auditLogBuilder =
                   SubscriptionAuditHelper.buildUViewSubscriptionAudit(routingContext);
-              RoutingContextHelper.setAuditingLogV2(routingContext, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(routingContext, auditLogBuilder);
               routingContext
                   .response()
                   .putHeader("Content-Type", "application/json")
@@ -344,7 +345,7 @@ public class SubscriptionController implements ApiController {
             v -> {
               UserActivityAuditLogBuilder auditLogBuilder =
                   SubscriptionAuditHelper.buildUDeleteSubscriptionAudit(routingContext);
-              RoutingContextHelper.setAuditingLogV2(routingContext, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(routingContext, auditLogBuilder);
               routingContext
                   .response()
                   .putHeader("Content-Type", "application/json")

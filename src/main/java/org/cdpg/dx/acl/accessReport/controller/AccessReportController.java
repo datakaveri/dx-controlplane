@@ -15,14 +15,14 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.acl.accessReport.service.ReportService;
-import org.cdpg.dx.acl.apiserver.ApdApiController;
+import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 
-public class AccessReportController implements ApdApiController {
+public class AccessReportController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(AccessReportController.class);
   private final ReportService reportService;
 

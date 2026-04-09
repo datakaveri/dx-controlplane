@@ -29,7 +29,7 @@ import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.common.Constants;
-import org.cdpg.dx.acl.apiserver.ApdApiController;
+import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.acl.policy.service.PolicyService;
 import org.cdpg.dx.acl.policy.service.model.CreatePolicyRequest;
 import org.cdpg.dx.acl.policy.util.UserAccessHandler;
@@ -47,7 +47,7 @@ import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
-public class PolicyController implements ApdApiController {
+public class PolicyController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(PolicyController.class);
   private final PolicyService policyService;
   private final AuditingHandler auditingHandler;
@@ -137,7 +137,7 @@ public class PolicyController implements ApdApiController {
         handleFailureResponse(ctx, failureMessage.encode());
       }
     }
-    LOGGER.debug("request: " + request);
+    LOGGER.debug("request: {}", request);
     JsonArray policyList = request.getJsonArray("request");
     List<CreatePolicyRequest> requests =
         CreatePolicyRequest.jsonArrayToList(policyList, request.getLong("defaultExpiryDays"));

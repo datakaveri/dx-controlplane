@@ -110,7 +110,7 @@ public class ItemServiceImpl implements ItemService {
         .getSingleDocument(docIndex, termQuery)
         .onSuccess(
             existingDoc -> {
-              if (existingDoc != null && ElasticsearchResponse.getTotalHits() > 0) {
+              if (existingDoc != null && existingDoc.getDocId() != null) {
                 LOGGER.warn("Item with ID {} already exists", id);
                 promise.fail(new DxConflictException("Item with ID already exists"));
               } else {
@@ -139,13 +139,12 @@ public class ItemServiceImpl implements ItemService {
 
     return elResponse.compose(
         elasticResponse -> {
-          int totalHits = ElasticsearchResponse.getTotalHits();
-          if (totalHits == 0) {
+          if (elasticResponse.getDocId() == null) {
             LOGGER.warn("Item with ID {} does not exist", request.getItemId());
-            ResponseModel responseModel = new ResponseModel(List.of(elasticResponse));
-            responseModel.setTotalHits(totalHits);
+            ResponseModel responseModel = new ResponseModel(List.of(elasticResponse), 1, 1, 0);
             return Future.succeededFuture(responseModel);
           }
+          int totalHits = 1;
 
           JsonObject source = elasticResponse.getSource();
           String accessPolicy = source.getString(ACCESS_POLICY);
@@ -170,13 +169,12 @@ public class ItemServiceImpl implements ItemService {
 
     return elResponse.compose(
         elasticResponse -> {
-          int totalHits = ElasticsearchResponse.getTotalHits();
-          if (totalHits == 0) {
+          if (elasticResponse.getDocId() == null) {
             LOGGER.warn("Item with ID {} does not exist", request.getItemId());
-            ResponseModel responseModel = new ResponseModel(List.of(elasticResponse));
-            responseModel.setTotalHits(totalHits);
+            ResponseModel responseModel = new ResponseModel(List.of(elasticResponse), 1, 1, 0);
             return Future.succeededFuture(responseModel);
           }
+          int totalHits = 1;
 
           JsonObject source = elasticResponse.getSource();
           String accessPolicy = source.getString(ACCESS_POLICY);
@@ -202,8 +200,7 @@ public class ItemServiceImpl implements ItemService {
     }
     if (ownershipCheck(ownerUserId, request.getSubId(), request.getRoles())) {
       LOGGER.debug("Ownership check passed for item with ID: {}", request.getItemId());
-      ResponseModel responseModel = new ResponseModel(List.of(response), 1, 1);
-      responseModel.setTotalHits(totalHits);
+      ResponseModel responseModel = new ResponseModel(List.of(response), 1, 1, totalHits);
       return Future.succeededFuture(responseModel);
     } else {
       LOGGER.warn("Ownership check failed for item with ID: {}", request.getItemId());
@@ -236,8 +233,7 @@ public class ItemServiceImpl implements ItemService {
       String accessPolicy, int totalHits, ElasticsearchResponse response) {
     LOGGER.info(
         "Ownership and access check not required for access policy " + "'{}'", accessPolicy);
-    ResponseModel responseModel = new ResponseModel(List.of(response), 1, 1);
-    responseModel.setTotalHits(totalHits);
+    ResponseModel responseModel = new ResponseModel(List.of(response), 1, 1, totalHits);
     return Future.succeededFuture(responseModel);
   }
 
@@ -257,8 +253,7 @@ public class ItemServiceImpl implements ItemService {
           "Restricted item access granted: User {} is the owner of item {}",
           subId,
           request.getItemId());
-      ResponseModel responseModel = new ResponseModel(List.of(response), 1, 1);
-      responseModel.setTotalHits(totalHits);
+      ResponseModel responseModel = new ResponseModel(List.of(response), 1, 1, totalHits);
       return Future.succeededFuture(responseModel);
     }
 
@@ -403,8 +398,7 @@ public class ItemServiceImpl implements ItemService {
 
   // --- Helpers ---
   private Future<ResponseModel> succeededResponse(ElasticsearchResponse response, int totalHits) {
-    ResponseModel responseModel = new ResponseModel(List.of(response), 1, 1);
-    responseModel.setTotalHits(totalHits);
+    ResponseModel responseModel = new ResponseModel(List.of(response), 1, 1, totalHits);
     return Future.succeededFuture(responseModel);
   }
 
@@ -438,13 +432,13 @@ public class ItemServiceImpl implements ItemService {
     } else {
       return Future.failedFuture(new DxForbiddenException("User role not permitted to patch item"));
     }
-    LOGGER.debug("query: " + queryModel.getQueries().toElasticsearchQuery());
+    LOGGER.debug("query: {}", queryModel.getQueries().toElasticsearchQuery());
     String id = patchItemRequest.getItemId();
     elasticsearchService
         .getSingleDocument(docIndex, queryModel.getQueries())
         .onSuccess(
             result -> {
-              if (ElasticsearchResponse.getTotalHits() < 1) {
+              if (result.getDocId() == null) {
                 String errorMsg;
 
                 if (roles.contains(COS_ADMIN)) {
@@ -519,37 +513,44 @@ public class ItemServiceImpl implements ItemService {
             providerTermQuery,
             resourceSvrTermQuery,
             cosTermQuery));
+    QueryModel queryModel = new QueryModel();
+    queryModel.setQueries(boolQuery);
 
     elasticsearchService
-        .getSingleDocument(docIndex, boolQuery)
+        .count(docIndex, queryModel)
+        .compose(
+            totalHits -> {
+              if (totalHits > 1) {
+                LOGGER.debug("Item with ID {} has multiple associated entities", id);
+                return Future.<ElasticsearchResponse>failedFuture(
+                    new DxConflictException(
+                        "Item has associated entities and cannot be deleted"));
+              } else if (totalHits < 1) {
+                LOGGER.debug("Item with ID {} not found for deletion", id);
+                return Future.<ElasticsearchResponse>failedFuture(
+                    new DxNotFoundException(
+                        "Item not found for deletion in local catalogue"));
+              }
+              // Exactly 1 match -- fetch the document to get its docId
+              return elasticsearchService.getSingleDocument(docIndex, boolQuery);
+            })
         .onSuccess(
             result -> {
               LOGGER.debug("Item with ID {} found for deletion", id);
-              if (ElasticsearchResponse.getTotalHits() > 1) {
-                LOGGER.debug("Item with ID {} has multiple associated entities", id);
-                promise.fail(
-                    new DxConflictException("Item has associated entities and cannot be deleted"));
-              } else if (ElasticsearchResponse.getTotalHits() < 1) {
-                LOGGER.debug("Item with ID {} not found for deletion", id);
-                promise.fail(
-                    new DxNotFoundException("Item not found for deletion in local catalogue"));
-              } else {
-                LOGGER.debug("Deleting item with ID: {}", id);
-                String docId = result.getDocId();
-                elasticsearchService
-                    .deleteDocument(docIndex, docId)
-                    .onSuccess(
-                        v -> {
-                          LOGGER.debug("Item with ID {} deleted successfully", id);
-                          promise.complete(result);
-                        })
-                    .onFailure(
-                        failure -> {
-                          LOGGER.error(
-                              "Failed to delete item with ID {}: {}", id, failure.getMessage());
-                          promise.fail("Failed to delete item: " + failure.getMessage());
-                        });
-              }
+              String docId = result.getDocId();
+              elasticsearchService
+                  .deleteDocument(docIndex, docId)
+                  .onSuccess(
+                      v -> {
+                        LOGGER.debug("Item with ID {} deleted successfully", id);
+                        promise.complete(result);
+                      })
+                  .onFailure(
+                      failure -> {
+                        LOGGER.error(
+                            "Failed to delete item with ID {}: {}", id, failure.getMessage());
+                        promise.fail("Failed to delete item: " + failure.getMessage());
+                      });
             })
         .onFailure(promise::fail);
 
@@ -579,7 +580,7 @@ public class ItemServiceImpl implements ItemService {
         .getSingleDocument(docIndex, boolQuery)
         .onSuccess(
             getRes -> {
-              if (getRes == null || ElasticsearchResponse.getTotalHits() == 0) {
+              if (getRes == null || getRes.getDocId() == null) {
                 promise.fail("Item not found for update");
               } else {
                 QueryModel queryModel = new QueryModel();
@@ -640,7 +641,7 @@ public class ItemServiceImpl implements ItemService {
 
     return elasticsearchService
         .getSingleDocument(docIndex, termQuery)
-        .map(res -> ElasticsearchResponse.getTotalHits() > 0)
+        .map(res -> res.getDocId() != null)
         .recover(
             err -> {
               LOGGER.error("Local existence check failed for ID {}: {}", itemId, err.getMessage());
@@ -897,5 +898,26 @@ public class ItemServiceImpl implements ItemService {
         .onFailure(promise::fail);
 
     return promise.future();
+  }
+
+  @Override
+  public Future<Boolean> isItemNameExists(String name) {
+
+    if (name == null || name.isBlank()) {
+      return Future.failedFuture("Name cannot be null or empty");
+    }
+
+    QueryModel queryModel = new QueryModel(QueryType.TERM);
+    queryModel.setQueryParameters(Map.of(FIELD, "name.keyword", VALUE, name));
+
+    return elasticsearchService
+        .getSingleDocument(docIndex, queryModel)
+        .map(res -> res.getDocId() != null)
+        .recover(
+            err -> {
+              LOGGER.error(
+                  "Error while checking item name existence '{}': {}", name, err.getMessage());
+              return Future.failedFuture("Failed to check item name existence");
+            });
   }
 }

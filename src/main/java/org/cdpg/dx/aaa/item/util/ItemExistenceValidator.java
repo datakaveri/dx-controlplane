@@ -425,7 +425,7 @@ public class ItemExistenceValidator {
   private void validateId(JsonObject request, Promise<JsonObject> promise) {
     if (request.containsKey(ID)) {
       String id = request.getString(ID);
-      LOGGER.debug("id in the request body: " + id);
+      LOGGER.debug("id in the request body: {}", id);
 
       if (!isValidUuid(id)) {
         promise.fail("validation failed. Incorrect id");

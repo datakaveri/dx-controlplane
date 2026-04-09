@@ -289,7 +289,7 @@ public class PolicyServiceImpl implements PolicyService {
         .getItem(request)
         .onFailure(
             ar -> {
-              LOGGER.error("fetchItem error : " + ar.getMessage());
+              LOGGER.error("fetchItem error : {}", ar.getMessage());
               promise.fail(INTERNAL_SERVER_ERROR.getDescription());
             })
         .onSuccess(

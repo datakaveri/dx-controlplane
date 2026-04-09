@@ -1,6 +1,5 @@
 package org.cdpg.dx.aaa.credit.dao;
 
-//import org.cdpg.dx.aaa.credit.dao.impl.CreditDeductionDAOImpl;
 import org.cdpg.dx.aaa.credit.dao.impl.ComputeRoleDAOImpl;
 import org.cdpg.dx.aaa.credit.dao.impl.CreditTransactionDAOImpl;
 import org.cdpg.dx.aaa.credit.dao.impl.CreditRequestDAOImpl;
@@ -10,9 +9,8 @@ import org.cdpg.dx.database.postgres.service.PostgresService;
 public class CreditDAOFactory {
   private final PostgresService postgresService;
 
-  public CreditDAOFactory(PostgresService postgresService)
-  {
-    this.postgresService=postgresService;
+  public CreditDAOFactory(PostgresService postgresService) {
+    this.postgresService = postgresService;
   }
 
   public CreditRequestDAO creditRequestDAO() {
@@ -26,8 +24,8 @@ public class CreditDAOFactory {
   public ComputeRoleDAO computeRoleDAO() {
     return new ComputeRoleDAOImpl(postgresService);
   }
+
   public UserCreditDAO userCreditDAO() {
-    return new UserCreditDAOImpl(postgresService) {
-    };
+    return new UserCreditDAOImpl(postgresService);
   }
 }
