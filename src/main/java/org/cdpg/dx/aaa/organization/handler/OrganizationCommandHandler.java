@@ -19,6 +19,7 @@ import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RequestHelper;
+import org.cdpg.dx.common.util.CpRoutingContextHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 
 import static org.cdpg.dx.aaa.common.Constants.ID;
@@ -61,7 +62,7 @@ public class OrganizationCommandHandler {
               UserActivityAuditLogBuilder auditLogBuilder =
                   OrganizationAuditHelper.buildOrganisationAudit(
                       ctx, updatedOrg.toJson(), OrganisationAuditOperation.UPDATE_ORG);
-              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
               ResponseBuilder.sendSuccess(ctx, updatedOrg, urnGenerator);
             })
         .onFailure(
@@ -93,7 +94,7 @@ public class OrganizationCommandHandler {
               UserActivityAuditLogBuilder auditLogBuilder =
                 OrganizationAuditHelper.buildOrganisationAudit(
                   ctx, new JsonObject().put(ID,orgId.toString()), OrganisationAuditOperation.DELETE_ORG);
-              RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
               ResponseBuilder.sendSuccess(ctx, "Organisation deleted Successfully!", urnGenerator);
             })
         .onFailure(ctx::fail);

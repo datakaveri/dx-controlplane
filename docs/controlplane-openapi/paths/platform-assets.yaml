@@ -1,0 +1,307 @@
+/iudx/v2/cat/getAllAssets:
+  get:
+    tags:
+    - Platform Assets Management
+    description: 'Get all the assets belonging to the platform.
+
+      **Role-based behavior:** - Only users with the `cos_admin` role can access this endpoint.
+
+      '
+    operationId: get platform assets
+    security:
+    - authorization: []
+    parameters:
+    - name: page
+      in: query
+      description: Page number for pagination
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    - name: size
+      in: query
+      description: Page size for pagination
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 100
+    - name: sort
+      in: query
+      description: 'This parameter allows sorting the results by up to 3 fields, separated by a semicolon (;). The format
+        for each field is `fieldName:asc` or `fieldName:desc`. For example: `itemCreatedAt:desc;dataReadiness:asc;name:desc`
+        will sort by creation date (descending), then dataReadiness (ascending), then name (descending).
+
+        '
+      required: false
+      schema:
+        type: string
+    responses:
+      '200':
+        description: A successful response with all platform assets
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/catalogue.yaml#/SearchResponse
+            examples:
+              PlatformAssetsExample:
+                summary: Sample response for platform assets
+                value:
+                  type: dx:controlPlane:success
+                  title: Success
+                  result:
+                  - description: Support Vector Machine (SVM) is a powerful supervised learning algorithm that creates a hyperplane
+                      or set of hyperplanes in a high-dimensional space for classification, regression, or outlier detection
+                      tasks. SVMs are effective in high-dimensional spaces, memory efficient, and versatile through different
+                      kernel functions (linear, polynomial, RBF, sigmoid). They work by finding the optimal hyperplane that
+                      maximizes the margin between different classes in the training data. SVMs are particularly effective
+                      for classification problems where the boundary between classes is complex, and they handle both linear
+                      and non-linear classification tasks through the kernel trick.
+                    industry: Sector Agnostic
+                    type:
+                    - adex:AiModel
+                    organizationId: 5519beed-53e1-4f81-a863-9aa07bd98b1d
+                    lastUpdated: 01 June, 2025 - 06:28 PM
+                    itemStatus: ACTIVE
+                    id: ebfd8b9c-d1f2-4113-84b7-85e49fdaaf77
+                    department: NA
+                    uploadedBy: NA
+                    publishStatus: ACTIVE
+                    mediaURL: https://github.com/scikit-learn/scikit-learn
+                    shortDescription: A supervised learning algorithm used for classification, regression, and outlier detection
+                    label: Support Vector Machine (SVM)
+                    modelType: Classical Machine Learning
+                    '@context': https://voc.iudx.org.in/
+                    tags:
+                    - classical-ml
+                    - traditional-ml
+                    - baseline-models
+                    - machine-learning
+                    - algorithms
+                    organizationType: Public
+                    itemCreatedAt: 2025-06-01T18:28:00+0530
+                    license: BSD-3-Clause
+                    fileSize: '-'
+                    name: SupportVectorMachine
+                    ownerUserId: 96dd9006-7193-49ed-ad8b-37592525d119
+                    accessPolicy: OPEN
+                    fileFormat: Python pickle file
+                  paginationInfo:
+                    page: 1
+                    size: 1
+                    totalCount: 615
+                    totalPages: 615
+                    hasNext: true
+                    hasPrevious: false
+      '403':
+        description: User does not have the required role to access this endpoint
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            examples:
+              ForbiddenExample:
+                summary: Forbidden response
+                value:
+                  type: dx:controlPlane:forbidden
+                  title: Forbidden
+                  detail: User does not have the required role.
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            examples:
+              MissingToken:
+                summary: Missing Bearer token
+                value:
+                  type: dx:controlPlane:notAuthorized
+                  title: Not Authorized
+                  detail: Missing Bearer token
+              InvalidToken:
+                summary: Invalid token format
+                value:
+                  type: dx:controlPlane:notAuthorized
+                  title: Not Authorized
+                  detail: Invalid token format
+    x-codeSamples:
+    - lang: cURL
+      label: get organisation assets
+      source: 'curl --location --request GET ''https://example
+
+        .com/iudx/v2/cat/getAllAssets?sort=name:asc&page=1&size=1'' \
+
+        --header ''Authorization: Bearer <token>''
+
+        '
+  post:
+    summary: Retrieve all platform assets with filters
+    description: 'Fetch all assets belonging to the platform using filters. Supports property-based, temporal, numeric range,
+      and full-text search filters.
+
+      **Role-based behavior:** - Only users with the `cos_admin` role can access this endpoint.
+
+      '
+    operationId: get platform assets with filters
+    tags:
+    - Platform Assets Management
+    security:
+    - authorization: []
+    parameters:
+    - name: page
+      in: query
+      description: Page number for pagination
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    - name: size
+      in: query
+      description: Page size for pagination
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 100
+    - name: sort
+      in: query
+      description: 'This parameter allows sorting the results by up to 3 fields, separated by a semicolon (;). The format
+        for each field is `fieldName:asc` or `fieldName:desc`. For example: `itemCreatedAt:desc;dataReadiness:asc;name:desc`
+        will sort by creation date (descending), then dataReadiness (ascending), then name (descending).
+
+        '
+      required: false
+      schema:
+        type: string
+    requestBody:
+      description: Request body containing unified search filters
+      required: true
+      content:
+        application/json:
+          schema:
+            anyOf:
+            - $ref: ../components/schemas/catalogue.yaml#/TextSearchRequest
+            - $ref: ../components/schemas/catalogue.yaml#/SearchCriteriaRequest
+            - $ref: ../components/schemas/catalogue.yaml#/AutocompleteFuzzyTextSearchRequest
+            - $ref: ../components/schemas/catalogue.yaml#/ComplexSearchRequest
+    responses:
+      '200':
+        description: A successful response with all platform assets
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/catalogue.yaml#/SearchResponse
+            examples:
+              PlatformAssetsExample:
+                summary: Sample response for platform assets
+                value:
+                  type: dx:controlPlane:success
+                  title: Success
+                  result:
+                  - description: Support Vector Machine (SVM) is a powerful supervised learning algorithm that creates a hyperplane
+                      or set of hyperplanes in a high-dimensional space for classification, regression, or outlier detection
+                      tasks. SVMs are effective in high-dimensional spaces, memory efficient, and versatile through different
+                      kernel functions (linear, polynomial, RBF, sigmoid). They work by finding the optimal hyperplane that
+                      maximizes the margin between different classes in the training data. SVMs are particularly effective
+                      for classification problems where the boundary between classes is complex, and they handle both linear
+                      and non-linear classification tasks through the kernel trick.
+                    industry: Sector Agnostic
+                    type:
+                    - adex:AiModel
+                    organizationId: 5519beed-53e1-4f81-a863-9aa07bd98b1d
+                    lastUpdated: 01 June, 2025 - 06:28 PM
+                    itemStatus: ACTIVE
+                    id: ebfd8b9c-d1f2-4113-84b7-85e49fdaaf77
+                    department: NA
+                    uploadedBy: NA
+                    publishStatus: ACTIVE
+                    mediaURL: https://github.com/scikit-learn/scikit-learn
+                    shortDescription: A supervised learning algorithm used for classification, regression, and outlier detection
+                    label: Support Vector Machine (SVM)
+                    modelType: Classical Machine Learning
+                    '@context': https://voc.iudx.org.in/
+                    tags:
+                    - classical-ml
+                    - traditional-ml
+                    - baseline-models
+                    - machine-learning
+                    - algorithms
+                    organizationType: Public
+                    itemCreatedAt: 2025-06-01T18:28:00+0530
+                    license: BSD-3-Clause
+                    fileSize: '-'
+                    name: SupportVectorMachine
+                    ownerUserId: 96dd9006-7193-49ed-ad8b-37592525d119
+                    accessPolicy: OPEN
+                    fileFormat: Python pickle file
+                  paginationInfo:
+                    page: 1
+                    size: 1
+                    totalCount: 615
+                    totalPages: 615
+                    hasNext: true
+                    hasPrevious: false
+      '403':
+        description: User does not have the required role to access this endpoint
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            examples:
+              ForbiddenExample:
+                summary: Forbidden response
+                value:
+                  type: dx:controlPlane:forbidden
+                  title: Forbidden
+                  detail: User does not have the required role.
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            examples:
+              MissingToken:
+                summary: Missing Bearer token
+                value:
+                  type: dx:controlPlane:notAuthorized
+                  title: Not Authorized
+                  detail: Missing Bearer token
+              InvalidToken:
+                summary: Invalid token format
+                value:
+                  type: dx:controlPlane:notAuthorized
+                  title: Not Authorized
+                  detail: Invalid token format
+      '400':
+        description: Bad Request – Malformed request, missing required fields, or unsupported searchType.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:badRequest
+                title:
+                  type: string
+                  example: Bad Request
+                detail:
+                  type: string
+            examples:
+              missingFields:
+                summary: Missing searchType or malformed searchCriteria
+                value:
+                  type: dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: Missing or malformed request
+    x-codeSamples:
+    - lang: cURL
+      label: search by item type
+      source: "curl --location --request POST 'https://example\n.com/iudx/v2/cat/getAllAssets?size=100&page=1' \\\n  --header\
+        \ 'Content-Type: application/json' \\\n  --data '{\n    \"searchCriteria\": [\n      {\n        \"searchType\": \"\
+        term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:AiModel\"]\n      }\n    ],\n    \"filter\": [\"\
+        id\"]\n  }\n"

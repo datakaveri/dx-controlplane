@@ -67,7 +67,7 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
 
   public static AccessRequestDto fromJson(JsonObject request) {
     AccessRequestDto dto = new AccessRequestDto();
-    LOGGER.info("AccessRequestDto fromJson: " + request.encodePrettily());
+    LOGGER.info("AccessRequestDto fromJson: {}", request.encodePrettily());
     JsonObject entries = request.getJsonArray("rows").getJsonObject(0);
     dto.setRequestId(entries.getString(DB_REQUEST_ID));
     dto.setStatus(Status.fromString(entries.getString(DB_STATUS)));

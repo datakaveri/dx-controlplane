@@ -1,0 +1,36 @@
+CustomRoleResponse:
+  type: object
+  properties:
+    type:
+      type: string
+    title:
+      type: string
+    result:
+      type: array
+      items:
+        $ref: '#/CustomRoleItem'
+    paginationInfo:
+      $ref: pagination.yaml#/PaginationInfoResponse
+CustomRoleItem:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    userId:
+      type: string
+      format: uuid
+    role:
+      type: string
+    scope:
+      type: array
+      items:
+        type: string
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+    tableName:
+      type: string

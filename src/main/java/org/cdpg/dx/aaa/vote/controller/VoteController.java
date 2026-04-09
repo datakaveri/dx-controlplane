@@ -5,7 +5,7 @@ import io.vertx.ext.web.openapi.RouterBuilder;
 import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.apiserver.ApiController;
+import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.aaa.vote.model.VoteRequest;
 import org.cdpg.dx.aaa.vote.service.ItemVoteService;
 import org.cdpg.dx.common.URNGenerator;

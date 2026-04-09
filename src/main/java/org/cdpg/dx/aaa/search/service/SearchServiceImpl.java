@@ -12,7 +12,8 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.search.util.ResponseModel;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxEsException;
-import org.cdpg.dx.database.elastic.model.OrderBy;
+import org.cdpg.dx.database.elastic.model.ElasticsearchSearchResult;
+import org.cdpg.dx.database.postgres.models.OrderBy;
 import org.cdpg.dx.database.elastic.model.QueryDecoder;
 import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
 import org.cdpg.dx.database.elastic.model.QueryModel;
@@ -39,7 +40,13 @@ public class SearchServiceImpl implements SearchService {
 
       return elasticsearchService
           .search(docIndex, queryModel, SOURCE_ONLY)
-          .map(results -> new ResponseModel(results, requestDTO.getSize(), requestDTO.getPage()))
+          .map(
+              searchResult ->
+                  new ResponseModel(
+                      searchResult.getResults(),
+                      requestDTO.getSize(),
+                      requestDTO.getPage(),
+                      searchResult.getTotalHits()))
           .onFailure(err -> LOGGER.error("Search execution failed: {}", err.getMessage()));
 
     } catch (DxBadRequestException bre) {
@@ -117,7 +124,9 @@ public class SearchServiceImpl implements SearchService {
 
       return elasticsearchService
           .search(docIndex, queryModel, COUNT_AGGREGATION_ONLY)
-          .map(ResponseModel::new)
+          .map(
+              searchResult ->
+                  new ResponseModel(searchResult.getResults(), searchResult.getAggregations()))
           .onFailure(err -> LOGGER.error("Count execution failed: {}", err.getMessage()));
 
     } catch (DxBadRequestException bre) {

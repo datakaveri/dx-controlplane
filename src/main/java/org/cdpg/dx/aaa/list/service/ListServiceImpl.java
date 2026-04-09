@@ -7,6 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.common.ResponseModel;
 import org.cdpg.dx.common.exception.DxBadRequestException;
+import org.cdpg.dx.database.elastic.model.ElasticsearchSearchResult;
 import org.cdpg.dx.database.elastic.model.QueryDecoder;
 import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
 import org.cdpg.dx.database.elastic.model.QueryModel;
@@ -40,7 +41,9 @@ public class ListServiceImpl implements ListService {
     }
     return elasticsearchService
         .search(docIndex, queryModel, AGGREGATION_LIST)
-        .map(ResponseModel::new)
+        .map(
+            searchResult ->
+                new ResponseModel(searchResult.getResults(), searchResult.getAggregations()))
         .onFailure(err -> LOGGER.error(new DxBadRequestException(err.getMessage())));
   }
 }

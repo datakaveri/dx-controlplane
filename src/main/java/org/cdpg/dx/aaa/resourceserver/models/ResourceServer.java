@@ -91,7 +91,7 @@ public record ResourceServer(
   }
     private static String getStatusFromJson(JsonObject json) {
         JsonArray roles = json.getJsonArray(ROLES);
-        LOGGER.debug("Roles in getStatusFromJson: " + roles.contains("org_admin"));
+        LOGGER.debug("Roles in getStatusFromJson: {}", roles.contains("org_admin"));
         if (roles == null || roles.isEmpty()) {
             throw new DxValidationException("Missing or invalid required field: roles");
         }

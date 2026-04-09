@@ -173,7 +173,7 @@ public class PolicyDaoImpl implements PolicyDao {
     return Future.all(new ArrayList<>(insertFutures))
         .map(cf -> insertFutures.stream().map(Future::result).collect(Collectors.toList()))
         .onSuccess(results -> LOGGER.info("All policies inserted successfully"))
-        .onFailure(err -> LOGGER.error("createPolicy fail :: " + err.getLocalizedMessage()));
+        .onFailure(err -> LOGGER.error("createPolicy fail :: {}", err.getLocalizedMessage()));
   }
 
   @Override

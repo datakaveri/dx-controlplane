@@ -59,6 +59,9 @@ class OrganizationServiceTest {
   @Mock
   private ItemService itemService;
 
+  @Mock
+  private ProviderRoleRequestDAO providerRequestDAO;
+
 
   private OrganizationServiceImpl organizationService;
 
@@ -73,7 +76,7 @@ class OrganizationServiceTest {
     when(factory.organizationUserDAO()).thenReturn(orgUserDAO);
     when(factory.organizationDAO()).thenReturn(orgDAO);
     when(factory.organizationJoinRequestDAO()).thenReturn(joinRequestDAO);
-//    when(factory.providerRoleRequestDAO()).thenReturn(providerRequestDAO);
+    when(factory.providerRoleRequestDAO()).thenReturn(providerRequestDAO);
 
     // Create the service under test
     organizationService = new OrganizationServiceImpl(factory, keycloakUserService,itemService);
@@ -152,9 +155,15 @@ class OrganizationServiceTest {
       Constants.STATUS, Status.GRANTED.getStatus()
     );
 
+    Map<String, Object> rejectedFilter = Map.of(
+      Constants.REQUESTED_BY, userId.toString(),
+      Constants.STATUS, Status.REJECTED.getStatus()
+    );
+
     // Mock DAO responses
     when(createRequestDAO.getAllWithFilters(pendingFilter)).thenReturn(Future.succeededFuture(pendingList));
     when(createRequestDAO.getAllWithFilters(grantedFilter)).thenReturn(Future.succeededFuture(grantedList));
+    when(createRequestDAO.getAllWithFilters(rejectedFilter)).thenReturn(Future.succeededFuture(List.of()));
 
     // Act
     organizationService.getOrganizationCreateRequestsByUserId(userId).onComplete(ar -> {
@@ -353,6 +362,7 @@ class OrganizationServiceTest {
     when(createRequestDAO.get(requestId)).thenReturn(Future.succeededFuture(request));
     when(orgDAO.create(any())).thenReturn(Future.succeededFuture(createdOrg));
     when(keycloakUserService.addRoleToUser(userId, DxRole.ORG_ADMIN)).thenReturn(Future.succeededFuture(true));
+    when(keycloakUserService.addRoleToUser(userId, DxRole.PROVIDER)).thenReturn(Future.succeededFuture(true));
     when(keycloakUserService.setOrganisationDetails(userId, orgId, orgName)).thenReturn(Future.succeededFuture(true));
     when(orgUserDAO.create(any())).thenReturn(Future.succeededFuture(mock(OrganizationUser.class)));
 
@@ -364,6 +374,7 @@ class OrganizationServiceTest {
         verify(createRequestDAO).get(requestId);
         verify(orgDAO).create(any());
         verify(keycloakUserService).addRoleToUser(userId, DxRole.ORG_ADMIN);
+        verify(keycloakUserService).addRoleToUser(userId, DxRole.PROVIDER);
         verify(keycloakUserService).setOrganisationDetails(userId, orgId, orgName);
         verify(orgUserDAO).create(any());
         testContext.completeNow();

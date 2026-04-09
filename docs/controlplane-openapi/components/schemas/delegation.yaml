@@ -1,0 +1,29 @@
+DelegationRole:
+  type: string
+  enum:
+  - cos_admin
+  - org_admin
+  - provider
+  - consumer
+  description: Delegation role
+DelegationScope:
+  type: string
+  enum:
+  - cos_admin_access
+  - org_admin_access
+  - asset_management
+  - compute_management
+  - user_management
+  - data_access
+  - api
+  - subs
+  description: Allowed scope values across all roles
+DelegationEntityType:
+  type: string
+  enum:
+  - org
+  - provider
+  - adex:AiModel
+  - adex:DataBank
+  - adex:Apps
+  description: Entity type for scoped delegation

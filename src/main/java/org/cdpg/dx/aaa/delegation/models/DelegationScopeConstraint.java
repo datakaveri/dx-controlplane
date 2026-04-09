@@ -12,6 +12,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
 import static org.cdpg.dx.common.util.DateTimeHelper.parseDateTime;
@@ -26,12 +28,13 @@ public record DelegationScopeConstraint(
   String entityType,      // NOT NULL ('*' allowed)
   LocalDateTime expiryAt                // NOT NULL
 ) implements BaseEntity<DelegationScopeConstraint> {
+  private static final Logger LOGGER = LoggerFactory.getLogger(DelegationScopeConstraint.class);
 
   // -------------------------------------------------------------------------
   // FROM JSON (API → DOMAIN)
   // -------------------------------------------------------------------------
   public static DelegationScopeConstraint fromJson(JsonObject json) {
-    System.out.print("json body: "+json);
+    LOGGER.debug("Parsing delegation scope constraint from JSON: {}", json);
 
     try {
       UUID delegationId = requireNonNull(
@@ -77,7 +80,7 @@ public record DelegationScopeConstraint(
     } catch (DxValidationException e) {
       throw e;
     } catch (Exception e) {
-      e.printStackTrace();
+      LOGGER.error("Failed to parse delegation scope constraint", e);
       throw new DxValidationException(
         "Invalid delegation scope constraint: " + e.getMessage()
       );

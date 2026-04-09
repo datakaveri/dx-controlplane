@@ -1,0 +1,419 @@
+/iudx/v2/auth/user/compute/requests:
+  get:
+    summary: Get the current user's compute role requests
+    description: 'Returns a paginated list of compute role requests submitted by the currently authenticated user. Supports filtering by status and pagination. Requires an authenticated user token.
+
+      **Log Type:** `COMPUTE`
+
+      '
+    tags:
+    - Compute APIs
+    operationId: get-auth-v2-user-compute-role-request
+    security:
+    - authorization: []
+    parameters:
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    - $ref: ../components/parameters.yaml#/StatusParam
+    responses:
+      '200':
+        description: Compute role requests retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  description: URN indicating the response status
+                title:
+                  type: string
+                  description: Human-readable response title
+                result:
+                  type: array
+                  description: List of compute role request records
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        description: Unique identifier of the compute role request
+                      userId:
+                        type: string
+                        format: uuid
+                        description: UUID of the user who submitted the request
+                      userName:
+                        type: string
+                        description: Display name of the requesting user
+                      status:
+                        type: string
+                        description: Current status of the request (pending, granted, rejected)
+                      approvedBy:
+                        type: string
+                        format: uuid
+                        nullable: true
+                        description: UUID of the admin who approved the request, or null if not yet processed
+                      createdAt:
+                        type: string
+                        format: date-time
+                        description: Timestamp when the request was created
+                      updatedAt:
+                        type: string
+                        format: date-time
+                        description: Timestamp when the request was last updated
+                      tableName:
+                        type: string
+                        description: Internal table name for the record
+                paginationInfo:
+                  $ref: ../components/schemas/pagination.yaml#/PaginationInfo
+            examples:
+              success:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                  - id: 25fcafb9-d65e-454f-9196-8648dcf08854
+                    userId: 436cb796-5826-458b-a914-a54721f70997
+                    userName: test test
+                    status: pending
+                    approvedBy: null
+                    createdAt: '2025-06-04T10:54:53.301846'
+                    updatedAt: '2025-06-04T10:54:53.301846'
+                    tableName: compute_role
+                  paginationInfo:
+                    page: 1
+                    size: 10
+                    totalCount: 346
+                    totalPages: 35
+                    hasNext: true
+                    hasPrevious: false
+      '400':
+        description: Bad Request - Invalid query parameters
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/generalBadRequest
+      '401':
+        description: Unauthorized - Token invalid or expired
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+/iudx/v2/auth/compute/requests:
+  get:
+    summary: Get all compute role requests (COS Admin)
+    description: 'Returns a paginated list of all compute role requests across all users. Supports filtering by status and pagination. Requires `cos_admin` role.
+
+      **Log Type:** `COMPUTE`
+
+      '
+    tags:
+    - Compute APIs
+    operationId: get-auth-v2-compute-role-request
+    security:
+    - authorization: []
+    parameters:
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    - $ref: ../components/parameters.yaml#/StatusParam
+    - $ref: ../components/parameters.yaml#/SearchTermParam
+    responses:
+      '200':
+        description: Compute role requests retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  description: URN indicating the response status
+                title:
+                  type: string
+                  description: Human-readable response title
+                result:
+                  type: array
+                  description: List of compute role request records
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        description: Unique identifier of the compute role request
+                      userId:
+                        type: string
+                        format: uuid
+                        description: UUID of the requesting user
+                      userName:
+                        type: string
+                        description: Display name of the requesting user
+                      status:
+                        type: string
+                        description: Current status of the request (pending, granted, rejected)
+                      approvedBy:
+                        type: string
+                        format: uuid
+                        nullable: true
+                        description: UUID of the admin who approved the request, or null if not yet processed
+                      createdAt:
+                        type: string
+                        format: date-time
+                        description: Timestamp when the request was created
+                      updatedAt:
+                        type: string
+                        format: date-time
+                        description: Timestamp when the request was last updated
+                      tableName:
+                        type: string
+                        description: Internal table name for the record
+                paginationInfo:
+                  $ref: ../components/schemas/pagination.yaml#/PaginationInfo
+            examples:
+              success:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                  - id: 25fcafb9-d65e-454f-9196-8648dcf08854
+                    userId: 436cb796-5826-458b-a914-a54721f70997
+                    userName: test test
+                    status: pending
+                    approvedBy: null
+                    createdAt: '2025-06-04T10:54:53.301846'
+                    updatedAt: '2025-06-04T10:54:53.301846'
+                    tableName: compute_role
+                  paginationInfo:
+                    page: 1
+                    size: 10
+                    totalCount: 346
+                    totalPages: 35
+                    hasNext: true
+                    hasPrevious: false
+      '400':
+        description: Bad Request - Invalid query parameters
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/generalBadRequest
+      '401':
+        description: Unauthorized - Token invalid or expired
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller does not have `cos_admin` role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/createNotificationForbidden
+  post:
+    summary: Create a compute role request (User)
+    tags:
+    - Compute APIs
+    description: 'Submits a new request for the compute role. The request will be reviewed by a COS Admin who can grant or reject it. Once granted, the user gains access to compute/sandbox functionality. Requires an authenticated user token.
+
+      **Log Type:** `COMPUTE`
+
+      '
+    operationId: post-auth-v2-compute-role-request
+    security:
+    - authorization: []
+    responses:
+      '200':
+        description: Compute role request created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  description: URN indicating the response status
+                title:
+                  type: string
+                  description: Human-readable response title
+                result:
+                  type: object
+                  description: The newly created compute role request
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                      description: Unique identifier of the created request
+                    userId:
+                      type: string
+                      format: uuid
+                      description: UUID of the requesting user
+                    userName:
+                      type: string
+                      description: Display name of the requesting user
+                    status:
+                      type: string
+                      description: Status of the request (will be `pending` upon creation)
+                    approvedBy:
+                      type: string
+                      format: uuid
+                      nullable: true
+                      description: Will be null upon creation
+                    createdAt:
+                      type: string
+                      format: date-time
+                      description: Timestamp when the request was created
+                    updatedAt:
+                      type: string
+                      format: date-time
+                      description: Timestamp when the request was last updated
+                    tableName:
+                      type: string
+                      description: Internal table name for the record
+            examples:
+              success:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                    id: 25fcafb9-d65e-454f-9196-8648dcf08854
+                    userId: 436cb796-5826-458b-a914-a54721f70997
+                    userName: test test
+                    status: pending
+                    approvedBy: null
+                    createdAt: '2025-06-04T10:54:53.301846'
+                    updatedAt: '2025-06-04T10:54:53.301846'
+                    tableName: compute_role
+      '400':
+        description: Bad Request - Invalid request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/generalBadRequest
+      '401':
+        description: Unauthorized - Token invalid or expired
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+/iudx/v2/auth/compute/requests/{id}:
+  parameters:
+  - name: id
+    in: path
+    required: true
+    description: UUID of the compute role request to update
+    schema:
+      type: string
+      format: uuid
+  put:
+    summary: Approve or reject a compute role request (COS Admin)
+    tags:
+    - Compute APIs
+    description: 'Allows a COS Admin to grant or reject a pending compute role request. The `status` field in the request body should be set to `granted` or `rejected`. Requires `cos_admin` role.
+
+      **Log Type:** `COMPUTE`
+
+      '
+    operationId: put-auth-v2-compute-role-request
+    security:
+    - authorization: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                description: New status for the compute role request. Must be `granted` or `rejected`.
+                enum:
+                - granted
+                - rejected
+            required:
+            - status
+          examples:
+            grant:
+              summary: Grant compute role
+              value:
+                status: granted
+            reject:
+              summary: Reject compute role
+              value:
+                status: rejected
+    responses:
+      '200':
+        description: Compute role request updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  description: URN indicating the response status
+                title:
+                  type: string
+                  description: Human-readable response title
+                detail:
+                  type: string
+                  description: Description of the action taken
+            examples:
+              success:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  detail: Updated Request
+      '400':
+        description: Bad Request - Invalid status value or request format
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/generalBadRequest
+      '401':
+        description: Unauthorized - Token invalid or expired
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller does not have `cos_admin` role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/createNotificationForbidden
+/iudx/v2/auth/compute/requests/report:
+  get:
+    summary: Download compute requests report (COS Admin)
+    description: 'Returns a CSV file containing compute role request activity logs. Requires `cos_admin` role. Useful for auditing and generating reports of all compute role requests.'
+    tags:
+    - Compute APIs
+    operationId: get-auth-v2-compute-requests-report
+    security:
+    - authorization: []
+    parameters:
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParamReport
+    - $ref: ../components/parameters.yaml#/SortingParam
+    - $ref: ../components/parameters.yaml#/StatusParam
+    responses:
+      '200':
+        description: CSV report generated successfully
+        content:
+          text/csv:
+            schema:
+              type: string
+              format: binary
+      '401':
+        description: Unauthorized - Token invalid or expired
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller does not have `cos_admin` role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/createNotificationForbidden

@@ -3,21 +3,26 @@ package org.cdpg.dx.aaa.credit.Controller;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.apiserver.ApiController;
-import org.cdpg.dx.aaa.credit.handler.CreditHandler;
+import org.cdpg.dx.apiserver.ApiController;
+import org.cdpg.dx.aaa.credit.handler.ComputeRoleHandler;
+import org.cdpg.dx.aaa.credit.handler.CreditBalanceHandler;
+import org.cdpg.dx.aaa.credit.handler.CreditRequestHandler;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.cdpg.dx.auth.authorization.model.DxScope;
 
 public class CreditController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(CreditController.class);
-  private final CreditHandler creditHandler;
+  private final CreditRequestHandler creditRequestHandler;
+  private final CreditBalanceHandler creditBalanceHandler;
+  private final ComputeRoleHandler computeRoleHandler;
   private final Boolean isKycRequired;
   private final AuditingHandler auditingHandler;
 
-  public CreditController(CreditHandler creditHandler, AuditingHandler auditingHandler,Boolean isKycRequired) {
-    this.creditHandler = creditHandler;
+  public CreditController(CreditRequestHandler creditRequestHandler, CreditBalanceHandler creditBalanceHandler, ComputeRoleHandler computeRoleHandler, AuditingHandler auditingHandler, Boolean isKycRequired) {
+    this.creditRequestHandler = creditRequestHandler;
+    this.creditBalanceHandler = creditBalanceHandler;
+    this.computeRoleHandler = computeRoleHandler;
     this.isKycRequired = isKycRequired;
     this.auditingHandler = auditingHandler;
   }
@@ -29,94 +34,87 @@ public class CreditController implements ApiController {
       .operation("post-auth-v2-credit-request")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.forRoles(DxRole.COMPUTE))
-      .handler(creditHandler::createCreditRequest);
+      .handler(creditRequestHandler::createCreditRequest);
 
     routerBuilder
       .operation("get-auth-v2-credit")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
-      .handler(AuthorizationHandler.forDelegationScopes(DxScope.COS_ADMIN_ACCESS,DxScope.CREDIT_MANAGEMENT))
-      .handler(creditHandler::getCreditRequests);
+      .handler(creditRequestHandler::getCreditRequests);
 
     routerBuilder
       .operation("get-auth-v2-user-credit")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
-      .handler(creditHandler::getUserCreditRequests);
+      .handler(creditRequestHandler::getUserCreditRequests);
 
     routerBuilder
       .operation("delete-auth-v2-user-credit")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
-      .handler(creditHandler::deletePendingCreditRequest);
+      .handler(creditRequestHandler::deletePendingCreditRequest);
 
 
     routerBuilder
       .operation("put-auth-v2-credit-request")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
-      .handler(AuthorizationHandler.forDelegationScopes(DxScope.COS_ADMIN_ACCESS,DxScope.CREDIT_MANAGEMENT))
-      .handler(creditHandler::updateCreditRequestStatus);
+      .handler(creditRequestHandler::updateCreditRequestStatus);
 
     routerBuilder
       .operation("put-auth-v2-user-credit")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
-      .handler(AuthorizationHandler.forDelegationScopes(DxScope.COS_ADMIN_ACCESS,DxScope.CREDIT_MANAGEMENT))
-      .handler(creditHandler::deductCredits);
+      .handler(creditBalanceHandler::deductCredits);
 
     routerBuilder
       .operation("put-auth-v2-user-credit-add")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
-      .handler(AuthorizationHandler.forDelegationScopes(DxScope.COS_ADMIN_ACCESS,DxScope.CREDIT_MANAGEMENT))
-      .handler(creditHandler::addCredits);
+      .handler(creditBalanceHandler::addCredits);
 
     routerBuilder
       .operation("post-auth-v2-compute-role-request")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.KycVerification(isKycRequired))
-      .handler(creditHandler::createComputeRoleRequest);
+      .handler(computeRoleHandler::createComputeRoleRequest);
 
 
     routerBuilder
       .operation("get-auth-v2-compute-role-request")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
-      .handler(creditHandler::getAllComputeRequests);
+      .handler(computeRoleHandler::getAllComputeRequests);
 
     routerBuilder
       .operation("get-auth-v2-user-compute-role-request")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
-      .handler(creditHandler::getComputeRequests);
+      .handler(computeRoleHandler::getComputeRequests);
 
     routerBuilder
       .operation("delete-auth-v2-user-compute-role-request")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
-      .handler(creditHandler::deletePendingComputeRequests);
+      .handler(computeRoleHandler::deletePendingComputeRequests);
 
     routerBuilder
       .operation("put-auth-v2-compute-role-request")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
-      .handler(AuthorizationHandler.forDelegationScopes(DxScope.COS_ADMIN_ACCESS,DxScope.CREDIT_MANAGEMENT))
-      .handler(creditHandler::updateComputeRoleStatus);
+      .handler(computeRoleHandler::updateComputeRoleStatus);
 
     routerBuilder
       .operation("get-auth-v2-admin-user-credit-balance")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
-      .handler(AuthorizationHandler.forDelegationScopes(DxScope.COS_ADMIN_ACCESS,DxScope.CREDIT_MANAGEMENT))
-      .handler(creditHandler::getBalanceofUser);
+      .handler(creditBalanceHandler::getBalanceofUser);
 
     routerBuilder
       .operation("get-auth-v2-user-credit-balance")
       .handler(auditingHandler::handleApiAudit)
       .handler(AuthorizationHandler.forRoles(DxRole.COMPUTE))
       .handler(AuthorizationHandler.KycVerification(isKycRequired))
-      .handler(creditHandler::getBalance);
+      .handler(creditBalanceHandler::getBalance);
   }
 }
-

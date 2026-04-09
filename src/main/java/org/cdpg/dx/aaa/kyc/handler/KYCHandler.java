@@ -20,6 +20,7 @@ import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.response.ResponseBuilder;
+import org.cdpg.dx.common.util.CpRoutingContextHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
@@ -50,7 +51,7 @@ public class KYCHandler {
 
     JsonObject OrgRequestJson = ctx.body().asJsonObject();
 
-    LOGGER.debug("orgRequestJson: " + OrgRequestJson);
+    LOGGER.debug("orgRequestJson: {}", OrgRequestJson);
 
     String code = OrgRequestJson.getString("auth_code");
     String codeVerifier = OrgRequestJson.getString("code_verifier");
@@ -68,7 +69,7 @@ public class KYCHandler {
           KYCAuditLogHelper.buildAudit(
             ctx, KYCAuditOperation.VERIFY);
 
-        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
         ResponseBuilder.sendSuccess(ctx, res,urnGenerator);
       })
       .onFailure(ctx::fail);
@@ -94,7 +95,7 @@ public class KYCHandler {
         UserActivityAuditLogBuilder auditLogBuilder =
           KYCAuditLogHelper.buildAudit(
             ctx, KYCAuditOperation.CONFIRM);
-        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
         ResponseBuilder.sendSuccess(ctx, res,urnGenerator);
       })
       .onFailure(ctx::fail);
@@ -130,7 +131,7 @@ public class KYCHandler {
         UserActivityAuditLogBuilder auditLogBuilder =
           KYCAuditLogHelper.buildAudit(
             ctx, KYCAuditOperation.REVOKE);
-        RoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+        CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
         ResponseBuilder.sendSuccess(ctx, "KYC revoked successfully",urnGenerator);
       })
       .onFailure(ctx::fail);
