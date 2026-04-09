@@ -25,7 +25,7 @@ pipeline {
             triggeredBy cause: 'UserIdCause'
           }
           expression {
-            return env.BRANCH_NAME == 'dev' || env.CHANGE_TARGET == 'dev';
+            return env.BRANCH_NAME == 'dev';
           }
         }
       }
