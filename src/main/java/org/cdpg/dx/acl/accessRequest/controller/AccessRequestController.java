@@ -198,7 +198,8 @@ public class AccessRequestController implements ApiController {
     User user = ctx.user();
 
     Map<String, String> allowedFilters =
-        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE);
+        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE, "organizationId",
+            DB_ASSET_ORGANIZATION_ID);
     Map<String, Object> additionalFilters = Map.of("provider_id", user.subject());
     Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
     Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
@@ -244,7 +245,8 @@ public class AccessRequestController implements ApiController {
 
     String organizationId = RoutingContextHelper.fromPrincipal(ctx).organisationId();
     Map<String, String> allowedFilters =
-        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE);
+        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE, "organizationId",
+            DB_ASSET_ORGANIZATION_ID);
     Map<String, Object> additionalFilters = Map.of(DB_ASSET_ORGANIZATION_ID, organizationId);
     Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
     Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
@@ -290,7 +292,8 @@ public class AccessRequestController implements ApiController {
     User user = ctx.user();
 
     Map<String, String> allowedFilters =
-        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE);
+        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE, "organizationId",
+            DB_ASSET_ORGANIZATION_ID);
     Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
     Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
 
@@ -520,7 +523,8 @@ public class AccessRequestController implements ApiController {
     User user = ctx.user();
 
     Map<String, String> allowedFilters =
-        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE);
+        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE, "organizationId",
+            DB_ASSET_ORGANIZATION_ID);
     Map<String, Object> additionalFilters = Map.of("consumer_id", user.subject());
     Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
     Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
