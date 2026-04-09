@@ -142,7 +142,7 @@ class AccessRequestServiceTest {
         .setItemId(itemId.toString())
         .setAssetName("Test Dataset")
         .setAssetType("adex:DataBank")
-        .setItemOrganization(providerOrgId.toString())
+        .setItemOrganizationId(providerOrgId.toString())
         .setShortDescription("A test dataset");
   }
 
