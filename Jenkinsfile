@@ -36,7 +36,7 @@ pipeline {
           steps {
             script {
               dir('dx-common') {
-                git branch: 'origin/dev', 
+                git branch: 'dev', 
                     url: 'https://github.com/datakaveri/dx-common.git'
                 
                 sh 'mvn clean install -Dmaven.test.skip=true'
