@@ -4,14 +4,20 @@ ARG VERSION="0.0.1-SNAPSHOT"
 FROM maven:3-eclipse-temurin-21 as builder
 
 WORKDIR /usr/share/app
+
+# Clone dx-common inside Docker
+RUN git clone -b dev https://github.com/datakaveri/dx-common.git /dx-common
+
+# Build dx-common
+RUN cd /dx-common && mvn clean install -DskipTests
+
 COPY pom.xml .
 
-# Downloads all packages defined in pom.xml
-RUN mvn clean package
 COPY src src
 
 # Build the source code to generate the fatjar
 RUN mvn clean package -Dmaven.test.skip=true
+
 
 # Java Runtime as the base for final image
 FROM eclipse-temurin:21-jre
