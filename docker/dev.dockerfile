@@ -13,6 +13,9 @@ RUN cd /dx-common && mvn clean install -DskipTests
 
 COPY pom.xml .
 
+# Downloads all packages defined in pom.xml
+RUN mvn clean package
+
 COPY src src
 
 # Build the source code to generate the fatjar
