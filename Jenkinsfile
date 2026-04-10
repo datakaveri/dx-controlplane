@@ -25,7 +25,7 @@ pipeline {
             triggeredBy cause: 'UserIdCause'
           }
           expression {
-            return env.BRANCH_NAME == 'stable/v2.2'
+            return env.BRANCH_NAME == 'stable/v2.2' || env.BRANCH_NAME.startsWith('PR-');
           }
         }
       }
