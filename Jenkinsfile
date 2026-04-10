@@ -25,25 +25,12 @@ pipeline {
             triggeredBy cause: 'UserIdCause'
           }
           expression {
-            return env.BRANCH_NAME == 'dev';
+            return env.BRANCH_NAME == 'dev' || env.BRANCH_NAME.startsWith('PR-');
           }
         }
       }
 
       stages {
-
-        stage('Build dx-common Dependency') {
-          steps {
-            script {
-              dir('dx-common') {
-                git branch: 'dev', 
-                    url: 'https://github.com/datakaveri/dx-common.git'
-                
-                sh 'mvn clean install -Dmaven.test.skip=true'
-              }
-            }
-          }
-        }
 
         stage('Trivy Code Scan (Dependencies)') {
           steps {
