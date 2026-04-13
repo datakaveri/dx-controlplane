@@ -51,7 +51,7 @@ pipeline {
           }
         }
 
-        stage('Trivy Scan - High and Critical') {
+        stage('Trivy Scan and Report') {
           steps {
             script {
               try {
@@ -62,18 +62,11 @@ pipeline {
                   --ignore-unfixed \\
                   ${devImage.imageName()}
                 """
+                sh "trivy image --output trivy-dev-image-report.txt ${devImage.imageName()}"
               } catch (Exception e) {
                 echo "Trivy scan failed due to high or critical vulnerabilities."
                 throw e
               }
-            }
-          }
-        }
-
-        stage('Trivy Docker Image Scan and Report') {
-          steps {
-            script {
-              sh "trivy image --output trivy-dev-image-report.txt ${devImage.imageName()}"
             }
           }
           post {
@@ -91,6 +84,11 @@ pipeline {
         }
 
         stage('Continuous Deployment') {
+          when {
+            expression {
+              return env.BRANCH_NAME == 'dev'
+            }
+          }
 
           stages {
 
