@@ -714,23 +714,31 @@ public class QueryModel {
    * @return List of Elasticsearch SortOptions objects.
    */
   public List<SortOptions> toSortOptions() {
-    if (sortFields == null || sortFields.isEmpty()) {
-      return null; // Returns null if there are no sorting rules
+
+    List<SortOptions> sortOptions = new ArrayList<>();
+
+    // Add _score sorting FIRST
+
+    sortOptions.add(SortOptions.of(s -> s.score(sc -> sc.order(SortOrder.Desc))));
+
+    if (sortFields != null && !sortFields.isEmpty()) {
+      sortOptions.addAll(
+          sortFields.entrySet().stream()
+              .map(
+                  entry ->
+                      SortOptions.of(
+                          s ->
+                              s.field(
+                                  f ->
+                                      f.field(entry.getKey())
+                                          .order(
+                                              "asc".equalsIgnoreCase(entry.getValue())
+                                                  ? SortOrder.Asc
+                                                  : SortOrder.Desc))))
+              .toList());
     }
 
-    return sortFields.entrySet().stream()
-        .map(
-            entry ->
-                SortOptions.of(
-                    s ->
-                        s.field(
-                            f ->
-                                f.field(entry.getKey())
-                                    .order(
-                                        "asc".equalsIgnoreCase(entry.getValue())
-                                            ? SortOrder.Asc
-                                            : SortOrder.Desc))))
-        .collect(Collectors.toList());
+    return sortOptions.isEmpty() ? null : sortOptions;
   }
 
   /**

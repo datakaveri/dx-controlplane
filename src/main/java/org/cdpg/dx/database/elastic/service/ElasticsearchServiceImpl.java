@@ -54,11 +54,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.database.elastic.model.BulkSyncResult;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxInternalServerErrorException;
 import org.cdpg.dx.database.elastic.ElasticClient;
 import org.cdpg.dx.database.elastic.model.BulkScriptUpdate;
+import org.cdpg.dx.database.elastic.model.BulkSyncResult;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.database.elastic.model.QueryModel;
 
@@ -538,24 +538,33 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
 
   private Future<Void> executeUpdate(String index, String id, QueryModel model) {
     Promise<Void> promise = Promise.promise();
-    JsonObject doc = model.extractDocumentFromQueryModel();
-    String rawJson = doc.encode();
-    JsonData jsonData = JsonData.fromJson(rawJson);
 
-    UpdateRequest<String, JsonData> updateRequest =
-        UpdateRequest.of(u -> u.index(index).id(id).doc(jsonData));
+    Script script = model.toElasticsearchScript();
+
+    UpdateRequest.Builder<String, JsonData> builder =
+        new UpdateRequest.Builder<String, JsonData>().index(index).id(id).retryOnConflict(3);
+
+    if (script != null) {
+      builder.script(script);
+    } else {
+      JsonObject doc = model.extractDocumentFromQueryModel();
+      builder.doc(JsonData.fromJson(doc.encode()));
+    }
+
+    UpdateRequest<String, JsonData> request = builder.build();
 
     asyncClient
-        .update(updateRequest, JsonObject.class)
+        .update(request, JsonObject.class)
         .whenComplete(
             (res, err) -> {
               if (err != null) {
-                LOGGER.error("update failed {}", err.getMessage());
+                LOGGER.error("update failed {}", err.getMessage(), err);
                 promise.fail(new RuntimeException("Update error", err));
               } else {
                 promise.complete();
               }
             });
+
     return promise.future();
   }
 

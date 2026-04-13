@@ -697,18 +697,9 @@ public class ItemServiceImpl implements ItemService {
   ) {
     Promise<Void> promise = Promise.promise();
 
-    QueryModel idQuery = new QueryModel(QueryType.TERM);
-    idQuery.setQueryParameters(Map.of(
-        FIELD, ID_KEYWORD,
-        VALUE, entityId.toString()
-    ));
-
-    QueryModel boolQuery = new QueryModel();
-    boolQuery.setQueryType(QueryType.BOOL);
-    boolQuery.setMustQueries(List.of(idQuery));
-
-    boolQuery.setScriptLanguage("painless");
-    boolQuery.setScriptSource("""
+    QueryModel updateQueryModel = new QueryModel();
+    updateQueryModel.setScriptLanguage("painless");
+    updateQueryModel.setScriptSource("""
     if (ctx._source.metrics == null) {
       ctx._source.metrics = [
         'likes': 0,
@@ -729,16 +720,13 @@ public class ItemServiceImpl implements ItemService {
     }
   """);
 
-    boolQuery.setScriptParams(Map.of(
+    updateQueryModel.setScriptParams(Map.of(
         "likeDelta", likeDelta,
         "dislikeDelta", dislikeDelta
     ));
 
-    QueryModel updateByQueryModel = new QueryModel();
-    updateByQueryModel.setQueries(boolQuery);
-
     elasticsearchService
-        .updateDocumentsByQuery(updateByQueryModel.getQueries(), docIndex)
+        .updateDocument(docIndex, entityId.toString(), updateQueryModel)
         .onSuccess(v -> promise.complete())
         .onFailure(promise::fail);
 
@@ -778,24 +766,13 @@ public class ItemServiceImpl implements ItemService {
     return elasticsearchService.bulkUpdateById(docIndex, updates);
   }
 @Override
-  public Future<Void> updateMetric(
-      UUID entityId,
-      String metricField,
-      int delta
-  ) {
+  public Future<Void> updateMetric(UUID entityId, String metricField, int delta) {
     Promise<Void> promise = Promise.promise();
 
-    QueryModel idQuery = new QueryModel(QueryType.TERM);
-    idQuery.setQueryParameters(Map.of(
-        FIELD, ID_KEYWORD,
-        VALUE, entityId.toString()
-    ));
+    QueryModel updateModel = new QueryModel();
 
-    QueryModel boolQuery = new QueryModel(QueryType.BOOL);
-    boolQuery.setMustQueries(List.of(idQuery));
-
-    boolQuery.setScriptLanguage("painless");
-    boolQuery.setScriptSource("""
+    updateModel.setScriptLanguage("painless");
+    updateModel.setScriptSource("""
     if (ctx._source.metrics == null) {
       ctx._source.metrics = [
         'likes': 0,
@@ -816,16 +793,13 @@ public class ItemServiceImpl implements ItemService {
       );
   """);
 
-    boolQuery.setScriptParams(Map.of(
+    updateModel.setScriptParams(Map.of(
         "metricField", metricField,
         "delta", delta
     ));
 
-    QueryModel updateByQueryModel = new QueryModel();
-    updateByQueryModel.setQueries(boolQuery);
-
     elasticsearchService
-        .updateDocumentsByQuery(updateByQueryModel.getQueries(), docIndex)
+        .updateDocument(docIndex, entityId.toString(), updateModel)
         .onSuccess(v -> promise.complete())
         .onFailure(promise::fail);
 
