@@ -790,7 +790,7 @@ public class CentralItemServiceImpl implements ItemService {
                           response -> {
                             if (response == null) {
                               LOGGER.info("response is null");
-                              return new AssetRequestResponse(assetRequest, null, null, null , null);
+                              return new AssetRequestResponse(assetRequest, null);
                             }
 
                             JsonObject item =
@@ -811,12 +811,12 @@ public class CentralItemServiceImpl implements ItemService {
                             LOGGER.info("Building asset response");
 
                             return new AssetRequestResponse(
-                                assetRequest, itemName, accessPolicy, type, asset);
+                                assetRequest, asset);
                           })
                       .recover(
                           err ->
                               Future.succeededFuture(
-                                  new AssetRequestResponse(assetRequest, null, null, null, null)));
+                                  new AssetRequestResponse(assetRequest,  null)));
                 })
             .toList();
 
