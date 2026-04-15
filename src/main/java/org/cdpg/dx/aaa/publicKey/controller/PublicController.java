@@ -1,6 +1,5 @@
 package org.cdpg.dx.aaa.publicKey.controller;
 
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import org.cdpg.dx.apiserver.ApiController;
@@ -21,13 +20,9 @@ public class PublicController implements ApiController {
   }
 
   private void retrievePublicKey(RoutingContext ctx) {
-
-    JsonObject jwks = publicService.generateJwks();
-
-    if (jwks.isEmpty()) {
-      ctx.fail(404, new RuntimeException("No public key found"));
-    } else {
-      ctx.response().putHeader("Content-Type", "application/json").end(jwks.encodePrettily());
-    }
+    ctx.response()
+        .putHeader("Content-Type", "application/json")
+        .putHeader("Cache-Control", "public, max-age=3600")
+        .end(publicService.generateJwks().encodePrettily());
   }
 }
