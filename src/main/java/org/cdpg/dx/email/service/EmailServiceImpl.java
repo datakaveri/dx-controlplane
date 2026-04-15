@@ -7,6 +7,7 @@ import io.vertx.ext.mail.MailClient;
 import io.vertx.ext.mail.MailMessage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.acl.accessRequest.util.EmailType;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.email.model.EmailRequest;
 import org.cdpg.dx.email.util.EmailComposer;
@@ -66,27 +67,41 @@ public class EmailServiceImpl implements EmailService {
   public Future<Void> sendEmailService(JsonObject jsonObject) {
     EmailRequest emailRequest = EmailRequest.fromJson(jsonObject);
     Promise<Void> promise = Promise.promise();
-    if (emailRequest.isCreated()) {
-      emailComposer
-          .sendEmailForCreateAccessRequest(emailRequest)
-          .compose(v -> sendEmail(v))
-          .onSuccess(
-              success -> {
-                LOGGER.debug("Email sent successfully for access request creation.");
-                promise.complete();
-              })
-          .onFailure(promise::fail);
-    } else {
-      emailComposer
-          .sendEmailForUpdateAccessRequest(emailRequest)
-          .compose(this::sendEmail)
-          .onSuccess(
-              success -> {
-                LOGGER.debug("Email sent successfully for access request update.");
-                promise.complete();
-              })
-          .onFailure(promise::fail);
+
+    EmailType emailType = EmailType.valueOf(jsonObject.getString("emailType"));
+
+    Future<MailMessage> mailFuture;
+
+    switch (emailType) {
+
+      case PROVIDER_CREATE:
+        mailFuture = emailComposer.sendEmailForCreateAccessRequest(emailRequest);
+        break;
+
+      case CONSUMER_ACK:
+        mailFuture = emailComposer.sendEmailForCreateAccessRequestConsumerAck(emailRequest);
+        break;
+
+      case CONSUMER_UPDATE:
+        mailFuture = emailComposer.sendEmailForUpdateAccessRequest(emailRequest);
+        break;
+
+      default:
+        return Future.failedFuture(
+            new IllegalArgumentException("Unsupported email type: " + emailType));
     }
+
+    mailFuture
+        .compose(this::sendEmail)
+        .onSuccess(v -> {
+          LOGGER.debug("Email sent successfully for type: {}", emailType);
+          promise.complete();
+        })
+        .onFailure(err -> {
+          LOGGER.error("Failed to send email for type {}: {}", emailType, err.getMessage());
+          promise.fail(err);
+        });
+
     return promise.future();
   }
 }

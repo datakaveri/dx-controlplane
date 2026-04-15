@@ -3,6 +3,7 @@ package org.cdpg.dx.common.email;
 import static org.cdpg.dx.email.util.Constants.*;
 
 import io.vertx.core.json.JsonObject;
+import org.cdpg.dx.acl.accessRequest.util.EmailType;
 
 public record SendEmail(
     String consumerUserId,
@@ -14,7 +15,8 @@ public record SendEmail(
     String shortDescription,
     boolean isCreated,
     String status,
-    String assetName) {
+    String assetName,
+    EmailType emailType) {
   private static void putIfPresent(JsonObject json, String key, String value) {
     if (value != null && !value.isBlank()) {
       json.put(key, value);
@@ -34,6 +36,7 @@ public record SendEmail(
     putIfPresent(json, ASSET_NAME, assetName);
     // boolean is primitive → always present
     json.put("isCreated", isCreated);
+    putIfPresent(json, "emailType", emailType != null ? emailType.name() : null);
     return json;
   }
 }
