@@ -831,15 +831,9 @@ public class CentralItemServiceImpl implements ItemService {
   public Future<Void> updateEngagementCounters(UUID entityId, int likeDelta, int dislikeDelta) {
     Promise<Void> promise = Promise.promise();
 
-    QueryModel idQuery = new QueryModel(QueryType.TERM);
-    idQuery.setQueryParameters(Map.of(FIELD, ID_KEYWORD, VALUE, entityId.toString()));
-
-    QueryModel boolQuery = new QueryModel();
-    boolQuery.setQueryType(QueryType.BOOL);
-    boolQuery.setMustQueries(List.of(idQuery));
-
-    boolQuery.setScriptLanguage("painless");
-    boolQuery.setScriptSource(
+    QueryModel updateQueryModel = new QueryModel();
+    updateQueryModel.setScriptLanguage("painless");
+    updateQueryModel.setScriptSource(
         """
     if (ctx._source.metrics == null) {
       ctx._source.metrics = [
@@ -861,16 +855,13 @@ public class CentralItemServiceImpl implements ItemService {
     }
   """);
 
-    boolQuery.setScriptParams(
+    updateQueryModel.setScriptParams(
         Map.of(
             "likeDelta", likeDelta,
             "dislikeDelta", dislikeDelta));
 
-    QueryModel updateByQueryModel = new QueryModel();
-    updateByQueryModel.setQueries(boolQuery);
-
     centralElasticsearchService
-        .updateDocumentsByQuery(updateByQueryModel.getQueries(), docIndex)
+        .updateDocument(docIndex, entityId.toString(), updateQueryModel)
         .onSuccess(v -> promise.complete())
         .onFailure(promise::fail);
 
@@ -911,14 +902,9 @@ public class CentralItemServiceImpl implements ItemService {
   public Future<Void> updateMetric(UUID entityId, String metricField, int delta) {
     Promise<Void> promise = Promise.promise();
 
-    QueryModel idQuery = new QueryModel(QueryType.TERM);
-    idQuery.setQueryParameters(Map.of(FIELD, ID_KEYWORD, VALUE, entityId.toString()));
-
-    QueryModel boolQuery = new QueryModel(QueryType.BOOL);
-    boolQuery.setMustQueries(List.of(idQuery));
-
-    boolQuery.setScriptLanguage("painless");
-    boolQuery.setScriptSource(
+    QueryModel updateModel = new QueryModel();
+    updateModel.setScriptLanguage("painless");
+    updateModel.setScriptSource(
         """
     if (ctx._source.metrics == null) {
       ctx._source.metrics = [
@@ -940,16 +926,13 @@ public class CentralItemServiceImpl implements ItemService {
       );
   """);
 
-    boolQuery.setScriptParams(
+    updateModel.setScriptParams(
         Map.of(
             "metricField", metricField,
             "delta", delta));
 
-    QueryModel updateByQueryModel = new QueryModel();
-    updateByQueryModel.setQueries(boolQuery);
-
     centralElasticsearchService
-        .updateDocumentsByQuery(updateByQueryModel.getQueries(), docIndex)
+        .updateDocument(docIndex, entityId.toString(), updateModel)
         .onSuccess(v -> promise.complete())
         .onFailure(promise::fail);
 
