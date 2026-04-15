@@ -108,8 +108,15 @@ public class EmailComposer {
 
   private String getDashboardUrl(String assetType, String itemId) {
     String baseUrl = config.getString("publisherPanelUrl");
-    String path = AssetType.fromString(assetType).equals(AI_MODEL) ? "ai-model" : "data-bank";
-    return baseUrl + "/" + path + "/data-card?id=" + itemId;
+
+    AssetType type = AssetType.fromString(assetType);
+
+    if (type.equals(AI_MODEL)) {
+      return baseUrl + "/model/" + itemId;
+    }
+
+    // Default → dataset
+    return baseUrl + "/dataset/" + itemId + "?tab=dataset";
   }
 
   public Future<UserDetails> getUserDetails(String userId) {
