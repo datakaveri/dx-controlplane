@@ -15,6 +15,9 @@ import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_EXPIRY_AT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_UPDATED_AT;
 import static org.cdpg.dx.acl.accessRequest.util.Constants.API_TO_DB_MAP;
+import static org.cdpg.dx.acl.accessRequest.util.EmailType.CONSUMER_ACK;
+import static org.cdpg.dx.acl.accessRequest.util.EmailType.CONSUMER_UPDATE;
+import static org.cdpg.dx.acl.accessRequest.util.EmailType.PROVIDER_CREATE;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
 import io.vertx.core.Future;
@@ -412,7 +415,8 @@ public class AccessRequestController implements ApiController {
                                       accessRequestDto.getShortDescription(),
                                       false,
                                       status.getStatus(),
-                                      accessRequestDto.getAssetName())
+                                      accessRequestDto.getAssetName(),
+                                      CONSUMER_UPDATE)
                                   .toJson();
                           Future<Void> future =
                               dataBrokerService.publishMessageInternal(
@@ -453,7 +457,8 @@ public class AccessRequestController implements ApiController {
                                       accessRequestDto.getShortDescription(),
                                       false,
                                       status.getStatus(),
-                                      accessRequestDto.getAssetName())
+                                      accessRequestDto.getAssetName(),
+                                      CONSUMER_UPDATE)
                                   .toJson();
                           Future<Void> future =
                               dataBrokerService.publishMessageInternal(
@@ -505,11 +510,30 @@ public class AccessRequestController implements ApiController {
                           accessRequestDto.getShortDescription(),
                           true,
                           null,
-                          accessRequestDto.getAssetName())
+                          accessRequestDto.getAssetName(),
+                      PROVIDER_CREATE)
                       .toJson();
-              Future<Void> future =
+              Future<Void> providerFuture =
                   dataBrokerService.publishMessageInternal(
                       jsonObject, emailExchange, emailRoutingKey);
+
+              JsonObject consumerObject =
+                  new SendEmail(
+                      accessRequestDto.getConsumerId(),
+                      "PATH",
+                      "templates/AssetRequestConsumerAckEmailTemplate.html",
+                      accessRequestDto.getProviderId(),
+                      accessRequestDto.getAssetType(),
+                      accessRequestDto.getItemId(),
+                      accessRequestDto.getShortDescription(),
+                      true,
+                      null,
+                      accessRequestDto.getAssetName(),
+                      CONSUMER_ACK)
+                      .toJson();
+              Future<Void> consumerFuture =
+                  dataBrokerService.publishMessageInternal(
+                      consumerObject, emailExchange, emailRoutingKey);
             })
         .onFailure(
             err -> {

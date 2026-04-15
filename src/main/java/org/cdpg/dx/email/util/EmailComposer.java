@@ -207,4 +207,89 @@ public class EmailComposer {
     message.setHtml(body);
     return message;
   }
+
+  public Future<MailMessage> sendEmailForCreateAccessRequestConsumerAck(EmailRequest emailRequest) {
+
+    Promise<MailMessage> promise = Promise.promise();
+
+    String senderEmail = config.getString("emailSender");
+    String emailTemplate = emailRequest.templateResolver().resolve();
+    String senderName = config.getString("senderName");
+    String platformName = config.getString("platformName");
+    String platformShortName = config.getString("platformShortName");
+    String dashboardUrl = getDashboardUrl(emailRequest.assetType(), emailRequest.itemId());
+
+    List<String> supportEmailIds = config.getJsonArray("emailSupport").getList();
+
+    if (emailRequest.consumerUserId() != null) {
+
+      getUserDetails(emailRequest.consumerUserId())
+          .onSuccess(
+              userDetails -> {
+                Map<String, String> emailDetails =
+                    Map.of(
+                        "CONTACT_US_URL",
+                        config.getString("publisherPanelUrl") + "/contact-us",
+                        "CONSUMER_FIRST_NAME",
+                        userDetails.firstName(),
+                        "CONSUMER_LAST_NAME",
+                        userDetails.lastName(),
+                        "ASSET_NAME",
+                        emailRequest.assetName(),
+                        "ASSET_DESCRIPTION",
+                        emailRequest.shortDescription(),
+                        "PLATFORM_NAME",
+                        platformName,
+                        "PLATFORM_SHORT_NAME",
+                        platformShortName,
+                        "DASHBOARD_URL",
+                        dashboardUrl,
+                        "SENDER_NAME",
+                        senderName,
+                        "ACK_MESSAGE",
+                        "Your access request has been successfully submitted and is currently under review.");
+
+                String htmlBody = TemplateCreator.render(emailTemplate, emailDetails);
+
+                MailMessage mailMessage =
+                    createConsumerAckMailMessage(
+                        senderEmail,
+                        userDetails.userEmail(),
+                        supportEmailIds,
+                        htmlBody,
+                        platformShortName);
+
+                promise.complete(mailMessage);
+              })
+          .onFailure(
+              err -> {
+                LOGGER.error("Failed to fetch consumer details: {}", err.getMessage());
+                promise.fail(err);
+              });
+
+    } else {
+      LOGGER.error("Consumer user ID is null.");
+      promise.fail(new DxBadRequestException("Consumer user ID is null."));
+    }
+
+    return promise.future();
+  }
+
+  public MailMessage createConsumerAckMailMessage(
+      String senderEmail,
+      String consumerEmail,
+      List<String> supportEmailIds,
+      String body,
+      String platformShortName) {
+
+    MailMessage message = new MailMessage();
+    message.setFrom(senderEmail);
+    message.setTo(consumerEmail);
+    message.setCc(supportEmailIds);
+
+    message.setSubject(platformShortName + " Platform – Dataset Access Request Received");
+
+    message.setHtml(body);
+    return message;
+  }
 }
