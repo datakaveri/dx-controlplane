@@ -13,11 +13,9 @@ import static org.cdpg.dx.aaa.common.Constants.RESOURCE_GRP;
 import static org.cdpg.dx.aaa.common.Constants.RESOURCE_SVR;
 import static org.cdpg.dx.aaa.common.Constants.RESTRICTED;
 import static org.cdpg.dx.aaa.common.Constants.VALUE;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONS;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSTRAINTS;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.EXPIRY_AT;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.POLICIES;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.POLICY_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.*;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.SHORT_DESCRIPTION;
+import static org.cdpg.dx.catalogueService.config.Constants.*;
 import static org.cdpg.dx.database.elastic.util.Constants.ACCESS_POLICY;
 import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
 import static org.cdpg.dx.database.elastic.util.Constants.COS_ADMIN;
@@ -48,18 +46,17 @@ import org.cdpg.dx.aaa.item.service.PolicyVerifyServiceImpl;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.item.util.ItemFactory;
 import org.cdpg.dx.aaa.item.util.PatchItemRequest;
+import org.cdpg.dx.acl.accessRequest.dao.model.AssetType;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.model.VerifyPolicyDto;
 import org.cdpg.dx.acl.policy.service.PolicyService;
 import org.cdpg.dx.acl.policy.service.impl.PolicyServiceImpl;
 import org.cdpg.dx.acl.rule.dao.AccessRuleDao;
 import org.cdpg.dx.acl.rule.dao.impl.AccessRuleDaoImpl;
+import org.cdpg.dx.catalogueService.config.Constants;
+import org.cdpg.dx.catalogueService.models.Asset;
 import org.cdpg.dx.catalogueService.models.ItemType;
-import org.cdpg.dx.common.exception.DxBadRequestException;
-import org.cdpg.dx.common.exception.DxConflictException;
-import org.cdpg.dx.common.exception.DxForbiddenException;
-import org.cdpg.dx.common.exception.DxNotFoundException;
-import org.cdpg.dx.common.exception.DxUnauthorizedException;
+import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.elastic.model.BulkScriptUpdate;
@@ -726,6 +723,57 @@ public class CentralItemServiceImpl implements ItemService {
     return str == null || str.trim().isEmpty();
   }
 
+  private Asset parseAndGetAsset(JsonObject result, String id) {
+    LOGGER.debug("Asset info : {}", result.encodePrettily());
+    try {
+      String assetName = result.getString(ASSET_NAME_KEY, "").trim();
+      String provider = result.getString(Constants.OWNER_ID);
+      String organizationId = result.getString(ORGANIZATION_ID);
+      String shortDescription = result.getString(SHORT_DESCRIPTION, "").trim();
+      String organizationName = result.getString(ORGANIZATION, "");
+
+      AssetType catAssetType = null;
+      JsonArray typeArray = result.getJsonArray(Constants.TYPE);
+      if (typeArray != null) {
+        for (Object type : typeArray) {
+          String typeStr = type.toString();
+          catAssetType = AssetType.fromString(typeStr);
+        }
+      }
+
+      // Validation
+      if (provider == null
+        || assetName.isEmpty()
+        || catAssetType == null
+        || organizationId == null
+        || shortDescription == null) {
+        LOGGER.error("Asset metadata invalid for id: {}", id);
+        LOGGER.error(
+          "Provider: {}, AssetName: {}, AssetType: {}, OrgId: {}, shortDescription : {}",
+          provider,
+          assetName,
+          catAssetType,
+          organizationId,
+          shortDescription);
+        throw new DxInternalServerErrorException("Incomplete asset metadata from catalogue");
+      }
+
+      return new Asset()
+        .setItemId(id)
+        .setProviderId(provider)
+        .setOrganizationId(organizationId)
+        .setOrganizationName(organizationName)
+        .setAssetType(catAssetType.getAssetType())
+        .setAssetName(assetName)
+        .setShortDescription(shortDescription);
+
+    } catch (Exception e) {
+      LOGGER.error("Error building asset from catalogue metadata: {}", e.getMessage(), e);
+      throw new DxInternalServerErrorException("Incomplete asset metadata from catalogue");
+    }
+  }
+
+
   @Override
   public Future<List<AssetRequestResponse>> enrichWithAssetInfo(List<AssetRequest> assetRequests) {
 
@@ -742,7 +790,7 @@ public class CentralItemServiceImpl implements ItemService {
                           response -> {
                             if (response == null) {
                               LOGGER.info("response is null");
-                              return new AssetRequestResponse(assetRequest, null, null, null);
+                              return new AssetRequestResponse(assetRequest, null);
                             }
 
                             JsonObject item =
@@ -757,15 +805,18 @@ public class CentralItemServiceImpl implements ItemService {
                                     ? typeArray.getString(0)
                                     : null;
 
+                            Asset asset = parseAndGetAsset(item, assetRequest.assetId().toString());
+
+
                             LOGGER.info("Building asset response");
 
                             return new AssetRequestResponse(
-                                assetRequest, itemName, accessPolicy, type);
+                                assetRequest, asset);
                           })
                       .recover(
                           err ->
                               Future.succeededFuture(
-                                  new AssetRequestResponse(assetRequest, null, null, null)));
+                                  new AssetRequestResponse(assetRequest,  null)));
                 })
             .toList();
 
