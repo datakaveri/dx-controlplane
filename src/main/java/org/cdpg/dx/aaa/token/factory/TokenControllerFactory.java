@@ -94,6 +94,9 @@ public class TokenControllerFactory {
       JksOptions jksOpts = new JksOptions().setPath(keystorePath).setPassword(keystorePassword);
       KeyStore ks = jksOpts.loadKeyStore(vertx);
       ECKey ecKey = ECKey.load(ks, "jwt-key-1", keystorePassword.toCharArray());
+      if (ecKey == null) {
+        throw new RuntimeException("EC key with alias 'jwt-key-1' not found in keystore: " + keystorePath);
+      }
       String kid = ecKey.computeThumbprint().toString();
 
       ECKey signingJwk =

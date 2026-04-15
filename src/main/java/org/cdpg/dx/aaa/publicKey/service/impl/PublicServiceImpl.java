@@ -32,6 +32,9 @@ public class PublicServiceImpl implements PublicService {
       JksOptions options = new JksOptions().setPath(keystorePath).setPassword(keystorePassword);
       KeyStore ks = options.loadKeyStore(vertx);
       ECKey loadedKey = ECKey.load(ks, KEY_ALIAS, keystorePassword.toCharArray());
+      if (loadedKey == null) {
+        throw new RuntimeException("EC key with alias '" + KEY_ALIAS + "' not found in keystore: " + keystorePath);
+      }
 
       if (!Curve.P_256.equals(loadedKey.getCurve())) {
         throw new IllegalArgumentException(
