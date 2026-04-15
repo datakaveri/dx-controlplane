@@ -5,6 +5,7 @@ import io.vertx.rabbitmq.QueueOptions;
 import io.vertx.rabbitmq.RabbitMQClient;
 import io.vertx.rabbitmq.RabbitMQConsumer;
 import io.vertx.rabbitmq.RabbitMQMessage;
+import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -15,6 +16,8 @@ import org.cdpg.dx.aaa.leaderboard.writer.LeaderboardWriterService;
 public class LeaderboardConsumer implements RabitMqConsumer {
 
   private static final Logger LOGGER = LogManager.getLogger(LeaderboardConsumer.class);
+  private static final Set<String> ALLOWED_ACTIONS =
+      Set.of("CREATE", "UPDATE", "VIEW", "DOWNLOAD", "LIKE", "NEUTRAL", "DISLIKE", "DELETE");
 
   private final RabbitMQClient rabbitMqClient;
   private final LeaderboardEnrichmentService enrichmentService;
@@ -72,7 +75,7 @@ public class LeaderboardConsumer implements RabitMqConsumer {
     try {
       body = message.body().toJsonObject();
     } catch (Exception e) {
-      LOGGER.error("Invalid JSON message, dropping: {}", message.body(), e);
+      LOGGER.warn("Invalid JSON message, dropping: {}", message.body(), e);
       ack(deliveryTag); // poison → ACK & drop
       return;
     }
@@ -84,6 +87,12 @@ public class LeaderboardConsumer implements RabitMqConsumer {
     } catch (Exception e) {
       e.getStackTrace();
       LOGGER.error("Invalid LeaderboardEvent payload, dropping: {}", body.encode(), e);
+      ack(deliveryTag);
+      return;
+    }
+
+    if (!ALLOWED_ACTIONS.contains(event.action().toUpperCase())) {
+      LOGGER.info("Skipping unsupported action [action={}], dropping message", event.action());
       ack(deliveryTag);
       return;
     }
