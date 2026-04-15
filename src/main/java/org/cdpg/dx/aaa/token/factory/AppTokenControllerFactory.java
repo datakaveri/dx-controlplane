@@ -13,13 +13,11 @@ import org.cdpg.dx.aaa.delegation.DelegationValidator;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.token.controller.AppTokenController;
-import org.cdpg.dx.aaa.token.controller.TokenController;
 import org.cdpg.dx.aaa.token.service.AppTokenService;
 import org.cdpg.dx.aaa.token.service.impl.AppTokenServiceImpl;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
-import org.jboss.resteasy.plugins.delegates.UriHeaderDelegate;
 
 import static org.cdpg.dx.aaa.token.factory.TokenControllerFactory.jwtInitConfig;
 
@@ -43,8 +41,9 @@ public class AppTokenControllerFactory {
     AppCredentialsDAO appCredentialsDAO = new AppCredentialsDAOImpl(pgService);
     AppConstraintsDAO appConstraintsDAO = new AppConstraintsDAOImpl(pgService);
 
-    DelegationValidator delegationValidator = new DelegationValidator(organizationService,itemService);
-    AppCredentialsService appCredentialsService = new AppCredentialsServiceImpl(delegationValidator,appCredentialsDAO,appConstraintsDAO);
+    DelegationValidator delegationValidator = new DelegationValidator(organizationService, itemService);
+    AppCredentialsService appCredentialsService =
+        new AppCredentialsServiceImpl(delegationValidator, appCredentialsDAO, appConstraintsDAO);
 
     AppTokenService appTokenService =
         new AppTokenServiceImpl(
