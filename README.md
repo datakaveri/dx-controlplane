@@ -40,12 +40,12 @@ There are multiple types of signature methods used for signing JWT, and each of 
 
 The current implementation is based on asymmetric key algorithm **ECDSA** (Elliptic Curve Digital Signature Algorithm), and the signature method is **ES256**.
 
-The Authentication Provider looks for aliases in the provided Keystore to verify and sign the generated JWT. The keystore and keypair should also be generated and signed using same algorithm which is required to sign and verify the JWT. For Signature algorithm ES256, the keystore alias is ES256. 
+The Authentication Provider looks for aliases in the provided Keystore to verify and sign the generated JWT. The keystore and keypair should also be generated and signed using same algorithm which is required to sign and verify the JWT. For Signature algorithm ES256, the keystore alias is `jwt-key-1`. 
 
 The Keytool command to generate ECDSA keystore keypair is:
 
 ```
- keytool -genkeypair -keystore keystore-ec.jks -storetype jks -storepass secret -keyalg EC -alias ES256 -keypass secret -sigalg SHA256withECDSA -dname "CN=,OU=,O=,L=,ST=,C=" -validity 360 -deststoretype pkcs12
+ keytool -genkeypair -keystore keystore-ec.jks -storetype jks -storepass secret -keyalg EC -alias jwt-key-1 -keypass secret -sigalg SHA256withECDSA -dname "CN=,OU=,O=,L=,ST=,C=" -validity 360 -deststoretype pkcs12
 ```
 
 The keystore path and the keystore password should then be added to the server config.

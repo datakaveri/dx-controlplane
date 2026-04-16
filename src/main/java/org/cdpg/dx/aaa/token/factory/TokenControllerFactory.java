@@ -3,12 +3,17 @@ package org.cdpg.dx.aaa.token.factory;
 import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
 import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
 
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.jwk.Curve;
+import com.nimbusds.jose.jwk.ECKey;
+import com.nimbusds.jose.jwk.KeyUse;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.KeyStoreOptions;
+import io.vertx.core.net.JksOptions;
 import io.vertx.ext.auth.jwt.JWTAuth;
 import io.vertx.ext.auth.jwt.JWTAuthOptions;
 import io.vertx.ext.web.client.WebClient;
+import java.security.KeyStore;
 import org.cdpg.dx.aaa.clientSecret.dao.ClientcredetialDao;
 import org.cdpg.dx.aaa.clientSecret.dao.impl.ClientcredetialDaoImpl;
 import org.cdpg.dx.aaa.clientSecret.service.ClientcredetialService;
@@ -60,7 +65,8 @@ public class TokenControllerFactory {
             config.getString(DOC_INDEX),
             config.getString(APD_URL));
 
-    DelegationAccessEvaluator delegationAccessEvaluator = new DelegationAccessEvaluator(delegationService,itemService,keycloakUserService);
+    DelegationAccessEvaluator delegationAccessEvaluator =
+        new DelegationAccessEvaluator(delegationService, itemService, keycloakUserService);
 
     TokenService tokenService =
         new TokenServiceImpl(
@@ -77,10 +83,30 @@ public class TokenControllerFactory {
     return new TokenController(tokenService, urnGenerator);
   }
 
+  /**
+   * Creates a JWTAuth provider using the EC private key from the keystore as a JWK.
+   * The JWK includes the kid (SHA-256 thumbprint), so Vert.x will automatically
+   * embed kid in the generated token headers.
+   */
   public static JWTAuth jwtInitConfig(String keystorePath, String keystorePassword, Vertx vertx) {
-    JWTAuthOptions config = new JWTAuthOptions();
-    config.setKeyStore(new KeyStoreOptions().setPath(keystorePath).setPassword(keystorePassword));
+    try {
+      JksOptions jksOpts = new JksOptions().setPath(keystorePath).setPassword(keystorePassword);
+      KeyStore ks = jksOpts.loadKeyStore(vertx);
+      ECKey ecKey = ECKey.load(ks, "jwt-key-1", keystorePassword.toCharArray());
+      String kid = ecKey.computeThumbprint().toString();
 
-    return JWTAuth.create(vertx, config);
+      ECKey signingJwk =
+          new ECKey.Builder(Curve.P_256, ecKey.toECPublicKey())
+              .privateKey(ecKey.toECPrivateKey())
+              .keyUse(KeyUse.SIGNATURE)
+              .algorithm(JWSAlgorithm.ES256)
+              .keyID(kid)
+              .build();
+
+      JsonObject jwk = new JsonObject(signingJwk.toJSONObject());
+      return JWTAuth.create(vertx, new JWTAuthOptions().addJwk(jwk));
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to initialize JWT auth from keystore", e);
+    }
   }
 }
