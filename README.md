@@ -45,7 +45,7 @@ The Authentication Provider looks for aliases in the provided Keystore to verify
 The Keytool command to generate ECDSA keystore keypair is:
 
 ```
- keytool -genkeypair -keystore keystore-ec.jks -storetype jks -storepass secret -keyalg EC -alias jwt-key-1 -keypass secret -sigalg SHA256withECDSA -dname "CN=,OU=,O=,L=,ST=,C=" -validity 360 -deststoretype pkcs12
+ keytool -genkeypair -alias jwt-key-1 -keyalg EC -groupname secp256r1 -sigalg SHA256withECDSA -storetype JKS -keystore keystore-ec.jks -storepass secret -keypass secret -validity 3650 -dname "CN=controlplane-jwt-signing-key"
 ```
 
 The keystore path and the keystore password should then be added to the server config.
