@@ -27,6 +27,7 @@ import org.cdpg.dx.aaa.appCredentials.model.AppCredentials;
 import org.cdpg.dx.aaa.appCredentials.service.impl.AppCredentialsServiceImpl;
 import org.cdpg.dx.aaa.delegation.DelegationValidator;
 import org.cdpg.dx.common.exception.DxNotFoundException;
+import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.util.PaginationInfo;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
@@ -48,13 +49,14 @@ class AppCredentialsServiceTest {
   @Mock private AppCredentialsDAO appCredentialsDAO;
   @Mock private AppConstraintsDAO appConstraintsDAO;
   @Mock private DelegationValidator delegationValidator;
+  @Mock private DataBrokerService dataBrokerService;
 
   private AppCredentialsServiceImpl appCredentialsService;
 
   @BeforeEach
   void setUp() {
     appCredentialsService =
-        new AppCredentialsServiceImpl(delegationValidator, appCredentialsDAO, appConstraintsDAO);
+        new AppCredentialsServiceImpl(delegationValidator, appCredentialsDAO, appConstraintsDAO, dataBrokerService, "revoked-appid");
   }
 
   private AppCredentials buildAppCredentials(UUID appId, UUID userId) {

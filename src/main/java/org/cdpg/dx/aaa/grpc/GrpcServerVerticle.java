@@ -24,8 +24,10 @@ import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
 
+import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DATA_BROKER_SERVICE_ADDRESS;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.ELASTIC_SERVICE_ADDRESS;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.POSTGRES_SERVICE_ADDRESS;
+import org.cdpg.dx.databroker.service.DataBrokerService;
 
 public class GrpcServerVerticle extends AbstractVerticle {
 
@@ -57,9 +59,10 @@ public class GrpcServerVerticle extends AbstractVerticle {
 
     AppCredentialsDAO appCredentialsDAO = new AppCredentialsDAOImpl(postgresService);
     AppConstraintsDAO appConstraintsDAO = new AppConstraintsDAOImpl(postgresService);
+    DataBrokerService dataBrokerService = DataBrokerService.createProxy(vertx, DATA_BROKER_SERVICE_ADDRESS);
     // delegationValidator is only needed by createApp(); this verticle never calls it
     AppCredentialsService appCredentialsService = new AppCredentialsServiceImpl(
-        null, appCredentialsDAO, appConstraintsDAO);
+        null, appCredentialsDAO, appConstraintsDAO, dataBrokerService, config().getString("appIdRevokeExchange", "revoked-appid"));
 
     AppIdVerificationGrpcService grpcService = new AppIdVerificationGrpcService(
         vertx, appCredentialsService, itemService);
