@@ -1,7 +1,6 @@
 package org.cdpg.dx.aaa.grpc;
 
 import io.grpc.stub.StreamObserver;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -10,10 +9,7 @@ import io.vertx.core.json.JsonObject;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -26,33 +22,32 @@ import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.auth.appid.v1.AppIdPrincipalProto;
 import org.cdpg.dx.auth.appid.v1.AppIdVerificationServiceGrpc;
+import org.cdpg.dx.auth.appid.v1.CheckItemAccessRequest;
+import org.cdpg.dx.auth.appid.v1.CheckItemAccessResponse;
 import org.cdpg.dx.auth.appid.v1.VerifyAppIdRequest;
 import org.cdpg.dx.auth.appid.v1.VerifyAppIdResponse;
 
 public class AppIdVerificationGrpcService
     extends AppIdVerificationServiceGrpc.AppIdVerificationServiceImplBase {
 
-  private static final Logger LOGGER =
-      LogManager.getLogger(AppIdVerificationGrpcService.class);
+  private static final Logger LOGGER = LogManager.getLogger(AppIdVerificationGrpcService.class);
 
   private final Context vertxContext;
   private final AppCredentialsService appCredentialsService;
   private final ItemService itemService;
 
   public AppIdVerificationGrpcService(
-      Vertx vertx,
-      AppCredentialsService appCredentialsService,
-      ItemService itemService) {
+      Vertx vertx, AppCredentialsService appCredentialsService, ItemService itemService) {
     this.vertxContext = vertx.getOrCreateContext();
     this.appCredentialsService = appCredentialsService;
     this.itemService = itemService;
   }
 
+  /* ── VerifyAppId ─────────────────────────────────────────────────────── */
+
   @Override
   public void verifyAppId(
-      VerifyAppIdRequest request,
-      StreamObserver<VerifyAppIdResponse> responseObserver) {
-
+      VerifyAppIdRequest request, StreamObserver<VerifyAppIdResponse> observer) {
     String appIdStr = request.getAppId();
     String appSecret = request.getAppSecret();
 
@@ -60,24 +55,124 @@ public class AppIdVerificationGrpcService
     try {
       appId = UUID.fromString(appIdStr);
     } catch (IllegalArgumentException e) {
-      respond(responseObserver, failResponse("INVALID_CREDENTIALS"));
+      respond(observer, failVerify("INVALID_CREDENTIALS"));
       return;
     }
 
-    // Dispatch to Vert.x event loop so service proxies (PostgresService etc.) work correctly
-    vertxContext.runOnContext(ignored ->
-        appCredentialsService
-            .getAppById(appId)
-            .compose(app -> validateApp(app, appSecret))
-            .compose(app ->
-                appCredentialsService
-                    .getAppConstraintsById(appId)
-                    .compose(constraints -> buildResponse(app, constraints)))
-            .onSuccess(response -> respond(responseObserver, response))
-            .onFailure(err -> {
-              LOGGER.error("AppId verification failed for {}: {}", appIdStr, err.getMessage());
-              respond(responseObserver, failResponse(mapErrorCode(err)));
-            }));
+    vertxContext.runOnContext(
+        ignored ->
+            appCredentialsService
+                .getAppById(appId)
+                .compose(app -> validateApp(app, appSecret))
+                .compose(app -> buildVerifyResponse(app, appId))
+                .onSuccess(response -> respond(observer, response))
+                .onFailure(
+                    err -> {
+                      LOGGER.error(
+                          "AppId verification failed for {}: {}", appIdStr, err.getMessage());
+                      respond(observer, failVerify(mapErrorCode(err)));
+                    }));
+  }
+
+  private Future<VerifyAppIdResponse> buildVerifyResponse(AppCredentials app, UUID appId) {
+    return appCredentialsService
+        .getAppConstraintsById(appId)
+        .map(
+            constraints -> {
+              List<String> scopes =
+                  constraints.stream()
+                      .map(AppConstraints::scope)
+                      .filter(s -> s != null && !s.isBlank())
+                      .distinct()
+                      .collect(Collectors.toList());
+
+              long expiresAtEpoch = 0;
+              if (app.expiryAt() != null) {
+                expiresAtEpoch =
+                    LocalDateTime.parse(app.expiryAt())
+                        .atZone(ZoneId.of("Asia/Kolkata"))
+                        .toInstant()
+                        .getEpochSecond();
+              }
+
+              AppIdPrincipalProto principal =
+                  AppIdPrincipalProto.newBuilder()
+                      .setAppId(app.appId().toString())
+                      .setOwnerId(app.userId().toString())
+                      .addRoles(app.role() != null ? app.role() : "consumer")
+                      .addAllScopes(scopes)
+                      .setExpiresAtEpoch(expiresAtEpoch)
+                      .build();
+
+              return VerifyAppIdResponse.newBuilder()
+                  .setSuccess(true)
+                  .setPrincipal(principal)
+                  .build();
+            });
+  }
+
+  /* ── CheckItemAccess ─────────────────────────────────────────────────── */
+
+  @Override
+  public void checkItemAccess(
+      CheckItemAccessRequest request, StreamObserver<CheckItemAccessResponse> observer) {
+    String appIdStr = request.getAppId();
+    String entityId = request.getEntityId();
+
+    UUID appId;
+    try {
+      appId = UUID.fromString(appIdStr);
+    } catch (IllegalArgumentException e) {
+      respond(observer, failAccess("INVALID_CREDENTIALS"));
+      return;
+    }
+
+    vertxContext.runOnContext(
+        ignored ->
+            appCredentialsService
+                .getAppById(appId)
+                .compose(app -> fetchItemMetadata(entityId, app.userId().toString()))
+                .onSuccess(response -> respond(observer, response))
+                .onFailure(
+                    err -> {
+                      LOGGER.error(
+                          "CheckItemAccess failed appId={} entityId={}: {}",
+                          appIdStr,
+                          entityId,
+                          err.getMessage());
+                      respond(observer, failAccess("NO_ACCESS"));
+                    }));
+  }
+
+  private Future<CheckItemAccessResponse> fetchItemMetadata(String entityId, String userId) {
+    GetItemRequest req = new GetItemRequest(entityId, userId);
+    return itemService
+        .getItemWithAccessChecks(req)
+        .map(
+            response -> {
+              if (response == null || response.getResponse() == null) {
+                throw new RuntimeException("No item response");
+              }
+              JsonArray results = response.getResponse().getJsonArray("results");
+              if (results == null || results.isEmpty()) {
+                throw new RuntimeException("Item not found");
+              }
+              JsonObject item = results.getJsonObject(0);
+              String iid = item.getString("id", "");
+              String accessPolicy = item.getString("accessPolicy", "");
+              Object resourceServer = item.getValue("resourceServer");
+              Object policies = item.getValue("policies");
+              String resourceServerJson = resourceServer != null ? resourceServer.toString() : "[]";
+              String policiesJson = policies != null ? policies.toString() : "[]";
+
+              return CheckItemAccessResponse.newBuilder()
+                  .setSuccess(true)
+                  .setIid(iid)
+                  .setAccessPolicy(accessPolicy)
+                  .setResourceServerJson(resourceServerJson)
+                  .setPoliciesJson(policiesJson)
+                  .build();
+            });
   }
 
   /* ── Validation ──────────────────────────────────────────────────────── */
@@ -90,9 +185,8 @@ public class AppIdVerificationGrpcService
       return Future.failedFuture("REVOKED");
     }
     if (app.expiryAt() != null) {
-      Instant expiry = LocalDateTime.parse(app.expiryAt())
-          .atZone(ZoneId.of("Asia/Kolkata"))
-          .toInstant();
+      Instant expiry =
+          LocalDateTime.parse(app.expiryAt()).atZone(ZoneId.of("Asia/Kolkata")).toInstant();
       if (expiry.isBefore(Instant.now())) {
         return Future.failedFuture("EXPIRED");
       }
@@ -103,117 +197,19 @@ public class AppIdVerificationGrpcService
     return Future.succeededFuture(app);
   }
 
-  /* ── Response building ───────────────────────────────────────────────── */
-
-  private Future<VerifyAppIdResponse> buildResponse(
-      AppCredentials app, List<AppConstraints> constraints) {
-
-    List<String> scopes = constraints.stream()
-        .map(AppConstraints::scope)
-        .filter(s -> s != null && !s.isBlank())
-        .distinct()
-        .collect(Collectors.toList());
-
-    // Collect specific UUID entity IDs under data_access scope for metadata enrichment
-    List<String> dataAccessEntityIds = constraints.stream()
-        .filter(c -> "data_access".equalsIgnoreCase(c.scope()))
-        .map(AppConstraints::entityId)
-        .filter(eid -> eid != null && isValidUUID(eid))
-        .distinct()
-        .collect(Collectors.toList());
-
-    if (dataAccessEntityIds.isEmpty()) {
-      return Future.succeededFuture(successResponse(app, scopes, Map.of()));
-    }
-
-    List<Future<Map.Entry<String, String>>> metaFutures = dataAccessEntityIds.stream()
-        .map(entityId -> fetchEntityMetadata(entityId, app.userId().toString()))
-        .collect(Collectors.toList());
-
-    return CompositeFuture.all(new ArrayList<>(metaFutures))
-        .map(cf -> {
-          Map<String, String> entityMetadataMap = new HashMap<>();
-          for (Future<Map.Entry<String, String>> f : metaFutures) {
-            Map.Entry<String, String> entry = f.result();
-            if (entry != null) {
-              entityMetadataMap.put(entry.getKey(), entry.getValue());
-            }
-          }
-          return successResponse(app, scopes, entityMetadataMap);
-        });
-  }
-
-  private Future<Map.Entry<String, String>> fetchEntityMetadata(
-      String entityId, String userId) {
-
-    GetItemRequest req = new GetItemRequest(entityId, userId);
-    return itemService
-        .getItemWithAccessChecks(req)
-        .map(response -> {
-          if (response == null || response.getResponse() == null) {
-            return null;
-          }
-          JsonArray results = response.getResponse().getJsonArray("results");
-          if (results == null || results.isEmpty()) {
-            return null;
-          }
-          JsonObject item = results.getJsonObject(0);
-          JsonObject metadata = new JsonObject()
-              .put("iid", item.getString("id"))
-              .put("accessPolicy", item.getString("accessPolicy"))
-              .put("resourceServer", item.getValue("resourceServer"))
-              .put("policies", item.getValue("policies"));
-          return Map.entry(entityId, metadata.encode());
-        })
-        .recover(err -> {
-          LOGGER.warn("Could not fetch item metadata for entityId {}: {}",
-              entityId, err.getMessage());
-          return Future.succeededFuture(null);
-        });
-  }
-
-  private VerifyAppIdResponse successResponse(
-      AppCredentials app,
-      List<String> scopes,
-      Map<String, String> entityMetadataMap) {
-
-    long expiresAtEpoch = 0;
-    if (app.expiryAt() != null) {
-      expiresAtEpoch = LocalDateTime.parse(app.expiryAt())
-          .atZone(ZoneId.of("Asia/Kolkata"))
-          .toInstant()
-          .getEpochSecond();
-    }
-
-    AppIdPrincipalProto principal = AppIdPrincipalProto.newBuilder()
-        .setAppId(app.appId().toString())
-        .setOwnerId(app.userId().toString())
-        .addRoles(app.role() != null ? app.role() : "consumer")
-        .addAllScopes(scopes)
-        .putAllEntityMetadataMap(entityMetadataMap)
-        .setExpiresAtEpoch(expiresAtEpoch)
-        .build();
-
-    return VerifyAppIdResponse.newBuilder()
-        .setSuccess(true)
-        .setPrincipal(principal)
-        .build();
-  }
-
-  private VerifyAppIdResponse failResponse(String errorCode) {
-    return VerifyAppIdResponse.newBuilder()
-        .setSuccess(false)
-        .setErrorCode(errorCode)
-        .build();
-  }
-
   /* ── Helpers ─────────────────────────────────────────────────────────── */
 
-  private void respond(
-      StreamObserver<VerifyAppIdResponse> observer,
-      VerifyAppIdResponse response) {
+  private <T> void respond(StreamObserver<T> observer, T response) {
     observer.onNext(response);
     observer.onCompleted();
+  }
+
+  private VerifyAppIdResponse failVerify(String errorCode) {
+    return VerifyAppIdResponse.newBuilder().setSuccess(false).setErrorCode(errorCode).build();
+  }
+
+  private CheckItemAccessResponse failAccess(String errorCode) {
+    return CheckItemAccessResponse.newBuilder().setSuccess(false).setErrorCode(errorCode).build();
   }
 
   private String mapErrorCode(Throwable err) {
@@ -223,14 +219,5 @@ public class AppIdVerificationGrpcService
       if (msg.contains("EXPIRED")) return "EXPIRED";
     }
     return "INVALID_CREDENTIALS";
-  }
-
-  private boolean isValidUUID(String value) {
-    try {
-      UUID.fromString(value);
-      return true;
-    } catch (IllegalArgumentException e) {
-      return false;
-    }
   }
 }
