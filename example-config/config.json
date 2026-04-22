@@ -46,7 +46,8 @@
     "docIndex": "iudx-docs",
     "docUserIndex": "doc_user_index",
     "vocContext": "https://voc.dev.iudx.io",
-    "defaultExpiryDays": 12
+    "defaultExpiryDays": 12,
+    "appIdRevokeExchange": "revoked-appid"
   },
   "emailOptions": {
     "emailSender": "no-reply@iudx.io",
@@ -250,6 +251,13 @@
       "id": "org.cdpg.dx.aaa.delegation.DelegationVerticle",
       "verticleInstances": 1,
       "isWorkerVerticle": false
+    },
+    {
+      "id": "org.cdpg.dx.aaa.grpc.GrpcServerVerticle",
+      "verticleInstances": 1,
+      "isWorkerVerticle": false,
+      "grpcPort": 9090,
+      "required": ["postgresOptions", "commonOptions", "keycloakOptions"]
     }
   ]
 }

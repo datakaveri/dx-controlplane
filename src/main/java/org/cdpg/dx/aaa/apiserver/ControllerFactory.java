@@ -295,7 +295,8 @@ public class ControllerFactory {
     // App credentials & tokens
     controllers.add(
         AppCredentialsControllerFactory.create(
-            infra.pgService(), shared.organizationService(), shared.itemService(), urnGenerator));
+            infra.pgService(), shared.organizationService(), shared.itemService(), urnGenerator,
+            infra.dataBrokerService(), config.getString("appIdRevokeExchange", "revoked-appid")));
 
     controllers.add(
         AppTokenControllerFactory.create(
@@ -305,7 +306,8 @@ public class ControllerFactory {
             shared.itemService(),
             urnGenerator,
             config,
-            vertx));
+            vertx,
+            infra.dataBrokerService()));
 
     // Summary / dashboard
     controllers.add(SummaryControllerFactory.create(infra.pgService(), urnGenerator));

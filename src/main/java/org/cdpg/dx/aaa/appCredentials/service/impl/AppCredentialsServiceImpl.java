@@ -29,6 +29,7 @@ import org.cdpg.dx.common.exception.BaseDxException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
+import org.cdpg.dx.databroker.service.DataBrokerService;
 
 public class AppCredentialsServiceImpl implements AppCredentialsService {
 
@@ -37,6 +38,8 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
   private final AppCredentialsDAO appCredentialsDAO;
   private final AppConstraintsDAO appConstraintsDAO;
   private final DelegationValidator delegationValidator;
+  private final DataBrokerService dataBrokerService;
+  private final String appIdRevokeExchange;
   private final Supplier<String> randomSecretSupplier =
       () -> {
         byte[] randBytes = new byte[APP_SECRET_BYTES];
@@ -44,10 +47,12 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
         return Hex.encodeHexString(randBytes);
       };
 
-  public AppCredentialsServiceImpl(DelegationValidator delegationValidator,AppCredentialsDAO appCredentialsDAO, AppConstraintsDAO appConstraintsDAO) {
+  public AppCredentialsServiceImpl(DelegationValidator delegationValidator, AppCredentialsDAO appCredentialsDAO, AppConstraintsDAO appConstraintsDAO, DataBrokerService dataBrokerService, String appIdRevokeExchange) {
     this.appCredentialsDAO = appCredentialsDAO;
     this.appConstraintsDAO = appConstraintsDAO;
     this.delegationValidator = delegationValidator;
+    this.dataBrokerService = dataBrokerService;
+    this.appIdRevokeExchange = appIdRevokeExchange;
   }
 
   @Override
@@ -260,7 +265,11 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
                         "No appCredentials found for userId " + userId + " and appId " + appId));
               }
               return appCredentialsDAO.delete(appId);
-            });
+            })
+        .compose(deleted -> {
+          publishRevocation(appId.toString());
+          return Future.succeededFuture(deleted);
+        });
   }
 
 
@@ -284,8 +293,19 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
             new DxNotFoundException(
               "No appCredentials found for userId " + userId + " and appId " + appId));
         }
+        if ("revoked".equalsIgnoreCase(status)) {
+          publishRevocation(appId.toString());
+        }
         return Future.succeededFuture(true);
       });
+  }
+
+  private void publishRevocation(String appId) {
+    JsonObject payload = new JsonObject().put("appId", appId);
+    dataBrokerService
+        .publishMessageInternal(payload, appIdRevokeExchange, "##")
+        .onSuccess(v -> LOGGER.info("AppId revocation published to payload={}", payload))
+        .onFailure(err -> LOGGER.error("Failed to publish AppId revocation for appId={}: {}", appId, err.getMessage()));
   }
 
   @Override

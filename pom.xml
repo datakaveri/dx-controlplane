@@ -357,6 +357,13 @@
             <version>4.2.0</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- gRPC server runtime for AppId verification gRPC service -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-netty-shaded</artifactId>
+            <version>1.63.0</version>
+        </dependency>
     </dependencies>
 
     <build>

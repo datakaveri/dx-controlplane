@@ -184,6 +184,13 @@
       "id": "org.cdpg.dx.aaa.delegation.DelegationVerticle",
       "verticleInstances": 1,
       "isWorkerVerticle": false
+    },
+    {
+      "id": "org.cdpg.dx.aaa.grpc.GrpcServerVerticle",
+      "verticleInstances": 1,
+      "isWorkerVerticle": false,
+      "grpcPort": 9090,
+      "required": ["postgresOptions", "commonOptions", "keycloakOptions"]
     }
   ]
 }
