@@ -303,8 +303,8 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
   private void publishRevocation(String appId) {
     JsonObject payload = new JsonObject().put("appId", appId);
     dataBrokerService
-        .publishMessageInternal(payload, appIdRevokeExchange, "#")
-        .onSuccess(v -> LOGGER.info("AppId revocation published to exchange={} appId={}", appIdRevokeExchange, appId))
+        .publishMessageInternal(payload, appIdRevokeExchange, "##")
+        .onSuccess(v -> LOGGER.info("AppId revocation published to payload={}", payload))
         .onFailure(err -> LOGGER.error("Failed to publish AppId revocation for appId={}: {}", appId, err.getMessage()));
   }
 

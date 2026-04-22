@@ -25,8 +25,10 @@ import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
 
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DATA_BROKER_SERVICE_ADDRESS;
+import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DELEGATION_SERVICE_ADDRESS;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.ELASTIC_SERVICE_ADDRESS;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.POSTGRES_SERVICE_ADDRESS;
+import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 
 public class GrpcServerVerticle extends AbstractVerticle {
@@ -64,8 +66,10 @@ public class GrpcServerVerticle extends AbstractVerticle {
     AppCredentialsService appCredentialsService = new AppCredentialsServiceImpl(
         null, appCredentialsDAO, appConstraintsDAO, dataBrokerService, config().getString("appIdRevokeExchange", "revoked-appid"));
 
+    DelegationService delegationService = DelegationService.createProxy(vertx, DELEGATION_SERVICE_ADDRESS);
+
     AppIdVerificationGrpcService grpcService = new AppIdVerificationGrpcService(
-        vertx, appCredentialsService, itemService);
+        vertx, appCredentialsService, itemService, delegationService);
 
     try {
       grpcServer = ServerBuilder.forPort(grpcPort)

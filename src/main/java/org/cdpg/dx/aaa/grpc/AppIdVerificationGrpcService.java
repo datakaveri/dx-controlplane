@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.appCredentials.model.AppConstraints;
 import org.cdpg.dx.aaa.appCredentials.model.AppCredentials;
 import org.cdpg.dx.aaa.appCredentials.service.AppCredentialsService;
+import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.auth.appid.v1.AppIdPrincipalProto;
@@ -35,12 +36,17 @@ public class AppIdVerificationGrpcService
   private final Context vertxContext;
   private final AppCredentialsService appCredentialsService;
   private final ItemService itemService;
+  private final DelegationService delegationService;
 
   public AppIdVerificationGrpcService(
-      Vertx vertx, AppCredentialsService appCredentialsService, ItemService itemService) {
+      Vertx vertx,
+      AppCredentialsService appCredentialsService,
+      ItemService itemService,
+      DelegationService delegationService) {
     this.vertxContext = vertx.getOrCreateContext();
     this.appCredentialsService = appCredentialsService;
     this.itemService = itemService;
+    this.delegationService = delegationService;
   }
 
   /* ── VerifyAppId ─────────────────────────────────────────────────────── */
@@ -98,7 +104,7 @@ public class AppIdVerificationGrpcService
               AppIdPrincipalProto principal =
                   AppIdPrincipalProto.newBuilder()
                       .setAppId(app.appId().toString())
-                      .setOwnerId(app.userId().toString())
+                      .setUserId(app.userId().toString())
                       .addRoles(app.role() != null ? app.role() : "consumer")
                       .addAllScopes(scopes)
                       .setExpiresAtEpoch(expiresAtEpoch)
@@ -116,32 +122,44 @@ public class AppIdVerificationGrpcService
   @Override
   public void checkItemAccess(
       CheckItemAccessRequest request, StreamObserver<CheckItemAccessResponse> observer) {
-    String appIdStr = request.getAppId();
+    String userId  = request.getUserId();
     String entityId = request.getEntityId();
+    String did = request.getDid();
+    boolean hasDid = did != null && !did.isBlank();
 
-    UUID appId;
-    try {
-      appId = UUID.fromString(appIdStr);
-    } catch (IllegalArgumentException e) {
+    if (userId == null || userId.isBlank()) {
       respond(observer, failAccess("INVALID_CREDENTIALS"));
       return;
     }
 
     vertxContext.runOnContext(
-        ignored ->
-            appCredentialsService
-                .getAppById(appId)
-                .compose(app -> fetchItemMetadata(entityId, app.userId().toString()))
-                .onSuccess(response -> respond(observer, response))
-                .onFailure(
-                    err -> {
-                      LOGGER.error(
-                          "CheckItemAccess failed appId={} entityId={}: {}",
-                          appIdStr,
-                          entityId,
-                          err.getMessage());
-                      respond(observer, failAccess("NO_ACCESS"));
-                    }));
+        ignored -> {
+          Future<CheckItemAccessResponse> work;
+          if (hasDid) {
+            // Mirror the HTTP /cat/item/access delegation check:
+            // userId = delegator (app owner), did = delegate (acting on their behalf)
+            work = delegationService
+                .checkItemAccess(userId, did)
+                .compose(delegResult -> {
+                  JsonArray allowed = delegResult.getJsonArray("result");
+                  if (allowed == null
+                      || (!allowed.contains("*") && !allowed.contains(entityId))) {
+                    return Future.failedFuture("DELEGATION_NO_ACCESS");
+                  }
+                  return fetchItemMetadata(entityId, userId);
+                });
+          } else {
+            work = fetchItemMetadata(entityId, userId);
+          }
+          work
+              .onSuccess(response -> respond(observer, response))
+              .onFailure(err -> {
+                LOGGER.error(
+                    "CheckItemAccess failed userId={} entityId={} did={}: {}",
+                    userId, entityId, did, err.getMessage());
+                respond(observer, failAccess("NO_ACCESS"));
+              });
+        });
   }
 
   private Future<CheckItemAccessResponse> fetchItemMetadata(String entityId, String userId) {
