@@ -8,7 +8,6 @@ import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.USER_ID;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_FIELD;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
-import io.vertx.core.Handler;
 import io.vertx.core.json.JsonArray;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
@@ -20,40 +19,48 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.aaa.activity.service.UserActivityAuditLogService;
 import org.cdpg.dx.auditing.v2.util.Util;
-import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.v2.handler.AuthenticationHandler;
+import org.cdpg.dx.auth.v2.handler.AuthorizationContext;
+import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
+import org.cdpg.dx.auth.v2.handler.ScopeRule;
+import org.cdpg.dx.auth.v2.model.Scopes;
 import org.cdpg.dx.common.URNGenerator;
-import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
-import org.cdpg.dx.common.util.RoutingContextHelper;
 
 public class ActivityController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(ActivityController.class);
   private final UserActivityAuditLogService userActivityAuditLogService;
   private final URNGenerator urnGenerator;
+  private final AuthenticationHandler authenticationV2;
+  private final AuthorizationHandler authorizationV2;
 
   public ActivityController(
-      UserActivityAuditLogService userActivityAuditLogService, URNGenerator urnGenerator) {
+      UserActivityAuditLogService userActivityAuditLogService,
+      URNGenerator urnGenerator,
+      AuthenticationHandler authenticationV2,
+      AuthorizationHandler authorizationV2) {
     this.userActivityAuditLogService = userActivityAuditLogService;
     this.urnGenerator = urnGenerator;
+    this.authenticationV2 = authenticationV2;
+    this.authorizationV2 = authorizationV2;
   }
 
   @Override
   public void register(RouterBuilder builder) {
-
-    Handler<RoutingContext> adminAccessHandler =
-        AuthorizationHandler.forRoles(DxRole.ORG_ADMIN, DxRole.COS_ADMIN);
-    Handler<RoutingContext> consumerAccessHandler = AuthorizationHandler.forRoles(DxRole.CONSUMER);
-
     builder
         .operation(OP_GET_ACTIVITY_FOR_CONSUMER)
-        .handler(consumerAccessHandler)
+        .handler(authenticationV2)
+        .handler(authorizationV2.forScopes(Scopes.DATA_ACCESS))
         .handler(this::handleGetAllActivityLogsForUser);
     builder
         .operation(OP_GET_ACTIVITY_FOR_ADMIN)
-        .handler(adminAccessHandler)
+        .handler(authenticationV2)
+        .handler(
+            authorizationV2.forScopesWithContext(
+                ScopeRule.platform(Scopes.USER_MANAGEMENT),
+                ScopeRule.org(Scopes.ORG_USER_MANAGEMENT)))
         .handler(this::handleGetAllActivityLogsForAdmin);
   }
 
@@ -105,11 +112,11 @@ public class ActivityController implements ApiController {
   private void handleGetAllActivityLogsForAdmin(RoutingContext context) {
     LOGGER.info("handleGetAllActivityLogsForAdmin() started");
 
-    DxUser user = RoutingContextHelper.fromPrincipal(context);
-    Map<String, String> allowedFilters = Util.getAllowedFilterMapForAdmin(user);
-    Map<String, Object> additionalFilter = Util.getAdditionalFilters(user);
+    AuthorizationContext authCtx = context.get(AuthorizationContext.KEY);
+    Map<String, String> allowedFilters = Util.getAllowedFilterMapForAdmin(authCtx);
+    Map<String, Object> additionalFilter = Util.getAdditionalFilters(authCtx);
 
-    LOGGER.info("Allowed Filters for admin: {}", allowedFilters);
+    LOGGER.info("Admin auth level: {}, allowed filters: {}", authCtx.getLevel(), allowedFilters);
 
     PaginatedRequest request =
         PaginationRequestBuilder.from(context)

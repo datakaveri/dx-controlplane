@@ -63,6 +63,7 @@ import org.cdpg.dx.aaa.token.factory.AppTokenControllerFactory;
 import org.cdpg.dx.aaa.token.factory.TokenControllerFactory;
 import org.cdpg.dx.aaa.user.factory.UserControllerFactory;
 import org.cdpg.dx.apiserver.ApiController;
+import org.cdpg.dx.auth.v2.factory.AuthHandlersV2;
 import org.cdpg.dx.common.URNGenerator;
 
 /**
@@ -77,7 +78,7 @@ public class ControllerFactory {
   private ControllerFactory() {}
 
   public static List<ApiController> createControllers(
-      Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
+      Vertx vertx, JsonObject config, URNGenerator urnGenerator, AuthHandlersV2 authV2) {
 
     // ── Config values ──
     boolean isCentralCatEnabled = config.getBoolean(IS_CENTRAL_CATALOGUE_ENABLED, false);
@@ -116,11 +117,11 @@ public class ControllerFactory {
 
     // Activity
     ActivityController activityController =
-        ActivityControllerFactory.create(infra.pgService(), urnGenerator);
+        ActivityControllerFactory.create(infra.pgService(), urnGenerator, authV2);
     controllers.add(activityController);
 
     ActivityReportController activityReportController =
-        ActivityReportControllerFactory.create(infra.pgService(), vertx);
+        ActivityReportControllerFactory.create(infra.pgService(), vertx, authV2);
     controllers.add(activityReportController);
 
     // Organization
