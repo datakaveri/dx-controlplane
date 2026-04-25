@@ -12,9 +12,11 @@ import org.cdpg.dx.aaa.appCredentials.service.AppCredentialsService;
 import org.cdpg.dx.aaa.appCredentials.service.impl.AppCredentialsServiceImpl;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.auth.v2.handler.AuthenticationHandler;
+import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.v2.lookup.local.LocalAppCredentialLookup;
 import org.cdpg.dx.auth.v2.lookup.local.LocalDelegationLookup;
 import org.cdpg.dx.auth.v2.lookup.local.LocalUserLookup;
+import org.cdpg.dx.auth.v2.registry.InMemoryRoleScopeRegistry;
 import org.cdpg.dx.auth.v2.resolver.AppCredentialsResolver;
 import org.cdpg.dx.auth.v2.resolver.DelegationResolver;
 import org.cdpg.dx.auth.v2.resolver.JwtPrincipalResolver;
@@ -33,7 +35,7 @@ public final class LocalAuthV2Factory {
 
   private LocalAuthV2Factory() {}
 
-  public static Handler<RoutingContext> build(Vertx vertx, JsonObject config) {
+  public static AuthHandlersV2 buildPair(Vertx vertx, JsonObject config) {
     PostgresService postgresService =
         PostgresService.createProxy(vertx, ServiceProxyAddressConstants.POSTGRES_SERVICE_ADDRESS);
     DataBrokerService dataBrokerService =
@@ -60,9 +62,16 @@ public final class LocalAuthV2Factory {
     LocalDelegationLookup delegationLookup = new LocalDelegationLookup(delegationService);
     LocalUserLookup userLookup = new LocalUserLookup(keycloakUserService);
 
-    return new AuthenticationHandler(
-        new JwtPrincipalResolver(),
-        new DelegationResolver(delegationLookup, userLookup),
-        new AppCredentialsResolver(appLookup, userLookup));
+    AuthenticationHandler authentication =
+        new AuthenticationHandler(
+            new JwtPrincipalResolver(),
+            new DelegationResolver(delegationLookup, userLookup),
+            new AppCredentialsResolver(appLookup, userLookup));
+    AuthorizationHandler authorization = new AuthorizationHandler(new InMemoryRoleScopeRegistry());
+    return new AuthHandlersV2(authentication, authorization);
+  }
+
+  public static Handler<RoutingContext> build(Vertx vertx, JsonObject config) {
+    return buildPair(vertx, config).authentication();
   }
 }

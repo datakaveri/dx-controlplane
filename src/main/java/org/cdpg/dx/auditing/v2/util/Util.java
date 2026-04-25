@@ -4,34 +4,24 @@ import static org.cdpg.dx.auditing.v2.Constant.ActivityApiParamConstants.ALLOWED
 import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.ORG_ID;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.auth.v2.handler.AuthLevel;
+import org.cdpg.dx.auth.v2.handler.AuthorizationContext;
 
 public class Util {
 
-  public static Map<String, Object> getAdditionalFilters(DxUser user) {
+  private Util() {}
 
-    List<String> roles = user.roles();
-
-    String organizationId = user.organisationId();
-    Map<String, Object> additionalFilters = null;
-    if (roles.contains(DxRole.ORG_ADMIN.getRole())) {
-      additionalFilters = Map.of("org_Id", organizationId);
-
-    } else {
-      additionalFilters = Map.of();
+  public static Map<String, Object> getAdditionalFilters(AuthorizationContext authCtx) {
+    if (authCtx.getLevel() == AuthLevel.ORG) {
+      return Map.of("org_Id", authCtx.getOrgId());
     }
-    return additionalFilters;
+    return Map.of();
   }
 
-  public static Map<String, String> getAllowedFilterMapForAdmin(DxUser user) {
-    List<String> roles = user.roles();
-
+  public static Map<String, String> getAllowedFilterMapForAdmin(AuthorizationContext authCtx) {
     Map<String, String> allowedFilter = new HashMap<>(ALLOWED_FILTER_MAP_FOR_ADMIN_V2);
-
-    if (roles.contains(DxRole.COS_ADMIN.getRole())) {
+    if (authCtx.getLevel() == AuthLevel.PLATFORM) {
       allowedFilter.put("orgId", ORG_ID);
     }
     return allowedFilter;

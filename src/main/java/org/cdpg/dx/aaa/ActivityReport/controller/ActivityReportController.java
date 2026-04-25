@@ -6,7 +6,6 @@ import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.USER_ID;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_FIELD;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
-import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
@@ -18,34 +17,43 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.ActivityReport.service.ActivityReportService;
 import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.auditing.v2.util.Util;
-import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.auth.v2.handler.AuthenticationHandler;
+import org.cdpg.dx.auth.v2.handler.AuthorizationContext;
+import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
+import org.cdpg.dx.auth.v2.handler.ScopeRule;
+import org.cdpg.dx.auth.v2.model.Scopes;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
-import org.cdpg.dx.common.util.RoutingContextHelper;
 
 public class ActivityReportController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(ActivityReportController.class);
   private final ActivityReportService reportService;
+  private final AuthenticationHandler authenticationV2;
+  private final AuthorizationHandler authorizationV2;
 
-  public ActivityReportController(ActivityReportService reportService) {
+  public ActivityReportController(
+      ActivityReportService reportService,
+      AuthenticationHandler authenticationV2,
+      AuthorizationHandler authorizationV2) {
     this.reportService = reportService;
+    this.authenticationV2 = authenticationV2;
+    this.authorizationV2 = authorizationV2;
   }
 
   @Override
   public void register(RouterBuilder builder) {
-    Handler<RoutingContext> adminAccessHandler =
-        AuthorizationHandler.forRoles(DxRole.ORG_ADMIN, DxRole.COS_ADMIN);
-    Handler<RoutingContext> consumerAccessHandler = AuthorizationHandler.forRoles(DxRole.CONSUMER);
-
     builder
         .operation("get-admin-report")
-        .handler(adminAccessHandler)
+        .handler(authenticationV2)
+        .handler(
+            authorizationV2.forScopesWithContext(
+                ScopeRule.platform(Scopes.USER_MANAGEMENT),
+                ScopeRule.org(Scopes.ORG_USER_MANAGEMENT)))
         .handler(this::handleGenerateCsvForAdmin);
     builder
         .operation("get-consumer-report")
-        .handler(consumerAccessHandler)
+        .handler(authenticationV2)
+        .handler(authorizationV2.forScopes(Scopes.DATA_ACCESS))
         .handler(this::handleGenerateCsvForConsumer);
   }
 
@@ -59,11 +67,11 @@ public class ActivityReportController implements ApiController {
         .putHeader("Content-Disposition", "attachment; filename=\"admin_report.csv\"")
         .setChunked(true);
 
-    DxUser user = RoutingContextHelper.fromPrincipal(routingContext);
-    Map<String, String> allowedFilters = Util.getAllowedFilterMapForAdmin(user);
-    Map<String, Object> additionalFilter = Util.getAdditionalFilters(user);
+    AuthorizationContext authCtx = routingContext.get(AuthorizationContext.KEY);
+    Map<String, String> allowedFilters = Util.getAllowedFilterMapForAdmin(authCtx);
+    Map<String, Object> additionalFilter = Util.getAdditionalFilters(authCtx);
 
-    LOGGER.info("Allowed Filters for admin: {}", allowedFilters);
+    LOGGER.info("Admin auth level: {}, allowed filters: {}", authCtx.getLevel(), allowedFilters);
 
     PaginatedRequest request =
         PaginationRequestBuilder.from(routingContext)
