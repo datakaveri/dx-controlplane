@@ -115,18 +115,25 @@ already hold `ORG_USER_MANAGEMENT` / `USER_MANAGEMENT` not `DATA_ACCESS`
 
 | Controller | Operation | v1 gate | v2 scope |
 |---|---|---|---|
-| `AdminController` | `get-auth-v2-user` | none today | leave unchanged for now (or add `DATA_ACCESS`) |
+| `AdminController` | `get-auth-v2-user` | none today | `forScopes(DATA_ACCESS)` *(self)* |
 | `AdminController` | `get-auth-v2-user-id-admin` | `forRoles(COS_ADMIN, DELEGATE)` | `forScopes(USER_MANAGEMENT)` |
 | `AdminController` | `get-auth-v2-admin-user` | `forRoles(COS_ADMIN)` | `forScopes(USER_MANAGEMENT)` |
 | `AdminController` | `get-auth-v2-user-search` | `forRoles(CONSUMER)` | `forScopes(DATA_ACCESS)` |
-| `AdminController` | `put-auth-v2-user` | none | unchanged — see §6 |
-| `AdminController` | `put-auth-v2-user-password` | none | unchanged — see §6 |
-| `AdminController` | `post-auth-v2-user-update` | none | unchanged — see §6 |
-| `AdminController` | `delete-auth-v2-user` | none | unchanged — see §6 |
+| `AdminController` | `put-auth-v2-user` | none | `forScopes(DATA_ACCESS)` *(self)* |
+| `AdminController` | `put-auth-v2-user-password` | none | `forScopes(DATA_ACCESS)` *(self)* |
+| `AdminController` | `post-auth-v2-user-update` | none | `forScopes(DATA_ACCESS)` *(self)* |
+| `AdminController` | `delete-auth-v2-user` | none | `forScopes(DATA_ACCESS)` *(self)* |
 | `AdminController` | `post-auth-v2-admin-id-update` | `forRoles(COS_ADMIN, DELEGATE)` | `forScopes(USER_MANAGEMENT)` |
 
-**Existing scopes sufficient.** ⚠ Several operations have no role gate
-today — flag for §6 review.
+**Existing scopes sufficient.** *(self)* rows: each handler keys off
+`ctx.user().subject()` only — caller can act on themselves regardless
+of scope. `DATA_ACCESS` admits every authenticated user via the
+composite-stacked `consumer` role in their JWT (see
+`admin-auth-v2-migration-plan.md` §5.1). Three handler methods
+(`getDxUserFromKeycloak`, `getAllDxUsersKeycloak`,
+`updateDxUserStatusById`) had inline `AccessValidator.validate(...)`
+calls duplicating the v1 controller gate; removed alongside the v2
+swap.
 
 ### 4.5 Organization
 
@@ -446,7 +453,7 @@ as intentionally open.
 
 | Controller | Operation | Likely intent |
 |---|---|---|
-| `AdminController` | `get-auth-v2-user`, `put-auth-v2-user`, `put-auth-v2-user-password`, `post-auth-v2-user-update`, `delete-auth-v2-user` | Self-update vs admin-only?? Confirm — currently anyone with a JWT can call them |
+| ~~`AdminController`~~ | ~~`get-auth-v2-user`, `put-auth-v2-user`, `put-auth-v2-user-password`, `post-auth-v2-user-update`, `delete-auth-v2-user`~~ | Resolved: self-only, gated with `forScopes(DATA_ACCESS)` (auth-v2 admin migration). |
 | `OrganizationController` | `OP_LIST_ORGANISATIONS`, `OP_GET_ORGANISATION_BY_ID` | Public listing? Or DATA_ACCESS? |
 | `SearchController` | `POST_SEARCH`, `POST_COUNT_SEARCH`, `POST_ASSET_SEARCH`, `GET_ASSET_SEARCH` | Public catalogue? Or scoped? |
 | `ItemController` | `CREATE_ITEM`, `GET_ITEM`, `DELETE_ITEM`, `UPDATE_ITEM`, `GET_ITEM_WITH_ACCESS`, `CHECK_ITEM_NAME_AVAILABILITY`, `DOWNLOAD_SCRIPT` | Custom ownership handlers run; should still add scope upstream |

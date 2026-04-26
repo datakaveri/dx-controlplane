@@ -172,7 +172,8 @@ public class ControllerFactory {
             shared.organizationService(),
             urnGenerator,
             shared.emailComposer());
-    controllers.add(new AdminController(adminHandler));
+    controllers.add(
+        new AdminController(adminHandler, authV2.authentication(), authV2.authorization()));
 
     // Asset
     AssetHandler assetHandler =
