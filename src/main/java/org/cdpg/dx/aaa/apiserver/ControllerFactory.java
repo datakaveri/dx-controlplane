@@ -298,7 +298,8 @@ public class ControllerFactory {
     controllers.add(
         AppCredentialsControllerFactory.create(
             infra.pgService(), shared.organizationService(), shared.itemService(), urnGenerator,
-            infra.dataBrokerService(), config.getString("appIdRevokeExchange", "revoked-appid")));
+            infra.dataBrokerService(), config.getString("appIdRevokeExchange", "revoked-appid"),
+            authV2));
 
     controllers.add(
         AppTokenControllerFactory.create(
