@@ -376,13 +376,16 @@ operations and `forRoles(CONSUMER)` for self operations. Plus
 | `UserInteractionV2Controller` | `OP_POST_USER_FEEDBACK` | `forRoles(CONSUMER)` | `forScopes(DATA_ACCESS)` |
 | `UserInteractionV2Controller` | `OP_GET_USER_FEEDBACK` | `forRoles(CONSUMER)` | `forScopes(DATA_ACCESS)` |
 | `UserInteractionV2Controller` | `OP_DELETE_USER_FEEDBACK` | `forRoles(CONSUMER)` | `forScopes(DATA_ACCESS)` |
-| `UserInteractionV2Controller` | `OP_POST_PROVIDER_FEEDBACK` | `forRoles(CONSUMER)` | `forScopes(DATA_ACCESS)` |
-| `UserInteractionV2Controller` | `OP_GET_PROVIDER_FEEDBACK` | `forRoles(CONSUMER)` | `forScopes(DATA_ACCESS)` |
-| `UserInteractionV2Controller` | `OP_DELETE_PROVIDER_FEEDBACK` | `forRoles(CONSUMER)` | `forScopes(DATA_ACCESS)` |
+| `UserInteractionV2Controller` | `OP_POST_PROVIDER_FEEDBACK` | `forRoles(CONSUMER)` ⚠ | `forScopesWithContext(self(OWN_ASSET_MANAGEMENT), org(ORG_ASSET_MANAGEMENT))` |
+| `UserInteractionV2Controller` | `OP_GET_PROVIDER_FEEDBACK` | `forRoles(CONSUMER)` ⚠ | `forScopesWithContext(self(OWN_ASSET_MANAGEMENT), org(ORG_ASSET_MANAGEMENT))` |
+| `UserInteractionV2Controller` | `OP_DELETE_PROVIDER_FEEDBACK` | `forRoles(CONSUMER)` ⚠ | `forScopesWithContext(self(OWN_ASSET_MANAGEMENT), org(ORG_ASSET_MANAGEMENT))` |
 | `UserInteractionController` (v1) | various | none in current code | leave for now; deprecate if v2 controller supersedes |
 | `VoteController` | `OP_POST_ITEM_VOTE` | none | `forScopes(DATA_ACCESS)` |
 
-**Existing scopes sufficient.**
+**Existing scopes sufficient.** ⚠ Provider-feedback rows: v1 gates by `CONSUMER` but the OpenAPI spec
+(`paths/interactions.yaml` `post-provider-feedback`) requires the caller to be the asset owner, a
+provider who has interacted with the asset, or `org_admin`. The v1 gate is left as-is per scope of
+the migration; v2 is corrected to match the spec.
 
 ### 4.21 Reports / dashboards / leaderboard
 

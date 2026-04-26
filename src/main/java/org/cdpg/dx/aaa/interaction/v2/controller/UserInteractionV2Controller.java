@@ -3,7 +3,6 @@ package org.cdpg.dx.aaa.interaction.v2.controller;
 import static org.cdpg.dx.aaa.apiserver.OperationIds.*;
 import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.CREATED_AT;
 
-import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
@@ -23,14 +22,15 @@ import org.cdpg.dx.aaa.interaction.v2.service.UserInteractionV2Service;
 import org.cdpg.dx.aaa.interaction.v2.util.InteractionAuditLogHelper;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
-import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.v2.handler.AuthenticationHandler;
+import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
+import org.cdpg.dx.auth.v2.handler.ScopeRule;
+import org.cdpg.dx.auth.v2.model.Scopes;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.CpRoutingContextHelper;
-import org.cdpg.dx.common.util.RoutingContextHelper;
 
 public class UserInteractionV2Controller implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(UserInteractionV2Controller.class);
@@ -44,69 +44,85 @@ public class UserInteractionV2Controller implements ApiController {
   private final AuditingHandler auditingHandler;
   private final UserInteractionV2Service service;
   private final URNGenerator urnGenerator;
-  Handler<RoutingContext> syncInteractionMetricAccessHandler =
-      AuthorizationHandler.forRoles(DxRole.COS_ADMIN);
-
-  Handler<RoutingContext> interactionAccessHandler = AuthorizationHandler.forRoles(DxRole.CONSUMER);
-  Handler<RoutingContext> feedbackAccessHandler = AuthorizationHandler.forRoles(DxRole.CONSUMER);
-
+  private final AuthenticationHandler authenticationV2;
+  private final AuthorizationHandler authorizationV2;
 
   public UserInteractionV2Controller(
       AuditingHandler auditingHandler,
       UserInteractionV2Service service,
-      URNGenerator urnGenerator) {
+      URNGenerator urnGenerator,
+      AuthenticationHandler authenticationV2,
+      AuthorizationHandler authorizationV2) {
     this.auditingHandler = auditingHandler;
     this.service = service;
     this.urnGenerator = urnGenerator;
+    this.authenticationV2 = authenticationV2;
+    this.authorizationV2 = authorizationV2;
   }
 
   @Override
   public void register(RouterBuilder builder) {
     LOGGER.info("Registering UserInteractionController routes");
+
+    var userScopedAccess = authorizationV2.forScopes(Scopes.DATA_ACCESS);
+    var adminSyncAccess = authorizationV2.forScopes(Scopes.USER_MANAGEMENT);
+    var providerFeedbackAccess =
+        authorizationV2.forScopesWithContext(
+            ScopeRule.self(Scopes.OWN_ASSET_MANAGEMENT),
+            ScopeRule.org(Scopes.ORG_ASSET_MANAGEMENT));
+
     builder
         .operation(OP_POST_USER_INTERACTION)
         .handler(auditingHandler::handleApiAudit)
-        .handler(interactionAccessHandler)
+        .handler(authenticationV2)
+        .handler(userScopedAccess)
         .handler(this::handlePostUserInteractionRequest);
     builder
         .operation(OP_GET_USER_INTERACTIONS)
-        .handler(interactionAccessHandler)
+        .handler(authenticationV2)
+        .handler(userScopedAccess)
         .handler(this::handleGetUserInteractionRequest);
     builder
         .operation(OP_SYNC_INTERACTION_METRICS)
-        .handler(syncInteractionMetricAccessHandler)
+        .handler(authenticationV2)
+        .handler(adminSyncAccess)
         .handler(this::handleSyncInteractionMetrics);
 
-     builder
+    builder
         .operation(OP_POST_USER_FEEDBACK)
-        .handler(interactionAccessHandler)
+        .handler(authenticationV2)
+        .handler(userScopedAccess)
         .handler(this::handlePostUpdateUserFeedbackRequest);
 
-     builder
-          .operation(OP_GET_USER_FEEDBACK)
-          .handler(interactionAccessHandler)
-          .handler(this::handleGetUserFeedbackRequest);
+    builder
+        .operation(OP_GET_USER_FEEDBACK)
+        .handler(authenticationV2)
+        .handler(userScopedAccess)
+        .handler(this::handleGetUserFeedbackRequest);
 
     builder
-       .operation(OP_DELETE_USER_FEEDBACK)
-       .handler(interactionAccessHandler)
-       .handler(this::handleDeleteUserFeedbackRequest);
+        .operation(OP_DELETE_USER_FEEDBACK)
+        .handler(authenticationV2)
+        .handler(userScopedAccess)
+        .handler(this::handleDeleteUserFeedbackRequest);
 
     builder
-      .operation(OP_POST_PROVIDER_FEEDBACK)
-      .handler(feedbackAccessHandler)
-      .handler(this::handlePostUpdateProviderFeedbackRequest);
+        .operation(OP_POST_PROVIDER_FEEDBACK)
+        .handler(authenticationV2)
+        .handler(providerFeedbackAccess)
+        .handler(this::handlePostUpdateProviderFeedbackRequest);
 
     builder
-      .operation(OP_GET_PROVIDER_FEEDBACK)
-      .handler(feedbackAccessHandler)
-      .handler(this::handleGetProviderFeedbackRequest);
+        .operation(OP_GET_PROVIDER_FEEDBACK)
+        .handler(authenticationV2)
+        .handler(providerFeedbackAccess)
+        .handler(this::handleGetProviderFeedbackRequest);
 
     builder
-      .operation(OP_DELETE_PROVIDER_FEEDBACK)
-      .handler(feedbackAccessHandler)
-      .handler(this::handleDeleteProviderFeedbackRequest);
-
+        .operation(OP_DELETE_PROVIDER_FEEDBACK)
+        .handler(authenticationV2)
+        .handler(providerFeedbackAccess)
+        .handler(this::handleDeleteProviderFeedbackRequest);
   }
 
   private void handlePostUserInteractionRequest(RoutingContext ctx) {
