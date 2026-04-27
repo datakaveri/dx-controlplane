@@ -454,6 +454,7 @@ as intentionally open.
 | Controller | Operation | Likely intent |
 |---|---|---|
 | ~~`AdminController`~~ | ~~`get-auth-v2-user`, `put-auth-v2-user`, `put-auth-v2-user-password`, `post-auth-v2-user-update`, `delete-auth-v2-user`~~ | Resolved: self-only, gated with `forScopes(DATA_ACCESS)` (auth-v2 admin migration). |
+| ~~`CreditController`~~ | ~~`post-auth-v2-compute-role-request`~~ | Resolved: any KYC-verified authenticated user — gated with `forScopes(DATA_ACCESS)` + KYC unchanged (auth-v2 user/credit migration, see plan §5.1). |
 | `OrganizationController` | `OP_LIST_ORGANISATIONS`, `OP_GET_ORGANISATION_BY_ID` | Public listing? Or DATA_ACCESS? |
 | `SearchController` | `POST_SEARCH`, `POST_COUNT_SEARCH`, `POST_ASSET_SEARCH`, `GET_ASSET_SEARCH` | Public catalogue? Or scoped? |
 | `ItemController` | `CREATE_ITEM`, `GET_ITEM`, `DELETE_ITEM`, `UPDATE_ITEM`, `GET_ITEM_WITH_ACCESS`, `CHECK_ITEM_NAME_AVAILABILITY`, `DOWNLOAD_SCRIPT` | Custom ownership handlers run; should still add scope upstream |

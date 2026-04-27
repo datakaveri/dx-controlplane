@@ -14,9 +14,6 @@ import org.cdpg.dx.aaa.credit.util.CreditRequestEnricher;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.auditing.model.AuditLog;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
-import org.cdpg.dx.auth.authentication.util.AccessValidator;
-import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.request.PaginatedRequest;
@@ -88,18 +85,6 @@ public class CreditRequestHandler {
 
 
   public void getCreditRequests(RoutingContext ctx) {
-
-
-    User dxUser = ctx.user();
-    JsonObject userJson = dxUser.principal();
-
-    AccessValidator.validate(
-      userJson,
-      List.of( // primary roles (no scope check)
-        DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.CREDIT_MANAGEMENT.getScope(),DxScope.COS_ADMIN_ACCESS.getScope())
-    );
-
     PaginatedRequest request = PaginationRequestBuilder.from(ctx)
       .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_CREDIT_REQUEST)
       .apiToDbMap(ALLOWED_FILTER_MAP_FOR_CREDIT_REQUEST)
@@ -163,18 +148,6 @@ public class CreditRequestHandler {
 
 
   public void updateCreditRequestStatus(RoutingContext ctx) {
-
-
-    User dxUser = ctx.user();
-    JsonObject userJson = dxUser.principal();
-
-    AccessValidator.validate(
-      userJson,
-      List.of( // primary roles (no scope check)
-        DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.CREDIT_MANAGEMENT.getScope(),DxScope.COS_ADMIN_ACCESS.getScope())
-    );
-
     JsonObject creditRequestJson = ctx.body().asJsonObject();
 
     JsonObject responseObject = creditRequestJson.copy();

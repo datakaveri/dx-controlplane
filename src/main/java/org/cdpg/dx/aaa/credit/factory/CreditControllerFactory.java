@@ -15,6 +15,7 @@ import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
+import org.cdpg.dx.auth.v2.factory.AuthHandlersV2;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
@@ -24,13 +25,13 @@ public class CreditControllerFactory {
 
   private CreditControllerFactory() {}
 
-  public static CreditController create(CreditService creditService, EmailComposer emailComposer, UserService userService, OrganizationService organizationService, KeycloakUserService keycloakUserService, AuditingHandler auditingHandler, URNGenerator urnGenerator, Boolean isKycRequired) {
+  public static CreditController create(CreditService creditService, EmailComposer emailComposer, UserService userService, OrganizationService organizationService, KeycloakUserService keycloakUserService, AuditingHandler auditingHandler, URNGenerator urnGenerator, Boolean isKycRequired, AuthHandlersV2 authV2) {
 
     CreditRequestHandler creditRequestHandler = new CreditRequestHandler(creditService, emailComposer, keycloakUserService, urnGenerator);
     CreditBalanceHandler creditBalanceHandler = new CreditBalanceHandler(creditService, emailComposer, keycloakUserService, urnGenerator);
     ComputeRoleHandler computeRoleHandler = new ComputeRoleHandler(creditService, emailComposer, userService, organizationService, keycloakUserService, urnGenerator);
 
-    return new CreditController(creditRequestHandler, creditBalanceHandler, computeRoleHandler, auditingHandler, isKycRequired);
+    return new CreditController(creditRequestHandler, creditBalanceHandler, computeRoleHandler, auditingHandler, isKycRequired, authV2.authentication(), authV2.authorization());
   }
 
   public static CreditService createService(PostgresService pgService, KeycloakUserService keycloakUserService, JsonObject config) {
