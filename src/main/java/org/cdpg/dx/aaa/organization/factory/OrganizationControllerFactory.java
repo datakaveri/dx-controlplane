@@ -3,8 +3,6 @@ package org.cdpg.dx.aaa.organization.factory;
 import io.vertx.ext.web.client.WebClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.delegation.OrgOwnershipValidator;
-import org.cdpg.dx.aaa.delegation.handler.DelegationHandler;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
@@ -17,6 +15,7 @@ import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
+import org.cdpg.dx.auth.v2.factory.AuthHandlersV2;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
@@ -41,21 +40,12 @@ public class OrganizationControllerFactory {
       ElasticsearchService esService,
       KeycloakUserService keycloakUserService,
       URNGenerator urnGenerator,
-      OrgOwnershipValidator orgOwnershipValidator,
       WebClient webClient,
       Boolean kycRequired,
       String docIndex,
-      String apdURL) {
+      String apdURL,
+      AuthHandlersV2 authV2) {
 
-    /* =========================
-     * Core services
-     * ========================= */
-
-    /* UserServiceImpl userService =
-                new UserServiceImpl(
-                        keycloakUserService, organizationService, creditService, esService, docUserIndex);
-
-    */
     OrganizationDAOFactory organizationDAOFactory = new OrganizationDAOFactory(pgService);
 
     PolicyDao policyDao = new PolicyDaoImpl(pgService);
@@ -84,7 +74,6 @@ public class OrganizationControllerFactory {
     OrganizationJoinRequestHandler joinRequestHandler =
         new OrganizationJoinRequestHandler(
             organizationService,
-            orgOwnershipValidator,
             userService,
             keycloakUserService,
             emailComposer,
@@ -95,7 +84,7 @@ public class OrganizationControllerFactory {
 
     ProviderRoleHandler providerRoleHandler =
         new ProviderRoleHandler(
-            organizationService, userService, orgOwnershipValidator, emailComposer, urnGenerator);
+            organizationService, userService, emailComposer, urnGenerator);
 
     /* =========================
      * Controller (ONLY wiring)
@@ -109,7 +98,9 @@ public class OrganizationControllerFactory {
         userHandler,
         providerRoleHandler,
         auditingHandler,
-        kycRequired);
+        kycRequired,
+        authV2.authentication(),
+        authV2.authorization());
   }
 
   /* =========================

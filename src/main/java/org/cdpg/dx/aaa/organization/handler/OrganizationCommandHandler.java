@@ -1,9 +1,7 @@
 package org.cdpg.dx.aaa.organization.handler;
 
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
-import java.util.List;
 import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -11,16 +9,14 @@ import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
 import org.cdpg.dx.aaa.organization.models.OrganisationAuditOperation;
 import org.cdpg.dx.aaa.organization.models.UpdateOrgDTO;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
-import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
-import org.cdpg.dx.auth.authentication.util.AccessValidator;
-import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.cdpg.dx.auth.authorization.model.DxScope;
+import org.cdpg.dx.auth.v2.handler.AuthLevel;
+import org.cdpg.dx.auth.v2.handler.AuthorizationContext;
 import org.cdpg.dx.common.URNGenerator;
+import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.response.ResponseBuilder;
-import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.util.CpRoutingContextHelper;
-import org.cdpg.dx.common.util.RoutingContextHelper;
+import org.cdpg.dx.common.util.RequestHelper;
 
 import static org.cdpg.dx.aaa.common.Constants.ID;
 
@@ -37,20 +33,6 @@ public class OrganizationCommandHandler {
   }
 
   public void updateOrganisationById(RoutingContext ctx) {
-
-    // updates org
-    // delegate requirement: scope - org_management and delegator is cos_admin
-    // check if request param and delegated org id is same
-
-    User user = ctx.user();
-    JsonObject userJson = user.principal();
-
-//    AccessValidator.validate(
-//        userJson,
-//        List.of( // primary roles (no scope check)
-//            DxRole.COS_ADMIN.getRole()),
-//        List.of(DxScope.USER_MANAGEMENT.getScope(), DxScope.COS_ADMIN_ACCESS.getScope()));
-
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     UpdateOrgDTO updateOrgDTO = RequestHelper.parseBody(ctx, UpdateOrgDTO::fromJson);
 
@@ -58,7 +40,6 @@ public class OrganizationCommandHandler {
         .updateOrganizationById(orgId, updateOrgDTO)
         .onSuccess(
             updatedOrg -> {
-
               UserActivityAuditLogBuilder auditLogBuilder =
                   OrganizationAuditHelper.buildOrganisationAudit(
                       ctx, updatedOrg.toJson(), OrganisationAuditOperation.UPDATE_ORG);
@@ -77,23 +58,22 @@ public class OrganizationCommandHandler {
   }
 
   public void deleteOrganisationById(RoutingContext ctx) {
-
-    JsonObject userJson = ctx.user().principal();
-
-//    AccessValidator.validate(
-//      userJson,
-//      List.of( // primary roles (no scope check)
-//        DxRole.COS_ADMIN.getRole(),DxRole.ORG_ADMIN.getRole()),
-//      List.of(DxScope.USER_MANAGEMENT.getScope(), DxScope.ORG_ADMIN_ACCESS.getScope(), DxScope.COS_ADMIN_ACCESS.getScope()));
-
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
+
+    AuthorizationContext authCtx = ctx.get(AuthorizationContext.KEY);
+    if (authCtx != null && authCtx.getLevel() == AuthLevel.ORG
+        && !orgId.toString().equals(authCtx.getOrgId())) {
+      ctx.fail(new DxForbiddenException("Cannot delete a different organisation"));
+      return;
+    }
+
     organizationService
         .deleteOrganization(orgId)
         .onSuccess(
             updatedOrg -> {
               UserActivityAuditLogBuilder auditLogBuilder =
                 OrganizationAuditHelper.buildOrganisationAudit(
-                  ctx, new JsonObject().put(ID,orgId.toString()), OrganisationAuditOperation.DELETE_ORG);
+                  ctx, new JsonObject().put(ID, orgId.toString()), OrganisationAuditOperation.DELETE_ORG);
               CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
               ResponseBuilder.sendSuccess(ctx, "Organisation deleted Successfully!", urnGenerator);
             })
