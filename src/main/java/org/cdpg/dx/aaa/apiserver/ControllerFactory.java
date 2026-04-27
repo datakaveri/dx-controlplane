@@ -172,7 +172,8 @@ public class ControllerFactory {
             shared.organizationService(),
             urnGenerator,
             shared.emailComposer());
-    controllers.add(new AdminController(adminHandler));
+    controllers.add(
+        new AdminController(adminHandler, authV2.authentication(), authV2.authorization()));
 
     // Asset
     AssetHandler assetHandler =
@@ -297,7 +298,8 @@ public class ControllerFactory {
     controllers.add(
         AppCredentialsControllerFactory.create(
             infra.pgService(), shared.organizationService(), shared.itemService(), urnGenerator,
-            infra.dataBrokerService(), config.getString("appIdRevokeExchange", "revoked-appid")));
+            infra.dataBrokerService(), config.getString("appIdRevokeExchange", "revoked-appid"),
+            authV2));
 
     controllers.add(
         AppTokenControllerFactory.create(
@@ -319,7 +321,11 @@ public class ControllerFactory {
     // User interactions v2
     controllers.add(
         UserInteractionV2controllerFactory.create(
-            infra.pgService(), shared.itemService(), shared.auditingHandler(), urnGenerator));
+            infra.pgService(),
+            shared.itemService(),
+            shared.auditingHandler(),
+            urnGenerator,
+            authV2));
 
     return controllers;
   }
