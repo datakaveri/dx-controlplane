@@ -155,7 +155,8 @@ public class ControllerFactory {
             shared.keycloakUserService(),
             shared.auditingHandler(),
             urnGenerator,
-            isKycRequired);
+            isKycRequired,
+            authV2);
     controllers.add(creditApiController);
 
     KYCHandler kycHandler =
@@ -274,7 +275,7 @@ public class ControllerFactory {
     controllers.add(PublicKeycontrllerFactory.create(config, vertx));
 
     // User
-    controllers.add(UserControllerFactory.create(shared.userService(), urnGenerator));
+    controllers.add(UserControllerFactory.create(shared.userService(), urnGenerator, authV2));
 
     // Delegation
     controllers.add(

@@ -15,9 +15,6 @@ import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.AuditLog;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
-import org.cdpg.dx.auth.authentication.util.AccessValidator;
-import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.request.PaginatedRequest;
@@ -138,18 +135,6 @@ public class ComputeRoleHandler {
 
 
   public void getAllComputeRequests(RoutingContext ctx) {
-
-
-    User dxUser = ctx.user();
-    JsonObject userJson = dxUser.principal();
-
-    AccessValidator.validate(
-      userJson,
-      List.of( // primary roles (no scope check)
-        DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.COMPUTE_MANAGEMENT.getScope(),DxScope.COS_ADMIN_ACCESS.getScope())
-    );
-
     PaginatedRequest request = PaginationRequestBuilder.from(ctx)
       .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_COMPUTE_ROLE)
       .apiToDbMap(ALLOWED_FILTER_MAP_FOR_COMPUTE_ROLE)
@@ -181,18 +166,6 @@ public class ComputeRoleHandler {
   }
 
   public void updateComputeRoleStatus(RoutingContext ctx) {
-
-
-    User dxUser = ctx.user();
-    JsonObject userJson = dxUser.principal();
-
-    AccessValidator.validate(
-      userJson,
-      List.of( // primary roles (no scope check)
-        DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.COMPUTE_MANAGEMENT.getScope(),DxScope.COS_ADMIN_ACCESS.getScope())
-    );
-
     JsonObject creditRequestJson = ctx.body().asJsonObject();
 
     User user = ctx.user();

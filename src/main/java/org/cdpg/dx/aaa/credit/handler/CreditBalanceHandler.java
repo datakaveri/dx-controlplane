@@ -10,9 +10,6 @@ import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.credit.util.CreditRequestAuditLogHelper;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
-import org.cdpg.dx.auth.authentication.util.AccessValidator;
-import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RequestHelper;
@@ -57,17 +54,6 @@ public class CreditBalanceHandler {
   }
 
   public void getBalanceofUser(RoutingContext ctx) {
-
-    User dxUser = ctx.user();
-    JsonObject userJson = dxUser.principal();
-
-    AccessValidator.validate(
-      userJson,
-      List.of( // primary roles (no scope check)
-        DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.CREDIT_MANAGEMENT.getScope(),DxScope.COS_ADMIN_ACCESS.getScope())
-    );
-
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "id");
     creditService.getBalance(userId)
       .onSuccess(res -> {
@@ -84,18 +70,6 @@ public class CreditBalanceHandler {
 
 
   public void deductCredits(RoutingContext ctx) {
-
-
-    User dxUser = ctx.user();
-    JsonObject userJson = dxUser.principal();
-
-    AccessValidator.validate(
-      userJson,
-      List.of( // primary roles (no scope check)
-        DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.CREDIT_MANAGEMENT.getScope(),DxScope.COS_ADMIN_ACCESS.getScope())
-    );
-
     JsonObject creditDeductionJson = ctx.body().asJsonObject();
 
     User user = ctx.user();
@@ -124,17 +98,6 @@ public class CreditBalanceHandler {
   }
 
   public void addCredits(RoutingContext ctx) {
-
-    User dxUser = ctx.user();
-    JsonObject userJson = dxUser.principal();
-
-    AccessValidator.validate(
-      userJson,
-      List.of( // primary roles (no scope check)
-        DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.CREDIT_MANAGEMENT.getScope(),DxScope.COS_ADMIN_ACCESS.getScope())
-    );
-
     JsonObject creditAdditionJson = ctx.body().asJsonObject();
 
     User user = ctx.user();

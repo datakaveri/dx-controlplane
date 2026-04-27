@@ -26,7 +26,6 @@ import java.util.*;
 
 import static org.cdpg.dx.aaa.organization.config.Constants.USER_ID;
 import static org.cdpg.dx.aaa.user.util.constants.*;
-import static org.cdpg.dx.auth.authorization.model.DxRole.COS_ADMIN;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
 public class UserHandler {
