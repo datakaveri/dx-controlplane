@@ -16,6 +16,7 @@ import org.cdpg.dx.acl.policy.service.impl.PolicyServiceImpl;
 import org.cdpg.dx.acl.rule.dao.AccessRuleDao;
 import org.cdpg.dx.acl.rule.dao.impl.AccessRuleDaoImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
+import org.cdpg.dx.auth.v2.factory.AuthHandlersV2;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
@@ -31,7 +32,8 @@ public class PolicyFactory {
       AuditingHandler auditingHandler,
       URNGenerator urnGenerator,
       WebClient webClient,
-      JsonObject config) {
+      JsonObject config,
+      AuthHandlersV2 authV2) {
     PolicyDao policyDao = new PolicyDaoImpl(pgService);
     AccessRuleDao accessRuleDao = new AccessRuleDaoImpl(pgService);
     ItemService itemService =
@@ -48,6 +50,13 @@ public class PolicyFactory {
         new PolicyServiceImpl(itemService, policyDao, accessRuleDao, config.getString(APD_URL));
 
     return new PolicyController(
-        policyService, pgService, auditingHandler, keycloakUserService, urnGenerator, config);
+        policyService,
+        pgService,
+        auditingHandler,
+        keycloakUserService,
+        urnGenerator,
+        config,
+        authV2.authentication(),
+        authV2.authorization());
   }
 }

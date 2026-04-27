@@ -463,7 +463,7 @@ as intentionally open.
 | `SummaryController` | `OP_GET_DASHBOARD_USAGE_SUMMARY` | Admin only |
 | `OrganizationReportController` | all 6 | Admin only |
 | `KYCController` | `get-auth-v2-kyc-confirm`, `post-auth-v2-kyc-verify` | Self-service for any consumer |
-| `AccessRequestController` | `CREATE_ACCESS_REQUEST_API`, `GET_ACCESS_REQUEST_CONSUMER_API`, `CHECK_ACCESS_REQUEST_API` | Consumer self |
+| ~~`AccessRequestController`~~ | ~~`CREATE_ACCESS_REQUEST_API`, `GET_ACCESS_REQUEST_CONSUMER_API`, `CHECK_ACCESS_REQUEST_API`~~ | Resolved: gated with `forScopes(DATA_ACCESS)` — any authenticated user (auth-v2 ACL migration §5.1). |
 | `VoteController` | `OP_POST_ITEM_VOTE` | Consumer |
 | `ListController` | `LIST_AVAILABLE_FILTER` | Public? |
 | `CentralListController` / `CentralSearchController` | all | Public central catalogue — confirm |
