@@ -1,7 +1,6 @@
 package org.cdpg.dx.aaa.organization.handler;
 
 import io.vertx.core.Future;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
@@ -18,28 +17,21 @@ import org.cdpg.dx.aaa.organization.models.OrganisationAuditOperation;
 import org.cdpg.dx.aaa.organization.models.OrganizationCreateRequest;
 import org.cdpg.dx.aaa.organization.models.Status;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
-import org.cdpg.dx.aaa.user.service.UserService;
-import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
-import org.cdpg.dx.auth.authentication.util.AccessValidator;
-import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.cdpg.dx.auth.authorization.model.DxScope;
+import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
+import org.cdpg.dx.auth.v2.model.DxPrincipal;
 import org.cdpg.dx.common.URNGenerator;
-import org.cdpg.dx.common.util.DelegatorResolver;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
-import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.CpRoutingContextHelper;
-import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 import static org.cdpg.dx.aaa.common.Constants.ID;
-import static org.cdpg.dx.aaa.delegation.util.Constants.DELEGATOR_ID;
 import static org.cdpg.dx.aaa.organization.config.Constants.*;
 import static org.cdpg.dx.aaa.organization.config.Constants.API_TO_DB_ORG_CREATE_REQUEST;
 import static org.cdpg.dx.aaa.organization.config.Constants.CREATED_AT;
@@ -72,8 +64,9 @@ public class OrganizationCreateRequestHandler {
     }
 
     JsonObject orgRequestJson = ctx.body().asJsonObject();
+    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
+    UUID userId = UUID.fromString(principal.getSub());
     User user = ctx.user();
-    UUID userId = UUID.fromString(user.subject());
 
     String orgName = orgRequestJson.getString("name");
 
@@ -146,14 +139,6 @@ public class OrganizationCreateRequestHandler {
   public void updateOrganisationRequest(RoutingContext ctx) {
 
     JsonObject OrgRequestJson = ctx.body().asJsonObject();
-    User user = ctx.user();
-//    JsonObject userJson = user.principal();
-//
-//    AccessValidator.validate(
-//        userJson,
-//        List.of( // primary roles (no scope check)
-//            DxRole.COS_ADMIN.getRole()),
-//        List.of(DxScope.COS_ADMIN_ACCESS.getScope()));
 
     UUID requestId = UUID.fromString(OrgRequestJson.getString("req_id"));
     Status status = Status.fromString(OrgRequestJson.getString("status"));
@@ -180,8 +165,8 @@ public class OrganizationCreateRequestHandler {
 
   public void deleteOrganizationCreateRequest(RoutingContext ctx) {
     UUID requestId = UUID.fromString(ctx.pathParam("id"));
-    User user = ctx.user();
-    UUID userId = DelegatorResolver.resolveActingUserId(ctx);
+    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
+    UUID userId = UUID.fromString(principal.getSub());
 
     organizationService
         .getOrganizationCreateRequestById(requestId)
@@ -229,8 +214,8 @@ public class OrganizationCreateRequestHandler {
   }
 
   public void getUserOrganisationRequest(RoutingContext ctx) {
-    User user = ctx.user();
-    UUID userId = DelegatorResolver.resolveActingUserId(ctx);
+    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
+    UUID userId = UUID.fromString(principal.getSub());
 
     organizationService
         .getOrganizationCreateRequestsByUserId(userId)
@@ -244,7 +229,6 @@ public class OrganizationCreateRequestHandler {
             })
         .onSuccess(
             result -> {
-              // todo : check if audit log is needed for this and also need verify the audit log
               UserActivityAuditLogBuilder auditLogBuilder =
                 OrganizationAuditHelper.buildOrganisationAudit(
                   ctx, new JsonObject(), OrganisationAuditOperation.GET);
@@ -262,15 +246,6 @@ public class OrganizationCreateRequestHandler {
   }
 
   public void getAllOrganisationRequest(RoutingContext ctx) {
-
-    User user = ctx.user();
-    JsonObject userJson = user.principal();
-
-//    AccessValidator.validate(
-//        userJson,
-//        List.of( // primary roles (no scope check)
-//            DxRole.COS_ADMIN.getRole()),
-//        List.of(DxScope.COS_ADMIN_ACCESS.getScope()));
 
     PaginatedRequest request =
         PaginationRequestBuilder.from(ctx)

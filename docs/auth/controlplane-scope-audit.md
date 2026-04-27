@@ -455,7 +455,8 @@ as intentionally open.
 |---|---|---|
 | ~~`AdminController`~~ | ~~`get-auth-v2-user`, `put-auth-v2-user`, `put-auth-v2-user-password`, `post-auth-v2-user-update`, `delete-auth-v2-user`~~ | Resolved: self-only, gated with `forScopes(DATA_ACCESS)` (auth-v2 admin migration). |
 | ~~`CreditController`~~ | ~~`post-auth-v2-compute-role-request`~~ | Resolved: any KYC-verified authenticated user — gated with `forScopes(DATA_ACCESS)` + KYC unchanged (auth-v2 user/credit migration, see plan §5.1). |
-| `OrganizationController` | `OP_LIST_ORGANISATIONS`, `OP_GET_ORGANISATION_BY_ID` | Public listing? Or DATA_ACCESS? |
+| ~~`OrganizationController`~~ | ~~`OP_LIST_ORGANISATIONS`, `OP_GET_ORGANISATION_BY_ID`~~ | Resolved: gated with `forScopes(DATA_ACCESS)` — any authenticated user (auth-v2 organization migration §5.2). |
+| ~~`OrganizationController`~~ | ~~`OP_CREATE_ORG_REQUEST`, `OP_CREATE_ORG_JOIN_REQUEST`, `OP_CREATE_PROVIDER_REQUEST`~~ | Resolved: gated with `forScopes(DATA_ACCESS)` + KYC (auth-v2 organization migration §5.1). |
 | `SearchController` | `POST_SEARCH`, `POST_COUNT_SEARCH`, `POST_ASSET_SEARCH`, `GET_ASSET_SEARCH` | Public catalogue? Or scoped? |
 | `ItemController` | `CREATE_ITEM`, `GET_ITEM`, `DELETE_ITEM`, `UPDATE_ITEM`, `GET_ITEM_WITH_ACCESS`, `CHECK_ITEM_NAME_AVAILABILITY`, `DOWNLOAD_SCRIPT` | Custom ownership handlers run; should still add scope upstream |
 | `LeaderboardController` | all 3 | Public-ish? `forScopes(DATA_ACCESS)`? |

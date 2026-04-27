@@ -1,23 +1,17 @@
 package org.cdpg.dx.aaa.organization.audit;
 
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
 import org.cdpg.dx.aaa.organization.models.OrganisationAuditOperation;
-import org.cdpg.dx.auditing.enums.EntityType;
-import org.cdpg.dx.auditing.enums.Operation;
-import org.cdpg.dx.auditing.enums.OriginServer;
-import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auditing.v2.util.AuditLogHelper;
+import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
+import org.cdpg.dx.auth.v2.model.DxPrincipal;
 
 import static org.cdpg.dx.aaa.common.Constants.ID;
-import static org.cdpg.dx.aaa.credit.util.Constants.*;
-import static org.cdpg.dx.aaa.credit.util.Constants.AMOUNT;
 
 /**
  * OrganizationAuditHelper
@@ -36,17 +30,22 @@ public final class OrganizationAuditHelper {
   public static UserActivityAuditLogBuilder buildOrganisationAudit(
       RoutingContext ctx, JsonObject body, OrganisationAuditOperation operation) {
 
-    return AuditLogHelper.createBaseAudit(ctx)
-      .withLogType("USER_ACTION")
-      .withOriginServer("AAA")
-      .withRequestId(
-        body != null && body.getString(ID) != null
-          ? safeUuid(body.getString(ID))
-          : null
-      )
+    UserActivityAuditLogBuilder.Builder builder =
+        AuditLogHelper.createBaseAudit(ctx)
+            .withLogType("USER_ACTION")
+            .withOriginServer("AAA")
+            .withRequestId(
+                body != null && body.getString(ID) != null
+                    ? safeUuid(body.getString(ID))
+                    : null)
+            .withAction(operation.value());
 
-      .withAction(operation.value())
-      .build();
+    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
+    if (principal != null && principal.isDelegation()) {
+      builder.withDelegatorId(safeUuid(principal.getSub()));
+    }
+
+    return builder.build();
   }
 
 

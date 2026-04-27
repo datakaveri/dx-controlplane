@@ -134,11 +134,11 @@ public class ControllerFactory {
             infra.esService(),
             shared.keycloakUserService(),
             urnGenerator,
-            orgOwnershipValidator,
             infra.webClient(),
             isKycRequired,
             docIndex,
-            apdURL);
+            apdURL,
+            authV2);
     controllers.add(organizationController);
 
     OrganizationReportController organizationReportController =
