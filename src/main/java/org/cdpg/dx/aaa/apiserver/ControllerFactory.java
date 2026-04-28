@@ -31,6 +31,7 @@ import org.cdpg.dx.aaa.clientSecret.controller.ClientController;
 import org.cdpg.dx.aaa.clientSecret.factory.ClientControllerFactory;
 import org.cdpg.dx.aaa.connector.service.ConnectorService;
 import org.cdpg.dx.aaa.connector.service.ConnectorServiceImpl;
+import org.cdpg.dx.aaa.conversation.factory.ConversationControllerFactory;
 import org.cdpg.dx.aaa.credit.factory.CreditControllerFactory;
 import org.cdpg.dx.aaa.delegation.ItemOwnershipValidator;
 import org.cdpg.dx.aaa.delegation.OrgOwnershipValidator;
@@ -327,6 +328,9 @@ public class ControllerFactory {
             shared.auditingHandler(),
             urnGenerator,
             authV2));
+
+    // Request conversations
+    controllers.add(ConversationControllerFactory.create(infra.pgService(), urnGenerator));
 
     return controllers;
   }
