@@ -6,6 +6,7 @@ import static org.cdpg.dx.testutil.VertxFutureAssert.assertFutureSuccess;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -57,6 +58,8 @@ class AppCredentialsServiceTest {
   void setUp() {
     appCredentialsService =
         new AppCredentialsServiceImpl(delegationValidator, appCredentialsDAO, appConstraintsDAO, dataBrokerService, "revoked-appid");
+    lenient().when(dataBrokerService.publishMessageInternal(any(JsonObject.class), any(String.class), any(String.class)))
+        .thenReturn(Future.succeededFuture());
   }
 
   private AppCredentials buildAppCredentials(UUID appId, UUID userId) {

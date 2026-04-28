@@ -66,6 +66,8 @@ class DelegationServiceTest {
     lenient().when(factory.delegationRequestDAO()).thenReturn(delegationRequestDAO);
     lenient().when(factory.scopeConstraintDAO()).thenReturn(scopeConstraintDAO);
     lenient().when(factory.tokenDAO()).thenReturn(tokenDAO);
+    lenient().when(keycloakUserService.publishScopesAndRolesToKeycloak(any(DelegationGrant.class), any(JsonArray.class), any(String.class), any(Set.class)))
+        .thenAnswer(invocation -> Future.succeededFuture(invocation.getArgument(0)));
 
     delegationService =
         new DelegationServiceImpl(factory, keycloakUserService, organizationService, itemService);
@@ -112,8 +114,6 @@ class DelegationServiceTest {
       when(scopeConstraintDAO.create(any(DelegationScopeConstraint.class)))
           .thenReturn(Future.succeededFuture(null));
       when(keycloakUserService.addRoleToUser(any(UUID.class), any()))
-          .thenReturn(Future.succeededFuture(true));
-      when(keycloakUserService.setDelegationScopes(any(UUID.class), anyList(), any(UUID.class)))
           .thenReturn(Future.succeededFuture(true));
 
       Future<JsonObject> future =
