@@ -140,4 +140,12 @@ public final class OperationIds {
   public static final String OP_POST_PROVIDER_FEEDBACK = "post-provider-feedback";
   public static final String OP_GET_PROVIDER_FEEDBACK = "get-provider-feedback";
   public static final String OP_DELETE_PROVIDER_FEEDBACK = "delete-provider-feedback";
+
+  public static final String OP_GET_CONVERSATION_MESSAGES = "get-request-conversations";
+  public static final String OP_GET_CONVERSATION_MESSAGE = "get-request-conversation-by-id";
+  public static final String OP_CREATE_CONVERSATION_MESSAGE = "post-request-conversation";
+  public static final String OP_REPLY_CONVERSATION_MESSAGE = "post-request-conversation-reply";
+  public static final String OP_UPDATE_CONVERSATION_MESSAGE = "put-request-conversation";
+  public static final String OP_DELETE_CONVERSATION_MESSAGE = "delete-request-conversation";
+  public static final String OP_GET_CONVERSATION_BY_REQUEST_TYPE = "get-conversations-by-request-type";
 }
