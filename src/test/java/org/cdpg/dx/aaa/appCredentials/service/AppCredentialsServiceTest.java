@@ -6,6 +6,7 @@ import static org.cdpg.dx.testutil.VertxFutureAssert.assertFutureSuccess;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -27,6 +28,7 @@ import org.cdpg.dx.aaa.appCredentials.model.AppCredentials;
 import org.cdpg.dx.aaa.appCredentials.service.impl.AppCredentialsServiceImpl;
 import org.cdpg.dx.aaa.delegation.DelegationValidator;
 import org.cdpg.dx.common.exception.DxNotFoundException;
+import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.util.PaginationInfo;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
@@ -48,13 +50,16 @@ class AppCredentialsServiceTest {
   @Mock private AppCredentialsDAO appCredentialsDAO;
   @Mock private AppConstraintsDAO appConstraintsDAO;
   @Mock private DelegationValidator delegationValidator;
+  @Mock private DataBrokerService dataBrokerService;
 
   private AppCredentialsServiceImpl appCredentialsService;
 
   @BeforeEach
   void setUp() {
     appCredentialsService =
-        new AppCredentialsServiceImpl(delegationValidator, appCredentialsDAO, appConstraintsDAO);
+        new AppCredentialsServiceImpl(delegationValidator, appCredentialsDAO, appConstraintsDAO, dataBrokerService, "revoked-appid");
+    lenient().when(dataBrokerService.publishMessageInternal(any(JsonObject.class), any(String.class), any(String.class)))
+        .thenReturn(Future.succeededFuture());
   }
 
   private AppCredentials buildAppCredentials(UUID appId, UUID userId) {

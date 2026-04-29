@@ -31,6 +31,7 @@ import org.cdpg.dx.aaa.clientSecret.controller.ClientController;
 import org.cdpg.dx.aaa.clientSecret.factory.ClientControllerFactory;
 import org.cdpg.dx.aaa.connector.service.ConnectorService;
 import org.cdpg.dx.aaa.connector.service.ConnectorServiceImpl;
+import org.cdpg.dx.aaa.conversation.factory.ConversationControllerFactory;
 import org.cdpg.dx.aaa.credit.factory.CreditControllerFactory;
 import org.cdpg.dx.aaa.delegation.ItemOwnershipValidator;
 import org.cdpg.dx.aaa.delegation.OrgOwnershipValidator;
@@ -63,6 +64,7 @@ import org.cdpg.dx.aaa.token.factory.AppTokenControllerFactory;
 import org.cdpg.dx.aaa.token.factory.TokenControllerFactory;
 import org.cdpg.dx.aaa.user.factory.UserControllerFactory;
 import org.cdpg.dx.apiserver.ApiController;
+import org.cdpg.dx.auth.v2.factory.AuthHandlersV2;
 import org.cdpg.dx.common.URNGenerator;
 
 /**
@@ -77,7 +79,7 @@ public class ControllerFactory {
   private ControllerFactory() {}
 
   public static List<ApiController> createControllers(
-      Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
+      Vertx vertx, JsonObject config, URNGenerator urnGenerator, AuthHandlersV2 authV2) {
 
     // ── Config values ──
     boolean isCentralCatEnabled = config.getBoolean(IS_CENTRAL_CATALOGUE_ENABLED, false);
@@ -116,11 +118,11 @@ public class ControllerFactory {
 
     // Activity
     ActivityController activityController =
-        ActivityControllerFactory.create(infra.pgService(), urnGenerator);
+        ActivityControllerFactory.create(infra.pgService(), urnGenerator, authV2);
     controllers.add(activityController);
 
     ActivityReportController activityReportController =
-        ActivityReportControllerFactory.create(infra.pgService(), vertx);
+        ActivityReportControllerFactory.create(infra.pgService(), vertx, authV2);
     controllers.add(activityReportController);
 
     // Organization
@@ -133,11 +135,11 @@ public class ControllerFactory {
             infra.esService(),
             shared.keycloakUserService(),
             urnGenerator,
-            orgOwnershipValidator,
             infra.webClient(),
             isKycRequired,
             docIndex,
-            apdURL);
+            apdURL,
+            authV2);
     controllers.add(organizationController);
 
     OrganizationReportController organizationReportController =
@@ -154,7 +156,8 @@ public class ControllerFactory {
             shared.keycloakUserService(),
             shared.auditingHandler(),
             urnGenerator,
-            isKycRequired);
+            isKycRequired,
+            authV2);
     controllers.add(creditApiController);
 
     KYCHandler kycHandler =
@@ -171,7 +174,8 @@ public class ControllerFactory {
             shared.organizationService(),
             urnGenerator,
             shared.emailComposer());
-    controllers.add(new AdminController(adminHandler));
+    controllers.add(
+        new AdminController(adminHandler, authV2.authentication(), authV2.authorization()));
 
     // Asset
     AssetHandler assetHandler =
@@ -272,7 +276,7 @@ public class ControllerFactory {
     controllers.add(PublicKeycontrllerFactory.create(config, vertx));
 
     // User
-    controllers.add(UserControllerFactory.create(shared.userService(), urnGenerator));
+    controllers.add(UserControllerFactory.create(shared.userService(), urnGenerator, authV2));
 
     // Delegation
     controllers.add(
@@ -295,7 +299,9 @@ public class ControllerFactory {
     // App credentials & tokens
     controllers.add(
         AppCredentialsControllerFactory.create(
-            infra.pgService(), shared.organizationService(), shared.itemService(), urnGenerator));
+            infra.pgService(), shared.organizationService(), shared.itemService(), urnGenerator,
+            infra.dataBrokerService(), config.getString("appIdRevokeExchange", "revoked-appid"),
+            authV2));
 
     controllers.add(
         AppTokenControllerFactory.create(
@@ -305,7 +311,8 @@ public class ControllerFactory {
             shared.itemService(),
             urnGenerator,
             config,
-            vertx));
+            vertx,
+            infra.dataBrokerService()));
 
     // Summary / dashboard
     controllers.add(SummaryControllerFactory.create(infra.pgService(), urnGenerator));
@@ -316,7 +323,14 @@ public class ControllerFactory {
     // User interactions v2
     controllers.add(
         UserInteractionV2controllerFactory.create(
-            infra.pgService(), shared.itemService(), shared.auditingHandler(), urnGenerator));
+            infra.pgService(),
+            shared.itemService(),
+            shared.auditingHandler(),
+            urnGenerator,
+            authV2));
+
+    // Request conversations
+    controllers.add(ConversationControllerFactory.create(infra.pgService(), urnGenerator));
 
     return controllers;
   }

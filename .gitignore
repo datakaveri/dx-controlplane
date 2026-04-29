@@ -93,6 +93,9 @@ allure-results
 # Annotation Processing
 .apt_generated/
 
+# Vert.x code generation
+src/main/generated/
+
 # Scala IDE specific (Scala & Java development for Eclipse)
 .cache-main
 .scala_dependencies

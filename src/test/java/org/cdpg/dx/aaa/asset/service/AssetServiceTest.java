@@ -58,6 +58,7 @@ class AssetServiceTest {
       Status.PENDING.getStatus(),
       "dataset",
       new JsonObject().put("key", "value"),
+      new JsonObject(),
       LocalDateTime.now(),
       LocalDateTime.now()
     );

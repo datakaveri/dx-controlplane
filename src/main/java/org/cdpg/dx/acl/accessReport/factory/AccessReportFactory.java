@@ -9,12 +9,17 @@ import org.cdpg.dx.acl.accessRequest.dao.impl.AccessRequestDaoImpl;
 import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
 import org.cdpg.dx.acl.accessReport.controller.AccessReportController;
 import org.cdpg.dx.acl.accessReport.service.impl.ReportServiceImpl;
+import org.cdpg.dx.auth.v2.factory.AuthHandlersV2;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 
 public class AccessReportFactory {
-  public static AccessReportController create(PostgresService pgService, Vertx vertx) {
+  public static AccessReportController create(
+      PostgresService pgService, Vertx vertx, AuthHandlersV2 authV2) {
     AccessRequestDao accessRequestDao =
         new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
-    return new AccessReportController(new ReportServiceImpl(accessRequestDao, vertx));
+    return new AccessReportController(
+        new ReportServiceImpl(accessRequestDao, vertx),
+        authV2.authentication(),
+        authV2.authorization());
   }
 }

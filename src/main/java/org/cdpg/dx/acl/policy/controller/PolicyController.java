@@ -34,8 +34,10 @@ import org.cdpg.dx.acl.policy.service.PolicyService;
 import org.cdpg.dx.acl.policy.service.model.CreatePolicyRequest;
 import org.cdpg.dx.acl.policy.util.UserAccessHandler;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
-import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.v2.handler.AuthenticationHandler;
+import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
+import org.cdpg.dx.auth.v2.handler.ScopeRule;
+import org.cdpg.dx.auth.v2.model.Scopes;
 import org.cdpg.dx.catalogueService.models.ItemType;
 import org.cdpg.dx.common.HttpStatusCode;
 import org.cdpg.dx.common.ResponseUrn;
@@ -55,6 +57,8 @@ public class PolicyController implements ApiController {
   private final KeycloakUserService keycloakUserService;
   private final URNGenerator urnGenerator;
   private final JsonObject config;
+  private final AuthenticationHandler authenticationV2;
+  private final AuthorizationHandler authorizationV2;
 
   public PolicyController(
       PolicyService policyService,
@@ -62,47 +66,58 @@ public class PolicyController implements ApiController {
       AuditingHandler auditingHandler,
       KeycloakUserService keycloakUserService,
       URNGenerator urnGenerator,
-      JsonObject config) {
+      JsonObject config,
+      AuthenticationHandler authenticationV2,
+      AuthorizationHandler authorizationV2) {
     this.policyService = policyService;
     this.postgresService = postgresService;
     this.auditingHandler = auditingHandler;
     this.keycloakUserService = keycloakUserService;
     this.urnGenerator = urnGenerator;
     this.config = config;
+    this.authenticationV2 = authenticationV2;
+    this.authorizationV2 = authorizationV2;
   }
 
   @Override
   public void register(RouterBuilder builder) {
-    Handler<RoutingContext> providerAndOrgAdmin =
-        AuthorizationHandler.forRoles(DxRole.PROVIDER, DxRole.ORG_ADMIN, DxRole.DELEGATE);
-    Handler<RoutingContext> apiAccessHandler =
-        AuthorizationHandler.forRoles(DxRole.CONSUMER, DxRole.PROVIDER, DxRole.DELEGATE);
-    Handler<RoutingContext> apiAccessVerifyApiRole =
-        AuthorizationHandler.forRoles(DxRole.PROVIDER, DxRole.ORG_ADMIN, DxRole.CONSUMER);
+    Handler<RoutingContext> selfOrConsumerAccess =
+        authorizationV2.forScopes(Scopes.DATA_ACCESS, Scopes.OWN_ASSET_MANAGEMENT);
+    Handler<RoutingContext> verifyAccess =
+        authorizationV2.forScopes(
+            Scopes.DATA_ACCESS, Scopes.OWN_ASSET_MANAGEMENT, Scopes.ORG_ASSET_MANAGEMENT);
+    Handler<RoutingContext> policyAdminAccess =
+        authorizationV2.forScopesWithContext(
+            ScopeRule.self(Scopes.OWN_ASSET_MANAGEMENT),
+            ScopeRule.org(Scopes.ORG_ASSET_MANAGEMENT));
     UserAccessHandler userAccessHandler = new UserAccessHandler(postgresService,
         keycloakUserService);
 
     builder.operation(CREATE_POLICY_API)
         .handler(auditingHandler::handleApiAudit)
-        .handler(providerAndOrgAdmin)
+        .handler(authenticationV2)
+        .handler(policyAdminAccess)
         .handler(userAccessHandler)
         .handler(this::handleCreatePolicy);
 
     builder.operation(GET_POLICY_API)
         .handler(auditingHandler::handleApiAudit)
-        .handler(apiAccessHandler)
+        .handler(authenticationV2)
+        .handler(selfOrConsumerAccess)
         .handler(userAccessHandler)
         .handler(this::handleGetPolicies);
 
     builder.operation(DELETE_POLICY_API)
         .handler(auditingHandler::handleApiAudit)
-        .handler(providerAndOrgAdmin)
+        .handler(authenticationV2)
+        .handler(policyAdminAccess)
         .handler(userAccessHandler)
         .handler(this::handleDeletePolicy);
 
     builder.operation(VERIFY_API)
         .handler(auditingHandler::handleApiAudit)
-        .handler(apiAccessVerifyApiRole)
+        .handler(authenticationV2)
+        .handler(verifyAccess)
         .handler(userAccessHandler)
         .handler(this::verifyRequestHandler);
   }

@@ -1,6 +1,5 @@
 package org.cdpg.dx.aaa.organization.handler;
 
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
@@ -12,7 +11,6 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.delegation.OrgOwnershipValidator;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
 import org.cdpg.dx.aaa.organization.models.OrganisationAuditOperation;
@@ -21,23 +19,18 @@ import org.cdpg.dx.aaa.organization.models.ProviderRoleRequest;
 import org.cdpg.dx.aaa.organization.models.Status;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
-import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
-import org.cdpg.dx.auth.authentication.util.AccessValidator;
-import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.cdpg.dx.auth.authorization.model.DxScope;
+import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
+import org.cdpg.dx.auth.v2.model.DxPrincipal;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
-import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
-import org.cdpg.dx.common.util.DelegatorResolver;
 import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.util.CpRoutingContextHelper;
-import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
 
 import static org.cdpg.dx.aaa.common.Constants.ID;
@@ -54,32 +47,25 @@ public class ProviderRoleHandler {
   private final UserService userService;
   private final EmailComposer emailComposer;
   private final URNGenerator urnGenerator;
-  private final OrgOwnershipValidator orgOwnershipValidator;
 
   public ProviderRoleHandler(
       OrganizationService organizationService,
       UserService userService,
-      OrgOwnershipValidator orgOwnershipValidator,
       EmailComposer emailComposer,
       URNGenerator urnGenerator) {
     this.organizationService = organizationService;
     this.userService = userService;
-    this.orgOwnershipValidator = orgOwnershipValidator;
     this.emailComposer = emailComposer;
     this.urnGenerator = urnGenerator;
   }
 
   public void createProviderRequest(RoutingContext ctx) {
 
+    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
     User user = ctx.user();
-    LOGGER.debug("User: {}", user);
-    if (user == null || user.subject() == null || user.principal() == null) {
-      ctx.fail(new DxForbiddenException("User not found"));
-      return;
-    }
 
-    String userId = user.subject();
-    String orgID = user.principal().getString("organisation_id");
+    String userId = principal.getSub();
+    String orgID = principal.getOrganisationId();
 
     if (userId == null || userId.isEmpty()) {
       ctx.fail(new DxForbiddenException("User not found"));
@@ -91,7 +77,7 @@ public class ProviderRoleHandler {
       return;
     }
 
-    JsonObject req = new JsonObject().put("user_id", user.subject()).put("organization_id", orgID);
+    JsonObject req = new JsonObject().put("user_id", userId).put("organization_id", orgID);
 
     ProviderRoleRequest providerRoleRequest = ProviderRoleRequest.fromJson(req);
 
@@ -114,50 +100,18 @@ public class ProviderRoleHandler {
 
   public void updateProviderRequest(RoutingContext ctx) {
 
-    User user = ctx.user();
-    JsonObject userJson = user.principal();
-
-//    AccessValidator.validate(
-//      userJson,
-//      List.of(DxRole.ORG_ADMIN.getRole()),
-//      List.of(
-//        DxScope.USER_MANAGEMENT.getScope(),
-//        DxScope.ORG_ADMIN_ACCESS.getScope()
-//      )
-//    );
-
-    UUID delegatorId = DelegatorResolver.getDelegatorId(ctx);
-
     JsonObject orgRequestJson = ctx.body().asJsonObject();
     UUID reqId = RequestHelper.getPathParamAsUUID(ctx, "id");
     Status status = Status.fromString(orgRequestJson.getString("status"));
 
-    UUID userId = UUID.fromString(user.subject());
-
-    DelegatorResolver.resolveOrgId(ctx, userService, null)
-      // ownership validation (only for delegation)
-      .compose(
-        orgId -> {
-          if (delegatorId != null) {
-            return orgOwnershipValidator
-              .validateOrgOwnership(
-                delegatorId, List.of(orgId.toString()))
-              .map(v -> orgId);
-          }
-          return Future.succeededFuture(orgId);
-        })
-      // update request status
-      .compose(
-        orgId ->
-          organizationService
-            .updateProviderRequestStatus(reqId, status)
-            .map(v -> orgId))
+    organizationService
+      .updateProviderRequestStatus(reqId, status)
       .onSuccess(
-        orgId -> {
+        v -> {
 
           UserActivityAuditLogBuilder auditLogBuilder =
             OrganizationAuditHelper.buildOrganisationAudit(
-              ctx, new JsonObject().put(ID,reqId.toString()), OrganisationAuditOperation.UPDATE_PROVIDER_REQUEST);
+              ctx, new JsonObject().put(ID, reqId.toString()), OrganisationAuditOperation.UPDATE_PROVIDER_REQUEST);
           CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
           emailComposer
@@ -174,41 +128,31 @@ public class ProviderRoleHandler {
   }
 
 
-
-
   public void getProviderRequest(RoutingContext ctx) {
 
-    User user = ctx.user();
-    JsonObject userJson = user.principal();
+    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
+    String orgIdStr = principal.getOrganisationId();
+    if (orgIdStr == null || orgIdStr.isBlank()) {
+      ctx.fail(new DxBadRequestException("User is not part of any organisation"));
+      return;
+    }
+    UUID resOrgId = UUID.fromString(orgIdStr);
 
-    LOGGER.info("userInfo: {}", userJson);
-    UUID userId = UUID.fromString(user.subject());
+    PaginatedRequest request =
+      PaginationRequestBuilder.from(ctx)
+        .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_PROVIDER_ROLE_REQUEST)
+        .apiToDbMap(API_TO_DB_PROVIDER_ROLE_REQUEST)
+        .additionalFilters(Map.of(ORGANIZATION_ID, resOrgId.toString()))
+        .allowedTimeFields(Set.of(CREATED_AT))
+        .defaultTimeField(CREATED_AT)
+        .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
+        .allowedSortFields(API_TO_DB_PROVIDER_ROLE_REQUEST.keySet())
+        .build();
 
-    DelegatorResolver.resolveOrgId(ctx, userService, null)
-      .compose(resOrgId -> {
-
-        PaginatedRequest request =
-          PaginationRequestBuilder.from(ctx)
-            .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_PROVIDER_ROLE_REQUEST)
-            .apiToDbMap(API_TO_DB_PROVIDER_ROLE_REQUEST)
-            .additionalFilters(Map.of(ORGANIZATION_ID, resOrgId.toString()))
-            .allowedTimeFields(Set.of(CREATED_AT))
-            .defaultTimeField(CREATED_AT)
-            .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
-            .allowedSortFields(API_TO_DB_PROVIDER_ROLE_REQUEST.keySet())
-            .build();
-
-        return organizationService.getAllPendingProviderRoleRequests(request)
-          .map(providerResult -> Map.entry(providerResult, resOrgId));
-      })
-      .compose(entry -> {
-
-        PaginatedResult<ProviderRoleRequest> providerResult = entry.getKey();
-        UUID orgId = entry.getValue();
-
-        return organizationService.getOrganizationJoinRequestsByOrgId(orgId)
-          .map(joinRequests -> Map.entry(providerResult, joinRequests));
-      })
+    organizationService.getAllPendingProviderRoleRequests(request)
+      .compose(providerResult ->
+        organizationService.getOrganizationJoinRequestsByOrgId(resOrgId)
+          .map(joinRequests -> Map.entry(providerResult, joinRequests)))
       .compose(entry -> {
 
         PaginatedResult<ProviderRoleRequest> providerResult = entry.getKey();
@@ -229,7 +173,7 @@ public class ProviderRoleHandler {
 
           List<JsonObject> finalResponse = enriched.stream()
             .map(json -> {
-              LOGGER.info("The json is : {}",json);
+              LOGGER.info("The json is : {}", json);
               UUID uid = UUID.fromString(json.getString("user_id"));
               OrganizationJoinRequest joinReq = joinRequestMap.get(uid);
 
@@ -246,12 +190,11 @@ public class ProviderRoleHandler {
           return Map.entry(finalResponse, providerResult.paginationInfo());
         });
       })
-      .onSuccess(entry ->
-        {
+      .onSuccess(entry -> {
 
         UserActivityAuditLogBuilder auditLogBuilder =
-        OrganizationAuditHelper.buildOrganisationAudit(
-          ctx,new JsonObject(), OrganisationAuditOperation.GET_PROVIDER_REQS);
+          OrganizationAuditHelper.buildOrganisationAudit(
+            ctx, new JsonObject(), OrganisationAuditOperation.GET_PROVIDER_REQS);
         CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
         ResponseBuilder.sendSuccess(
@@ -260,14 +203,14 @@ public class ProviderRoleHandler {
           entry.getValue(),
           urnGenerator
         );
-        }
-      )
+      })
       .onFailure(ctx::fail);
-}
+  }
 
-    public void deleteUserProviderRoleRequest(RoutingContext ctx) {
+  public void deleteUserProviderRoleRequest(RoutingContext ctx) {
 
-    UUID userId = DelegatorResolver.resolveActingUserId(ctx);
+    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
+    UUID userId = UUID.fromString(principal.getSub());
 
     organizationService
         .getProviderRoleRequestByUserId(userId)
@@ -292,14 +235,14 @@ public class ProviderRoleHandler {
                           return Future.failedFuture(
                               new DxNotFoundException("Failed to delete provider role request"));
                         }
-                        return Future.succeededFuture(request); // <-- keep request
+                        return Future.succeededFuture(request);
                       });
             })
         .onSuccess(
             request -> {
               UserActivityAuditLogBuilder auditLogBuilder =
                 OrganizationAuditHelper.buildOrganisationAudit(
-                  ctx,new JsonObject().put(ID,request.id().toString()), OrganisationAuditOperation.DELETE_PENDING_PROVIDER_REQUEST);
+                  ctx, new JsonObject().put(ID, request.id().toString()), OrganisationAuditOperation.DELETE_PENDING_PROVIDER_REQUEST);
               CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
               ResponseBuilder.sendSuccess(
@@ -316,11 +259,11 @@ public class ProviderRoleHandler {
   }
 
   public void getProviderRoleRequest(RoutingContext ctx) {
-    UUID userId = DelegatorResolver.resolveActingUserId(ctx);
-    JsonObject userJson = ctx.user().principal();
+    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
+    UUID userId = UUID.fromString(principal.getSub());
 
     organizationService
-        .getProviderRoleRequestByUserId(userId) // Future<ProviderRoleRequest>
+        .getProviderRoleRequestByUserId(userId)
         .compose(
             request -> {
               if (request == null) {
@@ -338,7 +281,7 @@ public class ProviderRoleHandler {
             enriched -> {
               UserActivityAuditLogBuilder auditLogBuilder =
                 OrganizationAuditHelper.buildOrganisationAudit(
-                  ctx,enriched, OrganisationAuditOperation.GET_PROVIDER_REQS);
+                  ctx, enriched, OrganisationAuditOperation.GET_PROVIDER_REQS);
               CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
               if (enriched == null) {
@@ -359,17 +302,6 @@ public class ProviderRoleHandler {
 
   public void createProviderRole(RoutingContext ctx) {
 
-    JsonObject userJson = ctx.user().principal();
-
-//    AccessValidator.validate(
-//      userJson,
-//      List.of(DxRole.ORG_ADMIN.getRole()),
-//      List.of(
-//        DxScope.USER_MANAGEMENT.getScope(),
-//        DxScope.ORG_ADMIN_ACCESS.getScope()
-//      )
-//    );
-
     JsonObject providerRequestJson = ctx.body().asJsonObject();
     ProviderRoleRequest providerRoleRequest = ProviderRoleRequest.fromJson(providerRequestJson);
     organizationService
@@ -378,7 +310,7 @@ public class ProviderRoleHandler {
         org -> {
           UserActivityAuditLogBuilder auditLogBuilder =
             OrganizationAuditHelper.buildOrganisationAudit(
-              ctx,new JsonObject(), OrganisationAuditOperation.REQUEST_PROVIDER_ROLE);
+              ctx, new JsonObject(), OrganisationAuditOperation.REQUEST_PROVIDER_ROLE);
           CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
           ResponseBuilder.sendSuccess(ctx, "Provider role granted successfully", urnGenerator);

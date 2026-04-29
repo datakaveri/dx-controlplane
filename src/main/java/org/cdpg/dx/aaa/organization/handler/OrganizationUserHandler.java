@@ -9,9 +9,7 @@ import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER
 
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -24,21 +22,18 @@ import org.cdpg.dx.aaa.organization.models.OrganizationUser;
 import org.cdpg.dx.aaa.organization.models.Role;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
-import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
-import org.cdpg.dx.auth.authentication.util.AccessValidator;
-import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.cdpg.dx.auth.authorization.model.DxScope;
+import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
+import org.cdpg.dx.auth.v2.model.DxPrincipal;
 import org.cdpg.dx.common.URNGenerator;
-import org.cdpg.dx.common.util.DelegatorResolver;
 import org.cdpg.dx.common.exception.DxBadRequestException;
+import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
-import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.util.CpRoutingContextHelper;
-import org.cdpg.dx.common.util.RoutingContextHelper;
+import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.keycloak.config.KeycloakConstants;
 
 public class OrganizationUserHandler {
@@ -56,23 +51,15 @@ public class OrganizationUserHandler {
   }
 
   public void getOrganisationUserInfo(RoutingContext ctx) {
-    // gets org_user info
-    // delegate requirement: scope - org_management and delegator is org_admin or cos_admin
-    // delegation table has the org_id
-
-    User user = ctx.user();
-    JsonObject userJson = user.principal();
-//
-//    AccessValidator.validate(
-//        userJson,
-//        List.of( // primary roles (no scope check)
-//            DxRole.ORG_ADMIN.getRole()),
-//        List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope()));
-
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
 
-    // TODO check this belogns to the org
+    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
+    if (!orgId.toString().equals(principal.getOrganisationId())) {
+      ctx.fail(new DxForbiddenException(
+        "The org id of the user and the path parameter are not same"));
+      return;
+    }
 
     userService
         .getUserInfoByID(userId)
@@ -89,20 +76,14 @@ public class OrganizationUserHandler {
   }
 
   public void getOrganisationUsers(RoutingContext ctx) {
-    // gets org_user
-    // delegate requirement: scope - org_management and delegator is org_admin
-    // delegation table has the org_id
-
-    User user = ctx.user();
-    JsonObject userJson = user.principal();
-
-//    AccessValidator.validate(
-//        userJson,
-//        List.of( // primary roles (no scope check)
-//            DxRole.ORG_ADMIN.getRole()),
-//        List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope()));
-
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
+
+    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
+    if (!orgId.toString().equals(principal.getOrganisationId())) {
+      ctx.fail(new DxForbiddenException(
+        "The org id of the user and the path parameter are not same"));
+      return;
+    }
 
     PaginatedRequest request =
         PaginationRequestBuilder.from(ctx)
@@ -136,12 +117,7 @@ public class OrganizationUserHandler {
 
   public void updateOrganisationUserRole(RoutingContext ctx) {
 
-    // updates org_user role
-    // delegate requirement: scope - org_management and delegator is org_admin or cos_admin
-    // delegation table has org_id
-
     JsonObject OrgRequestJson = ctx.body().asJsonObject();
-    JsonObject userJson = ctx.user().principal();
 
     Role role;
     role = Role.fromString(OrgRequestJson.getString("role"));
@@ -149,11 +125,12 @@ public class OrganizationUserHandler {
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
 
-//    AccessValidator.validate(
-//      userJson,
-//      List.of( // primary roles (no scope check)
-//        DxRole.ORG_ADMIN.getRole()),
-//      List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope()));
+    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
+    if (!orgId.toString().equals(principal.getOrganisationId())) {
+      ctx.fail(new DxForbiddenException(
+        "The org id of the user and the path parameter are not same"));
+      return;
+    }
 
     organizationService
         .updateUserRole(orgId, userId, role)
@@ -172,34 +149,26 @@ public class OrganizationUserHandler {
               }
             })
         .onFailure(ctx::fail);
-    ;
   }
 
   public void deleteOrganisationUserById(RoutingContext ctx) {
 
-    // deletes org_user
-    // delegate requirement: scope - org_management and delegator is org_admin or cos_admin
-    // delegation table has the org_id
-    // get actual org admin id from the delegation table
-
-    UUID delegatorId = DelegatorResolver.getDelegatorId(ctx);
-
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
-    JsonObject userJson = ctx.user().principal();
 
     if (orgId == null || userId == null) {
       ctx.fail(new DxNotFoundException("Organization ID or User ID is missing"));
       return;
     }
 
-    UUID orgAdminId = delegatorId != null ? delegatorId : UUID.fromString(ctx.user().subject());
+    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
+    if (!orgId.toString().equals(principal.getOrganisationId())) {
+      ctx.fail(new DxForbiddenException(
+        "The org id of the user and the path parameter are not same"));
+      return;
+    }
 
-//    AccessValidator.validate(
-//      userJson,
-//      List.of( // primary roles (no scope check)
-//        DxRole.ORG_ADMIN.getRole()),
-//      List.of(DxScope.USER_MANAGEMENT.getScope(),DxScope.ORG_ADMIN_ACCESS.getScope()));
+    UUID orgAdminId = UUID.fromString(principal.getSub());
 
     userService
         .getUserInfoByID(userId)
@@ -253,9 +222,6 @@ public class OrganizationUserHandler {
                                 OrganizationAuditHelper.buildOrganisationAudit(
                                   ctx, new JsonObject().put(ID,userId.toString()) , OrganisationAuditOperation.DELETE_USER);
                               CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
-
-
-//                              RoutingContextHelper.setAuditingLogNew(ctx, audit);
 
                               ResponseBuilder.sendSuccess(
                                   ctx,

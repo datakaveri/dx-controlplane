@@ -17,6 +17,7 @@ import org.cdpg.dx.aaa.token.service.AppTokenService;
 import org.cdpg.dx.aaa.token.service.impl.AppTokenServiceImpl;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.postgres.service.PostgresService;
+import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 import static org.cdpg.dx.aaa.token.factory.TokenControllerFactory.jwtInitConfig;
@@ -30,7 +31,8 @@ public class AppTokenControllerFactory {
       ItemService itemService,
       URNGenerator urnGenerator,
       JsonObject config,
-      Vertx vertx) {
+      Vertx vertx,
+      DataBrokerService dataBrokerService) {
 
     String keystorePath = config.getString("keystorePath");
     String keystorePassword = config.getString("keystorePassword");
@@ -43,7 +45,7 @@ public class AppTokenControllerFactory {
 
     DelegationValidator delegationValidator = new DelegationValidator(organizationService, itemService);
     AppCredentialsService appCredentialsService =
-        new AppCredentialsServiceImpl(delegationValidator, appCredentialsDAO, appConstraintsDAO);
+        new AppCredentialsServiceImpl(delegationValidator, appCredentialsDAO, appConstraintsDAO, dataBrokerService, config.getString("appIdRevokeExchange", "revoked-appid"));
 
     AppTokenService appTokenService =
         new AppTokenServiceImpl(

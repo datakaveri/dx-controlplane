@@ -14,9 +14,6 @@ import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.AuditLog;
-import org.cdpg.dx.auth.authentication.util.AccessValidator;
-import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.model.UserInfo;
@@ -73,16 +70,6 @@ public class AdminHandler {
   public void getDxUserFromKeycloak(RoutingContext ctx) {
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "id");
 
-    User user = ctx.user();
-    JsonObject userJson = user.principal();
-
-    AccessValidator.validate(
-      userJson,
-      List.of( // primary roles (no scope check)
-        DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.COS_ADMIN_ACCESS.getScope())
-    );
-
     userService.getUserInfoByID(userId)
       .compose(userService::getUserInfo)
       .onSuccess(response -> {
@@ -99,16 +86,6 @@ public class AdminHandler {
 
 
   public void getAllDxUsersKeycloak(RoutingContext ctx) {
-
-    User user1 = ctx.user();
-    JsonObject userJson = user1.principal();
-
-    AccessValidator.validate(
-      userJson,
-      List.of( // primary roles (no scope check)
-        DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.COS_ADMIN_ACCESS.getScope())
-    );
 
     PaginatedRequest request = PaginationRequestBuilder.from(ctx).build();
     String name = ctx.queryParam("search_term").stream().findFirst().orElse(null);
@@ -403,16 +380,6 @@ public class AdminHandler {
 
   public void updateDxUserStatusById(RoutingContext ctx) {
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "id");
-
-    User dxUser = ctx.user();
-    JsonObject userJson = dxUser.principal();
-
-    AccessValidator.validate(
-      userJson,
-      List.of( // primary roles (no scope check)
-        DxRole.COS_ADMIN.getRole()),
-      List.of(DxScope.COS_ADMIN_ACCESS.getScope())
-    );
 
     JsonObject status = ctx.body().asJsonObject();
 

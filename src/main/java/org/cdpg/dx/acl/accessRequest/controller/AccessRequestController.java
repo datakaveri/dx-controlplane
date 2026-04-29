@@ -43,8 +43,11 @@ import org.cdpg.dx.acl.policy.util.UserAccessHandler;
 import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
-import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.v2.handler.AuthenticationHandler;
+import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
+import org.cdpg.dx.auth.v2.handler.ScopeRule;
+import org.cdpg.dx.auth.v2.model.Scopes;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.email.SendEmail;
 import org.cdpg.dx.common.exception.DxForbiddenException;
@@ -73,6 +76,8 @@ public class AccessRequestController implements ApiController {
   private final URNGenerator urnGenerator;
   private final String emailExchange;
   private final String emailRoutingKey;
+  private final AuthenticationHandler authenticationV2;
+  private final AuthorizationHandler authorizationV2;
 
   public AccessRequestController(
       AccessRequestService accessRequestService,
@@ -82,7 +87,9 @@ public class AccessRequestController implements ApiController {
       PostgresService postgresService,
       KeycloakUserService keycloakUserService,
       String emailExchange,
-      String emailRoutingKey) {
+      String emailRoutingKey,
+      AuthenticationHandler authenticationV2,
+      AuthorizationHandler authorizationV2) {
     this.accessRequestService = accessRequestService;
     this.auditingHandler = auditingHandler;
     this.dataBrokerService = dataBrokerService;
@@ -91,6 +98,8 @@ public class AccessRequestController implements ApiController {
     this.keycloakUserService = keycloakUserService;
     this.emailExchange = emailExchange;
     this.emailRoutingKey = emailRoutingKey;
+    this.authenticationV2 = authenticationV2;
+    this.authorizationV2 = authorizationV2;
   }
 
   private static LocalDateTime parseAndValidateFutureTime(String timeString) {
@@ -115,56 +124,71 @@ public class AccessRequestController implements ApiController {
 
   @Override
   public void register(RouterBuilder builder) {
-    Handler<RoutingContext> cosAdminAccessHandler = AuthorizationHandler.forRoles(DxRole.COS_ADMIN);
-    Handler<RoutingContext> orgAdminAccessHandler = AuthorizationHandler.forRoles(DxRole.ORG_ADMIN);
-    Handler<RoutingContext> providerAndOrgAdminAccessHandler =
-        AuthorizationHandler.forRoles(DxRole.PROVIDER, DxRole.ORG_ADMIN);
+    Handler<RoutingContext> selfAccess = authorizationV2.forScopes(Scopes.DATA_ACCESS);
+    Handler<RoutingContext> orgAdminAccess =
+        authorizationV2.forScopes(Scopes.ORG_ASSET_MANAGEMENT);
+    Handler<RoutingContext> cosAdminAccess = authorizationV2.forScopes(Scopes.ASSET_MANAGEMENT);
+    Handler<RoutingContext> providerAdminAccess =
+        authorizationV2.forScopesWithContext(
+            ScopeRule.self(Scopes.OWN_ASSET_MANAGEMENT),
+            ScopeRule.org(Scopes.ORG_ASSET_MANAGEMENT));
     UserAccessHandler userAccessHandler = new UserAccessHandler(postgresService, keycloakUserService);
 
     builder
         .operation(CREATE_ACCESS_REQUEST_API)
         .handler(auditingHandler::handleApiAudit)
+        .handler(authenticationV2)
+        .handler(selfAccess)
         .handler(this::createAccessRequestHandler);
 
     builder
         .operation(GET_ACCESS_REQUEST_CONSUMER_API)
         .handler(auditingHandler::handleApiAudit)
+        .handler(authenticationV2)
+        .handler(selfAccess)
         .handler(this::getConsumerAccessRequestHandler);
 
     builder
         .operation(WITHDRAW_ACCESS_REQUEST_API_FOR_CONSUMER)
         .handler(auditingHandler::handleApiAudit)
-        .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+        .handler(authenticationV2)
+        .handler(selfAccess)
         .handler(this::updateAccessRequestHandlerForConumser);
 
     builder
         .operation(GET_ACCESS_REQUEST_FOR_ORG_ADMIN_API)
         .handler(auditingHandler::handleApiAudit)
-        .handler(orgAdminAccessHandler)
+        .handler(authenticationV2)
+        .handler(orgAdminAccess)
         .handler(this::getOrganizationAccessRequestHandler);
 
     builder
         .operation(GET_ACCESS_REQUEST_FOR_COS_ADMIN_API)
         .handler(auditingHandler::handleApiAudit)
-        .handler(cosAdminAccessHandler)
+        .handler(authenticationV2)
+        .handler(cosAdminAccess)
         .handler(this::getPlatformAccessRequestHandler);
 
     builder
         .operation(GET_ACCESS_REQUEST_PROVIDER_API)
         .handler(auditingHandler::handleApiAudit)
-        .handler(providerAndOrgAdminAccessHandler)
+        .handler(authenticationV2)
+        .handler(providerAdminAccess)
         .handler(this::getAccessRequestHandler);
 
     builder
         .operation(UPDATE_ACCESS_REQUEST_API)
         .handler(auditingHandler::handleApiAudit)
+        .handler(authenticationV2)
         .handler(userAccessHandler)
-        .handler(providerAndOrgAdminAccessHandler)
+        .handler(providerAdminAccess)
         .handler(this::updateAccessRequestHandler);
 
     builder
         .operation(CHECK_ACCESS_REQUEST_API)
         .handler(auditingHandler::handleApiAudit)
+        .handler(authenticationV2)
+        .handler(selfAccess)
         .handler(this::checkAccessRequestHandler);
   }
 

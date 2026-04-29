@@ -8,12 +8,12 @@ info:
 
      Dx Control Plane **Auth Server (AAA)**  is a core component of the Dx Control Plane responsible for validating JWT tokens and enforcing **Role-Based Access Control (RBAC)** on incoming API requests. The **Keycloak Server** acts as the **Identity Provider (IdP)** and issues signed JWT tokens upon successful user login or registration. The AAA validates the token by verifying its signature, expiration, and integrity, and extracts user roles from the token claims.
     This enables secure access to platform services such as organization management, credit management, compute APIs, and KYC check APIs. Users can be assigned roles such as `compute`, `publisher`, `org_admin`, and `cos_admin`, which determine the API operations they are authorized to perform.
-    The Auth Server ensures that only authorized users can perform actions according to their role, by matching the required role for each API with the roles present in the user's JWT. Additionally, audit logging tracks authentication and authorization events for security and troubleshooting purposes. 
+    The Auth Server ensures that only authorized users can perform actions according to their role, by matching the required role for each API with the roles present in the user's JWT. Additionally, audit logging tracks authentication and authorization events for security and troubleshooting purposes.
 
     # About DX Catalogue
-     The DX Catalogue is a core component of the Dx Control Plane responsible for  dataset discovery portal and metadata store.It enables *Providers* of datasources to describe them with DX  based annotations to make discovery and consumption of data both automatable and semantically describable. For search and discovery, it allows users to search through text and geo-based queries.  The catalogue is a [JSON-LD](https://json-ld.org/) document stored and based on the  [RDF](https://www.w3.org/RDF/) information exchange model. 
+     The DX Catalogue is a core component of the Dx Control Plane responsible for  dataset discovery portal and metadata store.It enables *Providers* of datasources to describe them with DX  based annotations to make discovery and consumption of data both automatable and semantically describable. For search and discovery, it allows users to search through text and geo-based queries.  The catalogue is a [JSON-LD](https://json-ld.org/) document stored and based on the  [RDF](https://www.w3.org/RDF/) information exchange model.
     #  Configurations
-    - **Server**: 
+    - **Server**:
       - In the doc, we display the server url to be https://${HOSTNAME} with the hostname as ${HOSTNAME}
       - This could be configured according to the deployment
     - **Base path**:
@@ -24,13 +24,13 @@ info:
          - The base path for [DX Catalogue Server](https://github.com/datakaveri/iudx-catalogue-server) is set to `/iudx/v2/cat`
      - **Request Samples**:
       - The `<tokenValue>` in the header of request sample could be replaced with respective token value [Also refer Tokens section [here](#section/Tokens)]
-      - The `<payload>` in the request sample could be replaced with the payload given adjacent to the request sample    
+      - The `<payload>` in the request sample could be replaced with the payload given adjacent to the request sample
 
     # API HTTP Responses
      Apart from the response codes specified in each API, the API server may respond with certain 4xx and 5xx error codes which are related to common API Gateway behaviours.
      The application should address them accordingly.
 
-       
+
   contact:
     name: For support contact CDPG Team at
     email: ${SUPPORT_EMAIL}
@@ -1145,19 +1145,14 @@ paths:
     get:
       tags:
         - CAT Entity
-      description: >
+      description: |
         Check if a given asset name is available for creating a new catalogue item.
-        
-        This API is intended for UI clients to perform a pre-validation before
-        submitting a create request.
-        
+        This API is intended for UI clients to perform a pre-validation before submitting a create request.
         The validation checks whether any existing item already uses the same name.
-        
-        By default, the check considers items in both ACTIVE and PENDING states
-        to prevent duplicate entries during approval workflows.
+        By default, the check considers items in both ACTIVE and PENDING states to prevent duplicate entries during approval workflows.
       operationId: validate item name availability
       security:
-        - optionalAuth: [ ]
+        - optionalAuth: []
       parameters:
         - name: name
           in: query
@@ -1182,22 +1177,6 @@ paths:
                   detail:
                     type: string
                     example: Asset name is available
-
-
-        '409':
-          description: Conflict | Asset Name Already Exists
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                InvalidToken:
-                  summary: Conflict - Asset Name Already Exists
-                  value:
-                    type: "urn:dx:ControlPlane:conflict"
-                    title: "Conflict"
-                    detail: "Asset name Already Exists"
-
         '400':
           description: Invalid request parameters
           content:
@@ -1205,10 +1184,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/invalidIdErrorResponse'
               example:
-                type: "dx:controlPlane:badRequest"
-                title: "Bad Request"
-                detail: "Missing or invalid query parameters"
-
+                type: dx:controlPlane:badRequest
+                title: Bad Request
+                detail: Missing or invalid query parameters
         '401':
           description: Missing or invalid authentication token
           content:
@@ -1219,15 +1197,27 @@ paths:
                 InvalidToken:
                   summary: Invalid token format
                   value:
-                    type: "dx:controlPlane:notAuthorized"
-                    title: "Not Authorized"
-                    detail: "Invalid token format"
-
+                    type: dx:controlPlane:notAuthorized
+                    title: Not Authorized
+                    detail: Invalid token format
+        '409':
+          description: Conflict | Asset Name Already Exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                InvalidToken:
+                  summary: Conflict - Asset Name Already Exists
+                  value:
+                    type: urn:dx:ControlPlane:conflict
+                    title: Conflict
+                    detail: Asset name Already Exists
       x-codeSamples:
         - lang: cURL
           label: validate item name
           source: |
-            curl --location --request GET 'https://${HOSTNAME}/iudx/v2/cat/item/validate?name= 
+            curl --location --request GET 'https://${HOSTNAME}/iudx/v2/cat/item/validate?name=
             sandbox item'
   /items/scripts/download/{filename}:
     get:
@@ -4842,6 +4832,293 @@ paths:
           label: Delete provider feedback
           source: |
             curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/provider/feedback?id=811e9876-9381-4a25-8ad1-e8b289616ab8' --header 'Authorization: Bearer ${TOKEN}'
+
+  /iudx/v2/requests/{request_id}/conversations:
+    get:
+      tags:
+        - Conversations
+      operationId: get-request-conversations
+      summary: Get all messages
+      description: Paginated conversation thread for a request. Supports nested Q&A.
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          schema:
+            type: number
+            format: float
+
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Conversation messages fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+    post:
+      tags:
+        - Conversations
+      operationId: post-request-conversation
+      summary: Create message
+      description: Post a new message, question, answer, or internal note.
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          schema:
+            type: number
+            format: float
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                parent_msg_id:
+                  type: string
+                  format: uuid
+                  nullable: true
+                sender_role:
+                  type: string
+                message_type:
+                  type: string
+                content:
+                  type: string
+                internal_note:
+                  type: boolean
+      responses:
+        '200':
+          description: Message created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+  /iudx/v2/requests/{request_id}/conversations/{msg_id}:
+    get:
+      tags:
+        - Conversations
+      operationId: get-request-conversation-by-id
+      summary: Get single message
+      description: Fetch a specific message with its replies.
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: msg_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Conversation message fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+    put:
+      tags:
+        - Conversations
+      operationId: put-request-conversation
+      summary: Update message
+      description: Edit message content (within allowed time window).
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: msg_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                content:
+                  type: string
+                  nullable: true
+                  additionalProperties: true
+                metadata:
+                  type: object
+                  nullable: true
+                  additionalProperties: true
+      responses:
+        '200':
+          description: Message updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - Conversations
+      operationId: delete-request-conversation
+      summary: Delete message
+      description: Soft delete a message (admin only).
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: msg_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Message deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+  /iudx/v2/requests/{request_id}/conversations/{msg_id}/reply:
+    post:
+      tags:
+        - Conversations
+      operationId: post-request-conversation-reply
+      summary: Reply to message
+      description: Reply to a specific question or message (sets parent_msg_id).
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: msg_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                parent_msg_id:
+                  type: string
+                  format: uuid
+                  nullable: true
+                sender_role:
+                  type: string
+                message_type:
+                  type: string
+                content:
+                  type: string
+                internal_note:
+                  type: boolean
+      responses:
+        '200':
+          description: Reply created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+  /iudx/v2/conversations/request-type:
+    get:
+      tags:
+        - Conversations
+      operationId: get-conversations-by-request-type
+      summary: Get request type mappings
+      description: List request type mappings with optional filters.
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: type_key
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: display_name
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: is_active
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Request type mappings fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetRequestTypeMappingsResponse'
   /iudx/v2/auth/kyc/verify:
     post:
       summary: Verify KYC
@@ -17249,6 +17526,50 @@ components:
         bookmarked:
           type: boolean
           description: Whether the user has bookmarked the asset
+    RequestTypeMapping:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for request type mapping
+          example: 1
+        type_key:
+          type: string
+          description: Stable key used by backend flows
+          example: join_org
+        display_name:
+          type: string
+          description: Human readable request type label
+          example: Organisation Join Request
+        is_active:
+          type: boolean
+          description: Flag indicating if this type is enabled
+          example: true
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp in UTC
+          example: '2026-04-28T04:00:00Z'
+    GetRequestTypeMappingsResponse:
+      type: object
+      required:
+        - type
+        - title
+        - result
+        - paginationInfo
+      properties:
+        type:
+          type: string
+          example: urn:dx:ControlPlane:success
+        title:
+          type: string
+          example: Success
+        result:
+          type: array
+          items:
+            $ref: '#/components/schemas/RequestTypeMapping'
+        paginationInfo:
+          $ref: '#/components/schemas/PaginationInfo'
     BookmarkResult:
       type: object
       required:
