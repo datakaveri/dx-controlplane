@@ -1844,14 +1844,27 @@ paths:
       security:
         - authorization: [ ]
       parameters:
-        - $ref: '#/components/parameters/status'
-        - $ref: '#/components/parameters/organizationId'
-        - $ref: '#/components/parameters/page'
-        - $ref: '#/components/parameters/size'
-        - $ref: '#/components/parameters/sort'
-        - $ref: '#/components/parameters/time'
-        - $ref: '#/components/parameters/endtime'
-        - $ref: '#/components/parameters/timerel'
+        - name: status
+          in: query
+          description: Status of the policy. Displays all the policies if status is not specified
+          required: false
+          schema:
+            type: string
+            enum:
+              - ACTIVE
+              - DELETED
+        - name: organizationId
+          in: query
+          description: Filter policies by organization ID of the asset. Displays all policies if not specified.
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+        - $ref: '#/components/parameters/TimeParam'
+        - $ref: '#/components/parameters/EndTimeParam'
+        - $ref: '#/components/parameters/TimeRelParam'
       responses:
         '200':
           description: Successfully fetched consumer policies
@@ -1872,14 +1885,27 @@ paths:
       security:
         - authorization: [ ]
       parameters:
-        - $ref: '#/components/parameters/status'
-        - $ref: '#/components/parameters/organizationId'
-        - $ref: '#/components/parameters/page'
-        - $ref: '#/components/parameters/size'
-        - $ref: '#/components/parameters/sort'
-        - $ref: '#/components/parameters/time'
-        - $ref: '#/components/parameters/endtime'
-        - $ref: '#/components/parameters/timerel'
+        - name: status
+          in: query
+          description: Status of the policy. Displays all the policies if status is not specified
+          required: false
+          schema:
+            type: string
+            enum:
+              - ACTIVE
+              - DELETED
+        - name: organizationId
+          in: query
+          description: Filter policies by organization ID of the asset. Displays all policies if not specified.
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+        - $ref: '#/components/parameters/TimeParam'
+        - $ref: '#/components/parameters/EndTimeParam'
+        - $ref: '#/components/parameters/TimeRelParam'
       responses:
         '200':
           description: Successfully fetched provider policies
@@ -1902,14 +1928,27 @@ paths:
       security:
         - authorization: [ ]
       parameters:
-        - $ref: '#/components/parameters/status'
-        - $ref: '#/components/parameters/organizationId'
-        - $ref: '#/components/parameters/page'
-        - $ref: '#/components/parameters/size'
-        - $ref: '#/components/parameters/sort'
-        - $ref: '#/components/parameters/time'
-        - $ref: '#/components/parameters/endtime'
-        - $ref: '#/components/parameters/timerel'
+        - name: status
+          in: query
+          description: Status of the policy. Displays all the policies if status is not specified
+          required: false
+          schema:
+            type: string
+            enum:
+              - ACTIVE
+              - DELETED
+        - name: organizationId
+          in: query
+          description: Filter policies by organization ID of the asset. Displays all policies if not specified.
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+        - $ref: '#/components/parameters/TimeParam'
+        - $ref: '#/components/parameters/EndTimeParam'
+        - $ref: '#/components/parameters/TimeRelParam'
       responses:
         '200':
           description: Successfully fetched organization policies
@@ -1932,14 +1971,27 @@ paths:
       security:
         - authorization: [ ]
       parameters:
-        - $ref: '#/components/parameters/status'
-        - $ref: '#/components/parameters/organizationId'
-        - $ref: '#/components/parameters/page'
-        - $ref: '#/components/parameters/size'
-        - $ref: '#/components/parameters/sort'
-        - $ref: '#/components/parameters/time'
-        - $ref: '#/components/parameters/endtime'
-        - $ref: '#/components/parameters/timerel'
+        - name: status
+          in: query
+          description: Status of the policy. Displays all the policies if status is not specified
+          required: false
+          schema:
+            type: string
+            enum:
+              - ACTIVE
+              - DELETED
+        - name: organizationId
+          in: query
+          description: Filter policies by organization ID of the asset. Displays all policies if not specified.
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+        - $ref: '#/components/parameters/TimeParam'
+        - $ref: '#/components/parameters/EndTimeParam'
+        - $ref: '#/components/parameters/TimeRelParam'
       responses:
         '200':
           description: Successfully fetched platform policies

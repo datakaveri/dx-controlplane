@@ -1217,7 +1217,7 @@ paths:
         - lang: cURL
           label: validate item name
           source: |
-            curl --location --request GET 'https://${HOSTNAME}/iudx/v2/cat/item/validate?name=
+            curl --location --request GET 'https://${HOSTNAME}/iudx/v2/cat/item/available-name?name=
             sandbox item'
   /items/scripts/download/{filename}:
     get:
