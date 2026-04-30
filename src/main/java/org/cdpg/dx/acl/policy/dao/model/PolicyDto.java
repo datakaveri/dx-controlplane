@@ -1,5 +1,6 @@
 package org.cdpg.dx.acl.policy.dao.model;
 
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ADDITIONAL_INFO;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_EMAIL;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_FIRST_NAME;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_ID;
@@ -22,6 +23,7 @@ public class PolicyDto implements BaseEntity<PolicyDto> {
   private String itemType;
   private LocalDateTime expiryAt;
   private JsonObject constraints;
+  private JsonObject additionalInfo;
   private String providerId;
   private String status;
   private LocalDateTime createdAt;
@@ -61,6 +63,7 @@ public class PolicyDto implements BaseEntity<PolicyDto> {
     }
 
     this.constraints = row.getJsonObject("constraints");
+    this.additionalInfo = row.getJsonObject("additional_info");
 
     if (row.containsKey("consumer_id")) {
       this.consumerId = row.getString("consumer_id");
@@ -74,13 +77,13 @@ public class PolicyDto implements BaseEntity<PolicyDto> {
   @Override
   public Map<String, Object> toNonEmptyFieldsMap() {
     Map<String, Object> map = new HashMap<>();
-
     EntityUtil.putIfPresent(map, "policyId", policyId);
     EntityUtil.putIfPresent(map, "itemId", itemId);
     EntityUtil.putIfPresent(map, "itemType", itemType);
     EntityUtil.putIfPresent(map, "status", status);
     EntityUtil.putIfPresent(map, "expiryAt", expiryAt);
     EntityUtil.putIfPresent(map, "constraints", constraints);
+    EntityUtil.putIfPresent(map, "additionalInfo", additionalInfo);
 
     return map;
   }
@@ -88,13 +91,9 @@ public class PolicyDto implements BaseEntity<PolicyDto> {
   public JsonObject toJson() {
     return new JsonObject()
         .put("policyId", policyId)
-        .put("itemId", itemId)
-        .put("itemType", itemType)
         .put("status", status)
-        .put("expiryAt", expiryAt != null ? expiryAt.toString() : null)
         .put("constraints", constraints)
-        .put("createdAt", createdAt != null ? createdAt.toString() : null)
-        .put("updatedAt", updatedAt != null ? updatedAt.toString() : null)
+        .put(ADDITIONAL_INFO, additionalInfo)
         .put(
             USER,
             new JsonObject()
@@ -113,7 +112,10 @@ public class PolicyDto implements BaseEntity<PolicyDto> {
             .put("shortDescription", shortDescription)
             .put("organization", itemOrganizationName)
             .put("organizationId", itemOrganizationId)
-        );
+        )
+        .put("expiryAt", expiryAt != null ? expiryAt.toString() : null)
+        .put("createdAt", createdAt != null ? createdAt.toString() : null)
+        .put("updatedAt", updatedAt != null ? updatedAt.toString() : null);
   }
 
   @Override
@@ -247,6 +249,15 @@ public class PolicyDto implements BaseEntity<PolicyDto> {
 
   public PolicyDto setConsumerOrganization(String consumerOrganization) {
     this.consumerOrganization = consumerOrganization;
+    return this;
+  }
+
+  public JsonObject getAdditionalInfo() {
+    return additionalInfo;
+  }
+
+  public PolicyDto setAdditionalInfo(JsonObject additionalInfo) {
+    this.additionalInfo = additionalInfo;
     return this;
   }
 }

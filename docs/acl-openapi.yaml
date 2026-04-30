@@ -1488,7 +1488,8 @@ paths:
                     additionalProperties: false
                     properties:
                       userId:
-                        type: uuid
+                        type: string
+                        format: uuid
                         pattern: ^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$
                         minLength: 1
                       itemId:
@@ -1721,70 +1722,6 @@ paths:
                 }
               ]
             }'
-    get:
-      tags:
-        - Policies
-      summary: Get Policies
-      description: |
-        Get all latest policies associated with a specific user. The response is determined by the user's roles:
-
-        - If the user is a `provider`, the response includes all policies created by the provider or their delegates.
-        - If the user is a `delegate`, the response comprises policies set by the delegate or set for the consumer on whose behalf the delegate is acting.
-        - If the user is a `consumer`, the response includes policies set for the consumer.
-
-        `Note`: Please note that the response displays the policies for a user concerning a specific server.
-      operationId: get-auth-v1-policies
-      parameters:
-        - name: Authorization
-          in: header
-          description: DX Auth issued identity token
-          required: true
-          schema:
-            type: string
-            minLength: 1
-            pattern: Bearer [a-zA-Z0-9_*\-*\.\/]+$|^[a-zA-Z0-9_*\-*\.\/]+$
-      responses:
-        '200':
-          description: Policies have been successfully listed.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/getPolicySuccessResponseWithResourceType'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '401':
-          description: Unauthorized - `token` invalid/expired
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Unauthorized'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '404':
-          description: Not Found - Policy not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/policyNotFound'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-      security:
-        - authorization: []
-      x-codeSamples:
-        - lang: cURL
-          label: get latest policies
-          source: |
-            curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/policy' \
-            --header 'Authorization: <tokenValue>'
     put:
       tags:
         - Policies
@@ -6162,11 +6099,11 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:AclApd:success
+          example: dx:aclApd:success
         title:
           type: string
           example: Success
-        results:
+        result:
           type: array
           items:
             $ref: '#/components/schemas/Policy'
@@ -6175,31 +6112,101 @@ components:
     Policy:
       type: object
       properties:
-        id:
+        policyId:
           type: string
-        itemId:
-          type: string
-        itemType:
-          type: string
+
         status:
           type: string
-        providerId:
-          type: string
-        consumerId:
-          type: string
-        organizationId:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
+
+        additionalInfo:
+          type: object
+          properties:
+            requestAs:
+              type: string
+            organisationName:
+              type: string
+            purposeOfRequest:
+              type: string
+
         expiryAt:
           type: string
           format: date-time
-        constraints:
+
+        createdAt:
+          type: string
+          format: date-time
+
+        updatedAt:
+          type: string
+          format: date-time
+
+        user:
+          $ref: '#/components/schemas/PolicyUser'
+
+        asset:
+          $ref: '#/components/schemas/PolicyAsset'
+    PolicyUser:
+      type: object
+      properties:
+        consumerId:
+          type: string
+        consumerFirstName:
+          type: string
+        consumerLastName:
+          type: string
+        consumerEmail:
+          type: string
+        consumerOrganization:
+          type: string
+    PolicyAsset:
+      type: object
+      properties:
+        itemId:
+          type: string
+        assetName:
+          type: string
+        assetType:
+          type: string
+        shortDescription:
+          type: string
+        organization:
+          type: string
+        organizationId:
+          type: string
+    PolicyConstraints:
+      type: object
+      properties:
+        access:
+          type: array
+          items:
+            oneOf:
+              - type: string
+              - $ref: '#/components/schemas/AccessObject'
+        subjects:
+          $ref: '#/components/schemas/PolicySubjects'
+    AccessObject:
+      type: object
+      properties:
+        accessType:
+          type: string
+        expiry:
+          type: integer
+        limits:
           type: object
+          properties:
+            apiHits:
+              type: integer
+    PolicySubjects:
+      type: object
+      properties:
+        allowedOrgIds:
+          type: array
+          items:
+            type: string
+        allowedRoles:
+          type: array
+          items:
+            type: string
     PaginationInfo:
       type: object
       properties:

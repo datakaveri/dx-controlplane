@@ -430,7 +430,7 @@ class PolicyServiceTest {
               .put("expiry_at", expiryAt);
       QueryResult existingResult = new QueryResult();
       existingResult.setRows(new JsonArray().add(policyRow));
-      when(policyDao.checkExistingPoliciesForIds(itemId, ownerId, userEmail))
+      when(policyDao.checkExistingPoliciesForIds(itemId, ownerId, userId.toString()))
           .thenReturn(Future.succeededFuture(existingResult));
 
       // Mock verifyPolicy
@@ -443,7 +443,7 @@ class PolicyServiceTest {
       when(policyDao.verifyPolicy(policyId)).thenReturn(Future.succeededFuture(verifyResult));
 
       policyService
-          .initiateVerifyPolicy(ownerId, userEmail, itemId, ItemType.DATABANK, consumer)
+          .initiateVerifyPolicy(ownerId, userId.toString(), itemId, ItemType.DATABANK, consumer)
           .onComplete(
               ctx.succeeding(
                   result ->
@@ -451,7 +451,7 @@ class PolicyServiceTest {
                           () -> {
                             assertThat(result).isNotNull();
                             assertThat(result.getPolicyId()).isEqualTo(policyId.toString());
-                            verify(policyDao).checkExistingPoliciesForIds(itemId, ownerId, userEmail);
+                            verify(policyDao).checkExistingPoliciesForIds(itemId, ownerId, userId.toString());
                             verify(policyDao).verifyPolicy(policyId);
                             ctx.completeNow();
                           })));

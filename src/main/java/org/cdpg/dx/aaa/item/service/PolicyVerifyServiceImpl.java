@@ -60,7 +60,7 @@ public class PolicyVerifyServiceImpl implements PolicyVerifyService {
       // Internal default APD
       return policyService
           .initiateVerifyPolicy(
-              owner.sub(), requester.email(), UUID.fromString(itemId), itemType, requester)
+              owner.sub(), requester.sub().toString(), UUID.fromString(itemId), itemType, requester)
           .compose(
               policyDto -> {
                 LOGGER.debug(

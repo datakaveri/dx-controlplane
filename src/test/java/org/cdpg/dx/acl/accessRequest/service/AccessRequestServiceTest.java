@@ -284,7 +284,7 @@ class AccessRequestServiceTest {
       QueryResult emptyPolicyResult = new QueryResult();
       emptyPolicyResult.setRows(new JsonArray());
       when(policyDao.checkExistingPoliciesForIds(
-              eq(itemId), eq(providerId), eq("consumer@example.com")))
+              eq(itemId), eq(providerId), eq(consumerId.toString())))
           .thenReturn(Future.succeededFuture(emptyPolicyResult));
 
       // Mock policy insertion
@@ -352,7 +352,7 @@ class AccessRequestServiceTest {
       QueryResult emptyResult = new QueryResult();
       emptyResult.setRows(new JsonArray());
       when(policyDao.deActivatePolicyByUserAndItem(
-              eq(itemId), eq(providerId), eq("consumer@example.com")))
+              eq(itemId), eq(providerId), eq(consumerId.toString())))
           .thenReturn(Future.succeededFuture(emptyResult));
 
       // Mock update status

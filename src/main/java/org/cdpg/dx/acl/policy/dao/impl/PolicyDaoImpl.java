@@ -16,7 +16,6 @@ import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_OWNER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_POLICY_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_PROVIDER_COMMENT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_USER_EMAIL_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.POLICY_TABLE;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.USER_TABLE;
 import static org.cdpg.dx.common.HttpStatusCode.INTERNAL_SERVER_ERROR;
@@ -55,7 +54,7 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
 
   @Override
   public Future<QueryResult> checkExistingPoliciesForIds(
-      UUID itemId, UUID ownerId, String userEmail) {
+      UUID itemId, UUID ownerId, String userId) {
     Promise<QueryResult> promise = Promise.promise();
 
     Condition condition =
@@ -64,7 +63,7 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
                 new Condition(DB_ITEM_ID, Condition.Operator.EQUALS, List.of(itemId.toString())),
                 new Condition(DB_OWNER_ID, Condition.Operator.EQUALS, List.of(ownerId.toString())),
                 new Condition(DB_STATUS, Condition.Operator.EQUALS, List.of(ACTIVE)),
-                new Condition(DB_USER_EMAIL_ID, Condition.Operator.EQUALS, List.of(userEmail)),
+                new Condition(DB_CONSUMER_ID, Condition.Operator.EQUALS, List.of(userId)),
                 new Condition(
                     DB_EXPIRY_AT,
                     Condition.Operator.GREATER,
@@ -297,7 +296,7 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
 
   @Override
   public Future<QueryResult> deActivatePolicyByUserAndItem(
-      UUID itemId, UUID ownerId, String userEmail) {
+      UUID itemId, UUID ownerId, String userId) {
 
     Condition condition =
         new Condition()
@@ -314,9 +313,9 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
                         .setOperator(Condition.Operator.EQUALS)
                         .setValues(List.of(ownerId.toString())),
                     new Condition()
-                        .setColumn(DB_USER_EMAIL_ID)
+                        .setColumn(DB_CONSUMER_ID)
                         .setOperator(Condition.Operator.EQUALS)
-                        .setValues(List.of(userEmail)),
+                        .setValues(List.of(userId)),
                     new Condition()
                         .setColumn(DB_STATUS)
                         .setOperator(Condition.Operator.EQUALS)
@@ -333,7 +332,7 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
             .setValues(List.of("DELETED"))
             .setCondition(condition);
 
-    LOGGER.debug("Soft deleting policy for item {} user {}", itemId, userEmail);
+    LOGGER.debug("Soft deleting policy for item {} user {}", itemId, userId);
 
     return postgresService.update(query);
   }

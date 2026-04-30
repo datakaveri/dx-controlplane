@@ -17,15 +17,16 @@ import static org.cdpg.dx.acl.accessRequest.config.Constants.CONSUMER_LAST_NAME;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_EMAIL_ID;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_FIRST_NAME;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_LAST_NAME;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.USER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSTRAINTS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_FIRST_NAME;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CONSUMER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_EXPIRY_AT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ITEM_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_OWNER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_USER_EMAIL_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.EMAIL;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.FIRST_NAME;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ITEM_ID;
@@ -54,6 +55,7 @@ import io.vertx.core.json.JsonObject;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -129,6 +131,23 @@ public class PolicyServiceImpl implements PolicyService {
             resourceObjs -> {
               Set<UUID> providerIds =
                   resourceObjs.stream().map(ResourceObj::getProviderId).collect(Collectors.toSet());
+
+              // Build map: itemId -> organizationId
+              Map<UUID, UUID> itemOrgMap =
+                  resourceObjs.stream()
+                      .collect(Collectors.toMap(ResourceObj::getItemId,
+                          ResourceObj::getOrganizationId));
+
+              //Enrich requests
+              requests.forEach(req -> {
+                UUID orgId = itemOrgMap.get(req.getItemId());
+                if (orgId != null) {
+                  req.setItemOrganizationId(orgId.toString());
+                }
+                if (!itemOrgMap.containsKey(req.getItemId())) {
+                  throw new IllegalStateException("Missing orgId for item: " + req.getItemId());
+                }
+              });
 
               boolean isOwner = providerIds.stream().allMatch(id -> id.equals(userId));
 
@@ -301,6 +320,7 @@ public class PolicyServiceImpl implements PolicyService {
         .getItem(request)
         .onFailure(
             ar -> {
+              LOGGER.error(ar.getCause().getLocalizedMessage());
               LOGGER.error("fetchItem error : {}", ar.getMessage());
               promise.fail(INTERNAL_SERVER_ERROR.getDescription());
             })
@@ -570,11 +590,11 @@ public class PolicyServiceImpl implements PolicyService {
   /** Verify if an ACTIVE policy exists for a given user/item pair. */
   @Override
   public Future<VerifyPolicyDto> initiateVerifyPolicy(
-      UUID ownerId, String userEmail, UUID itemId, ItemType itemType, DxUser user) {
+      UUID ownerId, String userId, UUID itemId, ItemType itemType, DxUser user) {
     Promise<VerifyPolicyDto> promise = Promise.promise();
 
     policyDao
-        .checkExistingPoliciesForIds(itemId, ownerId, userEmail)
+        .checkExistingPoliciesForIds(itemId, ownerId, userId)
         .onSuccess(
             queryResult -> {
               JsonArray rows = queryResult.getRows();
@@ -671,32 +691,17 @@ public class PolicyServiceImpl implements PolicyService {
 
       if (dto.getConsumerId() == null) continue;
 
-      GetItemRequest request = new GetItemRequest(dto.getItemId(), "");
-
       Future<Void> future =
-          itemService
-              .getItem(request)
-              .onSuccess(
-                  response -> {
-                    if (!response.getElasticsearchResponses().isEmpty()) {
-
-                      JsonObject itemJson = response.getElasticsearchResponses().getFirst();
-                      Asset asset = parseAndGetAsset(itemJson, dto.getItemId());
-
-                      // Override DB values with catalogue values
-                      dto.setAssetName(asset.getAssetName());
-                      dto.setAssetType(asset.getAssetType());
-                      dto.setShortDescription(asset.getShortDescription());
-                      dto.setItemOrganizationId(asset.getOrganizationId());
-                      dto.setItemOrganizationName(asset.getOrganizationName());
-                      dto.setProviderId(asset.getProviderId());
-                    }
-                  })
-              .onFailure(
-                  err -> {
-                    LOGGER.warn("Failed to fetch item {}: {}", dto.getItemId(), err.getMessage());
-                    // fallback: keep DB values
-                  })
+          keycloakUserService
+              .getUserById(UUID.fromString(dto.getConsumerId()))
+              .onSuccess(user -> {
+                dto.setConsumerEmail(user.email());
+                dto.setConsumerFirstName(user.givenName());
+                dto.setConsumerLastName(user.familyName());
+                dto.setConsumerOrganization(user.organisationName());
+              })
+              .onFailure(err ->
+                  LOGGER.warn("Failed to fetch user {}: {}", dto.getConsumerId(), err.getMessage()))
               .mapEmpty();
 
       futures.add(future);
@@ -773,7 +778,7 @@ public class PolicyServiceImpl implements PolicyService {
         JsonObject jsonObject =
             new JsonObject()
                 .put(POLICY_ID, row.getString(DB_ID))
-                .put(USER_EMAIL_ID, row.getString(DB_USER_EMAIL_ID))
+                .put(USER_ID, row.getString(DB_CONSUMER_ID))
                 .put(ITEM_ID, row.getString(DB_ITEM_ID))
                 .put(DB_EXPIRY_AT, row.getString(DB_EXPIRY_AT));
 
