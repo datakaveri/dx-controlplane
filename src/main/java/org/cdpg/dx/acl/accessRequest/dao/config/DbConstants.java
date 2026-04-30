@@ -9,6 +9,8 @@ public class DbConstants {
   public static final String DB_PROVIDER_COMMENT = "provider_comment";
   public static final String DB_FEEDBACK_TO_CONSUMER = "feedback_to_consumer";
   public static final String POLICY_TABLE = "policy";
+  public static final String USER_TABLE = "user_table";
+
   public static final String ACCESS_RULE_TABLE = "access_rule";
   public static final String DB_OWNER_ID = "owner_id";
   public static final String DB_USER_EMAIL_ID = "user_emailid";

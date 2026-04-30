@@ -29,6 +29,7 @@ import org.cdpg.dx.catalogueService.models.ItemType;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.model.ResourceObj;
 import org.cdpg.dx.database.postgres.models.QueryResult;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -44,6 +45,7 @@ class PolicyServiceTest {
   @Mock private PolicyDao policyDao;
   @Mock private AccessRuleDao accessRuleDao;
   @Mock private ItemService itemService;
+  @Mock private KeycloakUserService keycloakUserService;
 
   private PolicyServiceImpl policyService;
 
@@ -52,12 +54,14 @@ class PolicyServiceTest {
   // Common test UUIDs
   private final UUID userId = UUID.randomUUID();
   private final UUID itemId = UUID.randomUUID();
+  private final UUID consumerId = UUID.randomUUID();
   private final UUID orgId = UUID.randomUUID();
   private final UUID policyId = UUID.randomUUID();
 
   @BeforeEach
   void setUp() {
-    policyService = new PolicyServiceImpl(itemService, policyDao, accessRuleDao, APD_URL);
+    policyService = new PolicyServiceImpl(itemService, keycloakUserService, policyDao,
+        accessRuleDao, APD_URL);
   }
 
   private DxUser createProviderUser(UUID sub, UUID orgId) {
@@ -171,7 +175,7 @@ class PolicyServiceTest {
 
       // Build a CreatePolicyRequest
       CreatePolicyRequest req = new CreatePolicyRequest();
-      req.setUserEmail("consumer@example.com");
+      req.setUserId(consumerId.toString());
       req.setItemId(itemId.toString());
       req.setItemType(ItemType.DATABANK);
       req.setExpiryTime("2030-01-01T00:00:00");
@@ -219,7 +223,7 @@ class PolicyServiceTest {
           .thenReturn(Future.succeededFuture(responseModel));
 
       CreatePolicyRequest req = new CreatePolicyRequest();
-      req.setUserEmail("consumer@example.com");
+      req.setUserId(consumerId.toString());
       req.setItemId(itemId.toString());
       req.setItemType(ItemType.DATABANK);
       req.setExpiryTime("2030-01-01T00:00:00");
@@ -426,7 +430,7 @@ class PolicyServiceTest {
               .put("expiry_at", expiryAt);
       QueryResult existingResult = new QueryResult();
       existingResult.setRows(new JsonArray().add(policyRow));
-      when(policyDao.checkExistingPoliciesForIds(itemId, ownerId, userEmail))
+      when(policyDao.checkExistingPoliciesForIds(itemId, ownerId, userId.toString()))
           .thenReturn(Future.succeededFuture(existingResult));
 
       // Mock verifyPolicy
@@ -439,7 +443,7 @@ class PolicyServiceTest {
       when(policyDao.verifyPolicy(policyId)).thenReturn(Future.succeededFuture(verifyResult));
 
       policyService
-          .initiateVerifyPolicy(ownerId, userEmail, itemId, ItemType.DATABANK, consumer)
+          .initiateVerifyPolicy(ownerId, userId.toString(), itemId, ItemType.DATABANK, consumer)
           .onComplete(
               ctx.succeeding(
                   result ->
@@ -447,7 +451,7 @@ class PolicyServiceTest {
                           () -> {
                             assertThat(result).isNotNull();
                             assertThat(result.getPolicyId()).isEqualTo(policyId.toString());
-                            verify(policyDao).checkExistingPoliciesForIds(itemId, ownerId, userEmail);
+                            verify(policyDao).checkExistingPoliciesForIds(itemId, ownerId, userId.toString());
                             verify(policyDao).verifyPolicy(policyId);
                             ctx.completeNow();
                           })));

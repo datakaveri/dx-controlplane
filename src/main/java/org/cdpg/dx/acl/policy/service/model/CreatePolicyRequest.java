@@ -16,7 +16,8 @@ import org.cdpg.dx.catalogueService.models.ItemType;
 
 public class CreatePolicyRequest {
   private static long defaultExpiryDays;
-  private String userEmail;
+  private String userId;
+  private String itemOrganizationId;
   private UUID itemId;
   private ItemType itemType;
   private LocalDateTime expiryTime;
@@ -29,8 +30,9 @@ public class CreatePolicyRequest {
 
     CreatePolicyRequest createPolicyRequest = new CreatePolicyRequest();
     createPolicyRequest.setConstraints(jsonObject.getJsonObject("constraints"));
-    createPolicyRequest.setUserEmail(jsonObject.getString("userEmail"));
+    createPolicyRequest.setUserId(jsonObject.getString("userId"));
     createPolicyRequest.setItemId(jsonObject.getString("itemId"));
+    createPolicyRequest.setItemOrganizationId(jsonObject.getString("itemOrganizationId"));
     createPolicyRequest.setAdditionalInfo(jsonObject.getJsonObject("additionalInfo", null));
     createPolicyRequest.setProviderComment(jsonObject.getString("providerComment", null));
     createPolicyRequest.setFeedbackToConsumer(jsonObject.getString("feedbackToConsumer", null));
@@ -56,12 +58,12 @@ public class CreatePolicyRequest {
     return createPolicyRequestList;
   }
 
-  public String getUserEmail() {
-    return userEmail;
+  public String getUserId() {
+    return userId;
   }
 
-  public void setUserEmail(String userEmail) {
-    this.userEmail = userEmail;
+  public void setUserId(String userId) {
+    this.userId = userId;
   }
 
   public UUID getItemId() {
@@ -146,11 +148,21 @@ public class CreatePolicyRequest {
     return this;
   }
 
+  public String getItemOrganizationId() {
+    return itemOrganizationId;
+  }
+
+  public CreatePolicyRequest setItemOrganizationId(String itemOrganizationId) {
+    this.itemOrganizationId = itemOrganizationId;
+    return this;
+  }
+
   @Override
   public String toString() {
     return "CreatePolicyRequest{" +
-        "userEmail='" + userEmail + '\'' +
+        "userId='" + userId + '\'' +
         ", itemId=" + itemId +
+        ", itemOrganizationId=" + itemOrganizationId +
         ", itemType=" + itemType +
         ", expiryTime=" + expiryTime +
         ", constraints=" + constraints +
