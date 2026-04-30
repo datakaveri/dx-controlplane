@@ -47,7 +47,8 @@ public class PolicyFactory {
             config.getString(APD_URL));
 
     PolicyService policyService =
-        new PolicyServiceImpl(itemService, policyDao, accessRuleDao, config.getString(APD_URL));
+        new PolicyServiceImpl(itemService, keycloakUserService, policyDao, accessRuleDao,
+            config.getString(APD_URL));
 
     return new PolicyController(
         policyService,

@@ -88,7 +88,8 @@ public class ItemServiceImpl implements ItemService {
       String apdURL) {
     this.accessRuleDao = new AccessRuleDaoImpl(postgresService);
     this.elasticsearchService = elasticsearchService;
-    PolicyService policyService = new PolicyServiceImpl(this, policyDao, accessRuleDao, apdURL);
+    PolicyService policyService = new PolicyServiceImpl(this, keycloakUserService, policyDao,
+        accessRuleDao, apdURL);
     this.policyVerifyService = new PolicyVerifyServiceImpl(policyService, webClient, apdURL);
     this.keycloakUserService = keycloakUserService;
     this.client = webClient;

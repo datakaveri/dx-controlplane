@@ -5,15 +5,20 @@ import static org.cdpg.dx.aaa.common.Constants.DETAIL;
 import static org.cdpg.dx.aaa.common.Constants.TITLE;
 import static org.cdpg.dx.aaa.common.Constants.TYPE;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ADDITIONAL_INFO;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ASSET_ORGANIZATION_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CONSTRAINTS;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CONSUMER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_EXPIRY_AT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_FEEDBACK_TO_CONSUMER;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ITEM_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_OWNER_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_POLICY_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_PROVIDER_COMMENT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_USER_EMAIL_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.POLICY_TABLE;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.USER_TABLE;
 import static org.cdpg.dx.common.HttpStatusCode.INTERNAL_SERVER_ERROR;
 
 import io.vertx.core.Future;
@@ -29,8 +34,10 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
+import org.cdpg.dx.acl.policy.dao.model.PolicyDto;
 import org.cdpg.dx.acl.policy.service.model.CreatePolicyRequest;
 import org.cdpg.dx.common.HttpStatusCode;
+import org.cdpg.dx.database.postgres.base.dao.AbstractBaseDAO;
 import org.cdpg.dx.database.postgres.models.Condition;
 import org.cdpg.dx.database.postgres.models.InsertQuery;
 import org.cdpg.dx.database.postgres.models.Join;
@@ -40,14 +47,10 @@ import org.cdpg.dx.database.postgres.models.SelectQuery;
 import org.cdpg.dx.database.postgres.models.UpdateQuery;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 
-public class PolicyDaoImpl implements PolicyDao {
+public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyDao {
   private static final Logger LOGGER = LogManager.getLogger(PolicyDaoImpl.class);
-  private static final String POLICY_TABLE = "policy";
-  private static final String USER_TABLE = "user_table";
-  private final PostgresService postgresService;
-
   public PolicyDaoImpl(PostgresService postgresService) {
-    this.postgresService = postgresService;
+    super(postgresService, POLICY_TABLE, DB_POLICY_ID, PolicyDto::new);
   }
 
   @Override
@@ -94,8 +97,8 @@ public class PolicyDaoImpl implements PolicyDao {
     List<Object> itemIds =
         requests.stream().map(req -> req.getItemId().toString()).collect(Collectors.toList());
 
-    List<Object> emails =
-        requests.stream().map(CreatePolicyRequest::getUserEmail).collect(Collectors.toList());
+    List<Object> consumerIds =
+        requests.stream().map(CreatePolicyRequest::getUserId).collect(Collectors.toList());
 
     Condition cond =
         new Condition(
@@ -103,10 +106,8 @@ public class PolicyDaoImpl implements PolicyDao {
                 new Condition(DB_ITEM_ID, Condition.Operator.EQUALS, itemIds),
                 new Condition(DB_OWNER_ID, Condition.Operator.EQUALS, List.of(ownerId.toString())),
                 new Condition(DB_STATUS, Condition.Operator.EQUALS, List.of(ACTIVE)),
-                new Condition(DB_USER_EMAIL_ID, Condition.Operator.EQUALS, emails),
-                new Condition(
-                    DB_EXPIRY_AT,
-                    Condition.Operator.GREATER,
+                new Condition(DB_CONSUMER_ID, Condition.Operator.EQUALS, consumerIds),
+                new Condition(DB_EXPIRY_AT, Condition.Operator.GREATER,
                     List.of(LocalDateTime.now().toString()))),
             Condition.LogicalOperator.AND);
 
@@ -138,7 +139,8 @@ public class PolicyDaoImpl implements PolicyDao {
                 req -> {
                   List<Object> values =
                       Arrays.asList(
-                          req.getUserEmail(),
+                          req.getUserId(),
+                          req.getItemOrganizationId(),
                           req.getItemId().toString(),
                           userId.toString(),
                           req.getExpiryTime().toString(),
@@ -153,7 +155,8 @@ public class PolicyDaoImpl implements PolicyDao {
                           .setTable(POLICY_TABLE)
                           .setColumns(
                               List.of(
-                                  DB_USER_EMAIL_ID,
+                                  DB_CONSUMER_ID,
+                                  DB_ASSET_ORGANIZATION_ID,
                                   DB_ITEM_ID,
                                   DB_OWNER_ID,
                                   DB_EXPIRY_AT,
@@ -187,7 +190,7 @@ public class PolicyDaoImpl implements PolicyDao {
                 List.of(
                     "P._id AS \"policyId\"",
                     "P.item_id AS \"itemId\"",
-                    "P.user_emailid AS \"consumerEmailId\"",
+                    "P.consumer_id AS \"consumerId\"",
                     "U.first_name AS \"consumerFirstName\"",
                     "U.last_name AS \"consumerLastName\"",
                     "U._id AS \"consumerId\"",
@@ -201,12 +204,12 @@ public class PolicyDaoImpl implements PolicyDao {
                     "P.created_at AS \"createdAt\""))
             .setCondition(
                 new Condition()
-                    .setColumn("P.user_emailid")
+                    .setColumn("P.consumer_id")
                     .setValues(List.of(emailId))
                     .setOperator(Condition.Operator.EQUALS))
             .setJoins(
                 List.of(
-                    new Join(Join.JoinType.LEFT, USER_TABLE, "U", "P.user_emailid", "email_id")))
+                    new Join(Join.JoinType.LEFT, USER_TABLE, "U", "P.consumer_id", "_id")))
             .setOrderBy(List.of(new OrderBy("P.updated_at", OrderBy.Direction.DESC)));
 
     return postgresService.select(selectQuery, false).map(result -> result);

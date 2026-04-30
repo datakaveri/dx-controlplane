@@ -394,7 +394,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
       String feedbackToConsumer) {
 
     CreatePolicyRequest request = new CreatePolicyRequest();
-    request.setUserEmail(consumerEmail);
+    request.setUserId(consumerId);
     request.setItemId(itemId);
     request.setItemType(itemType);
 
