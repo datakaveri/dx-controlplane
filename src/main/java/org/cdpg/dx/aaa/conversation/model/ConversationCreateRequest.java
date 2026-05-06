@@ -5,7 +5,7 @@ import java.util.UUID;
 
 public record ConversationCreateRequest(
     UUID parentMsgId,
-//    String requestType,
+    String requestType,
     String messageType,
     String content,
     Boolean internalNote,
@@ -18,7 +18,7 @@ public record ConversationCreateRequest(
             : (json.getString("parentMsgId") != null
                 ? UUID.fromString(json.getString("parentMsgId"))
                 : null),
-//        json.getString("request_type"),
+        json.getString("request_type"),
         json.getString("message_type"),
         json.getString("content"),
         json.getBoolean("internal_note"),

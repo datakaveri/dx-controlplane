@@ -4833,7 +4833,7 @@ paths:
           source: |
             curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/provider/feedback?id=811e9876-9381-4a25-8ad1-e8b289616ab8' --header 'Authorization: Bearer ${TOKEN}'
 
-  /iudx/v2/requests/{request_id}/conversations:
+  /iudx/v2/requests/{request_type}/conversations:
     get:
       tags:
         - Conversations
@@ -4843,12 +4843,11 @@ paths:
       security:
         - authorization: [ ]
       parameters:
-        - name: request_id
+        - name: request_type
           in: path
           required: true
           schema:
-            type: number
-            format: float
+            type: string
 
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
@@ -4859,6 +4858,65 @@ paths:
             application/json:
               schema:
                 type: object
+                properties:
+                  type:
+                    type: string
+                    example: "dx:controlPlane:success"
+                  title:
+                    type: string
+                    example: "Success"
+                  result:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                          example: "c0ca7a6c-597f-4e03-b861-bb912b3cb1ec"
+                        requestType:
+                          type: string
+                        senderId:
+                          type: string
+                          format: uuid
+                          example: "1dc28cc6-d614-461a-9b8f-d6110feb3e2f"
+                        senderRole:
+                          type: string
+                          example: "new user"
+                        messageType:
+                          type: string
+                          example: "question"
+                        content:
+                          type: string
+                          example: "do ggggg have to add my phone number also ?"
+                        isInternal:
+                          type: boolean
+                          example: false
+                        createdAt:
+                          type: string
+                          format: date-time
+                          example: "2026-05-05T08:52:22.936019Z"
+                  paginationInfo:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                        example: 1
+                      size:
+                        type: integer
+                        example: 10
+                      totalCount:
+                        type: integer
+                        example: 1
+                      totalPages:
+                        type: integer
+                        example: 1
+                      hasNext:
+                        type: boolean
+                        example: false
+                      hasPrevious:
+                        type: boolean
+                        example: false
         '400':
           description: Bad Request
           content:
@@ -4886,12 +4944,11 @@ paths:
       security:
         - authorization: [ ]
       parameters:
-        - name: request_id
+        - name: request_type
           in: path
           required: true
           schema:
-            type: number
-            format: float
+            type: string
       requestBody:
         required: true
         content:
@@ -4936,7 +4993,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
-  /iudx/v2/requests/{request_id}/conversations/{msg_id}:
+  /iudx/v2/requests/{request_type}/conversations/{msg_id}:
     get:
       tags:
         - Conversations
@@ -4946,12 +5003,11 @@ paths:
       security:
         - authorization: [ ]
       parameters:
-        - name: request_id
+        - name: request_type
           in: path
           required: true
           schema:
-            type: integer
-            format: int32
+            type: string
         - name: msg_id
           in: path
           required: true
@@ -4965,6 +5021,43 @@ paths:
             application/json:
               schema:
                 type: object
+                properties:
+                  type:
+                    type: string
+                    example: "dx:controlPlane:success"
+                  title:
+                    type: string
+                    example: "Success"
+                  result:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        example: "c0ca7a6c-597f-4e03-b861-bb912b3cb1ec"
+                      requestType:
+                        type: string
+                      senderId:
+                        type: string
+                        format: uuid
+                        example: "1dc28cc6-d614-461a-9b8f-d6110feb3e2f"
+                      senderRole:
+                        type: string
+                        example: "new user"
+                      messageType:
+                        type: string
+                        example: "question"
+                      content:
+                        type: string
+                        example: "do ggggg have to add my phone number also ?"
+                      isInternal:
+                        type: boolean
+                        example: false
+                      createdAt:
+                        type: string
+                        format: date-time
+                        example: "2026-05-05T08:52:22.936019Z"
+
     put:
       tags:
         - Conversations
@@ -4974,12 +5067,11 @@ paths:
       security:
         - authorization: [ ]
       parameters:
-        - name: request_id
+        - name: request_type
           in: path
           required: true
           schema:
-            type: integer
-            format: int32
+            type: string
         - name: msg_id
           in: path
           required: true
@@ -5018,12 +5110,11 @@ paths:
       security:
         - authorization: [ ]
       parameters:
-        - name: request_id
+        - name: request_type
           in: path
           required: true
           schema:
-            type: integer
-            format: int32
+            type: string
         - name: msg_id
           in: path
           required: true
@@ -5037,7 +5128,7 @@ paths:
             application/json:
               schema:
                 type: object
-  /iudx/v2/requests/{request_id}/conversations/{msg_id}/reply:
+  /iudx/v2/requests/{request_type}/conversations/{msg_id}/reply:
     post:
       tags:
         - Conversations
@@ -5047,12 +5138,11 @@ paths:
       security:
         - authorization: [ ]
       parameters:
-        - name: request_id
+        - name: request_type
           in: path
           required: true
           schema:
-            type: integer
-            format: int32
+            type: string
         - name: msg_id
           in: path
           required: true
@@ -5085,40 +5175,6 @@ paths:
             application/json:
               schema:
                 type: object
-  /iudx/v2/conversations/request-type:
-    get:
-      tags:
-        - Conversations
-      operationId: get-conversations-by-request-type
-      summary: Get request type mappings
-      description: List request type mappings with optional filters.
-      security:
-        - authorization: [ ]
-      parameters:
-        - name: type_key
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: display_name
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: is_active
-          in: query
-          required: false
-          schema:
-            type: boolean
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParam'
-      responses:
-        '200':
-          description: Request type mappings fetched successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GetRequestTypeMappingsResponse'
   /iudx/v2/auth/kyc/verify:
     post:
       summary: Verify KYC

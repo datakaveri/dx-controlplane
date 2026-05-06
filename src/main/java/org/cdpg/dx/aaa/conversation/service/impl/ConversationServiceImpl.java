@@ -34,16 +34,16 @@ public class ConversationServiceImpl implements ConversationService {
 
   @Override
   public Future<PaginatedResult<ConversationMessage>> getAllMessages(
-      Float requestId, PaginatedRequest request) {
+      String requestType, PaginatedRequest request) {
     return conversationDao
         .getAllWithFilters(request);
   }
 
   @Override
-  public Future<ConversationMessage> getSingleMessage(int requestId, UUID messageId) {
+  public Future<ConversationMessage> getSingleMessage(String requestType, UUID messageId) {
     return conversationDao
         .getAllWithFilters(
-            Map.of("request_type_id", requestId, "id", messageId.toString()))
+            Map.of("request_type", requestType, "id", messageId.toString()))
         .compose(
             messages ->
                 messages.isEmpty()
@@ -59,7 +59,7 @@ public class ConversationServiceImpl implements ConversationService {
     ConversationMessage message =
         new ConversationMessage(
             null,
-            request.requestTypeId(),
+            request.requestType(),
             request.parentMsgId(),
             request.senderId(),
             request.senderRole(),
@@ -77,7 +77,7 @@ public class ConversationServiceImpl implements ConversationService {
     ConversationMessage reply =
       new ConversationMessage(
         null,
-        request.requestTypeId(),
+        request.requestType(),
         request.parentMsgId(),
         request.senderId(),
         request.senderRole(),
@@ -91,11 +91,11 @@ public class ConversationServiceImpl implements ConversationService {
 
   @Override
   public Future<ConversationMessage> updateMessage(
-      int requestId, UUID messageId, UUID userId, ConversationUpdateRequest request) {
+      String requestType, UUID messageId, UUID userId, ConversationUpdateRequest request) {
     Map<String, Object> condition =
         Map.of(
             "id", messageId.toString(),
-            "request_type_id", requestId,
+            "request_type", requestType,
             "sender_id", userId.toString());
 
     Map<String, Object> updates = new HashMap<>();
@@ -106,12 +106,12 @@ public class ConversationServiceImpl implements ConversationService {
   }
 
   @Override
-  public Future<Void> deleteMessage(int requestId, UUID messageId, UUID userId) {
+  public Future<Void> deleteMessage(String requestType, UUID messageId, UUID userId) {
     return conversationDao
         .getAllWithFilters(
             Map.of(
                 "id", messageId.toString(),
-                "request_type_id", requestId,
+                "request_type", requestType,
                 "sender_id", userId.toString()))
         .compose(
             messages -> {

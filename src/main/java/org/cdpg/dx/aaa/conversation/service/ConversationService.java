@@ -12,9 +12,9 @@ import java.util.UUID;
 
 public interface ConversationService {
 
-  Future<PaginatedResult<ConversationMessage>> getAllMessages(Float requestId, PaginatedRequest request);
+  Future<PaginatedResult<ConversationMessage>> getAllMessages(String requestTyoe, PaginatedRequest request);
 
-  Future<ConversationMessage> getSingleMessage(int requestId, UUID messageId);
+  Future<ConversationMessage> getSingleMessage(String requestType, UUID messageId);
 
   Future<ConversationMessage>createMessage(
       ConversationMessage request);
@@ -23,9 +23,9 @@ public interface ConversationService {
     ConversationMessage request);
 
   Future<ConversationMessage> updateMessage(
-      int requestId, UUID messageId, UUID userId, ConversationUpdateRequest request);
+      String requestId, UUID messageId, UUID userId, ConversationUpdateRequest request);
 
-  Future<Void> deleteMessage(int requestId, UUID messageId, UUID userId);
+  Future<Void> deleteMessage(String requestId, UUID messageId, UUID userId);
 
   Future<PaginatedResult<RequestTypeMapping>> getByRequestType(PaginatedRequest request);
 }

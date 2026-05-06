@@ -330,7 +330,7 @@ public class ControllerFactory {
             authV2));
 
     // Request conversations
-    controllers.add(ConversationControllerFactory.create(infra.pgService(), urnGenerator));
+    controllers.add(ConversationControllerFactory.create(infra.pgService(), urnGenerator,authV2));
 
     return controllers;
   }
