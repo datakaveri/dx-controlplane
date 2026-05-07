@@ -5,6 +5,9 @@ import static org.cdpg.dx.email.util.Constants.*;
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.acl.accessRequest.util.EmailType;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 public record SendEmail(
     String consumerUserId,
     String templateType,
@@ -13,6 +16,7 @@ public record SendEmail(
     String assetType,
     String itemId,
     String shortDescription,
+    String expiryAt,
     boolean isCreated,
     String status,
     String assetName,
@@ -31,6 +35,7 @@ public record SendEmail(
     putIfPresent(json, PROVIDER_USER_ID, providerUserId);
     putIfPresent(json, ASSET_TYPE, assetType);
     putIfPresent(json, ITEM_ID, itemId);
+    putIfPresent(json, EXPIRY_AT, expiryAt);
     putIfPresent(json, SHORT_DESCRIPTION, shortDescription);
     putIfPresent(json, STATUS, status);
     putIfPresent(json, ASSET_NAME, assetName);
