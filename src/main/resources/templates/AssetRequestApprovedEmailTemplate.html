@@ -1,20 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Asset Access Request ${REQUEST_STATUS}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <title>Asset Access Request ${REQUEST_STATUS}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 </head>
-<body>
-<p>Hello ${CONSUMER_FIRST_NAME} ${CONSUMER_LAST_NAME},</p>
-<!--<p>${STATUS_MESSAGE}</p>-->
+<body style="font-family: Arial, sans-serif; line-height: 1.6;">
 
-<!--    <strong>Asset Name:</strong> ${ASSET_NAME}<br/>-->
-<!--    <strong>Asset Description:</strong> ${ASSET_DESCRIPTION}-->
-<p>${ACTION_MESSAGE}</p>
 <p>
-    Regards,<br/>
-    ${SENDER_NAME}
+  Hello ${CONSUMER_FIRST_NAME} ${CONSUMER_LAST_NAME},
 </p>
+
+<p>
+  ${STATUS_MESSAGE}
+</p>
+
+<p>
+  <strong>Asset Name:</strong><br/>
+  ${ASSET_NAME}
+</p>
+
+<p>
+  <strong>Access Expiry Date:</strong><br/>
+  ${ASSET_EXPIRY}
+</p>
+
+<p>
+  ${ACTION_MESSAGE}<br/>
+  ${ASSET_LINK}
+</p>
+
+<p>
+  Regards,<br/>
+  ${SENDER_NAME}
+</p>
+
 </body>
 </html>
