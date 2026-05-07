@@ -384,6 +384,7 @@ public class AccessRequestController implements ApdApiController {
                       : null;
               boolean isUserOrgAdmin = provider.roles().contains(DxRole.ORG_ADMIN.getRole());
 
+
               if (status == Status.GRANTED) {
                 LocalDateTime expiryAt = parseAndValidateFutureTime(body.getString("expiryAt"));
 
@@ -405,6 +406,8 @@ public class AccessRequestController implements ApdApiController {
                           RoutingContextHelper.setAuditingLogV2(ctx, auditLog);
                           ResponseBuilder.sendSuccess(
                               ctx, "Request updated successfully", urnGenerator);
+
+                          String expiryAtStr = (accessRequestDto.getExpiryAt()!=null)?accessRequestDto.getExpiryAt().toString():"";
                           JsonObject jsonObject =
                               new SendEmail(
                                       accessRequestDto.getConsumerId(),
@@ -414,7 +417,7 @@ public class AccessRequestController implements ApdApiController {
                                       accessRequestDto.getAssetType(),
                                       accessRequestDto.getItemId(),
                                       accessRequestDto.getShortDescription(),
-                                      accessRequestDto.getExpiryAt().toString(),
+                                      expiryAtStr,
                                       false,
                                       status.getStatus(),
                                       accessRequestDto.getAssetName(),
@@ -445,6 +448,8 @@ public class AccessRequestController implements ApdApiController {
                               AccessRequestAuditLogHelper.buildAudit(
                                   ctx, accessRequestDto, AccessRequestAuditOperation.REJECT);
                           RoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+                          String expiryAtStr = (accessRequestDto.getExpiryAt()!=null)?accessRequestDto.getExpiryAt().toString():"";
+
                           // RoutingContextHelper.setAuditingLog(ctx, auditLog);
                           ResponseBuilder.sendSuccess(
                               ctx, "Request updated successfully", urnGenerator);
@@ -457,7 +462,7 @@ public class AccessRequestController implements ApdApiController {
                                       accessRequestDto.getAssetType(),
                                       accessRequestDto.getItemId(),
                                       accessRequestDto.getShortDescription(),
-                                      accessRequestDto.getExpiryAt().toString(),
+                                      expiryAtStr,
                                       false,
                                       status.getStatus(),
                                       accessRequestDto.getAssetName(),
@@ -502,6 +507,9 @@ public class AccessRequestController implements ApdApiController {
               RoutingContextHelper.setAuditingLogV2(ctx, auditLog);
               // RoutingContextHelper.setAuditingLog(ctx, auditLog);
               ResponseBuilder.sendSuccess(ctx, "Request inserted successfully!", urnGenerator);
+              String expiryAtStr = (accessRequestDto.getExpiryAt()!=null)?accessRequestDto.getExpiryAt().toString():"";
+
+
               JsonObject jsonObject =
                   new SendEmail(
                           accessRequestDto.getConsumerId(),
@@ -511,7 +519,7 @@ public class AccessRequestController implements ApdApiController {
                           accessRequestDto.getAssetType(),
                           accessRequestDto.getItemId(),
                           accessRequestDto.getShortDescription(),
-                          accessRequestDto.getExpiryAt().toString(),
+                          expiryAtStr,
                           true,
                           null,
                           accessRequestDto.getAssetName(),
@@ -530,7 +538,7 @@ public class AccessRequestController implements ApdApiController {
                           accessRequestDto.getAssetType(),
                           accessRequestDto.getItemId(),
                           accessRequestDto.getShortDescription(),
-                          accessRequestDto.getExpiryAt().toString(),
+                          expiryAtStr,
                           true,
                           null,
                           accessRequestDto.getAssetName(),
