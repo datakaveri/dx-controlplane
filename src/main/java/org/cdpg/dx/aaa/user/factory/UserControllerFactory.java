@@ -32,7 +32,7 @@ public class UserControllerFactory {
 
     UserHandler userHandler = new UserHandler(userService, urnGenerator);
 
-    return new UserController(userHandler, authV2.authentication(), authV2.authorization());
+    return new UserController(userHandler, authV2.authorization());
   }
 
   public static UserService createService(KeycloakUserService keycloakUserService, OrganizationService organizationService, CreditService creditService , ElasticsearchService elasticsearchService, CustomRoleDAO customRoleDAO,String docUserIndex) {

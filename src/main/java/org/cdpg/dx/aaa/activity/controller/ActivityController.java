@@ -19,10 +19,7 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.aaa.activity.service.UserActivityAuditLogService;
 import org.cdpg.dx.auditing.v2.util.Util;
-import org.cdpg.dx.auth.v2.handler.AuthenticationHandler;
-import org.cdpg.dx.auth.v2.handler.AuthorizationContext;
-import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.v2.handler.ScopeRule;
+import org.cdpg.dx.auth.v2.handler.*;
 import org.cdpg.dx.auth.v2.model.Scopes;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.request.PaginatedRequest;
@@ -33,17 +30,14 @@ public class ActivityController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(ActivityController.class);
   private final UserActivityAuditLogService userActivityAuditLogService;
   private final URNGenerator urnGenerator;
-  private final AuthenticationHandler authenticationV2;
   private final AuthorizationHandler authorizationV2;
 
   public ActivityController(
       UserActivityAuditLogService userActivityAuditLogService,
       URNGenerator urnGenerator,
-      AuthenticationHandler authenticationV2,
       AuthorizationHandler authorizationV2) {
     this.userActivityAuditLogService = userActivityAuditLogService;
     this.urnGenerator = urnGenerator;
-    this.authenticationV2 = authenticationV2;
     this.authorizationV2 = authorizationV2;
   }
 
@@ -51,12 +45,10 @@ public class ActivityController implements ApiController {
   public void register(RouterBuilder builder) {
     builder
         .operation(OP_GET_ACTIVITY_FOR_CONSUMER)
-        .handler(authenticationV2)
         .handler(authorizationV2.forScopes(Scopes.DATA_ACCESS))
         .handler(this::handleGetAllActivityLogsForUser);
     builder
         .operation(OP_GET_ACTIVITY_FOR_ADMIN)
-        .handler(authenticationV2)
         .handler(
             authorizationV2.forScopesWithContext(
                 ScopeRule.platform(Scopes.USER_MANAGEMENT),

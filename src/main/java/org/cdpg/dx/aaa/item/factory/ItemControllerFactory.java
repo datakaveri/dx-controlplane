@@ -14,6 +14,7 @@ import org.cdpg.dx.aaa.item.service.central.CentralItemServiceImpl;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
+import org.cdpg.dx.auth.v2.factory.AuthHandlersV2;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
@@ -43,7 +44,8 @@ public class ItemControllerFactory {
       boolean isCentralCatEnabled,
       boolean isEdgeCatalogue,
       boolean isStandalone,
-      DelegationService delegationService) {
+      DelegationService delegationService,
+      AuthHandlersV2 authV2) {
     PolicyDao policyDao = new PolicyDaoImpl(pgService);
     ItemService itemService =
         new ItemServiceImpl(
@@ -86,6 +88,7 @@ public class ItemControllerFactory {
         urnGenerator,
         orchestrationService,
         delegationService,
-        keycloakUserService);
+        keycloakUserService,
+        authV2.authorization());
   }
 }

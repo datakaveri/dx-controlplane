@@ -16,7 +16,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.acl.accessReport.service.ReportService;
 import org.cdpg.dx.apiserver.ApiController;
-import org.cdpg.dx.auth.v2.handler.AuthenticationHandler;
 import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.v2.model.Scopes;
 import org.cdpg.dx.common.request.PaginatedRequest;
@@ -26,34 +25,27 @@ import org.cdpg.dx.common.util.RoutingContextHelper;
 public class AccessReportController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(AccessReportController.class);
   private final ReportService reportService;
-  private final AuthenticationHandler authenticationV2;
   private final AuthorizationHandler authorizationV2;
 
   public AccessReportController(
       ReportService reportService,
-      AuthenticationHandler authenticationV2,
       AuthorizationHandler authorizationV2) {
     this.reportService = reportService;
-    this.authenticationV2 = authenticationV2;
     this.authorizationV2 = authorizationV2;
   }
 
   @Override
   public void register(RouterBuilder builder) {
-    Handler<RoutingContext> providerAccess =
-        authorizationV2.forScopes(Scopes.OWN_ASSET_MANAGEMENT);
-    Handler<RoutingContext> orgAdminAccess =
-        authorizationV2.forScopes(Scopes.ORG_ASSET_MANAGEMENT);
+    Handler<RoutingContext> providerAccess = authorizationV2.forScopes(Scopes.OWN_ASSET_MANAGEMENT);
+    Handler<RoutingContext> orgAdminAccess = authorizationV2.forScopes(Scopes.ORG_ASSET_MANAGEMENT);
 
     builder
         .operation(GET_ACCESS_REQUEST_REPORT_API)
-        .handler(authenticationV2)
         .handler(providerAccess)
         .handler(this::handleGenerateCsvForProvider);
 
     builder
         .operation(GET_ACCESS_REQUEST_REPORT_FOR_ORG_ADMIN_API)
-        .handler(authenticationV2)
         .handler(orgAdminAccess)
         .handler(this::handleGenerateCsvForOrgAdmin);
   }

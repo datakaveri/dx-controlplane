@@ -19,7 +19,6 @@ public class AccessReportFactory {
         new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
     return new AccessReportController(
         new ReportServiceImpl(accessRequestDao, vertx),
-        authV2.authentication(),
         authV2.authorization());
   }
 }

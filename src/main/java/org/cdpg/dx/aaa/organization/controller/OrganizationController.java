@@ -9,7 +9,6 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.aaa.organization.handler.*;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
-import org.cdpg.dx.auth.v2.handler.AuthenticationHandler;
 import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.v2.handler.ScopeRule;
 import org.cdpg.dx.auth.v2.model.Scopes;
@@ -26,7 +25,6 @@ public class OrganizationController implements ApiController {
   private final ProviderRoleHandler providerRoleHandler;
   private final AuditingHandler auditingHandler;
   private final Boolean isKycRequired;
-  private final AuthenticationHandler authenticationV2;
   private final AuthorizationHandler authorizationV2;
 
   public OrganizationController(
@@ -38,7 +36,6 @@ public class OrganizationController implements ApiController {
       ProviderRoleHandler providerRoleHandler,
       AuditingHandler auditingHandler,
       Boolean isKycRequired,
-      AuthenticationHandler authenticationV2,
       AuthorizationHandler authorizationV2) {
 
     this.commandHandler = commandHandler;
@@ -49,7 +46,6 @@ public class OrganizationController implements ApiController {
     this.providerRoleHandler = providerRoleHandler;
     this.auditingHandler = auditingHandler;
     this.isKycRequired = isKycRequired;
-    this.authenticationV2 = authenticationV2;
     this.authorizationV2 = authorizationV2;
   }
 
@@ -71,28 +67,24 @@ public class OrganizationController implements ApiController {
     routerBuilder
         .operation(OP_GET_ORG_CREATE_REQUESTS)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(cosAdminAccess)
         .handler(createRequestHandler::getAllOrganisationRequest);
 
     routerBuilder
         .operation(OP_GET_USER_ORG_CREATE_REQUESTS)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(selfAccess)
         .handler(createRequestHandler::getUserOrganisationRequest);
 
     routerBuilder
         .operation(OP_DELETE_USER_ORG_CREATE_REQUEST)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(selfAccess)
         .handler(createRequestHandler::deleteOrganizationCreateRequest);
 
     routerBuilder
         .operation(OP_CREATE_ORG_REQUEST)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(selfAccess)
         .handler(KycVerification(isKycRequired))
         .handler(createRequestHandler::createOrganisationRequest);
@@ -100,7 +92,6 @@ public class OrganizationController implements ApiController {
     routerBuilder
         .operation(OP_APPROVE_ORG_CREATE_REQUEST)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(cosAdminAccess)
         .handler(createRequestHandler::updateOrganisationRequest);
 
@@ -111,7 +102,6 @@ public class OrganizationController implements ApiController {
     routerBuilder
         .operation(OP_CREATE_ORG_JOIN_REQUEST)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(selfAccess)
         .handler(KycVerification(isKycRequired))
         .handler(joinRequestHandler::joinOrganisationRequest);
@@ -119,35 +109,30 @@ public class OrganizationController implements ApiController {
     routerBuilder
         .operation(OP_GET_ORG_JOIN_REQUESTS)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(orgAdminAccess)
         .handler(joinRequestHandler::getJoinOrganisationRequests);
 
     routerBuilder
         .operation(OP_GET_USER_ORG_JOIN_REQUESTS)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(selfAccess)
         .handler(joinRequestHandler::getUserJoinOrganisationRequests);
 
     routerBuilder
         .operation(OP_WITHDRAW_USER_ORG_JOIN_REQUESTS)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(selfAccess)
         .handler(joinRequestHandler::withdrawJoinRequest);
 
     routerBuilder
         .operation(OP_DELETE_USER_ORG_JOIN_REQUEST)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(selfAccess)
         .handler(joinRequestHandler::deleteUserJoinOrganisationRequests);
 
     routerBuilder
         .operation(OP_APPROVE_ORG_JOIN_REQUEST)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(orgAdminAccess)
         .handler(joinRequestHandler::approveJoinOrganisationRequests);
 
@@ -158,28 +143,24 @@ public class OrganizationController implements ApiController {
     routerBuilder
         .operation(OP_LIST_ORGANISATIONS)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(selfAccess)
         .handler(queryHandler::listAllOrganisations);
 
     routerBuilder
         .operation(OP_GET_ORGANISATION_BY_ID)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(selfAccess)
         .handler(queryHandler::getOrganizationById);
 
     routerBuilder
         .operation(OP_UPDATE_ORGANISATION_BY_ID)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(cosAdminAccess)
         .handler(commandHandler::updateOrganisationById);
 
     routerBuilder
         .operation(OP_DELETE_ORGANISATION_BY_ID)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(orgDeleteAccess)
         .handler(commandHandler::deleteOrganisationById);
 
@@ -190,28 +171,24 @@ public class OrganizationController implements ApiController {
     routerBuilder
         .operation(OP_GET_ORG_USERS)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(orgAdminAccess)
         .handler(userHandler::getOrganisationUsers);
 
     routerBuilder
         .operation(OP_GET_ORG_USER_INFO)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(orgAdminAccess)
         .handler(userHandler::getOrganisationUserInfo);
 
     routerBuilder
         .operation(OP_DELETE_ORG_USER)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(orgAdminAccess)
         .handler(userHandler::deleteOrganisationUserById);
 
     routerBuilder
         .operation(OP_UPDATE_ORG_USER_ROLE)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(orgAdminAccess)
         .handler(userHandler::updateOrganisationUserRole);
 
@@ -222,7 +199,6 @@ public class OrganizationController implements ApiController {
     routerBuilder
         .operation(OP_CREATE_PROVIDER_REQUEST)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(selfAccess)
         .handler(KycVerification(isKycRequired))
         .handler(providerRoleHandler::createProviderRequest);
@@ -230,35 +206,30 @@ public class OrganizationController implements ApiController {
     routerBuilder
         .operation(OP_GET_PROVIDER_REQUEST)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(orgAdminAccess)
         .handler(providerRoleHandler::getProviderRequest);
 
     routerBuilder
         .operation(OP_UPDATE_PROVIDER_REQUEST)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(orgAdminAccess)
         .handler(providerRoleHandler::updateProviderRequest);
 
     routerBuilder
         .operation(OP_GET_USER_PROVIDER_REQUESTS)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(selfAccess)
         .handler(providerRoleHandler::getProviderRoleRequest);
 
     routerBuilder
         .operation(OP_DELETE_USER_PROVIDER_REQUEST)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(selfAccess)
         .handler(providerRoleHandler::deleteUserProviderRoleRequest);
 
     routerBuilder
         .operation(OP_CREATE_PROVIDER_ROLE)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(orgAdminAccess)
         .handler(providerRoleHandler::createProviderRole);
   }
