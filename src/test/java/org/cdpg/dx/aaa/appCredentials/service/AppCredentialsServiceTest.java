@@ -27,6 +27,7 @@ import org.cdpg.dx.aaa.appCredentials.model.AppCredentialResponse;
 import org.cdpg.dx.aaa.appCredentials.model.AppCredentials;
 import org.cdpg.dx.aaa.appCredentials.service.impl.AppCredentialsServiceImpl;
 import org.cdpg.dx.aaa.delegation.DelegationValidator;
+import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.common.request.PaginatedRequest;
@@ -51,13 +52,14 @@ class AppCredentialsServiceTest {
   @Mock private AppConstraintsDAO appConstraintsDAO;
   @Mock private DelegationValidator delegationValidator;
   @Mock private DataBrokerService dataBrokerService;
+  @Mock private UserService userService;
 
   private AppCredentialsServiceImpl appCredentialsService;
 
   @BeforeEach
   void setUp() {
     appCredentialsService =
-        new AppCredentialsServiceImpl(delegationValidator, appCredentialsDAO, appConstraintsDAO, dataBrokerService, "revoked-appid");
+        new AppCredentialsServiceImpl(delegationValidator, appCredentialsDAO, appConstraintsDAO, dataBrokerService,"revoked-appid", userService);
     lenient().when(dataBrokerService.publishMessageInternal(any(JsonObject.class), any(String.class), any(String.class)))
         .thenReturn(Future.succeededFuture());
   }

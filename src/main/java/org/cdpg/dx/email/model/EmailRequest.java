@@ -13,6 +13,7 @@ public record EmailRequest(
     String assetType,
     String itemId,
     String shortDescription,
+    String expiryAt,
     boolean isCreated,
     String status,
     String assetName) {
@@ -34,6 +35,7 @@ public record EmailRequest(
     boolean isCreated = json.getBoolean("isCreated", false);
     String status = json.getString(STATUS, null);
     String assetName = json.getString(ASSET_NAME, null);
+    String expiryAt = json.getString(EXPIRY_AT,null);
 
     // Template resolution
     TemplateRef.Type type = TemplateRef.Type.valueOf(json.getString(TEMPLATE_TYPE));
@@ -48,6 +50,7 @@ public record EmailRequest(
         assetType,
         itemId,
         shortDescription,
+        expiryAt,
         isCreated,
         status,
         assetName);
@@ -73,6 +76,9 @@ public record EmailRequest(
         + ", shortDescription='"
         + shortDescription
         + '\''
+      + ", expiryAt='"
+      + expiryAt
+      + '\''
         + ", isCreated="
         + isCreated
         + ", status='"

@@ -50,6 +50,10 @@ public class EmailComposer {
     String statusMessage;
     String actionMessage;
 
+    LOGGER.info("ASSET_NAME: {}",emailRequest.assetName());
+    LOGGER.info("ASSET_EXPIRY: {}",emailRequest.expiryAt());
+
+
     if (emailRequest.status() != null && emailRequest.status().equalsIgnoreCase("REJECTED")) {
       statusMessage = "Unfortunately, your request has been rejected by the provider";
       actionMessage =
@@ -81,6 +85,8 @@ public class EmailComposer {
                         statusMessage,
                         "ASSET_NAME",
                         emailRequest.assetName(),
+                        "ASSET_EXPIRY",
+                        emailRequest.expiryAt(),
                         "ASSET_DESCRIPTION",
                         emailRequest.shortDescription(),
                         "ACTION_MESSAGE",
@@ -291,5 +297,9 @@ public class EmailComposer {
 
     message.setHtml(body);
     return message;
+  }
+
+  private String safe(String value) {
+    return value != null ? value : "";
   }
 }

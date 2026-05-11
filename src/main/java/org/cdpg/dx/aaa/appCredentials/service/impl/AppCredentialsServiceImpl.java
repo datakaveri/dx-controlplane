@@ -12,6 +12,8 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Supplier;
+
+import io.vertx.ext.auth.User;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -25,8 +27,12 @@ import org.cdpg.dx.aaa.appCredentials.service.AppCredentialsService;
 import org.cdpg.dx.aaa.delegation.DelegationHandlerValidator;
 import org.cdpg.dx.aaa.delegation.DelegationValidator;
 import org.cdpg.dx.aaa.delegation.models.DelegationScopeConstraint;
+import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.common.exception.BaseDxException;
+import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
+import org.cdpg.dx.common.exception.DxUnauthorizedException;
+import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
 import org.cdpg.dx.databroker.service.DataBrokerService;
@@ -39,6 +45,7 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
   private final AppConstraintsDAO appConstraintsDAO;
   private final DelegationValidator delegationValidator;
   private final DataBrokerService dataBrokerService;
+  private final UserService userService;
   private final String appIdRevokeExchange;
   private final Supplier<String> randomSecretSupplier =
       () -> {
@@ -47,12 +54,13 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
         return Hex.encodeHexString(randBytes);
       };
 
-  public AppCredentialsServiceImpl(DelegationValidator delegationValidator, AppCredentialsDAO appCredentialsDAO, AppConstraintsDAO appConstraintsDAO, DataBrokerService dataBrokerService, String appIdRevokeExchange) {
+  public AppCredentialsServiceImpl(DelegationValidator delegationValidator, AppCredentialsDAO appCredentialsDAO, AppConstraintsDAO appConstraintsDAO, DataBrokerService dataBrokerService, String appIdRevokeExchange,UserService userService) {
     this.appCredentialsDAO = appCredentialsDAO;
     this.appConstraintsDAO = appConstraintsDAO;
     this.delegationValidator = delegationValidator;
     this.dataBrokerService = dataBrokerService;
     this.appIdRevokeExchange = appIdRevokeExchange;
+    this.userService = userService;
   }
 
   @Override
@@ -321,6 +329,85 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
               }
               return Future.succeededFuture(apps.stream().findFirst().get());
             });
+  }
+
+
+  @Override
+  public Future<DxUser> postDxUserInfoFromAppId(String appId, String appSecret) {
+    Map<String, Object> credentialsFilter = Map.of(APP_ID, appId);
+    Map<String, Object> constraintsFilter = Map.of(APP_ID, appId);
+
+    Future<List<AppCredentials>> credentialsFuture = appCredentialsDAO.getAllWithFilters(credentialsFilter);
+    Future<List<AppConstraints>> constraintsFuture = appConstraintsDAO.getAllWithFilters(constraintsFilter);
+
+    return Future.all(credentialsFuture, constraintsFuture)
+      .compose(results -> {
+        List<AppCredentials> credentials = results.resultAt(0);
+        List<AppConstraints> constraints = results.resultAt(1);
+
+        LOGGER.info("credentials: {}",credentials);
+        LOGGER.info("constraints: {}",constraints);
+
+        if (credentials.isEmpty()) {
+          return Future.failedFuture(new DxNotFoundException("Invalid appId"));
+        }
+        if (constraints.isEmpty()) {
+          return Future.failedFuture(new DxNotFoundException("No constraints found for appId"));
+        }
+
+        AppCredentials appCredentials = credentials.stream().findFirst().get();
+
+        String hashedIncomingSecret = DigestUtils.sha512Hex(appSecret);
+        if (!hashedIncomingSecret.equals(appCredentials.appSecret())) {
+          return Future.failedFuture(new DxUnauthorizedException("Invalid appSecret"));
+        }
+
+        String role = appCredentials.role();
+        UUID userId = appCredentials.userId();
+
+        // Scopes from AppConstraints
+        JsonArray scopes = new JsonArray();
+        constraints.forEach(c -> {
+          if (c.scope() != null && !c.scope().isBlank()) {
+            scopes.add(c.scope());
+          }
+        });
+
+        // Fetch user details using userId from AppCredentials
+        return userService.getUserInfoByID(userId)
+          .compose(baseUser -> {
+            if (baseUser == null) {
+              return Future.failedFuture(new DxBadRequestException("User not found for appId"));
+            }
+
+            DxUser dxUser = new DxUser(
+              role != null ? List.of(role) : baseUser.roles(),
+              baseUser.organisationId(),
+              baseUser.organisationName(),
+              baseUser.sub(),
+              baseUser.emailVerified(),
+              baseUser.kycVerified(),
+              baseUser.name(),
+              baseUser.preferredUsername(),
+              baseUser.givenName(),
+              baseUser.familyName(),
+              baseUser.email(),
+              baseUser.pendingRoles(),
+              baseUser.organisation(),
+              baseUser.createdAt(),
+              baseUser.kycData(),
+              baseUser.twitter_account(),
+              baseUser.linkedin_account(),
+              baseUser.github_account(),
+              baseUser.account_enabled(),
+              baseUser.did(),
+              baseUser.aud(),
+              scopes
+            );
+
+            return Future.succeededFuture(dxUser);
+          });
+      });
   }
 
   @Override

@@ -6,6 +6,7 @@ import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
@@ -60,15 +61,24 @@ public class AppCredentialsHandler {
       return;
     }
 
-      Set<String> roles = extractRoles(user);
-      String role = getHighestRole(roles);
+      Set<String> user_roles = extractRoles(user);
+//      String role = getHighestRole(roles);
+      JsonObject body = ctx.body().asJsonObject();
 
-    JsonObject body = ctx.body().asJsonObject();
+      JsonArray rolesArray = body.getJsonArray("roles");
+      String role = "";
+      if (rolesArray != null && !rolesArray.isEmpty()) {
+        JsonObject firstRole = rolesArray.getJsonObject(0);
+        if (firstRole != null) {
+          role = firstRole.getString("role", "");
+        }
+      }
+
     body.put(USER_ID,userId);
     body.put(ROLE,role);
 
       try {
-        delegationHandlerValidator.validateCreateDelegationGrantBody(userId, roles,body);
+        delegationHandlerValidator.validateCreateDelegationGrantBody(userId, user_roles ,body);
       } catch (DxBadRequestException | DxForbiddenException e) {
         ctx.fail(e);
         return;
@@ -126,6 +136,20 @@ public class AppCredentialsHandler {
               ResponseBuilder.sendSuccess(ctx, "Deleted app id successfully" ,urnGenerator);
             })
         .onFailure(ctx::fail);
+  }
+
+  public void postDxUserInfo(RoutingContext ctx) {
+    LOGGER.trace("postdxUserInfo() handler started");
+    JsonObject appCredentials = ctx.body().asJsonObject();
+    String appId = appCredentials.getString("appId");
+    String appSecret = appCredentials.getString("appSecret");
+    appCredentialsService
+      .postDxUserInfoFromAppId(appId, appSecret)
+      .onSuccess(
+        dxUser -> {
+          ResponseBuilder.sendSuccess(ctx, "Fetched user details from app id successfully", dxUser, urnGenerator);
+        })
+      .onFailure(ctx::fail);
   }
 
   public void changeAppStatus(RoutingContext ctx) {

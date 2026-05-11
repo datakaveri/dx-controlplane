@@ -259,6 +259,181 @@ paths:
             curl --location --request PATCH \
             'https://${HOSTNAME}/iudx/v2/app/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9?status=disable' \
             --header 'Authorization: Bearer <token>'
+  /iudx/v2/auth/app/user:
+    post:
+      tags:
+        - App
+      summary: DxUser from App constraints
+      operationId: post-appId-dxUser
+      security:
+        - authorization: [ ]
+      description: |
+        Authenticates the app using appId and appSecret, and returns the resolved
+        user context with app-specific roles and scopes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - appId
+                - appSecret
+              properties:
+                appId:
+                  type: string
+                  format: uuid
+                  example: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+                appSecret:
+                  type: string
+                  example: s3cr3t-app-key
+            examples:
+              Example 1:
+                value:
+                  appId: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+                  appSecret: s3cr3t-app-key
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  result:
+                    type: object
+                    properties:
+                      roles:
+                        type: array
+                        items:
+                          type: string
+                      organisationId:
+                        type: string
+                      organisationName:
+                        type: string
+                      sub:
+                        type: string
+                        format: uuid
+                      emailVerified:
+                        type: boolean
+                      kycVerified:
+                        type: boolean
+                      name:
+                        type: string
+                      preferredUsername:
+                        type: string
+                      givenName:
+                        type: string
+                      familyName:
+                        type: string
+                      email:
+                        type: string
+                        format: email
+                      organisation:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          organisationId:
+                            type: string
+                          userId:
+                            type: string
+                          userName:
+                            type: string
+                          status:
+                            type: string
+                          jobTitle:
+                            type: string
+                          empId:
+                            type: string
+                          requestedAt:
+                            type: string
+                          processedAt:
+                            type: string
+                          request_type:
+                            type: string
+                      createdAt:
+                        type: string
+                      kycData:
+                        type: object
+                      scopes:
+                        type: array
+                        items:
+                          type: string
+                        description: App-specific scopes from appConstraints
+              examples:
+                Example 1:
+                  value:
+                    type: urn:dx:ControlPlane:success
+                    title: Success
+                    result:
+                      roles:
+                        - consumer
+                      organisationId: e87246e2-5da5-40b0-973c-690d2f48f879
+                      organisationName: Test Org
+                      sub: 436cb796-5826-458b-a914-a54721f70997
+                      emailVerified: true
+                      kycVerified: false
+                      name: test test
+                      preferredUsername: test
+                      givenName: test
+                      familyName: test
+                      email: testing@gmail.com
+                      organisation:
+                        id: 98e74f31-4e40-4615-85b8-61256f0bc7c4
+                        organisationId: e87246e2-5da5-40b0-973c-690d2f48f879
+                        userId: 436cb796-5826-458b-a914-a54721f70997
+                        userName: test test
+                        status: granted
+                        jobTitle: Employee
+                        empId: EMP8790
+                        requestedAt: '2025-06-04T06:13:58.917342'
+                        processedAt: '2025-06-04T06:13:58.917342'
+                        request_type: organisation_join
+                      createdAt: '2025-06-04T06:12:48.991'
+                      kycData: { }
+                      scopes:
+                        - user_management
+                        - data_access
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Authenticate App and Resolve User
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/auth/app/user' \
+            --header 'Authorization: Bearer <token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "appId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+              "appSecret": "s3cr3t-app-key"
+            }'
   /iudx/v2/auth/asset/request:
     post:
       summary: Create Asset Request

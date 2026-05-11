@@ -15,6 +15,7 @@ import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.token.controller.AppTokenController;
 import org.cdpg.dx.aaa.token.service.AppTokenService;
 import org.cdpg.dx.aaa.token.service.impl.AppTokenServiceImpl;
+import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.service.DataBrokerService;
@@ -28,6 +29,7 @@ public class AppTokenControllerFactory {
       PostgresService pgService,
       KeycloakUserService keycloakUserService,
       OrganizationService organizationService,
+      UserService userService,
       ItemService itemService,
       URNGenerator urnGenerator,
       JsonObject config,
@@ -45,7 +47,7 @@ public class AppTokenControllerFactory {
 
     DelegationValidator delegationValidator = new DelegationValidator(organizationService, itemService);
     AppCredentialsService appCredentialsService =
-        new AppCredentialsServiceImpl(delegationValidator, appCredentialsDAO, appConstraintsDAO, dataBrokerService, config.getString("appIdRevokeExchange", "revoked-appid"));
+        new AppCredentialsServiceImpl(delegationValidator, appCredentialsDAO, appConstraintsDAO, dataBrokerService, config.getString("appIdRevokeExchange", "revoked-appid"),userService);
 
     AppTokenService appTokenService =
         new AppTokenServiceImpl(

@@ -2,10 +2,12 @@ package org.cdpg.dx.aaa.appCredentials.service;
 
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.auth.User;
 import org.cdpg.dx.aaa.appCredentials.model.AppConstraints;
 import org.cdpg.dx.aaa.appCredentials.model.AppCredentialResponse;
 import org.cdpg.dx.aaa.appCredentials.model.AppCredentials;
 import org.cdpg.dx.aaa.bookmarks.model.Bookmark;
+import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
 
@@ -25,5 +27,7 @@ public interface AppCredentialsService {
   Future<AppCredentials> getAppById(UUID appId);
 
   Future<List<AppConstraints>> getAppConstraintsById(UUID appId);
+
+  Future<DxUser> postDxUserInfoFromAppId( String appId , String appCred);
 
 }

@@ -300,7 +300,7 @@ public class ControllerFactory {
     controllers.add(
         AppCredentialsControllerFactory.create(
             infra.pgService(), shared.organizationService(), shared.itemService(), urnGenerator,
-            infra.dataBrokerService(), config.getString("appIdRevokeExchange", "revoked-appid"),
+            infra.dataBrokerService(), config.getString("appIdRevokeExchange", "revoked-appid"), shared.userService(),
             authV2));
 
     controllers.add(
@@ -308,6 +308,7 @@ public class ControllerFactory {
             infra.pgService(),
             shared.keycloakUserService(),
             shared.organizationService(),
+            shared.userService(),
             shared.itemService(),
             urnGenerator,
             config,
