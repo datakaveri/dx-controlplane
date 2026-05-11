@@ -113,6 +113,7 @@ public final class OperationIds {
   public static final String OP_GET_APPID = "get-appId";
   public static final String OP_DELETE_APPID = "delete-appId";
   public static final String OP_UPDATE_STATUS_APPID = "update-appId-status";
+  public static final String OP_POST_APPID_DX_USER = "post-appId-dxUser";
   /* =====================================================
    * Toekens
    * ===================================================== */

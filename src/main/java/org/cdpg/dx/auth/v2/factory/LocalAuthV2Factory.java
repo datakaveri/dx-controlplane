@@ -50,7 +50,7 @@ public final class LocalAuthV2Factory {
             appCredentialsDAO,
             appConstraintsDAO,
             dataBrokerService,
-            config.getString("appIdRevokeExchange", "revoked-appid"));
+            config.getString("appIdRevokeExchange", "revoked-appid"),null);
 
     DelegationService delegationService =
         DelegationService.createProxy(

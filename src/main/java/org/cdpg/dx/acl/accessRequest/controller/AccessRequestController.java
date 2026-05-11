@@ -428,6 +428,9 @@ public class AccessRequestController implements ApiController {
                           CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
                           ResponseBuilder.sendSuccess(
                               ctx, "Request updated successfully", urnGenerator);
+
+                          String expiryAtStr = (accessRequestDto.getExpiryAt()!=null)?accessRequestDto.getExpiryAt().toString():"";
+
                           JsonObject jsonObject =
                               new SendEmail(
                                       accessRequestDto.getConsumerId(),
@@ -437,6 +440,7 @@ public class AccessRequestController implements ApiController {
                                       accessRequestDto.getAssetType(),
                                       accessRequestDto.getItemId(),
                                       accessRequestDto.getShortDescription(),
+                                      expiryAtStr,
                                       false,
                                       status.getStatus(),
                                       accessRequestDto.getAssetName(),
@@ -470,6 +474,10 @@ public class AccessRequestController implements ApiController {
                           // RoutingContextHelper.setAuditingLog(ctx, auditLog);
                           ResponseBuilder.sendSuccess(
                               ctx, "Request updated successfully", urnGenerator);
+
+                          String expiryAtStr = (accessRequestDto.getExpiryAt()!=null)?accessRequestDto.getExpiryAt().toString():"";
+
+
                           JsonObject jsonObject =
                               new SendEmail(
                                       accessRequestDto.getConsumerId(),
@@ -479,6 +487,7 @@ public class AccessRequestController implements ApiController {
                                       accessRequestDto.getAssetType(),
                                       accessRequestDto.getItemId(),
                                       accessRequestDto.getShortDescription(),
+                                       expiryAtStr,
                                       false,
                                       status.getStatus(),
                                       accessRequestDto.getAssetName(),
@@ -523,6 +532,10 @@ public class AccessRequestController implements ApiController {
               CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
               // RoutingContextHelper.setAuditingLog(ctx, auditLog);
               ResponseBuilder.sendSuccess(ctx, "Request inserted successfully!", urnGenerator);
+
+              String expiryAtStr = (accessRequestDto.getExpiryAt()!=null)?accessRequestDto.getExpiryAt().toString():"";
+
+
               JsonObject jsonObject =
                   new SendEmail(
                           accessRequestDto.getConsumerId(),
@@ -532,6 +545,7 @@ public class AccessRequestController implements ApiController {
                           accessRequestDto.getAssetType(),
                           accessRequestDto.getItemId(),
                           accessRequestDto.getShortDescription(),
+                          expiryAtStr,
                           true,
                           null,
                           accessRequestDto.getAssetName(),
@@ -540,6 +554,7 @@ public class AccessRequestController implements ApiController {
               Future<Void> providerFuture =
                   dataBrokerService.publishMessageInternal(
                       jsonObject, emailExchange, emailRoutingKey);
+
 
               JsonObject consumerObject =
                   new SendEmail(
@@ -550,6 +565,7 @@ public class AccessRequestController implements ApiController {
                       accessRequestDto.getAssetType(),
                       accessRequestDto.getItemId(),
                       accessRequestDto.getShortDescription(),
+                      expiryAtStr,
                       true,
                       null,
                       accessRequestDto.getAssetName(),

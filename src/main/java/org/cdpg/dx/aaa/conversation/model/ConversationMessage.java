@@ -12,7 +12,7 @@ import java.util.UUID;
 
 public record ConversationMessage(
   UUID id,
-  Integer requestTypeId,
+  String requestType,
   UUID parentMsgId,
   UUID senderId,
   String senderRole,
@@ -26,9 +26,7 @@ public record ConversationMessage(
   public static ConversationMessage fromJson(JsonObject json) {
     return new ConversationMessage(
       json.getString("id") != null ? UUID.fromString(json.getString("id")) : null,
-      json.getValue("request_type_id") != null                              // ✅ handles int/float/string
-        ? ((Number) json.getValue("request_type_id")).intValue()
-        : null,
+      json.getString("request_type"),
       json.getString("parent_msg_id") != null
         ? UUID.fromString(json.getString("parent_msg_id"))
         : null,
@@ -50,7 +48,7 @@ public record ConversationMessage(
   public Map<String, Object> toNonEmptyFieldsMap() {
     Map<String, Object> map = new HashMap<>();
     if (id != null) map.put("id", id.toString());
-    if (requestTypeId != null) map.put("request_type_id", requestTypeId);    // ✅ int
+    if (requestType != null) map.put("request_type", requestType);    // ✅ int
     if (parentMsgId != null) map.put("parent_msg_id", parentMsgId.toString());
     if (senderId != null) map.put("sender_id", senderId.toString());
     if (senderRole != null) map.put("sender_role", senderRole);
@@ -67,7 +65,7 @@ public record ConversationMessage(
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
     if (id != null) json.put("id", id.toString());
-    if (requestTypeId != null) json.put("request_type_id", requestTypeId);
+    if (requestType != null) json.put("request_type", requestType);
     if (parentMsgId != null) json.put("parent_msg_id", parentMsgId.toString());
     if (senderId != null) json.put("sender_id", senderId.toString());
     if (senderRole != null) json.put("sender_role", senderRole);

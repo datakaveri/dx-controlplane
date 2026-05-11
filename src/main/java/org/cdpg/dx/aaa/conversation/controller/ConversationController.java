@@ -10,8 +10,10 @@ import org.cdpg.dx.aaa.conversation.model.ConversationMessage;
 import org.cdpg.dx.aaa.conversation.model.ConversationUpdateRequest;
 import org.cdpg.dx.aaa.conversation.service.ConversationService;
 import org.cdpg.dx.apiserver.ApiController;
-import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.v2.handler.AuthenticationHandler;
+import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
+import org.cdpg.dx.auth.v2.model.Scopes;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
@@ -34,68 +36,81 @@ public class ConversationController implements ApiController {
           "type_key", "type_key",
           "display_name", "display_name",
           "is_active", "is_active");
-  private static final Handler<RoutingContext> USER_ACCESS_HANDLER =
-      AuthorizationHandler.forRoles(
-          DxRole.CONSUMER, DxRole.PROVIDER, DxRole.ORG_ADMIN, DxRole.COS_ADMIN);
-  private static final Handler<RoutingContext> ADMIN_ACCESS_HANDLER =
-      AuthorizationHandler.forRoles(DxRole.COS_ADMIN);
+
+  private final AuthenticationHandler authenticationV2;
+  private final AuthorizationHandler authorizationV2;
+
+
 
 
   private final ConversationService service;
   private final URNGenerator urnGenerator;
 
-  public ConversationController(ConversationService service, URNGenerator urnGenerator) {
+  public ConversationController(ConversationService service, URNGenerator urnGenerator,
+                                AuthenticationHandler authenticationV2,
+                                AuthorizationHandler authorizationV2) {
     this.service = service;
     this.urnGenerator = urnGenerator;
+    this.authenticationV2 = authenticationV2;
+    this.authorizationV2 = authorizationV2;
   }
 
   @Override
   public void register(RouterBuilder builder) {
+
+    var selfAccess = authorizationV2.forScopes(Scopes.DATA_ACCESS);
+    var orgAdminAccess = authorizationV2.forScopes(Scopes.ORG_USER_MANAGEMENT);
+    var cosAdminAccess = authorizationV2.forScopes(Scopes.ORG_MANAGEMENT);
+
     builder
         .operation(OP_GET_CONVERSATION_MESSAGES)
-        .handler(USER_ACCESS_HANDLER)
+      .handler(authenticationV2)
+        .handler(selfAccess)
         .handler(this::handleGetAllMessages);
     builder
         .operation(OP_GET_CONVERSATION_MESSAGE)
-        .handler(USER_ACCESS_HANDLER)
+      .handler(authenticationV2)
+      .handler(selfAccess)
         .handler(this::handleGetSingleMessage);
+
     builder
         .operation(OP_CREATE_CONVERSATION_MESSAGE)
-        .handler(USER_ACCESS_HANDLER)
+      .handler(authenticationV2)
+      .handler(cosAdminAccess)
         .handler(this::handleCreateMessage);
+
     builder
         .operation(OP_REPLY_CONVERSATION_MESSAGE)
-        .handler(USER_ACCESS_HANDLER)
+      .handler(authenticationV2)
+      .handler(cosAdminAccess)
         .handler(this::handleReplyToMessage);
+
     builder
         .operation(OP_UPDATE_CONVERSATION_MESSAGE)
-        .handler(USER_ACCESS_HANDLER)
-        .handler(this::handleUpdateMessage);
+      .handler(authenticationV2)
+      .handler(this::handleUpdateMessage);
+
     builder
         .operation(OP_DELETE_CONVERSATION_MESSAGE)
-        .handler(ADMIN_ACCESS_HANDLER)
-        .handler(this::handleDeleteMessage);
-    builder
-        .operation(OP_GET_CONVERSATION_BY_REQUEST_TYPE)
-        .handler(USER_ACCESS_HANDLER)
-        .handler(this::handleGetAllRequestIdAndType);
+      .handler(authenticationV2)
+      .handler(this::handleDeleteMessage);
+
   }
 
   private void handleGetAllMessages(RoutingContext ctx) {
     try {
-//      UUID requestId = UUID.fromString(ctx.pathParam("request_id"));
-      Float requestId = Float.parseFloat(ctx.pathParam("request_id"));
+      String requestType = ctx.pathParam("request_type");
 
       PaginatedRequest paginatedRequest =
           PaginationRequestBuilder.from(ctx)
-              .additionalFilters(Map.of("request_type_id", requestId))
+              .additionalFilters(Map.of("request_type", requestType))
               .allowedFiltersDbMap(MESSAGE_FILTER_MAP)
               .apiToDbMap(MESSAGE_FILTER_MAP)
               .allowedTimeFields(Set.of(CREATED_AT))
               .build();
 
       service
-          .getAllMessages(requestId, paginatedRequest)
+          .getAllMessages(requestType, paginatedRequest)
           .onSuccess(
               result ->
                   ResponseBuilder.sendSuccess(
@@ -109,7 +124,7 @@ public class ConversationController implements ApiController {
 
   private void handleGetSingleMessage(RoutingContext ctx) {
     try {
-      int requestTypeId = (int) Float.parseFloat(ctx.pathParam("request_id"));
+      String requestTypeId = ctx.pathParam("request_type");
       UUID messageId = UUID.fromString(ctx.pathParam("msg_id"));
 
       service
@@ -125,11 +140,11 @@ public class ConversationController implements ApiController {
   // /iudx/v2/requests/{request_id}/conversations
   private void handleCreateMessage(RoutingContext ctx) {
     try {
-      int requestTypeId = (int) Float.parseFloat(ctx.pathParam("request_id"));
+      String requestType = ctx.pathParam("request_type");
       UUID userId = UUID.fromString(ctx.user().subject());
 
       JsonObject message = ctx.body().asJsonObject();
-      message.put("request_type_id",requestTypeId);
+      message.put("request_type",requestType);
       message.put("sender_id",userId.toString());
 
       ConversationMessage request = ConversationMessage.fromJson(message);
@@ -146,15 +161,15 @@ public class ConversationController implements ApiController {
 
   private void handleReplyToMessage(RoutingContext ctx) {
     try {
-      int requestTypeId = (int) Double.parseDouble(ctx.pathParam("request_id"));
+      String requestType = ctx.pathParam("request_type");
       UUID parentMsgId = UUID.fromString(ctx.pathParam("msg_id"));
       UUID userId = UUID.fromString(ctx.user().subject());
 
 
       JsonObject message = ctx.body().asJsonObject();
-      message.put("request_type_id",requestTypeId);
+      message.put("request_type",requestType);
       message.put("sender_id",userId.toString());
-
+      message.put("parent_msg_id",parentMsgId.toString());
       ConversationMessage request = ConversationMessage.fromJson(message);
 
 
@@ -170,14 +185,14 @@ public class ConversationController implements ApiController {
 
   private void handleUpdateMessage(RoutingContext ctx) {
     try {
-      int requestTypeId = (int) Double.parseDouble(ctx.pathParam("request_id"));
+      String requestType = ctx.pathParam("request_type");
       UUID messageId = UUID.fromString(ctx.pathParam("msg_id"));
       UUID userId = UUID.fromString(ctx.user().subject());
       ConversationUpdateRequest request =
           ctx.body().asJsonObject().mapTo(ConversationUpdateRequest.class);
 
       service
-          .updateMessage(requestTypeId, messageId, userId, request)
+          .updateMessage(requestType, messageId, userId, request)
           .onSuccess(result -> ResponseBuilder.sendSuccess(ctx, result, urnGenerator))
           .onFailure(ctx::fail);
     } catch (Exception e) {
@@ -188,12 +203,12 @@ public class ConversationController implements ApiController {
 
   private void handleDeleteMessage(RoutingContext ctx) {
     try {
-      int requestTypeId = (int) Double.parseDouble(ctx.pathParam("request_id"));
+      String requestType = ctx.pathParam("request_type");
       UUID messageId = UUID.fromString(ctx.pathParam("msg_id"));
       UUID userId = UUID.fromString(ctx.user().subject());
 
       service
-          .deleteMessage(requestTypeId, messageId, userId)
+          .deleteMessage(requestType, messageId, userId)
           .onSuccess(
               v ->
                   ResponseBuilder.sendSuccess(
