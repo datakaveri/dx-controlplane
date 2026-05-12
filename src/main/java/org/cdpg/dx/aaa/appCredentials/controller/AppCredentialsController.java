@@ -34,7 +34,6 @@ public class AppCredentialsController implements ApiController {
 
     builder
       .operation(OperationIds.OP_POST_APPID_DX_USER)
-      .handler(authenticationV2)
       .handler(appAccess)
       .handler(appCredentialsHandler::postDxUserInfo);
 

@@ -1,17 +1,20 @@
 package org.cdpg.dx.aaa.conversation.controller;
 
-import io.vertx.core.Handler;
+import static org.cdpg.dx.aaa.apiserver.OperationIds.*;
+import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.CREATED_AT;
+
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.conversation.model.ConversationMessage;
 import org.cdpg.dx.aaa.conversation.model.ConversationUpdateRequest;
 import org.cdpg.dx.aaa.conversation.service.ConversationService;
 import org.cdpg.dx.apiserver.ApiController;
-import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.cdpg.dx.auth.v2.handler.AuthenticationHandler;
 import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.v2.model.Scopes;
 import org.cdpg.dx.common.URNGenerator;
@@ -19,39 +22,28 @@ import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-import static org.cdpg.dx.aaa.apiserver.OperationIds.*;
-import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.CREATED_AT;
-
 public class ConversationController implements ApiController {
 
   private static final Logger LOGGER = LogManager.getLogger(ConversationController.class);
-  private static final Map<String, String> MESSAGE_FILTER_MAP = Map.of("requestType", "request_type");
-  private static final Map<String, String>
-    REQUEST_TYPE_FILTER_MAP =
+  private static final Map<String, String> MESSAGE_FILTER_MAP =
+      Map.of("requestType", "request_type");
+  private static final Map<String, String> REQUEST_TYPE_FILTER_MAP =
       Map.of(
           "type_key", "type_key",
           "display_name", "display_name",
           "is_active", "is_active");
 
-  private final AuthenticationHandler authenticationV2;
   private final AuthorizationHandler authorizationV2;
-
-
-
 
   private final ConversationService service;
   private final URNGenerator urnGenerator;
 
-  public ConversationController(ConversationService service, URNGenerator urnGenerator,
-                                AuthenticationHandler authenticationV2,
-                                AuthorizationHandler authorizationV2) {
+  public ConversationController(
+      ConversationService service,
+      URNGenerator urnGenerator,
+      AuthorizationHandler authorizationV2) {
     this.service = service;
     this.urnGenerator = urnGenerator;
-    this.authenticationV2 = authenticationV2;
     this.authorizationV2 = authorizationV2;
   }
 
@@ -64,37 +56,26 @@ public class ConversationController implements ApiController {
 
     builder
         .operation(OP_GET_CONVERSATION_MESSAGES)
-      .handler(authenticationV2)
         .handler(selfAccess)
         .handler(this::handleGetAllMessages);
     builder
         .operation(OP_GET_CONVERSATION_MESSAGE)
-      .handler(authenticationV2)
-      .handler(selfAccess)
+        .handler(selfAccess)
         .handler(this::handleGetSingleMessage);
 
     builder
         .operation(OP_CREATE_CONVERSATION_MESSAGE)
-      .handler(authenticationV2)
-      .handler(cosAdminAccess)
+        .handler(cosAdminAccess)
         .handler(this::handleCreateMessage);
 
     builder
         .operation(OP_REPLY_CONVERSATION_MESSAGE)
-      .handler(authenticationV2)
-      .handler(cosAdminAccess)
+        .handler(cosAdminAccess)
         .handler(this::handleReplyToMessage);
 
-    builder
-        .operation(OP_UPDATE_CONVERSATION_MESSAGE)
-      .handler(authenticationV2)
-      .handler(this::handleUpdateMessage);
+    builder.operation(OP_UPDATE_CONVERSATION_MESSAGE).handler(this::handleUpdateMessage);
 
-    builder
-        .operation(OP_DELETE_CONVERSATION_MESSAGE)
-      .handler(authenticationV2)
-      .handler(this::handleDeleteMessage);
-
+    builder.operation(OP_DELETE_CONVERSATION_MESSAGE).handler(this::handleDeleteMessage);
   }
 
   private void handleGetAllMessages(RoutingContext ctx) {
@@ -144,8 +125,8 @@ public class ConversationController implements ApiController {
       UUID userId = UUID.fromString(ctx.user().subject());
 
       JsonObject message = ctx.body().asJsonObject();
-      message.put("request_type",requestType);
-      message.put("sender_id",userId.toString());
+      message.put("request_type", requestType);
+      message.put("sender_id", userId.toString());
 
       ConversationMessage request = ConversationMessage.fromJson(message);
 
@@ -165,13 +146,11 @@ public class ConversationController implements ApiController {
       UUID parentMsgId = UUID.fromString(ctx.pathParam("msg_id"));
       UUID userId = UUID.fromString(ctx.user().subject());
 
-
       JsonObject message = ctx.body().asJsonObject();
-      message.put("request_type",requestType);
-      message.put("sender_id",userId.toString());
-      message.put("parent_msg_id",parentMsgId.toString());
+      message.put("request_type", requestType);
+      message.put("sender_id", userId.toString());
+      message.put("parent_msg_id", parentMsgId.toString());
       ConversationMessage request = ConversationMessage.fromJson(message);
-
 
       service
           .replyToMessage(request)
@@ -210,9 +189,7 @@ public class ConversationController implements ApiController {
       service
           .deleteMessage(requestType, messageId, userId)
           .onSuccess(
-              v ->
-                  ResponseBuilder.sendSuccess(
-                      ctx, "Conversation message deleted", urnGenerator))
+              v -> ResponseBuilder.sendSuccess(ctx, "Conversation message deleted", urnGenerator))
           .onFailure(ctx::fail);
     } catch (Exception e) {
       LOGGER.error("Failed to delete a conversation message", e);

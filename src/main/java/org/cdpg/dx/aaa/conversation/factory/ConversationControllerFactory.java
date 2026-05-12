@@ -15,11 +15,11 @@ public class ConversationControllerFactory {
 
   private ConversationControllerFactory() {}
 
-  public static ConversationController create(PostgresService postgresService, URNGenerator urnGenerator, AuthHandlersV2 authV2) {
+  public static ConversationController create(
+      PostgresService postgresService, URNGenerator urnGenerator, AuthHandlersV2 authV2) {
     ConversationDao dao = new ConversationDaoImpl(postgresService);
     RequestTypeMappingDao requestTypeMappingDao = new RequestTypeMappingDaoImpl(postgresService);
     ConversationService service = new ConversationServiceImpl(dao, requestTypeMappingDao);
-    return new ConversationController(service, urnGenerator,  authV2.authentication(),
-      authV2.authorization());
+    return new ConversationController(service, urnGenerator, authV2.authorization());
   }
 }
