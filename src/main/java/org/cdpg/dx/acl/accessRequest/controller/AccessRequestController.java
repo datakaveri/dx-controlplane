@@ -18,6 +18,7 @@ import static org.cdpg.dx.acl.accessRequest.util.Constants.API_TO_DB_MAP;
 import static org.cdpg.dx.acl.accessRequest.util.EmailType.CONSUMER_ACK;
 import static org.cdpg.dx.acl.accessRequest.util.EmailType.CONSUMER_UPDATE;
 import static org.cdpg.dx.acl.accessRequest.util.EmailType.PROVIDER_CREATE;
+import static org.cdpg.dx.auth.v2.handler.AuthorizationHandler.PRINCIPAL_KEY;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
 import io.vertx.core.Future;
@@ -44,9 +45,9 @@ import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.cdpg.dx.auth.v2.handler.AuthenticationHandler;
 import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.v2.handler.ScopeRule;
+import org.cdpg.dx.auth.v2.model.DxPrincipal;
 import org.cdpg.dx.auth.v2.model.Scopes;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.email.SendEmail;
@@ -76,7 +77,6 @@ public class AccessRequestController implements ApiController {
   private final URNGenerator urnGenerator;
   private final String emailExchange;
   private final String emailRoutingKey;
-  private final AuthenticationHandler authenticationV2;
   private final AuthorizationHandler authorizationV2;
 
   public AccessRequestController(
@@ -88,7 +88,6 @@ public class AccessRequestController implements ApiController {
       KeycloakUserService keycloakUserService,
       String emailExchange,
       String emailRoutingKey,
-      AuthenticationHandler authenticationV2,
       AuthorizationHandler authorizationV2) {
     this.accessRequestService = accessRequestService;
     this.auditingHandler = auditingHandler;
@@ -98,7 +97,6 @@ public class AccessRequestController implements ApiController {
     this.keycloakUserService = keycloakUserService;
     this.emailExchange = emailExchange;
     this.emailRoutingKey = emailRoutingKey;
-    this.authenticationV2 = authenticationV2;
     this.authorizationV2 = authorizationV2;
   }
 
@@ -137,49 +135,42 @@ public class AccessRequestController implements ApiController {
     builder
         .operation(CREATE_ACCESS_REQUEST_API)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(selfAccess)
         .handler(this::createAccessRequestHandler);
 
     builder
         .operation(GET_ACCESS_REQUEST_CONSUMER_API)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(selfAccess)
         .handler(this::getConsumerAccessRequestHandler);
 
     builder
         .operation(WITHDRAW_ACCESS_REQUEST_API_FOR_CONSUMER)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(selfAccess)
         .handler(this::updateAccessRequestHandlerForConumser);
 
     builder
         .operation(GET_ACCESS_REQUEST_FOR_ORG_ADMIN_API)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(orgAdminAccess)
         .handler(this::getOrganizationAccessRequestHandler);
 
     builder
         .operation(GET_ACCESS_REQUEST_FOR_COS_ADMIN_API)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(cosAdminAccess)
         .handler(this::getPlatformAccessRequestHandler);
 
     builder
         .operation(GET_ACCESS_REQUEST_PROVIDER_API)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(providerAdminAccess)
         .handler(this::getAccessRequestHandler);
 
     builder
         .operation(UPDATE_ACCESS_REQUEST_API)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(userAccessHandler)
         .handler(providerAdminAccess)
         .handler(this::updateAccessRequestHandler);
@@ -187,7 +178,6 @@ public class AccessRequestController implements ApiController {
     builder
         .operation(CHECK_ACCESS_REQUEST_API)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(selfAccess)
         .handler(this::checkAccessRequestHandler);
   }
@@ -514,8 +504,12 @@ public class AccessRequestController implements ApiController {
     JsonObject additionalInfo = body.getJsonObject("additionalInfo");
     JsonObject constraints = body.getJsonObject("constraints");
     DxUser consumer;
+    DxPrincipal principal;
+
+
     try {
-      consumer = RoutingContextHelper.fromPrincipal(ctx);
+        principal =  ctx.get(PRINCIPAL_KEY);
+    //  consumer = RoutingContextHelper.fromPrincipal(ctx);
     } catch (Exception e) {
       LOGGER.error("Error extracting user from token: {}", e.getMessage(), e);
       ctx.fail(new DxForbiddenException("Invalid user"));
@@ -523,7 +517,7 @@ public class AccessRequestController implements ApiController {
     }
 
     accessRequestService
-        .createAccessRequest(consumer, itemId, requestType, additionalInfo, constraints)
+        .createAccessRequest(UUID.fromString(principal.getAuthenticatedSub()), itemId, requestType, additionalInfo, constraints)
         .onSuccess(
             accessRequestDto -> {
               UserActivityAuditLogBuilder auditLog =

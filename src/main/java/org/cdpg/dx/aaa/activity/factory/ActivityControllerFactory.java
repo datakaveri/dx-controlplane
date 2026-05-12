@@ -20,7 +20,6 @@ public class ActivityControllerFactory {
     return new ActivityController(
         userActivityAuditLogService,
         urnGenerator,
-        authV2.authentication(),
         authV2.authorization());
   }
 }

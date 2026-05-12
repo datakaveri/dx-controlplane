@@ -6,31 +6,31 @@ import java.util.List;
 public enum RoleScopeMapping {
 
   COS_ADMIN("cos_admin", List.of(
-    "cos_admin_access",
-    "asset_management",
-    "compute_management",
-    "user_management",
-    "credit_management",
-    "publish_assets"
+    "cos-admin-access",
+    "asset-management",
+    "compute-management",
+    "user-management",
+    "credit-management",
+    "publish-assets"
   )),
 
   ORG_ADMIN("org_admin", List.of(
-    "org_admin_access",
-    "asset_management",
-    "user_management",
-    "publish_assets"
+    "org-admin-access",
+    "asset-management",
+    "user-management",
+    "publish-assets"
   )),
 
   PROVIDER("provider", List.of(
-    "asset_management"
+    "asset-management"
   )),
 
   CONSUMER("consumer", List.of(
-    "data_access"
+    "data-access"
   )),
 
   COMPUTE("compute", List.of(
-    "compute_access"
+    "compute-access"
   ));
 
   private final String role;

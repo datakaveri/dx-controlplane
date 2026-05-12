@@ -50,7 +50,6 @@ import org.cdpg.dx.acl.policy.service.model.CreatePolicyRequest;
 import org.cdpg.dx.acl.policy.util.UserAccessHandler;
 import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
-import org.cdpg.dx.auth.v2.handler.AuthenticationHandler;
 import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.v2.handler.ScopeRule;
 import org.cdpg.dx.auth.v2.model.Scopes;
@@ -75,7 +74,6 @@ public class PolicyController implements ApiController {
   private final KeycloakUserService keycloakUserService;
   private final URNGenerator urnGenerator;
   private final JsonObject config;
-  private final AuthenticationHandler authenticationV2;
   private final AuthorizationHandler authorizationV2;
 
   public PolicyController(
@@ -85,7 +83,6 @@ public class PolicyController implements ApiController {
       KeycloakUserService keycloakUserService,
       URNGenerator urnGenerator,
       JsonObject config,
-      AuthenticationHandler authenticationV2,
       AuthorizationHandler authorizationV2) {
     this.policyService = policyService;
     this.postgresService = postgresService;
@@ -93,7 +90,6 @@ public class PolicyController implements ApiController {
     this.keycloakUserService = keycloakUserService;
     this.urnGenerator = urnGenerator;
     this.config = config;
-    this.authenticationV2 = authenticationV2;
     this.authorizationV2 = authorizationV2;
   }
 
@@ -108,8 +104,11 @@ public class PolicyController implements ApiController {
         authorizationV2.forScopesWithContext(
             ScopeRule.self(Scopes.OWN_ASSET_MANAGEMENT),
             ScopeRule.org(Scopes.ORG_ASSET_MANAGEMENT));
-    Handler<RoutingContext> cosAdminAccessHandler = authorizationV2.forScopes(Scopes.ASSET_MANAGEMENT);
-    Handler<RoutingContext> orgAdminAccessHandler = authorizationV2.forScopes(Scopes.ORG_ASSET_MANAGEMENT);
+
+    Handler<RoutingContext> cosAdminAccessHandler =
+        authorizationV2.forScopes(Scopes.ASSET_MANAGEMENT);
+    Handler<RoutingContext> orgAdminAccessHandler =
+        authorizationV2.forScopes(Scopes.ORG_ASSET_MANAGEMENT);
     Handler<RoutingContext> providerAndOrgAdmin =
         authorizationV2.forScopesWithContext(
             ScopeRule.self(Scopes.OWN_ASSET_MANAGEMENT),
@@ -119,24 +118,25 @@ public class PolicyController implements ApiController {
             ScopeRule.self(Scopes.OWN_ASSET_MANAGEMENT), ScopeRule.self(Scopes.DATA_ACCESS));
     Handler<RoutingContext> apiAccessVerifyApiRole =
         authorizationV2.forScopesWithContext(
-            ScopeRule.self(Scopes.OWN_ASSET_MANAGEMENT), ScopeRule.self(Scopes.DATA_ACCESS),
+            ScopeRule.self(Scopes.OWN_ASSET_MANAGEMENT),
+            ScopeRule.self(Scopes.DATA_ACCESS),
             ScopeRule.org(Scopes.ORG_ASSET_MANAGEMENT));
-    UserAccessHandler userAccessHandler = new UserAccessHandler(postgresService,
-        keycloakUserService);
+    UserAccessHandler userAccessHandler =
+        new UserAccessHandler(postgresService, keycloakUserService);
 
-    builder.operation(CREATE_POLICY_API)
+    builder
+        .operation(CREATE_POLICY_API)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(policyAdminAccess)
         .handler(userAccessHandler)
         .handler(this::handleCreatePolicy);
 
-//    builder.operation(GET_POLICY_API)
-//        .handler(auditingHandler::handleApiAudit)
-//        .handler(authenticationV2)
-//        .handler(selfOrConsumerAccess)
-//        .handler(userAccessHandler)
-//        .handler(this::handleGetPolicies);
+    //    builder.operation(GET_POLICY_API)
+    //        .handler(auditingHandler::handleApiAudit)
+    //        .handler(authenticationV2)
+    //        .handler(selfOrConsumerAccess)
+    //        .handler(userAccessHandler)
+    //        .handler(this::handleGetPolicies);
 
     builder
         .operation(GET_POLICIES_CONSUMER_API)
@@ -146,34 +146,31 @@ public class PolicyController implements ApiController {
     builder
         .operation(GET_POLICIES_PROVIDER_API)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(providerAndOrgAdmin)
         .handler(this::getPoliciesHandler);
 
     builder
         .operation(GET_POLICIES_FOR_ORG_ADMIN_API)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(orgAdminAccessHandler)
         .handler(this::getOrganizationPoliciesHandler);
 
     builder
         .operation(GET_POLICIES_FOR_COS_ADMIN_API)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(cosAdminAccessHandler)
         .handler(this::getPlatformPoliciesHandler);
 
-    builder.operation(DELETE_POLICY_API)
+    builder
+        .operation(DELETE_POLICY_API)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(policyAdminAccess)
         .handler(userAccessHandler)
         .handler(this::handleDeletePolicy);
 
-    builder.operation(VERIFY_API)
+    builder
+        .operation(VERIFY_API)
         .handler(auditingHandler::handleApiAudit)
-        .handler(authenticationV2)
         .handler(verifyAccess)
         .handler(userAccessHandler)
         .handler(this::verifyRequestHandler);

@@ -175,7 +175,7 @@ public class ControllerFactory {
             urnGenerator,
             shared.emailComposer());
     controllers.add(
-        new AdminController(adminHandler, authV2.authentication(), authV2.authorization()));
+        new AdminController(adminHandler, authV2.authorization()));
 
     // Asset
     AssetHandler assetHandler =
@@ -248,7 +248,8 @@ public class ControllerFactory {
             isCentralCatEnabled,
             isEdgeCatalogue,
             isStandalone,
-            shared.delegationService());
+            shared.delegationService(),
+            authV2);
     controllers.add(itemController);
 
     // Resource server

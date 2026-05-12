@@ -32,7 +32,6 @@ public class UserInteractionV2controllerFactory {
         auditingHandler,
         service,
         urnGenerator,
-        authV2.authentication(),
         authV2.authorization());
   }
 }

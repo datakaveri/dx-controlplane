@@ -12,7 +12,7 @@ import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
 
 public interface AccessRequestService {
-  Future<AccessRequestDto> createAccessRequest(DxUser consumer, UUID itemId, RequestType requestType,
+  Future<AccessRequestDto> createAccessRequest(UUID consumerId, UUID itemId, RequestType requestType,
                                                JsonObject additionalInfo, JsonObject constraints);
 
   Future<AccessRequestDto> approveAccessRequest(UUID providerId, UUID requestId, LocalDateTime expiryAt,

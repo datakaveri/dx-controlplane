@@ -131,7 +131,7 @@ public class DelegationAccessEvaluator {
     String entityId = constraint.getString("entity_id");
     String scope = constraint.getString("scope");
 
-    if ("*".equals(scope) || "data_access".equals(scope)) {
+    if ("*".equals(scope) || "data-access".equals(scope)) {
       return fetchItemAsDelegator(delegatorId, itemId, delegationId, delegateId);
     }
 

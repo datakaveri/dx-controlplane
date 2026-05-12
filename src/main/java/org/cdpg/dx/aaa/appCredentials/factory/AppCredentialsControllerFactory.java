@@ -29,6 +29,6 @@ public class AppCredentialsControllerFactory {
     DelegationValidator delegationValidator = new DelegationValidator(organizationService, itemService);
     AppCredentialsService appCredentialsService = new AppCredentialsServiceImpl(delegationValidator, appCredentialsDAO, appConstraintsDAO, dataBrokerService, appIdRevokeExchange, userService);
     AppCredentialsHandler appCredentialsHandler = new AppCredentialsHandler(appCredentialsService, delegationHandlerValidator, urnGenerator);
-    return new AppCredentialsController(appCredentialsHandler, authV2.authentication(), authV2.authorization());
+    return new AppCredentialsController(appCredentialsHandler, authV2.authorization());
   }
 }

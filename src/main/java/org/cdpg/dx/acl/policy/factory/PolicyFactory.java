@@ -57,7 +57,6 @@ public class PolicyFactory {
         keycloakUserService,
         urnGenerator,
         config,
-        authV2.authentication(),
         authV2.authorization());
   }
 }

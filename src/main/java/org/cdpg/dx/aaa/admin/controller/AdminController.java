@@ -5,82 +5,67 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.admin.handler.AdminHandler;
 import org.cdpg.dx.apiserver.ApiController;
-import org.cdpg.dx.auth.v2.handler.AuthenticationHandler;
 import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.v2.model.Scopes;
 
 public class AdminController implements ApiController {
-    private static final Logger LOGGER = LogManager.getLogger(AdminController.class);
-    private final AdminHandler adminHandler;
-    private final AuthenticationHandler authenticationV2;
-    private final AuthorizationHandler authorizationV2;
+  private static final Logger LOGGER = LogManager.getLogger(AdminController.class);
+  private final AdminHandler adminHandler;
+  private final AuthorizationHandler authorizationV2;
 
-    public AdminController(
-        AdminHandler adminHandler,
-        AuthenticationHandler authenticationV2,
-        AuthorizationHandler authorizationV2) {
-        this.adminHandler = adminHandler;
-        this.authenticationV2 = authenticationV2;
-        this.authorizationV2 = authorizationV2;
-    }
-    @Override
-    public void register(RouterBuilder routerBuilder) {
+  public AdminController(AdminHandler adminHandler, AuthorizationHandler authorizationV2) {
+    this.adminHandler = adminHandler;
+    this.authorizationV2 = authorizationV2;
+  }
 
-        var selfAccess = authorizationV2.forScopes(Scopes.DATA_ACCESS);
-        var adminAccess = authorizationV2.forScopes(Scopes.USER_MANAGEMENT);
+  @Override
+  public void register(RouterBuilder routerBuilder) {
 
-        routerBuilder
-                .operation("get-auth-v2-user")
-                .handler(authenticationV2)
-                .handler(selfAccess)
-                .handler(adminHandler::getDxUserInfo);
+    var selfAccess = authorizationV2.forScopes(Scopes.DATA_ACCESS);
+    var adminAccess = authorizationV2.forScopes(Scopes.USER_MANAGEMENT);
 
-        routerBuilder
-                .operation("get-auth-v2-user-id-admin")
-                .handler(authenticationV2)
-                .handler(adminAccess)
-                .handler(adminHandler::getDxUserFromKeycloak);
+    routerBuilder
+        .operation("get-auth-v2-user")
+        .handler(selfAccess)
+        .handler(adminHandler::getDxUserInfo);
 
-        routerBuilder
-                .operation("get-auth-v2-admin-user")
-                .handler(authenticationV2)
-                .handler(adminAccess)
-                .handler(adminHandler::getAllDxUsersKeycloak);
+    routerBuilder
+        .operation("get-auth-v2-user-id-admin")
+        .handler(adminAccess)
+        .handler(adminHandler::getDxUserFromKeycloak);
 
-        routerBuilder
-          .operation("get-auth-v2-user-search")
-          .handler(authenticationV2)
-          .handler(selfAccess)
-          .handler(adminHandler::getAllUsersInfoKeycloak);
+    routerBuilder
+        .operation("get-auth-v2-admin-user")
+        .handler(adminAccess)
+        .handler(adminHandler::getAllDxUsersKeycloak);
 
-        routerBuilder
-                .operation("put-auth-v2-user")
-                .handler(authenticationV2)
-                .handler(selfAccess)
-                .handler(adminHandler::updateDxUserInfo);
-        routerBuilder
-                .operation("put-auth-v2-user-password")
-                .handler(authenticationV2)
-                .handler(selfAccess)
-                .handler(adminHandler::updatePassword);
+    routerBuilder
+        .operation("get-auth-v2-user-search")
+        .handler(selfAccess)
+        .handler(adminHandler::getAllUsersInfoKeycloak);
 
-      routerBuilder
+    routerBuilder
+        .operation("put-auth-v2-user")
+        .handler(selfAccess)
+        .handler(adminHandler::updateDxUserInfo);
+    routerBuilder
+        .operation("put-auth-v2-user-password")
+        .handler(selfAccess)
+        .handler(adminHandler::updatePassword);
+
+    routerBuilder
         .operation("post-auth-v2-user-update")
-        .handler(authenticationV2)
         .handler(selfAccess)
         .handler(adminHandler::updateUserStatus);
 
-      routerBuilder
+    routerBuilder
         .operation("delete-auth-v2-user")
-        .handler(authenticationV2)
         .handler(selfAccess)
         .handler(adminHandler::deleteDxUser);
 
-      routerBuilder
+    routerBuilder
         .operation("post-auth-v2-admin-id-update")
-        .handler(authenticationV2)
         .handler(adminAccess)
         .handler(adminHandler::updateDxUserStatusById);
-
-    }
+  }
 }

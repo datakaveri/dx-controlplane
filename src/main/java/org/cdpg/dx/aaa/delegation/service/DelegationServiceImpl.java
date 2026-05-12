@@ -588,7 +588,7 @@ public class DelegationServiceImpl implements DelegationService{
                   return fullAccessResponse();
                 }
 
-                if ("data_access".equals(scope.scope())) {
+                if ("data-access".equals(scope.scope())) {
 
                   if ("*".equals(scope.entityId())) {
                     return fullAccessResponse();

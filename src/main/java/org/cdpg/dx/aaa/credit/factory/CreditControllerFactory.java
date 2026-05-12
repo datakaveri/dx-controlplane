@@ -31,7 +31,7 @@ public class CreditControllerFactory {
     CreditBalanceHandler creditBalanceHandler = new CreditBalanceHandler(creditService, emailComposer, keycloakUserService, urnGenerator);
     ComputeRoleHandler computeRoleHandler = new ComputeRoleHandler(creditService, emailComposer, userService, organizationService, keycloakUserService, urnGenerator);
 
-    return new CreditController(creditRequestHandler, creditBalanceHandler, computeRoleHandler, auditingHandler, isKycRequired, authV2.authentication(), authV2.authorization());
+    return new CreditController(creditRequestHandler, creditBalanceHandler, computeRoleHandler, auditingHandler, isKycRequired, authV2.authorization());
   }
 
   public static CreditService createService(PostgresService pgService, KeycloakUserService keycloakUserService, JsonObject config) {
