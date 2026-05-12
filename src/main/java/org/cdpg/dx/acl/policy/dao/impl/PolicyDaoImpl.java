@@ -19,6 +19,7 @@ import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.POLICY_TABLE;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.USER_TABLE;
 import static org.cdpg.dx.common.HttpStatusCode.INTERNAL_SERVER_ERROR;
+import static org.cdpg.dx.database.postgres.util.ConditionBuilder.fromFilters;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -28,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -36,11 +38,14 @@ import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.model.PolicyDto;
 import org.cdpg.dx.acl.policy.service.model.CreatePolicyRequest;
 import org.cdpg.dx.common.HttpStatusCode;
+import org.cdpg.dx.common.exception.BaseDxException;
+import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.database.postgres.base.dao.AbstractBaseDAO;
 import org.cdpg.dx.database.postgres.models.Condition;
 import org.cdpg.dx.database.postgres.models.InsertQuery;
 import org.cdpg.dx.database.postgres.models.Join;
 import org.cdpg.dx.database.postgres.models.OrderBy;
+import org.cdpg.dx.database.postgres.models.PaginatedResult;
 import org.cdpg.dx.database.postgres.models.QueryResult;
 import org.cdpg.dx.database.postgres.models.SelectQuery;
 import org.cdpg.dx.database.postgres.models.UpdateQuery;
@@ -335,6 +340,81 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
     LOGGER.debug("Soft deleting policy for item {} user {}", itemId, userId);
 
     return postgresService.update(query);
+  }
+
+  @Override
+  public Future<PaginatedResult<PolicyDto>> getPoliciesWithAccessControl(
+      PaginatedRequest request,
+      Set<String> policyIds,
+      String consumerId) {
+
+    int page = request.page() > 0 ? request.page() : 1;
+    int size = request.size() > 0 ? request.size() : 10;
+    int offset = (page - 1) * size;
+
+    /*
+     * Existing request filters
+     */
+    Condition requestCondition =
+        fromFilters(request.filters(), request.temporalRequests());
+
+    /*
+     * (_id IN (...) OR consumer_id = ?)
+     */
+    List<Condition> orConditions = new ArrayList<>();
+
+    if (policyIds != null && !policyIds.isEmpty()) {
+      orConditions.add(
+          new Condition(DB_ID, Condition.Operator.EQUALS, new ArrayList<>(policyIds)));
+    }
+
+    if (consumerId != null) {
+      orConditions.add(
+          new Condition(DB_CONSUMER_ID,
+              Condition.Operator.EQUALS,
+              List.of(consumerId)));
+    }
+
+    Condition accessCondition =
+        new Condition(orConditions, Condition.LogicalOperator.OR);
+
+    /*
+     * Final:
+     * (request filters)
+     * AND
+     * (_id IN (...) OR consumer_id = ?)
+     */
+    Condition finalCondition;
+
+    if (requestCondition != null) {
+      finalCondition =
+          new Condition(
+              List.of(requestCondition, accessCondition),
+              Condition.LogicalOperator.AND);
+    } else {
+      finalCondition = accessCondition;
+    }
+
+    SelectQuery query =
+        new SelectQuery(
+            POLICY_TABLE,
+            List.of("*"),
+            finalCondition,
+            null,
+            request.orderByList(),
+            size,
+            offset);
+
+    LOGGER.info("Executing consumer policy query: {}", query);
+
+    return postgresService
+        .select(query, true)
+        .map(result -> toPaginatedResult(result, page, size))
+        .recover(
+            err -> {
+              LOGGER.error("Failed fetching policies: {}", err.getMessage(), err);
+              return Future.failedFuture(BaseDxException.from(err));
+            });
   }
 
   private String generateErrorResponse(HttpStatusCode httpStatusCode, String errorMessage) {

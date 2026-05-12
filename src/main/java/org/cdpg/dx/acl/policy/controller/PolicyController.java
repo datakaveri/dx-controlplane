@@ -35,6 +35,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -48,6 +49,8 @@ import org.cdpg.dx.acl.policy.dao.model.PolicyDto;
 import org.cdpg.dx.acl.policy.service.PolicyService;
 import org.cdpg.dx.acl.policy.service.model.CreatePolicyRequest;
 import org.cdpg.dx.acl.policy.util.UserAccessHandler;
+import org.cdpg.dx.acl.rule.dao.AccessRuleDao;
+import org.cdpg.dx.acl.rule.dao.impl.AccessRuleDaoImpl;
 import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
@@ -75,6 +78,7 @@ public class PolicyController implements ApiController {
   private final URNGenerator urnGenerator;
   private final JsonObject config;
   private final AuthorizationHandler authorizationV2;
+  private final AccessRuleDao accessRuleDao;
 
   public PolicyController(
       PolicyService policyService,
@@ -91,6 +95,7 @@ public class PolicyController implements ApiController {
     this.urnGenerator = urnGenerator;
     this.config = config;
     this.authorizationV2 = authorizationV2;
+    this.accessRuleDao = new AccessRuleDaoImpl(postgresService);
   }
 
   @Override
@@ -423,45 +428,56 @@ public class PolicyController implements ApiController {
 
   private void getConsumerPoliciesHandler(RoutingContext ctx) {
     LOGGER.info("Handling getConsumerPolicies request...");
-    User user = ctx.user();
+
+    DxUser user = RoutingContextHelper.fromPrincipal(ctx);
 
     Map<String, String> allowedFilters =
-        Map.of("status", DB_STATUS, "organizationId", DB_ASSET_ORGANIZATION_ID);
-    Map<String, Object> additionalFilters = Map.of("consumer_id", user.subject());
+        Map.of(
+            "status", DB_STATUS,
+            "organizationId", DB_ASSET_ORGANIZATION_ID);
+
     Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
+
     Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
 
-    PaginatedRequest request =
-        PaginationRequestBuilder.from(ctx)
-            .allowedFiltersDbMap(allowedFilters)
-            .apiToDbMap(API_TO_DB_MAP)
-            .additionalFilters(additionalFilters)
-            .allowedTimeFields(allowedTimeFields)
-            .defaultTimeField("created_at")
-            .defaultSort("updated_at", DEFAULT_SORTING_ORDER)
-            .allowedSortFields(allowedSortFields)
-            .build();
+    accessRuleDao
+        .getAccessiblePolicyIds(user.sub().toString(), user.organisationId(), user.roles())
+        .compose(
+            policyIds -> {
+              LOGGER.info("Accessible policy ids for user {} : {}", user.sub(), policyIds);
 
-    LOGGER.info("PaginatedRequest created for getActivityLogForConsumer:  {}", request);
+              PaginatedRequest request =
+                  PaginationRequestBuilder.from(ctx)
+                      .allowedFiltersDbMap(allowedFilters)
+                      .apiToDbMap(API_TO_DB_MAP)
+                      .allowedTimeFields(allowedTimeFields)
+                      .defaultTimeField("created_at")
+                      .defaultSort("updated_at", DEFAULT_SORTING_ORDER)
+                      .allowedSortFields(allowedSortFields)
+                      .build();
 
-    policyService
-        .listPolicies(request)
+              return policyService.listPolicies(
+                  request,
+                  policyIds == null ? Set.of() : policyIds.stream().collect(Collectors.toSet()),
+                  user.sub().toString());
+
+            })
         .compose(policyService::enrichPolicyRequestsWithItemDetails)
         .compose(policyService::enrichPolicyRequestsWithUserInfo)
         .onSuccess(
             pagedResult -> {
-              LOGGER.info("Successfully fetched access requests for user: {}", user.subject());
+              LOGGER.info("Successfully fetched policies for user: {}", user.sub());
+
               ResponseBuilder.sendSuccess(
                   ctx,
-                  pagedResult.data().stream()
-                      .map(PolicyDto::toJson) // call toJson on each object
-                      .collect(Collectors.toList()),
+                  pagedResult.data().stream().map(PolicyDto::toJson).collect(Collectors.toList()),
                   pagedResult.paginationInfo(),
                   urnGenerator);
             })
         .onFailure(
             err -> {
-              LOGGER.error("Error fetching access requests: {}", err.getMessage(), err);
+              LOGGER.error("Error fetching consumer policies: {}", err.getMessage(), err);
+
               ctx.fail(err);
             });
   }

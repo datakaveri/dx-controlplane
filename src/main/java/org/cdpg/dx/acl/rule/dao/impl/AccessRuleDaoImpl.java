@@ -27,7 +27,9 @@ import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -330,5 +332,105 @@ public class AccessRuleDaoImpl implements AccessRuleDao {
         .onSuccess(v -> LOGGER.info("Access rules deactivated for policyId={}", policyId))
         .onFailure(
             err -> LOGGER.error("Failed to update access rules for policyId={}", policyId, err));
+  }
+
+  @Override
+  public Future<Set<String>> getAccessiblePolicyIds(String userId, String orgId,
+                                                   List<String> roles) {
+
+    List<Join> joins =
+        List.of(
+            new Join(Join.JoinType.LEFT, ACSESS_RULE_ALLOWED_USER_TABLE, "U", "R._id", DB_RULE_ID),
+            new Join(Join.JoinType.LEFT, ACCESS_RULE_ALLOWED_ORG_TABLE, "O", "R._id", DB_RULE_ID),
+            new Join(
+                Join.JoinType.LEFT, ACCESS_RULE_ALLOWED_ROLE_TABLE, "RL", "R._id", DB_RULE_ID));
+
+    List<Condition> conditions = new ArrayList<>();
+
+    conditions.add(new Condition("R.status", Condition.Operator.EQUALS, List.of(ACTIVE)));
+
+    /*
+     * ORG CONDITION
+     *
+     * Rule matches if:
+     *   - no org restriction exists
+     *   OR
+     *   - org matches
+     */
+    if (orgId != null) {
+
+      Condition orgMatch = new Condition("O.org_id", Condition.Operator.EQUALS, List.of(orgId));
+
+      Condition orgNotConfigured = new Condition("O.org_id", Condition.Operator.IS_NULL, null);
+
+      conditions.add(
+          new Condition(List.of(orgMatch, orgNotConfigured), Condition.LogicalOperator.OR));
+    } else {
+
+      conditions.add(new Condition("O.org_id", Condition.Operator.IS_NULL, null));
+    }
+
+    /*
+     * USER CONDITION
+     *
+     * Rule matches if:
+     *   - no user restriction exists
+     *   OR
+     *   - user matches
+     */
+    Condition userMatch = new Condition("U.user_id", Condition.Operator.EQUALS, List.of(userId));
+
+    Condition userNotConfigured = new Condition("U.user_id", Condition.Operator.IS_NULL, null);
+
+    conditions.add(
+        new Condition(List.of(userMatch, userNotConfigured), Condition.LogicalOperator.OR));
+
+    /*
+     * ROLE CONDITION
+     *
+     * Rule matches if:
+     *   - no role restriction exists
+     *   OR
+     *   - role matches
+     */
+    if (roles != null && !roles.isEmpty()) {
+
+      Condition roleMatch = new Condition("RL.role", Condition.Operator.IN, new ArrayList<>(roles));
+
+      Condition roleNotConfigured = new Condition("RL.role", Condition.Operator.IS_NULL, null);
+
+      conditions.add(
+          new Condition(List.of(roleMatch, roleNotConfigured), Condition.LogicalOperator.OR));
+
+    } else {
+
+      conditions.add(new Condition("RL.role", Condition.Operator.IS_NULL, null));
+    }
+
+    Condition finalCondition = new Condition(conditions, Condition.LogicalOperator.AND);
+
+    SelectQuery selectQuery =
+        new SelectQuery()
+            .setTable(ACCESS_RULE_TABLE)
+            .setTableAlias("R")
+            .setColumns(List.of("DISTINCT R.policy_id"))
+            .setJoins(joins)
+            .setCondition(finalCondition);
+
+    return postgresService
+        .select(selectQuery, false)
+        .map(
+            result -> {
+              Set<String> policyIds = new HashSet<>();
+
+              for (Object rowObj : result.getRows()) {
+
+                JsonObject row = (JsonObject) rowObj;
+
+                policyIds.add(row.getString(DB_POLICY_ID));
+              }
+
+              return policyIds;
+            });
   }
 }
