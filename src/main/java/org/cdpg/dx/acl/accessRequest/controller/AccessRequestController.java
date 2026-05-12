@@ -18,6 +18,7 @@ import static org.cdpg.dx.acl.accessRequest.util.Constants.API_TO_DB_MAP;
 import static org.cdpg.dx.acl.accessRequest.util.EmailType.CONSUMER_ACK;
 import static org.cdpg.dx.acl.accessRequest.util.EmailType.CONSUMER_UPDATE;
 import static org.cdpg.dx.acl.accessRequest.util.EmailType.PROVIDER_CREATE;
+import static org.cdpg.dx.auth.v2.handler.AuthorizationHandler.PRINCIPAL_KEY;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
 import io.vertx.core.Future;
@@ -46,6 +47,7 @@ import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.v2.handler.ScopeRule;
+import org.cdpg.dx.auth.v2.model.DxPrincipal;
 import org.cdpg.dx.auth.v2.model.Scopes;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.email.SendEmail;
@@ -502,8 +504,12 @@ public class AccessRequestController implements ApiController {
     JsonObject additionalInfo = body.getJsonObject("additionalInfo");
     JsonObject constraints = body.getJsonObject("constraints");
     DxUser consumer;
+    DxPrincipal principal;
+
+
     try {
-      consumer = RoutingContextHelper.fromPrincipal(ctx);
+        principal =  ctx.get(PRINCIPAL_KEY);
+    //  consumer = RoutingContextHelper.fromPrincipal(ctx);
     } catch (Exception e) {
       LOGGER.error("Error extracting user from token: {}", e.getMessage(), e);
       ctx.fail(new DxForbiddenException("Invalid user"));
@@ -511,7 +517,7 @@ public class AccessRequestController implements ApiController {
     }
 
     accessRequestService
-        .createAccessRequest(consumer, itemId, requestType, additionalInfo, constraints)
+        .createAccessRequest(UUID.fromString(principal.getAuthenticatedSub()), itemId, requestType, additionalInfo, constraints)
         .onSuccess(
             accessRequestDto -> {
               UserActivityAuditLogBuilder auditLog =

@@ -185,10 +185,10 @@ public class TokenServiceImpl implements TokenService {
 //          LOGGER.info("Scope Constraints is {}",constraint.toJson());
           scopes.add(constraint.getString("scope"));
 
-          if ("data_access".equalsIgnoreCase(constraint.getString("scope"))) {
+          if ("data-access".equalsIgnoreCase(constraint.getString("scope"))) {
             if (constraint.getString("entity_id") == null) {
               return Future.failedFuture(
-                new DxBadRequestException("Entity ID cannot be null for data_access scope")
+                new DxBadRequestException("Entity ID cannot be null for data-access scope")
               );
             }
 //            entityIds.add(constraint.entityId().toString());

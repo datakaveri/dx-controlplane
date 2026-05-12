@@ -5,6 +5,7 @@ import static org.cdpg.dx.aaa.apiserver.OperationIds.OP_GET_ACTIVITY_FOR_CONSUME
 import static org.cdpg.dx.auditing.v2.Constant.ActivityApiParamConstants.*;
 import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.CREATED_AT;
 import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.USER_ID;
+import static org.cdpg.dx.auth.v2.handler.AuthorizationHandler.PRINCIPAL_KEY;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_FIELD;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
@@ -20,8 +21,10 @@ import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.aaa.activity.service.UserActivityAuditLogService;
 import org.cdpg.dx.auditing.v2.util.Util;
 import org.cdpg.dx.auth.v2.handler.*;
+import org.cdpg.dx.auth.v2.model.DxPrincipal;
 import org.cdpg.dx.auth.v2.model.Scopes;
 import org.cdpg.dx.common.URNGenerator;
+import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
@@ -59,9 +62,18 @@ public class ActivityController implements ApiController {
   private void handleGetAllActivityLogsForUser(RoutingContext context) {
     LOGGER.info("handleGetAllActivityLogsForUser() started");
 
-    User user = context.user();
+    DxPrincipal principal;
 
-    Map<String, Object> additionalFilters = Map.of(USER_ID, user.subject());
+    try {
+      principal = context.get(PRINCIPAL_KEY);
+      //  consumer = RoutingContextHelper.fromPrincipal(ctx);
+    } catch (Exception e) {
+      LOGGER.error("Error extracting user from token: {}", e.getMessage(), e);
+      context.fail(new DxForbiddenException("Invalid user"));
+      return;
+    }
+
+    Map<String, Object> additionalFilters = Map.of(USER_ID, principal.getAuthenticatedSub());
 
     PaginatedRequest request =
         PaginationRequestBuilder.from(context)
@@ -80,9 +92,11 @@ public class ActivityController implements ApiController {
         .getUserActivityLogForConsumer(request)
         .onSuccess(
             pagedResult -> {
-              LOGGER.info("Successfully fetched activity logs for user: {}", user.subject());
+              LOGGER.info(
+                  "Successfully fetched activity logs for user: {}",
+                  principal.getAuthenticatedSub());
               if (pagedResult.data().isEmpty()) {
-                LOGGER.info("No activity logs found for user: {}", user.subject());
+                LOGGER.info("No activity logs found for user: {}", principal.getAuthenticatedSub());
                 ResponseBuilder.sendNoContent(context, urnGenerator);
                 return;
               }

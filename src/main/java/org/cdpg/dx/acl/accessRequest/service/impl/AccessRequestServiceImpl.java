@@ -78,14 +78,14 @@ public class AccessRequestServiceImpl implements AccessRequestService {
 
   @Override
   public Future<AccessRequestDto> createAccessRequest(
-      DxUser consumer,
+      UUID consumerId,
       UUID itemId,
       RequestType requestType,
       JsonObject additionalInfo,
       JsonObject constraints) {
 
     return keycloakUserService
-        .getUserById(consumer.sub())
+        .getUserById(consumerId)
         .compose(
             fullUser -> {
               AccessRequestDto accessRequestDto =
