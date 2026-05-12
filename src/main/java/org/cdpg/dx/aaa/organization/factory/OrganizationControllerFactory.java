@@ -99,7 +99,6 @@ public class OrganizationControllerFactory {
         providerRoleHandler,
         auditingHandler,
         kycRequired,
-        authV2.authentication(),
         authV2.authorization());
   }
 

@@ -80,6 +80,7 @@ public final class LocalAppCredentialLookup implements AppCredentialLookup {
 
   private static AppPrincipal buildPrincipal(
       AppCredentials app, List<AppConstraints> constraints) {
+    System.out.println("constraints: " + constraints.getFirst().toJson());
     List<String> scopes =
         constraints.stream()
             .map(AppConstraints::scope)

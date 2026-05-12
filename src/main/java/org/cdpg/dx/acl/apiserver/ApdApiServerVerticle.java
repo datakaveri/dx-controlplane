@@ -15,6 +15,7 @@ import org.cdpg.dx.apiserver.AbstractApiServerVerticle;
 import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.auth.v2.factory.AuthHandlersV2;
 import org.cdpg.dx.auth.v2.factory.LocalAuthV2Factory;
+import org.cdpg.dx.auth.v2.handler.AuthenticationHandlerV2;
 import org.cdpg.dx.common.URNGenerator;
 
 public class ApdApiServerVerticle extends AbstractApiServerVerticle {
@@ -49,7 +50,7 @@ public class ApdApiServerVerticle extends AbstractApiServerVerticle {
   @Override
   protected List<ApiController> createControllers(
       Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
-    this.authV2Pair = LocalAuthV2Factory.buildPair(vertx, config);
+    this.authV2Pair = LocalAuthV2Factory.buildPair(vertx, config, this.jwksResolver);
     return ControllerFactory.createControllers(vertx, config, urnGenerator, authV2Pair);
   }
 
@@ -62,7 +63,7 @@ public class ApdApiServerVerticle extends AbstractApiServerVerticle {
   }
 
   @Override
-  protected Handler<RoutingContext> getAuthV2Handler() {
+  protected AuthenticationHandlerV2 getAuthV2Handler() {
     return authV2Pair.authentication();
   }
 
@@ -74,8 +75,7 @@ public class ApdApiServerVerticle extends AbstractApiServerVerticle {
       String keystorePassword = config().getString("keystorePassword");
       serverOptions
           .setSsl(true)
-          .setKeyCertOptions(
-              new KeyStoreOptions().setPath(keystore).setPassword(keystorePassword));
+          .setKeyCertOptions(new KeyStoreOptions().setPath(keystore).setPassword(keystorePassword));
     }
   }
 }

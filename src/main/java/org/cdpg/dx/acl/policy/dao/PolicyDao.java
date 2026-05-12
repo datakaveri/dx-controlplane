@@ -3,10 +3,12 @@ package org.cdpg.dx.acl.policy.dao;
 import io.vertx.core.Future;
 import java.util.List;
 import java.util.UUID;
+import org.cdpg.dx.acl.policy.dao.model.PolicyDto;
 import org.cdpg.dx.acl.policy.service.model.CreatePolicyRequest;
+import org.cdpg.dx.database.postgres.base.dao.BaseDAO;
 import org.cdpg.dx.database.postgres.models.QueryResult;
 
-public interface PolicyDao {
+public interface PolicyDao extends BaseDAO<PolicyDto> {
   Future<QueryResult> checkExistingPoliciesForIds(UUID itemId, UUID ownerId, String userEmail);
 
   Future<QueryResult> checkExistingPoliciesForIds(List<CreatePolicyRequest> requests, UUID ownerId);

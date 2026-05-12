@@ -64,7 +64,7 @@ public class GrpcServerVerticle extends AbstractVerticle {
     DataBrokerService dataBrokerService = DataBrokerService.createProxy(vertx, DATA_BROKER_SERVICE_ADDRESS);
     // delegationValidator is only needed by createApp(); this verticle never calls it
     AppCredentialsService appCredentialsService = new AppCredentialsServiceImpl(
-        null, appCredentialsDAO, appConstraintsDAO, dataBrokerService, config().getString("appIdRevokeExchange", "revoked-appid"));
+        null, appCredentialsDAO, appConstraintsDAO, dataBrokerService, config().getString("appIdRevokeExchange", "revoked-appid"),null);
 
     DelegationService delegationService = DelegationService.createProxy(vertx, DELEGATION_SERVICE_ADDRESS);
 

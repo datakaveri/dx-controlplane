@@ -91,16 +91,16 @@ public class DelegationValidator {
 
         switch (normalizedScope) {
 
-          case "user_management" ->
+          case "user-management" ->
             validations.add(validateOrgOwnership(actorId, entityIdList));
 
-          case "data_access" ->
+          case "data-access" ->
             validations.add(validateItemIdOwnership(actorId, entityIdList));
 
-          case "asset_management" ->
+          case "asset-management" ->
             validations.add(validateAssetRequestOwnership(actorId, entityIdList));
 
-          case "compute_management", "credit_management" -> {
+          case "compute-management", "credit-management" -> {
             LOGGER.debug("Skipping ownership validation for scope {}", scope);
           }
 

@@ -18,6 +18,6 @@ public class ActivityReportControllerFactory {
         new ActivityReportServiceImpl(activityLogDao, vertx);
 
     return new ActivityReportController(
-        activityReportService, authV2.authentication(), authV2.authorization());
+        activityReportService, authV2.authorization());
   }
 }

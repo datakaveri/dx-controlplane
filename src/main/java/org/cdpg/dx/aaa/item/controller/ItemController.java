@@ -13,11 +13,8 @@ import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.PATCH_ITEM;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.RESULT;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.UPDATE_ITEM;
 import static org.cdpg.dx.aaa.common.Constants.*;
-import static org.cdpg.dx.auth.authorization.model.DxScope.COS_ADMIN_ACCESS;
-import static org.cdpg.dx.auth.authorization.model.DxScope.ORG_ADMIN_ACCESS;
 import static org.cdpg.dx.database.elastic.util.Constants.DATA_UPLOAD_STATUS;
 import static org.cdpg.dx.database.elastic.util.Constants.VERIFIED_BY;
-import static org.cdpg.dx.keycloak.config.KeycloakConstants.SCOPES;
 
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -55,10 +52,10 @@ import org.cdpg.dx.aaa.item.service.ScriptGenerationService;
 import org.cdpg.dx.aaa.item.util.*;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
-import org.cdpg.dx.auth.authentication.util.AccessValidator;
-import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.cdpg.dx.auth.authorization.model.DxScope;
+import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
+import org.cdpg.dx.auth.v2.model.DxPrincipal;
+import org.cdpg.dx.auth.v2.model.Scopes;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
@@ -90,8 +87,7 @@ public class ItemController implements ApiController {
   private final ItemOwnershipValidator itemOwnershipValidator;
   private final VerifyItemTypeAndRole verifyItemTypeAndRole = new VerifyItemTypeAndRole();
   private final KeycloakUserService keycloakUserService;
-  Handler<RoutingContext> patchItemAccessHandler =
-      AuthorizationHandler.forRoles(DxRole.COS_ADMIN, DxRole.ORG_ADMIN, DxRole.PROVIDER);
+  private final AuthorizationHandler authorizationV2;
 
   public ItemController(
       AuditingHandler auditingHandler,
@@ -104,7 +100,8 @@ public class ItemController implements ApiController {
       URNGenerator urnGenerator,
       ItemRegistryService itemRegistryService,
       DelegationService delegationService,
-      KeycloakUserService keycloakUserService) {
+      KeycloakUserService keycloakUserService,
+      AuthorizationHandler authorizationV2) {
     this.auditingHandler = auditingHandler;
     this.itemService = itemService;
     this.centralItemService = centralItemService;
@@ -121,13 +118,23 @@ public class ItemController implements ApiController {
         new ItemFetchService(itemService, centralItemService, isCentralCatEnabled);
     this.delegationService = delegationService;
     this.keycloakUserService = keycloakUserService;
+    this.authorizationV2 = authorizationV2;
   }
 
   @Override
   public void register(RouterBuilder builder) {
+    Handler<RoutingContext> assetManagementAccess =
+        authorizationV2.forScopes(
+            Scopes.OWN_ASSET_MANAGEMENT,
+            Scopes.ORG_ASSET_MANAGEMENT,
+            Scopes.ASSET_MANAGEMENT);
+    Handler<RoutingContext> providerScriptAccess =
+        authorizationV2.forScopes(Scopes.OWN_ASSET_MANAGEMENT);
+
     builder
         .operation(CREATE_ITEM)
         .handler(auditingHandler::handleApiAudit)
+        .handler(assetManagementAccess)
         .handler(verifyItemTypeAndRole)
         .handler(this::handleCreateOrUpdateItem);
 
@@ -139,18 +146,20 @@ public class ItemController implements ApiController {
     builder
         .operation(DELETE_ITEM)
         .handler(auditingHandler::handleApiAudit)
+        .handler(assetManagementAccess)
         .handler(this::handleDeleteItem);
 
     builder
         .operation(UPDATE_ITEM)
         .handler(auditingHandler::handleApiAudit)
+        .handler(assetManagementAccess)
         .handler(verifyItemTypeAndRole)
         .handler(this::handleCreateOrUpdateItem);
 
     builder
         .operation(PATCH_ITEM)
         .handler(auditingHandler::handleApiAudit)
-        .handler(patchItemAccessHandler)
+        .handler(assetManagementAccess)
         .handler(this::handlePatchItem);
 
     builder
@@ -166,6 +175,7 @@ public class ItemController implements ApiController {
     builder
         .operation(DOWNLOAD_SCRIPT)
         .handler(auditingHandler::handleApiAudit)
+        .handler(providerScriptAccess)
         .handler(this::handleDownloadScript);
 
     LOGGER.debug("Item Controller registered");
@@ -207,18 +217,6 @@ public class ItemController implements ApiController {
 
   private void handleCreateOrUpdateItem(RoutingContext ctx) {
     LOGGER.debug("Handling create/update item");
-
-    User user = ctx.user();
-    JsonObject userJson = user.principal();
-
-    AccessValidator.validate(
-        userJson,
-        List.of( // primary roles (no scope check)
-            DxRole.PROVIDER.getRole(), DxRole.COS_ADMIN.getRole()),
-        List.of(
-            DxScope.ASSET_MANAGEMENT.getScope(),
-            COS_ADMIN_ACCESS.getScope(),
-            DxScope.ORG_ADMIN_ACCESS.getScope()));
 
     JsonObject body = ctx.body().asJsonObject();
 
@@ -267,18 +265,17 @@ public class ItemController implements ApiController {
       return;
     }
 
-    User user1 = ctx.user();
-    JsonObject userJson = user1.principal();
-    JsonArray scopes = userJson.getJsonArray(SCOPES);
-
-    AccessValidator.validate(
-        userJson,
-        List.of( // primary roles (no scope check)
-            DxRole.PROVIDER.getRole(), DxRole.COS_ADMIN.getRole()),
-        List.of(
-            DxScope.ASSET_MANAGEMENT.getScope(),
-            COS_ADMIN_ACCESS.getScope(),
-            DxScope.ORG_ADMIN_ACCESS.getScope()));
+    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
+    List<String> allowedRoles =
+        (principal.isDirectUser()
+                ? principal.getAuthorizationRoles()
+                : principal.getAuditRoles())
+            .stream()
+            .map(org.cdpg.dx.auth.v2.model.DxRole::keycloakName)
+            .collect(Collectors.toList());
+    boolean isAdmin =
+        allowedRoles.contains(DxRole.ORG_ADMIN.getRole())
+            || allowedRoles.contains(DxRole.COS_ADMIN.getRole());
 
     DxUser user = RoutingContextHelper.fromPrincipal(ctx);
     String userId = "";
@@ -300,17 +297,10 @@ public class ItemController implements ApiController {
             });
 
     LOGGER.debug("Keycloak ID: {},12aa: {}", orgId, id);
-    List<String> allowedRoles;
-    allowedRoles = ctx.get("allowedRoles");
     JsonObject body = ctx.body().asJsonObject();
     LOGGER.debug("Patch item request body: {}", body);
 
-    if (!allowedRoles.contains(DxRole.ORG_ADMIN.getRole())
-        && !allowedRoles.contains(DxRole.COS_ADMIN.getRole())
-        && !(allowedRoles.contains(DxRole.DELEGATE.getRole())
-            && (scopes.contains(COS_ADMIN_ACCESS) || scopes.contains(ORG_ADMIN_ACCESS)))
-        && (allowedRoles.contains(DxRole.PROVIDER.getRole())
-            || allowedRoles.contains(DxRole.DELEGATE.getRole()))) {
+    if (!isAdmin) {
       if (body.size() != 1 || !body.containsKey(DATA_UPLOAD_STATUS)) {
         ctx.fail(new DxForbiddenException("Providers can only patch dataUploadStatus field"));
         return;

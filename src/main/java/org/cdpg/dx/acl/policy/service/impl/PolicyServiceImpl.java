@@ -17,19 +17,21 @@ import static org.cdpg.dx.acl.accessRequest.config.Constants.CONSUMER_LAST_NAME;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_EMAIL_ID;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_FIRST_NAME;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_LAST_NAME;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.USER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSTRAINTS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_FIRST_NAME;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CONSUMER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_EXPIRY_AT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ITEM_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_OWNER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_USER_EMAIL_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.EMAIL;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.FIRST_NAME;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ITEM_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.LAST_NAME;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ORGANIZATION;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.OWNER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.POLICY_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.USER_EMAIL_ID;
@@ -37,6 +39,8 @@ import static org.cdpg.dx.auth.authorization.model.DxRole.CONSUMER;
 import static org.cdpg.dx.auth.authorization.model.DxRole.CONSUMER_DELEGATE;
 import static org.cdpg.dx.auth.authorization.model.DxRole.PROVIDER;
 import static org.cdpg.dx.auth.authorization.model.DxRole.PROVIDER_DELEGATE;
+import static org.cdpg.dx.catalogueService.config.Constants.ASSET_NAME_KEY;
+import static org.cdpg.dx.catalogueService.config.Constants.SHORT_DESCRIPTION;
 import static org.cdpg.dx.common.HttpStatusCode.BAD_REQUEST;
 import static org.cdpg.dx.common.HttpStatusCode.CONFLICT;
 import static org.cdpg.dx.common.HttpStatusCode.FORBIDDEN;
@@ -51,6 +55,7 @@ import io.vertx.core.json.JsonObject;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -60,31 +65,40 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.acl.accessRequest.dao.config.DbConstants;
+import org.cdpg.dx.acl.accessRequest.dao.model.AssetType;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.model.PolicyDto;
 import org.cdpg.dx.acl.policy.dao.model.VerifyPolicyDto;
 import org.cdpg.dx.acl.policy.service.PolicyService;
 import org.cdpg.dx.acl.policy.service.model.CreatePolicyRequest;
 import org.cdpg.dx.acl.rule.dao.AccessRuleDao;
+import org.cdpg.dx.catalogueService.config.Constants;
+import org.cdpg.dx.catalogueService.models.Asset;
 import org.cdpg.dx.catalogueService.models.ItemType;
 import org.cdpg.dx.common.HttpStatusCode;
 import org.cdpg.dx.common.ResponseUrn;
 import org.cdpg.dx.common.exception.DxForbiddenException;
+import org.cdpg.dx.common.exception.DxInternalServerErrorException;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.model.ResourceObj;
+import org.cdpg.dx.common.request.PaginatedRequest;
+import org.cdpg.dx.database.postgres.models.PaginatedResult;
 import org.cdpg.dx.database.postgres.models.QueryResult;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class PolicyServiceImpl implements PolicyService {
   private static final Logger LOGGER = LogManager.getLogger(PolicyServiceImpl.class);
   private static final String FAILURE_MESSAGE = "Policy could not be deleted";
   private final ItemService itemService;
+  private final KeycloakUserService keycloakUserService;
   private final PolicyDao policyDao;
   private final AccessRuleDao accessRuleDao;
   private final String apdUrl;
 
   public PolicyServiceImpl(
-      ItemService itemService, PolicyDao policyDao, AccessRuleDao accessRuleDao, String apdUrl) {
+      ItemService itemService, KeycloakUserService keycloakUserService, PolicyDao policyDao, AccessRuleDao accessRuleDao, String apdUrl) {
     this.itemService = itemService;
+    this.keycloakUserService = keycloakUserService;
     this.accessRuleDao = accessRuleDao;
     this.apdUrl = apdUrl;
     this.policyDao = policyDao;
@@ -117,6 +131,23 @@ public class PolicyServiceImpl implements PolicyService {
             resourceObjs -> {
               Set<UUID> providerIds =
                   resourceObjs.stream().map(ResourceObj::getProviderId).collect(Collectors.toSet());
+
+              // Build map: itemId -> organizationId
+              Map<UUID, UUID> itemOrgMap =
+                  resourceObjs.stream()
+                      .collect(Collectors.toMap(ResourceObj::getItemId,
+                          ResourceObj::getOrganizationId));
+
+              //Enrich requests
+              requests.forEach(req -> {
+                UUID orgId = itemOrgMap.get(req.getItemId());
+                if (orgId != null) {
+                  req.setItemOrganizationId(orgId.toString());
+                }
+                if (!itemOrgMap.containsKey(req.getItemId())) {
+                  throw new IllegalStateException("Missing orgId for item: " + req.getItemId());
+                }
+              });
 
               boolean isOwner = providerIds.stream().allMatch(id -> id.equals(userId));
 
@@ -289,6 +320,7 @@ public class PolicyServiceImpl implements PolicyService {
         .getItem(request)
         .onFailure(
             ar -> {
+              LOGGER.error(ar.getCause().getLocalizedMessage());
               LOGGER.error("fetchItem error : {}", ar.getMessage());
               promise.fail(INTERNAL_SERVER_ERROR.getDescription());
             })
@@ -558,11 +590,11 @@ public class PolicyServiceImpl implements PolicyService {
   /** Verify if an ACTIVE policy exists for a given user/item pair. */
   @Override
   public Future<VerifyPolicyDto> initiateVerifyPolicy(
-      UUID ownerId, String userEmail, UUID itemId, ItemType itemType, DxUser user) {
+      UUID ownerId, String userId, UUID itemId, ItemType itemType, DxUser user) {
     Promise<VerifyPolicyDto> promise = Promise.promise();
 
     policyDao
-        .checkExistingPoliciesForIds(itemId, ownerId, userEmail)
+        .checkExistingPoliciesForIds(itemId, ownerId, userId)
         .onSuccess(
             queryResult -> {
               JsonArray rows = queryResult.getRows();
@@ -600,6 +632,133 @@ public class PolicyServiceImpl implements PolicyService {
     return promise.future();
   }
 
+  @Override
+  public Future<PaginatedResult<PolicyDto>> listPolicies(PaginatedRequest request) {
+    return policyDao.getAllWithFilters(request);
+  }
+
+  @Override
+  public Future<PaginatedResult<PolicyDto>> enrichPolicyRequestsWithItemDetails(
+      PaginatedResult<PolicyDto> pagedResult) {
+
+    List<Future<?>> futures = new ArrayList<>();
+
+    for (PolicyDto dto : pagedResult.data()) {
+
+      if (dto.getItemId() == null) continue;
+
+      GetItemRequest request = new GetItemRequest(dto.getItemId(), "");
+
+      Future<Void> future =
+          itemService
+              .getItem(request)
+              .onSuccess(
+                  response -> {
+                    if (!response.getElasticsearchResponses().isEmpty()) {
+
+                      JsonObject itemJson = response.getElasticsearchResponses().getFirst();
+                      Asset asset = parseAndGetAsset(itemJson, dto.getItemId());
+
+                      // Override DB values with catalogue values
+                      dto.setAssetName(asset.getAssetName());
+                      dto.setAssetType(asset.getAssetType());
+                      dto.setShortDescription(asset.getShortDescription());
+                      dto.setItemOrganizationId(asset.getOrganizationId());
+                      dto.setItemOrganizationName(asset.getOrganizationName());
+                      dto.setProviderId(asset.getProviderId());
+                    }
+                  })
+              .onFailure(
+                  err -> {
+                    LOGGER.warn("Failed to fetch item {}: {}", dto.getItemId(), err.getMessage());
+                    // fallback: keep DB values
+                  })
+              .mapEmpty();
+
+      futures.add(future);
+    }
+
+    return Future.all(futures).map(v -> pagedResult);
+  }
+
+  @Override
+  public Future<PaginatedResult<PolicyDto>> enrichPolicyRequestsWithUserInfo(
+      PaginatedResult<PolicyDto> pagedResult) {
+
+    List<Future<?>> futures = new ArrayList<>();
+
+    for (PolicyDto dto : pagedResult.data()) {
+
+      if (dto.getConsumerId() == null) continue;
+
+      Future<Void> future =
+          keycloakUserService
+              .getUserById(UUID.fromString(dto.getConsumerId()))
+              .onSuccess(user -> {
+                dto.setConsumerEmail(user.email());
+                dto.setConsumerFirstName(user.givenName());
+                dto.setConsumerLastName(user.familyName());
+                dto.setConsumerOrganization(user.organisationName());
+              })
+              .onFailure(err ->
+                  LOGGER.warn("Failed to fetch user {}: {}", dto.getConsumerId(), err.getMessage()))
+              .mapEmpty();
+
+      futures.add(future);
+    }
+
+    return Future.all(futures).map(v -> pagedResult);
+  }
+  private Asset parseAndGetAsset(JsonObject result, String id) {
+    LOGGER.debug("Asset info : {}", result.encodePrettily());
+    try {
+      String assetName = result.getString(ASSET_NAME_KEY, "").trim();
+      String provider = result.getString(Constants.OWNER_ID);
+      String organizationId = result.getString(Constants.ORGANIZATION_ID);
+      String shortDescription = result.getString(SHORT_DESCRIPTION, "").trim();
+      String organizationName = result.getString(ORGANIZATION, "");
+
+      AssetType catAssetType = null;
+      JsonArray typeArray = result.getJsonArray(Constants.TYPE);
+      if (typeArray != null) {
+        for (Object type : typeArray) {
+          String typeStr = type.toString();
+          catAssetType = AssetType.fromString(typeStr);
+        }
+      }
+
+      // Validation
+      if (provider == null
+          || assetName.isEmpty()
+          || catAssetType == null
+          || organizationId == null
+          || shortDescription == null) {
+        LOGGER.error("Asset metadata invalid for id: {}", id);
+        LOGGER.error(
+            "Provider: {}, AssetName: {}, AssetType: {}, OrgId: {}, shortDescription : {}",
+            provider,
+            assetName,
+            catAssetType,
+            organizationId,
+            shortDescription);
+        throw new DxInternalServerErrorException("Incomplete asset metadata from catalogue");
+      }
+
+      return new Asset()
+          .setItemId(id)
+          .setProviderId(provider)
+          .setOrganizationId(organizationId)
+          .setOrganizationName(organizationName)
+          .setAssetType(catAssetType.getAssetType())
+          .setAssetName(assetName)
+          .setShortDescription(shortDescription);
+
+    } catch (Exception e) {
+      LOGGER.error("Error building asset from catalogue metadata: {}", e.getMessage(), e);
+      throw new DxInternalServerErrorException("Incomplete asset metadata from catalogue");
+    }
+  }
+
   private String generateErrorResponse(HttpStatusCode httpStatusCode, String errorMessage) {
     return new JsonObject()
         .put(TYPE, httpStatusCode.getValue())
@@ -619,7 +778,7 @@ public class PolicyServiceImpl implements PolicyService {
         JsonObject jsonObject =
             new JsonObject()
                 .put(POLICY_ID, row.getString(DB_ID))
-                .put(USER_EMAIL_ID, row.getString(DB_USER_EMAIL_ID))
+                .put(USER_ID, row.getString(DB_CONSUMER_ID))
                 .put(ITEM_ID, row.getString(DB_ITEM_ID))
                 .put(DB_EXPIRY_AT, row.getString(DB_EXPIRY_AT));
 

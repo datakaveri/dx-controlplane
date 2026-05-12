@@ -17,7 +17,6 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.ActivityReport.service.ActivityReportService;
 import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.auditing.v2.util.Util;
-import org.cdpg.dx.auth.v2.handler.AuthenticationHandler;
 import org.cdpg.dx.auth.v2.handler.AuthorizationContext;
 import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.v2.handler.ScopeRule;
@@ -28,15 +27,12 @@ import org.cdpg.dx.common.request.PaginationRequestBuilder;
 public class ActivityReportController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(ActivityReportController.class);
   private final ActivityReportService reportService;
-  private final AuthenticationHandler authenticationV2;
   private final AuthorizationHandler authorizationV2;
 
   public ActivityReportController(
       ActivityReportService reportService,
-      AuthenticationHandler authenticationV2,
       AuthorizationHandler authorizationV2) {
     this.reportService = reportService;
-    this.authenticationV2 = authenticationV2;
     this.authorizationV2 = authorizationV2;
   }
 
@@ -44,7 +40,6 @@ public class ActivityReportController implements ApiController {
   public void register(RouterBuilder builder) {
     builder
         .operation("get-admin-report")
-        .handler(authenticationV2)
         .handler(
             authorizationV2.forScopesWithContext(
                 ScopeRule.platform(Scopes.USER_MANAGEMENT),
@@ -52,7 +47,6 @@ public class ActivityReportController implements ApiController {
         .handler(this::handleGenerateCsvForAdmin);
     builder
         .operation("get-consumer-report")
-        .handler(authenticationV2)
         .handler(authorizationV2.forScopes(Scopes.DATA_ACCESS))
         .handler(this::handleGenerateCsvForConsumer);
   }

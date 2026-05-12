@@ -162,58 +162,58 @@ public class AppTokenServiceImpl implements AppTokenService {
               LOGGER.info("highestRole: {}", highestRole);
               switch (highestRole) {
                 case "cos_admin" -> finalScopes.addAll(List.of(
-                  "cos_admin_access",
-                  "asset_management",
-                  "compute_management",
-                  "user_management",
-                  "credit_management",
+                  "cos-admin-access",
+                  "asset-management",
+                  "compute-management",
+                  "user-management",
+                  "credit-management",
                   "publish"));
                 case "org_admin" -> finalScopes.addAll(List.of(
-                  "org_admin_access",
-                  "asset_management",
-                  "user_management",
+                  "org-admin-access",
+                  "asset-management",
+                  "user-management",
                   "publish"));
                 case "provider" -> finalScopes.addAll(List.of(
-                  "asset_management"));
+                  "asset-management"));
                 case "compute" -> finalScopes.addAll(List.of(
-                  "credit_management"));
+                  "credit-management"));
                 case "consumer" ->
                   {
                     finalScopes.addAll(List.of(
-                  "data_access"));
-                    needsItemCheck = true; // * includes data_access
+                  "data-access"));
+                    needsItemCheck = true; // * includes data-access
                   }
               }
             }
 
-            case "cos_admin_access" -> {
-              finalScopes.addAll(List.of("cos_admin_access", "user_management", "asset_management", "compute_management", "data_access"));
+            case "cos-admin-access" -> {
+              finalScopes.addAll(List.of("cos-admin-access", "user-management", "asset-management", "compute-management", "data-access"));
               finalRoles.addAll(List.of("cos_admin", "org_admin", "provider", "consumer", "compute"));
             }
 
-            case "org_admin_access" -> {
-              finalScopes.addAll(List.of("org_admin_access", "asset_management", "user_management", "data_access"));
+            case "org-admin-access" -> {
+              finalScopes.addAll(List.of("org-admin-access", "asset-management", "user-management", "data-access"));
               finalRoles.addAll(List.of("org_admin", "consumer"));
               finalRoles.remove("compute");
             }
 
-            case "user_management" -> {
-              finalScopes.add("user_management");
+            case "user-management" -> {
+              finalScopes.add("user-management");
               finalRoles.addAll(List.of("org_admin", "consumer"));
             }
 
-            case "asset_management" -> {
-              finalScopes.add("asset_management");
+            case "asset-management" -> {
+              finalScopes.add("asset-management");
               finalRoles.add("provider");
             }
 
-            case "compute_management" -> {
-              finalScopes.add("compute_management");
+            case "compute-management" -> {
+              finalScopes.add("compute-management");
               finalRoles.add("compute");
             }
 
-            case "data_access" -> {
-              finalScopes.add("data_access");
+            case "data-access" -> {
+              finalScopes.add("data-access");
               finalRoles.add("consumer");
               needsItemCheck = true;
             }
@@ -298,7 +298,7 @@ public class AppTokenServiceImpl implements AppTokenService {
     Set<String> dataItemTypes = Set.of("adex:Apps", "adex:DataBank", "adex:AiModel");
 
     return appConstraints.stream()
-      .filter(c -> "data_access".equalsIgnoreCase(c.scope()))
+      .filter(c -> "data-access".equalsIgnoreCase(c.scope()))
       .filter(c -> dataItemTypes.contains(c.entityType()))
       .filter(c -> c.entityId() != null && isValidUUID(c.entityId()))
       .map(AppConstraints::entityId)

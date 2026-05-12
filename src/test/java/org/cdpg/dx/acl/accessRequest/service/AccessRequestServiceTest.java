@@ -202,7 +202,8 @@ class AccessRequestServiceTest {
           .thenReturn(Future.succeededFuture(createdDto));
 
       accessRequestService
-          .createAccessRequest(consumer, itemId, RequestType.DOWNLOAD, additionalInfo, constraints)
+          .createAccessRequest(
+              consumer.sub(), itemId, RequestType.DOWNLOAD, additionalInfo, constraints)
           .onComplete(
               ctx.succeeding(
                   result ->
@@ -232,7 +233,7 @@ class AccessRequestServiceTest {
           .thenReturn(Future.succeededFuture(true));
 
       accessRequestService
-          .createAccessRequest(consumer, itemId, RequestType.DOWNLOAD, null, null)
+          .createAccessRequest(consumer.sub(), itemId, RequestType.DOWNLOAD, null, null)
           .onComplete(
               ctx.failing(
                   err ->
@@ -260,12 +261,9 @@ class AccessRequestServiceTest {
       LocalDateTime expiryAt = LocalDateTime.now().plusDays(30);
       JsonObject constraints =
           new JsonObject()
+              .put("access", new JsonArray().add(new JsonObject().put("accessType", "api")))
               .put(
-                  "access",
-                  new JsonArray().add(new JsonObject().put("accessType", "api")))
-              .put(
-                  "subjects",
-                  new JsonObject().put("allowedUserIds", new JsonArray().add("user1")));
+                  "subjects", new JsonObject().put("allowedUserIds", new JsonArray().add("user1")));
 
       // Mock ownership check
       when(accessRequestDao.ownershipCheck(requestId, providerId, providerOrgId, false))
@@ -284,13 +282,12 @@ class AccessRequestServiceTest {
       QueryResult emptyPolicyResult = new QueryResult();
       emptyPolicyResult.setRows(new JsonArray());
       when(policyDao.checkExistingPoliciesForIds(
-              eq(itemId), eq(providerId), eq("consumer@example.com")))
+              eq(itemId), eq(providerId), eq(consumerId.toString())))
           .thenReturn(Future.succeededFuture(emptyPolicyResult));
 
       // Mock policy insertion
       QueryResult insertResult = new QueryResult();
-      insertResult.setRows(
-          new JsonArray().add(new JsonObject().put("_id", policyId.toString())));
+      insertResult.setRows(new JsonArray().add(new JsonObject().put("_id", policyId.toString())));
       when(policyDao.insertPolicies(anyList(), eq(providerId)))
           .thenReturn(Future.succeededFuture(List.of(insertResult)));
 
@@ -352,15 +349,14 @@ class AccessRequestServiceTest {
       QueryResult emptyResult = new QueryResult();
       emptyResult.setRows(new JsonArray());
       when(policyDao.deActivatePolicyByUserAndItem(
-              eq(itemId), eq(providerId), eq("consumer@example.com")))
+              eq(itemId), eq(providerId), eq(consumerId.toString())))
           .thenReturn(Future.succeededFuture(emptyResult));
 
       // Mock update status
       AccessRequestDto rejectedDto = createPendingAccessRequest();
       rejectedDto.setStatus(Status.REJECTED);
       when(accessRequestDao.update(
-              eq(Map.of("request_id", requestId.toString())),
-              eq(Map.of("status", "REJECTED"))))
+              eq(Map.of("request_id", requestId.toString())), eq(Map.of("status", "REJECTED"))))
           .thenReturn(Future.succeededFuture(rejectedDto));
 
       accessRequestService
@@ -391,10 +387,8 @@ class AccessRequestServiceTest {
     @Test
     @DisplayName("should return paginated access requests for provider")
     void getAccessRequestsForProvider_success(VertxTestContext ctx) {
-      PaginatedRequest paginatedRequest =
-          org.mockito.Mockito.mock(PaginatedRequest.class);
-      PaginationInfo paginationInfo =
-          new PaginationInfo(1, 10, 1, 1, false, false);
+      PaginatedRequest paginatedRequest = org.mockito.Mockito.mock(PaginatedRequest.class);
+      PaginationInfo paginationInfo = new PaginationInfo(1, 10, 1, 1, false, false);
       AccessRequestDto dto = createPendingAccessRequest();
       PaginatedResult<AccessRequestDto> expectedResult =
           new PaginatedResult<>(paginationInfo, List.of(dto));
@@ -421,10 +415,8 @@ class AccessRequestServiceTest {
     @Test
     @DisplayName("should return paginated access requests for consumer")
     void getAccessRequestsForConsumer_success(VertxTestContext ctx) {
-      PaginatedRequest paginatedRequest =
-          org.mockito.Mockito.mock(PaginatedRequest.class);
-      PaginationInfo paginationInfo =
-          new PaginationInfo(1, 10, 1, 1, false, false);
+      PaginatedRequest paginatedRequest = org.mockito.Mockito.mock(PaginatedRequest.class);
+      PaginationInfo paginationInfo = new PaginationInfo(1, 10, 1, 1, false, false);
       AccessRequestDto dto = createPendingAccessRequest();
       PaginatedResult<AccessRequestDto> expectedResult =
           new PaginatedResult<>(paginationInfo, List.of(dto));
@@ -465,8 +457,7 @@ class AccessRequestServiceTest {
       AccessRequestDto withdrawnDto = createPendingAccessRequest();
       withdrawnDto.setStatus(Status.WITHDRAWN);
       when(accessRequestDao.update(
-              eq(Map.of("request_id", requestId.toString())),
-              eq(Map.of("status", "WITHDRAWN"))))
+              eq(Map.of("request_id", requestId.toString())), eq(Map.of("status", "WITHDRAWN"))))
           .thenReturn(Future.succeededFuture(withdrawnDto));
 
       accessRequestService
@@ -523,8 +514,7 @@ class AccessRequestServiceTest {
       // hasAccess fails with DxForbiddenNoAccessException
       when(accessRequestDao.hasAccess(consumerId.toString(), itemId.toString()))
           .thenReturn(
-              Future.failedFuture(
-                  new DxForbiddenNoAccessException("No access policy found")));
+              Future.failedFuture(new DxForbiddenNoAccessException("No access policy found")));
 
       // Keycloak lookup for rule matching
       when(keycloakUserService.getUserById(consumerId))

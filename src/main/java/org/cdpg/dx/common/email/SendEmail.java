@@ -5,6 +5,8 @@ import static org.cdpg.dx.email.util.Constants.*;
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.acl.accessRequest.util.EmailType;
 
+import java.time.LocalDateTime;
+
 public record SendEmail(
     String consumerUserId,
     String templateType,
@@ -13,6 +15,7 @@ public record SendEmail(
     String assetType,
     String itemId,
     String shortDescription,
+    String expiryAt,
     boolean isCreated,
     String status,
     String assetName,
@@ -33,6 +36,7 @@ public record SendEmail(
     putIfPresent(json, ITEM_ID, itemId);
     putIfPresent(json, SHORT_DESCRIPTION, shortDescription);
     putIfPresent(json, STATUS, status);
+    putIfPresent(json, EXPIRY_AT, expiryAt);
     putIfPresent(json, ASSET_NAME, assetName);
     // boolean is primitive → always present
     json.put("isCreated", isCreated);

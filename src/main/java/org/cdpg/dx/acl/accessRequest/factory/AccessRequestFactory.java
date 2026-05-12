@@ -75,7 +75,6 @@ public class AccessRequestFactory {
         keycloakUserService,
         emailExchange,
         emailRoutingKey,
-        authV2.authentication(),
         authV2.authorization());
   }
 }

@@ -11,12 +11,15 @@ import io.vertx.core.net.KeyStoreOptions;
 import io.vertx.ext.web.RoutingContext;
 import java.util.List;
 import java.util.function.Supplier;
+
+import io.vertx.ext.web.handler.AuthenticationHandler;
 import org.cdpg.dx.aaa.publicKey.service.PublicService;
 import org.cdpg.dx.aaa.publicKey.service.impl.PublicServiceImpl;
 import org.cdpg.dx.apiserver.AbstractApiServerVerticle;
 import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.auth.v2.factory.AuthHandlersV2;
 import org.cdpg.dx.auth.v2.factory.LocalAuthV2Factory;
+import org.cdpg.dx.auth.v2.handler.AuthenticationHandlerV2;
 import org.cdpg.dx.common.URNGenerator;
 
 public class ApiServerVerticle extends AbstractApiServerVerticle {
@@ -42,7 +45,7 @@ public class ApiServerVerticle extends AbstractApiServerVerticle {
   @Override
   protected List<ApiController> createControllers(
       Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
-    this.authV2Pair = LocalAuthV2Factory.buildPair(vertx, config);
+    this.authV2Pair = LocalAuthV2Factory.buildPair(vertx, config, this.jwksResolver);
     return ControllerFactory.createControllers(vertx, config, urnGenerator, authV2Pair);
   }
 
@@ -60,7 +63,7 @@ public class ApiServerVerticle extends AbstractApiServerVerticle {
   }
 
   @Override
-  protected Handler<RoutingContext> getAuthV2Handler() {
+  protected AuthenticationHandlerV2 getAuthV2Handler() {
     return authV2Pair.authentication();
   }
 

@@ -1457,7 +1457,7 @@ paths:
 
             ### User Policy Request:
 
-            - `userEmail`: The email ID of the user for whom the policy is being defined.
+            - `userId`: The ID of the user for whom the policy is being defined.
             - `itemId`: The UUID value of the item for which the policy is being established.
             - `itemType`: An enum value representing the type of the item.
             - `expiryTime`: An optional field, representing the policy's expiry time in ISO8601 format compatible with UTC (yyyy-MM-dd'T'HH:mm:ss). If not provided, a default expiry time is set for the policy.
@@ -1487,9 +1487,10 @@ paths:
                     type: object
                     additionalProperties: false
                     properties:
-                      userEmail:
+                      userId:
                         type: string
-                        pattern: ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$
+                        format: uuid
+                        pattern: ^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$
                         minLength: 1
                       itemId:
                         type: string
@@ -1523,7 +1524,7 @@ paths:
                         maxLength: 4000
                         minLength: 1
                     required:
-                      - userEmail
+                      - userId
                       - itemId
                       - itemType
                       - constraints
@@ -1532,7 +1533,7 @@ paths:
               x-examples:
                 example-1:
                   request:
-                    - userEmail: pqr@abc.com
+                    - userId: <uuid>
                       itemId: example-resource-group
                       itemType: DATABANK
                       expiryTime: '2023-08-30T21:10:06'
@@ -1557,7 +1558,7 @@ paths:
                               dataUsage: 10:gb
                           - accessType: sub
                             expiry: 1735689600
-                    - userEmail: test@demo.com
+                    - userId: <uuid>
                       itemId: example-resource-group
                       itemType: DATABANK
                       expiryTime: '2023-08-30T21:10:06'
@@ -1586,7 +1587,7 @@ paths:
               Request for resource with additionalInfo:
                 value:
                   request:
-                    - userEmail: abc@xyz.com
+                    - userId: <uuid>
                       itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
                       itemType: DATABANK
                       expiryTime: '2022-08-04T20:00:19'
@@ -1618,7 +1619,7 @@ paths:
               Request for resource user policy:
                 value:
                   request:
-                    - userEmail: abc@xyz.com
+                    - userId: <uuid>
                       itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
                       itemType: DATABANK
                       expiryTime: '2022-10-10T04:00:19'
@@ -1706,7 +1707,7 @@ paths:
             --data-raw '{
               "request": [
                 {
-                  "userEmail": "consumer@example.com",
+                  "userId": "5067611f-0835-4cee-9b3e-fe81adab65f1",
                   "itemId": "5011676f-0835-4cee-9b3e-fe81adab65f1",
                   "itemType": "DATABANK",
                   "expiryTime": "2026-08-04T20:00:19Z",
@@ -1721,70 +1722,6 @@ paths:
                 }
               ]
             }'
-    get:
-      tags:
-        - Policies
-      summary: Get Policies
-      description: |
-        Get all latest policies associated with a specific user. The response is determined by the user's roles:
-
-        - If the user is a `provider`, the response includes all policies created by the provider or their delegates.
-        - If the user is a `delegate`, the response comprises policies set by the delegate or set for the consumer on whose behalf the delegate is acting.
-        - If the user is a `consumer`, the response includes policies set for the consumer.
-
-        `Note`: Please note that the response displays the policies for a user concerning a specific server.
-      operationId: get-auth-v1-policies
-      parameters:
-        - name: Authorization
-          in: header
-          description: DX Auth issued identity token
-          required: true
-          schema:
-            type: string
-            minLength: 1
-            pattern: Bearer [a-zA-Z0-9_*\-*\.\/]+$|^[a-zA-Z0-9_*\-*\.\/]+$
-      responses:
-        '200':
-          description: Policies have been successfully listed.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/getPolicySuccessResponseWithResourceType'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '401':
-          description: Unauthorized - `token` invalid/expired
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Unauthorized'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '404':
-          description: Not Found - Policy not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/policyNotFound'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-      security:
-        - authorization: []
-      x-codeSamples:
-        - lang: cURL
-          label: get latest policies
-          source: |
-            curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/policy' \
-            --header 'Authorization: <tokenValue>'
     put:
       tags:
         - Policies
@@ -1896,6 +1833,124 @@ paths:
             curl --location --request PUT \
             'https://${HOSTNAME}/iudx/acl/apd/v2/policy?id=231f6eca-6276-4993-bfeb-53cbbbba6f06' \
             --header 'Authorization: <tokenValue>'
+  /iudx/acl/apd/v2/policy/consumer:
+    get:
+      tags:
+        - Policies
+      operationId: get-policies-consumer-api
+      summary: List Consumer Policies
+      description: |
+        Lists all policies applicable to the consumer calling the API.
+      security:
+        - authorization: [ ]
+      parameters:
+        - $ref: '#/components/parameters/status'
+        - $ref: '#/components/parameters/organizationId'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+        - $ref: '#/components/parameters/sort'
+        - $ref: '#/components/parameters/time'
+        - $ref: '#/components/parameters/endtime'
+        - $ref: '#/components/parameters/timerel'
+      responses:
+        '200':
+          description: Successfully fetched consumer policies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyListResponse'
+        '401':
+          description: Unauthorized
+  /iudx/acl/apd/v2/policy/provider:
+    get:
+      tags:
+        - Policies
+      operationId: get-policies-provider-api
+      summary: List Provider Policies
+      description: |
+        Lists all policies created by the provider or delegate calling the API.
+      security:
+        - authorization: [ ]
+      parameters:
+        - $ref: '#/components/parameters/status'
+        - $ref: '#/components/parameters/organizationId'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+        - $ref: '#/components/parameters/sort'
+        - $ref: '#/components/parameters/time'
+        - $ref: '#/components/parameters/endtime'
+        - $ref: '#/components/parameters/timerel'
+      responses:
+        '200':
+          description: Successfully fetched provider policies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyListResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+  /iudx/acl/apd/v2/policy/organisation:
+    get:
+      tags:
+        - Policies
+      operationId: get-policies-org_admin-api
+      summary: List Organization Policies
+      description: |
+        Lists all policies for assets belonging to the organization of the org admin.
+      security:
+        - authorization: [ ]
+      parameters:
+        - $ref: '#/components/parameters/status'
+        - $ref: '#/components/parameters/organizationId'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+        - $ref: '#/components/parameters/sort'
+        - $ref: '#/components/parameters/time'
+        - $ref: '#/components/parameters/endtime'
+        - $ref: '#/components/parameters/timerel'
+      responses:
+        '200':
+          description: Successfully fetched organization policies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyListResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+  /iudx/acl/apd/v2/policy/platform:
+    get:
+      tags:
+        - Policies
+      operationId: get-policies-cos_admin-api
+      summary: List Platform Policies (COS Admin)
+      description: |
+        Lists all policies across the platform. Accessible only to COS Admin users.
+      security:
+        - authorization: [ ]
+      parameters:
+        - $ref: '#/components/parameters/status'
+        - $ref: '#/components/parameters/organizationId'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+        - $ref: '#/components/parameters/sort'
+        - $ref: '#/components/parameters/time'
+        - $ref: '#/components/parameters/endtime'
+        - $ref: '#/components/parameters/timerel'
+      responses:
+        '200':
+          description: Successfully fetched platform policies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyListResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
   /iudx/acl/apd/v2/verify:
     post:
       tags:
@@ -2089,6 +2144,65 @@ components:
       required: false
       schema:
         type: string
+    status:
+      name: status
+      in: query
+      schema:
+        type: string
+        enum: [ ACTIVE, DELETED ]
+      description: Filter by policy status
+    assetType:
+      name: assetType
+      in: query
+      schema:
+        type: string
+        enum: [ adex:DataBank, adex:AiModel ]
+      description: Type of asset
+    organizationId:
+      name: organizationId
+      in: query
+      schema:
+        type: string
+      description: Filter by organization ID
+    page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    size:
+      name: size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1000
+    sort:
+      name: sort
+      in: query
+      schema:
+        type: string
+      description: Sorting format field:asc;field:desc
+    time:
+      name: time
+      in: query
+      schema:
+        type: string
+        format: date-time
+    endtime:
+      name: endtime
+      in: query
+      schema:
+        type: string
+        format: date-time
+    timerel:
+      name: timerel
+      in: query
+      schema:
+        type: string
+        enum: [ between, before, after ]
+
   schemas:
     AssetRequest:
       type: object
@@ -5980,3 +6094,131 @@ components:
         type: urn:dx:cat:InvalidParamValue
         title: Invalid value for a query param
         detail: Invalid offset parameter.
+    PolicyListResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          example: dx:aclApd:success
+        title:
+          type: string
+          example: Success
+        result:
+          type: array
+          items:
+            $ref: '#/components/schemas/Policy'
+        paginationInfo:
+          $ref: '#/components/schemas/PaginationInfo'
+    Policy:
+      type: object
+      properties:
+        policyId:
+          type: string
+
+        status:
+          type: string
+
+        additionalInfo:
+          type: object
+          properties:
+            requestAs:
+              type: string
+            organisationName:
+              type: string
+            purposeOfRequest:
+              type: string
+
+        expiryAt:
+          type: string
+          format: date-time
+
+        createdAt:
+          type: string
+          format: date-time
+
+        updatedAt:
+          type: string
+          format: date-time
+
+        user:
+          $ref: '#/components/schemas/PolicyUser'
+
+        asset:
+          $ref: '#/components/schemas/PolicyAsset'
+    PolicyUser:
+      type: object
+      properties:
+        consumerId:
+          type: string
+        consumerFirstName:
+          type: string
+        consumerLastName:
+          type: string
+        consumerEmail:
+          type: string
+        consumerOrganization:
+          type: string
+    PolicyAsset:
+      type: object
+      properties:
+        itemId:
+          type: string
+        assetName:
+          type: string
+        assetType:
+          type: string
+        shortDescription:
+          type: string
+        organization:
+          type: string
+        organizationId:
+          type: string
+    PolicyConstraints:
+      type: object
+      properties:
+        access:
+          type: array
+          items:
+            oneOf:
+              - type: string
+              - $ref: '#/components/schemas/AccessObject'
+        subjects:
+          $ref: '#/components/schemas/PolicySubjects'
+    AccessObject:
+      type: object
+      properties:
+        accessType:
+          type: string
+        expiry:
+          type: integer
+        limits:
+          type: object
+          properties:
+            apiHits:
+              type: integer
+    PolicySubjects:
+      type: object
+      properties:
+        allowedOrgIds:
+          type: array
+          items:
+            type: string
+        allowedRoles:
+          type: array
+          items:
+            type: string
+    PaginationInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+        size:
+          type: integer
+        totalCount:
+          type: integer
+        totalPages:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrevious:
+          type: boolean

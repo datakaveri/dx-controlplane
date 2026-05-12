@@ -78,14 +78,14 @@ public class AccessRequestServiceImpl implements AccessRequestService {
 
   @Override
   public Future<AccessRequestDto> createAccessRequest(
-      DxUser consumer,
+      UUID consumerId,
       UUID itemId,
       RequestType requestType,
       JsonObject additionalInfo,
       JsonObject constraints) {
 
     return keycloakUserService
-        .getUserById(consumer.sub())
+        .getUserById(consumerId)
         .compose(
             fullUser -> {
               AccessRequestDto accessRequestDto =
@@ -262,7 +262,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
               // ------------------------------------------
               return policyDao
                   .checkExistingPoliciesForIds(
-                      itemId, UUID.fromString(request.getProviderId()), request.getConsumerEmail())
+                      itemId, UUID.fromString(request.getProviderId()), request.getConsumerId())
                   .compose(
                       res -> {
                         if (!res.getRows().isEmpty()) {
@@ -274,7 +274,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
 
                         // No existing policy → SAFE TO CREATE POLICY
                         return createPolicyForApproval(
-                            request.getConsumerEmail(),
+                            request.getItemOrganizationId(),
                             request.getConsumerId(),
                             itemId.toString(),
                             ItemType.fromCatalogueItemType(request.getAssetType()),
@@ -382,7 +382,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
   }
 
   private Future<UUID> createPolicyForApproval(
-      String consumerEmail,
+      String itemOrganizationId,
       String consumerId,
       String itemId,
       ItemType itemType,
@@ -394,9 +394,10 @@ public class AccessRequestServiceImpl implements AccessRequestService {
       String feedbackToConsumer) {
 
     CreatePolicyRequest request = new CreatePolicyRequest();
-    request.setUserEmail(consumerEmail);
+    request.setUserId(consumerId);
     request.setItemId(itemId);
     request.setItemType(itemType);
+    request.setItemOrganizationId(itemOrganizationId);
 
     // expiry
     if (expiryAt != null) {
@@ -466,11 +467,11 @@ public class AccessRequestServiceImpl implements AccessRequestService {
 
               UUID itemId = UUID.fromString(request.getItemId());
               UUID ownerId = UUID.fromString(request.getProviderId());
-              String consumerEmail = request.getConsumerEmail();
+              String consumerId = request.getConsumerId();
 
               // Delete policy if exists
               return policyDao
-                  .deActivatePolicyByUserAndItem(itemId, ownerId, consumerEmail)
+                  .deActivatePolicyByUserAndItem(itemId, ownerId, consumerId)
                   .compose(queryResult -> {
 
                     if (queryResult.getRows() == null || queryResult.getRows().isEmpty()) {
