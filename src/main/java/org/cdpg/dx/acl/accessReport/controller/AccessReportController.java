@@ -25,19 +25,15 @@ import org.cdpg.dx.common.util.RoutingContextHelper;
 public class AccessReportController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(AccessReportController.class);
   private final ReportService reportService;
-  private final AuthorizationHandler authorizationV2;
 
-  public AccessReportController(
-      ReportService reportService,
-      AuthorizationHandler authorizationV2) {
+  public AccessReportController(ReportService reportService) {
     this.reportService = reportService;
-    this.authorizationV2 = authorizationV2;
   }
 
   @Override
   public void register(RouterBuilder builder) {
-    Handler<RoutingContext> providerAccess = authorizationV2.forScopes(Scopes.OWN_ASSET_MANAGEMENT);
-    Handler<RoutingContext> orgAdminAccess = authorizationV2.forScopes(Scopes.ORG_ASSET_MANAGEMENT);
+    Handler<RoutingContext> providerAccess = AuthorizationHandler.forScopes(Scopes.OWN_ASSET_MANAGEMENT);
+    Handler<RoutingContext> orgAdminAccess = AuthorizationHandler.forScopes(Scopes.ORG_ASSET_MANAGEMENT);
 
     builder
         .operation(GET_ACCESS_REQUEST_REPORT_API)

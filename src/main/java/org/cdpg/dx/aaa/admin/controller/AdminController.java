@@ -11,18 +11,16 @@ import org.cdpg.dx.auth.v2.model.Scopes;
 public class AdminController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(AdminController.class);
   private final AdminHandler adminHandler;
-  private final AuthorizationHandler authorizationV2;
 
-  public AdminController(AdminHandler adminHandler, AuthorizationHandler authorizationV2) {
+  public AdminController(AdminHandler adminHandler) {
     this.adminHandler = adminHandler;
-    this.authorizationV2 = authorizationV2;
   }
 
   @Override
   public void register(RouterBuilder routerBuilder) {
 
-    var selfAccess = authorizationV2.forScopes(Scopes.DATA_ACCESS);
-    var adminAccess = authorizationV2.forScopes(Scopes.USER_MANAGEMENT);
+    var selfAccess = AuthorizationHandler.forScopes(Scopes.DATA_ACCESS);
+    var adminAccess = AuthorizationHandler.forScopes(Scopes.USER_MANAGEMENT);
 
     routerBuilder
         .operation("get-auth-v2-user")

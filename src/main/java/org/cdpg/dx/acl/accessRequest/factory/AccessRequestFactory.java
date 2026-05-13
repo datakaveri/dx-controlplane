@@ -21,7 +21,7 @@ import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
 import org.cdpg.dx.acl.rule.dao.AccessRuleDao;
 import org.cdpg.dx.acl.rule.dao.impl.AccessRuleDaoImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
-import org.cdpg.dx.auth.v2.factory.AuthHandlersV2;
+import org.cdpg.dx.auth.v2.handler.AuthenticationHandlerV2;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
@@ -45,8 +45,7 @@ public class AccessRequestFactory {
       URNGenerator urnGenerator,
       WebClient webClient,
       String emailExchange,
-      String emailRoutingKey,
-      AuthHandlersV2 authV2) {
+      String emailRoutingKey) {
     AccessRequestDao accessRequestDao =
         new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
 
@@ -74,7 +73,6 @@ public class AccessRequestFactory {
         pgService,
         keycloakUserService,
         emailExchange,
-        emailRoutingKey,
-        authV2.authorization());
+        emailRoutingKey);
   }
 }

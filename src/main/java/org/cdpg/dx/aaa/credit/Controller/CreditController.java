@@ -20,29 +20,26 @@ public class CreditController implements ApiController {
   private final ComputeRoleHandler computeRoleHandler;
   private final Boolean isKycRequired;
   private final AuditingHandler auditingHandler;
-  private final AuthorizationHandler authorizationV2;
 
   public CreditController(
       CreditRequestHandler creditRequestHandler,
       CreditBalanceHandler creditBalanceHandler,
       ComputeRoleHandler computeRoleHandler,
       AuditingHandler auditingHandler,
-      Boolean isKycRequired,
-      AuthorizationHandler authorizationV2) {
+      Boolean isKycRequired) {
     this.creditRequestHandler = creditRequestHandler;
     this.creditBalanceHandler = creditBalanceHandler;
     this.computeRoleHandler = computeRoleHandler;
     this.isKycRequired = isKycRequired;
     this.auditingHandler = auditingHandler;
-    this.authorizationV2 = authorizationV2;
   }
 
   @Override
   public void register(RouterBuilder routerBuilder) {
 
-    var selfAccess = authorizationV2.forScopes(Scopes.DATA_ACCESS);
-    var adminAccess = authorizationV2.forScopes(Scopes.USER_MANAGEMENT);
-    var computeAccess = authorizationV2.forScopes(Scopes.COMPUTE_ACCESS);
+    var selfAccess = AuthorizationHandler.forScopes(Scopes.DATA_ACCESS);
+    var adminAccess = AuthorizationHandler.forScopes(Scopes.USER_MANAGEMENT);
+    var computeAccess = AuthorizationHandler.forScopes(Scopes.COMPUTE_ACCESS);
 
     routerBuilder
       .operation("post-auth-v2-credit-request")

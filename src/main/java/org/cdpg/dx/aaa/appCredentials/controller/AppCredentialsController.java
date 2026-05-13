@@ -12,20 +12,16 @@ import org.cdpg.dx.auth.v2.model.Scopes;
 public class AppCredentialsController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(AppCredentialsController.class);
   final AppCredentialsHandler appCredentialsHandler;
-  private final AuthorizationHandler authorizationV2;
 
-  public AppCredentialsController(
-      AppCredentialsHandler appCredentialsHandler,
-      AuthorizationHandler authorizationV2) {
+  public AppCredentialsController(AppCredentialsHandler appCredentialsHandler) {
     this.appCredentialsHandler = appCredentialsHandler;
-    this.authorizationV2 = authorizationV2;
   }
 
   @Override
   public void register(RouterBuilder builder) {
     LOGGER.info("Registering AppId APIs");
 
-    var appAccess = authorizationV2.forScopes(Scopes.DATA_ACCESS);
+    var appAccess = AuthorizationHandler.forScopes(Scopes.DATA_ACCESS);
 
     builder
         .operation(OperationIds.OP_POST_APPID)

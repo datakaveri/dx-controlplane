@@ -155,7 +155,7 @@ class DelegationServiceTest {
                           new JsonArray()
                               .add(
                                   new JsonObject()
-                                      .put("scope", "data_access")
+                                      .put("scope", "data-access")
                                       .put("entity_type", "item")
                                       .put(
                                           "entity_id",

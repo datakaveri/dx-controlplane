@@ -160,7 +160,9 @@ class AppTokenServiceTest {
         true,
         null,
         null,
-        new JsonArray());
+        new JsonArray(),
+        null,
+        null);
   }
 
   private AppConstraints buildConstraint(UUID appId, UUID userId, String scope) {
@@ -358,7 +360,7 @@ class AppTokenServiceTest {
       AppTokenRequest request = new AppTokenRequest(appId, PLAIN_SECRET);
 
       List<AppConstraints> constraints =
-          List.of(buildConstraint(appId, userId, "asset_management"));
+          List.of(buildConstraint(appId, userId, "asset-management"));
 
       when(appCredentialsService.getAppById(appId)).thenReturn(Future.succeededFuture(app));
       when(appCredentialsService.getAppConstraintsById(appId))
@@ -389,7 +391,7 @@ class AppTokenServiceTest {
       AppTokenRequest request = new AppTokenRequest(appId, PLAIN_SECRET);
 
       List<AppConstraints> constraints =
-          List.of(buildConstraint(appId, userId, "user_management"));
+          List.of(buildConstraint(appId, userId, "user-management"));
 
       when(appCredentialsService.getAppById(appId)).thenReturn(Future.succeededFuture(app));
       when(appCredentialsService.getAppConstraintsById(appId))
@@ -418,7 +420,7 @@ class AppTokenServiceTest {
       AppTokenRequest request = new AppTokenRequest(appId, "  " + PLAIN_SECRET + "  ");
 
       List<AppConstraints> constraints =
-          List.of(buildConstraint(appId, userId, "asset_management"));
+          List.of(buildConstraint(appId, userId, "asset-management"));
 
       when(appCredentialsService.getAppById(appId)).thenReturn(Future.succeededFuture(app));
       when(appCredentialsService.getAppConstraintsById(appId))
@@ -597,7 +599,7 @@ class AppTokenServiceTest {
       AppTokenRequest request = new AppTokenRequest(appId, PLAIN_SECRET);
 
       List<AppConstraints> constraints =
-          List.of(buildConstraint(appId, userId, "cos_admin_access"));
+          List.of(buildConstraint(appId, userId, "cos-admin-access"));
 
       when(appCredentialsService.getAppById(appId)).thenReturn(Future.succeededFuture(app));
       when(appCredentialsService.getAppConstraintsById(appId))
@@ -625,7 +627,7 @@ class AppTokenServiceTest {
       AppTokenRequest request = new AppTokenRequest(appId, PLAIN_SECRET);
 
       List<AppConstraints> constraints =
-          List.of(buildConstraint(appId, userId, "org_admin_access"));
+          List.of(buildConstraint(appId, userId, "org-admin-access"));
 
       when(appCredentialsService.getAppById(appId)).thenReturn(Future.succeededFuture(app));
       when(appCredentialsService.getAppConstraintsById(appId))
@@ -653,7 +655,7 @@ class AppTokenServiceTest {
       AppTokenRequest request = new AppTokenRequest(appId, PLAIN_SECRET);
 
       List<AppConstraints> constraints =
-          List.of(buildConstraint(appId, userId, "compute_management"));
+          List.of(buildConstraint(appId, userId, "compute-management"));
 
       when(appCredentialsService.getAppById(appId)).thenReturn(Future.succeededFuture(app));
       when(appCredentialsService.getAppConstraintsById(appId))
@@ -682,7 +684,7 @@ class AppTokenServiceTest {
 
       // entityId = "*" which is not a valid UUID, and no request itemId
       List<AppConstraints> constraints =
-          List.of(buildConstraint(appId, userId, "data_access"));
+          List.of(buildConstraint(appId, userId, "data-access"));
 
       when(appCredentialsService.getAppById(appId)).thenReturn(Future.succeededFuture(app));
       when(appCredentialsService.getAppConstraintsById(appId))
@@ -713,8 +715,8 @@ class AppTokenServiceTest {
 
       List<AppConstraints> constraints =
           List.of(
-              buildConstraint(appId, userId, "asset_management"),
-              buildConstraint(appId, userId, "user_management"));
+              buildConstraint(appId, userId, "asset-management"),
+              buildConstraint(appId, userId, "user-management"));
 
       when(appCredentialsService.getAppById(appId)).thenReturn(Future.succeededFuture(app));
       when(appCredentialsService.getAppConstraintsById(appId))
@@ -780,7 +782,7 @@ class AppTokenServiceTest {
 
       List<AppConstraints> constraints =
           List.of(
-              buildConstraintWithEntity(appId, userId, "data_access", itemId, "adex:Apps"));
+              buildConstraintWithEntity(appId, userId, "data-access", itemId, "adex:Apps"));
 
       // Build a mock ResponseModel
       JsonObject itemJson =
@@ -830,7 +832,7 @@ class AppTokenServiceTest {
 
       // Constraint has entityId="*" (not a valid UUID) so resolveItemId falls back to requestItemId
       List<AppConstraints> constraints =
-          List.of(buildConstraint(appId, userId, "data_access"));
+          List.of(buildConstraint(appId, userId, "data-access"));
 
       JsonObject itemJson =
           new JsonObject()
@@ -879,7 +881,7 @@ class AppTokenServiceTest {
 
       List<AppConstraints> constraints =
           List.of(
-              buildConstraintWithEntity(appId, userId, "data_access", itemId, "adex:Apps"));
+              buildConstraintWithEntity(appId, userId, "data-access", itemId, "adex:Apps"));
 
       ResponseModel mockResponse = org.mockito.Mockito.mock(ResponseModel.class);
       when(mockResponse.getResponse()).thenReturn(null);
@@ -913,7 +915,7 @@ class AppTokenServiceTest {
 
       List<AppConstraints> constraints =
           List.of(
-              buildConstraintWithEntity(appId, userId, "data_access", itemId, "adex:Apps"));
+              buildConstraintWithEntity(appId, userId, "data-access", itemId, "adex:Apps"));
 
       JsonObject responseJson = new JsonObject().put("results", new JsonArray());
       ResponseModel mockResponse = org.mockito.Mockito.mock(ResponseModel.class);
@@ -953,7 +955,7 @@ class AppTokenServiceTest {
       List<AppConstraints> constraints =
           List.of(
               buildConstraintWithEntity(
-                  appId, userId, "data_access", constraintItemId.toString(), "other:Type"));
+                  appId, userId, "data-access", constraintItemId.toString(), "other:Type"));
 
       JsonObject itemJson =
           new JsonObject()
@@ -1007,9 +1009,9 @@ class AppTokenServiceTest {
       UUID constraintEntityId = UUID.randomUUID();
       List<AppConstraints> constraints =
           List.of(
-              buildConstraintWithEntity(appId, userId, "data_access", "*", "adex:Apps"),
+              buildConstraintWithEntity(appId, userId, "data-access", "*", "adex:Apps"),
               buildConstraintWithEntity(
-                  appId, userId, "data_access", constraintEntityId.toString(), "adex:DataBank"));
+                  appId, userId, "data-access", constraintEntityId.toString(), "adex:DataBank"));
 
       // resolveItemId picks the first constraint with entityType in dataItemTypes AND valid UUID
       // which would be the second constraint (constraintEntityId).
@@ -1061,7 +1063,7 @@ class AppTokenServiceTest {
       AppTokenRequest request = new AppTokenRequest(appId, PLAIN_SECRET);
 
       List<AppConstraints> constraints =
-          List.of(buildConstraint(appId, userId, "asset_management"));
+          List.of(buildConstraint(appId, userId, "asset-management"));
 
       when(appCredentialsService.getAppById(appId)).thenReturn(Future.succeededFuture(app));
       when(appCredentialsService.getAppConstraintsById(appId))
@@ -1116,7 +1118,7 @@ class AppTokenServiceTest {
 
       List<AppConstraints> constraints =
           List.of(
-              buildConstraintWithEntity(appId, userId, "data_access", itemId, "adex:Apps"));
+              buildConstraintWithEntity(appId, userId, "data-access", itemId, "adex:Apps"));
 
       when(appCredentialsService.getAppById(appId)).thenReturn(Future.succeededFuture(app));
       when(appCredentialsService.getAppConstraintsById(appId))
@@ -1151,7 +1153,7 @@ class AppTokenServiceTest {
       AppTokenRequest request = new AppTokenRequest(appId, PLAIN_SECRET);
 
       List<AppConstraints> constraints =
-          List.of(buildConstraint(appId, userId, "asset_management"));
+          List.of(buildConstraint(appId, userId, "asset-management"));
 
       when(appCredentialsService.getAppById(appId)).thenReturn(Future.succeededFuture(app));
       when(appCredentialsService.getAppConstraintsById(appId))
@@ -1180,7 +1182,7 @@ class AppTokenServiceTest {
 
             JsonArray scopes = capturedClaims[0].getJsonArray("scope");
             assertThat(scopes).isNotNull();
-            assertThat(scopes.getList()).contains("asset_management");
+            assertThat(scopes.getList()).contains("asset-management");
 
             JsonObject realmAccess = capturedClaims[0].getJsonObject("realm_access");
             assertThat(realmAccess).isNotNull();
@@ -1201,7 +1203,7 @@ class AppTokenServiceTest {
       AppTokenRequest request = new AppTokenRequest(appId, PLAIN_SECRET);
 
       List<AppConstraints> constraints =
-          List.of(buildConstraint(appId, userId, "asset_management"));
+          List.of(buildConstraint(appId, userId, "asset-management"));
 
       when(appCredentialsService.getAppById(appId)).thenReturn(Future.succeededFuture(app));
       when(appCredentialsService.getAppConstraintsById(appId))

@@ -43,27 +43,24 @@ public class UserInteractionV2Controller implements ApiController {
   private final AuditingHandler auditingHandler;
   private final UserInteractionV2Service service;
   private final URNGenerator urnGenerator;
-  private final AuthorizationHandler authorizationV2;
 
   public UserInteractionV2Controller(
       AuditingHandler auditingHandler,
       UserInteractionV2Service service,
-      URNGenerator urnGenerator,
-      AuthorizationHandler authorizationV2) {
+      URNGenerator urnGenerator) {
     this.auditingHandler = auditingHandler;
     this.service = service;
     this.urnGenerator = urnGenerator;
-    this.authorizationV2 = authorizationV2;
   }
 
   @Override
   public void register(RouterBuilder builder) {
     LOGGER.info("Registering UserInteractionController routes");
 
-    var userScopedAccess = authorizationV2.forScopes(Scopes.DATA_ACCESS);
-    var adminSyncAccess = authorizationV2.forScopes(Scopes.USER_MANAGEMENT);
+    var userScopedAccess = AuthorizationHandler.forScopes(Scopes.DATA_ACCESS);
+    var adminSyncAccess = AuthorizationHandler.forScopes(Scopes.USER_MANAGEMENT);
     var providerFeedbackAccess =
-        authorizationV2.forScopesWithContext(
+        AuthorizationHandler.forScopesWithContext(
             ScopeRule.self(Scopes.OWN_ASSET_MANAGEMENT),
             ScopeRule.org(Scopes.ORG_ASSET_MANAGEMENT));
 

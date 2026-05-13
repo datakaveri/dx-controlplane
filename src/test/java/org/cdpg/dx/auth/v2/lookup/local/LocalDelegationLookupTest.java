@@ -85,8 +85,8 @@ class LocalDelegationLookupTest {
     }
 
     @Test
-    @DisplayName("wildcard scope '*' is dropped — scopes stay empty (fail-closed, not full)")
-    void wildcardDropped() {
+    @DisplayName("wildcard scope '*' sets fullDelegation=true — delegatee gets all of delegator's current scopes")
+    void wildcardMeansFullDelegation() {
       DelegationService svc = mock(DelegationService.class);
       when(svc.getAllDelegationsOfDelegate("bob"))
           .thenReturn(Future.succeededFuture(List.of(grant("alice", "bob", "active", "*"))));
@@ -94,7 +94,7 @@ class LocalDelegationLookupTest {
       DelegationRecord d =
           new LocalDelegationLookup(svc).findActive("alice", "bob").result().get();
       assertTrue(d.scopes().isEmpty());
-      assertFalse(d.fullDelegation());
+      assertTrue(d.fullDelegation());
     }
   }
 

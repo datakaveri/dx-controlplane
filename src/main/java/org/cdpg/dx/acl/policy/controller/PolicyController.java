@@ -10,7 +10,6 @@ import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_POLICIES_CONSUM
 import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_POLICIES_FOR_COS_ADMIN_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_POLICIES_FOR_ORG_ADMIN_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_POLICIES_PROVIDER_API;
-import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_POLICY_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.HEADER_X_CONTENT_TYPE_OPTIONS;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.ID;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.TITLE;
@@ -35,7 +34,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -77,7 +75,6 @@ public class PolicyController implements ApiController {
   private final KeycloakUserService keycloakUserService;
   private final URNGenerator urnGenerator;
   private final JsonObject config;
-  private final AuthorizationHandler authorizationV2;
   private final AccessRuleDao accessRuleDao;
 
   public PolicyController(
@@ -86,43 +83,41 @@ public class PolicyController implements ApiController {
       AuditingHandler auditingHandler,
       KeycloakUserService keycloakUserService,
       URNGenerator urnGenerator,
-      JsonObject config,
-      AuthorizationHandler authorizationV2) {
+      JsonObject config) {
     this.policyService = policyService;
     this.postgresService = postgresService;
     this.auditingHandler = auditingHandler;
     this.keycloakUserService = keycloakUserService;
     this.urnGenerator = urnGenerator;
     this.config = config;
-    this.authorizationV2 = authorizationV2;
     this.accessRuleDao = new AccessRuleDaoImpl(postgresService);
   }
 
   @Override
   public void register(RouterBuilder builder) {
     Handler<RoutingContext> selfOrConsumerAccess =
-        authorizationV2.forScopes(Scopes.DATA_ACCESS, Scopes.OWN_ASSET_MANAGEMENT);
+        AuthorizationHandler.forScopes(Scopes.DATA_ACCESS, Scopes.OWN_ASSET_MANAGEMENT);
     Handler<RoutingContext> verifyAccess =
-        authorizationV2.forScopes(
+        AuthorizationHandler.forScopes(
             Scopes.DATA_ACCESS, Scopes.OWN_ASSET_MANAGEMENT, Scopes.ORG_ASSET_MANAGEMENT);
     Handler<RoutingContext> policyAdminAccess =
-        authorizationV2.forScopesWithContext(
+        AuthorizationHandler.forScopesWithContext(
             ScopeRule.self(Scopes.OWN_ASSET_MANAGEMENT),
             ScopeRule.org(Scopes.ORG_ASSET_MANAGEMENT));
 
     Handler<RoutingContext> cosAdminAccessHandler =
-        authorizationV2.forScopes(Scopes.ASSET_MANAGEMENT);
+        AuthorizationHandler.forScopes(Scopes.ASSET_MANAGEMENT);
     Handler<RoutingContext> orgAdminAccessHandler =
-        authorizationV2.forScopes(Scopes.ORG_ASSET_MANAGEMENT);
+        AuthorizationHandler.forScopes(Scopes.ORG_ASSET_MANAGEMENT);
     Handler<RoutingContext> providerAndOrgAdmin =
-        authorizationV2.forScopesWithContext(
+        AuthorizationHandler.forScopesWithContext(
             ScopeRule.self(Scopes.OWN_ASSET_MANAGEMENT),
             ScopeRule.org(Scopes.ORG_ASSET_MANAGEMENT));
     Handler<RoutingContext> apiAccessHandler =
-        authorizationV2.forScopesWithContext(
+        AuthorizationHandler.forScopesWithContext(
             ScopeRule.self(Scopes.OWN_ASSET_MANAGEMENT), ScopeRule.self(Scopes.DATA_ACCESS));
     Handler<RoutingContext> apiAccessVerifyApiRole =
-        authorizationV2.forScopesWithContext(
+        AuthorizationHandler.forScopesWithContext(
             ScopeRule.self(Scopes.OWN_ASSET_MANAGEMENT),
             ScopeRule.self(Scopes.DATA_ACCESS),
             ScopeRule.org(Scopes.ORG_ASSET_MANAGEMENT));

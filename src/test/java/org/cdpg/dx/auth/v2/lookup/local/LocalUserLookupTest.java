@@ -44,7 +44,9 @@ class LocalUserLookupTest {
         enabled,
         null,
         null,
-        new JsonArray());
+        new JsonArray(),
+        null,
+        null);
   }
 
   @Test

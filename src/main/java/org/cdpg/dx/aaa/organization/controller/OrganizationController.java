@@ -25,7 +25,6 @@ public class OrganizationController implements ApiController {
   private final ProviderRoleHandler providerRoleHandler;
   private final AuditingHandler auditingHandler;
   private final Boolean isKycRequired;
-  private final AuthorizationHandler authorizationV2;
 
   public OrganizationController(
       OrganizationCommandHandler commandHandler,
@@ -35,8 +34,7 @@ public class OrganizationController implements ApiController {
       OrganizationUserHandler userHandler,
       ProviderRoleHandler providerRoleHandler,
       AuditingHandler auditingHandler,
-      Boolean isKycRequired,
-      AuthorizationHandler authorizationV2) {
+      Boolean isKycRequired) {
 
     this.commandHandler = commandHandler;
     this.queryHandler = queryHandler;
@@ -46,17 +44,16 @@ public class OrganizationController implements ApiController {
     this.providerRoleHandler = providerRoleHandler;
     this.auditingHandler = auditingHandler;
     this.isKycRequired = isKycRequired;
-    this.authorizationV2 = authorizationV2;
   }
 
   @Override
   public void register(RouterBuilder routerBuilder) {
 
-    var selfAccess = authorizationV2.forScopes(Scopes.DATA_ACCESS);
-    var orgAdminAccess = authorizationV2.forScopes(Scopes.ORG_USER_MANAGEMENT);
-    var cosAdminAccess = authorizationV2.forScopes(Scopes.ORG_MANAGEMENT);
+    var selfAccess = AuthorizationHandler.forScopes(Scopes.DATA_ACCESS);
+    var orgAdminAccess = AuthorizationHandler.forScopes(Scopes.ORG_USER_MANAGEMENT);
+    var cosAdminAccess = AuthorizationHandler.forScopes(Scopes.ORG_MANAGEMENT);
     var orgDeleteAccess =
-        authorizationV2.forScopesWithContext(
+        AuthorizationHandler.forScopesWithContext(
             ScopeRule.platform(Scopes.ORG_MANAGEMENT),
             ScopeRule.org(Scopes.ORG_USER_MANAGEMENT));
 

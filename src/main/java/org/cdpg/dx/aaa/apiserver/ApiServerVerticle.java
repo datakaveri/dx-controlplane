@@ -3,28 +3,21 @@ package org.cdpg.dx.aaa.apiserver;
 import static org.cdpg.dx.aaa.common.Constants.IS_CENTRAL_CATALOGUE_ENABLED;
 
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.KeyStoreOptions;
-import io.vertx.ext.web.RoutingContext;
 import java.util.List;
 import java.util.function.Supplier;
-
-import io.vertx.ext.web.handler.AuthenticationHandler;
 import org.cdpg.dx.aaa.publicKey.service.PublicService;
 import org.cdpg.dx.aaa.publicKey.service.impl.PublicServiceImpl;
 import org.cdpg.dx.apiserver.AbstractApiServerVerticle;
 import org.cdpg.dx.apiserver.ApiController;
-import org.cdpg.dx.auth.v2.factory.AuthHandlersV2;
 import org.cdpg.dx.auth.v2.factory.LocalAuthV2Factory;
 import org.cdpg.dx.auth.v2.handler.AuthenticationHandlerV2;
 import org.cdpg.dx.common.URNGenerator;
 
 public class ApiServerVerticle extends AbstractApiServerVerticle {
-
-  private AuthHandlersV2 authV2Pair;
 
   @Override
   protected String getOpenApiSpecPath(JsonObject config) {
@@ -45,8 +38,7 @@ public class ApiServerVerticle extends AbstractApiServerVerticle {
   @Override
   protected List<ApiController> createControllers(
       Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
-    this.authV2Pair = LocalAuthV2Factory.buildPair(vertx, config, this.jwksResolver);
-    return ControllerFactory.createControllers(vertx, config, urnGenerator, authV2Pair);
+    return ControllerFactory.createControllers(vertx, config, urnGenerator);
   }
 
   @Override
@@ -64,7 +56,7 @@ public class ApiServerVerticle extends AbstractApiServerVerticle {
 
   @Override
   protected AuthenticationHandlerV2 getAuthV2Handler() {
-    return authV2Pair.authentication();
+    return LocalAuthV2Factory.buildPair(vertx, config(), jwksResolver);
   }
 
   @Override
@@ -75,8 +67,7 @@ public class ApiServerVerticle extends AbstractApiServerVerticle {
       String keystorePassword = config().getString("keystorePassword");
       serverOptions
           .setSsl(true)
-          .setKeyCertOptions(
-              new KeyStoreOptions().setPath(keystore).setPassword(keystorePassword));
+          .setKeyCertOptions(new KeyStoreOptions().setPath(keystore).setPassword(keystorePassword));
     }
   }
 }

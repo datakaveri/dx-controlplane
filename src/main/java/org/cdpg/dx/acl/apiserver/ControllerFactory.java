@@ -17,7 +17,7 @@ import org.cdpg.dx.acl.accessRequest.factory.AccessRequestFactory;
 import org.cdpg.dx.acl.policy.controller.PolicyController;
 import org.cdpg.dx.acl.policy.factory.PolicyFactory;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
-import org.cdpg.dx.auth.v2.factory.AuthHandlersV2;
+import org.cdpg.dx.auth.v2.handler.AuthenticationHandlerV2;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
@@ -32,7 +32,7 @@ public class ControllerFactory {
   private ControllerFactory() {}
 
   public static List<org.cdpg.dx.apiserver.ApiController> createControllers(
-      Vertx vertx, JsonObject config, URNGenerator urnGenerator, AuthHandlersV2 authV2) {
+      Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
 
     final String docIndex = config.getString(DOC_INDEX);
     final String vocContext = config.getString(VOC_CONTEXT);
@@ -68,11 +68,10 @@ public class ControllerFactory {
             urnGenerator,
             webClient,
             emailExchange,
-            emailRoutingKey,
-            authV2);
+            emailRoutingKey);
 
     AccessReportController accessReportController =
-        AccessReportFactory.create(pgService, vertx, authV2);
+        AccessReportFactory.create(pgService, vertx);
     PolicyController policyController =
         PolicyFactory.createPolicyController(
             pgService,
@@ -81,8 +80,7 @@ public class ControllerFactory {
             auditingHandler,
             urnGenerator,
             webClient,
-            config,
-            authV2);
+            config);
     return List.of(accessRequestController, accessReportController, policyController);
   }
 }

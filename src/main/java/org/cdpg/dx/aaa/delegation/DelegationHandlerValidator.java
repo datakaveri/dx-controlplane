@@ -101,7 +101,7 @@ public class DelegationHandlerValidator {
         {
           if(entityId!=null && entityType!=null)
           {
-            throw new DxBadRequestException("No entity required for cos_admin_access/org_admin_access scope");
+            throw new DxBadRequestException("No entity required for cos-admin-access/org-admin-access scope");
           }
           else
           {

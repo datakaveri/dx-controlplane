@@ -105,7 +105,9 @@ class TokenServiceTest {
         true,
         null,
         null,
-        new JsonArray());
+        new JsonArray(),
+        null,
+        null);
   }
 
   private static DxUser buildTestUserWithRoles(UUID userId, List<String> roles) {
@@ -131,7 +133,9 @@ class TokenServiceTest {
         true,
         null,
         null,
-        new JsonArray());
+        new JsonArray(),
+        null,
+        null);
   }
 
   private AccessTokenRequest identityTokenRequest() {
@@ -658,7 +662,7 @@ class TokenServiceTest {
       List<JsonObject> scopeConstraints =
           List.of(
               new JsonObject()
-                  .put("scope", "data_access")
+                  .put("scope", "data-access")
                   .put("entity_id", itemId));
 
       when(delegationService.getDelegationScopeConstraints(delegationId.toString()))
@@ -742,7 +746,7 @@ class TokenServiceTest {
       stubJwtGeneration("unused");
 
       List<JsonObject> constraints =
-          List.of(new JsonObject().put("scope", "data_access").put("entity_id", itemId));
+          List.of(new JsonObject().put("scope", "data-access").put("entity_id", itemId));
       when(delegationService.getDelegationScopeConstraints(delegationId.toString()))
           .thenReturn(Future.succeededFuture(constraints));
       when(delegationService.getDelegationGrantById(delegationId.toString()))
@@ -773,7 +777,7 @@ class TokenServiceTest {
       stubJwtGeneration("unused");
 
       List<JsonObject> constraints =
-          List.of(new JsonObject().put("scope", "data_access").put("entity_id", itemId));
+          List.of(new JsonObject().put("scope", "data-access").put("entity_id", itemId));
       when(delegationService.getDelegationScopeConstraints(delegationId.toString()))
           .thenReturn(Future.succeededFuture(constraints));
 
@@ -812,7 +816,7 @@ class TokenServiceTest {
       stubJwtGeneration("unused");
 
       List<JsonObject> constraints =
-          List.of(new JsonObject().put("scope", "data_access").put("entity_id", itemId));
+          List.of(new JsonObject().put("scope", "data-access").put("entity_id", itemId));
       when(delegationService.getDelegationScopeConstraints(delegationId.toString()))
           .thenReturn(Future.succeededFuture(constraints));
 
@@ -885,7 +889,7 @@ class TokenServiceTest {
       stubJwtGeneration("delegation-token");
 
       List<JsonObject> constraints =
-          List.of(new JsonObject().put("scope", "data_access").put("entity_id", itemId));
+          List.of(new JsonObject().put("scope", "data-access").put("entity_id", itemId));
       when(delegationService.getDelegationScopeConstraints(delegationId.toString()))
           .thenReturn(Future.succeededFuture(constraints));
 

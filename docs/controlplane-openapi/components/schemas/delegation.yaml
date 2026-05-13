@@ -9,12 +9,12 @@ DelegationRole:
 DelegationScope:
   type: string
   enum:
-  - cos_admin_access
-  - org_admin_access
-  - asset_management
-  - compute_management
-  - user_management
-  - data_access
+  - cos-admin-access
+  - org-admin-access
+  - asset-management
+  - compute-management
+  - user-management
+  - data-access
   - api
   - subs
   description: Allowed scope values across all roles

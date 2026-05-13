@@ -27,13 +27,10 @@ import org.cdpg.dx.common.request.PaginationRequestBuilder;
 public class ActivityReportController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(ActivityReportController.class);
   private final ActivityReportService reportService;
-  private final AuthorizationHandler authorizationV2;
 
   public ActivityReportController(
-      ActivityReportService reportService,
-      AuthorizationHandler authorizationV2) {
+      ActivityReportService reportService) {
     this.reportService = reportService;
-    this.authorizationV2 = authorizationV2;
   }
 
   @Override
@@ -41,13 +38,13 @@ public class ActivityReportController implements ApiController {
     builder
         .operation("get-admin-report")
         .handler(
-            authorizationV2.forScopesWithContext(
+            AuthorizationHandler.forScopesWithContext(
                 ScopeRule.platform(Scopes.USER_MANAGEMENT),
                 ScopeRule.org(Scopes.ORG_USER_MANAGEMENT)))
         .handler(this::handleGenerateCsvForAdmin);
     builder
         .operation("get-consumer-report")
-        .handler(authorizationV2.forScopes(Scopes.DATA_ACCESS))
+        .handler(AuthorizationHandler.forScopes(Scopes.DATA_ACCESS))
         .handler(this::handleGenerateCsvForConsumer);
   }
 

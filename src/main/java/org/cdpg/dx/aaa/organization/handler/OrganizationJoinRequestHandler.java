@@ -18,9 +18,9 @@ import org.cdpg.dx.aaa.organization.models.Status;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
-import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.v2.model.DxPrincipal;
 import org.cdpg.dx.common.URNGenerator;
+import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
@@ -65,8 +65,8 @@ public class OrganizationJoinRequestHandler {
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     JsonObject orgRequestJson = ctx.body().asJsonObject();
 
-    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
-    UUID userId = UUID.fromString(principal.getSub());
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    UUID userId = dxUser.sub();
     User user = ctx.user();
 
     keycloakUserService.getUserById(userId)
@@ -135,8 +135,8 @@ public class OrganizationJoinRequestHandler {
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     String orgIdparam = ctx.pathParam("id");
 
-    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
-    if (!orgIdparam.equals(principal.getOrganisationId())) {
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    if (!orgIdparam.equals(dxUser.organisationId())) {
       ctx.fail(new DxForbiddenException(
         "The org id of the user and the path parameter are not same"));
       return;
@@ -186,8 +186,8 @@ public class OrganizationJoinRequestHandler {
 
   public void getUserJoinOrganisationRequests(RoutingContext ctx) {
 
-    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
-    UUID userId = UUID.fromString(principal.getSub());
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    UUID userId = dxUser.sub();
 
     organizationService
         .getOrganizationJoinRequestsByUser(userId)
@@ -220,8 +220,8 @@ public class OrganizationJoinRequestHandler {
 
   public void deleteUserJoinOrganisationRequests(RoutingContext ctx) {
 
-    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
-    UUID userId = UUID.fromString(principal.getSub());
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    UUID userId = dxUser.sub();
 
     UUID requestId = UUID.fromString(ctx.pathParam("id"));
 
@@ -274,8 +274,8 @@ public class OrganizationJoinRequestHandler {
 
     String orgIdparam = ctx.pathParam("org_id");
 
-    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
-    if (orgIdparam != null && !orgIdparam.equals(principal.getOrganisationId())) {
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    if (orgIdparam != null && !orgIdparam.equals(dxUser.organisationId())) {
       ctx.fail(new DxForbiddenException(
         "The org id of the user and the path parameter are not same"));
       return;
@@ -318,8 +318,8 @@ public class OrganizationJoinRequestHandler {
 
   public void withdrawJoinRequest(RoutingContext ctx) {
 
-    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
-    UUID userId = UUID.fromString(principal.getSub());
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    UUID userId = dxUser.sub();
     UUID orgJoinReqId = UUID.fromString(ctx.pathParam("id"));
 
     organizationService

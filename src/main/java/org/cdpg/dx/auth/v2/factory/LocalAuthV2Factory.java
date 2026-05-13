@@ -13,11 +13,9 @@ import org.cdpg.dx.aaa.appCredentials.service.impl.AppCredentialsServiceImpl;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.auth.authentication.client.JwksResolver;
 import org.cdpg.dx.auth.v2.handler.AuthenticationHandlerV2;
-import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.v2.lookup.local.LocalAppCredentialLookup;
 import org.cdpg.dx.auth.v2.lookup.local.LocalDelegationLookup;
 import org.cdpg.dx.auth.v2.lookup.local.LocalUserLookup;
-import org.cdpg.dx.auth.v2.registry.InMemoryRoleScopeRegistry;
 import org.cdpg.dx.auth.v2.resolver.AppCredentialsResolver;
 import org.cdpg.dx.auth.v2.resolver.DelegationResolver;
 import org.cdpg.dx.common.config.ServiceProxyAddressConstants;
@@ -35,7 +33,8 @@ public final class LocalAuthV2Factory {
 
   private LocalAuthV2Factory() {}
 
-  public static AuthHandlersV2 buildPair(Vertx vertx, JsonObject config, JwksResolver jwksResolver) {
+  public static AuthenticationHandlerV2 buildPair(
+      Vertx vertx, JsonObject config, JwksResolver jwksResolver) {
     PostgresService postgresService =
         PostgresService.createProxy(vertx, ServiceProxyAddressConstants.POSTGRES_SERVICE_ADDRESS);
     DataBrokerService dataBrokerService =
@@ -50,7 +49,8 @@ public final class LocalAuthV2Factory {
             appCredentialsDAO,
             appConstraintsDAO,
             dataBrokerService,
-            config.getString("appIdRevokeExchange", "revoked-appid"),null);
+            config.getString("appIdRevokeExchange", "revoked-appid"),
+            null);
 
     DelegationService delegationService =
         DelegationService.createProxy(
@@ -67,11 +67,11 @@ public final class LocalAuthV2Factory {
             jwksResolver,
             new DelegationResolver(delegationLookup, userLookup),
             new AppCredentialsResolver(appLookup, userLookup));
-    AuthorizationHandler authorization = new AuthorizationHandler(new InMemoryRoleScopeRegistry());
-    return new AuthHandlersV2(authentication, authorization);
+    return authentication;
   }
 
-  public static Handler<RoutingContext> build(Vertx vertx, JsonObject config, JwksResolver jwksResolver) {
-    return buildPair(vertx, config, jwksResolver).authentication();
+  public static Handler<RoutingContext> build(
+      Vertx vertx, JsonObject config, JwksResolver jwksResolver) {
+    return buildPair(vertx, config, jwksResolver);
   }
 }

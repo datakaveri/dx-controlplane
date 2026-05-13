@@ -8,8 +8,8 @@ import java.util.UUID;
 import org.cdpg.dx.aaa.organization.models.OrganisationAuditOperation;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auditing.v2.util.AuditLogHelper;
-import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.v2.model.DxPrincipal;
+import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.common.util.RoutingContextHelper;
 
 import static org.cdpg.dx.aaa.common.Constants.ID;
 
@@ -40,9 +40,9 @@ public final class OrganizationAuditHelper {
                     : null)
             .withAction(operation.value());
 
-    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
-    if (principal != null && principal.isDelegation()) {
-      builder.withDelegatorId(safeUuid(principal.getSub()));
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    if (dxUser != null && dxUser.delegateeId() != null) {
+      builder.withDelegatorId(dxUser.sub());
     }
 
     return builder.build();

@@ -23,9 +23,9 @@ import org.cdpg.dx.aaa.organization.models.Role;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
-import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.v2.model.DxPrincipal;
 import org.cdpg.dx.common.URNGenerator;
+import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
@@ -54,8 +54,8 @@ public class OrganizationUserHandler {
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
 
-    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
-    if (!orgId.toString().equals(principal.getOrganisationId())) {
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    if (!orgId.toString().equals(dxUser.organisationId())) {
       ctx.fail(new DxForbiddenException(
         "The org id of the user and the path parameter are not same"));
       return;
@@ -78,8 +78,8 @@ public class OrganizationUserHandler {
   public void getOrganisationUsers(RoutingContext ctx) {
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
 
-    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
-    if (!orgId.toString().equals(principal.getOrganisationId())) {
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    if (!orgId.toString().equals(dxUser.organisationId())) {
       ctx.fail(new DxForbiddenException(
         "The org id of the user and the path parameter are not same"));
       return;
@@ -125,8 +125,8 @@ public class OrganizationUserHandler {
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
 
-    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
-    if (!orgId.toString().equals(principal.getOrganisationId())) {
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    if (!orgId.toString().equals(dxUser.organisationId())) {
       ctx.fail(new DxForbiddenException(
         "The org id of the user and the path parameter are not same"));
       return;
@@ -161,14 +161,14 @@ public class OrganizationUserHandler {
       return;
     }
 
-    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
-    if (!orgId.toString().equals(principal.getOrganisationId())) {
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    if (!orgId.toString().equals(dxUser.organisationId())) {
       ctx.fail(new DxForbiddenException(
         "The org id of the user and the path parameter are not same"));
       return;
     }
 
-    UUID orgAdminId = UUID.fromString(principal.getSub());
+    UUID orgAdminId = dxUser.sub();
 
     userService
         .getUserInfoByID(userId)

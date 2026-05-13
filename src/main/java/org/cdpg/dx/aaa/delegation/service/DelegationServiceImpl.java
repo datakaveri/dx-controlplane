@@ -356,7 +356,7 @@ public class DelegationServiceImpl implements DelegationService{
 
         JsonArray entityIds = constraint.getJsonArray("entity_id");
 
-        //skipping cos_admin_access and compute_management because no entity check is needed for them
+        //skipping cos-admin-access and compute-management because no entity check is needed for them
         if (entityIds != null && !entityIds.isEmpty()) {
           for (Object entity : entityIds) {
             insertFutures.add(createScopeConstraint(delegationId, role, constraint, entity)
