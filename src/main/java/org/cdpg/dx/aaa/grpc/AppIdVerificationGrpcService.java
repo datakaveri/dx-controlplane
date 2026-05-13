@@ -27,6 +27,7 @@ import org.cdpg.dx.auth.appid.v1.CheckItemAccessRequest;
 import org.cdpg.dx.auth.appid.v1.CheckItemAccessResponse;
 import org.cdpg.dx.auth.appid.v1.VerifyAppIdRequest;
 import org.cdpg.dx.auth.appid.v1.VerifyAppIdResponse;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class AppIdVerificationGrpcService
     extends AppIdVerificationServiceGrpc.AppIdVerificationServiceImplBase {
@@ -37,16 +38,19 @@ public class AppIdVerificationGrpcService
   private final AppCredentialsService appCredentialsService;
   private final ItemService itemService;
   private final DelegationService delegationService;
+  private final KeycloakUserService keycloakUserService;
 
   public AppIdVerificationGrpcService(
       Vertx vertx,
       AppCredentialsService appCredentialsService,
       ItemService itemService,
-      DelegationService delegationService) {
+      DelegationService delegationService,
+      KeycloakUserService keycloakUserService) {
     this.vertxContext = vertx.getOrCreateContext();
     this.appCredentialsService = appCredentialsService;
     this.itemService = itemService;
     this.delegationService = delegationService;
+    this.keycloakUserService = keycloakUserService;
   }
 
   /* ── VerifyAppId ─────────────────────────────────────────────────────── */
@@ -83,7 +87,7 @@ public class AppIdVerificationGrpcService
   private Future<VerifyAppIdResponse> buildVerifyResponse(AppCredentials app, UUID appId) {
     return appCredentialsService
         .getAppConstraintsById(appId)
-        .map(
+        .compose(
             constraints -> {
               List<String> scopes =
                   constraints.stream()
@@ -101,19 +105,44 @@ public class AppIdVerificationGrpcService
                         .getEpochSecond();
               }
 
-              AppIdPrincipalProto principal =
-                  AppIdPrincipalProto.newBuilder()
-                      .setAppId(app.appId().toString())
-                      .setUserId(app.userId().toString())
-                      .addRoles(app.role() != null ? app.role() : "consumer")
-                      .addAllScopes(scopes)
-                      .setExpiresAtEpoch(expiresAtEpoch)
-                      .build();
+              final long finalExpiresAtEpoch = expiresAtEpoch;
+              final List<String> finalScopes = scopes;
 
-              return VerifyAppIdResponse.newBuilder()
-                  .setSuccess(true)
-                  .setPrincipal(principal)
-                  .build();
+              // Fetch owner's organisationId from Keycloak to build a DxUser-equivalent principal.
+              // If Keycloak is unavailable we still return a valid response with empty
+              // organisationId.
+              return keycloakUserService
+                  .getUserById(app.userId())
+                  .recover(
+                      err -> {
+                        LOGGER.warn(
+                            "Could not fetch user info for userId={}: {}",
+                            app.userId(),
+                            err.getMessage());
+                        return Future.succeededFuture(null);
+                      })
+                  .map(
+                      dxUser -> {
+                        String organisationId =
+                            (dxUser != null && dxUser.organisationId() != null)
+                                ? dxUser.organisationId()
+                                : "";
+
+                        AppIdPrincipalProto principal =
+                            AppIdPrincipalProto.newBuilder()
+                                .setAppId(app.appId().toString())
+                                .setUserId(app.userId().toString())
+                                .addRoles(app.role() != null ? app.role() : "consumer")
+                                .addAllScopes(finalScopes)
+                                .setExpiresAtEpoch(finalExpiresAtEpoch)
+                                .setOrganisationId(organisationId)
+                                .build();
+
+                        return VerifyAppIdResponse.newBuilder()
+                            .setSuccess(true)
+                            .setPrincipal(principal)
+                            .build();
+                      });
             });
   }
 
@@ -122,7 +151,7 @@ public class AppIdVerificationGrpcService
   @Override
   public void checkItemAccess(
       CheckItemAccessRequest request, StreamObserver<CheckItemAccessResponse> observer) {
-    String userId  = request.getUserId();
+    String userId = request.getUserId();
     String entityId = request.getEntityId();
     String did = request.getDid();
     boolean hasDid = did != null && !did.isBlank();
@@ -138,27 +167,32 @@ public class AppIdVerificationGrpcService
           if (hasDid) {
             // Mirror the HTTP /cat/item/access delegation check:
             // userId = delegator (app owner), did = delegate (acting on their behalf)
-            work = delegationService
-                .checkItemAccess(userId, did)
-                .compose(delegResult -> {
-                  JsonArray allowed = delegResult.getJsonArray("result");
-                  if (allowed == null
-                      || (!allowed.contains("*") && !allowed.contains(entityId))) {
-                    return Future.failedFuture("DELEGATION_NO_ACCESS");
-                  }
-                  return fetchItemMetadata(entityId, userId);
-                });
+            work =
+                delegationService
+                    .checkItemAccess(userId, did)
+                    .compose(
+                        delegResult -> {
+                          JsonArray allowed = delegResult.getJsonArray("result");
+                          if (allowed == null
+                              || (!allowed.contains("*") && !allowed.contains(entityId))) {
+                            return Future.failedFuture("DELEGATION_NO_ACCESS");
+                          }
+                          return fetchItemMetadata(entityId, userId);
+                        });
           } else {
             work = fetchItemMetadata(entityId, userId);
           }
-          work
-              .onSuccess(response -> respond(observer, response))
-              .onFailure(err -> {
-                LOGGER.error(
-                    "CheckItemAccess failed userId={} entityId={} did={}: {}",
-                    userId, entityId, did, err.getMessage());
-                respond(observer, failAccess("NO_ACCESS"));
-              });
+          work.onSuccess(response -> respond(observer, response))
+              .onFailure(
+                  err -> {
+                    LOGGER.error(
+                        "CheckItemAccess failed userId={} entityId={} did={}: {}",
+                        userId,
+                        entityId,
+                        did,
+                        err.getMessage());
+                    respond(observer, failAccess("NO_ACCESS"));
+                  });
         });
   }
 
