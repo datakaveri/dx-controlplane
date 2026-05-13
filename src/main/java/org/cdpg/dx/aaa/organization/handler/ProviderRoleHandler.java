@@ -20,9 +20,9 @@ import org.cdpg.dx.aaa.organization.models.Status;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
-import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.v2.model.DxPrincipal;
 import org.cdpg.dx.common.exception.DxBadRequestException;
+import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.request.PaginatedRequest;
@@ -61,11 +61,11 @@ public class ProviderRoleHandler {
 
   public void createProviderRequest(RoutingContext ctx) {
 
-    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
     User user = ctx.user();
 
-    String userId = principal.getSub();
-    String orgID = principal.getOrganisationId();
+    String userId = dxUser.sub().toString();
+    String orgID = dxUser.organisationId();
 
     if (userId == null || userId.isEmpty()) {
       ctx.fail(new DxForbiddenException("User not found"));
@@ -130,8 +130,8 @@ public class ProviderRoleHandler {
 
   public void getProviderRequest(RoutingContext ctx) {
 
-    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
-    String orgIdStr = principal.getOrganisationId();
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    String orgIdStr = dxUser.organisationId();
     if (orgIdStr == null || orgIdStr.isBlank()) {
       ctx.fail(new DxBadRequestException("User is not part of any organisation"));
       return;
@@ -209,8 +209,8 @@ public class ProviderRoleHandler {
 
   public void deleteUserProviderRoleRequest(RoutingContext ctx) {
 
-    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
-    UUID userId = UUID.fromString(principal.getSub());
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    UUID userId = dxUser.sub();
 
     organizationService
         .getProviderRoleRequestByUserId(userId)
@@ -259,8 +259,8 @@ public class ProviderRoleHandler {
   }
 
   public void getProviderRoleRequest(RoutingContext ctx) {
-    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
-    UUID userId = UUID.fromString(principal.getSub());
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    UUID userId = dxUser.sub();
 
     organizationService
         .getProviderRoleRequestByUserId(userId)

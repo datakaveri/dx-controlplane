@@ -65,7 +65,7 @@ import org.cdpg.dx.aaa.token.factory.AppTokenControllerFactory;
 import org.cdpg.dx.aaa.token.factory.TokenControllerFactory;
 import org.cdpg.dx.aaa.user.factory.UserControllerFactory;
 import org.cdpg.dx.apiserver.ApiController;
-import org.cdpg.dx.auth.v2.factory.AuthHandlersV2;
+import org.cdpg.dx.auth.v2.handler.AuthenticationHandlerV2;
 import org.cdpg.dx.common.URNGenerator;
 
 /**
@@ -80,7 +80,7 @@ public class ControllerFactory {
   private ControllerFactory() {}
 
   public static List<ApiController> createControllers(
-      Vertx vertx, JsonObject config, URNGenerator urnGenerator, AuthHandlersV2 authV2) {
+      Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
 
     // ── Config values ──
     boolean isCentralCatEnabled = config.getBoolean(IS_CENTRAL_CATALOGUE_ENABLED, false);
@@ -119,11 +119,11 @@ public class ControllerFactory {
 
     // Activity
     ActivityController activityController =
-        ActivityControllerFactory.create(infra.pgService(), urnGenerator, authV2);
+        ActivityControllerFactory.create(infra.pgService(), urnGenerator);
     controllers.add(activityController);
 
     ActivityReportController activityReportController =
-        ActivityReportControllerFactory.create(infra.pgService(), vertx, authV2);
+        ActivityReportControllerFactory.create(infra.pgService(), vertx);
     controllers.add(activityReportController);
 
     // Organization
@@ -139,8 +139,7 @@ public class ControllerFactory {
             infra.webClient(),
             isKycRequired,
             docIndex,
-            apdURL,
-            authV2);
+            apdURL);
     controllers.add(organizationController);
 
     OrganizationReportController organizationReportController =
@@ -157,8 +156,7 @@ public class ControllerFactory {
             shared.keycloakUserService(),
             shared.auditingHandler(),
             urnGenerator,
-            isKycRequired,
-            authV2);
+            isKycRequired);
     controllers.add(creditApiController);
 
     KYCHandler kycHandler =
@@ -175,8 +173,7 @@ public class ControllerFactory {
             shared.organizationService(),
             urnGenerator,
             shared.emailComposer());
-    controllers.add(
-        new AdminController(adminHandler, authV2.authorization()));
+    controllers.add(new AdminController(adminHandler));
 
     // Asset
     AssetHandler assetHandler =
@@ -249,8 +246,7 @@ public class ControllerFactory {
             isCentralCatEnabled,
             isEdgeCatalogue,
             isStandalone,
-            shared.delegationService(),
-            authV2);
+            shared.delegationService());
     controllers.add(itemController);
 
     // Acl server
@@ -283,7 +279,7 @@ public class ControllerFactory {
     controllers.add(PublicKeycontrllerFactory.create(config, vertx));
 
     // User
-    controllers.add(UserControllerFactory.create(shared.userService(), urnGenerator, authV2));
+    controllers.add(UserControllerFactory.create(shared.userService(), urnGenerator));
 
     // Delegation
     controllers.add(
@@ -306,9 +302,13 @@ public class ControllerFactory {
     // App credentials & tokens
     controllers.add(
         AppCredentialsControllerFactory.create(
-            infra.pgService(), shared.organizationService(), shared.itemService(), urnGenerator,
-            infra.dataBrokerService(), config.getString("appIdRevokeExchange", "revoked-appid"), shared.userService(),
-            authV2));
+            infra.pgService(),
+            shared.organizationService(),
+            shared.itemService(),
+            urnGenerator,
+            infra.dataBrokerService(),
+            config.getString("appIdRevokeExchange", "revoked-appid"),
+            shared.userService()));
 
     controllers.add(
         AppTokenControllerFactory.create(
@@ -331,14 +331,10 @@ public class ControllerFactory {
     // User interactions v2
     controllers.add(
         UserInteractionV2controllerFactory.create(
-            infra.pgService(),
-            shared.itemService(),
-            shared.auditingHandler(),
-            urnGenerator,
-            authV2));
+            infra.pgService(), shared.itemService(), shared.auditingHandler(), urnGenerator));
 
     // Request conversations
-    controllers.add(ConversationControllerFactory.create(infra.pgService(), urnGenerator,authV2));
+    controllers.add(ConversationControllerFactory.create(infra.pgService(), urnGenerator));
 
     return controllers;
   }

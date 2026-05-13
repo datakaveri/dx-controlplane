@@ -15,7 +15,6 @@ import org.cdpg.dx.aaa.user.dao.CustomRoleDAO;
 import org.cdpg.dx.aaa.user.handler.UserHandler;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.aaa.user.service.UserServiceImpl;
-import org.cdpg.dx.auth.v2.factory.AuthHandlersV2;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
@@ -27,12 +26,12 @@ public class UserControllerFactory {
   private UserControllerFactory() {}
 
   public static UserController create(
-      UserService userService, URNGenerator urnGenerator, AuthHandlersV2 authV2) {
+      UserService userService, URNGenerator urnGenerator) {
 
 
     UserHandler userHandler = new UserHandler(userService, urnGenerator);
 
-    return new UserController(userHandler, authV2.authorization());
+    return new UserController(userHandler);
   }
 
   public static UserService createService(KeycloakUserService keycloakUserService, OrganizationService organizationService, CreditService creditService , ElasticsearchService elasticsearchService, CustomRoleDAO customRoleDAO,String docUserIndex) {

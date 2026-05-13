@@ -104,7 +104,9 @@ class UserServiceTest {
         true,                // account_enabled
         null,                // did
         null,                // aud
-        new JsonArray()      // scopes
+        new JsonArray(),     // scopes
+        null,                // delegateeId
+        null                 // appId
     );
   }
 

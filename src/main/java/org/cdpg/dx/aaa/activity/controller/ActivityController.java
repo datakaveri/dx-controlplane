@@ -32,27 +32,24 @@ public class ActivityController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(ActivityController.class);
   private final UserActivityAuditLogService userActivityAuditLogService;
   private final URNGenerator urnGenerator;
-  private final AuthorizationHandler authorizationV2;
 
   public ActivityController(
       UserActivityAuditLogService userActivityAuditLogService,
-      URNGenerator urnGenerator,
-      AuthorizationHandler authorizationV2) {
+      URNGenerator urnGenerator) {
     this.userActivityAuditLogService = userActivityAuditLogService;
     this.urnGenerator = urnGenerator;
-    this.authorizationV2 = authorizationV2;
   }
 
   @Override
   public void register(RouterBuilder builder) {
     builder
         .operation(OP_GET_ACTIVITY_FOR_CONSUMER)
-        .handler(authorizationV2.forScopes(Scopes.DATA_ACCESS))
+        .handler(AuthorizationHandler.forScopes(Scopes.DATA_ACCESS))
         .handler(this::handleGetAllActivityLogsForUser);
     builder
         .operation(OP_GET_ACTIVITY_FOR_ADMIN)
         .handler(
-            authorizationV2.forScopesWithContext(
+            AuthorizationHandler.forScopesWithContext(
                 ScopeRule.platform(Scopes.USER_MANAGEMENT),
                 ScopeRule.org(Scopes.ORG_USER_MANAGEMENT)))
         .handler(this::handleGetAllActivityLogsForAdmin);

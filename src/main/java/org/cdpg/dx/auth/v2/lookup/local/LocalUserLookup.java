@@ -19,8 +19,8 @@ import org.cdpg.dx.keycloak.service.KeycloakUserService;
  * and maps {@link DxUser} → {@link UserSnapshot}.
  *
  * <p>Role strings from Keycloak are translated via {@link DxRole#fromKeycloakName}. Strings that
- * don't map to a v2 system role (e.g. legacy {@code delegate} variants) are silently dropped —
- * the v2 model recognises only the five system roles.
+ * don't map to a v2 system role (e.g. legacy {@code delegate} variants) are silently dropped — the
+ * v2 model recognises only the five system roles.
  */
 public final class LocalUserLookup implements UserLookup {
 
@@ -42,12 +42,13 @@ public final class LocalUserLookup implements UserLookup {
     return userService
         .getUserById(uuid)
         .map(this::toSnapshot)
-        .recover(err -> {
-          if (err instanceof DxNotFoundException) {
-            return Future.succeededFuture(Optional.empty());
-          }
-          return Future.failedFuture(err);
-        });
+        .recover(
+            err -> {
+              if (err instanceof DxNotFoundException) {
+                return Future.succeededFuture(Optional.empty());
+              }
+              return Future.failedFuture(err);
+            });
   }
 
   private Optional<UserSnapshot> toSnapshot(DxUser user) {

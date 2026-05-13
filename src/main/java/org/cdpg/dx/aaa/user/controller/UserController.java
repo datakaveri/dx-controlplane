@@ -13,21 +13,18 @@ public class UserController implements ApiController {
 
   private static final Logger LOGGER = LogManager.getLogger(UserController.class);
   private final UserHandler userHandler;
-  private final AuthorizationHandler authorizationV2;
 
   public UserController(
-      UserHandler userHandler,
-      AuthorizationHandler authorizationV2) {
+      UserHandler userHandler) {
     this.userHandler = userHandler;
-    this.authorizationV2 = authorizationV2;
   }
 
   @Override
   public void register(RouterBuilder routerBuilder) {
 
-    var selfAccess = authorizationV2.forScopes(Scopes.DATA_ACCESS);
+    var selfAccess = AuthorizationHandler.forScopes(Scopes.DATA_ACCESS);
     var customRoleAdminAccess =
-        authorizationV2.forScopesWithContext(
+        AuthorizationHandler.forScopesWithContext(
             ScopeRule.platform(Scopes.ROLE_MANAGEMENT), ScopeRule.org(Scopes.ORG_USER_MANAGEMENT));
 
     routerBuilder

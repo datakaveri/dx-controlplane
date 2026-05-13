@@ -15,7 +15,6 @@ import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
-import org.cdpg.dx.auth.v2.factory.AuthHandlersV2;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
@@ -43,8 +42,7 @@ public class OrganizationControllerFactory {
       WebClient webClient,
       Boolean kycRequired,
       String docIndex,
-      String apdURL,
-      AuthHandlersV2 authV2) {
+      String apdURL) {
 
     OrganizationDAOFactory organizationDAOFactory = new OrganizationDAOFactory(pgService);
 
@@ -98,8 +96,7 @@ public class OrganizationControllerFactory {
         userHandler,
         providerRoleHandler,
         auditingHandler,
-        kycRequired,
-        authV2.authorization());
+        kycRequired);
   }
 
   /* =========================

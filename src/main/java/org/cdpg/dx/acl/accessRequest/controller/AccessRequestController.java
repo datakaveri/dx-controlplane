@@ -18,7 +18,6 @@ import static org.cdpg.dx.acl.accessRequest.util.Constants.API_TO_DB_MAP;
 import static org.cdpg.dx.acl.accessRequest.util.EmailType.CONSUMER_ACK;
 import static org.cdpg.dx.acl.accessRequest.util.EmailType.CONSUMER_UPDATE;
 import static org.cdpg.dx.acl.accessRequest.util.EmailType.PROVIDER_CREATE;
-import static org.cdpg.dx.auth.v2.handler.AuthorizationHandler.PRINCIPAL_KEY;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
 import io.vertx.core.Future;
@@ -47,7 +46,6 @@ import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.v2.handler.ScopeRule;
-import org.cdpg.dx.auth.v2.model.DxPrincipal;
 import org.cdpg.dx.auth.v2.model.Scopes;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.email.SendEmail;
@@ -77,8 +75,6 @@ public class AccessRequestController implements ApiController {
   private final URNGenerator urnGenerator;
   private final String emailExchange;
   private final String emailRoutingKey;
-  private final AuthorizationHandler authorizationV2;
-
   public AccessRequestController(
       AccessRequestService accessRequestService,
       AuditingHandler auditingHandler,
@@ -87,8 +83,7 @@ public class AccessRequestController implements ApiController {
       PostgresService postgresService,
       KeycloakUserService keycloakUserService,
       String emailExchange,
-      String emailRoutingKey,
-      AuthorizationHandler authorizationV2) {
+      String emailRoutingKey) {
     this.accessRequestService = accessRequestService;
     this.auditingHandler = auditingHandler;
     this.dataBrokerService = dataBrokerService;
@@ -97,7 +92,6 @@ public class AccessRequestController implements ApiController {
     this.keycloakUserService = keycloakUserService;
     this.emailExchange = emailExchange;
     this.emailRoutingKey = emailRoutingKey;
-    this.authorizationV2 = authorizationV2;
   }
 
   private static LocalDateTime parseAndValidateFutureTime(String timeString) {
@@ -122,12 +116,12 @@ public class AccessRequestController implements ApiController {
 
   @Override
   public void register(RouterBuilder builder) {
-    Handler<RoutingContext> selfAccess = authorizationV2.forScopes(Scopes.DATA_ACCESS);
+    Handler<RoutingContext> selfAccess = AuthorizationHandler.forScopes(Scopes.DATA_ACCESS);
     Handler<RoutingContext> orgAdminAccess =
-        authorizationV2.forScopes(Scopes.ORG_ASSET_MANAGEMENT);
-    Handler<RoutingContext> cosAdminAccess = authorizationV2.forScopes(Scopes.ASSET_MANAGEMENT);
+        AuthorizationHandler.forScopes(Scopes.ORG_ASSET_MANAGEMENT);
+    Handler<RoutingContext> cosAdminAccess = AuthorizationHandler.forScopes(Scopes.ASSET_MANAGEMENT);
     Handler<RoutingContext> providerAdminAccess =
-        authorizationV2.forScopesWithContext(
+        AuthorizationHandler.forScopesWithContext(
             ScopeRule.self(Scopes.OWN_ASSET_MANAGEMENT),
             ScopeRule.org(Scopes.ORG_ASSET_MANAGEMENT));
     UserAccessHandler userAccessHandler = new UserAccessHandler(postgresService, keycloakUserService);
@@ -503,21 +497,21 @@ public class AccessRequestController implements ApiController {
     RequestType requestType = RequestType.valueOf(body.getString("requestType"));
     JsonObject additionalInfo = body.getJsonObject("additionalInfo");
     JsonObject constraints = body.getJsonObject("constraints");
-    DxUser consumer;
-    DxPrincipal principal;
-
+    DxUser dxUser;
 
     try {
-        principal =  ctx.get(PRINCIPAL_KEY);
-    //  consumer = RoutingContextHelper.fromPrincipal(ctx);
+      dxUser = RoutingContextHelper.fromPrincipal(ctx);
     } catch (Exception e) {
       LOGGER.error("Error extracting user from token: {}", e.getMessage(), e);
       ctx.fail(new DxForbiddenException("Invalid user"));
       return;
     }
 
+    String authenticatedSub = dxUser.delegateeId() != null ? dxUser.delegateeId() : dxUser.sub().toString();
+    UUID consumerId = UUID.fromString(authenticatedSub);
+
     accessRequestService
-        .createAccessRequest(UUID.fromString(principal.getAuthenticatedSub()), itemId, requestType, additionalInfo, constraints)
+        .createAccessRequest(consumerId, itemId, requestType, additionalInfo, constraints)
         .onSuccess(
             accessRequestDto -> {
               UserActivityAuditLogBuilder auditLog =

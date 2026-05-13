@@ -54,7 +54,6 @@ import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.v2.model.DxPrincipal;
 import org.cdpg.dx.auth.v2.model.Scopes;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxBadRequestException;
@@ -87,7 +86,6 @@ public class ItemController implements ApiController {
   private final ItemOwnershipValidator itemOwnershipValidator;
   private final VerifyItemTypeAndRole verifyItemTypeAndRole = new VerifyItemTypeAndRole();
   private final KeycloakUserService keycloakUserService;
-  private final AuthorizationHandler authorizationV2;
 
   public ItemController(
       AuditingHandler auditingHandler,
@@ -100,8 +98,7 @@ public class ItemController implements ApiController {
       URNGenerator urnGenerator,
       ItemRegistryService itemRegistryService,
       DelegationService delegationService,
-      KeycloakUserService keycloakUserService,
-      AuthorizationHandler authorizationV2) {
+      KeycloakUserService keycloakUserService) {
     this.auditingHandler = auditingHandler;
     this.itemService = itemService;
     this.centralItemService = centralItemService;
@@ -118,18 +115,17 @@ public class ItemController implements ApiController {
         new ItemFetchService(itemService, centralItemService, isCentralCatEnabled);
     this.delegationService = delegationService;
     this.keycloakUserService = keycloakUserService;
-    this.authorizationV2 = authorizationV2;
   }
 
   @Override
   public void register(RouterBuilder builder) {
     Handler<RoutingContext> assetManagementAccess =
-        authorizationV2.forScopes(
+        AuthorizationHandler.forScopes(
             Scopes.OWN_ASSET_MANAGEMENT,
             Scopes.ORG_ASSET_MANAGEMENT,
             Scopes.ASSET_MANAGEMENT);
     Handler<RoutingContext> providerScriptAccess =
-        authorizationV2.forScopes(Scopes.OWN_ASSET_MANAGEMENT);
+        AuthorizationHandler.forScopes(Scopes.OWN_ASSET_MANAGEMENT);
 
     builder
         .operation(CREATE_ITEM)
@@ -265,21 +261,13 @@ public class ItemController implements ApiController {
       return;
     }
 
-    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
-    List<String> allowedRoles =
-        (principal.isDirectUser()
-                ? principal.getAuthorizationRoles()
-                : principal.getAuditRoles())
-            .stream()
-            .map(org.cdpg.dx.auth.v2.model.DxRole::keycloakName)
-            .collect(Collectors.toList());
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    List<String> allowedRoles = dxUser.roles();
     boolean isAdmin =
         allowedRoles.contains(DxRole.ORG_ADMIN.getRole())
             || allowedRoles.contains(DxRole.COS_ADMIN.getRole());
 
-    DxUser user = RoutingContextHelper.fromPrincipal(ctx);
-    String userId = "";
-    userId = user.sub().toString();
+    String userId = dxUser.sub().toString();
     AtomicReference<String> orgId = new AtomicReference<>("");
     // orgId = user.organisationId();
 
@@ -287,8 +275,8 @@ public class ItemController implements ApiController {
     keycloakUserService
         .getUserById(UUID.fromString(userId))
         .onSuccess(
-            dxUser -> {
-              orgId.set(dxUser.organisationId());
+            keycloakUser -> {
+              orgId.set(keycloakUser.organisationId());
             })
         .onFailure(
             err -> {

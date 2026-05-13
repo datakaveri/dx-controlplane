@@ -105,7 +105,9 @@ class TokenServiceTest {
         true,
         null,
         null,
-        new JsonArray());
+        new JsonArray(),
+        null,
+        null);
   }
 
   private static DxUser buildTestUserWithRoles(UUID userId, List<String> roles) {
@@ -131,7 +133,9 @@ class TokenServiceTest {
         true,
         null,
         null,
-        new JsonArray());
+        new JsonArray(),
+        null,
+        null);
   }
 
   private AccessTokenRequest identityTokenRequest() {

@@ -33,26 +33,22 @@ public class ConversationController implements ApiController {
           "display_name", "display_name",
           "is_active", "is_active");
 
-  private final AuthorizationHandler authorizationV2;
-
   private final ConversationService service;
   private final URNGenerator urnGenerator;
 
   public ConversationController(
       ConversationService service,
-      URNGenerator urnGenerator,
-      AuthorizationHandler authorizationV2) {
+      URNGenerator urnGenerator) {
     this.service = service;
     this.urnGenerator = urnGenerator;
-    this.authorizationV2 = authorizationV2;
   }
 
   @Override
   public void register(RouterBuilder builder) {
 
-    var selfAccess = authorizationV2.forScopes(Scopes.DATA_ACCESS);
-    var orgAdminAccess = authorizationV2.forScopes(Scopes.ORG_USER_MANAGEMENT);
-    var cosAdminAccess = authorizationV2.forScopes(Scopes.ORG_MANAGEMENT);
+    var selfAccess = AuthorizationHandler.forScopes(Scopes.DATA_ACCESS);
+    var orgAdminAccess = AuthorizationHandler.forScopes(Scopes.ORG_USER_MANAGEMENT);
+    var cosAdminAccess = AuthorizationHandler.forScopes(Scopes.ORG_MANAGEMENT);
 
     builder
         .operation(OP_GET_CONVERSATION_MESSAGES)

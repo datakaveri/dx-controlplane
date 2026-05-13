@@ -18,9 +18,9 @@ import org.cdpg.dx.aaa.organization.models.OrganizationCreateRequest;
 import org.cdpg.dx.aaa.organization.models.Status;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
-import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.v2.model.DxPrincipal;
 import org.cdpg.dx.common.URNGenerator;
+import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
@@ -64,8 +64,8 @@ public class OrganizationCreateRequestHandler {
     }
 
     JsonObject orgRequestJson = ctx.body().asJsonObject();
-    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
-    UUID userId = UUID.fromString(principal.getSub());
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    UUID userId = dxUser.sub();
     User user = ctx.user();
 
     String orgName = orgRequestJson.getString("name");
@@ -165,8 +165,8 @@ public class OrganizationCreateRequestHandler {
 
   public void deleteOrganizationCreateRequest(RoutingContext ctx) {
     UUID requestId = UUID.fromString(ctx.pathParam("id"));
-    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
-    UUID userId = UUID.fromString(principal.getSub());
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    UUID userId = dxUser.sub();
 
     organizationService
         .getOrganizationCreateRequestById(requestId)
@@ -214,8 +214,8 @@ public class OrganizationCreateRequestHandler {
   }
 
   public void getUserOrganisationRequest(RoutingContext ctx) {
-    DxPrincipal principal = ctx.get(AuthorizationHandler.PRINCIPAL_KEY);
-    UUID userId = UUID.fromString(principal.getSub());
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    UUID userId = dxUser.sub();
 
     organizationService
         .getOrganizationCreateRequestsByUserId(userId)
