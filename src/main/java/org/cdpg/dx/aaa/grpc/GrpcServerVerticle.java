@@ -1,5 +1,10 @@
 package org.cdpg.dx.aaa.grpc;
 
+import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DATA_BROKER_SERVICE_ADDRESS;
+import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DELEGATION_SERVICE_ADDRESS;
+import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.ELASTIC_SERVICE_ADDRESS;
+import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.POSTGRES_SERVICE_ADDRESS;
+
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.vertx.core.AbstractVerticle;
@@ -15,21 +20,16 @@ import org.cdpg.dx.aaa.appCredentials.dao.impl.AppConstraintsDAOImpl;
 import org.cdpg.dx.aaa.appCredentials.dao.impl.AppCredentialsDAOImpl;
 import org.cdpg.dx.aaa.appCredentials.service.AppCredentialsService;
 import org.cdpg.dx.aaa.appCredentials.service.impl.AppCredentialsServiceImpl;
+import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
+import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
-
-import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DATA_BROKER_SERVICE_ADDRESS;
-import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DELEGATION_SERVICE_ADDRESS;
-import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.ELASTIC_SERVICE_ADDRESS;
-import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.POSTGRES_SERVICE_ADDRESS;
-import org.cdpg.dx.aaa.delegation.service.DelegationService;
-import org.cdpg.dx.databroker.service.DataBrokerService;
 
 public class GrpcServerVerticle extends AbstractVerticle {
 
@@ -42,40 +42,46 @@ public class GrpcServerVerticle extends AbstractVerticle {
     String docIndex = config().getString("docIndex", "iudx-docs");
     String apdUrl = config().getString("apdURL", "");
 
-    PostgresService postgresService =
-        PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
+    PostgresService postgresService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
     ElasticsearchService elasticsearchService =
         ElasticsearchService.createProxy(vertx, ELASTIC_SERVICE_ADDRESS);
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config());
     WebClient webClient = WebClient.create(vertx);
     PolicyDao policyDao = new PolicyDaoImpl(postgresService);
 
-    ItemService itemService = new ItemServiceImpl(
-        elasticsearchService,
-        keycloakUserService,
-        postgresService,
-        policyDao,
-        webClient,
-        docIndex,
-        apdUrl);
+    ItemService itemService =
+        new ItemServiceImpl(
+            elasticsearchService,
+            keycloakUserService,
+            postgresService,
+            policyDao,
+            webClient,
+            docIndex,
+            apdUrl);
 
     AppCredentialsDAO appCredentialsDAO = new AppCredentialsDAOImpl(postgresService);
     AppConstraintsDAO appConstraintsDAO = new AppConstraintsDAOImpl(postgresService);
-    DataBrokerService dataBrokerService = DataBrokerService.createProxy(vertx, DATA_BROKER_SERVICE_ADDRESS);
+    DataBrokerService dataBrokerService =
+        DataBrokerService.createProxy(vertx, DATA_BROKER_SERVICE_ADDRESS);
     // delegationValidator is only needed by createApp(); this verticle never calls it
-    AppCredentialsService appCredentialsService = new AppCredentialsServiceImpl(
-        null, appCredentialsDAO, appConstraintsDAO, dataBrokerService, config().getString("appIdRevokeExchange", "revoked-appid"),null);
+    AppCredentialsService appCredentialsService =
+        new AppCredentialsServiceImpl(
+            null,
+            appCredentialsDAO,
+            appConstraintsDAO,
+            dataBrokerService,
+            config().getString("appIdRevokeExchange", "revoked-appid"),
+            null);
 
-    DelegationService delegationService = DelegationService.createProxy(vertx, DELEGATION_SERVICE_ADDRESS);
+    DelegationService delegationService =
+        DelegationService.createProxy(vertx, DELEGATION_SERVICE_ADDRESS);
 
-    AppIdVerificationGrpcService grpcService = new AppIdVerificationGrpcService(
-        vertx, appCredentialsService, itemService, delegationService);
+    AppIdVerificationGrpcService grpcService =
+        new AppIdVerificationGrpcService(
+            vertx, appCredentialsService, itemService, delegationService, keycloakUserService);
 
     try {
-      grpcServer = ServerBuilder.forPort(grpcPort)
-          .addService(grpcService)
-          .build()
-          .start();
+      grpcServer = ServerBuilder.forPort(grpcPort).addService(grpcService).build().start();
       LOGGER.info("AppId gRPC server started on port {}", grpcPort);
       startPromise.complete();
     } catch (IOException e) {
