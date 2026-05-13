@@ -391,7 +391,7 @@ class AppTokenServiceTest {
       AppTokenRequest request = new AppTokenRequest(appId, PLAIN_SECRET);
 
       List<AppConstraints> constraints =
-          List.of(buildConstraint(appId, userId, "user_management"));
+          List.of(buildConstraint(appId, userId, "user-management"));
 
       when(appCredentialsService.getAppById(appId)).thenReturn(Future.succeededFuture(app));
       when(appCredentialsService.getAppConstraintsById(appId))
@@ -599,7 +599,7 @@ class AppTokenServiceTest {
       AppTokenRequest request = new AppTokenRequest(appId, PLAIN_SECRET);
 
       List<AppConstraints> constraints =
-          List.of(buildConstraint(appId, userId, "cos_admin_access"));
+          List.of(buildConstraint(appId, userId, "cos-admin-access"));
 
       when(appCredentialsService.getAppById(appId)).thenReturn(Future.succeededFuture(app));
       when(appCredentialsService.getAppConstraintsById(appId))
@@ -627,7 +627,7 @@ class AppTokenServiceTest {
       AppTokenRequest request = new AppTokenRequest(appId, PLAIN_SECRET);
 
       List<AppConstraints> constraints =
-          List.of(buildConstraint(appId, userId, "org_admin_access"));
+          List.of(buildConstraint(appId, userId, "org-admin-access"));
 
       when(appCredentialsService.getAppById(appId)).thenReturn(Future.succeededFuture(app));
       when(appCredentialsService.getAppConstraintsById(appId))
@@ -655,7 +655,7 @@ class AppTokenServiceTest {
       AppTokenRequest request = new AppTokenRequest(appId, PLAIN_SECRET);
 
       List<AppConstraints> constraints =
-          List.of(buildConstraint(appId, userId, "compute_management"));
+          List.of(buildConstraint(appId, userId, "compute-management"));
 
       when(appCredentialsService.getAppById(appId)).thenReturn(Future.succeededFuture(app));
       when(appCredentialsService.getAppConstraintsById(appId))
@@ -716,7 +716,7 @@ class AppTokenServiceTest {
       List<AppConstraints> constraints =
           List.of(
               buildConstraint(appId, userId, "asset-management"),
-              buildConstraint(appId, userId, "user_management"));
+              buildConstraint(appId, userId, "user-management"));
 
       when(appCredentialsService.getAppById(appId)).thenReturn(Future.succeededFuture(app));
       when(appCredentialsService.getAppConstraintsById(appId))

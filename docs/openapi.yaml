@@ -397,8 +397,8 @@ paths:
                       createdAt: '2025-06-04T06:12:48.991'
                       kycData: { }
                       scopes:
-                        - user_management
-                        - data_access
+                        - user-management
+                        - data-access
         '400':
           description: Bad Request
           content:
@@ -3042,7 +3042,7 @@ paths:
                   roles:
                     - role: org_admin
                       constraints:
-                        - scope: org_admin_access
+                        - scope: org-admin-access
                           expiry_at: '2026-01-31T23:59:59'
               role_with_entity_constraints:
                 summary: Role with entity-specific constraints
@@ -3053,9 +3053,9 @@ paths:
                   roles:
                     - role: org_admin
                       constraints:
-                        - scope: user_management
+                        - scope: user-management
                           expiry_at: '2026-01-31T23:59:59'
-                        - scope: data_access
+                        - scope: data-access
                           entity_id:
                             - xyz-uuid-123
                           entity_type: data_bank
@@ -17843,12 +17843,12 @@ components:
     DelegationScope:
       type: string
       enum:
-        - cos_admin_access
-        - org_admin_access
-        - asset_management
-        - compute_management
-        - user_management
-        - data_access
+        - cos-admin-access
+        - org-admin-access
+        - asset-management
+        - compute-management
+        - user-management
+        - data-access
         - api
         - subs
       description: Allowed scope values across all roles
