@@ -1,17 +1,12 @@
 package org.cdpg.dx.aaa.resourceserver.service;
 
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.sqlclient.PreparedQuery;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.resourceserver.dao.ResourceServerDAO;
 import org.cdpg.dx.aaa.resourceserver.models.ResourceServer;
-import org.cdpg.dx.acl.accessRequest.controller.AccessRequestController;
 import org.cdpg.dx.common.exception.DxUnauthorizedException;
 import org.cdpg.dx.common.util.ServiceErrorHelper;
-import org.cdpg.dx.common.request.PaginatedRequest;
-import org.cdpg.dx.database.postgres.models.PaginatedResult;
 
 import java.util.List;
 import java.util.Map;
@@ -19,8 +14,8 @@ import java.util.UUID;
 
 public class ResourceServerServiceImpl implements ResourceServerService {
 
-  private final ResourceServerDAO dao;
     private static final Logger LOGGER = LogManager.getLogger(ResourceServerServiceImpl.class);
+  private final ResourceServerDAO dao;
 
   public ResourceServerServiceImpl(ResourceServerDAO dao) {
     this.dao = dao;

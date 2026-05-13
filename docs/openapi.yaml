@@ -8938,6 +8938,356 @@ paths:
             curl --location --request DELETE \
             'https://${HOSTNAME}/iudx/v2/resource_servers/7e9f1f76-baa1-4230-817f-f61ef3c0c411' \
             --header 'Authorization: Bearer <YOUR_ACCESS_TOKEN>'
+
+  /iudx/v2/acl_servers:
+    get:
+      summary: List ACL Servers
+      operationId: list acl servers
+      tags:
+        - ACL Servers
+      security:
+        - authorization: [ ]
+      description: |
+        Retrieves the list of available ACL APD servers that can be associated
+        with datasets, assets, or resources during onboarding.
+
+        ACL servers are responsible for managing access control policies for
+        consumers and delegates. Providers can choose an ACL server while
+        onboarding metadata so that access requests for the asset can later
+        be governed through the selected ACL APD server.
+
+        **Access Control**
+        - Accessible only to users with `cos_admin` or `org_admin` roles.
+
+        **Role-based behavior**
+        - `cos_admin`: Returns all ACL servers available in the system.
+        - `org_admin`: Returns only the ACL servers created by the requesting organization administrator.
+
+        **Usage**
+        - Typically used by provider onboarding workflows to fetch the list
+          of available ACL servers before publishing dataset metadata.
+        - The returned `id` should be referenced while onboarding assets/resources.
+
+      responses:
+        '200':
+          description: ACL servers retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - type
+                  - title
+                  - result
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AclServer'
+              example:
+                type: dx:controlPlane:success
+                title: Success
+                result:
+                  - id: 2ef0f344-dc41-4369-a50b-1515a0db5db2
+                    name: DX ACL APD Server
+                    url: acl-apd.iudx.io
+                    owner_id: 1dc28cc6-d614-461a-9b8f-d6110feb3e2f
+                    visibility: PUBLIC
+                    status: ACTIVE
+                    created_at: '2025-09-29T08:38:27.149785'
+                    updated_at: '2025-09-29T08:38:27.149785'
+
+        '401':
+          description: Unauthorized - Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingToken:
+                  value:
+                    type: dx:controlPlane:notAuthorized
+                    title: Not Authorized
+                    detail: Missing Bearer token
+
+                invalidToken:
+                  value:
+                    type: dx:controlPlane:notAuthorized
+                    title: Not Authorized
+                    detail: Invalid token format
+
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
+
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+      x-codeSamples:
+        - lang: cURL
+          label: List ACL Servers
+          source: |
+            curl --location \
+            'https://${HOSTNAME}/iudx/v2/acl_servers' \
+            --header 'Authorization: Bearer <YOUR_ACCESS_TOKEN>'
+
+    post:
+      summary: Create an ACL Server
+      operationId: create acl server
+      tags:
+        - ACL Servers
+      security:
+        - authorization: [ ]
+      description: |
+        Creates a new ACL APD server configuration.
+
+        ACL servers are used for managing access policies for assets/resources.
+        Providers can associate one of the configured ACL servers while
+        onboarding metadata into the catalogue.
+
+        **Access Control**
+        - Accessible only to users with `cos_admin` or `org_admin` roles.
+
+        **Notes**
+        - The created ACL server will initially be in `PENDING` status.
+        - Ownership is automatically assigned to the requesting user’s organization.
+        - The configured URL should point to a valid DX ACL APD deployment.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AclServerCreateRequest'
+            example:
+              name: DX ACL APD Server
+              url: acl-apd.iudx.io
+              visibility: PUBLIC
+
+      responses:
+        '201':
+          description: ACL Server created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AclServerResponse'
+              example:
+                type: dx:controlPlane:success
+                title: Success
+                result:
+                  id: cabd5e4d-a426-4472-8d5d-80f8ac55cead
+                  name: DX ACL APD Server
+                  url: acl-apd.iudx.io
+                  owner_id: 64cb5154-6f8c-40ff-891f-baee2aac8b85
+                  visibility: PUBLIC
+                  status: PENDING
+                  created_at: '2025-12-16T07:00:14.225681'
+                  updated_at: '2025-12-16T07:00:14.225681'
+
+        '401':
+          description: Unauthorized - Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '403':
+          description: Forbidden - User does not have the required role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
+
+        '409':
+          description: Conflict - ACL server already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:conflict
+                title: Conflict
+                detail: ACL server with the same URL already exists.
+
+      x-codeSamples:
+        - lang: cURL
+          label: Create ACL Server
+          source: |
+            curl --location --request POST 'https://${HOSTNAME}/iudx/v2/acl_servers' \
+            --header 'Authorization: Bearer <YOUR_ACCESS_TOKEN>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "name": "DX ACL APD Server",
+              "url": "acl-apd.iudx.io",
+              "visibility": "PUBLIC"
+            }'
+
+  /iudx/v2/acl_servers/{id}:
+    get:
+      summary: Get ACL Server by ID
+      operationId: get acl server
+      security:
+        - authorization: [ ]
+      tags:
+        - ACL Servers
+      description: |
+        Retrieves the details of a specific ACL APD server using its unique identifier.
+
+        **Access Control**
+        - Accessible only to users with `cos_admin` or `org_admin` roles.
+
+        **Role-based behavior**
+        - `cos_admin`: Can fetch details of any ACL server.
+        - `org_admin`: Can fetch details only for ACL servers owned by their organization.
+
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        '200':
+          description: ACL server retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AclServerResponse'
+              example:
+                type: dx:controlPlane:success
+                title: Success
+                result:
+                  id: 7e9f1f76-baa1-4230-817f-f61ef3c0c411
+                  name: DX ACL APD Server
+                  url: acl-apd.iudx.io
+                  owner_id: 64cb5154-6f8c-40ff-891f-baee2aac8b85
+                  visibility: PUBLIC
+                  status: ACTIVE
+                  created_at: '2025-12-16T07:14:25.034849'
+                  updated_at: '2025-12-16T07:14:25.034849'
+
+        '401':
+          description: Unauthorized - Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '403':
+          description: Forbidden - User does not have the required role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '404':
+          description: Not Found - ACL server not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:notFound
+                title: Not Found
+                detail: ACL server not found.
+
+      x-codeSamples:
+        - lang: cURL
+          label: Get ACL Server by ID
+          source: |
+            curl --location --request GET \
+            'https://${HOSTNAME}/iudx/v2/acl_servers/7e9f1f76-baa1-4230-817f-f61ef3c0c411' \
+            --header 'Authorization: Bearer <YOUR_ACCESS_TOKEN>'
+
+    delete:
+      summary: Delete ACL Server
+      operationId: delete acl server
+      security:
+        - authorization: [ ]
+      tags:
+        - ACL Servers
+      description: |
+        Deletes an existing ACL APD server configuration.
+
+        **Access Control**
+        - Accessible only to users with `cos_admin` or `org_admin` roles.
+
+        **Role-based behavior**
+        - `cos_admin`: Can delete any ACL server.
+        - `org_admin`: Can delete only ACL servers owned by their organization.
+
+        **Important**
+        - ACL servers currently associated with active datasets/resources
+          should not be deleted until the dependent resources are updated.
+        - Once deleted, the ACL server configuration cannot be recovered.
+
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        '204':
+          description: No Content - ACL server deleted successfully
+
+        '401':
+          description: Unauthorized - Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '404':
+          description: Not Found - ACL server not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:notFound
+                title: Not Found
+                detail: ACL server not found.
+
+      x-codeSamples:
+        - lang: cURL
+          label: Delete ACL Server
+          source: |
+            curl --location --request DELETE \
+            'https://${HOSTNAME}/iudx/v2/acl_servers/7e9f1f76-baa1-4230-817f-f61ef3c0c411' \
+            --header 'Authorization: Bearer <YOUR_ACCESS_TOKEN>'
   /iudx/v2/auth/organisations/{id}/users/{user_id}:
     parameters:
       - name: id
@@ -10680,6 +11030,83 @@ components:
       schema:
         type: string
   schemas:
+    AclServer:
+      type: object
+      required:
+        - id
+        - name
+        - url
+        - owner_id
+        - visibility
+        - status
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: DX ACL APD Server
+        url:
+          type: string
+          example: acl-apd.iudx.io
+        owner_id:
+          type: string
+          format: uuid
+        visibility:
+          type: string
+          enum:
+            - PUBLIC
+            - PRIVATE
+          example: PUBLIC
+        status:
+          type: string
+          enum:
+            - PENDING
+            - ACTIVE
+            - INACTIVE
+          example: ACTIVE
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    AclServerResponse:
+      type: object
+      required:
+        - type
+        - title
+        - result
+      properties:
+        type:
+          type: string
+          example: dx:controlPlane:success
+        title:
+          type: string
+          example: Success
+        result:
+          $ref: '#/components/schemas/AclServer'
+    AclServerCreateRequest:
+      type: object
+      required:
+        - name
+        - url
+        - visibility
+      properties:
+        name:
+          type: string
+          example: DX ACL APD Server
+        url:
+          type: string
+          example: acl-apd.iudx.io
+        visibility:
+          type: string
+          enum:
+            - PUBLIC
+            - PRIVATE
+          example: PUBLIC
     AssetSummary:
       type: object
       required:
@@ -11243,6 +11670,8 @@ components:
         autoComplete:
           type: boolean
           description: Enables autocomplete suggestions.
+        textSearchOptions:
+          $ref: '#/components/schemas/TextSearchOptions'
         filter:
           type: array
           items:
@@ -11288,6 +11717,8 @@ components:
         autoComplete:
           type: boolean
           description: Enables autocomplete suggestions.
+        textSearchOptions:
+          $ref: '#/components/schemas/TextSearchOptions'
       required:
         - q
     ComplexSearchRequest:
@@ -11303,6 +11734,8 @@ components:
         autoComplete:
           type: boolean
           description: Enables autocomplete suggestions.
+        textSearchOptions:
+          $ref: '#/components/schemas/TextSearchOptions'
         searchCriteria:
           type: array
           items:
@@ -11441,6 +11874,29 @@ components:
         q: sat
         autoComplete: true
         fuzzy: true
+    TextSearchField:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Field name to be included in text search.
+          example: name
+        boost:
+          type: number
+          description: Optional boost factor to prioritize this field.
+          example: 3
+    TextSearchOptions:
+      type: object
+      additionalProperties: false
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/TextSearchField'
+          description: List of fields with optional boost values.
     DataBankResourceCreateResult:
       type: object
       description: Result payload for successful Data Bank Resource creation

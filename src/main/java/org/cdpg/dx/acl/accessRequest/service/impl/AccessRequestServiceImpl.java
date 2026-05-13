@@ -472,19 +472,19 @@ public class AccessRequestServiceImpl implements AccessRequestService {
               // Delete policy if exists
               return policyDao
                   .deActivatePolicyByUserAndItem(itemId, ownerId, consumerId)
-                  .compose(queryResult -> {
+                  .compose(
+                      queryResult -> {
+                        if (queryResult.getRows() == null || queryResult.getRows().isEmpty()) {
+                          // No policy existed — continue safely
+                          return Future.succeededFuture();
+                        }
 
-                    if (queryResult.getRows() == null || queryResult.getRows().isEmpty()) {
-                      // No policy existed — continue safely
-                      return Future.succeededFuture();
-                    }
+                        JsonObject row = queryResult.getRows().getJsonObject(0);
+                        UUID policyId = UUID.fromString(row.getString(DB_ID));
 
-                    JsonObject row = queryResult.getRows().getJsonObject(0);
-                    UUID policyId = UUID.fromString(row.getString(DB_ID));
-
-                    // deactivate associated access rules
-                    return accessRuleDao.updateStatusByPolicyId(policyId, IN_ACTIVE);
-                  })
+                        // deactivate associated access rules
+                        return accessRuleDao.updateStatusByPolicyId(policyId, IN_ACTIVE);
+                      })
                   .recover(
                       err -> {
                         LOGGER.warn("Policy delete skipped or failed: {}", err.getMessage());
@@ -590,26 +590,29 @@ public class AccessRequestServiceImpl implements AccessRequestService {
       GetItemRequest request = new GetItemRequest(dto.getItemId(), "");
 
       Future<Void> future =
-          itemService.getItem(request)
-              .onSuccess(response -> {
-                if (!response.getElasticsearchResponses().isEmpty()) {
+          itemService
+              .getItem(request)
+              .onSuccess(
+                  response -> {
+                    if (!response.getElasticsearchResponses().isEmpty()) {
 
-                  JsonObject itemJson = response.getElasticsearchResponses().getFirst();
-                  Asset asset = parseAndGetAsset(itemJson, dto.getItemId());
+                      JsonObject itemJson = response.getElasticsearchResponses().getFirst();
+                      Asset asset = parseAndGetAsset(itemJson, dto.getItemId());
 
-                  // Override DB values with catalogue values
-                  dto.setAssetName(asset.getAssetName());
-                  dto.setAssetType(asset.getAssetType());
-                  dto.setShortDescription(asset.getShortDescription());
-                  dto.setItemOrganizationId(asset.getOrganizationId());
-                  dto.setItemOrganizationName(asset.getOrganizationName());
-                  dto.setProviderId(asset.getProviderId());
-                }
-              })
-              .onFailure(err -> {
-                LOGGER.warn("Failed to fetch item {}: {}", dto.getItemId(), err.getMessage());
-                // fallback: keep DB values
-              })
+                      // Override DB values with catalogue values
+                      dto.setAssetName(asset.getAssetName());
+                      dto.setAssetType(asset.getAssetType());
+                      dto.setShortDescription(asset.getShortDescription());
+                      dto.setItemOrganizationId(asset.getOrganizationId());
+                      dto.setItemOrganizationName(asset.getOrganizationName());
+                      dto.setProviderId(asset.getProviderId());
+                    }
+                  })
+              .onFailure(
+                  err -> {
+                    LOGGER.warn("Failed to fetch item {}: {}", dto.getItemId(), err.getMessage());
+                    // fallback: keep DB values
+                  })
               .mapEmpty();
 
       futures.add(future);

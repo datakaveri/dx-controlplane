@@ -56,6 +56,11 @@ public class ApiConstants {
   public static final String LIST_RESOURCE_SERVERS = "list resource servers";
   public static final String UPDATE_RESOURCE_SERVER = "update resource server";
   public static final String DELETE_RESOURCE_SERVER = "delete resource server";
+  public static final String CREATE_ACL_SERVER = "create acl server";
+  public static final String GET_ACL_SERVER = "get acl server";
+  public static final String LIST_ACL_SERVERS = "list acl servers";
+  public static final String UPDATE_ACL_SERVER = "update acl server";
+  public static final String DELETE_ACL_SERVER = "delete acl server";
   public static final String GET_ORG_ASSETS = "get organisation assets";
   public static final String GET_ORG_ASSETS_VTH_FILTERS = "get org assets with filters";
   public static final String GET_PLATFORM_ASSETS = "get platform assets";

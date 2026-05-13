@@ -638,6 +638,17 @@ public class PolicyServiceImpl implements PolicyService {
   }
 
   @Override
+  public Future<PaginatedResult<PolicyDto>> listPolicies(
+      PaginatedRequest request,
+      Set<String> policyIds,
+      String consumerId) {
+
+    return policyDao.getPoliciesWithAccessControl(
+        request,
+        policyIds,
+        consumerId);
+  }
+  @Override
   public Future<PaginatedResult<PolicyDto>> enrichPolicyRequestsWithItemDetails(
       PaginatedResult<PolicyDto> pagedResult) {
 
@@ -700,8 +711,17 @@ public class PolicyServiceImpl implements PolicyService {
                 dto.setConsumerLastName(user.familyName());
                 dto.setConsumerOrganization(user.organisationName());
               })
-              .onFailure(err ->
-                  LOGGER.warn("Failed to fetch user {}: {}", dto.getConsumerId(), err.getMessage()))
+              .recover(err -> {
+                LOGGER.warn("Failed to fetch user {}: {}", dto.getConsumerId(), err.getMessage());
+
+                // Keep fields empty/null if user no longer exists
+                dto.setConsumerEmail(null);
+                dto.setConsumerFirstName(null);
+                dto.setConsumerLastName(null);
+                dto.setConsumerOrganization(null);
+
+                return Future.succeededFuture();
+              })
               .mapEmpty();
 
       futures.add(future);

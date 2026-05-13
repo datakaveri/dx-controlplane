@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.ActivityReport.controller.ActivityReportController;
 import org.cdpg.dx.aaa.ActivityReport.factory.ActivityReportControllerFactory;
+import org.cdpg.dx.aaa.aclserver.factory.AclServerControllerFactory;
 import org.cdpg.dx.aaa.activity.controller.ActivityController;
 import org.cdpg.dx.aaa.activity.factory.ActivityControllerFactory;
 import org.cdpg.dx.aaa.admin.controller.AdminController;
@@ -251,6 +252,11 @@ public class ControllerFactory {
             shared.delegationService(),
             authV2);
     controllers.add(itemController);
+
+    // Acl server
+    controllers.add(
+        AclServerControllerFactory.createController(
+            infra.pgService(), shared.auditingHandler(), urnGenerator));
 
     // Resource server
     controllers.add(

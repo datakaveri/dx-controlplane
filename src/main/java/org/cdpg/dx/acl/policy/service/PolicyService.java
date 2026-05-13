@@ -2,6 +2,7 @@ package org.cdpg.dx.acl.policy.service;
 
 import io.vertx.core.Future;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.cdpg.dx.acl.policy.dao.model.PolicyDto;
 import org.cdpg.dx.acl.policy.dao.model.VerifyPolicyDto;
@@ -19,6 +20,10 @@ public interface PolicyService {
                                                ItemType itemType, DxUser user);
 
   Future<PaginatedResult<PolicyDto>> listPolicies(PaginatedRequest request);
+  Future<PaginatedResult<PolicyDto>> listPolicies(
+      PaginatedRequest request,
+      Set<String> policyIds,
+      String consumerId);
 
   Future<PaginatedResult<PolicyDto>> enrichPolicyRequestsWithItemDetails(
       PaginatedResult<PolicyDto> pagedResult);
