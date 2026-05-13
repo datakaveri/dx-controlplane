@@ -31,4 +31,6 @@ public interface PolicyDao extends BaseDAO<PolicyDto> {
   Future<PaginatedResult<PolicyDto>> getPoliciesWithAccessControl(PaginatedRequest request,
                                                                   Set<String> policyIds,
                                                                   String consumerId);
+
+  Future<Boolean> matchesPolicy(UUID itemId, String userId);
 }

@@ -39,14 +39,11 @@ import org.cdpg.dx.catalogueService.models.Asset;
 import org.cdpg.dx.catalogueService.models.ItemType;
 import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.common.exception.DxCreateAccessRequestForbiddenException;
-import org.cdpg.dx.common.exception.DxForbiddenAccessRejectedException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxForbiddenNoAccessException;
-import org.cdpg.dx.common.exception.DxForbiddenPendingAccessException;
 import org.cdpg.dx.common.exception.DxInternalServerErrorException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.DxValidationException;
-import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.model.RequestType;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
@@ -518,51 +515,55 @@ public class AccessRequestServiceImpl implements AccessRequestService {
 
     return accessRequestDao
         .hasAccess(consumerId.toString(), itemId)
-
-        // If policy exists → true
         .recover(
             err -> {
 
-              // If PENDING → propagate immediately
-              if (err instanceof DxForbiddenPendingAccessException) {
+              // Unexpected/system failures should stop immediately
+              if (!(err instanceof DxForbiddenException)) {
                 return Future.failedFuture(err);
               }
 
-              // If REJECTED → propagate immediately
-              if (err instanceof DxForbiddenAccessRejectedException) {
+              // Fallback to policy access
+              return hasPolicyAccess(consumerId, itemId);
+            })
+        .recover(
+            err -> {
+
+              // Unexpected/system failures should stop immediately
+              if (!(err instanceof DxForbiddenException)) {
                 return Future.failedFuture(err);
               }
 
-              //  Only fallback when NO ACCESS POLICY
-              if (err instanceof DxForbiddenNoAccessException) {
+              // Final fallback to rule access
+              return keycloakUserService
+                  .getUserById(consumerId)
+                  .compose(
+                      fullUser ->
+                          accessRuleDao.ruleMatches(
+                              UUID.fromString(itemId),
+                              fullUser.sub().toString(),
+                              fullUser.organisationId(),
+                              fullUser.roles()))
+                  .compose(
+                      ruleMatch -> {
+                        if (Boolean.TRUE.equals(ruleMatch)) {
+                          return Future.succeededFuture(true);
+                        }
 
-                return keycloakUserService
-                    .getUserById(consumerId)
-                    .compose(
-                        fullUser ->
-                            accessRuleDao.ruleMatches(
-                                UUID.fromString(itemId),
-                                fullUser.sub().toString(),
-                                fullUser.organisationId(),
-                                fullUser.roles()))
-                    .compose(
-                        ruleMatch -> {
-                          if (Boolean.TRUE.equals(ruleMatch)) {
-                            return Future.succeededFuture(true);
-                          }
-                          return Future.failedFuture(
-                              new DxForbiddenNoAccessException(
-                                  "User does not have access to the given item"));
-                        });
-              }
-
-              // Any other unexpected failure
-              return Future.failedFuture(err);
+                        return Future.failedFuture(
+                            new DxForbiddenNoAccessException(
+                                "User does not have access to the given item"));
+                      });
             })
         .onFailure(
             err ->
                 LOGGER.error(
                     "Failed to check access for consumer {} on item {}", consumerId, itemId, err));
+  }
+
+  private Future<Boolean> hasPolicyAccess(UUID consumerId, String itemId) {
+
+    return policyDao.matchesPolicy(UUID.fromString(itemId), consumerId.toString());
   }
 
   @Override

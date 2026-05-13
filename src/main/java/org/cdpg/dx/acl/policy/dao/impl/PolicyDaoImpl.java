@@ -39,6 +39,7 @@ import org.cdpg.dx.acl.policy.dao.model.PolicyDto;
 import org.cdpg.dx.acl.policy.service.model.CreatePolicyRequest;
 import org.cdpg.dx.common.HttpStatusCode;
 import org.cdpg.dx.common.exception.BaseDxException;
+import org.cdpg.dx.common.exception.DxForbiddenNoAccessException;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.database.postgres.base.dao.AbstractBaseDAO;
 import org.cdpg.dx.database.postgres.models.Condition;
@@ -414,6 +415,40 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
             err -> {
               LOGGER.error("Failed fetching policies: {}", err.getMessage(), err);
               return Future.failedFuture(BaseDxException.from(err));
+            });
+  }
+
+  @Override
+  public Future<Boolean> matchesPolicy(UUID itemId, String consumerId) {
+
+    LocalDateTime now = LocalDateTime.now();
+
+    Condition finalCondition =
+        new Condition(
+            List.of(
+                new Condition(DB_ITEM_ID, Condition.Operator.EQUALS, List.of(itemId.toString())),
+                new Condition(DB_CONSUMER_ID, Condition.Operator.EQUALS, List.of(consumerId)),
+                new Condition(DB_STATUS, Condition.Operator.EQUALS, List.of("ACTIVE")),
+                new Condition(DB_EXPIRY_AT, Condition.Operator.GREATER, List.of(now.toString()))),
+            Condition.LogicalOperator.AND);
+
+    SelectQuery query =
+        new SelectQuery()
+            .setTable(POLICY_TABLE)
+            .setColumns(List.of("1"))
+            .setCondition(finalCondition)
+            .setLimit(1);
+
+    return postgresService
+        .select(query, false)
+        .compose(
+            result -> {
+              if (!result.getRows().isEmpty()) {
+                return Future.succeededFuture(true);
+              }
+
+              return Future.failedFuture(
+                  new DxForbiddenNoAccessException("No matching active policy found"));
             });
   }
 
