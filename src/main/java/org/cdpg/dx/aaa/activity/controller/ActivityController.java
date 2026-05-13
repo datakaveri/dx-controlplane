@@ -5,12 +5,10 @@ import static org.cdpg.dx.aaa.apiserver.OperationIds.OP_GET_ACTIVITY_FOR_CONSUME
 import static org.cdpg.dx.auditing.v2.Constant.ActivityApiParamConstants.*;
 import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.CREATED_AT;
 import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.USER_ID;
-import static org.cdpg.dx.auth.v2.handler.AuthorizationHandler.PRINCIPAL_KEY;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_FIELD;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
 import io.vertx.core.json.JsonArray;
-import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import java.util.Map;
@@ -21,13 +19,14 @@ import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.aaa.activity.service.UserActivityAuditLogService;
 import org.cdpg.dx.auditing.v2.util.Util;
 import org.cdpg.dx.auth.v2.handler.*;
-import org.cdpg.dx.auth.v2.model.DxPrincipal;
 import org.cdpg.dx.auth.v2.model.Scopes;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxForbiddenException;
+import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
+import org.cdpg.dx.common.util.RoutingContextHelper;
 
 public class ActivityController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(ActivityController.class);
@@ -62,18 +61,17 @@ public class ActivityController implements ApiController {
   private void handleGetAllActivityLogsForUser(RoutingContext context) {
     LOGGER.info("handleGetAllActivityLogsForUser() started");
 
-    DxPrincipal principal;
+    DxUser dxUser;
 
     try {
-      principal = context.get(PRINCIPAL_KEY);
-      //  consumer = RoutingContextHelper.fromPrincipal(ctx);
+      dxUser = RoutingContextHelper.fromPrincipal(context);
     } catch (Exception e) {
       LOGGER.error("Error extracting user from token: {}", e.getMessage(), e);
       context.fail(new DxForbiddenException("Invalid user"));
       return;
     }
 
-    Map<String, Object> additionalFilters = Map.of(USER_ID, principal.getAuthenticatedSub());
+    Map<String, Object> additionalFilters = Map.of(USER_ID, dxUser.sub().toString());
 
     PaginatedRequest request =
         PaginationRequestBuilder.from(context)
@@ -94,9 +92,9 @@ public class ActivityController implements ApiController {
             pagedResult -> {
               LOGGER.info(
                   "Successfully fetched activity logs for user: {}",
-                  principal.getAuthenticatedSub());
+                  dxUser.sub());
               if (pagedResult.data().isEmpty()) {
-                LOGGER.info("No activity logs found for user: {}", principal.getAuthenticatedSub());
+                LOGGER.info("No activity logs found for user: {}", dxUser.sub());
                 ResponseBuilder.sendNoContent(context, urnGenerator);
                 return;
               }

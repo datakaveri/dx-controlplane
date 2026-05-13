@@ -402,7 +402,9 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
               baseUser.account_enabled(),
               baseUser.did(),
               baseUser.aud(),
-              scopes
+              scopes,
+              null,  // delegateeId — not applicable here
+              null   // appId — not applicable here
             );
 
             return Future.succeededFuture(dxUser);

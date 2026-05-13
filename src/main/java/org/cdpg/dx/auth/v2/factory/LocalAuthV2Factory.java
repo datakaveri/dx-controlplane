@@ -20,7 +20,6 @@ import org.cdpg.dx.auth.v2.lookup.local.LocalUserLookup;
 import org.cdpg.dx.auth.v2.registry.InMemoryRoleScopeRegistry;
 import org.cdpg.dx.auth.v2.resolver.AppCredentialsResolver;
 import org.cdpg.dx.auth.v2.resolver.DelegationResolver;
-import org.cdpg.dx.auth.v2.resolver.JwtPrincipalResolver;
 import org.cdpg.dx.common.config.ServiceProxyAddressConstants;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.service.DataBrokerService;
@@ -66,7 +65,6 @@ public final class LocalAuthV2Factory {
     AuthenticationHandlerV2 authentication =
         new AuthenticationHandlerV2(
             jwksResolver,
-            new JwtPrincipalResolver(),
             new DelegationResolver(delegationLookup, userLookup),
             new AppCredentialsResolver(appLookup, userLookup));
     AuthorizationHandler authorization = new AuthorizationHandler(new InMemoryRoleScopeRegistry());
