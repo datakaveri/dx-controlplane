@@ -68,13 +68,17 @@ public final class LocalDelegationLookup implements DelegationLookup {
 
   private static DelegationRecord toRecord(JsonObject grant, String delegatorSub, String delegateeSub) {
     Set<String> scopes = new HashSet<>();
+    boolean fullDelegation = false;
+
     JsonArray constraints = grant.getJsonArray("constraints");
     if (constraints != null) {
       for (int i = 0; i < constraints.size(); i++) {
         JsonObject c = constraints.getJsonObject(i);
         if (c == null) continue;
         String scope = c.getString("scope");
-        if (scope != null && !scope.isBlank() && !"*".equals(scope)) {
+        if ("*".equals(scope)) {
+          fullDelegation = true;
+        } else if (scope != null && !scope.isBlank()) {
           scopes.add(scope);
         }
       }
@@ -90,9 +94,6 @@ public final class LocalDelegationLookup implements DelegationLookup {
       }
     }
 
-    // A constraint with scope "*" would mean "all delegator scopes". In that case the resolver
-    // uses delegator.flattenedScopes, so we surface that as fullDelegation=true and leave
-    // `scopes` empty. Today this is a fail-safe path since we strip "*" above.
-    return new DelegationRecord(delegatorSub, delegateeSub, scopes, false, true, expiresAt);
+    return new DelegationRecord(delegatorSub, delegateeSub, scopes, fullDelegation, true, expiresAt);
   }
 }

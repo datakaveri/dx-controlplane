@@ -46,7 +46,9 @@ public class DxUserMapper {
       user.isEnabled(),
       getAttr(attrs, KeycloakConstants.DID),
       getAttr(attrs, KeycloakConstants.AUD),
-      parseScopes(attrs)  // Now returns JsonArray
+      parseScopes(attrs),
+      null,  // delegateeId — not applicable for direct user lookup
+      null   // appId — not applicable for direct user lookup
     );
   }
 
