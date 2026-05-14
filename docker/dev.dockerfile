@@ -1,9 +1,7 @@
 ARG VERSION="0.0.1-SNAPSHOT"
 
 # Using maven base image in builder stage to build Java code.
-FROM maven:3.9.9-eclipse-temurin-21 as builder
-
-RUN apt-get update && apt-get upgrade -y && apt-get clean
+FROM maven:3-eclipse-temurin-21 as builder
 
 WORKDIR /usr/share/app
 
@@ -25,9 +23,9 @@ RUN mvn clean package -Dmaven.test.skip=true
 
 
 # Java Runtime as the base for final image
-FROM eclipse-temurin:21.0.7_6-jre
+FROM eclipse-temurin:21-jre-noble
 
-RUN apt-get update && apt-get upgrade -y && apt-get clean
+RUN apt-get update && apt-get upgrade -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ARG VERSION
 ENV JAR="iudx.aaa.server-dev-${VERSION}-fat.jar"
