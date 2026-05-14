@@ -1,4 +1,4 @@
-package org.cdpg.dx.auth.v2.lookup.local;
+package org.cdpg.dx.auth.authentication.lookup.local;
 
 import io.vertx.core.Future;
 import java.time.Instant;
@@ -12,8 +12,8 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.cdpg.dx.aaa.appCredentials.model.AppConstraints;
 import org.cdpg.dx.aaa.appCredentials.model.AppCredentials;
 import org.cdpg.dx.aaa.appCredentials.service.AppCredentialsService;
-import org.cdpg.dx.auth.v2.lookup.AppCredentialLookup;
-import org.cdpg.dx.auth.v2.model.AppPrincipal;
+import org.cdpg.dx.auth.authentication.lookup.AppCredentialLookup;
+import org.cdpg.dx.auth.model.AppPrincipal;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 
 /**

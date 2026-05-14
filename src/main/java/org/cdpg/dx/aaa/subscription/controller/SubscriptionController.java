@@ -23,7 +23,7 @@ import org.cdpg.dx.aaa.subscription.util.SubscriptionAuditHelper;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxValidationException;
 import org.cdpg.dx.common.util.CpRoutingContextHelper;
@@ -36,7 +36,7 @@ public class SubscriptionController implements ApiController {
   private final SubscriptionService subscriptionService;
   private final AuditingHandler auditingHandler;
   Handler<RoutingContext> roleAllowed =
-      AuthorizationHandler.forRoles(DxRole.DELEGATE, DxRole.CONSUMER);
+      AuthorizationHandler.forRoles(DxRole.CONSUMER);
   SubscriptionAuthorizationHandler subscriptionAuthorizationHandler;
 
   public SubscriptionController(

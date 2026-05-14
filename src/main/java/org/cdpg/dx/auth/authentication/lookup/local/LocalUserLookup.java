@@ -1,4 +1,4 @@
-package org.cdpg.dx.auth.v2.lookup.local;
+package org.cdpg.dx.auth.authentication.lookup.local;
 
 import io.vertx.core.Future;
 import java.util.HashSet;
@@ -7,10 +7,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import org.cdpg.dx.auth.v2.lookup.UserLookup;
-import org.cdpg.dx.auth.v2.model.DxRole;
-import org.cdpg.dx.auth.v2.model.UserSnapshot;
+import org.cdpg.dx.auth.authentication.lookup.UserLookup;
+import org.cdpg.dx.auth.model.UserSnapshot;
 import org.cdpg.dx.common.exception.DxNotFoundException;
+import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
@@ -18,9 +18,8 @@ import org.cdpg.dx.keycloak.service.KeycloakUserService;
  * In-process {@link UserLookup} for dx-controlplane. Wraps {@link KeycloakUserService#getUserById}
  * and maps {@link DxUser} → {@link UserSnapshot}.
  *
- * <p>Role strings from Keycloak are translated via {@link DxRole#fromKeycloakName}. Strings that
- * don't map to a v2 system role (e.g. legacy {@code delegate} variants) are silently dropped — the
- * v2 model recognises only the five system roles.
+ * <p>Role strings from Keycloak are translated via {@link DxRole#fromString}. Strings that
+ * don't map to a system role (e.g. legacy {@code delegate} variants) are silently dropped.
  */
 public final class LocalUserLookup implements UserLookup {
 
@@ -70,7 +69,7 @@ public final class LocalUserLookup implements UserLookup {
     }
     Set<DxRole> out = new HashSet<>();
     for (String name : legacyRoleNames) {
-      DxRole.fromKeycloakName(name).ifPresent(out::add);
+      DxRole.fromString(name).ifPresent(out::add);
     }
     return out;
   }

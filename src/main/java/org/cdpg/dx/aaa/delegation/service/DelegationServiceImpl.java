@@ -16,8 +16,6 @@ import org.cdpg.dx.aaa.delegation.util.RoleScopeMapping;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.organization.models.Role;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
-import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.util.DateTimeHelper;
@@ -105,7 +103,7 @@ public class DelegationServiceImpl implements DelegationService{
 
     return flow
       .compose(created ->
-        keycloakUserService.addRoleToUser(created.delegateId(), DxRole.DELEGATE)
+        keycloakUserService.addCustomRoleToUser(created.delegateId(), "delegate")
           .map(v -> created)
       )
       .compose(created ->

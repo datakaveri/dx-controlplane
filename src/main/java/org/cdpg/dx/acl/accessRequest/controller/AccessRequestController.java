@@ -43,10 +43,10 @@ import org.cdpg.dx.acl.policy.util.UserAccessHandler;
 import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
-import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.v2.handler.ScopeRule;
-import org.cdpg.dx.auth.v2.model.Scopes;
+import org.cdpg.dx.auth.model.DxRole;
+import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
+import org.cdpg.dx.auth.authorization.model.ScopeRule;
+import org.cdpg.dx.auth.model.Scopes;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.email.SendEmail;
 import org.cdpg.dx.common.exception.DxForbiddenException;
@@ -389,7 +389,7 @@ public class AccessRequestController implements ApiController {
                   provider.organisationId() != null
                       ? UUID.fromString(provider.organisationId())
                       : null;
-              boolean isUserOrgAdmin = provider.roles().contains(DxRole.ORG_ADMIN.getRole());
+              boolean isUserOrgAdmin = provider.roles().contains(DxRole.ORG_ADMIN.value());
 
               if (status == Status.GRANTED) {
                 LocalDateTime expiryAt = parseAndValidateFutureTime(body.getString("expiryAt"));

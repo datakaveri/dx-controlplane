@@ -5,7 +5,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.RoutingContext;
-import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.model.DxRole;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -42,7 +42,6 @@ public final class AuditContextExtractor {
   public static DxRole getUserRole(User user) {
     JsonArray roles = getRealmRoles(user);
 
-    if (roles.contains("delegate")) return DxRole.DELEGATE;
     if (roles.contains("cos_admin")) return DxRole.COS_ADMIN;
     if (roles.contains("org_admin")) return DxRole.ORG_ADMIN;
     if (roles.contains("provider")) return DxRole.PROVIDER;

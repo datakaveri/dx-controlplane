@@ -16,7 +16,7 @@ import org.cdpg.dx.aaa.kyc.util.KYCAuditLogHelper;
 import org.cdpg.dx.aaa.kyc.util.KYCAuditOperation;
 import org.cdpg.dx.auditing.model.AuditLog;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
-import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.response.ResponseBuilder;

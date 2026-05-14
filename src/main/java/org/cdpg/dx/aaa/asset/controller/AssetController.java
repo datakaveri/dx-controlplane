@@ -7,8 +7,8 @@ import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.aaa.asset.handler.AssetHandler;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.cdpg.dx.auth.authorization.model.DxScope;
+import org.cdpg.dx.auth.model.DxRole;
+import org.cdpg.dx.auth.model.Scopes;
 
 public class AssetController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(AssetController.class);
@@ -33,15 +33,15 @@ public class AssetController implements ApiController {
     routerBuilder
       .operation("get-auth-v2-asset-request")
       .handler(auditingHandler::handleApiAudit)
-      .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.CONSUMER,DxRole.DELEGATE))
-      .handler(AuthorizationHandler.forDelegationScopes(DxScope.COS_ADMIN_ACCESS))
+      .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.CONSUMER))
+      .handler(AuthorizationHandler.forScopes(Scopes.ASSET_MANAGEMENT))
       .handler(assetHandler::getAllAssetRequests);
 
     routerBuilder
       .operation("put-auth-v2-asset-request")
       .handler(auditingHandler::handleApiAudit)
-      .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.DELEGATE))
-      .handler(AuthorizationHandler.forDelegationScopes(DxScope.COS_ADMIN_ACCESS))
+      .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
+      .handler(AuthorizationHandler.forScopes(Scopes.ASSET_MANAGEMENT))
       .handler(assetHandler::updateAssetRequestStatus);
 
      routerBuilder

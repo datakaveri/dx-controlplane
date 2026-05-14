@@ -1,4 +1,4 @@
-package org.cdpg.dx.auth.v2.lookup.local;
+package org.cdpg.dx.auth.authentication.lookup.local;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -9,7 +9,7 @@ import io.vertx.core.json.JsonObject;
 import java.util.List;
 import java.util.Optional;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
-import org.cdpg.dx.auth.v2.model.DelegationRecord;
+import org.cdpg.dx.auth.model.DelegationRecord;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

@@ -1,4 +1,4 @@
-package org.cdpg.dx.auth.v2.lookup.local;
+package org.cdpg.dx.auth.authentication.lookup.local;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -12,7 +12,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.cdpg.dx.aaa.appCredentials.model.AppConstraints;
 import org.cdpg.dx.aaa.appCredentials.model.AppCredentials;
 import org.cdpg.dx.aaa.appCredentials.service.AppCredentialsService;
-import org.cdpg.dx.auth.v2.model.AppPrincipal;
+import org.cdpg.dx.auth.model.AppPrincipal;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -5,8 +5,8 @@ import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.ORG_ID;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.cdpg.dx.auth.v2.handler.AuthLevel;
-import org.cdpg.dx.auth.v2.handler.AuthorizationContext;
+import org.cdpg.dx.auth.authorization.model.AuthLevel;
+import org.cdpg.dx.auth.authorization.model.AuthorizationContext;
 
 public class Util {
 

@@ -13,7 +13,7 @@ import org.cdpg.dx.aaa.delegation.DelegationValidator;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
-import org.cdpg.dx.auth.v2.handler.AuthenticationHandlerV2;
+import org.cdpg.dx.auth.authentication.handler.AuthenticationHandler;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.service.DataBrokerService;

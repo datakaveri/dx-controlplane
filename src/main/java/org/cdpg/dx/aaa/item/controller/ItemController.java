@@ -52,9 +52,9 @@ import org.cdpg.dx.aaa.item.service.ScriptGenerationService;
 import org.cdpg.dx.aaa.item.util.*;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
-import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.v2.model.Scopes;
+import org.cdpg.dx.auth.model.DxRole;
+import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
+import org.cdpg.dx.auth.model.Scopes;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
@@ -121,9 +121,7 @@ public class ItemController implements ApiController {
   public void register(RouterBuilder builder) {
     Handler<RoutingContext> assetManagementAccess =
         AuthorizationHandler.forScopes(
-            Scopes.OWN_ASSET_MANAGEMENT,
-            Scopes.ORG_ASSET_MANAGEMENT,
-            Scopes.ASSET_MANAGEMENT);
+            Scopes.OWN_ASSET_MANAGEMENT, Scopes.ORG_ASSET_MANAGEMENT, Scopes.ASSET_MANAGEMENT);
     Handler<RoutingContext> providerScriptAccess =
         AuthorizationHandler.forScopes(Scopes.OWN_ASSET_MANAGEMENT);
 
@@ -264,8 +262,8 @@ public class ItemController implements ApiController {
     DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
     List<String> allowedRoles = dxUser.roles();
     boolean isAdmin =
-        allowedRoles.contains(DxRole.ORG_ADMIN.getRole())
-            || allowedRoles.contains(DxRole.COS_ADMIN.getRole());
+        allowedRoles.contains(DxRole.ORG_ADMIN.value())
+            || allowedRoles.contains(DxRole.COS_ADMIN.value());
 
     String userId = dxUser.sub().toString();
     AtomicReference<String> orgId = new AtomicReference<>("");
@@ -476,8 +474,8 @@ public class ItemController implements ApiController {
                   String currentUserOrgId = ctx.get(ORGANIZATION_ID);
                   List<String> userRoles = dxUser.roles();
 
-                  boolean isCosAdmin = userRoles.contains(DxRole.COS_ADMIN.getRole());
-                  boolean isOrgAdmin = userRoles.contains(DxRole.ORG_ADMIN.getRole());
+                  boolean isCosAdmin = userRoles.contains(DxRole.COS_ADMIN.value());
+                  boolean isOrgAdmin = userRoles.contains(DxRole.ORG_ADMIN.value());
                   boolean isOwner = currentUserId.equals(itemOwnerId);
                   boolean sameOrg = currentUserOrgId != null && currentUserOrgId.equals(itemOrgId);
 

@@ -5,8 +5,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.admin.handler.AdminHandler;
 import org.cdpg.dx.apiserver.ApiController;
-import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.v2.model.Scopes;
+import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
+import org.cdpg.dx.auth.model.Scopes;
 
 public class AdminController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(AdminController.class);

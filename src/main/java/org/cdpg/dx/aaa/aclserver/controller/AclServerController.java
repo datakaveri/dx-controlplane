@@ -19,7 +19,7 @@ import org.cdpg.dx.aaa.apiserver.config.ApiConstants;
 import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxUnauthorizedException;
 import org.cdpg.dx.common.model.DxUser;
@@ -108,10 +108,10 @@ public class AclServerController implements ApiController {
     String userRole = null;
     UUID userId = user.sub();
 
-    if (userRoles.contains(DxRole.COS_ADMIN.getRole())) {
-      userRole = DxRole.COS_ADMIN.getRole();
-    } else if (userRoles.contains(DxRole.ORG_ADMIN.getRole())) {
-      userRole = DxRole.ORG_ADMIN.getRole();
+    if (userRoles.contains(DxRole.COS_ADMIN.value())) {
+      userRole = DxRole.COS_ADMIN.value();
+    } else if (userRoles.contains(DxRole.ORG_ADMIN.value())) {
+      userRole = DxRole.ORG_ADMIN.value();
     }
 
     if (userRole == null) {
@@ -167,10 +167,10 @@ public class AclServerController implements ApiController {
 
     // Determine the user's role
     String userRole = null;
-    if (userRoles.contains(DxRole.COS_ADMIN.getRole())) {
-      userRole = DxRole.COS_ADMIN.getRole();
-    } else if (userRoles.contains(DxRole.ORG_ADMIN.getRole())) {
-      userRole = DxRole.ORG_ADMIN.getRole();
+    if (userRoles.contains(DxRole.COS_ADMIN.value())) {
+      userRole = DxRole.COS_ADMIN.value();
+    } else if (userRoles.contains(DxRole.ORG_ADMIN.value())) {
+      userRole = DxRole.ORG_ADMIN.value();
     }
 
     if (userRole == null) {

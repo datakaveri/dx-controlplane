@@ -19,8 +19,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.cdpg.dx.auth.authorization.model.DxScope.COS_ADMIN_ACCESS;
-import static org.cdpg.dx.auth.authorization.model.DxScope.ORG_ADMIN_ACCESS;
 
 public class DelegationHandlerValidator {
 
@@ -95,18 +93,6 @@ public class DelegationHandlerValidator {
         if(!obj.getAllowedScopes().contains(scope))
         {
           throw new DxBadRequestException("The role that the user is giving doesnt allow the scope "+ scope);
-        }
-
-        if(scope.equals(COS_ADMIN_ACCESS.getScope()) || scope.equals(ORG_ADMIN_ACCESS.getScope()))
-        {
-          if(entityId!=null && entityType!=null)
-          {
-            throw new DxBadRequestException("No entity required for cos-admin-access/org-admin-access scope");
-          }
-          else
-          {
-            return;
-          }
         }
 
         // ---------- Entity pairing validation ----------

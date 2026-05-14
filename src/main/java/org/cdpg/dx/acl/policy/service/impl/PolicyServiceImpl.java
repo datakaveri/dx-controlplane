@@ -35,10 +35,8 @@ import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ORGANIZATION;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.OWNER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.POLICY_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.USER_EMAIL_ID;
-import static org.cdpg.dx.auth.authorization.model.DxRole.CONSUMER;
-import static org.cdpg.dx.auth.authorization.model.DxRole.CONSUMER_DELEGATE;
-import static org.cdpg.dx.auth.authorization.model.DxRole.PROVIDER;
-import static org.cdpg.dx.auth.authorization.model.DxRole.PROVIDER_DELEGATE;
+import static org.cdpg.dx.auth.model.DxRole.CONSUMER;
+import static org.cdpg.dx.auth.model.DxRole.PROVIDER;
 import static org.cdpg.dx.catalogueService.config.Constants.ASSET_NAME_KEY;
 import static org.cdpg.dx.catalogueService.config.Constants.SHORT_DESCRIPTION;
 import static org.cdpg.dx.common.HttpStatusCode.BAD_REQUEST;
@@ -96,7 +94,11 @@ public class PolicyServiceImpl implements PolicyService {
   private final String apdUrl;
 
   public PolicyServiceImpl(
-      ItemService itemService, KeycloakUserService keycloakUserService, PolicyDao policyDao, AccessRuleDao accessRuleDao, String apdUrl) {
+      ItemService itemService,
+      KeycloakUserService keycloakUserService,
+      PolicyDao policyDao,
+      AccessRuleDao accessRuleDao,
+      String apdUrl) {
     this.itemService = itemService;
     this.keycloakUserService = keycloakUserService;
     this.accessRuleDao = accessRuleDao;
@@ -135,19 +137,20 @@ public class PolicyServiceImpl implements PolicyService {
               // Build map: itemId -> organizationId
               Map<UUID, UUID> itemOrgMap =
                   resourceObjs.stream()
-                      .collect(Collectors.toMap(ResourceObj::getItemId,
-                          ResourceObj::getOrganizationId));
+                      .collect(
+                          Collectors.toMap(ResourceObj::getItemId, ResourceObj::getOrganizationId));
 
-              //Enrich requests
-              requests.forEach(req -> {
-                UUID orgId = itemOrgMap.get(req.getItemId());
-                if (orgId != null) {
-                  req.setItemOrganizationId(orgId.toString());
-                }
-                if (!itemOrgMap.containsKey(req.getItemId())) {
-                  throw new IllegalStateException("Missing orgId for item: " + req.getItemId());
-                }
-              });
+              // Enrich requests
+              requests.forEach(
+                  req -> {
+                    UUID orgId = itemOrgMap.get(req.getItemId());
+                    if (orgId != null) {
+                      req.setItemOrganizationId(orgId.toString());
+                    }
+                    if (!itemOrgMap.containsKey(req.getItemId())) {
+                      throw new IllegalStateException("Missing orgId for item: " + req.getItemId());
+                    }
+                  });
 
               boolean isOwner = providerIds.stream().allMatch(id -> id.equals(userId));
 
@@ -439,10 +442,10 @@ public class PolicyServiceImpl implements PolicyService {
     //    List<Object> resourceServerUrls = new ArrayList<>();
     //    resourceServerUrls.add("rs.forestdx.iudx.io");
     //    resourceServerUrls.add("file.forestdx.iudx.io");
-    if (role.contains(PROVIDER.getRole()) || role.contains(PROVIDER_DELEGATE.getRole())) {
+    if (role.contains(PROVIDER.value()) || role.contains("providerDelegate")) {
       daoFuture = policyDao.getPoliciesByProvider(user.sub().toString());
-    } else if (role.contains(CONSUMER.getRole()) || role.contains(CONSUMER_DELEGATE.getRole())) {
-      daoFuture = policyDao.getPoliciesByConsumer(user.sub().toString());
+    } else if (role.contains(CONSUMER.value()) || role.contains("consumerDelegate")) {
+      daoFuture = policyDao.getPoliciesByConsumer(user.email());
     } else {
       JsonObject error =
           new JsonObject()
@@ -474,8 +477,7 @@ public class PolicyServiceImpl implements PolicyService {
                     LOGGER.info("Policy Row: {}", row.encodePrettily());
 
                     // Enrich row before passing to DTO
-                    if (role.contains(PROVIDER.getRole())
-                        || role.contains(PROVIDER_DELEGATE.getRole())) {
+                    if (role.contains(PROVIDER.value()) || role.contains("providerDelegate")) {
                       row.mergeIn(getProviderInfo(row));
                     } else {
                       row.mergeIn(getConsumerInfo(row));
@@ -611,8 +613,10 @@ public class PolicyServiceImpl implements PolicyService {
                         verifiedPolicy -> {
                           VerifyPolicyDto verifyPolicyDto =
                               new VerifyPolicyDto(
-                                  policyId.toString(), ResponseUrn.VERIFY_SUCCESS_URN.getUrn(),
-                                  constraints, expiryAt);
+                                  policyId.toString(),
+                                  ResponseUrn.VERIFY_SUCCESS_URN.getUrn(),
+                                  constraints,
+                                  expiryAt);
                           promise.complete(verifyPolicyDto);
                         })
                     .onFailure(promise::fail);
@@ -639,15 +643,11 @@ public class PolicyServiceImpl implements PolicyService {
 
   @Override
   public Future<PaginatedResult<PolicyDto>> listPolicies(
-      PaginatedRequest request,
-      Set<String> policyIds,
-      String consumerId) {
+      PaginatedRequest request, Set<String> policyIds, String consumerId) {
 
-    return policyDao.getPoliciesWithAccessControl(
-        request,
-        policyIds,
-        consumerId);
+    return policyDao.getPoliciesWithAccessControl(request, policyIds, consumerId);
   }
+
   @Override
   public Future<PaginatedResult<PolicyDto>> enrichPolicyRequestsWithItemDetails(
       PaginatedResult<PolicyDto> pagedResult) {
@@ -705,23 +705,26 @@ public class PolicyServiceImpl implements PolicyService {
       Future<Void> future =
           keycloakUserService
               .getUserById(UUID.fromString(dto.getConsumerId()))
-              .onSuccess(user -> {
-                dto.setConsumerEmail(user.email());
-                dto.setConsumerFirstName(user.givenName());
-                dto.setConsumerLastName(user.familyName());
-                dto.setConsumerOrganization(user.organisationName());
-              })
-              .recover(err -> {
-                LOGGER.warn("Failed to fetch user {}: {}", dto.getConsumerId(), err.getMessage());
+              .onSuccess(
+                  user -> {
+                    dto.setConsumerEmail(user.email());
+                    dto.setConsumerFirstName(user.givenName());
+                    dto.setConsumerLastName(user.familyName());
+                    dto.setConsumerOrganization(user.organisationName());
+                  })
+              .recover(
+                  err -> {
+                    LOGGER.warn(
+                        "Failed to fetch user {}: {}", dto.getConsumerId(), err.getMessage());
 
-                // Keep fields empty/null if user no longer exists
-                dto.setConsumerEmail(null);
-                dto.setConsumerFirstName(null);
-                dto.setConsumerLastName(null);
-                dto.setConsumerOrganization(null);
+                    // Keep fields empty/null if user no longer exists
+                    dto.setConsumerEmail(null);
+                    dto.setConsumerFirstName(null);
+                    dto.setConsumerLastName(null);
+                    dto.setConsumerOrganization(null);
 
-                return Future.succeededFuture();
-              })
+                    return Future.succeededFuture();
+                  })
               .mapEmpty();
 
       futures.add(future);
@@ -729,6 +732,7 @@ public class PolicyServiceImpl implements PolicyService {
 
     return Future.all(futures).map(v -> pagedResult);
   }
+
   private Asset parseAndGetAsset(JsonObject result, String id) {
     LOGGER.debug("Asset info : {}", result.encodePrettily());
     try {

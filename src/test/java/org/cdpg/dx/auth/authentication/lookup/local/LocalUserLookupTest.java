@@ -1,4 +1,4 @@
-package org.cdpg.dx.auth.v2.lookup.local;
+package org.cdpg.dx.auth.authentication.lookup.local;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -10,9 +10,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import org.cdpg.dx.auth.v2.model.DxRole;
-import org.cdpg.dx.auth.v2.model.UserSnapshot;
+import org.cdpg.dx.auth.model.UserSnapshot;
 import org.cdpg.dx.common.exception.DxNotFoundException;
+import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.junit.jupiter.api.DisplayName;

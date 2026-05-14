@@ -1,4 +1,4 @@
-package org.cdpg.dx.auth.v2.factory;
+package org.cdpg.dx.auth.factory;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -12,12 +12,12 @@ import org.cdpg.dx.aaa.appCredentials.service.AppCredentialsService;
 import org.cdpg.dx.aaa.appCredentials.service.impl.AppCredentialsServiceImpl;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.auth.authentication.client.JwksResolver;
-import org.cdpg.dx.auth.v2.handler.AuthenticationHandlerV2;
-import org.cdpg.dx.auth.v2.lookup.local.LocalAppCredentialLookup;
-import org.cdpg.dx.auth.v2.lookup.local.LocalDelegationLookup;
-import org.cdpg.dx.auth.v2.lookup.local.LocalUserLookup;
-import org.cdpg.dx.auth.v2.resolver.AppCredentialsResolver;
-import org.cdpg.dx.auth.v2.resolver.DelegationResolver;
+import org.cdpg.dx.auth.authentication.handler.AuthenticationHandler;
+import org.cdpg.dx.auth.authentication.lookup.local.LocalAppCredentialLookup;
+import org.cdpg.dx.auth.authentication.lookup.local.LocalDelegationLookup;
+import org.cdpg.dx.auth.authentication.lookup.local.LocalUserLookup;
+import org.cdpg.dx.auth.authentication.resolver.AppCredentialsResolver;
+import org.cdpg.dx.auth.authentication.resolver.DelegationResolver;
 import org.cdpg.dx.common.config.ServiceProxyAddressConstants;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.service.DataBrokerService;
@@ -25,15 +25,15 @@ import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
 
 /**
- * Builds a fully-wired v2 {@link AuthenticationHandlerV2} backed by in-process controlplane
+ * Builds a fully-wired {@link AuthenticationHandler} backed by in-process controlplane
  * services — no gRPC round-trips. Intended for {@code AbstractApiServerVerticle#getAuthV2Handler()}
  * overrides in controlplane verticles.
  */
-public final class LocalAuthV2Factory {
+public final class LocalAuthFactory {
 
-  private LocalAuthV2Factory() {}
+  private LocalAuthFactory() {}
 
-  public static AuthenticationHandlerV2 buildPair(
+  public static AuthenticationHandler buildPair(
       Vertx vertx, JsonObject config, JwksResolver jwksResolver) {
     PostgresService postgresService =
         PostgresService.createProxy(vertx, ServiceProxyAddressConstants.POSTGRES_SERVICE_ADDRESS);
@@ -62,8 +62,8 @@ public final class LocalAuthV2Factory {
     LocalDelegationLookup delegationLookup = new LocalDelegationLookup(delegationService);
     LocalUserLookup userLookup = new LocalUserLookup(keycloakUserService);
 
-    AuthenticationHandlerV2 authentication =
-        new AuthenticationHandlerV2(
+    AuthenticationHandler authentication =
+        new AuthenticationHandler(
             jwksResolver,
             new DelegationResolver(delegationLookup, userLookup),
             new AppCredentialsResolver(appLookup, userLookup));

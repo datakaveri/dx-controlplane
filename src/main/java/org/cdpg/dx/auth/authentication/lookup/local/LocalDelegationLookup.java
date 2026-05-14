@@ -1,4 +1,4 @@
-package org.cdpg.dx.auth.v2.lookup.local;
+package org.cdpg.dx.auth.authentication.lookup.local;
 
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
@@ -12,22 +12,13 @@ import java.util.Optional;
 import java.util.Set;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.delegation.util.Status;
-import org.cdpg.dx.auth.v2.lookup.DelegationLookup;
-import org.cdpg.dx.auth.v2.model.DelegationRecord;
+import org.cdpg.dx.auth.authentication.lookup.DelegationLookup;
+import org.cdpg.dx.auth.model.DelegationRecord;
 
 /**
  * In-process {@link DelegationLookup} for dx-controlplane. Wraps {@link
  * DelegationService#getAllDelegationsOfDelegate(String)} and filters for the active grant where
  * the delegator matches.
- *
- * <p>Follow-up (noted in auth-v2-implementation-plan.md §7): push this filter down to a DAO-level
- * {@code findActive(delegator, delegatee)} for indexed lookup when delegation volume grows.
- *
- * <p><b>Scope vocabulary caveat:</b> scope strings from {@code scope_constraints} are returned
- * verbatim. They must match the v2 {@code Scopes} kebab-case vocabulary for the capping
- * intersection in {@code DelegationResolver} to work. Legacy delegation records using the older
- * scope names will produce an empty effective scope set (fail-closed). Migration of scope strings
- * is a separate concern handled in a later phase.
  */
 public final class LocalDelegationLookup implements DelegationLookup {
 

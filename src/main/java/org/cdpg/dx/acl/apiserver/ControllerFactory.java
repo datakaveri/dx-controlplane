@@ -17,7 +17,7 @@ import org.cdpg.dx.acl.accessRequest.factory.AccessRequestFactory;
 import org.cdpg.dx.acl.policy.controller.PolicyController;
 import org.cdpg.dx.acl.policy.factory.PolicyFactory;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
-import org.cdpg.dx.auth.v2.handler.AuthenticationHandlerV2;
+import org.cdpg.dx.auth.authentication.handler.AuthenticationHandler;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
