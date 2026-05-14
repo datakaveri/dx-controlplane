@@ -152,7 +152,7 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
                     .put(ORGANIZATION_ID, getItemOrganizationId()))
             .put(CREATED_AT, getCreatedAt())
             .put(UPDATED_AT, getUpdatedAt())
-            .put(DB_EXPIRY_AT, getExpiryAt());
+            .put(EXPIRY_AT, getExpiryAt());
     return request;
   }
 
