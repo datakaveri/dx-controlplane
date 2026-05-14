@@ -62,7 +62,7 @@ public class ApdApiServerVerticle extends AbstractApiServerVerticle {
 
   @Override
   protected AuthenticationHandlerV2 getAuthV2Handler() {
-    return authV2;
+    return LocalAuthV2Factory.buildPair(vertx, config(), jwksResolver);
   }
 
   @Override
