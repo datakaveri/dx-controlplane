@@ -5,8 +5,11 @@ FROM maven:3-eclipse-temurin-21 as builder
 
 WORKDIR /usr/share/app
 
+ARG CACHE_BUST=1
+
 # Clone dx-common inside Docker
-RUN git clone -b dev https://github.com/datakaveri/dx-common.git /dx-common
+RUN echo "DX_COMMON_COMMIT=$CACHE_BUST" && \
+git clone -b dev https://github.com/datakaveri/dx-common.git /dx-common
 
 # Build dx-common
 RUN cd /dx-common && mvn clean install -DskipTests
