@@ -6,7 +6,8 @@ import io.vertx.ext.auth.User;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.delegation.handler.DelegationHandler;
-import org.cdpg.dx.aaa.delegation.util.RoleScopeMapping;
+import org.cdpg.dx.auth.authorization.registry.SystemRoleScopeMap;
+import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.model.DxUser;
@@ -89,10 +90,11 @@ public class DelegationHandlerValidator {
           throw new DxBadRequestException("Scope is required in constraints");
         }
 
-        RoleScopeMapping obj = RoleScopeMapping.fromString(role);
-        if(!obj.getAllowedScopes().contains(scope))
-        {
-          throw new DxBadRequestException("The role that the user is giving doesnt allow the scope "+ scope);
+        Set<String> allowedScopes = DxRole.fromString(role)
+            .map(SystemRoleScopeMap::getScopes)
+            .orElse(Set.of());
+        if (!allowedScopes.contains(scope)) {
+          throw new DxBadRequestException("The role that the user is giving doesnt allow the scope " + scope);
         }
 
         // ---------- Entity pairing validation ----------

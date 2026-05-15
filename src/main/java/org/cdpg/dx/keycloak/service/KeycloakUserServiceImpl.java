@@ -1,42 +1,34 @@
 package org.cdpg.dx.keycloak.service;
 
 import io.vertx.core.Future;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.ws.rs.ForbiddenException;
-import org.apache.logging.log4j.LogManager;
-import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
-import org.cdpg.dx.aaa.delegation.util.RoleScopeMapping;
-import org.cdpg.dx.auth.model.DxRole;
-import org.cdpg.dx.common.exception.BaseDxException;
-import org.cdpg.dx.common.exception.DxForbiddenException;
-import org.cdpg.dx.common.exception.DxNotFoundException;
-import org.cdpg.dx.common.exception.KeycloakServiceException;
-import org.cdpg.dx.common.model.UserInfo;
-import org.cdpg.dx.common.util.BlockingExecutionUtil;
-import org.cdpg.dx.keycloak.client.KeycloakClientProvider;
-import org.cdpg.dx.keycloak.config.KeycloakConstants;
-import org.cdpg.dx.common.model.DxUser;
-import org.cdpg.dx.keycloak.util.DxUserMapper;
-import org.cdpg.dx.keycloak.util.UserInfoMapper;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.apache.logging.log4j.Logger;
-import org.keycloak.representations.idm.CredentialRepresentation;
-
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
+import org.cdpg.dx.auth.authorization.registry.SystemRoleScopeMap;
+import org.cdpg.dx.auth.model.DxRole;
+import org.cdpg.dx.common.exception.BaseDxException;
+import org.cdpg.dx.common.exception.DxForbiddenException;
+import org.cdpg.dx.common.exception.KeycloakServiceException;
+import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.common.model.UserInfo;
+import org.cdpg.dx.common.util.BlockingExecutionUtil;
+import org.cdpg.dx.keycloak.client.KeycloakClientProvider;
+import org.cdpg.dx.keycloak.config.KeycloakConstants;
+import org.cdpg.dx.keycloak.util.DxUserMapper;
+import org.cdpg.dx.keycloak.util.UserInfoMapper;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 
 public class KeycloakUserServiceImpl implements KeycloakUserService {
   private final Keycloak keycloak;
@@ -517,12 +509,14 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
     List<String> newScopes = new ArrayList<>();
 
     if (roles == null || roles.isEmpty()) {
-      RoleScopeMapping roleMapping = RoleScopeMapping.fromString(highestRole);
+      newScopes =
+          DxRole.fromString(highestRole)
+              .map(dxRole -> new ArrayList<>(SystemRoleScopeMap.getScopes(dxRole)))
+              .orElse(new ArrayList<>());
       LOGGER.info(
           "Wildcard delegation detected, expanding scopes for role: {} and scopes: {}",
-          roleMapping.getRole(),
-          roleMapping.getAllowedScopes());
-      newScopes = roleMapping.getAllowedScopes().stream().toList();
+          highestRole,
+          newScopes);
 
     } else {
       for (Object r : roles) {
@@ -535,12 +529,15 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
             newScopes.add(((JsonObject) c).getString("scope"));
           }
         } else {
-          RoleScopeMapping roleMapping = RoleScopeMapping.fromString(role);
+          List<String> roleScopes =
+              DxRole.fromString(role)
+                  .map(dxRole -> new ArrayList<>(SystemRoleScopeMap.getScopes(dxRole)))
+                  .orElse(new ArrayList<>());
           LOGGER.info(
               "No subset constraint found, expanding scopes for role: {} and scopes: {}",
-              roleMapping.getRole(),
-              roleMapping.getAllowedScopes());
-          newScopes = roleMapping.getAllowedScopes().stream().toList();
+              role,
+              roleScopes);
+          newScopes = roleScopes;
         }
       }
     }

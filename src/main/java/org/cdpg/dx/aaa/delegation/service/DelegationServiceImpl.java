@@ -12,10 +12,11 @@ import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
 import org.cdpg.dx.aaa.delegation.models.DelegationScopeConstraint;
 import org.cdpg.dx.aaa.delegation.models.DelegationUpdateRequest;
 import org.cdpg.dx.aaa.delegation.util.DelegationRole;
-import org.cdpg.dx.aaa.delegation.util.RoleScopeMapping;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.organization.models.Role;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
+import org.cdpg.dx.auth.authorization.registry.SystemRoleScopeMap;
+import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.util.DateTimeHelper;
@@ -62,13 +63,93 @@ public class DelegationServiceImpl implements DelegationService{
     this.delegationValidator = new DelegationValidator(organizationService, itemService);
   }
 
+  @Override
+  public Future<JsonObject> findActiveDelegation(String delegatorId, String delegateeId) {
+
+    return delegationGrantDAO
+        .findActiveDelegationWithScopes(delegatorId, delegateeId)
+        .compose(
+            rows -> {
+              if (rows == null || rows.isEmpty()) {
+                return Future.failedFuture(
+                    new DxNotFoundException(
+                        "No active delegation found for delegator "
+                            + delegatorId
+                            + " and delegatee "
+                            + delegateeId));
+              }
+              LOGGER.debug("rows = {}", rows);
+              JsonObject firstRow = rows.getJsonObject(0);
+              JsonObject delegation =
+                  new JsonObject()
+                      .put("delegation_id", firstRow.getString("delegation_id"))
+                      .put("delegator_id", firstRow.getString("delegator_id"))
+                      .put("delegate_id", firstRow.getString("delegate_id"))
+                      .put("justification", firstRow.getString("justification"))
+                      .put("expiry_at", firstRow.getString("delegation_expiry_at"))
+                      .put("status", firstRow.getString("status"))
+                      .put("created_at", firstRow.getString("created_at"));
+
+              JsonArray constraints = new JsonArray();
+              Set<String> explicitScopes = new LinkedHashSet<>();
+              boolean hasWildcard = false;
+
+              for (int i = 0; i < rows.size(); i++) {
+                JsonObject row = rows.getJsonObject(i);
+                String role = row.getString("role");
+                String scope = row.getString("scope");
+
+                JsonObject constraint = new JsonObject();
+                if (role != null) constraint.put("role", role);
+                if (scope != null) {
+                  constraint.put("scope", scope);
+                  if ("*".equals(scope)) {
+                    hasWildcard = true;
+                  } else {
+                    explicitScopes.add(scope);
+                  }
+                }
+                if (row.getString("entity_id") != null)
+                  constraint.put("entity_id", row.getString("entity_id"));
+                if (row.getString("entity_type") != null)
+                  constraint.put("entity_type", row.getString("entity_type"));
+                if (row.getString("constraint_expiry_at") != null)
+                  constraint.put("expiry_at", row.getString("constraint_expiry_at"));
+                constraints.add(constraint);
+              }
+
+              delegation.put("constraints", constraints);
+              final boolean wildcardPresent = hasWildcard;
+
+              return keycloakUserService
+                  .getUserById(UUID.fromString(delegatorId))
+                  .map(
+                      dxUser -> {
+                        Set<String> cappedScopes = new LinkedHashSet<>(explicitScopes);
+
+                        if (wildcardPresent && dxUser.roles() != null) {
+                          // Wildcard: expand ALL of the delegator's actual roles (including default
+                          // consumer)
+                          for (String r : dxUser.roles()) {
+                            DxRole.fromString(r)
+                                .ifPresent(
+                                    role ->
+                                        cappedScopes.addAll(SystemRoleScopeMap.getScopes(role)));
+                          }
+                        }
+
+                        JsonObject delegatorJson = dxUser.toJson();
+                        delegatorJson.put("scopes", new JsonArray(new ArrayList<>(cappedScopes)));
+                        delegation.put("delegator", delegatorJson);
+                        return delegation;
+                      });
+            })
+        .recover(err -> Future.failedFuture(BaseDxException.from(err)));
+  }
 
   @Override
   public Future<JsonObject> createDelegationGrant(
-    JsonObject delegationGrantBody,
-    Set<String> delegatorRoles,
-    JsonArray roleConstraints
-  ) {
+      JsonObject delegationGrantBody, Set<String> delegatorRoles, JsonArray roleConstraints) {
     LOGGER.info("Creating delegation grant: {}", delegationGrantBody);
 
     UUID delegatorId = UUID.fromString(delegationGrantBody.getString(DELEGATOR_ID));
@@ -269,9 +350,8 @@ public class DelegationServiceImpl implements DelegationService{
           for (DelegationScopeConstraint c : constraints) {
             if (c.scope() != null && !c.scope().isBlank()) {
               if ("*".equals(c.scope())) {
-                RoleScopeMapping mapping =
-                  RoleScopeMapping.fromString(c.role().toString());
-                scopesToRemove.addAll(mapping.getAllowedScopes());
+                DxRole.fromString(c.role().toString()).ifPresent(dxRole ->
+                    scopesToRemove.addAll(SystemRoleScopeMap.getScopes(dxRole)));
               } else {
                 scopesToRemove.add(c.scope());
               }
@@ -444,19 +524,12 @@ public class DelegationServiceImpl implements DelegationService{
     // -------------------- WILDCARD --------------------
     if (roles == null || roles.isEmpty()) {
 
-      RoleScopeMapping roleMapping =
-        RoleScopeMapping.fromString(highestRole);
+      List<String> scopes = DxRole.fromString(highestRole)
+          .map(dxRole -> new ArrayList<>(SystemRoleScopeMap.getScopes(dxRole)))
+          .orElse(new ArrayList<>());
 
-      LOGGER.info(
-        "Wildcard delegation detected, expanding scopes for role: {} and scopes: {}",
-        roleMapping.getRole(),
-        roleMapping.getAllowedScopes()
-      );
-
-      List<String> scopes =
-        roleMapping.getAllowedScopes()
-          .stream()
-          .toList();
+      LOGGER.info("Wildcard delegation detected, expanding scopes for role: {} and scopes: {}",
+          highestRole, scopes);
 
       return keycloakUserService
         .setDelegationScopes(
@@ -486,20 +559,14 @@ public class DelegationServiceImpl implements DelegationService{
       }
       else
         {
-          RoleScopeMapping roleMapping =
-            RoleScopeMapping.fromString(role);
+          List<String> roleScopes = DxRole.fromString(role)
+              .map(dxRole -> new ArrayList<>(SystemRoleScopeMap.getScopes(dxRole)))
+              .orElse(new ArrayList<>());
 
-         LOGGER.info(
-            "No subset constraint found, expanding scopes for role: {} and scopes: {}",
-            roleMapping.getRole(),
-            roleMapping.getAllowedScopes()
-          );
+          LOGGER.info("No subset constraint found, expanding scopes for role: {} and scopes: {}",
+              role, roleScopes);
 
-         scopes =
-            roleMapping.getAllowedScopes()
-              .stream()
-              .toList();
-
+          scopes = roleScopes;
         }
     }
 

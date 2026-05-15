@@ -13,11 +13,9 @@ import org.cdpg.dx.aaa.appCredentials.service.impl.AppCredentialsServiceImpl;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.auth.authentication.client.JwksResolver;
 import org.cdpg.dx.auth.authentication.handler.AuthenticationHandler;
-import org.cdpg.dx.auth.authentication.lookup.local.LocalAppCredentialLookup;
-import org.cdpg.dx.auth.authentication.lookup.local.LocalDelegationLookup;
-import org.cdpg.dx.auth.authentication.lookup.local.LocalUserLookup;
-import org.cdpg.dx.auth.authentication.resolver.AppCredentialsResolver;
-import org.cdpg.dx.auth.authentication.resolver.DelegationResolver;
+import org.cdpg.dx.auth.authentication.resolver.AppCredentialsResolverImpl;
+import org.cdpg.dx.auth.authentication.resolver.DelegationResolverImpl;
+import org.cdpg.dx.auth.authentication.resolver.JwtResolverImpl;
 import org.cdpg.dx.common.config.ServiceProxyAddressConstants;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.service.DataBrokerService;
@@ -25,9 +23,9 @@ import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
 
 /**
- * Builds a fully-wired {@link AuthenticationHandler} backed by in-process controlplane
- * services — no gRPC round-trips. Intended for {@code AbstractApiServerVerticle#getAuthV2Handler()}
- * overrides in controlplane verticles.
+ * Builds a fully-wired {@link AuthenticationHandler} backed by in-process controlplane services —
+ * no gRPC round-trips. Intended for {@code AbstractApiServerVerticle#getAuthV2Handler()} overrides
+ * in controlplane verticles.
  */
 public final class LocalAuthFactory {
 
@@ -58,15 +56,13 @@ public final class LocalAuthFactory {
 
     KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
 
-    LocalAppCredentialLookup appLookup = new LocalAppCredentialLookup(appCredentialsService);
-    LocalDelegationLookup delegationLookup = new LocalDelegationLookup(delegationService);
-    LocalUserLookup userLookup = new LocalUserLookup(keycloakUserService);
+    JwtResolverImpl jwtResolver = new JwtResolverImpl(jwksResolver);
+    DelegationResolverImpl delegationResolver = new DelegationResolverImpl(delegationService);
+    AppCredentialsResolverImpl appResolver =
+        new AppCredentialsResolverImpl(appCredentialsService, keycloakUserService);
 
     AuthenticationHandler authentication =
-        new AuthenticationHandler(
-            jwksResolver,
-            new DelegationResolver(delegationLookup, userLookup),
-            new AppCredentialsResolver(appLookup, userLookup));
+        new AuthenticationHandler(jwtResolver, delegationResolver, appResolver);
     return authentication;
   }
 

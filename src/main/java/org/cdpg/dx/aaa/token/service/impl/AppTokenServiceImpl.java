@@ -18,6 +18,9 @@ import org.cdpg.dx.aaa.token.model.AppTokenRequest;
 import org.cdpg.dx.aaa.token.model.ItemInfo;
 import org.cdpg.dx.aaa.token.service.AppTokenService;
 import org.cdpg.dx.aaa.token.util.TokenClaimsBuilder;
+import org.cdpg.dx.auth.authorization.registry.SystemRoleScopeMap;
+import org.cdpg.dx.auth.model.DxRole;
+import org.cdpg.dx.auth.model.Scopes;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.DxUnauthorizedException;
@@ -124,19 +127,8 @@ public class AppTokenServiceImpl implements AppTokenService {
       .getUserById(app.userId())
       .compose(user -> {
 
-        JsonObject userJson = user.toJson();
-        LOGGER.info("user info: {}",userJson);
         JsonObject extraClaims = new JsonObject();
         extraClaims.put("appId", app.appId().toString());
-
-        Set<String> userRoles = new HashSet<>(
-          userJson.getJsonArray("roles", new JsonArray())
-            .stream()
-            .map(Object::toString)
-            .toList()
-        );
-
-        LOGGER.info("user roles : {}", userRoles);
 
         List<String> allScopes = appConstraints.stream()
           .map(AppConstraints::scope)
@@ -144,92 +136,49 @@ public class AppTokenServiceImpl implements AppTokenService {
           .distinct()
           .toList();
 
-        LOGGER.info("all scopes : {}",allScopes);
+        LOGGER.info("app constraint scopes: {}", allScopes);
 
-        Set<String> finalScopes = new HashSet<>();
-        Set<String> finalRoles = new HashSet<>();
-        finalRoles.add("consumer");
+        Set<String> finalScopes = new LinkedHashSet<>();
+        Set<String> finalRoles = new LinkedHashSet<>();
+        finalRoles.add(DxRole.CONSUMER.value());
 
         boolean needsItemCheck = false;
 
-        for (String scope : allScopes) {
-          switch (scope.toLowerCase()) {
-
-            case "*" -> {
-              String highestRole = getHighestRole(userRoles);
-              finalRoles.addAll(userRoles);
-              LOGGER.info("final roles: {}", finalRoles);
-              LOGGER.info("highestRole: {}", highestRole);
-              switch (highestRole) {
-                case "cos_admin" -> finalScopes.addAll(List.of(
-                  "cos-admin-access",
-                  "asset-management",
-                  "compute-management",
-                  "user-management",
-                  "credit-management",
-                  "publish"));
-                case "org_admin" -> finalScopes.addAll(List.of(
-                  "org-admin-access",
-                  "asset-management",
-                  "user-management",
-                  "publish"));
-                case "provider" -> finalScopes.addAll(List.of(
-                  "asset-management"));
-                case "compute" -> finalScopes.addAll(List.of(
-                  "credit-management"));
-                case "consumer" ->
-                  {
-                    finalScopes.addAll(List.of(
-                  "data-access"));
-                    needsItemCheck = true; // * includes data-access
-                  }
+        if (allScopes.contains("*")) {
+          // Wildcard: expand ALL of owner's actual roles (same pattern as delegation)
+          if (user.roles() != null) {
+            for (String r : user.roles()) {
+              DxRole.fromString(r).ifPresent(role -> {
+                finalScopes.addAll(SystemRoleScopeMap.getScopes(role));
+                finalRoles.add(role.value());
+              });
+            }
+          }
+          needsItemCheck = finalScopes.contains(Scopes.DATA_ACCESS);
+        } else {
+          for (String scope : allScopes) {
+            if (Scopes.ALL.contains(scope)) {
+              finalScopes.add(scope);
+              addRoleForScope(scope, finalRoles);
+              if (Scopes.DATA_ACCESS.equals(scope)) {
+                needsItemCheck = true;
               }
-            }
-
-            case "cos-admin-access" -> {
-              finalScopes.addAll(List.of("cos-admin-access", "user-management", "asset-management", "compute-management", "data-access"));
-              finalRoles.addAll(List.of("cos_admin", "org_admin", "provider", "consumer", "compute"));
-            }
-
-            case "org-admin-access" -> {
-              finalScopes.addAll(List.of("org-admin-access", "asset-management", "user-management", "data-access"));
-              finalRoles.addAll(List.of("org_admin", "consumer"));
-              finalRoles.remove("compute");
-            }
-
-            case "user-management" -> {
-              finalScopes.add("user-management");
-              finalRoles.addAll(List.of("org_admin", "consumer"));
-            }
-
-            case "asset-management" -> {
-              finalScopes.add("asset-management");
-              finalRoles.add("provider");
-            }
-
-            case "compute-management" -> {
-              finalScopes.add("compute-management");
-              finalRoles.add("compute");
-            }
-
-            case "data-access" -> {
-              finalScopes.add("data-access");
-              finalRoles.add("consumer");
-              needsItemCheck = true;
+            } else {
+              LOGGER.warn("Unknown scope in app constraints, skipping: {}", scope);
             }
           }
         }
+
+        LOGGER.info("final scopes: {}", finalScopes);
+        LOGGER.info("final roles: {}", finalRoles);
 
         extraClaims.put("scope", new JsonArray(new ArrayList<>(finalScopes)));
         extraClaims.put("realm_access", new JsonObject()
           .put("roles", new JsonArray(new ArrayList<>(finalRoles))));
 
-        // If data_access scope is involved and an itemId is provided, fetch and embed item info
         if (needsItemCheck) {
-          LOGGER.info("Inside getting token through app Id only");
           String resolvedItemId = resolveItemId(appConstraints, itemId);
           if (resolvedItemId != null && !resolvedItemId.isBlank()) {
-            LOGGER.info("Inside body of item!");
             return fetchAndValidateItemForApp(user, resolvedItemId, appConstraints)
               .compose(itemInfo -> {
                 extraClaims.mergeIn(itemInfo.toJson());
@@ -239,10 +188,20 @@ public class AppTokenServiceImpl implements AppTokenService {
           }
         }
 
-
-        // No itemId provided — skip item check, issue token with scopes only
         return generateJwtToken(user, extraClaims);
       });
+  }
+
+  private void addRoleForScope(String scope, Set<String> roles) {
+    // Add minimum role that grants this scope (consumer < compute < provider < org_admin < cos_admin)
+    List<DxRole> ordered = List.of(
+        DxRole.CONSUMER, DxRole.COMPUTE, DxRole.PROVIDER, DxRole.ORG_ADMIN, DxRole.COS_ADMIN);
+    for (DxRole role : ordered) {
+      if (SystemRoleScopeMap.getScopes(role).contains(scope)) {
+        roles.add(role.value());
+        return;
+      }
+    }
   }
 
   private Future<ItemInfo> fetchAndValidateItemForApp(DxUser user, String itemId, List<AppConstraints> appConstraints) {
@@ -335,13 +294,6 @@ public class AppTokenServiceImpl implements AppTokenService {
             .put("access_token", token)
             .put("token_type", "Bearer")
             .put("expires_in_minutes", tokenExpirationMinutes));
-  }
-
-  private String getHighestRole(Set<String> roles) {
-    if (roles.contains("cos_admin")) return "cos_admin";
-    if (roles.contains("org_admin")) return "org_admin";
-    if (roles.contains("provider")) return "provider";
-    return "consumer";
   }
 
   /* -------------------------------------------------
