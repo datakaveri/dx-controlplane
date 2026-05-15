@@ -185,7 +185,7 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
   }
 
   @Override
-  public Future<QueryResult> getPoliciesByConsumer(String emailId) {
+  public Future<QueryResult> getPoliciesByConsumer(String consumerId) {
 
     SelectQuery selectQuery =
         new SelectQuery()
@@ -210,7 +210,7 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
             .setCondition(
                 new Condition()
                     .setColumn("P.consumer_id")
-                    .setValues(List.of(emailId))
+                    .setValues(List.of(consumerId))
                     .setOperator(Condition.Operator.EQUALS))
             .setJoins(
                 List.of(

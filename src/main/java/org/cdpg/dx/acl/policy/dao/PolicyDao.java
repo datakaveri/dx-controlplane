@@ -18,7 +18,7 @@ public interface PolicyDao extends BaseDAO<PolicyDto> {
 
   Future<List<QueryResult>> insertPolicies(List<CreatePolicyRequest> requests, UUID userId);
 
-  Future<QueryResult> getPoliciesByConsumer(String email);
+  Future<QueryResult> getPoliciesByConsumer(String consumerId);
 
   Future<QueryResult> getPoliciesByProvider(String ownerId);
 
