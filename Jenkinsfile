@@ -45,8 +45,20 @@ pipeline {
         stage('Building images') {
           steps{
             script {
+
               echo 'Pulled - ' + env.GIT_BRANCH
-              devImage = docker.build(devRegistry, "-f ./docker/dev.dockerfile .")
+
+              DX_COMMON_COMMIT = sh(
+                script: "git ls-remote https://github.com/datakaveri/dx-common.git refs/heads/dev | cut -f1",
+                returnStdout: true
+              ).trim()
+
+              echo "DX_COMMON_COMMIT=${DX_COMMON_COMMIT}"
+
+              devImage = docker.build(
+                devRegistry,
+                "--build-arg CACHE_BUST=${DX_COMMON_COMMIT} -f ./docker/dev.dockerfile ."
+              )
             }
           }
         }

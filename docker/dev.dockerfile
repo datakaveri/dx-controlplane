@@ -5,8 +5,11 @@ FROM maven:3-eclipse-temurin-21 as builder
 
 WORKDIR /usr/share/app
 
+ARG CACHE_BUST=1
+
 # Clone dx-common inside Docker
-RUN git clone -b dev https://github.com/datakaveri/dx-common.git /dx-common
+RUN echo "DX_COMMON_COMMIT=$CACHE_BUST" && \
+git clone -b dev https://github.com/datakaveri/dx-common.git /dx-common
 
 # Build dx-common
 RUN cd /dx-common && mvn clean install -DskipTests
@@ -23,7 +26,9 @@ RUN mvn clean package -Dmaven.test.skip=true
 
 
 # Java Runtime as the base for final image
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:21-jre-noble
+
+RUN apt-get update && apt-get upgrade -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ARG VERSION
 ENV JAR="iudx.aaa.server-dev-${VERSION}-fat.jar"
