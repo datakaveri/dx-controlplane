@@ -277,7 +277,7 @@ class PolicyServiceTest {
       QueryResult queryResult = new QueryResult();
       queryResult.setRows(new JsonArray().add(policyRow));
 
-      when(policyDao.getPoliciesByConsumer(consumer.email()))
+      when(policyDao.getPoliciesByConsumer(consumer.sub().toString()))
           .thenReturn(Future.succeededFuture(queryResult));
 
       policyService
@@ -289,7 +289,7 @@ class PolicyServiceTest {
                           () -> {
                             assertThat(policies).isNotEmpty();
                             assertThat(policies).hasSize(1);
-                            verify(policyDao).getPoliciesByConsumer(consumer.email());
+                            verify(policyDao).getPoliciesByConsumer(consumer.sub().toString());
                             ctx.completeNow();
                           })));
     }

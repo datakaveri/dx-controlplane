@@ -442,7 +442,7 @@ public class PolicyServiceImpl implements PolicyService {
     if (role.contains(PROVIDER.getRole()) || role.contains(PROVIDER_DELEGATE.getRole())) {
       daoFuture = policyDao.getPoliciesByProvider(user.sub().toString());
     } else if (role.contains(CONSUMER.getRole()) || role.contains(CONSUMER_DELEGATE.getRole())) {
-      daoFuture = policyDao.getPoliciesByConsumer(user.email());
+      daoFuture = policyDao.getPoliciesByConsumer(user.sub().toString());
     } else {
       JsonObject error =
           new JsonObject()
