@@ -6,7 +6,8 @@ import io.vertx.ext.auth.User;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.delegation.handler.DelegationHandler;
-import org.cdpg.dx.aaa.delegation.util.RoleScopeMapping;
+import org.cdpg.dx.auth.authorization.registry.SystemRoleScopeMap;
+import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.model.DxUser;
@@ -19,8 +20,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.cdpg.dx.auth.authorization.model.DxScope.COS_ADMIN_ACCESS;
-import static org.cdpg.dx.auth.authorization.model.DxScope.ORG_ADMIN_ACCESS;
 
 public class DelegationHandlerValidator {
 
@@ -91,22 +90,11 @@ public class DelegationHandlerValidator {
           throw new DxBadRequestException("Scope is required in constraints");
         }
 
-        RoleScopeMapping obj = RoleScopeMapping.fromString(role);
-        if(!obj.getAllowedScopes().contains(scope))
-        {
-          throw new DxBadRequestException("The role that the user is giving doesnt allow the scope "+ scope);
-        }
-
-        if(scope.equals(COS_ADMIN_ACCESS.getScope()) || scope.equals(ORG_ADMIN_ACCESS.getScope()))
-        {
-          if(entityId!=null && entityType!=null)
-          {
-            throw new DxBadRequestException("No entity required for cos-admin-access/org-admin-access scope");
-          }
-          else
-          {
-            return;
-          }
+        Set<String> allowedScopes = DxRole.fromString(role)
+            .map(SystemRoleScopeMap::getScopes)
+            .orElse(Set.of());
+        if (!allowedScopes.contains(scope)) {
+          throw new DxBadRequestException("The role that the user is giving doesnt allow the scope " + scope);
         }
 
         // ---------- Entity pairing validation ----------

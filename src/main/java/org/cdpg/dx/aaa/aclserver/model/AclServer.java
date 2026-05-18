@@ -1,10 +1,9 @@
 package org.cdpg.dx.aaa.aclserver.model;
 
-
 import static org.cdpg.dx.aaa.aclserver.config.Constants.ACL_SERVER_TABLE;
 import static org.cdpg.dx.aaa.aclserver.config.Constants.ROLES;
-import static org.cdpg.dx.auth.authorization.model.DxRole.COS_ADMIN;
-import static org.cdpg.dx.auth.authorization.model.DxRole.ORG_ADMIN;
+import static org.cdpg.dx.auth.model.DxRole.COS_ADMIN;
+import static org.cdpg.dx.auth.model.DxRole.ORG_ADMIN;
 import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
 import static org.cdpg.dx.common.util.ValidationUtils.requireNonNull;
 
@@ -28,26 +27,36 @@ public record AclServer(
     String visibility,
     String status,
     LocalDateTime createdAt,
-    LocalDateTime updatedAt
-) implements BaseEntity<AclServer> {
+    LocalDateTime updatedAt)
+    implements BaseEntity<AclServer> {
 
   public static AclServer fromJson(JsonObject json) {
     LOGGER.debug("Inside fromJson of AclServer {}", json);
     try {
       return new AclServer(
-          json.getString(Constants.ID) != null ? UUID.fromString(json.getString(Constants.ID)) : UUID.randomUUID(),
+          json.getString(Constants.ID) != null
+              ? UUID.fromString(json.getString(Constants.ID))
+              : UUID.randomUUID(),
           requireNonNull(json.getString(Constants.NAME), Constants.NAME),
           requireNonNull(json.getString(Constants.URL), Constants.URL),
-          json.getString(Constants.OWNER_ID) != null ? UUID.fromString(json.getString(Constants.OWNER_ID)) : null,
+          json.getString(Constants.OWNER_ID) != null
+              ? UUID.fromString(json.getString(Constants.OWNER_ID))
+              : null,
           requireNonNull(json.getString(Constants.VISIBILITY), Constants.VISIBILITY),
-          json.getString(Constants.STATUS)!=null?json.getString(Constants.STATUS):getStatusFromJson(json),
-          json.getString(Constants.CREATED_AT) != null ? LocalDateTime.parse(json.getString(Constants.CREATED_AT), FORMATTER) : null,
-          json.getString(Constants.UPDATED_AT) != null ? LocalDateTime.parse(json.getString(Constants.UPDATED_AT), FORMATTER) : null
-      );
+          json.getString(Constants.STATUS) != null
+              ? json.getString(Constants.STATUS)
+              : getStatusFromJson(json),
+          json.getString(Constants.CREATED_AT) != null
+              ? LocalDateTime.parse(json.getString(Constants.CREATED_AT), FORMATTER)
+              : null,
+          json.getString(Constants.UPDATED_AT) != null
+              ? LocalDateTime.parse(json.getString(Constants.UPDATED_AT), FORMATTER)
+              : null);
     } catch (IllegalArgumentException e) {
       throw new DxValidationException("Missing or invalid required field: " + e.getMessage());
     }
   }
+
   private static final Logger LOGGER = LogManager.getLogger(AclServer.class);
 
   @Override
@@ -77,17 +86,18 @@ public record AclServer(
     if (updatedAt != null) map.put(Constants.UPDATED_AT, updatedAt.format(FORMATTER));
     return map;
   }
+
   private static String getStatusFromJson(JsonObject json) {
     JsonArray roles = json.getJsonArray(ROLES);
     LOGGER.debug("Roles in getStatusFromJson: {}", roles.contains("org_admin"));
-    if (roles == null || roles.isEmpty()) {
+    if (roles.isEmpty()) {
       throw new DxValidationException("Missing or invalid required field: roles");
     }
 
-    if (roles.contains(ORG_ADMIN.getRole())) {
+    if (roles.contains(ORG_ADMIN.value())) {
       LOGGER.debug("Role is org_admin");
       return "PENDING";
-    } else if (roles.contains(COS_ADMIN.getRole())) {
+    } else if (roles.contains(COS_ADMIN.value())) {
       LOGGER.debug("Role is cos_admin");
       return "ACTIVE";
     } else {
@@ -95,11 +105,8 @@ public record AclServer(
     }
   }
 
-
   @Override
   public String getTableName() {
     return ACL_SERVER_TABLE;
   }
 }
-
-

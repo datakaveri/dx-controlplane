@@ -4,9 +4,7 @@ import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
-import org.cdpg.dx.aaa.delegation.util.RoleScopeMapping;
-import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.cdpg.dx.auth.authorization.model.DxScope;
+import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.model.UserInfo;
 

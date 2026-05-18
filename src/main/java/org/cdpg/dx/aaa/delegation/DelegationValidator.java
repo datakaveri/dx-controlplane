@@ -2,7 +2,6 @@ package org.cdpg.dx.aaa.delegation;
 import io.vertx.core.*;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.cdpg.dx.aaa.delegation.util.RoleScopeMapping;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
@@ -91,16 +90,22 @@ public class DelegationValidator {
 
         switch (normalizedScope) {
 
-          case "user-management" ->
+          // user/org ownership validation
+          case "user-management", "org-user-management", "org-publisher-management" ->
             validations.add(validateOrgOwnership(actorId, entityIdList));
 
+          // item access validation
           case "data-access" ->
             validations.add(validateItemIdOwnership(actorId, entityIdList));
 
-          case "asset-management" ->
+          // asset ownership validation
+          case "asset-management", "own-asset-management",
+               "org-asset-management", "org-asset-publish", "asset-publish" ->
             validations.add(validateAssetRequestOwnership(actorId, entityIdList));
 
-          case "compute-management", "credit-management" -> {
+          // platform-level scopes — no entity ownership check needed
+          case "compute-management", "credit-management",
+               "org-management", "publisher-management", "role-management" -> {
             LOGGER.debug("Skipping ownership validation for scope {}", scope);
           }
 

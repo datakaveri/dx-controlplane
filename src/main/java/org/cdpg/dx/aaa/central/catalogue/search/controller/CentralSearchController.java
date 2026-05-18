@@ -20,7 +20,7 @@ import org.cdpg.dx.aaa.central.catalogue.search.service.CentralSearchService;
 import org.cdpg.dx.aaa.common.CheckIfTokenPresent;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.request.GetSearchRequestBuilder;
 import org.cdpg.dx.common.request.OrganisationAssetRequestBuilder;

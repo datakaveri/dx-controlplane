@@ -65,7 +65,7 @@ import org.cdpg.dx.aaa.token.factory.AppTokenControllerFactory;
 import org.cdpg.dx.aaa.token.factory.TokenControllerFactory;
 import org.cdpg.dx.aaa.user.factory.UserControllerFactory;
 import org.cdpg.dx.apiserver.ApiController;
-import org.cdpg.dx.auth.v2.handler.AuthenticationHandlerV2;
+import org.cdpg.dx.auth.authentication.handler.AuthenticationHandler;
 import org.cdpg.dx.common.URNGenerator;
 
 /**

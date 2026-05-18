@@ -2,7 +2,7 @@ package org.cdpg.dx.auditing.model;
 
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.auditing.enums.*;
-import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.model.DxRole;
 
 import java.util.UUID;
 
@@ -292,7 +292,7 @@ public class ActivityAuditLogBuilder {
     json.put(ORG_ID, safeString(orgId));
     json.put(ORG_NAME, orgName);
 
-    json.put(ROLE, role != null ? role.getRole() : null);
+    json.put(ROLE, role != null ? role.value() : null);
     json.put(IS_DELEGATE, isDelegate);
 
     json.put(DELEGATOR_ID, safeString(delegatorId));

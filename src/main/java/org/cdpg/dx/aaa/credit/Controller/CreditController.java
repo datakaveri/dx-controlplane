@@ -1,6 +1,6 @@
 package org.cdpg.dx.aaa.credit.Controller;
 
-import static org.cdpg.dx.auth.authorization.handler.AuthorizationHandler.KycVerification;
+import static org.cdpg.dx.auth.authorization.handler.AuthorizationHandler.kycVerification;
 
 import io.vertx.ext.web.openapi.RouterBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -10,8 +10,8 @@ import org.cdpg.dx.aaa.credit.handler.ComputeRoleHandler;
 import org.cdpg.dx.aaa.credit.handler.CreditBalanceHandler;
 import org.cdpg.dx.aaa.credit.handler.CreditRequestHandler;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
-import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.v2.model.Scopes;
+import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
+import org.cdpg.dx.auth.model.Scopes;
 
 public class CreditController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(CreditController.class);
@@ -39,13 +39,13 @@ public class CreditController implements ApiController {
 
     var selfAccess = AuthorizationHandler.forScopes(Scopes.DATA_ACCESS);
     var adminAccess = AuthorizationHandler.forScopes(Scopes.USER_MANAGEMENT);
-    var computeAccess = AuthorizationHandler.forScopes(Scopes.COMPUTE_ACCESS);
+    var computeAccess = AuthorizationHandler.forScopes(Scopes.COMPUTE_MANAGEMENT);
 
     routerBuilder
       .operation("post-auth-v2-credit-request")
       .handler(auditingHandler::handleApiAudit)
       .handler(computeAccess)
-      .handler(KycVerification(isKycRequired))
+      .handler(kycVerification(isKycRequired))
       .handler(creditRequestHandler::createCreditRequest);
 
     routerBuilder
@@ -89,7 +89,7 @@ public class CreditController implements ApiController {
       .operation("post-auth-v2-compute-role-request")
       .handler(auditingHandler::handleApiAudit)
       .handler(selfAccess)
-      .handler(KycVerification(isKycRequired))
+      .handler(kycVerification(isKycRequired))
       .handler(computeRoleHandler::createComputeRoleRequest);
 
 
@@ -127,7 +127,7 @@ public class CreditController implements ApiController {
       .operation("get-auth-v2-user-credit-balance")
       .handler(auditingHandler::handleApiAudit)
       .handler(computeAccess)
-      .handler(KycVerification(isKycRequired))
+      .handler(kycVerification(isKycRequired))
       .handler(creditBalanceHandler::getBalance);
   }
 }

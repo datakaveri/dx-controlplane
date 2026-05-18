@@ -13,13 +13,12 @@ import org.cdpg.dx.aaa.publicKey.service.PublicService;
 import org.cdpg.dx.aaa.publicKey.service.impl.PublicServiceImpl;
 import org.cdpg.dx.apiserver.AbstractApiServerVerticle;
 import org.cdpg.dx.apiserver.ApiController;
-import org.cdpg.dx.auth.v2.factory.LocalAuthV2Factory;
-import org.cdpg.dx.auth.v2.handler.AuthenticationHandlerV2;
+import org.cdpg.dx.auth.factory.LocalAuthFactory;
+import org.cdpg.dx.auth.authentication.handler.AuthenticationHandler;
 import org.cdpg.dx.common.URNGenerator;
 
 public class ApdApiServerVerticle extends AbstractApiServerVerticle {
 
-  private AuthenticationHandlerV2 authV2;
 
   @Override
   protected String getOpenApiSpecPath(JsonObject config) {
@@ -61,8 +60,8 @@ public class ApdApiServerVerticle extends AbstractApiServerVerticle {
   }
 
   @Override
-  protected AuthenticationHandlerV2 getAuthV2Handler() {
-    return LocalAuthV2Factory.buildPair(vertx, config(), jwksResolver);
+  protected AuthenticationHandler getAuthV2Handler() {
+    return LocalAuthFactory.buildPair(vertx, config(), jwksResolver);
   }
 
   @Override
