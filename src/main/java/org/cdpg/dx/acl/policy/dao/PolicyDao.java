@@ -4,6 +4,7 @@ import io.vertx.core.Future;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import org.cdpg.dx.acl.accessRequest.dao.model.PolicyAccessInfo;
 import org.cdpg.dx.acl.policy.dao.model.PolicyDto;
 import org.cdpg.dx.acl.policy.service.model.CreatePolicyRequest;
 import org.cdpg.dx.common.request.PaginatedRequest;
@@ -31,6 +32,5 @@ public interface PolicyDao extends BaseDAO<PolicyDto> {
   Future<PaginatedResult<PolicyDto>> getPoliciesWithAccessControl(PaginatedRequest request,
                                                                   Set<String> policyIds,
                                                                   String consumerId);
-
-  Future<Boolean> matchesPolicy(UUID itemId, String userId);
+  Future<List<PolicyAccessInfo>> getMatchingPolicies(UUID itemId, String consumerId);
 }

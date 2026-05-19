@@ -3,9 +3,12 @@ package org.cdpg.dx.acl.accessRequest.service;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
+import org.cdpg.dx.acl.accessRequest.dao.model.HasAccessResponse;
+import org.cdpg.dx.acl.accessRequest.dao.model.PolicyAccessInfo;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.model.RequestType;
 import org.cdpg.dx.common.request.PaginatedRequest;
@@ -25,7 +28,7 @@ public interface AccessRequestService {
                                                boolean isUserOrgAdmin, String providerComment,
                                                String feedbackToConsumer);
 
-  Future<Boolean> checkAccessRequest(UUID userId, String itemId);
+  Future<HasAccessResponse> checkAccessRequest(UUID userId, String itemId);
 
   Future<PaginatedResult<AccessRequestDto>> listAccessRequestForConsumer(PaginatedRequest paginatedRequest);
 
