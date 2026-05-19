@@ -1332,6 +1332,53 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/checkAccessRequestSuccessResponse'
+              examples:
+                Independent User Access:
+                  value:
+                    type: dx:aclApd:success
+                    title: Success
+                    detail: User has access to the given asset!
+                    result:
+                      - policyId: caa261ec-28f6-4567-9825-a5ecd75e6bba
+                        constraints:
+                          access:
+                            - accessType: api
+                        expiryAt: '2026-08-05T20:00:19'
+                    paginationInfo:
+                      page: 1
+                      size: 1
+                      totalCount: 1
+                      totalPages: 1
+                      hasNext: false
+                      hasPrevious: false
+
+                Org Level Policy Access:
+                  value:
+                    type: dx:aclApd:success
+                    title: Success
+                    detail: User has access to the given asset!
+                    result:
+                      - policyId: c26acea7-8992-47b2-9113-0c6255cfeee3
+                        constraints:
+                          access:
+                            - accessType: api
+                              expiry: 1735689600
+                              limits:
+                                apiHits: 100
+                          subjects:
+                            allowedOrgIds:
+                              - 2accd360-d791-4364-b18b-530b1b148cb9
+                            allowedRoles:
+                              - org_admin
+                              - provider
+                        expiryAt: '2026-08-04T20:00:19'
+                    paginationInfo:
+                      page: 1
+                      size: 1
+                      totalCount: 1
+                      totalPages: 1
+                      hasNext: false
+                      hasPrevious: false
           headers:
             Content-Type:
               schema:
@@ -2805,26 +2852,79 @@ components:
         title: Success
         detail: Request inserted successfully!
     checkAccessRequestSuccessResponse:
-      title: Create notification success
       type: object
+      additionalProperties: false
       properties:
         type:
           type: string
-          minLength: 1
+          example: dx:aclApd:success
         title:
           type: string
-          minLength: 1
+          example: Success
         detail:
           type: string
-          minLength: 1
+          example: User has access to the given asset!
+        result:
+          type: array
+          items:
+            $ref: '#/components/schemas/accessPolicyResult'
+        paginationInfo:
+          $ref: '#/components/schemas/paginationInfo'
       required:
         - type
         - title
         - detail
-      example:
-        type: urn:dx:AclApd:success
-        title: Success
-        detail: User has access to the given asset!
+        - result
+        - paginationInfo
+    accessPolicyResult:
+      type: object
+      additionalProperties: false
+      properties:
+        policyId:
+          type: string
+          format: uuid
+          example: caa261ec-28f6-4567-9825-a5ecd75e6bba
+        constraints:
+          type: object
+          description: Policy or rule constraints associated with the access
+        expiryAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2026-08-05T20:00:19'
+      required:
+        - policyId
+        - constraints
+        - expiryAt
+    paginationInfo:
+      type: object
+      additionalProperties: false
+      properties:
+        page:
+          type: integer
+          example: 1
+        size:
+          type: integer
+          example: 1
+        totalCount:
+          type: integer
+          example: 1
+        totalPages:
+          type: integer
+          example: 1
+        hasNext:
+          type: boolean
+          example: false
+        hasPrevious:
+          type: boolean
+          example: false
+      required:
+        - page
+        - size
+        - totalCount
+        - totalPages
+        - hasNext
+        - hasPrevious
     createNotificationResourceNotFoundResponse:
       title: Create notification resource not found
       type: object

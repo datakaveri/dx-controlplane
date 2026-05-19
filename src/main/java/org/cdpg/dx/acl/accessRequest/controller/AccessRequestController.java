@@ -43,14 +43,13 @@ import org.cdpg.dx.acl.policy.util.UserAccessHandler;
 import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
-import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.ScopeRule;
+import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.auth.model.Scopes;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.email.SendEmail;
 import org.cdpg.dx.common.exception.DxForbiddenException;
-import org.cdpg.dx.common.exception.DxForbiddenNoAccessException;
 import org.cdpg.dx.common.exception.DxValidationException;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.model.RequestType;
@@ -351,13 +350,10 @@ public class AccessRequestController implements ApiController {
     accessRequestService
         .checkAccessRequest(consumerId, itemId)
         .onSuccess(
-            hasAccess -> {
-              if (hasAccess) {
-                ResponseBuilder.sendSuccess(
-                    ctx, "User has access to the given asset!", urnGenerator);
-              } else {
-                ctx.fail(new DxForbiddenNoAccessException("User has access to the given asset!"));
-              }
+            response -> {
+              ResponseBuilder.sendSuccess(
+                  ctx, "User has access to the given asset!", response.getResults(),
+                  response.getPaginationInfo(), urnGenerator);
             })
         .onFailure(
             err -> {
