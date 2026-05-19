@@ -4,6 +4,7 @@ import io.vertx.core.Future;
 import org.cdpg.dx.aaa.conversation.model.ConversationMessage;
 import org.cdpg.dx.aaa.conversation.model.ConversationUpdateRequest;
 import org.cdpg.dx.aaa.conversation.model.RequestTypeMapping;
+import org.cdpg.dx.aaa.conversation.model.ThreadedResult;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
 import org.cdpg.dx.database.postgres.models.UpsertResult;
@@ -12,7 +13,7 @@ import java.util.UUID;
 
 public interface ConversationService {
 
-  Future<PaginatedResult<ConversationMessage>> getAllMessages(String requestTyoe, PaginatedRequest request);
+  Future<PaginatedResult<ConversationMessage>> getAllMessages(String requestType, PaginatedRequest request);
 
   Future<ConversationMessage> getSingleMessage(String requestType, UUID messageId);
 
@@ -28,4 +29,6 @@ public interface ConversationService {
   Future<Void> deleteMessage(String requestId, UUID messageId, UUID userId);
 
   Future<PaginatedResult<RequestTypeMapping>> getByRequestType(PaginatedRequest request);
+
+  Future<ThreadedResult> getThreadedMessages(PaginatedRequest request);
 }

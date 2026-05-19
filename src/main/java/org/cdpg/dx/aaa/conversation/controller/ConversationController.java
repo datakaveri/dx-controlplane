@@ -3,9 +3,12 @@ package org.cdpg.dx.aaa.conversation.controller;
 import static org.cdpg.dx.aaa.apiserver.OperationIds.*;
 import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.CREATED_AT;
 
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
+
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -26,7 +29,7 @@ public class ConversationController implements ApiController {
 
   private static final Logger LOGGER = LogManager.getLogger(ConversationController.class);
   private static final Map<String, String> MESSAGE_FILTER_MAP =
-      Map.of("requestType", "request_type");
+      Map.of("requestType", "request_type","senderRole", "sender_role");
   private static final Map<String, String> REQUEST_TYPE_FILTER_MAP =
       Map.of(
           "type_key", "type_key",
@@ -50,10 +53,7 @@ public class ConversationController implements ApiController {
     var orgAdminAccess = AuthorizationHandler.forScopes(Scopes.ORG_USER_MANAGEMENT);
     var cosAdminAccess = AuthorizationHandler.forScopes(Scopes.ORG_MANAGEMENT);
 
-    builder
-        .operation(OP_GET_CONVERSATION_MESSAGES)
-        .handler(selfAccess)
-        .handler(this::handleGetAllMessages);
+
     builder
         .operation(OP_GET_CONVERSATION_MESSAGE)
         .handler(selfAccess)
@@ -72,40 +72,61 @@ public class ConversationController implements ApiController {
     builder.operation(OP_UPDATE_CONVERSATION_MESSAGE).handler(this::handleUpdateMessage);
 
     builder.operation(OP_DELETE_CONVERSATION_MESSAGE).handler(this::handleDeleteMessage);
+
+    builder.operation(OP_GET_THREADED_MESSAGE).handler(this::getThreadedMessages);
   }
 
-  private void handleGetAllMessages(RoutingContext ctx) {
+  // New handler method:
+  private void getThreadedMessages(RoutingContext ctx) {
     try {
-      String requestType = ctx.pathParam("request_type");
+
+      String requestId = ctx.pathParam("request_id");
+
+      Map<String, Object> additionalFilters = new HashMap<>();
+      additionalFilters.put("request_type_id", requestId);
+      additionalFilters.put("parent_msg_id", null);
+
 
       PaginatedRequest paginatedRequest =
-          PaginationRequestBuilder.from(ctx)
-              .additionalFilters(Map.of("request_type", requestType))
-              .allowedFiltersDbMap(MESSAGE_FILTER_MAP)
-              .apiToDbMap(MESSAGE_FILTER_MAP)
-              .allowedTimeFields(Set.of(CREATED_AT))
-              .build();
+        PaginationRequestBuilder.from(ctx)
+          .additionalFilters(additionalFilters)
+          .allowedFiltersDbMap(MESSAGE_FILTER_MAP)
+          .apiToDbMap(MESSAGE_FILTER_MAP)
+          .allowedTimeFields(Set.of(CREATED_AT))
+          .defaultSort("created_at", "asc")
+          .build();
 
-      service
-          .getAllMessages(requestType, paginatedRequest)
-          .onSuccess(
-              result ->
-                  ResponseBuilder.sendSuccess(
-                      ctx, result.data(), result.paginationInfo(), urnGenerator))
-          .onFailure(ctx::fail);
+      service.getThreadedMessages(paginatedRequest)
+        .onSuccess(result -> {
+          JsonArray resultArray = new JsonArray();
+          result.result().forEach(msg -> resultArray.add(msg.toJson()));  // ← explicit toJson()
+
+          ResponseBuilder.sendSuccess(
+            ctx,
+            resultArray,              // ← JsonArray not List
+            result.paginationInfo(),
+            urnGenerator
+          );
+        })
+        .onFailure(err -> {
+          LOGGER.error("Failed to fetch threaded messages", err);
+          ctx.fail(err);
+        });
+
     } catch (Exception e) {
-      LOGGER.error("Failed to fetch conversation messages", e);
+      LOGGER.error("Failed to fetch threaded messages", e);
       ctx.fail(e);
     }
   }
 
+
   private void handleGetSingleMessage(RoutingContext ctx) {
     try {
-      String requestTypeId = ctx.pathParam("request_type");
+      String requestTypeIdStr = ctx.pathParam("request_id");
       UUID messageId = UUID.fromString(ctx.pathParam("msg_id"));
 
       service
-          .getSingleMessage(requestTypeId, messageId)
+          .getSingleMessage(requestTypeIdStr, messageId)
           .onSuccess(result -> ResponseBuilder.sendSuccess(ctx, result, urnGenerator))
           .onFailure(ctx::fail);
     } catch (Exception e) {
@@ -117,11 +138,11 @@ public class ConversationController implements ApiController {
   // /iudx/v2/requests/{request_id}/conversations
   private void handleCreateMessage(RoutingContext ctx) {
     try {
-      String requestType = ctx.pathParam("request_type");
+      String requestTypeId = ctx.pathParam("request_id");
       UUID userId = UUID.fromString(ctx.user().subject());
 
       JsonObject message = ctx.body().asJsonObject();
-      message.put("request_type", requestType);
+      message.put("request_type_id", requestTypeId);
       message.put("sender_id", userId.toString());
 
       ConversationMessage request = ConversationMessage.fromJson(message);
@@ -138,12 +159,12 @@ public class ConversationController implements ApiController {
 
   private void handleReplyToMessage(RoutingContext ctx) {
     try {
-      String requestType = ctx.pathParam("request_type");
+      String requestType = ctx.pathParam("request_id");
       UUID parentMsgId = UUID.fromString(ctx.pathParam("msg_id"));
       UUID userId = UUID.fromString(ctx.user().subject());
 
       JsonObject message = ctx.body().asJsonObject();
-      message.put("request_type", requestType);
+      message.put("request_type_id", requestType);
       message.put("sender_id", userId.toString());
       message.put("parent_msg_id", parentMsgId.toString());
       ConversationMessage request = ConversationMessage.fromJson(message);
@@ -160,7 +181,7 @@ public class ConversationController implements ApiController {
 
   private void handleUpdateMessage(RoutingContext ctx) {
     try {
-      String requestType = ctx.pathParam("request_type");
+      String requestType = ctx.pathParam("request_id");
       UUID messageId = UUID.fromString(ctx.pathParam("msg_id"));
       UUID userId = UUID.fromString(ctx.user().subject());
       ConversationUpdateRequest request =
@@ -178,7 +199,7 @@ public class ConversationController implements ApiController {
 
   private void handleDeleteMessage(RoutingContext ctx) {
     try {
-      String requestType = ctx.pathParam("request_type");
+      String requestType = ctx.pathParam("request_id");
       UUID messageId = UUID.fromString(ctx.pathParam("msg_id"));
       UUID userId = UUID.fromString(ctx.user().subject());
 

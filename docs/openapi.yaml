@@ -5008,22 +5008,25 @@ paths:
           source: |
             curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/provider/feedback?id=811e9876-9381-4a25-8ad1-e8b289616ab8' --header 'Authorization: Bearer ${TOKEN}'
 
-  /iudx/v2/requests/{request_type}/conversations:
+  /iudx/v2/requests/{request_id}/conversations:
     get:
       tags:
         - Conversations
-      operationId: get-request-conversations
+      operationId: get-threaded-message
       summary: Get all messages
-      description: Paginated conversation thread for a request. Supports nested Q&A.
+      description: >
+        Paginated conversation thread for a request.
+        Returns root messages with up to 2 levels of nested replies.
+        Each level shows first 3 replies inline. Use has_more and page param to load more.
       security:
         - authorization: [ ]
       parameters:
-        - name: request_type
+        - name: request_id
           in: path
           required: true
           schema:
             type: string
-
+            format: uuid
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
       responses:
@@ -5043,55 +5046,9 @@ paths:
                   result:
                     type: array
                     items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                          format: uuid
-                          example: "c0ca7a6c-597f-4e03-b861-bb912b3cb1ec"
-                        requestType:
-                          type: string
-                        senderId:
-                          type: string
-                          format: uuid
-                          example: "1dc28cc6-d614-461a-9b8f-d6110feb3e2f"
-                        senderRole:
-                          type: string
-                          example: "new user"
-                        messageType:
-                          type: string
-                          example: "question"
-                        content:
-                          type: string
-                          example: "do ggggg have to add my phone number also ?"
-                        isInternal:
-                          type: boolean
-                          example: false
-                        createdAt:
-                          type: string
-                          format: date-time
-                          example: "2026-05-05T08:52:22.936019Z"
+                      $ref: '#/components/schemas/ThreadedMessage'
                   paginationInfo:
-                    type: object
-                    properties:
-                      page:
-                        type: integer
-                        example: 1
-                      size:
-                        type: integer
-                        example: 10
-                      totalCount:
-                        type: integer
-                        example: 1
-                      totalPages:
-                        type: integer
-                        example: 1
-                      hasNext:
-                        type: boolean
-                        example: false
-                      hasPrevious:
-                        type: boolean
-                        example: false
+                    $ref: '#/components/schemas/PaginationInfo'
         '400':
           description: Bad Request
           content:
@@ -5119,11 +5076,12 @@ paths:
       security:
         - authorization: [ ]
       parameters:
-        - name: request_type
+        - name: request_id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -5139,6 +5097,8 @@ paths:
                   type: string
                 message_type:
                   type: string
+                request_type:
+                  type: string
                 content:
                   type: string
                 internal_note:
@@ -5150,6 +5110,49 @@ paths:
             application/json:
               schema:
                 type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      requestType:
+                        type: string
+                        example: join_orgs
+                      requestTypeId:
+                        type: string
+                        format: uuid
+                      parentMsgId:
+                        type: string
+                        format: uuid
+                        nullable: true
+                      senderId:
+                        type: string
+                        format: uuid
+                      senderRole:
+                        type: string
+                        example: requester
+                      messageType:
+                        type: string
+                        example: text
+                      content:
+                        type: string
+                      isInternal:
+                        type: boolean
+                      createdAt:
+                        type: string
+                        format: date-time
+                      replyCount:
+                        type: integer
+                      hasReplies:
+                        type: boolean
         '400':
           description: Bad Request
           content:
@@ -5168,7 +5171,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
-  /iudx/v2/requests/{request_type}/conversations/{msg_id}:
+  /iudx/v2/requests/{request_id}/conversations/{msg_id}:
     get:
       tags:
         - Conversations
@@ -5178,11 +5181,12 @@ paths:
       security:
         - authorization: [ ]
       parameters:
-        - name: request_type
+        - name: request_id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
         - name: msg_id
           in: path
           required: true
@@ -5242,11 +5246,12 @@ paths:
       security:
         - authorization: [ ]
       parameters:
-        - name: request_type
+        - name: request_id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
         - name: msg_id
           in: path
           required: true
@@ -5269,6 +5274,10 @@ paths:
                   type: object
                   nullable: true
                   additionalProperties: true
+                is_internal:
+                  type: boolean
+                  nullable: true
+                  additionalProperties: true
       responses:
         '200':
           description: Message updated successfully
@@ -5276,6 +5285,69 @@ paths:
             application/json:
               schema:
                 type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      requestType:
+                        type: string
+                        example: join_orgs
+                      requestTypeId:
+                        type: string
+                        format: uuid
+                      parentMsgId:
+                        type: string
+                        format: uuid
+                        nullable: true
+                      senderId:
+                        type: string
+                        format: uuid
+                      senderRole:
+                        type: string
+                        example: approver
+                      messageType:
+                        type: string
+                        example: question
+                      content:
+                        type: string
+                      isInternal:
+                        type: boolean
+                      createdAt:
+                        type: string
+                        format: date-time
+                      replyCount:
+                        type: integer
+                        example: 0
+                      hasReplies:
+                        type: boolean
+                        example: false
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
     delete:
       tags:
         - Conversations
@@ -5285,7 +5357,7 @@ paths:
       security:
         - authorization: [ ]
       parameters:
-        - name: request_type
+        - name: request_id
           in: path
           required: true
           schema:
@@ -5298,12 +5370,22 @@ paths:
             format: uuid
       responses:
         '200':
-          description: Message deleted successfully
+          description: Conversation message deleted
           content:
             application/json:
               schema:
                 type: object
-  /iudx/v2/requests/{request_type}/conversations/{msg_id}/reply:
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:as:Success
+                  title:
+                    type: string
+                    example: Success
+                  detail:
+                    type: string
+                    example: Conversation message deleted successfully
+  /iudx/v2/requests/{request_id}/conversations/{msg_id}/reply:
     post:
       tags:
         - Conversations
@@ -5313,11 +5395,12 @@ paths:
       security:
         - authorization: [ ]
       parameters:
-        - name: request_type
+        - name: request_id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
         - name: msg_id
           in: path
           required: true
@@ -5331,10 +5414,6 @@ paths:
             schema:
               type: object
               properties:
-                parent_msg_id:
-                  type: string
-                  format: uuid
-                  nullable: true
                 sender_role:
                   type: string
                 message_type:
@@ -5350,6 +5429,68 @@ paths:
             application/json:
               schema:
                 type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      requestType:
+                        type: string
+                        example: join_orgs
+                      requestTypeId:
+                        type: string
+                        format: uuid
+                      parentMsgId:
+                        type: string
+                        format: uuid
+                      senderId:
+                        type: string
+                        format: uuid
+                      senderRole:
+                        type: string
+                        example: requester
+                      messageType:
+                        type: string
+                        example: text
+                      content:
+                        type: string
+                      isInternal:
+                        type: boolean
+                      createdAt:
+                        type: string
+                        format: date-time
+                      replyCount:
+                        type: integer
+                        example: 0
+                      hasReplies:
+                        type: boolean
+                        example: false
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
   /iudx/v2/auth/kyc/verify:
     post:
       summary: Verify KYC
@@ -18257,6 +18398,94 @@ components:
             $ref: '#/components/schemas/RequestTypeMapping'
         paginationInfo:
           $ref: '#/components/schemas/PaginationInfo'
+    ConversationMessage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "c0ca7a6c-597f-4e03-b861-bb912b3cb1ec"
+        request_type:
+          type: string
+          example: "org_join"
+        parent_msg_id:
+          type: string
+          format: uuid
+          nullable: true
+          example: null
+        sender_id:
+          type: string
+          format: uuid
+          example: "1dc28cc6-d614-461a-9b8f-d6110feb3e2f"
+        sender_role:
+          type: string
+          example: "new user"
+        actor:
+          type: string
+          enum: [ requester, approver ]
+          example: "requester"
+        message_type:
+          type: string
+          enum: [ text, question, answer, info_request, note, system ]
+          example: "question"
+        content:
+          type: string
+          example: "Do I need to add my phone number?"
+        is_internal:
+          type: boolean
+          example: false
+        has_replies:
+          type: boolean
+          example: true
+        reply_count:
+          type: integer
+          description: Direct children count only, not full subtree
+          example: 4
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-05-07T08:00:00Z"
+
+    # ── Replies wrapper with its own paginationInfo ───────────────────────────
+    ThreadedReplies:
+      type: object
+      properties:
+        result:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConversationMessage'
+        paginationInfo:
+          type: object
+          properties:
+            page:
+              type: integer
+              example: 1
+            size:
+              type: integer
+              example: 3
+            totalCount:
+              type: integer
+              description: Total direct replies for this message
+              example: 4
+            totalPages:
+              type: integer
+              example: 2
+            hasNext:
+              type: boolean
+              description: true if there are more replies beyond the 3 shown
+              example: true
+            hasPrevious:
+              type: boolean
+              example: false
+
+    # ── Root message with nested replies ─────────────────────────────────────
+    ThreadedMessage:
+      allOf:
+        - $ref: '#/components/schemas/ConversationMessage'
+        - type: object
+          properties:
+            replies:
+              $ref: '#/components/schemas/ThreadedReplies'
     BookmarkResult:
       type: object
       required:
@@ -18265,7 +18494,6 @@ components:
         - entityId
         - entityType
         - createdAt
-        - tableName
       properties:
         id:
           type: string

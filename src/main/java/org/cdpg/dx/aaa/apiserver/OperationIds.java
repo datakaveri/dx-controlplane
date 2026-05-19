@@ -149,4 +149,5 @@ public final class OperationIds {
   public static final String OP_UPDATE_CONVERSATION_MESSAGE = "put-request-conversation";
   public static final String OP_DELETE_CONVERSATION_MESSAGE = "delete-request-conversation";
   public static final String OP_GET_CONVERSATION_BY_REQUEST_TYPE = "get-conversations-by-request-type";
+  public static final String OP_GET_THREADED_MESSAGE = "get-threaded-message";
 }
