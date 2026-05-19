@@ -1,7 +1,7 @@
 package org.cdpg.dx.aaa.organization.controller;
 
 import static org.cdpg.dx.aaa.apiserver.OperationIds.*;
-import static org.cdpg.dx.auth.authorization.handler.AuthorizationHandler.KycVerification;
+import static org.cdpg.dx.auth.authorization.handler.AuthorizationHandler.kycVerification;
 
 import io.vertx.ext.web.openapi.RouterBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -9,9 +9,9 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.aaa.organization.handler.*;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
-import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.v2.handler.ScopeRule;
-import org.cdpg.dx.auth.v2.model.Scopes;
+import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
+import org.cdpg.dx.auth.authorization.model.ScopeRule;
+import org.cdpg.dx.auth.model.Scopes;
 
 public class OrganizationController implements ApiController {
 
@@ -83,7 +83,7 @@ public class OrganizationController implements ApiController {
         .operation(OP_CREATE_ORG_REQUEST)
         .handler(auditingHandler::handleApiAudit)
         .handler(selfAccess)
-        .handler(KycVerification(isKycRequired))
+        .handler(kycVerification(isKycRequired))
         .handler(createRequestHandler::createOrganisationRequest);
 
     routerBuilder
@@ -100,7 +100,7 @@ public class OrganizationController implements ApiController {
         .operation(OP_CREATE_ORG_JOIN_REQUEST)
         .handler(auditingHandler::handleApiAudit)
         .handler(selfAccess)
-        .handler(KycVerification(isKycRequired))
+        .handler(kycVerification(isKycRequired))
         .handler(joinRequestHandler::joinOrganisationRequest);
 
     routerBuilder
@@ -197,7 +197,7 @@ public class OrganizationController implements ApiController {
         .operation(OP_CREATE_PROVIDER_REQUEST)
         .handler(auditingHandler::handleApiAudit)
         .handler(selfAccess)
-        .handler(KycVerification(isKycRequired))
+        .handler(kycVerification(isKycRequired))
         .handler(providerRoleHandler::createProviderRequest);
 
     routerBuilder

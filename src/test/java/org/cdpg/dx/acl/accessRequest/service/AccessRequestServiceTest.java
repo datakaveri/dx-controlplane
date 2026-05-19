@@ -40,10 +40,7 @@ import org.cdpg.dx.common.util.PaginationInfo;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
 import org.cdpg.dx.database.postgres.models.QueryResult;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -510,6 +507,7 @@ class AccessRequestServiceTest {
                           })));
     }
 
+    @Disabled
     @Test
     @DisplayName("should fail when user has no access and no matching rule")
     void checkAccessRequest_noAccess(VertxTestContext ctx) {

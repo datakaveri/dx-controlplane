@@ -6,7 +6,7 @@ import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.aaa.asset.dao.AssetRequestDAO;
 import org.cdpg.dx.aaa.asset.models.AssetRequest;
 import org.cdpg.dx.aaa.asset.models.Status;
-import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.exception.BaseDxException;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxNotFoundException;

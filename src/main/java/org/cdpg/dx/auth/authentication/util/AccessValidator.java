@@ -6,7 +6,6 @@ import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 
 import java.util.List;
@@ -44,7 +43,7 @@ public class AccessValidator {
     }
 
     // ---------------- DELEGATE USER ----------------
-    boolean isDelegate = userRoles.contains(DxRole.DELEGATE.getRole());
+    boolean isDelegate = userRoles.contains("delegate");
 
     if (isDelegate) {
       JsonArray delegationScopes =

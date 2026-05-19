@@ -27,7 +27,7 @@ import org.cdpg.dx.aaa.organization.models.OrganizationJoinRequest;
 import org.cdpg.dx.aaa.organization.models.OrganizationUser;
 import org.cdpg.dx.aaa.organization.models.Role;
 import org.cdpg.dx.aaa.organization.models.Status;
-import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.util.PaginationInfo;

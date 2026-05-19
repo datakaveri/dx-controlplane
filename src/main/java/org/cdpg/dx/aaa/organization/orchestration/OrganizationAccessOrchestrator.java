@@ -4,7 +4,6 @@ import io.vertx.core.Future;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
-import org.cdpg.dx.auth.authorization.model.DxScope;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
@@ -33,7 +32,7 @@ public class OrganizationAccessOrchestrator {
   }
 
   public Future<Void> assertOrgManagementAccess(
-      UUID requesterId, UUID orgId, DxScope requiredScope) {
+      UUID requesterId, UUID orgId, String requiredScope) {
 
     return userService
         .getUserInfoByID(requesterId)
@@ -57,7 +56,7 @@ public class OrganizationAccessOrchestrator {
                             scopes.stream()
                                 .anyMatch(
                                     s ->
-                                        s.getString("scope").equalsIgnoreCase(requiredScope.getScope())
+                                        s.getString("scope").equalsIgnoreCase(requiredScope)
                                             && s.getString("entity_id").equals(orgId)
                                             && LocalDateTime.now().isBefore((ChronoLocalDateTime<?>) s.getValue("expiry_at")));
 

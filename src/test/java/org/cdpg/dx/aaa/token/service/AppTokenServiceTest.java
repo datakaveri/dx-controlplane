@@ -1149,11 +1149,11 @@ class AppTokenServiceTest {
       UUID appId = UUID.randomUUID();
       UUID userId = UUID.randomUUID();
       AppCredentials app = buildActiveApp(appId, userId);
-      DxUser user = buildDxUser(userId, List.of("provider"));
+      DxUser user = buildDxUser(userId, List.of("provider", "consumer"));
       AppTokenRequest request = new AppTokenRequest(appId, PLAIN_SECRET);
 
       List<AppConstraints> constraints =
-          List.of(buildConstraint(appId, userId, "asset-management"));
+          List.of(buildConstraint(appId, userId, "own-asset-management"));
 
       when(appCredentialsService.getAppById(appId)).thenReturn(Future.succeededFuture(app));
       when(appCredentialsService.getAppConstraintsById(appId))
@@ -1182,13 +1182,12 @@ class AppTokenServiceTest {
 
             JsonArray scopes = capturedClaims[0].getJsonArray("scope");
             assertThat(scopes).isNotNull();
-            assertThat(scopes.getList()).contains("asset-management");
+            assertThat(scopes.getList()).contains("own-asset-management");
 
             JsonObject realmAccess = capturedClaims[0].getJsonObject("realm_access");
             assertThat(realmAccess).isNotNull();
             JsonArray roles = realmAccess.getJsonArray("roles");
             assertThat(roles.getList()).contains("provider");
-            // consumer role is always added
             assertThat(roles.getList()).contains("consumer");
           });
     }

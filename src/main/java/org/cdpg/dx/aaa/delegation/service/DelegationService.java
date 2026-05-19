@@ -15,6 +15,7 @@ import org.cdpg.dx.aaa.delegation.models.DelegationUpdateRequest;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -26,6 +27,15 @@ public interface DelegationService {
   static DelegationService createProxy(Vertx vertx, String address) {
     return new DelegationServiceVertxEBProxy(vertx, address);
   }
+
+  /**
+   * Targeted lookup: fetches the single active delegation from {@code delegatorId} to
+   * {@code delegateeId}, merging all non-expired constraints from all active grants into
+   * a single response JsonObject with a "constraints" array.
+   * Fails with {@code DxNotFoundException} when no matching active delegation exists.
+   */
+  Future<JsonObject> findActiveDelegation(String delegatorId, String delegateeId);
+
   Future<JsonObject> createDelegationGrant(JsonObject delegationGrant, Set<String> UserRoles, JsonArray roleConstraints);
 
   Future<JsonObject> getDelegationGrantById(String delegationId);

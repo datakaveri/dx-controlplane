@@ -10,7 +10,7 @@ import org.cdpg.dx.aaa.apiserver.OperationIds;
 import org.cdpg.dx.aaa.asset.controller.AssetController;
 import org.cdpg.dx.aaa.bookmarks.handler.BookmarksHandler;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.model.DxRole;
 
 public class BookmarksController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(BookmarksController.class);

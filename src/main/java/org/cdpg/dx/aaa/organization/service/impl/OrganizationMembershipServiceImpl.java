@@ -10,7 +10,7 @@ import org.cdpg.dx.aaa.organization.dao.OrganizationUserDAO;
 import org.cdpg.dx.aaa.organization.config.Constants;
 import org.cdpg.dx.aaa.organization.models.*;
 import org.cdpg.dx.aaa.organization.service.OrganizationMembershipService;
-import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.util.ServiceErrorHelper;

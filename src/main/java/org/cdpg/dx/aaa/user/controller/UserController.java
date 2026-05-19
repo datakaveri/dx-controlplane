@@ -5,9 +5,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.aaa.user.handler.UserHandler;
-import org.cdpg.dx.auth.v2.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.v2.handler.ScopeRule;
-import org.cdpg.dx.auth.v2.model.Scopes;
+import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
+import org.cdpg.dx.auth.authorization.model.ScopeRule;
+import org.cdpg.dx.auth.model.Scopes;
 
 public class UserController implements ApiController {
 

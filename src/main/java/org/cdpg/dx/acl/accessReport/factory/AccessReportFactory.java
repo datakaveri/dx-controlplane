@@ -9,7 +9,7 @@ import org.cdpg.dx.acl.accessRequest.dao.impl.AccessRequestDaoImpl;
 import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
 import org.cdpg.dx.acl.accessReport.controller.AccessReportController;
 import org.cdpg.dx.acl.accessReport.service.impl.ReportServiceImpl;
-import org.cdpg.dx.auth.v2.handler.AuthenticationHandlerV2;
+import org.cdpg.dx.auth.authentication.handler.AuthenticationHandler;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 
 public class AccessReportFactory {

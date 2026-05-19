@@ -4,7 +4,7 @@ import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import org.cdpg.dx.auditing.enums.HttpMethod;
 import org.cdpg.dx.auditing.model.ActivityAuditLogBuilder;
-import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.model.DxRole;
 
 import java.time.Instant;
 import java.time.LocalDateTime;

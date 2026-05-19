@@ -29,7 +29,7 @@ import org.cdpg.dx.aaa.credit.models.CreditRequest;
 import org.cdpg.dx.aaa.credit.models.CreditTransaction;
 import org.cdpg.dx.aaa.credit.models.Status;
 import org.cdpg.dx.aaa.credit.models.UserCredit;
-import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.common.exception.DxForbiddenException;

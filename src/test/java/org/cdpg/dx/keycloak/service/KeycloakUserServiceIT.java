@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.vertx.core.Future;
 import io.vertx.junit5.VertxTestContext;
 import java.util.*;
-import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.model.UserInfo;
 import org.cdpg.dx.testutil.KeycloakTestBase;
