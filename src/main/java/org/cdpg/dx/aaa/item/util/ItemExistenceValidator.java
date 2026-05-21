@@ -390,11 +390,13 @@ public class ItemExistenceValidator {
   }
 
   private void setCommonFields(JsonObject request, String method) {
-    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getUtcDatetimeAsString());
 
     if (REQUEST_POST.equalsIgnoreCase(method)) {
+      request.put(ITEM_STATUS, ACTIVE);
       request.put(ITEM_CREATED_AT, getUtcDatetimeAsString());
     }
+
+    request.put(LAST_UPDATED, getUtcDatetimeAsString());
   }
 
   private void preserveImmutableFields(JsonObject request, JsonObject existing) {
