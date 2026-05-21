@@ -1037,10 +1037,15 @@ paths:
       description: |
         Update an existing catalogue item. The request body must contain a fully valid item
         payload including the `id`.
+        ### Item status behavior
+        - PUT `/item` no longer automatically resets `itemStatus` to `ACTIVE`.
+        - Existing item status is preserved during metadata updates.
+        - Backend workflows may use `itemStatus` to represent asset onboarding states such as `REQUESTED` during API/SFTP request lifecycle handling.
 
         ### Update constraints
         - Relationship and identity fields **cannot be modified**.
-        - `itemStatus` is managed by the backend and cannot be updated by clients.
+        - `itemStatus` is initialized by the backend during item creation.
+        - During PUT updates, the existing `itemStatus` is preserved unless explicitly updated through authorized backend workflows.
         - `publishStatus` and `dataUploadStatus` cannot be updated via this API.
 
         To change `publishStatus` or `dataUploadStatus`, use the `/organisation/asset` PATCH API.
@@ -1052,7 +1057,6 @@ paths:
         1. adex:DataBank
            - id
            - type (1st element in array non-modifiable)
-           - itemStatus
            - itemCreatedAt
            - publishStatus
            - dataUploadStatus
@@ -1060,7 +1064,6 @@ paths:
         2. adex:AiModel
            - id
            - type (1st element in array non-modifiable)
-           - itemStatus
            - itemCreatedAt
            - publishStatus
            - dataUploadStatus
@@ -1068,7 +1071,6 @@ paths:
         3. adex:Apps
            - id
            - type (1st element in array non-modifiable)
-           - itemStatus
            - itemCreatedAt
            - publishStatus
            - dataUploadStatus
