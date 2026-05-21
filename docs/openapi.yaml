@@ -5940,11 +5940,16 @@ paths:
       tags:
         - Organisation Assets Management
       description: |
-        Update the publication or data upload status of an organisation asset.
+        Update the publication, onboarding, or data upload status of an organisation asset.
+
         **Role-based behavior:**
-          - `org_admin` or `cos_admin` can update both `publishStatus` and `dataUploadStatus`
-          - `provider` can update only `dataUploadStatus`
+          - `org_admin` or `cos_admin` can update `publishStatus`, `itemStatus`, and `dataUploadStatus`
+          - `provider` can update `dataUploadStatus` and `itemStatus`
           - Attempting to update unauthorized fields will result in `403 Forbidden`
+
+        ### Item status behavior
+        Backend workflows may use `itemStatus` to represent asset onboarding states such as `REQUESTED`
+        during API/SFTP request lifecycle handling.
       operationId: patch item
       security:
         - authorization: []
@@ -5978,10 +5983,21 @@ paths:
                   description: |
                     Indicates whether data has been uploaded for the asset. Must be a boolean value.
                   example: true
+                itemStatus:
+                  type: string
+                  enum:
+                    - ACTIVE
+                    - REQUESTED
+                    - INACTIVE
+                  description: |
+                    Represents the onboarding or operational lifecycle state of the asset.
+                    Can be used during API/SFTP asset request workflows.
+                  example: REQUESTED
               additionalProperties: false
             example:
               publishStatus: ACTIVE
               dataUploadStatus: true
+              itemStatus: REQUESTED
       responses:
         '200':
           description: Item status updated successfully
@@ -6038,7 +6054,7 @@ paths:
               example:
                 type: dx:controlPlane:forbidden
                 title: Forbidden
-                detail: Providers can only patch dataUploadStatus field
+                detail: Providers can only patch dataUploadStatus or itemStatus fields
       x-codeSamples:
         - lang: cURL
           label: patch item
