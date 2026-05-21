@@ -1040,7 +1040,7 @@ paths:
         ### Item status behavior
         - PUT `/item` no longer automatically resets `itemStatus` to `ACTIVE`.
         - Existing item status is preserved during metadata updates.
-        - Backend workflows may use `itemStatus` to represent asset onboarding states such as API/SFTP request lifecycle.
+        - Backend workflows may use `itemStatus` to represent asset onboarding states such as `REQUESTED` during API/SFTP request lifecycle handling.
 
         ### Update constraints
         - Relationship and identity fields **cannot be modified**.
