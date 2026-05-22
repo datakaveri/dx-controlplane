@@ -3,11 +3,9 @@ package org.cdpg.dx.aaa.email.util;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
-import java.util.List;
-import java.util.Map;
+
 import java.util.UUID;
 
-import io.vertx.ext.mail.MailMessage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.credit.models.ComputeRole;
