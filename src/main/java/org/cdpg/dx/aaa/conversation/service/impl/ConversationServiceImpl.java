@@ -7,6 +7,7 @@ import org.cdpg.dx.aaa.conversation.dao.ConversationDao;
 import org.cdpg.dx.aaa.conversation.dao.RequestTypeMappingDao;
 import org.cdpg.dx.aaa.conversation.model.*;
 import org.cdpg.dx.aaa.conversation.service.ConversationService;
+import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.util.PaginationInfo;
@@ -109,24 +110,36 @@ public class ConversationServiceImpl implements ConversationService {
     UUID userId,
     ConversationUpdateRequest request) {
 
-    Map<String, Object> condition = Map.of(
-      "id", messageId.toString(),
-      "request_type_id", requestType,
-      "sender_id", userId.toString()
-    );
-
-    Map<String, Object> updates = new HashMap<>();
-    if (request.content() != null) updates.put("content", request.content());
-    if (request.metaData() != null) updates.put("metadata", request.metaData());
-    if (request.isInternal() != null) updates.put("is_internal", request.isInternal());
-
-    return conversationDao.update(condition, updates)
-      .compose(v -> conversationDao.getAllWithFilters(Map.of("id", messageId.toString())))
+    return conversationDao.getAllWithFilters(Map.of("id", messageId.toString()))
       .compose(messages -> {
         if (messages.isEmpty()) {
           return Future.failedFuture(new DxNotFoundException("Conversation message not found"));
         }
-        return Future.succeededFuture(messages.getFirst());
+
+        ConversationMessage existing = messages.getFirst();
+        if (!existing.senderId().equals(userId)) {
+          return Future.failedFuture(new DxForbiddenException("This user is not allowed to update this message"));
+        }
+
+        Map<String, Object> condition = Map.of(
+          "id",              messageId.toString(),
+          "request_type_id", requestType,
+          "sender_id",       userId.toString()
+        );
+
+        Map<String, Object> updates = new HashMap<>();
+        if (request.content()    != null) updates.put("content",     request.content());
+        if (request.metaData()   != null) updates.put("metadata",    request.metaData());
+        if (request.isInternal() != null) updates.put("is_internal", request.isInternal());
+
+        return conversationDao.update(condition, updates)
+          .compose(v -> conversationDao.getAllWithFilters(Map.of("id", messageId.toString())))
+          .compose(updated -> {
+            if (updated.isEmpty()) {
+              return Future.failedFuture(new DxNotFoundException("Conversation message not found after update"));
+            }
+            return Future.succeededFuture(updated.getFirst());
+          });
       });
   }
   // -------------------------
@@ -134,22 +147,19 @@ public class ConversationServiceImpl implements ConversationService {
   // -------------------------
   @Override
   public Future<Void> deleteMessage(String requestType, UUID messageId, UUID userId) {
-    return conversationDao.getAllWithFilters(
-        Map.of(
-          "id", messageId.toString(),
-          "request_type_id", requestType,
-          "sender_id", userId.toString()
-        ))
+    return conversationDao.getAllWithFilters(Map.of("id", messageId.toString()))
       .compose(messages -> {
         if (messages.isEmpty()) {
           return Future.failedFuture(new DxNotFoundException("Conversation message not found"));
         }
-        ConversationMessage message = messages.getFirst();
 
-        // Delete the message and all its descendants recursively
+        ConversationMessage message = messages.getFirst();
+        if (!message.senderId().equals(userId)) {
+          return Future.failedFuture(new DxForbiddenException("This user is not allowed to delete this message"));
+        }
+
         return deleteRecursively(messageId)
           .compose(v -> {
-            // If it's a reply, decrement parent's reply count (don't delete parent)
             if (message.parentMsgId() != null) {
               return conversationDao.decrementReplyCount(message.parentMsgId());
             }
