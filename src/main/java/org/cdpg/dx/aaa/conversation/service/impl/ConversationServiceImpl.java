@@ -275,22 +275,12 @@ public class ConversationServiceImpl implements ConversationService {
   // THREAD META BUILDER
   // -------------------------
   private ThreadedReplies buildThreadedReplies(
-    List<ConversationMessage> replies,
-    int totalCount,
-    int pageSize) {
+    List<ConversationMessage> shown, int totalCount, int pageSize) {
 
-    int totalPages = (int) Math.ceil((double) totalCount / pageSize);
+    // PaginationInfo.from() calculates totalPages, hasNext, hasPrevious automatically
+    PaginationInfo info = PaginationInfo.from(1, pageSize, totalCount);
 
-    PaginationInfo info = new PaginationInfo(
-      1,
-      pageSize,
-      totalCount,
-      totalPages,
-      totalCount > pageSize,
-      false
-    );
-
-    return new ThreadedReplies(replies, info);
+    return new ThreadedReplies(shown, info);
   }
 
 
