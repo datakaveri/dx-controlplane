@@ -56,24 +56,27 @@ public class ConversationController implements ApiController {
 
     builder
         .operation(OP_GET_CONVERSATION_MESSAGE)
-        .handler(selfAccess)
         .handler(this::handleGetSingleMessage);
 
     builder
         .operation(OP_CREATE_CONVERSATION_MESSAGE)
-        .handler(cosAdminAccess)
         .handler(this::handleCreateMessage);
 
     builder
         .operation(OP_REPLY_CONVERSATION_MESSAGE)
-        .handler(cosAdminAccess)
         .handler(this::handleReplyToMessage);
 
-    builder.operation(OP_UPDATE_CONVERSATION_MESSAGE).handler(this::handleUpdateMessage);
+    builder
+      .operation(OP_UPDATE_CONVERSATION_MESSAGE)
+      .handler(this::handleUpdateMessage);
 
-    builder.operation(OP_DELETE_CONVERSATION_MESSAGE).handler(this::handleDeleteMessage);
+    builder
+      .operation(OP_DELETE_CONVERSATION_MESSAGE)
+      .handler(this::handleDeleteMessage);
 
-    builder.operation(OP_GET_THREADED_MESSAGE).handler(this::getThreadedMessages);
+    builder
+      .operation(OP_GET_THREADED_MESSAGE)
+      .handler(this::getThreadedMessages);
   }
 
   // New handler method:
