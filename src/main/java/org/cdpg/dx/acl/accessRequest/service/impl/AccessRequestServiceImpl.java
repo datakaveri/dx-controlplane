@@ -1,10 +1,14 @@
 package org.cdpg.dx.acl.accessRequest.service.impl;
 
 import static org.cdpg.dx.aaa.common.Constants.IN_ACTIVE;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONS;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_EXPIRY_AT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.EXPIRY_AT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ORGANIZATION;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.POLICY_ID;
 import static org.cdpg.dx.catalogueService.config.Constants.ASSET_NAME_KEY;
 import static org.cdpg.dx.catalogueService.config.Constants.ORGANIZATION_ID;
 import static org.cdpg.dx.catalogueService.config.Constants.OWNER_ID;
@@ -30,6 +34,8 @@ import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
 import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
 import org.cdpg.dx.acl.accessRequest.dao.model.AssetType;
+import org.cdpg.dx.acl.accessRequest.dao.model.HasAccessResponse;
+import org.cdpg.dx.acl.accessRequest.dao.model.PolicyAccessInfo;
 import org.cdpg.dx.acl.accessRequest.dao.model.Status;
 import org.cdpg.dx.acl.accessRequest.service.AccessRequestService;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
@@ -46,6 +52,7 @@ import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.DxValidationException;
 import org.cdpg.dx.common.model.RequestType;
 import org.cdpg.dx.common.request.PaginatedRequest;
+import org.cdpg.dx.common.util.PaginationInfo;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
 import org.cdpg.dx.database.postgres.models.QueryResult;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
@@ -511,59 +518,70 @@ public class AccessRequestServiceImpl implements AccessRequestService {
   }
 
   @Override
-  public Future<Boolean> checkAccessRequest(UUID consumerId, String itemId) {
+  public Future<HasAccessResponse> checkAccessRequest(UUID consumerId, String itemId) {
 
-    return accessRequestDao
-        .hasAccess(consumerId.toString(), itemId)
-        .recover(
-            err -> {
+    UUID itemUuid = UUID.fromString(itemId);
 
-              // Unexpected/system failures should stop immediately
-              if (!(err instanceof DxForbiddenException)) {
-                return Future.failedFuture(err);
+    Future<Boolean> requestAccessFuture =
+        accessRequestDao.hasAccess(consumerId.toString(), itemId).otherwise(false);
+
+    Future<List<PolicyAccessInfo>> policiesFuture =
+        policyDao.getMatchingPolicies(itemUuid, consumerId.toString()).otherwise(List.of());
+
+    Future<JsonObject> ruleFuture =
+        keycloakUserService
+            .getUserById(consumerId)
+            .compose(
+                fullUser ->
+                    accessRuleDao.findMatchingRule(
+                        itemUuid,
+                        fullUser.sub().toString(),
+                        fullUser.organisationId(),
+                        fullUser.roles()))
+            .otherwiseEmpty();
+
+    return Future.all(requestAccessFuture, policiesFuture, ruleFuture)
+        .compose(
+            composite -> {
+              Boolean requestAccess = composite.resultAt(0);
+
+              List<PolicyAccessInfo> policies = composite.resultAt(1);
+
+              JsonObject rule = composite.resultAt(2);
+
+              List<PolicyAccessInfo> results = new ArrayList<>(policies);
+
+              // Add rule result if exists
+              if (rule != null) {
+                String expiryAt = rule.getString(EXPIRY_AT);
+
+                results.add(
+                    new PolicyAccessInfo(
+                        UUID.fromString(rule.getString(POLICY_ID)),
+                        rule.getJsonObject(CONS, new JsonObject()),
+                        expiryAt != null
+                            ? LocalDateTime.parse(expiryAt)
+                            : null));
               }
 
-              // Fallback to policy access
-              return hasPolicyAccess(consumerId, itemId);
-            })
-        .recover(
-            err -> {
+              boolean hasAccess =
+                  Boolean.TRUE.equals(requestAccess) || !policies.isEmpty() || rule != null;
 
-              // Unexpected/system failures should stop immediately
-              if (!(err instanceof DxForbiddenException)) {
-                return Future.failedFuture(err);
+              if (!hasAccess) {
+
+                return Future.failedFuture(
+                    new DxForbiddenNoAccessException(
+                        "User does not have access to the given item"));
               }
 
-              // Final fallback to rule access
-              return keycloakUserService
-                  .getUserById(consumerId)
-                  .compose(
-                      fullUser ->
-                          accessRuleDao.ruleMatches(
-                              UUID.fromString(itemId),
-                              fullUser.sub().toString(),
-                              fullUser.organisationId(),
-                              fullUser.roles()))
-                  .compose(
-                      ruleMatch -> {
-                        if (Boolean.TRUE.equals(ruleMatch)) {
-                          return Future.succeededFuture(true);
-                        }
+              PaginationInfo pagination = PaginationInfo.from(1, results.size(), results.size());
 
-                        return Future.failedFuture(
-                            new DxForbiddenNoAccessException(
-                                "User does not have access to the given item"));
-                      });
+              return Future.succeededFuture(new HasAccessResponse(results, pagination));
             })
         .onFailure(
             err ->
                 LOGGER.error(
                     "Failed to check access for consumer {} on item {}", consumerId, itemId, err));
-  }
-
-  private Future<Boolean> hasPolicyAccess(UUID consumerId, String itemId) {
-
-    return policyDao.matchesPolicy(UUID.fromString(itemId), consumerId.toString());
   }
 
   @Override

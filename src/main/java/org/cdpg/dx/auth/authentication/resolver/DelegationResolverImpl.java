@@ -9,7 +9,6 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
-import org.cdpg.dx.auth.authentication.resolver.DelegationResolver;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.model.DxUser;

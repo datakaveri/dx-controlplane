@@ -25,8 +25,12 @@ import org.cdpg.dx.auth.appid.v1.AppIdPrincipalProto;
 import org.cdpg.dx.auth.appid.v1.AppIdVerificationServiceGrpc;
 import org.cdpg.dx.auth.appid.v1.CheckItemAccessRequest;
 import org.cdpg.dx.auth.appid.v1.CheckItemAccessResponse;
+import org.cdpg.dx.auth.appid.v1.ResolveDelegationRequest;
+import org.cdpg.dx.auth.appid.v1.ResolveDelegationResponse;
 import org.cdpg.dx.auth.appid.v1.VerifyAppIdRequest;
 import org.cdpg.dx.auth.appid.v1.VerifyAppIdResponse;
+import org.cdpg.dx.auth.authentication.resolver.DelegationResolverImpl;
+import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class AppIdVerificationGrpcService
@@ -39,6 +43,7 @@ public class AppIdVerificationGrpcService
   private final ItemService itemService;
   private final DelegationService delegationService;
   private final KeycloakUserService keycloakUserService;
+  private final DelegationResolverImpl delegationResolver;
 
   public AppIdVerificationGrpcService(
       Vertx vertx,
@@ -51,6 +56,7 @@ public class AppIdVerificationGrpcService
     this.itemService = itemService;
     this.delegationService = delegationService;
     this.keycloakUserService = keycloakUserService;
+    this.delegationResolver = new DelegationResolverImpl(delegationService);
   }
 
   /* ── VerifyAppId ─────────────────────────────────────────────────────── */
@@ -225,6 +231,71 @@ public class AppIdVerificationGrpcService
                   .setPoliciesJson(policiesJson)
                   .build();
             });
+  }
+
+  /* ── ResolveDelegation ───────────────────────────────────────────────────
+   * Bearer+DID auth path: the JWT belongs to the delegatee; the DID header carries the
+   * delegator's sub. We look up the active delegation, validate it, and return the
+   * delegator's DxUser so downstream handlers see the delegator's identity + scopes.
+   */
+
+  @Override
+  public void resolveDelegation(
+      ResolveDelegationRequest request, StreamObserver<ResolveDelegationResponse> observer) {
+    String delegatorSub = request.getDelegatorSub();
+    String delegateeSub = request.getDelegateeSub();
+
+    if (delegatorSub == null || delegatorSub.isBlank()
+        || delegateeSub == null || delegateeSub.isBlank()) {
+      respond(observer, failDelegation("INVALID_REQUEST"));
+      return;
+    }
+
+    vertxContext.runOnContext(
+        ignored ->
+            delegationResolver
+                .resolve(delegatorSub, delegateeSub)
+                .onSuccess(dxUser -> respond(observer, toResponse(dxUser, delegateeSub)))
+                .onFailure(
+                    err -> {
+                      LOGGER.warn(
+                          "ResolveDelegation failed delegatorSub={} delegateeSub={}: {}",
+                          delegatorSub, delegateeSub, err.getMessage());
+                      respond(observer, failDelegation(mapDelegationError(err)));
+                    }));
+  }
+
+  private ResolveDelegationResponse toResponse(DxUser u, String delegateeSub) {
+    ResolveDelegationResponse.Builder b =
+        ResolveDelegationResponse.newBuilder().setSuccess(true).setDelegateeSub(delegateeSub);
+
+    if (u.sub() != null)               b.setSub(u.sub().toString());
+    if (u.organisationId() != null)    b.setOrganisationId(u.organisationId());
+    if (u.organisationName() != null)  b.setOrganisationName(u.organisationName());
+    if (u.roles() != null)             b.addAllRoles(u.roles());
+    if (u.scopes() != null)            b.addAllScopes(u.scopes().getList());
+    if (u.name() != null)              b.setName(u.name());
+    if (u.preferredUsername() != null) b.setPreferredUsername(u.preferredUsername());
+    if (u.givenName() != null)         b.setGivenName(u.givenName());
+    if (u.familyName() != null)        b.setFamilyName(u.familyName());
+    if (u.email() != null)             b.setEmail(u.email());
+    b.setEmailVerified(u.emailVerified());
+    b.setKycVerified(u.kycVerified());
+    if (u.account_enabled() != null)   b.setAccountEnabled(u.account_enabled());
+
+    return b.build();
+  }
+
+  private ResolveDelegationResponse failDelegation(String errorCode) {
+    return ResolveDelegationResponse.newBuilder().setSuccess(false).setErrorCode(errorCode).build();
+  }
+
+  private String mapDelegationError(Throwable err) {
+    String msg = err.getMessage();
+    if (msg == null) return "INTERNAL_ERROR";
+    if (msg.toLowerCase().contains("expired")) return "EXPIRED";
+    if (msg.toLowerCase().contains("inactive")) return "DELEGATOR_INACTIVE";
+    return "NO_ACTIVE_DELEGATION";
   }
 
   /* ── Validation ──────────────────────────────────────────────────────── */

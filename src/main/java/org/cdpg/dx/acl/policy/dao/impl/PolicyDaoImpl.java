@@ -34,6 +34,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.acl.accessRequest.dao.model.PolicyAccessInfo;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.model.PolicyDto;
 import org.cdpg.dx.acl.policy.service.model.CreatePolicyRequest;
@@ -419,7 +420,7 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
   }
 
   @Override
-  public Future<Boolean> matchesPolicy(UUID itemId, String consumerId) {
+  public Future<List<PolicyAccessInfo>> getMatchingPolicies(UUID itemId, String consumerId) {
 
     LocalDateTime now = LocalDateTime.now();
 
@@ -428,27 +429,34 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
             List.of(
                 new Condition(DB_ITEM_ID, Condition.Operator.EQUALS, List.of(itemId.toString())),
                 new Condition(DB_CONSUMER_ID, Condition.Operator.EQUALS, List.of(consumerId)),
-                new Condition(DB_STATUS, Condition.Operator.EQUALS, List.of("ACTIVE")),
+                new Condition(DB_STATUS, Condition.Operator.EQUALS, List.of(ACTIVE)),
                 new Condition(DB_EXPIRY_AT, Condition.Operator.GREATER, List.of(now.toString()))),
             Condition.LogicalOperator.AND);
 
     SelectQuery query =
         new SelectQuery()
             .setTable(POLICY_TABLE)
-            .setColumns(List.of("1"))
-            .setCondition(finalCondition)
-            .setLimit(1);
+            .setColumns(List.of(DB_ID, DB_CONSTRAINTS, DB_EXPIRY_AT))
+            .setCondition(finalCondition);
 
     return postgresService
         .select(query, false)
         .compose(
             result -> {
-              if (!result.getRows().isEmpty()) {
-                return Future.succeededFuture(true);
+              List<PolicyAccessInfo> policies = new ArrayList<>();
+
+              for (Object rowObj : result.getRows()) {
+
+                JsonObject row = (JsonObject) rowObj;
+
+                policies.add(
+                    new PolicyAccessInfo(
+                        UUID.fromString(row.getString(DB_ID)),
+                        row.getJsonObject(DB_CONSTRAINTS),
+                        LocalDateTime.parse(row.getString(DB_EXPIRY_AT))));
               }
 
-              return Future.failedFuture(
-                  new DxForbiddenNoAccessException("No matching active policy found"));
+              return Future.succeededFuture(policies);
             });
   }
 

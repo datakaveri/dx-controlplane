@@ -287,8 +287,15 @@ public class ItemController implements ApiController {
     LOGGER.debug("Patch item request body: {}", body);
 
     if (!isAdmin) {
-      if (body.size() != 1 || !body.containsKey(DATA_UPLOAD_STATUS)) {
-        ctx.fail(new DxForbiddenException("Providers can only patch dataUploadStatus field"));
+
+      Set<String> allowedFields = Set.of(DATA_UPLOAD_STATUS, ITEM_STATUS);
+
+      boolean isValidProviderUpdate = allowedFields.containsAll(body.fieldNames());
+
+      if (!isValidProviderUpdate) {
+        ctx.fail(
+            new DxForbiddenException(
+                "Providers can only patch dataUploadStatus or itemStatus fields"));
         return;
       }
     }
