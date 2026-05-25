@@ -1396,6 +1396,505 @@ paths:
           source: |
             curl --location --request GET 'https://${HOSTNAME}/iudx/v2/cat/item/available-name?name=
             sandbox item'
+  /iudx/v2/cat/assets/share:
+    post:
+      tags:
+        - Share Assets
+      description: |
+        Share owned catalogue assets with specific users or organizations.
+
+        This API controls discovery visibility of assets for other users in catalogue APIs
+        such as `/search`, `/list`, and `/count`.
+
+        Sharing an asset allows the target users or organization members to discover the asset
+        through catalogue discovery APIs. This does not automatically grant operational access
+        to the asset. ACL authorization checks continue to remain independent.
+
+        Supported share types:
+        - USER → Share asset with specific users
+        - ORGANIZATION → Share asset with all users belonging to an organization
+
+        Notes:
+        - Only asset owners can perform sharing operations.
+        - The API supports sharing assets with any accessType.
+        - Existing PUBLIC asset visibility behaviour remains unchanged.
+        - Duplicate active share entries are ignored safely.
+
+      operationId: share asset visibility
+
+      security:
+        - authorization: [ ]
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - itemId
+                - shareType
+                - ids
+              properties:
+                itemId:
+                  type: string
+                  format: uuid
+                  description: Asset item identifier
+                  example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+
+                shareType:
+                  type: string
+                  enum:
+                    - USER
+                    - ORGANIZATION
+                  description: Type of visibility sharing
+
+                ids:
+                  type: array
+                  description: |
+                    List of target userIds or organizationIds depending on shareType
+                  items:
+                    type: string
+                    format: uuid
+                  example:
+                    - 2aa85f64-5717-4562-b3fc-2c963f66afa1
+                    - 2aa85f64-5717-4562-b3fc-2c963f66afa2
+
+            examples:
+              userShare:
+                summary: Share asset with users
+                value:
+                  itemId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  shareType: USER
+                  ids:
+                    - 2aa85f64-5717-4562-b3fc-2c963f66afa1
+                    - 2aa85f64-5717-4562-b3fc-2c963f66afa2
+
+              organizationShare:
+                summary: Share asset with organizations
+                value:
+                  itemId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  shareType: ORGANIZATION
+                  ids:
+                    - 8bb85f64-5717-4562-b3fc-2c963f66afa8
+
+      responses:
+        '200':
+          description: Asset shared successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  detail:
+                    type: string
+                    example: Assets shared successfully
+
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/invalidIdErrorResponse'
+              example:
+                type: dx:controlPlane:badRequest
+                title: Bad Request
+                detail: Missing or malformed request
+
+        '401':
+          description: Missing or invalid authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Invalid token format
+
+        '403':
+          description: User is not owner of the asset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:forbidden
+                title: Forbidden
+                detail: Only asset owner can share visibility
+
+        '404':
+          description: Asset not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:notFound
+                title: Not Found
+                detail: Item not found
+
+      x-codeSamples:
+        - lang: cURL
+          label: share asset with users
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/assets/share' \
+            --header 'Authorization: Bearer <token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "itemId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              "shareType": "USER",
+              "ids": [
+                "2aa85f64-5717-4562-b3fc-2c963f66afa1",
+                "2aa85f64-5717-4562-b3fc-2c963f66afa2"
+              ]
+            }'
+
+    delete:
+      tags:
+        - Share Assets
+
+      description: |
+        Revoke previously shared asset visibility from users or organizations.
+
+        Once revoked:
+        - users/organization members will no longer discover the asset
+        - catalogue `/search`, `/list`, and `/count` APIs will stop returning the asset if it is 
+        of PRIVATE accessType
+        - ACL authorization remains unaffected
+
+        Supported revoke types:
+        - USER
+        - ORGANIZATION
+
+      operationId: revoke asset visibility
+
+      security:
+        - authorization: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - itemId
+                - shareType
+                - ids
+              properties:
+                itemId:
+                  type: string
+                  format: uuid
+                shareType:
+                  type: string
+                  enum:
+                    - USER
+                    - ORGANIZATION
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+            examples:
+              revokeUserShare:
+                summary: Revoke user share
+                value:
+                  itemId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  shareType: USER
+                  ids:
+                    - 2aa85f64-5717-4562-b3fc-2c963f66afa1
+
+      responses:
+        '200':
+          description: Asset visibility revoked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  detail:
+                    type: string
+                    example: Shared access revoked successfully
+
+        '400':
+          description: Invalid request payload
+
+        '401':
+          description: Missing or invalid authentication token
+
+        '403':
+          description: User is not owner of the asset
+
+        '404':
+          description: Asset not found
+
+      x-codeSamples:
+        - lang: cURL
+          label: revoke asset share
+          source: |
+            curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/assets/share' \
+            --header 'Authorization: Bearer <token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "itemId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              "shareType": "USER",
+              "ids": [
+                "2aa85f64-5717-4562-b3fc-2c963f66afa1"
+              ]
+            }'
+
+    get:
+      tags:
+        - Share Assets
+
+      description: |
+        Fetch all active visibility shares configured for an asset.
+
+        The response includes:
+        - shared users
+        - shared organizations
+        - visibility type
+        - sharing metadata
+
+        Only asset owners can view sharing details.
+
+      operationId: get asset visibility details
+
+      security:
+        - authorization: []
+
+      parameters:
+        - name: itemId
+          in: query
+          required: true
+          description: Asset item identifier
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Asset visibility details fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        itemId:
+                          type: string
+                          format: uuid
+                        visibilityType:
+                          type: string
+                          example: USER
+                        userId:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        orgId:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        sharedBy:
+                          type: string
+                          format: uuid
+                        status:
+                          type: string
+                          example: ACTIVE
+                        createdAt:
+                          type: string
+                          format: date-time
+                        updatedAt:
+                          type: string
+                          format: date-time
+              example:
+                type: dx:controlPlane:success
+                title: Success
+                result:
+                  - id: 14447a8f-f43e-4145-820a-81c13e978fdb
+                    itemId: 96c1c3d4-3856-491a-9340-405e35db80c1
+                    visibilityType: USER
+                    userId: c43dfe14-5f4f-4b77-90e1-f9945574d226
+                    sharedBy: 2f945b8d-0cc8-4c5d-9a3e-53fa88e6e9b2
+                    status: ACTIVE
+                    createdAt: 2026-05-25T10:13:44.345666Z
+                    updatedAt: 2026-05-25T10:13:44.345666Z
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Missing or invalid authentication token
+        '403':
+          description: User is not owner of the asset
+        '404':
+          description: Asset not found
+
+      x-codeSamples:
+        - lang: cURL
+          label: get asset visibility details
+          source: |
+            curl --location --request GET \
+            'https://${HOSTNAME}/iudx/v2/assets/share?itemId=3fa85f64-5717-4562-b3fc-2c963f66afa6' \
+            --header 'Authorization: Bearer <token>'
+  /iudx/v2/cat/assets/shared-with-me:
+    get:
+      tags:
+        - Shared Assets
+      description: |
+        Fetch all catalogue assets that are shared with the currently authenticated user.
+
+        Assets may be shared:
+        - directly to the user
+        - to the user's organization
+
+        This API only controls discoverability visibility and does not guarantee operational access.
+        Actual asset access must still be validated through ACL policies and rules.
+
+        Only ACTIVE shared visibility records are returned.
+
+      operationId: get assets shared with me
+
+      security:
+        - authorization: []
+
+      responses:
+        '200':
+          description: Successfully fetched shared assets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+
+                  title:
+                    type: string
+                    example: Success
+
+                  result:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+
+                        itemId:
+                          type: string
+                          format: uuid
+
+                        visibilityType:
+                          type: string
+                          enum:
+                            - USER
+                            - ORGANIZATION
+
+                        userId:
+                          type: string
+                          format: uuid
+                          nullable: true
+
+                        orgId:
+                          type: string
+                          format: uuid
+                          nullable: true
+
+                        sharedBy:
+                          type: string
+                          format: uuid
+
+                        status:
+                          type: string
+                          example: ACTIVE
+
+                        createdAt:
+                          type: string
+                          format: date-time
+
+                        updatedAt:
+                          type: string
+                          format: date-time
+
+              example:
+                type: dx:controlPlane:success
+                title: Success
+                result:
+                  - id: "9d4f2e6a-7b63-4f7b-8d4a-f36e9b21aa11"
+                    itemId: "7ab91e8f-89d2-4db7-a7fd-9912cb6fa123"
+                    visibilityType: USER
+                    userId: "1bc52d8e-25a2-4cb6-bb45-fec93ea7c100"
+                    orgId: null
+                    sharedBy: "8ef12a90-3b0d-46f2-9c2d-6f88dd11b200"
+                    status: ACTIVE
+                    createdAt: "2026-05-22T10:00:00Z"
+                    updatedAt: "2026-05-22T10:00:00Z"
+
+        '401':
+          description: Missing or invalid authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid token
+
+        '403':
+          description: User does not have sufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:forbidden
+                title: Forbidden
+                detail: Insufficient permissions
+
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:internalServerError
+                title: Internal Server Error
+                detail: Failed to fetch shared assets
+
+      x-codeSamples:
+        - lang: cURL
+          label: get shared assets
+          source: |
+            curl --location --request GET 'https://${HOSTNAME}/iudx/v2/assets/shared-with-me' \
+            --header 'Authorization: Bearer <token>'
   /items/scripts/download/{filename}:
     get:
       tags:
