@@ -1037,10 +1037,14 @@ paths:
       description: |
         Update an existing catalogue item. The request body must contain a fully valid item
         payload including the `id`.
+
         ### Item status behavior
         - PUT `/item` no longer automatically resets `itemStatus` to `ACTIVE`.
-        - Existing item status is preserved during metadata updates.
-        - Backend workflows may use `itemStatus` to represent asset onboarding states such as `REQUESTED` during API/SFTP request lifecycle handling.
+        - Existing `itemStatus` is preserved during metadata updates.
+        - Backend workflows may use `itemStatus` to represent onboarding or ingestion states such as:
+          - `ACTIVE`
+          - `SFTP`
+          - `API`
 
         ### Update constraints
         - Relationship and identity fields **cannot be modified**.
@@ -6447,8 +6451,12 @@ paths:
           - Attempting to update unauthorized fields will result in `403 Forbidden`
 
         ### Item status behavior
-        Backend workflows may use `itemStatus` to represent asset onboarding states such as `REQUESTED`
-        during API/SFTP request lifecycle handling.
+        `itemStatus` represents the onboarding or ingestion workflow type associated with the asset.
+
+        Supported values:
+          - `ACTIVE` → Asset is active and available
+          - `SFTP` → Asset is undergoing SFTP-based onboarding or ingestion workflow
+          - `API` → Asset is undergoing API-based onboarding or ingestion workflow
       operationId: patch item
       security:
         - authorization: []
@@ -6486,17 +6494,17 @@ paths:
                   type: string
                   enum:
                     - ACTIVE
-                    - REQUESTED
-                    - INACTIVE
+                    - SFTP
+                    - API
                   description: |
                     Represents the onboarding or operational lifecycle state of the asset.
                     Can be used during API/SFTP asset request workflows.
-                  example: REQUESTED
+                  example: API
               additionalProperties: false
             example:
               publishStatus: ACTIVE
               dataUploadStatus: true
-              itemStatus: REQUESTED
+              itemStatus: SFTP
       responses:
         '200':
           description: Item status updated successfully
