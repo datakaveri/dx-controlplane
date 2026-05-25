@@ -11,11 +11,13 @@ public interface VisibilityDao {
 
   Future<Void> shareWithOrganizations(UUID itemId, UUID sharedBy, List<UUID> orgIds);
 
-  Future<List<VisibilityEntity>> getAssetsSharedWithMe(UUID userId, UUID orgId);
+  Future<List<VisibilityEntity>> getAssetsSharedWithMe(UUID userId, String orgId);
 
   Future<Void> revokeUserShare(UUID itemId, List<UUID> userIds);
 
   Future<Void> revokeOrganizationShare(UUID itemId, List<UUID> orgIds);
 
   Future<List<VisibilityEntity>> getVisibilityDetails(UUID itemId);
+  Future<Boolean> hasActiveUserShare(UUID itemId, UUID userId);
+  Future<Boolean> hasActiveOrganizationShare(UUID itemId, UUID orgId);
 }

@@ -23,6 +23,7 @@ import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class VisibilityController implements ApiController {
 
@@ -31,16 +32,19 @@ public class VisibilityController implements ApiController {
   private final VisibilityService visibilityService;
   private final URNGenerator urnGenerator;
   private final ItemExistenceCheck itemExistenceCheck;
+  private final KeycloakUserService keycloakUserService;
 
   public VisibilityController(
       VisibilityService visibilityService,
       ElasticsearchService elasticsearchService,
+      KeycloakUserService keycloakUserService,
       String docIndex,
       URNGenerator urnGenerator) {
 
     this.visibilityService = visibilityService;
     this.urnGenerator = urnGenerator;
     itemExistenceCheck = new ItemExistenceCheck(elasticsearchService, docIndex);
+    this.keycloakUserService = keycloakUserService;
   }
 
   @Override
@@ -74,9 +78,11 @@ public class VisibilityController implements ApiController {
 
     DxUser user = RoutingContextHelper.fromPrincipal(ctx);
 
-    visibilityService
-        .getAssetsSharedWithMe(
-            UUID.fromString(user.sub().toString()), UUID.fromString(user.organisationId()))
+    UUID userId = UUID.fromString(user.sub().toString());
+
+    keycloakUserService
+        .getUserById(userId)
+        .compose(kcUser -> visibilityService.getAssetsSharedWithMe(userId, kcUser.organisationId()))
         .onSuccess(
             result ->
                 ResponseBuilder.sendSuccess(
@@ -157,7 +163,8 @@ public class VisibilityController implements ApiController {
             result -> {
               LOGGER.info("Fetched visibility details successfully for item {}", itemId);
 
-              ResponseBuilder.sendSuccess(ctx, result, urnGenerator);
+              ResponseBuilder.sendSuccess(
+                  ctx, result.stream().map(VisibilityEntity::toJson).toList(), urnGenerator);
             })
         .onFailure(
             err -> {

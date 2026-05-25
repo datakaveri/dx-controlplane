@@ -75,25 +75,36 @@ public class VisibilityDaoImpl extends AbstractBaseDAO<VisibilityEntity> impleme
   }
 
   @Override
-  public Future<List<VisibilityEntity>> getAssetsSharedWithMe(UUID userId, UUID orgId) {
+  public Future<List<VisibilityEntity>> getAssetsSharedWithMe(UUID userId, String orgId) {
 
     Condition userCondition =
         new Condition(DB_USER_ID, Condition.Operator.EQUALS, List.of(userId.toString()));
 
-    Condition orgCondition =
-        new Condition(DB_ORG_ID, Condition.Operator.EQUALS, List.of(orgId.toString()));
-
     Condition statusCondition =
         new Condition(DB_STATUS, Condition.Operator.EQUALS, List.of(ACTIVE));
 
-    Condition finalCondition =
-        new Condition(
-            List.of(
-                new Condition(List.of(userCondition, orgCondition), Condition.LogicalOperator.OR),
-                statusCondition),
-            Condition.LogicalOperator.AND);
+    Condition accessCondition;
 
-    SelectQuery query = new SelectQuery().setTable(SHARE_TABLE).setCondition(finalCondition);
+    if (orgId != null && !orgId.isBlank()) {
+
+      Condition orgCondition = new Condition(DB_ORG_ID, Condition.Operator.EQUALS, List.of(orgId));
+
+      accessCondition =
+          new Condition(List.of(userCondition, orgCondition), Condition.LogicalOperator.OR);
+
+    } else {
+
+      accessCondition = userCondition;
+    }
+
+    Condition finalCondition =
+        new Condition(List.of(accessCondition, statusCondition), Condition.LogicalOperator.AND);
+
+    SelectQuery query =
+        new SelectQuery()
+            .setTable(SHARE_TABLE)
+            .setCondition(finalCondition)
+            .setColumns(List.of("*"));
 
     return postgresService
         .select(query, false)
@@ -113,7 +124,7 @@ public class VisibilityDaoImpl extends AbstractBaseDAO<VisibilityEntity> impleme
                 new Condition(DB_ITEM_ID, Condition.Operator.EQUALS, List.of(itemId.toString())),
                 new Condition(
                     DB_USER_ID,
-                    Condition.Operator.EQUALS,
+                    Condition.Operator.IN,
                     userIds.stream().map(UUID::toString).collect(Collectors.toList())),
                 new Condition(DB_STATUS, Condition.Operator.EQUALS, List.of(ACTIVE))),
             Condition.LogicalOperator.AND);
@@ -137,7 +148,7 @@ public class VisibilityDaoImpl extends AbstractBaseDAO<VisibilityEntity> impleme
                 new Condition(DB_ITEM_ID, Condition.Operator.EQUALS, List.of(itemId.toString())),
                 new Condition(
                     DB_ORG_ID,
-                    Condition.Operator.EQUALS,
+                    Condition.Operator.IN,
                     orgIds.stream().map(UUID::toString).collect(Collectors.toList())),
                 new Condition(DB_STATUS, Condition.Operator.EQUALS, List.of(ACTIVE))),
             Condition.LogicalOperator.AND);
@@ -174,5 +185,39 @@ public class VisibilityDaoImpl extends AbstractBaseDAO<VisibilityEntity> impleme
                 result.getRows().stream()
                     .map(obj -> new VisibilityEntity((JsonObject) obj))
                     .collect(Collectors.toList()));
+  }
+
+  @Override
+  public Future<Boolean> hasActiveUserShare(UUID itemId, UUID userId) {
+
+    Condition condition =
+        new Condition(
+            List.of(
+                new Condition(DB_ITEM_ID, Condition.Operator.EQUALS, List.of(itemId.toString())),
+                new Condition(DB_USER_ID, Condition.Operator.EQUALS, List.of(userId.toString())),
+                new Condition(DB_STATUS, Condition.Operator.EQUALS, List.of(ACTIVE))),
+            Condition.LogicalOperator.AND);
+
+    SelectQuery query =
+        new SelectQuery().setTable(SHARE_TABLE).setColumns(List.of(DB_ID)).setCondition(condition);
+
+    return postgresService.select(query, false).map(result -> !result.getRows().isEmpty());
+  }
+
+  @Override
+  public Future<Boolean> hasActiveOrganizationShare(UUID itemId, UUID orgId) {
+
+    Condition condition =
+        new Condition(
+            List.of(
+                new Condition(DB_ITEM_ID, Condition.Operator.EQUALS, List.of(itemId.toString())),
+                new Condition(DB_ORG_ID, Condition.Operator.EQUALS, List.of(orgId.toString())),
+                new Condition(DB_STATUS, Condition.Operator.EQUALS, List.of(ACTIVE))),
+            Condition.LogicalOperator.AND);
+
+    SelectQuery query =
+        new SelectQuery().setTable(SHARE_TABLE).setColumns(List.of(DB_ID)).setCondition(condition);
+
+    return postgresService.select(query, false).map(result -> !result.getRows().isEmpty());
   }
 }

@@ -263,6 +263,7 @@ public class ControllerFactory {
     //Share Assets
     controllers.add(
         VisibilityControllerFactory.createController(infra.pgService(), infra.esService(),
+            shared.keycloakUserService(), shared.organizationService(),
             docIndex, urnGenerator)
     );
 

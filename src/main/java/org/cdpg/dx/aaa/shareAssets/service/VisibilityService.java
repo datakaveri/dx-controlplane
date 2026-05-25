@@ -11,7 +11,7 @@ public interface VisibilityService {
 
   Future<Void> revokeAssets(UUID itemId, String shareType, List<UUID> ids);
 
-  Future<List<VisibilityEntity>> getAssetsSharedWithMe(UUID userId, UUID orgId);
+  Future<List<VisibilityEntity>> getAssetsSharedWithMe(UUID userId, String orgId);
 
   Future<List<VisibilityEntity>> getVisibilityDetails(UUID itemId);
 }
