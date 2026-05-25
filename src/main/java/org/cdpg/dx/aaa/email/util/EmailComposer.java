@@ -135,6 +135,21 @@ public class EmailComposer {
                 .send());
   }
 
+  public Future<Void> sendEmailForPlatformProviderRole(ProviderRoleRequest request, User user) {
+    return newEmail()
+        .template("templates/request-provider-role.html")
+        .to(cosAdminEmailId)
+        .subject("Platform Provider Role Request")
+        .variable("ADMIN_FIRST_NAME", "Admin")
+        .variable("ADMIN_LAST_NAME", "")
+        .variable("USER_FIRST_NAME", user.principal().getString("name"))
+        .variable("USER_EMAIL_ID", user.principal().getString("email"))
+        .variable("ADMIN_PORTAL_URL", adminPortalUrl)
+        .variable("SENDER_NAME", senderName)
+        .variable("DETAILS_MESSAGE", detailsMessage())
+        .send();
+  }
+
   public Future<Void> sendEmailForCreditRequest(User user) {
     return newEmail()
         .template("templates/request-credit.html")

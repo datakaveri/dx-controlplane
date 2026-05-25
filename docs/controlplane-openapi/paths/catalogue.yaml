@@ -2,19 +2,25 @@
   post:
     tags:
     - CAT Entity
-    description: "Create a new catalogue item. The request body defines the entity type\n(e.g., `adex:AiModel`, `adex:DataBank`,\
-      \ `adex:Apps`) and its metadata.\n\n### Backend-managed fields\nThe following fields are **automatically set by the\
-      \ backend** and must not be modified by the client:\n- `itemCreatedAt`\n- `itemStatus`\n- `publishStatus`\n- `dataUploadStatus`\n\
-      - `lastUpdated`\nThe `id` field **may be provided by the client**. If supplied, it must be a valid UUID and must not\
-      \ conflict with an existing item.\n\n### Token-derived fields\nThe backend populates these fields using the authenticated\
-      \ user’s token:\n- `ownerUserId` (from token sub)\n- `department` (organization name)\n- `uploadedBy` (organization\
-      \ name)\n- `organizationId` (if present in token and not already provided)\n\n### Default and conditional behavior\n\
-      - **publishStatus**\n  - Set to `ACTIVE` by default if the provider has `org_admin` or `cos_admin` role.\n  - Otherwise,\
-      \ set to `PENDING`.\n- **dataUploadStatus**\n  - Defaults to `false`.\n  - Automatically set to `true` if the item metadata\
-      \ contains a non-empty `mediaURL`.\n\n> `publishStatus` and `dataUploadStatus` **cannot be updated** via POST or PUT\
-      \ `/item`.\n> They must be updated using the `/organisation/asset` PATCH API.\n\n### Visibility rules\nAn item becomes\
-      \ visible across the platform **only when both**\n`publishStatus = ACTIVE` **and** `dataUploadStatus = true`.\n\n**Log\
-      \ Type:** `ASSET`\n"
+    description: "Create a new catalogue item. The request body defines the entity\
+      \ type\n(e.g., `adex:AiModel`, `adex:DataBank`, `adex:Apps`) and its metadata.\n\
+      \n### Backend-managed fields\nThe following fields are **automatically set by\
+      \ the backend** and must not be modified by the client:\n- `itemCreatedAt`\n\
+      - `itemStatus`\n- `publishStatus`\n- `dataUploadStatus`\n- `lastUpdated`\nThe\
+      \ `id` field **may be provided by the client**. If supplied, it must be a valid\
+      \ UUID and must not conflict with an existing item.\n\n### Token-derived fields\n\
+      The backend populates these fields using the authenticated user’s token:\n-\
+      \ `ownerUserId` (from token sub)\n- `department` (organization name)\n- `uploadedBy`\
+      \ (organization name)\n- `organizationId` (if present in token and not already\
+      \ provided)\n\n### Default and conditional behavior\n- **publishStatus**\n \
+      \ - Set to `ACTIVE` by default if the provider has `org_admin` or `cos_admin`\
+      \ role.\n  - Otherwise, set to `PENDING`.\n- **dataUploadStatus**\n  - Defaults\
+      \ to `false`.\n  - Automatically set to `true` if the item metadata contains\
+      \ a non-empty `mediaURL`.\n\n> `publishStatus` and `dataUploadStatus` **cannot\
+      \ be updated** via POST or PUT `/item`.\n> They must be updated using the `/organisation/asset`\
+      \ PATCH API.\n\n### Visibility rules\nAn item becomes visible across the platform\
+      \ **only when both**\n`publishStatus = ACTIVE` **and** `dataUploadStatus = true`.\n\
+      \n**Log Type:** `ASSET`\n"
     operationId: create item
     security:
     - authorization: []
@@ -81,7 +87,8 @@
     x-codeSamples:
     - lang: cURL
       label: create item cURL
-      source: 'curl --location --request POST ''https://${HOSTNAME}/iudx/v2/cat/item/'' \
+      source: 'curl --location --request POST ''https://${HOSTNAME}/iudx/v2/cat/item/''
+        \
 
         --header ''Authorization: Bearer <keycloak_token>'' \
 
@@ -93,15 +100,20 @@
   put:
     tags:
     - CAT Entity
-    description: "Update an existing catalogue item. The request body must contain a fully valid item\npayload including the\
-      \ `id`.\n\n### Update constraints\n- Relationship and identity fields **cannot be modified**.\n- `itemStatus` is managed\
-      \ by the backend and cannot be updated by clients.\n- `publishStatus` and `dataUploadStatus` cannot be updated via this\
-      \ API.\n\nTo change `publishStatus` or `dataUploadStatus`, use the `/organisation/asset` PATCH API.\n\n#### Non-updateable\
-      \ fields\nIf updates to any of the following fields are required, the item must be deleted and\nre-created.\n\n1. adex:DataBank\n\
-      \   - id\n   - type (1st element in array non-modifiable)\n   - itemStatus\n   - itemCreatedAt\n   - publishStatus\n\
-      \   - dataUploadStatus\n\n2. adex:AiModel\n   - id\n   - type (1st element in array non-modifiable)\n   - itemStatus\n\
-      \   - itemCreatedAt\n   - publishStatus\n   - dataUploadStatus\n\n3. adex:Apps\n   - id\n   - type (1st element in array\
-      \ non-modifiable)\n   - itemStatus\n   - itemCreatedAt\n   - publishStatus\n   - dataUploadStatus\n\n**Log Type:** `ASSET`\n"
+    description: "Update an existing catalogue item. The request body must contain\
+      \ a fully valid item\npayload including the `id`.\n\n### Update constraints\n\
+      - Relationship and identity fields **cannot be modified**.\n- `itemStatus` is\
+      \ managed by the backend and cannot be updated by clients.\n- `publishStatus`\
+      \ and `dataUploadStatus` cannot be updated via this API.\n\nTo change `publishStatus`\
+      \ or `dataUploadStatus`, use the `/organisation/asset` PATCH API.\n\n#### Non-updateable\
+      \ fields\nIf updates to any of the following fields are required, the item must\
+      \ be deleted and\nre-created.\n\n1. adex:DataBank\n   - id\n   - type (1st element\
+      \ in array non-modifiable)\n   - itemStatus\n   - itemCreatedAt\n   - publishStatus\n\
+      \   - dataUploadStatus\n\n2. adex:AiModel\n   - id\n   - type (1st element in\
+      \ array non-modifiable)\n   - itemStatus\n   - itemCreatedAt\n   - publishStatus\n\
+      \   - dataUploadStatus\n\n3. adex:Apps\n   - id\n   - type (1st element in array\
+      \ non-modifiable)\n   - itemStatus\n   - itemCreatedAt\n   - publishStatus\n\
+      \   - dataUploadStatus\n\n**Log Type:** `ASSET`\n"
     operationId: update item
     security:
     - authorization: []
@@ -180,7 +192,8 @@
     x-codeSamples:
     - lang: cURL
       label: update item cURL
-      source: 'curl --location --request PUT ''https://${HOSTNAME}/iudx/v2/cat/item/'' \
+      source: 'curl --location --request PUT ''https://${HOSTNAME}/iudx/v2/cat/item/''
+        \
 
         --header ''token: <token>'' \
 
@@ -194,8 +207,8 @@
     - CAT Entity
     description: 'Get an item given the ID.
 
-      If a Bearer token is provided in the Authorization header, the request will be authenticated and an audit log entry
-      will be created for a **View** operation.
+      If a Bearer token is provided in the Authorization header, the request will
+      be authenticated and an audit log entry will be created for a **View** operation.
 
       **Log Type:** `ASSET`
 
@@ -352,7 +365,8 @@
     x-codeSamples:
     - lang: cURL
       label: delete item
-      source: 'curl --location --request DELETE ''https://${HOSTNAME}/iudx/v2/cat/item?id=uuid'' \
+      source: 'curl --location --request DELETE ''https://${HOSTNAME}/iudx/v2/cat/item?id=uuid''
+        \
 
         --header ''token: <token>''
 
@@ -362,7 +376,8 @@
     tags:
     - CAT Entity
     summary: Download generated ingestion script
-    description: 'Download a generated Python script for onboarding OGC vector or STAC raster data.
+    description: 'Download a generated Python script for onboarding OGC vector or
+      STAC raster data.
 
 
       The `filename` path parameter must match the filename returned by the script
@@ -409,15 +424,20 @@
   get:
     tags:
     - CAT Entity
-    description: "Get an item with **access policy enforcement**. - If `accessPolicy=open`, the item is accessible to anyone.\
-      \ - If `accessPolicy=restricted`, user access will be validated. - If `accessPolicy=private`, only the owner or users\
-      \ with admin roles(either cos_admin or org_admin) can access it.\nIf a Bearer token is provided in the Authorization\
-      \ header, the request will be authenticated, and access checks will be performed accordingly.\n❗ For items with `accessPolicy=restricted`\
-      \ or `accessPolicy=private`, a valid token **must** be provided. Otherwise, the request will be rejected with a **401\
-      \ Unauthorized** error.\n### Delegator Access\n- If `isDelegator=true`, the caller is treated as a delegator accessing\n\
-      \  the item on behalf of a **delegate**.\n- In this case, `did` is mandatory. - Delegation scopes are validated to ensure\
-      \ the delegator has access to\n  the requested item.\n- If delegation does not exist or scope does not permit access,\n\
-      \  the request will be rejected with **403 Forbidden**.\n\n**Log Type:** `ASSET`\n"
+    description: "Get an item with **access policy enforcement**. - If `accessPolicy=open`,\
+      \ the item is accessible to anyone. - If `accessPolicy=restricted`, user access\
+      \ will be validated. - If `accessPolicy=private`, only the owner or users with\
+      \ admin roles(either cos_admin or org_admin) can access it.\nIf a Bearer token\
+      \ is provided in the Authorization header, the request will be authenticated,\
+      \ and access checks will be performed accordingly.\n❗ For items with `accessPolicy=restricted`\
+      \ or `accessPolicy=private`, a valid token **must** be provided. Otherwise,\
+      \ the request will be rejected with a **401 Unauthorized** error.\n### Delegator\
+      \ Access\n- If `isDelegator=true`, the caller is treated as a delegator accessing\n\
+      \  the item on behalf of a **delegate**.\n- In this case, `did` is mandatory.\
+      \ - Delegation scopes are validated to ensure the delegator has access to\n\
+      \  the requested item.\n- If delegation does not exist or scope does not permit\
+      \ access,\n  the request will be rejected with **403 Forbidden**.\n\n**Log Type:**\
+      \ `ASSET`\n"
     operationId: get item with accessPolicy
     security:
     - optionalAuth: []
@@ -432,7 +452,8 @@
         pattern: ^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$
     - name: isDelegator
       in: query
-      description: 'Indicates whether the caller is accessing the item as a delegator. Defaults to `false` when not provided.
+      description: 'Indicates whether the caller is accessing the item as a delegator.
+        Defaults to `false` when not provided.
 
         '
       required: false
@@ -524,7 +545,8 @@
     x-codeSamples:
     - lang: cURL
       label: get item with accessPolicy
-      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/v2/cat/item/access?id=uuid'' \
+      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/v2/cat/item/access?id=uuid''
+        \
 
         --header ''Authorization: Bearer <token>''
 
@@ -533,8 +555,96 @@
       label: get item with accessPolicy (delegator)
       source: 'curl --location --request GET
 
-        ''https://${HOSTNAME}/iudx/v2/cat/item/access?id=uuid&isDelegator=true&did=delegate-did'' \
+        ''https://${HOSTNAME}/iudx/v2/cat/item/access?id=uuid&isDelegator=true&did=delegate-did''
+        \
 
         --header ''Authorization: Bearer <token>''
+
+        '
+/iudx/v2/cat/item/available-name:
+  get:
+    tags:
+    - CAT Entity
+    description: 'Check if a given asset name is available for creating a new catalogue
+      item.
+
+      This API is intended for UI clients to perform a pre-validation before submitting
+      a create request.
+
+      The validation checks whether any existing item already uses the same name.
+
+      By default, the check considers items in both ACTIVE and PENDING states to prevent
+      duplicate entries during approval workflows.
+
+      '
+    operationId: validate item name availability
+    security:
+    - optionalAuth: []
+    parameters:
+    - name: name
+      in: query
+      description: Name of the asset to validate
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        description: Name availability result
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                detail:
+                  type: string
+                  example: Asset name is available
+      '400':
+        description: Invalid request parameters
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/invalidIdErrorResponse'
+            example:
+              type: dx:controlPlane:badRequest
+              title: Bad Request
+              detail: Missing or invalid query parameters
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+            examples:
+              InvalidToken:
+                summary: Invalid token format
+                value:
+                  type: dx:controlPlane:notAuthorized
+                  title: Not Authorized
+                  detail: Invalid token format
+      '409':
+        description: Conflict | Asset Name Already Exists
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+            examples:
+              InvalidToken:
+                summary: Conflict - Asset Name Already Exists
+                value:
+                  type: urn:dx:ControlPlane:conflict
+                  title: Conflict
+                  detail: Asset name Already Exists
+    x-codeSamples:
+    - lang: cURL
+      label: validate item name
+      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/v2/cat/item/available-name?name=
+
+        sandbox item''
 
         '

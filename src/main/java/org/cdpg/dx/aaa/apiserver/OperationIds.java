@@ -82,6 +82,16 @@ public final class OperationIds {
 
   public static final String OP_CREATE_PROVIDER_ROLE = "post-auth-v2-organization-user-provider";
 
+  public static final String OP_CREATE_PLATFORM_PROVIDER_REQUEST = "post-auth-v2-platform-provider-requests";
+
+  public static final String OP_GET_PLATFORM_PROVIDER_REQUESTS = "get-auth-v2-platform-provider-requests";
+
+  public static final String OP_UPDATE_PLATFORM_PROVIDER_REQUEST = "put-auth-v2-platform-provider-requests";
+
+  public static final String OP_GET_USER_PLATFORM_PROVIDER_REQUEST = "get-auth-v2-user-platform-provider-requests";
+
+  public static final String OP_DELETE_USER_PLATFORM_PROVIDER_REQUEST = "delete-auth-v2-user-platform-provider-requests";
+
   /* =====================================================
    * Organization Reports
    * ===================================================== */

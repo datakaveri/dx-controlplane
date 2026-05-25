@@ -22,7 +22,6 @@ public class OrganizationController implements ApiController {
   private final OrganizationCreateRequestHandler createRequestHandler;
   private final OrganizationJoinRequestHandler joinRequestHandler;
   private final OrganizationUserHandler userHandler;
-  private final ProviderRoleHandler providerRoleHandler;
   private final AuditingHandler auditingHandler;
   private final Boolean isKycRequired;
 
@@ -32,7 +31,6 @@ public class OrganizationController implements ApiController {
       OrganizationCreateRequestHandler createRequestHandler,
       OrganizationJoinRequestHandler joinRequestHandler,
       OrganizationUserHandler userHandler,
-      ProviderRoleHandler providerRoleHandler,
       AuditingHandler auditingHandler,
       Boolean isKycRequired) {
 
@@ -41,7 +39,6 @@ public class OrganizationController implements ApiController {
     this.createRequestHandler = createRequestHandler;
     this.joinRequestHandler = joinRequestHandler;
     this.userHandler = userHandler;
-    this.providerRoleHandler = providerRoleHandler;
     this.auditingHandler = auditingHandler;
     this.isKycRequired = isKycRequired;
   }
@@ -189,45 +186,5 @@ public class OrganizationController implements ApiController {
         .handler(orgAdminAccess)
         .handler(userHandler::updateOrganisationUserRole);
 
-    /* =========================
-     * Provider roles
-     * ========================= */
-
-    routerBuilder
-        .operation(OP_CREATE_PROVIDER_REQUEST)
-        .handler(auditingHandler::handleApiAudit)
-        .handler(selfAccess)
-        .handler(kycVerification(isKycRequired))
-        .handler(providerRoleHandler::createProviderRequest);
-
-    routerBuilder
-        .operation(OP_GET_PROVIDER_REQUEST)
-        .handler(auditingHandler::handleApiAudit)
-        .handler(orgAdminAccess)
-        .handler(providerRoleHandler::getProviderRequest);
-
-    routerBuilder
-        .operation(OP_UPDATE_PROVIDER_REQUEST)
-        .handler(auditingHandler::handleApiAudit)
-        .handler(orgAdminAccess)
-        .handler(providerRoleHandler::updateProviderRequest);
-
-    routerBuilder
-        .operation(OP_GET_USER_PROVIDER_REQUESTS)
-        .handler(auditingHandler::handleApiAudit)
-        .handler(selfAccess)
-        .handler(providerRoleHandler::getProviderRoleRequest);
-
-    routerBuilder
-        .operation(OP_DELETE_USER_PROVIDER_REQUEST)
-        .handler(auditingHandler::handleApiAudit)
-        .handler(selfAccess)
-        .handler(providerRoleHandler::deleteUserProviderRoleRequest);
-
-    routerBuilder
-        .operation(OP_CREATE_PROVIDER_ROLE)
-        .handler(auditingHandler::handleApiAudit)
-        .handler(orgAdminAccess)
-        .handler(providerRoleHandler::createProviderRole);
   }
 }

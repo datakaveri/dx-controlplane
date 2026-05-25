@@ -7,6 +7,8 @@ import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.aaa.organization.controller.OrganizationController;
+import org.cdpg.dx.aaa.provider.controller.ProviderController;
+import org.cdpg.dx.aaa.provider.handler.ProviderRoleHandler;
 import org.cdpg.dx.aaa.organization.dao.OrganizationDAOFactory;
 import org.cdpg.dx.aaa.organization.handler.*;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
@@ -94,9 +96,22 @@ public class OrganizationControllerFactory {
         createRequestHandler,
         joinRequestHandler,
         userHandler,
-        providerRoleHandler,
         auditingHandler,
         kycRequired);
+  }
+
+  public static ProviderController createProviderController(
+      OrganizationService organizationService,
+      UserService userService,
+      EmailComposer emailComposer,
+      URNGenerator urnGenerator,
+      AuditingHandler auditingHandler,
+      Boolean kycRequired) {
+
+    ProviderRoleHandler providerRoleHandler =
+        new ProviderRoleHandler(organizationService, userService, emailComposer, urnGenerator);
+
+    return new ProviderController(providerRoleHandler, auditingHandler, kycRequired);
   }
 
   /* =========================

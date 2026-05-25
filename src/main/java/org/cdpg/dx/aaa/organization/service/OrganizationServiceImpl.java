@@ -271,4 +271,19 @@ public class OrganizationServiceImpl implements OrganizationService {
   public Future<Boolean> deleteProviderRoleRequestById(UUID id) {
     return providerRole.deleteProviderRoleRequestById(id);
   }
+
+  @Override
+  public Future<Boolean> hasPendingPlatformProviderRole(UUID userId) {
+    return providerRole.hasPendingPlatformProviderRole(userId);
+  }
+
+  @Override
+  public Future<PaginatedResult<ProviderRoleRequest>> getAllPlatformProviderRequests(PaginatedRequest request) {
+    return providerRole.getAllPlatformProviderRequests(request);
+  }
+
+  @Override
+  public Future<ProviderRoleRequest> getPlatformProviderRoleRequestByUserId(UUID userId) {
+    return providerRole.getPlatformProviderRoleRequestByUserId(userId);
+  }
 }

@@ -3,15 +3,19 @@
     tags:
     - Access Request
     summary: Create Access Request
-    description: "\nConsumers can create an access request to request access to a provider’s resource.\n\nWhen an access request\
-      \ is created:\n\n- The request status is set to `PENDING`\n- The provider is notified\n\n## Important Rules\n\n- A consumer\
-      \ cannot create an access request for their own resource.\n- If an ACTIVE policy already exists for the consumer and\
-      \ resource,\n  the request will be rejected with `409 Conflict`.\n\n## Request Lifecycle\n\n- `PENDING` → Awaiting provider\
-      \ action\n- `GRANTED` → Policy is created automatically\n- `REJECTED` → No policy is created\n\nThe request does not\
-      \ grant access by itself. Access is granted only\nwhen the provider approves the request."
+    description: "\nConsumers can create an access request to request access to a\
+      \ provider’s resource.\n\nWhen an access request is created:\n\n- The request\
+      \ status is set to `PENDING`\n- The provider is notified\n\n## Important Rules\n\
+      \n- A consumer cannot create an access request for their own resource.\n- If\
+      \ an ACTIVE policy already exists for the consumer and resource,\n  the request\
+      \ will be rejected with `409 Conflict`.\n\n## Request Lifecycle\n\n- `PENDING`\
+      \ → Awaiting provider action\n- `GRANTED` → Policy is created automatically\n\
+      - `REJECTED` → No policy is created\n\nThe request does not grant access by\
+      \ itself. Access is granted only\nwhen the provider approves the request."
     operationId: post-auth-v2-access-requests
     requestBody:
-      description: '- `itemId` : The catalogue ID of the asset for which the request is to be created
+      description: '- `itemId` : The catalogue ID of the asset for which the request
+        is to be created
 
         - `requestType` : The type of usage of asset
 
@@ -32,8 +36,8 @@
                 - DOWNLOAD
                 minLength: 1
               additionalInfo:
-                description: Used to define additional information to access data for educational, research or testing, non-commercial,
-                  academia purposes
+                description: Used to define additional information to access data
+                  for educational, research or testing, non-commercial, academia purposes
                 type: object
                 minProperties: 1
                 maxProperties: 10
@@ -62,8 +66,8 @@
                   email: miles@davis.org
                   phone: 987654321
                   purpose: testing
-                  description: The resource would be used for testing the abcd application in which services are offered free
-                    of cost for public welfare
+                  description: The resource would be used for testing the abcd application
+                    in which services are offered free of cost for public welfare
                 constraints:
                   subjects:
                     allowedOrgIds:
@@ -130,7 +134,8 @@
       '403':
         description: 'Forbidden
 
-          - User cannot create access request for the resource, as the user is a provider of the resource'
+          - User cannot create access request for the resource, as the user is a provider
+          of the resource'
         content:
           application/json:
             schema:
@@ -171,10 +176,13 @@
     x-codeSamples:
     - lang: cURL
       label: Create access request
-      source: "curl --location --request POST 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request' \\\n  --header 'Authorization:\
-        \ <tokenValue>' \\\n  --header 'Content-Type: application/json' \\\n  --data-raw '<payload>'\n\n- lang: cURL\nlabel:\
-        \ Create access request with additional info\nsource: |\ncurl --location --request POST 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request'\
-        \ \\\n  --header 'Authorization: <tokenValue>' \\\n  --header 'Content-Type: application/json' \\\n  --data-raw '<payload>'\n"
+      source: "curl --location --request POST 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request'\
+        \ \\\n  --header 'Authorization: <tokenValue>' \\\n  --header 'Content-Type:\
+        \ application/json' \\\n  --data-raw '<payload>'\n\n- lang: cURL\nlabel: Create\
+        \ access request with additional info\nsource: |\ncurl --location --request\
+        \ POST 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request' \\\n  --header\
+        \ 'Authorization: <tokenValue>' \\\n  --header 'Content-Type: application/json'\
+        \ \\\n  --data-raw '<payload>'\n"
   put:
     tags:
     - Access Request
@@ -218,12 +226,14 @@
       - Providers can only act on requests for resources they own'
     operationId: put-auth-v2-access-requests
     requestBody:
-      description: '- `requestId` :  ID of the request. Can get this `id` by using the GET Access request API.
+      description: '- `requestId` :  ID of the request. Can get this `id` by using
+        the GET Access request API.
 
-        - `status` : The `provider` or `provider delegate` can update the status to `granted` or `rejected`.
+        - `status` : The `provider` or `provider delegate` can update the status to
+        `granted` or `rejected`.
 
-        - `expiryAt` : expiration time stamp with ISO 8601 format to provide access to the given asset (Only present for the
-        granted requests).'
+        - `expiryAt` : expiration time stamp with ISO 8601 format to provide access
+        to the given asset (Only present for the granted requests).'
       required: true
       content:
         application/json:
@@ -243,10 +253,12 @@
                   - granted
                 expiryAt:
                   type: string
-                  description: ISO 8601 format timestamp to provide access to the given asset
+                  description: ISO 8601 format timestamp to provide access to the
+                    given asset
                 constraints:
                   type: object
-                  description: Access constraints that the provider can apply (e.g., allowed access types)
+                  description: Access constraints that the provider can apply (e.g.,
+                    allowed access types)
                   additionalProperties: true
               required:
               - requestId
@@ -319,7 +331,8 @@
               type: string
             description: application/json
       '400':
-        description: Bad Request- Schema validation, missing or incorrect fields & values
+        description: Bad Request- Schema validation, missing or incorrect fields &
+          values
         content:
           application/json:
             schema:
@@ -354,7 +367,8 @@
       '403':
         description: 'Forbidden
 
-          - User does not own the asset or item for which access request is being granted or rejected'
+          - User does not own the asset or item for which access request is being
+          granted or rejected'
         content:
           application/json:
             schema:
@@ -369,18 +383,21 @@
     x-codeSamples:
     - lang: cURL
       label: Reject access request
-      source: "curl --location --request PUT 'https://${HOSTNAME}/iudx/acl/apd/v2/policies/requests' \\\n--header 'Authorization:\
-        \ <tokenValue>' \\\n--header 'Content-Type: application/json' \\\n  --data-raw '<payload>'\n"
+      source: "curl --location --request PUT 'https://${HOSTNAME}/iudx/acl/apd/v2/policies/requests'\
+        \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type: application/json'\
+        \ \\\n  --data-raw '<payload>'\n"
     - lang: cURL
       label: Approve access request
-      source: "curl --location --request PUT 'https://${HOSTNAME}/iudx/acl/apd/v2/policies/requests' \\\n--header 'Authorization:\
-        \ <tokenValue>' \\\n--header 'Content-Type: application/json' \\\n  --data-raw '<payload>'\n"
+      source: "curl --location --request PUT 'https://${HOSTNAME}/iudx/acl/apd/v2/policies/requests'\
+        \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type: application/json'\
+        \ \\\n  --data-raw '<payload>'\n"
 /iudx/acl/apd/v2/access_request/{id}:
   patch:
     tags:
     - Access Request
     summary: Withdraw Access Request
-    description: 'Consumers can withdraw their own access requests if their requests is in **pending** state.
+    description: 'Consumers can withdraw their own access requests if their requests
+      is in **pending** state.
 
       If the request is deleted
 
@@ -416,7 +433,8 @@
               type: string
             description: application/json
       '400':
-        description: Bad Request- Schema validation, missing or incorrect fields & values
+        description: Bad Request- Schema validation, missing or incorrect fields &
+          values
         content:
           application/json:
             schema:
@@ -451,7 +469,8 @@
       '403':
         description: 'Forbidden
 
-          - User does not own the asset or item for which access request is being granted or rejected'
+          - User does not own the asset or item for which access request is being
+          granted or rejected'
         content:
           application/json:
             schema:
@@ -466,15 +485,16 @@
     x-codeSamples:
     - lang: CURL
       label: Example - Withdraw Request
-      source: "curl --location --request PATCH \"https://${HOSTNAME}/iudx/acl/apd/v2/access_request/{{requestId}}\" \\\n \
-        \ --header \"Authorization: Bearer <JWT_TOKEN>\" \\\n  --header \"Content-Type: application/json\"\n"
+      source: "curl --location --request PATCH \"https://${HOSTNAME}/iudx/acl/apd/v2/access_request/{{requestId}}\"\
+        \ \\\n  --header \"Authorization: Bearer <JWT_TOKEN>\" \\\n  --header \"Content-Type:\
+        \ application/json\"\n"
 /iudx/acl/apd/v2/access_request/provider:
   get:
     tags:
     - Access Request
     summary: List Access Requests for Provider
-    description: 'Lists all the latest access requests for assets owned by the provider/provider delegate calling the API,
-      regardless of the state of the access requests.
+    description: 'Lists all the latest access requests for assets owned by the provider/provider
+      delegate calling the API, regardless of the state of the access requests.
 
 
       <br>
@@ -482,12 +502,14 @@
       <br>
 
 
-      `Note:` The response displays the requests for a provider with respect to a particular server.'
+      `Note:` The response displays the requests for a provider with respect to a
+      particular server.'
     operationId: get-auth-v2-access-requests-provider
     parameters:
     - name: requestStatus
       in: query
-      description: Status of the access request. Displays all the access requests if status is not specified
+      description: Status of the access request. Displays all the access requests
+        if status is not specified
       required: false
       schema:
         type: string
@@ -498,8 +520,8 @@
         - WITHDRAWN
     - name: assetType
       in: query
-      description: Type of the asset for which the access request is made. Displays all the access requests if assetType is
-        not specified
+      description: Type of the asset for which the access request is made. Displays
+        all the access requests if assetType is not specified
       required: false
       schema:
         type: string
@@ -535,7 +557,8 @@
                       email: miles.morales@acmecorp.org,
                       phoneNo: 9876543210,
                       purpose: academia,
-                      description: AI model would be used for non-commercial, academia purposes to test the application abcd
+                      description: AI model would be used for non-commercial, academia
+                        purposes to test the application abcd
                     user:
                       consumerId: a13eb955-c691-4fd3-b200-f18bc78810b5
                       consumerFirstName: Plutonian
@@ -546,7 +569,8 @@
                       itemId: 316cd4eb-71b3-42c2-beb2-785a77999321
                       assetName: Ice Estimation Model
                       assetType: adex:AiModel
-                      shortDescription: This is a test AI model for estimating percentage of ice on Pluto
+                      shortDescription: This is a test AI model for estimating percentage
+                        of ice on Pluto
                     expiryAt: '3000-03-05T20:00:19'
                     updatedAt: '2025-06-04T07:25:08.663637'
                     createdAt: '2025-06-04T09:10:57.267564'
@@ -563,7 +587,8 @@
               type: string
             description: application/json
       '400':
-        description: Bad Request- Schema validation, missing or incorrect fields & values
+        description: Bad Request- Schema validation, missing or incorrect fields &
+          values
         content:
           application/json:
             schema:
@@ -589,7 +614,8 @@
     x-codeSamples:
     - lang: cURL
       label: Get access requests
-      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/provider'' \
+      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/provider''
+        \
 
         '
       --header 'Authorization: <tokenValue>'
@@ -612,13 +638,15 @@
     tags:
     - Access Request
     summary: Get Access Request Report for Provider
-    description: "Lists all the latest access requests for assets owned by the provider/provider delegate calling the API,\
-      \ regardless of the state of the access requests. \nIt adds the response in a CSV file and lets the user download it."
+    description: "Lists all the latest access requests for assets owned by the provider/provider\
+      \ delegate calling the API, regardless of the state of the access requests.\
+      \ \nIt adds the response in a CSV file and lets the user download it."
     operationId: get-auth-v2-access-requests-provider-report
     parameters:
     - name: requestStatus
       in: query
-      description: Status of the access request. Displays all the access requests if status is not specified
+      description: Status of the access request. Displays all the access requests
+        if status is not specified
       required: false
       schema:
         type: string
@@ -629,8 +657,8 @@
         - WITHDRAWN
     - name: assetType
       in: query
-      description: Type of the asset for which the access request is made. Displays all the access requests if assetType is
-        not specified
+      description: Type of the asset for which the access request is made. Displays
+        all the access requests if assetType is not specified
       required: false
       schema:
         type: string
@@ -653,15 +681,16 @@
             schema:
               type: string
               format: binary
-              description: CSV file containing the access requests similar to the JSON response in GET /access_request/provider
+              description: CSV file containing the access requests similar to the
+                JSON response in GET /access_request/provider
         headers:
           Content-Type:
             schema:
               type: string
             description: application/json
       '400':
-        description: Bad Request- Schema validation, missing or incorrect fields & values. If there is no data for csv generation,
-          it returns a 400 error
+        description: Bad Request- Schema validation, missing or incorrect fields &
+          values. If there is no data for csv generation, it returns a 400 error
         content:
           application/json:
             schema:
@@ -683,7 +712,8 @@
               type: string
             description: application/json
       '403':
-        description: When consumer is trying to access the report generation API or when the user is not a provider user
+        description: When consumer is trying to access the report generation API or
+          when the user is not a provider user
         content:
           application/json:
             schema:
@@ -698,7 +728,8 @@
     x-codeSamples:
     - lang: cURL
       label: Get access requests
-      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/provider/report'' \
+      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/provider/report''
+        \
 
         '
       --header 'Authorization: <tokenValue>'
@@ -721,14 +752,17 @@
     tags:
     - Access Request
     summary: Get Access Request Report for Organization Admin
-    description: "Lists all the latest access requests for assets present in a certain organization when called by Organization\
-      \ Admin, regardless of the state of the access requests. \nIt adds the response in a CSV file and lets the user download\
-      \ it. The organization admin can view the access requests of all the users in the organization."
+    description: "Lists all the latest access requests for assets present in a certain\
+      \ organization when called by Organization Admin, regardless of the state of\
+      \ the access requests. \nIt adds the response in a CSV file and lets the user\
+      \ download it. The organization admin can view the access requests of all the\
+      \ users in the organization."
     operationId: get-auth-v2-access-requests-org-admin-report
     parameters:
     - name: requestStatus
       in: query
-      description: Status of the access request. Displays all the access requests if status is not specified
+      description: Status of the access request. Displays all the access requests
+        if status is not specified
       required: false
       schema:
         type: string
@@ -739,8 +773,8 @@
         - WITHDRAWN
     - name: assetType
       in: query
-      description: Type of the asset for which the access request is made. Displays all the access requests if assetType is
-        not specified
+      description: Type of the asset for which the access request is made. Displays
+        all the access requests if assetType is not specified
       required: false
       schema:
         type: string
@@ -757,21 +791,23 @@
       '200':
         description: 'OK
 
-          - Successfully fetched all the requests of a consumer or of a provider belonging to the certain organization'
+          - Successfully fetched all the requests of a consumer or of a provider belonging
+          to the certain organization'
         content:
           application/csv:
             schema:
               type: string
               format: binary
-              description: CSV file containing the access requests similar to the JSON response
+              description: CSV file containing the access requests similar to the
+                JSON response
         headers:
           Content-Type:
             schema:
               type: string
             description: application/json
       '400':
-        description: Bad Request- Schema validation, missing or incorrect fields & values. If there is no data for csv generation,
-          it returns a 400 error
+        description: Bad Request- Schema validation, missing or incorrect fields &
+          values. If there is no data for csv generation, it returns a 400 error
         content:
           application/json:
             schema:
@@ -793,7 +829,8 @@
               type: string
             description: application/json
       '403':
-        description: When consumer, provider or user other than org admin is trying to access the report generation API
+        description: When consumer, provider or user other than org admin is trying
+          to access the report generation API
         content:
           application/json:
             schema:
@@ -808,7 +845,8 @@
     x-codeSamples:
     - lang: cURL
       label: Get access requests
-      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/organisation/report'' \
+      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/organisation/report''
+        \
 
         '
       --header 'Authorization: <tokenValue>'
@@ -831,11 +869,13 @@
     tags:
     - Access Request
     summary: List Organization Access Requests
-    description: 'Lists all the latest access requests for all the assets in the organization owned by the organization admin
-      (Org Admin), regardless of the state of the access requests.
+    description: 'Lists all the latest access requests for all the assets in the organization
+      owned by the organization admin (Org Admin), regardless of the state of the
+      access requests.
 
-      After viewing the access request, the organization admin can reject or approve the access request using the [Update
-      Access Request](#operation/put-auth-v2-access-requests) API.
+      After viewing the access request, the organization admin can reject or approve
+      the access request using the [Update Access Request](#operation/put-auth-v2-access-requests)
+      API.
 
 
       <br>
@@ -843,13 +883,14 @@
       <br>
 
 
-      `Note:` The response displays the requests for a provider with respect to a particular organization that the org admin
-      owns.'
+      `Note:` The response displays the requests for a provider with respect to a
+      particular organization that the org admin owns.'
     operationId: get-auth-v2-access-requests-organisation
     parameters:
     - name: requestStatus
       in: query
-      description: Status of the access request. Displays all the access requests if status is not specified
+      description: Status of the access request. Displays all the access requests
+        if status is not specified
       required: false
       schema:
         type: string
@@ -860,8 +901,8 @@
         - WITHDRAWN
     - name: assetType
       in: query
-      description: Type of the asset for which the access request is made. Displays all the access requests if assetType is
-        not specified
+      description: Type of the asset for which the access request is made. Displays
+        all the access requests if assetType is not specified
       required: false
       schema:
         type: string
@@ -878,7 +919,8 @@
       '200':
         description: 'OK
 
-          - Successfully fetched all the requests of a consumer or of a provider in the organization'
+          - Successfully fetched all the requests of a consumer or of a provider in
+          the organization'
         content:
           application/json:
             schema:
@@ -897,7 +939,8 @@
                       email: miles.morales@acmecorp.org,
                       phoneNo: 9876543210,
                       purpose: academia,
-                      description: AI model would be used for non-commercial, academia purposes to test the application abcd
+                      description: AI model would be used for non-commercial, academia
+                        purposes to test the application abcd
                     user:
                       consumerId: a13eb955-c691-4fd3-b200-f18bc78810b5
                       consumerFirstName: Plutonian
@@ -908,7 +951,8 @@
                       itemId: 316cd4eb-71b3-42c2-beb2-785a77999321
                       assetName: Ice Estimation Model
                       assetType: adex:AiModel
-                      shortDescription: This is a test AI model for estimating percentage of ice on Pluto
+                      shortDescription: This is a test AI model for estimating percentage
+                        of ice on Pluto
                     expiryAt: '3000-03-05T20:00:19'
                     updatedAt: '2025-06-04T07:25:08.663637'
                     createdAt: '2025-06-04T09:10:57.267564'
@@ -925,7 +969,8 @@
               type: string
             description: application/json
       '400':
-        description: Bad Request- Schema validation, missing or incorrect fields & values
+        description: Bad Request- Schema validation, missing or incorrect fields &
+          values
         content:
           application/json:
             schema:
@@ -951,7 +996,8 @@
     x-codeSamples:
     - lang: cURL
       label: Get access requests
-      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/provider'' \
+      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/provider''
+        \
 
         '
       --header 'Authorization: <tokenValue>'
@@ -974,13 +1020,14 @@
     tags:
     - Access Request
     summary: List Consumer Access Requests
-    description: Lists all the latest access requests of the consumer calling the API regardless of the state of the access
-      requests.
+    description: Lists all the latest access requests of the consumer calling the
+      API regardless of the state of the access requests.
     operationId: get-auth-v2-access-requests-consumer
     parameters:
     - name: requestStatus
       in: query
-      description: Status of the access request. Displays all the access requests if status is not specified
+      description: Status of the access request. Displays all the access requests
+        if status is not specified
       required: false
       schema:
         type: string
@@ -991,8 +1038,8 @@
         - WITHDRAWN
     - name: assetType
       in: query
-      description: Type of the asset for which the access request is made. Displays all the access requests if assetType is
-        not specified
+      description: Type of the asset for which the access request is made. Displays
+        all the access requests if assetType is not specified
       required: false
       schema:
         type: string
@@ -1026,7 +1073,8 @@
                       email: miles.morales@acmecorp.org,
                       phoneNo: 9876543210,
                       purpose: academia,
-                      description: AI model would be used for non-commercial, academia purposes to test the application abcd
+                      description: AI model would be used for non-commercial, academia
+                        purposes to test the application abcd
                     user:
                       consumerId: a13eb955-c691-4fd3-b200-f18bc78810b5
                       consumerFirstName: Plutonian
@@ -1037,7 +1085,8 @@
                       itemId: 316cd4eb-71b3-42c2-beb2-785a77999321
                       assetName: Ice Estimation Model
                       assetType: adex:AiModel
-                      shortDescription: This is a test AI model for estimating percentage of ice on Pluto
+                      shortDescription: This is a test AI model for estimating percentage
+                        of ice on Pluto
                     expiryAt: '3000-03-05T20:00:19'
                     updatedAt: '2025-06-04T07:25:08.663637'
                     createdAt: '2025-06-04T09:10:57.267564'
@@ -1049,7 +1098,8 @@
                     hasNext: true
                     hasPrevious: false
       '400':
-        description: Bad Request- Schema validation, missing or incorrect fields & values
+        description: Bad Request- Schema validation, missing or incorrect fields &
+          values
         content:
           application/json:
             schema:
@@ -1070,7 +1120,8 @@
     x-codeSamples:
     - lang: cURL
       label: Get consumer access requests
-      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/consumer'' \
+      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/consumer''
+        \
 
         '
       --header 'Authorization: <tokenValue>'
@@ -1093,11 +1144,12 @@
     tags:
     - Access Request
     summary: Check Access Request
-    description: Checks if the access requests that were previously created by consumer or consumer delegate, has been approved
-      by the provider or provider delegate
+    description: Checks if the access requests that were previously created by consumer
+      or consumer delegate, has been approved by the provider or provider delegate
     operationId: post-auth-v2-access-requests-has-access
     requestBody:
-      description: '- `itemId` : The catalogue ID of the asset for which the request has been created
+      description: '- `itemId` : The catalogue ID of the asset for which the request
+        has been created
 
         '
       required: true
@@ -1169,7 +1221,8 @@
       '403':
         description: 'Forbidden
 
-          - User''s access request is still in pending status or has been rejected by the provider of the resource'
+          - User''s access request is still in pending status or has been rejected
+          by the provider of the resource'
         content:
           application/json:
             schema:
@@ -1184,5 +1237,173 @@
     x-codeSamples:
     - lang: cURL
       label: Check access request
-      source: "curl --location --request POST 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/has_access' \\\n--header\
-        \ 'Authorization: <tokenValue>' \\\n--header 'Content-Type: application/json' \\\n  --data-raw '<payload>'\n"
+      source: "curl --location --request POST 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/has_access'\
+        \ \\\n--header 'Authorization: <tokenValue>' \\\n--header 'Content-Type: application/json'\
+        \ \\\n  --data-raw '<payload>'\n"
+/iudx/acl/apd/v2/access_request/platform:
+  get:
+    tags:
+    - Access Request
+    summary: List Platform Access Requests (COS Admin)
+    description: 'Lists all the latest access requests for assets across the DX platform,
+
+      regardless of their current state.
+
+
+      This endpoint is accessible only to users with the `cos_admin` role and
+
+      provides a platform-wide view of access requests across all organizations.
+
+
+      <br>
+
+      <br>
+
+
+      `Note:` The response includes access requests from all organizations on the
+      platform.
+
+      Optionally, results can be filtered using query parameters such as requestStatus,
+
+      assetType, and temporal filters.
+
+      '
+    operationId: get-auth-v2-access-requests-platform
+    parameters:
+    - name: requestStatus
+      in: query
+      description: Status of the access request. Displays all the access requests
+        if status is not specified
+      required: false
+      schema:
+        type: string
+        enum:
+        - PENDING
+        - GRANTED
+        - REJECTED
+        - WITHDRAWN
+    - name: assetType
+      in: query
+      description: Type of the asset for which the access request is made. Displays
+        all the access requests if assetType is not specified
+      required: false
+      schema:
+        type: string
+        enum:
+        - adex:DataBank
+        - adex:AiModel
+    - name: organizationId
+      in: query
+      description: Filter access requests by organization ID of the asset. Displays
+        all requests if not specified.
+      required: false
+      schema:
+        type: string
+    - $ref: '../components/parameters.yaml#/PageParam'
+    - $ref: '../components/parameters.yaml#/SizeParam'
+    - $ref: '../components/parameters.yaml#/SortingParam'
+    - $ref: '../components/parameters.yaml#/TimeParam'
+    - $ref: '../components/parameters.yaml#/EndTimeParam'
+    - $ref: '../components/parameters.yaml#/TimeRelParam'
+    responses:
+      '200':
+        description: 'OK
+
+          - Successfully fetched all the access requests of consumers across the platform'
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas.yaml#/AccessRequest'
+            examples:
+              ListResults:
+                value:
+                  type: urn:dx:AclApd:success
+                  title: Success
+                  results:
+                  - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
+                    requestStatus: GRANTED
+                    requestType: DOWNLOAD
+                    additionalInfo:
+                      name: Miles Morales,
+                      email: miles.morales@acmecorp.org,
+                      phoneNo: 9876543210,
+                      purpose: academia,
+                      description: AI model would be used for non-commercial, academia
+                        purposes to test the application abcd
+                    user:
+                      consumerId: a13eb955-c691-4fd3-b200-f18bc78810b5
+                      consumerFirstName: Plutonian
+                      consumerLastName: Resident
+                      consumerEmail: scroopy@noopers.com
+                      consumerOrganization: Scroopy Noopers Corp
+                    asset:
+                      itemId: 316cd4eb-71b3-42c2-beb2-785a77999321
+                      assetName: Ice Estimation Model
+                      assetType: adex:AiModel
+                      shortDescription: This is a test AI model for estimating percentage
+                        of ice on Pluto
+                      organization: CDPG, IISC
+                      organizationId: 74e3b919-1d1b-44de-ace1-504f1887fdd3
+                    expiryAt: '3000-03-05T20:00:19'
+                    updatedAt: '2025-06-04T07:25:08.663637'
+                    createdAt: '2025-06-04T09:10:57.267564'
+                  paginationInfo:
+                    page: 1
+                    size: 1
+                    totalCount: 3
+                    totalPages: 3
+                    hasNext: true
+                    hasPrevious: false
+        headers:
+          Content-Type:
+            schema:
+              type: string
+            description: application/json
+      '400':
+        description: Bad Request- Schema validation, missing or incorrect fields &
+          values
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas.yaml#/updateNotificationBadRequest'
+        headers:
+          Content-Type:
+            schema:
+              type: string
+            description: application/json
+      '401':
+        description: '- Unauthorized - `token` invalid/expired'
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas.yaml#/Unauthorized'
+        headers:
+          Content-Type:
+            schema:
+              type: string
+            description: application/json
+    security:
+    - authorization: []
+    x-codeSamples:
+    - lang: cURL
+      label: Get access requests
+      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/platform''
+        \
+
+        '
+      --header 'Authorization: <tokenValue>'
+    - lang: cURL
+      label: Get access request with status
+      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/platform?requestStatus=GRANTED''
+        \
+
+        '
+      --header 'Authorization: <tokenValue>'
+    - lang: cURL
+      label: With pagination query params
+      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/platform?requestStatus=PENDING
+        &timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
+        \
+
+        '
+      --header 'Authorization: <tokenValue>'

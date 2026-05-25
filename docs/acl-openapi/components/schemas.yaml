@@ -370,7 +370,8 @@ createNotificationForbidden:
   example:
     type: urn:dx:AclApd:forbidden
     title: Forbidden
-    detail: User cannot create access request for the resource, as the user is a provider of the resource
+    detail: User cannot create access request for the resource, as the user is a provider
+      of the resource
 createNotificationConflictResponse:
   title: Create notification conflict response
   type: object
@@ -853,7 +854,8 @@ updateNotificationInvalidUserResponse:
   example:
     type: urn:dx:AclApd:forbidden
     title: Access Denied
-    detail: Notification could not be updated, notification doesn't belong to the user
+    detail: Notification could not be updated, notification doesn't belong to the
+      user
 policyNotFound:
   title: policyNotFound
   type: object
@@ -1286,7 +1288,8 @@ successResponseWithObjects:
       description: Detailed description of the type or response
     type:
       type: string
-      description: 'URN type of the response indicating if the query was successful or if any errors have been triggered.
+      description: 'URN type of the response indicating if the query was successful
+        or if any errors have been triggered.
 
         '
     title:
@@ -1320,7 +1323,8 @@ successResponseForCount:
   properties:
     type:
       type: string
-      description: 'Type of the response indicating if the query was successful or if any errors have been triggered.
+      description: 'Type of the response indicating if the query was successful or
+        if any errors have been triggered.
 
         '
     title:
@@ -1337,7 +1341,8 @@ errorResponseForDiscovery:
   properties:
     type:
       type: string
-      description: 'Type of the response indicating if the query was successful or if any errors have been triggered.
+      description: 'Type of the response indicating if the query was successful or
+        if any errors have been triggered.
 
         '
     title:
@@ -1358,7 +1363,8 @@ successResponseForGeoLocations:
   properties:
     type:
       type: string
-      description: 'URN type of the response indicating if the query was successful or if any errors have
+      description: 'URN type of the response indicating if the query was successful
+        or if any errors have
 
         been triggered.
 
@@ -1399,7 +1405,8 @@ listInstances:
   properties:
     type:
       type: string
-      description: 'URN type of the response indicating if the query was successful or if any errors have
+      description: 'URN type of the response indicating if the query was successful
+        or if any errors have
 
         been triggered.
 
@@ -1442,7 +1449,8 @@ AutocompleteFuzzyTextSearchRequest:
       type: array
       items:
         type: string
-      description: List of properties to include in the response (e.g., id, label, name, description, tags).
+      description: List of properties to include in the response (e.g., id, label,
+        name, description, tags).
   required:
   - q
   example:
@@ -1603,7 +1611,8 @@ invalidIdErrorResponse:
   properties:
     type:
       type: string
-      description: 'URN type of the response indicating if the query was successful or if any errors have
+      description: 'URN type of the response indicating if the query was successful
+        or if any errors have
 
         been triggered.
 
@@ -1625,7 +1634,8 @@ errorResponseForGetEntity:
   properties:
     type:
       type: string
-      description: 'Type of the response indicating if the query was successful or if any errors have been triggered.
+      description: 'Type of the response indicating if the query was successful or
+        if any errors have been triggered.
 
         '
     title:
@@ -1653,8 +1663,8 @@ errorResponseForGetEntity:
 exampleEntityWIdAIModel:
   type: object
   title: AI Model entity
-  description: An example AI model entity for first-time onboarding (without system-generated fields like itemCreatedAt or
-    itemStatus)
+  description: An example AI model entity for first-time onboarding (without system-generated
+    fields like itemCreatedAt or itemStatus)
   properties:
     '@context':
       type: string
@@ -1740,7 +1750,8 @@ exampleEntityWIdAIModel:
     name: ai-model-crop
     label: Test-Crop Disease Detection Model
     shortDescription: Detects diseases in crop leaves using image classification.
-    description: A test AI model for detecting crop disease with the help of infected leaf images.
+    description: A test AI model for detecting crop disease with the help of infected
+      leaf images.
     tags:
     - ai
     - ml
@@ -1875,7 +1886,8 @@ successResponseForCreateAIModelEntity:
   properties:
     type:
       type: string
-      description: 'URN type of the response indicating if the query was successful or if any errors have been triggered
+      description: 'URN type of the response indicating if the query was successful
+        or if any errors have been triggered
 
         '
     title:
@@ -1978,7 +1990,8 @@ successResponseForCreateAIModelEntity:
       name: ai-model-crop
       label: Test-Crop Disease Detection Model
       shortDescription: Detects diseases in crop leaves using image classification.
-      description: A test AI model for detecting crop disease with the help of infected leaf images.
+      description: A test AI model for detecting crop disease with the help of infected
+        leaf images.
       tags:
       - ai
       - ml
@@ -2008,7 +2021,8 @@ successResponseForCreateDataBankResourceEntity:
   properties:
     type:
       type: string
-      description: 'URN type of the response indicating if the query was successful or if any errors have been triggered
+      description: 'URN type of the response indicating if the query was successful
+        or if any errors have been triggered
 
         '
     title:
@@ -2085,7 +2099,8 @@ successResponseForCreateDataBankResourceEntity:
       name: subdistrict-weather-info
       label: Weather insights for subdistricts
       shortDescription: A short description about the dataset
-      description: Dataset providing weather information such as temperature and rainfall for subdistricts across a state.
+      description: Dataset providing weather information such as temperature and rainfall
+        for subdistricts across a state.
       tags:
       - environment
       - weather
@@ -2112,7 +2127,8 @@ successResponseForCreatePotentialAppsEntity:
   properties:
     type:
       type: string
-      description: 'URN type of the response indicating if the query was successful or if any errors have been triggered
+      description: 'URN type of the response indicating if the query was successful
+        or if any errors have been triggered
 
         '
     title:
@@ -2195,9 +2211,11 @@ successResponseForCreatePotentialAppsEntity:
       - adex:Apps
       name: crop-disease-detector-app
       label: Crop Disease Detection Application
-      shortDescription: An AI-powered application to detect crop diseases early using leaf imagery.
-      description: A potential application designed to detect crop diseases from infected leaf images using AI/ML models.
-        It supports early intervention and yield optimization by analyzing input data and recommending treatments.
+      shortDescription: An AI-powered application to detect crop diseases early using
+        leaf imagery.
+      description: A potential application designed to detect crop diseases from infected
+        leaf images using AI/ML models. It supports early intervention and yield optimization
+        by analyzing input data and recommending treatments.
       tags:
       - ai
       - ml
@@ -2241,7 +2259,8 @@ successResponseForUpdateAIModelEntity:
   properties:
     type:
       type: string
-      description: URN type of the response indicating if the query was successful or if any errors have been triggered
+      description: URN type of the response indicating if the query was successful
+        or if any errors have been triggered
     title:
       type: string
       description: A human-readable title for the message response
@@ -2332,7 +2351,8 @@ successResponseForUpdateAIModelEntity:
       name: ai-model-crop
       label: Test-Crop Disease Detection Model
       shortDescription: Detects diseases in crop leaves using image classification.
-      description: A test AI model for detecting crop disease with the help of infected leaf images.
+      description: A test AI model for detecting crop disease with the help of infected
+        leaf images.
       tags:
       - ai
       - ml
@@ -2366,7 +2386,8 @@ successResponseForUpdateDataBankEntity:
   properties:
     type:
       type: string
-      description: 'URN type of the response indicating if the query was successful or if any errors have been triggered
+      description: 'URN type of the response indicating if the query was successful
+        or if any errors have been triggered
 
         '
     title:
@@ -2488,7 +2509,8 @@ successResponseForUpdateAdexAppsEntity:
   properties:
     type:
       type: string
-      description: 'URN type of the response indicating if the query was successful or if any errors have been triggered
+      description: 'URN type of the response indicating if the query was successful
+        or if any errors have been triggered
 
         '
     title:
@@ -2628,7 +2650,8 @@ successResponseForUpdateAdexAppsEntity:
       - algorithm
       label: Test-Crop Disease Detection Model
       shortDescription: A test potential application item for detecting crop disease
-      description: A test potential application item for detecting crop disease with the help of infected leaf images.
+      description: A test potential application item for detecting crop disease with
+        the help of infected leaf images.
       organizationType: Private
       department: Agriculture and Co-operation
       uploadedBy: cdpg@datakaveri.org
@@ -2661,7 +2684,8 @@ successResponseForGetAIModelEntity:
   properties:
     type:
       type: string
-      description: 'URN type of the response indicating if the query was successful or if any errors have been triggered
+      description: 'URN type of the response indicating if the query was successful
+        or if any errors have been triggered
 
         '
     title:
@@ -2749,7 +2773,8 @@ successResponseForGetAIModelEntity:
       name: ai-model-crop
       label: Test-Crop Disease Detection Model
       shortDescription: Detects diseases in crop leaves using image classification.
-      description: A test AI model for detecting crop disease with the help of infected leaf images.
+      description: A test AI model for detecting crop disease with the help of infected
+        leaf images.
       tags:
       - ai
       - ml
@@ -2780,7 +2805,8 @@ successResponseForGetDataBankEntity:
   properties:
     type:
       type: string
-      description: 'URN type of the response indicating if the query was successful or if any errors have been triggered
+      description: 'URN type of the response indicating if the query was successful
+        or if any errors have been triggered
 
         '
     title:
@@ -2805,7 +2831,8 @@ successResponseForGetDataBankEntity:
       name: subdistrict-weather-info
       label: Weather insights for subdistricts
       shortDescription: A short description about the dataset
-      description: Dataset providing weather information such as temperature and rainfall for subdistricts across a state.
+      description: Dataset providing weather information such as temperature and rainfall
+        for subdistricts across a state.
       tags:
       - environment
       - weather
@@ -2835,7 +2862,8 @@ successResponseForGetAdexAppsEntity:
   properties:
     type:
       type: string
-      description: 'URN type of the response indicating if the query was successful or if any errors have been triggered
+      description: 'URN type of the response indicating if the query was successful
+        or if any errors have been triggered
 
         '
     title:
@@ -2859,9 +2887,11 @@ successResponseForGetAdexAppsEntity:
       - adex:Apps
       name: crop-disease-detector-app
       label: Crop Disease Detection Application
-      shortDescription: An AI-powered application to detect crop diseases early using leaf imagery.
-      description: A potential application designed to detect crop diseases from infected leaf images using AI/ML models.
-        It supports early intervention and yield optimization by analyzing input data and recommending treatments.
+      shortDescription: An AI-powered application to detect crop diseases early using
+        leaf imagery.
+      description: A potential application designed to detect crop diseases from infected
+        leaf images using AI/ML models. It supports early intervention and yield optimization
+        by analyzing input data and recommending treatments.
       tags:
       - ai
       - ml
@@ -2904,7 +2934,8 @@ successResponseForAutocompleteFuzzyTextSearch:
   properties:
     type:
       type: string
-      description: URN type of the response indicating if the query was successful or if any errors have been triggered.
+      description: URN type of the response indicating if the query was successful
+        or if any errors have been triggered.
     title:
       type: string
       description: A human-readable title for the message response.
@@ -2983,16 +3014,16 @@ successResponseForAutocompleteFuzzyTextSearch:
     - id: 32cf54e7-be31-474c-ae4c-3d41e556dd2d
       label: Satellite-Derived Geospatial Layers
       name: satellite-derived-geospatial-layers
-      description: The Satellite-Derived Geospatial Layers dataset provides high-resolution satellite imagery and geospatial
-        data...
+      description: The Satellite-Derived Geospatial Layers dataset provides high-resolution
+        satellite imagery and geospatial data...
       tags:
       - Satellite
       - Geospatial
     - id: 9c0737d6-17df-484f-a7f8-aa472002eae5
       label: Corporate Employee Performance Data
       name: corporate-employee-performance-data
-      description: The Corporate Employee Performance Data set is a comprehensive collection of performance metrics, key performance
-        indicators (KPIs)...
+      description: The Corporate Employee Performance Data set is a comprehensive
+        collection of performance metrics, key performance indicators (KPIs)...
       tags:
       - Corporate
       - HR Analytics
@@ -3000,8 +3031,8 @@ successResponseForAutocompleteFuzzyTextSearch:
     - id: f7c3489d-6a58-44a2-97f6-2dbd49291b3b
       label: AI-Based Traffic Congestion Prediction
       name: AI-Based Traffic Congestion Prediction
-      description: The AI-Based Traffic Congestion Prediction tool is an advanced solution aimed at alleviating urban traffic
-        issues...
+      description: The AI-Based Traffic Congestion Prediction tool is an advanced
+        solution aimed at alleviating urban traffic issues...
       tags:
       - ai
       - ml
@@ -3017,8 +3048,9 @@ successResponseForAutocompleteFuzzyTextSearch:
     - id: a4e2f75c-91b7-4b6e-9de1-78f6c9f84e63
       label: AI-Powered High-Risk Pregnancy Detection
       name: AI-Powered High-Risk Pregnancy Detection
-      description: The AI-Powered High-Risk Pregnancy Detection model leverages artificial intelligence to analyze antenatal
-        records and identify pregnancies at high risk...
+      description: The AI-Powered High-Risk Pregnancy Detection model leverages artificial
+        intelligence to analyze antenatal records and identify pregnancies at high
+        risk...
       tags:
       - ai
       - ml
@@ -3035,8 +3067,8 @@ successResponseForAutocompleteFuzzyTextSearch:
     - id: 2b1a2e8d-45f4-43a1-9e8e-d1f8ad1002bb
       label: School Dropout Risk Prediction Model
       name: school-dropout-risk-prediction-model
-      description: The School Dropout Risk Prediction Model is an advanced AI-powered tool designed to predict the likelihood
-        of students dropping out of school...
+      description: The School Dropout Risk Prediction Model is an advanced AI-powered
+        tool designed to predict the likelihood of students dropping out of school...
       tags:
       - ai
       - ml
@@ -3052,7 +3084,8 @@ successResponseForComplexSearch:
   properties:
     type:
       type: string
-      description: URN type of the response indicating if the query was successful or if any errors have been triggered
+      description: URN type of the response indicating if the query was successful
+        or if any errors have been triggered
     title:
       type: string
       description: A human-readable title for the message response
@@ -3137,7 +3170,8 @@ successResponseForSearchByItemType:
   properties:
     type:
       type: string
-      description: URN type of the response indicating if the query was successful or if any errors have been triggered.
+      description: URN type of the response indicating if the query was successful
+        or if any errors have been triggered.
     title:
       type: string
       description: A human-readable title for the message response.
@@ -3205,7 +3239,8 @@ successResponseForRangeSearch:
   properties:
     type:
       type: string
-      description: URN type of the response indicating if the query was successful or if any errors have been triggered
+      description: URN type of the response indicating if the query was successful
+        or if any errors have been triggered
     title:
       type: string
       description: A human-readable title for the message response
@@ -3302,7 +3337,8 @@ successResponseForTemporalSearch:
   properties:
     type:
       type: string
-      description: URN type of the response indicating if the query was successful or if any errors have been triggered
+      description: URN type of the response indicating if the query was successful
+        or if any errors have been triggered
     title:
       type: string
       description: A human-readable title for the message response
@@ -3412,7 +3448,8 @@ errorInvalidSchema:
   properties:
     type:
       type: string
-      description: 'URN type of the response indicating if the query was successful or if any errors have been triggered
+      description: 'URN type of the response indicating if the query was successful
+        or if any errors have been triggered
 
         '
     title:
@@ -3427,7 +3464,8 @@ errorInvalidSchema:
     title: Invalid Schema
     detail: Invalid Schema
     results:
-    - '[ECMA 262 regex "^[a-zA-Z0-9]([\w-]*[a-zA-Z0-9 ])?$" does not match input string "bgfnbgj!!!"]'
+    - '[ECMA 262 regex "^[a-zA-Z0-9]([\w-]*[a-zA-Z0-9 ])?$" does not match input string
+      "bgfnbgj!!!"]'
 errorInvalidSchema2:
   type: object
   title: Response - invalid schema
@@ -3435,7 +3473,8 @@ errorInvalidSchema2:
   properties:
     type:
       type: string
-      description: 'URN type of the response indicating if the query was successful or if any errors have been triggered
+      description: 'URN type of the response indicating if the query was successful
+        or if any errors have been triggered
 
         '
     title:
@@ -3450,7 +3489,8 @@ errorInvalidSchema2:
     title: Invalid Schema
     detail: Invalid Schema
     results:
-    - '[ECMA 262 regex "^[a-zA-Z0-9]([\w-]*[a-zA-Z0-9 ])?$" does not match input string "bgfnbgj!!!"]'
+    - '[ECMA 262 regex "^[a-zA-Z0-9]([\w-]*[a-zA-Z0-9 ])?$" does not match input string
+      "bgfnbgj!!!"]'
 errorInvalidUUID:
   type: object
   title: Response  - invalid UUID
@@ -3458,7 +3498,8 @@ errorInvalidUUID:
   properties:
     type:
       type: string
-      description: 'URN type of the response indicating if the query was successful or if any errors have been triggered
+      description: 'URN type of the response indicating if the query was successful
+        or if any errors have been triggered
 
         '
     title:
@@ -3480,7 +3521,8 @@ errorInvalidLinks:
   properties:
     type:
       type: string
-      description: 'URN type of the response indicating if the query was successful or if any errors have been triggered
+      description: 'URN type of the response indicating if the query was successful
+        or if any errors have been triggered
 
         '
     title:
@@ -3513,7 +3555,8 @@ errorResponseWithObjects:
       description: Detailed description of the type or response
     type:
       type: string
-      description: 'Type of the response indicating if the query was successful or if any errors have been triggered.
+      description: 'Type of the response indicating if the query was successful or
+        if any errors have been triggered.
 
         '
     title:
@@ -3533,7 +3576,8 @@ updateItemNotFound:
   properties:
     type:
       type: string
-      description: 'Type of the response indicating if the query was successful or if any errors have been triggered.
+      description: 'Type of the response indicating if the query was successful or
+        if any errors have been triggered.
 
         '
     title:
@@ -3560,8 +3604,8 @@ updateItemNotFound:
 exampleEntityAIModel:
   type: object
   title: AI Model entity
-  description: An example AI model entity for first-time onboarding (without system-generated fields like itemCreatedAt or
-    itemStatus)
+  description: An example AI model entity for first-time onboarding (without system-generated
+    fields like itemCreatedAt or itemStatus)
   properties:
     '@context':
       type: string
@@ -3641,7 +3685,8 @@ exampleEntityAIModel:
     name: ai-model-crop
     label: Test-Crop Disease Detection Model
     shortDescription: Detects diseases in crop leaves using image classification.
-    description: A test AI model for detecting crop disease with the help of infected leaf images.
+    description: A test AI model for detecting crop disease with the help of infected
+      leaf images.
     tags:
     - ai
     - ml
@@ -3742,7 +3787,8 @@ exampleEntityDataBank:
     - adex:DataBank
     label: Weather insights for subdistricts
     shortDescription: A short description about the dataset
-    description: Dataset providing weather information such as temperature and rainfall for subdistricts across a state.
+    description: Dataset providing weather information such as temperature and rainfall
+      for subdistricts across a state.
     tags:
     - environment
     - weather
@@ -3764,7 +3810,8 @@ exampleEntityDataBank:
 exampleEntityPotentialApps:
   type: object
   title: AI Use Case Template Schema
-  description: Schema for defining structured AI use case templates with sections, subsections, and bullet points.
+  description: Schema for defining structured AI use case templates with sections,
+    subsections, and bullet points.
   required:
   - sections
   - name
@@ -3864,9 +3911,11 @@ exampleEntityPotentialApps:
     name: crop-disease-detector-app
     industry: Agriculture
     label: Crop Disease Detection Application
-    shortDescription: An AI-powered application to detect crop diseases early using leaf imagery.
-    description: A potential application designed to detect crop diseases from infected leaf images using AI/ML models. It
-      supports early intervention and yield optimization by analyzing input data and recommending treatments.
+    shortDescription: An AI-powered application to detect crop diseases early using
+      leaf imagery.
+    description: A potential application designed to detect crop diseases from infected
+      leaf images using AI/ML models. It supports early intervention and yield optimization
+      by analyzing input data and recommending treatments.
     tags:
     - ai
     - ml
@@ -3881,8 +3930,8 @@ exampleEntityPotentialApps:
     organizationType: Private
     sections:
     - title: Problem Statement
-      content: Farmers often struggle with late-stage identification of crop diseases, leading to reduced yields and delayed
-        treatments.
+      content: Farmers often struggle with late-stage identification of crop diseases,
+        leading to reduced yields and delayed treatments.
 unAuthorizedAccess:
   type: object
   title: Common to unauthorized access response
@@ -3940,3 +3989,90 @@ invalidResponseForWrongOffsetValues:
     type: urn:dx:cat:InvalidParamValue
     title: Invalid value for a query param
     detail: Invalid offset parameter.
+PolicyListResponse:
+  type: object
+  properties:
+    type:
+      type: string
+      example: dx:aclApd:success
+    title:
+      type: string
+      example: Success
+    result:
+      type: array
+      items:
+        $ref: '#/Policy'
+    paginationInfo:
+      $ref: '#/PaginationInfo'
+Policy:
+  type: object
+  properties:
+    policyId:
+      type: string
+    status:
+      type: string
+    additionalInfo:
+      type: object
+      properties:
+        requestAs:
+          type: string
+        organisationName:
+          type: string
+        purposeOfRequest:
+          type: string
+    expiryAt:
+      type: string
+      format: date-time
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+    user:
+      $ref: '#/PolicyUser'
+    asset:
+      $ref: '#/PolicyAsset'
+PolicyUser:
+  type: object
+  properties:
+    consumerId:
+      type: string
+    consumerFirstName:
+      type: string
+    consumerLastName:
+      type: string
+    consumerEmail:
+      type: string
+    consumerOrganization:
+      type: string
+PolicyAsset:
+  type: object
+  properties:
+    itemId:
+      type: string
+    assetName:
+      type: string
+    assetType:
+      type: string
+    shortDescription:
+      type: string
+    organization:
+      type: string
+    organizationId:
+      type: string
+PaginationInfo:
+  type: object
+  properties:
+    page:
+      type: integer
+    size:
+      type: integer
+    totalCount:
+      type: integer
+    totalPages:
+      type: integer
+    hasNext:
+      type: boolean
+    hasPrevious:
+      type: boolean

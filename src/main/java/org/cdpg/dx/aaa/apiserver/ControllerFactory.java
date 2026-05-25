@@ -143,6 +143,16 @@ public class ControllerFactory {
             apdURL);
     controllers.add(organizationController);
 
+    // Provider roles (org-based + platform track)
+    controllers.add(
+        OrganizationControllerFactory.createProviderController(
+            shared.organizationService(),
+            shared.userService(),
+            shared.emailComposer(),
+            urnGenerator,
+            shared.auditingHandler(),
+            isKycRequired));
+
     OrganizationReportController organizationReportController =
         OrganizationReportControllerFactory.create(vertx, infra.pgService());
     controllers.add(organizationReportController);
