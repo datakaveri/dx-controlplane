@@ -56,6 +56,7 @@ import org.cdpg.dx.aaa.publicKey.factory.PublicKeycontrllerFactory;
 import org.cdpg.dx.aaa.resourceserver.factory.ResourceServerControllerFactory;
 import org.cdpg.dx.aaa.search.controller.SearchController;
 import org.cdpg.dx.aaa.search.factory.SearchControllerFactory;
+import org.cdpg.dx.aaa.shareAssets.factory.VisibilityControllerFactory;
 import org.cdpg.dx.aaa.subscription.controller.SubscriptionController;
 import org.cdpg.dx.aaa.subscription.factory.SubscriptionControllerFactory;
 import org.cdpg.dx.aaa.summary.controller.SummaryController;
@@ -258,6 +259,13 @@ public class ControllerFactory {
     controllers.add(
         ResourceServerControllerFactory.createController(
             infra.pgService(), shared.auditingHandler(), urnGenerator));
+
+    //Share Assets
+    controllers.add(
+        VisibilityControllerFactory.createController(infra.pgService(), infra.esService(),
+            shared.keycloakUserService(), shared.organizationService(),
+            docIndex, urnGenerator)
+    );
 
     // Client secrets
     controllers.add(ClientControllerFactory.create(infra.pgService(), urnGenerator));

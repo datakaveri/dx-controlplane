@@ -14,7 +14,6 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.cdpg.dx.aaa.appCredentials.model.AppConstraints;
 import org.cdpg.dx.aaa.appCredentials.model.AppCredentials;
 import org.cdpg.dx.aaa.appCredentials.service.AppCredentialsService;
-import org.cdpg.dx.auth.authentication.resolver.AppCredentialsResolver;
 import org.cdpg.dx.auth.authorization.registry.SystemRoleScopeMap;
 import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.exception.DxForbiddenException;
