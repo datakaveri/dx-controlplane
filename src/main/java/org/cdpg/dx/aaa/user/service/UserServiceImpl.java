@@ -221,7 +221,7 @@ public class UserServiceImpl implements UserService {
         QueryModel patchQueryModel = new QueryModel();
         patchQueryModel.createQueryModelFromDocument(updates);
 
-        elasticsearchService.updateDocument(docUserIndex, docId, patchQueryModel)
+        elasticsearchService.patchDocument(docUserIndex, docId, patchQueryModel)
           .onSuccess(v -> {
             LOGGER.debug("User info with userId {} updated successfully", userId);
             UserInfo updatedUserInfo = UserInfo.fromJson(result.getSource().mergeIn(updates));

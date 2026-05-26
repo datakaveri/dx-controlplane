@@ -1163,6 +1163,170 @@ paths:
             --header 'token: <token>' \
             --header 'Content-Type: application/json' \
             --data-raw '<payload>'
+    patch:
+      tags:
+        - CAT Entity
+      description: |
+        Partially update metadata fields of an existing catalogue item.
+
+        This endpoint allows the provider (owner) of the asset to patch selected
+        metadata fields without sending the complete item payload.
+
+        ### Authorization rules
+        - Only the asset owner (`ownerUserId`), or admins can patch the item.
+        - `itemCreatedAt`, `ownerUserId`, `organizationId`, and system-managed
+          fields cannot be modified.
+
+        ### Item status behavior
+        - `itemStatus` may be updated through this endpoint if permitted by backend workflows.
+        - Supported values:
+          - `ACTIVE`
+          - `SFTP`
+          - `API`
+
+        ### Partial update behavior
+        - Only fields provided in the request body are updated.
+        - Unspecified fields remain unchanged.
+        - Fields with `null` values may be ignored or rejected based on backend validation rules.
+
+        **Log Type:** `ASSET`
+      operationId: patch item metadata
+      security:
+        - authorization: [ ]
+      parameters:
+        - name: id
+          in: query
+          description: ID of the DX Entity
+          required: true
+          schema:
+            type: string
+            format: uuid
+            pattern: ^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              description: |
+                Partial metadata payload containing only the fields to be updated.
+
+                Restricted fields such as `publishStatus`, `providerUserId`,
+                `organizationId`, `itemCreatedAt`, and `metrics`
+                are not allowed.
+            examples:
+              PatchDataBank:
+                summary: Patch DataBank metadata
+                value:
+                  label: Updated Weather Dataset
+                  shortDescription: Updated short description
+                  tags:
+                    - weather
+                    - rainfall
+                  uploadFrequency: Weekly
+
+              PatchAIModel:
+                summary: Patch AI model metadata
+                value:
+                  description: Updated model description
+                  version: v2.1
+                  mediaURL:
+                    - https://example.com/model-card.pdf
+
+              PatchItemStatus:
+                summary: Patch onboarding workflow state
+                value:
+                  itemStatus: API
+
+      responses:
+        '200':
+          description: Item patched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/successResponseWithObjects'
+              example:
+                type: dx:controlPlane:success
+                title: Success
+                detail: 'Success: Item patched successfully'
+                result:
+                  - id: f5600bf0-7312-4b09-9583-ba742281ebf1
+
+        '400':
+          description: Invalid request or restricted field update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                MissingRequest:
+                  value:
+                    type: dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: Missing or malformed request
+
+                RestrictedField:
+                  value:
+                    type: dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: publishStatus cannot be updated using PATCH /item
+
+        '401':
+          description: Missing or invalid authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                MissingToken:
+                  value:
+                    type: dx:controlPlane:notAuthorized
+                    title: Not Authorized
+                    detail: Missing Bearer token
+
+                InvalidToken:
+                  value:
+                    type: dx:controlPlane:notAuthorized
+                    title: Not Authorized
+                    detail: Invalid token format
+
+        '403':
+          description: Forbidden – user is not the owner of the item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:forbidden
+                title: Forbidden
+                detail: Insufficient scope
+
+        '404':
+          description: Item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:notFound
+                title: Not Found
+                detail: No item found owned by you for update
+
+      x-codeSamples:
+        - lang: cURL
+          label: patch item metadata
+          source: |
+            curl --location --request PATCH \
+            'https://${HOSTNAME}/iudx/v2/cat/item?id=<item-id>' \
+            --header 'Authorization: Bearer <token>' \
+            --header 'Content-Type: application/json' \
+            --data-raw '{
+              "label": "Updated Dataset Name",
+              "shortDescription": "Updated description",
+              "tags": ["weather", "climate"]
+            }'
     get:
       tags:
         - CAT Entity
@@ -6677,8 +6841,8 @@ paths:
                 ItemNotFoundUnderOrganisation:
                   summary: Item does not belong to the organisation
                   value:
-                    type: dx:controlPlane:badRequest
-                    title: Bad Request
+                    type: dx:controlPlane:notFound
+                    title: Not Found
                     detail: No item found for update under your organization
         '401':
           description: Missing or invalid authentication token
