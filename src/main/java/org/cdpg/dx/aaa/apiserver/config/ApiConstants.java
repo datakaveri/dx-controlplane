@@ -48,6 +48,7 @@ public class ApiConstants {
   public static final String GET_ITEM = "get item";
   public static final String UPDATE_ITEM = "update item";
   public static final String PATCH_ITEM = "patch item";
+  public static final String PATCH_ITEM_META_DATA ="patch item metadata";
   public static final String GET_ITEM_WITH_ACCESS = "get item with accessPolicy";
   public static final String CHECK_ITEM_NAME_AVAILABILITY = "validate item name availability";
   public static final String DOWNLOAD_SCRIPT = "download script";

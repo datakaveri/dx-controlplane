@@ -14,7 +14,6 @@ import static org.cdpg.dx.aaa.common.Constants.RESOURCE_SVR;
 import static org.cdpg.dx.aaa.common.Constants.RESTRICTED;
 import static org.cdpg.dx.aaa.common.Constants.VALUE;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.*;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.OWNER_ID;
 import static org.cdpg.dx.catalogueService.config.Constants.*;
 import static org.cdpg.dx.catalogueService.config.Constants.SHORT_DESCRIPTION;
 import static org.cdpg.dx.database.elastic.util.Constants.ACCESS_POLICY;
@@ -30,7 +29,6 @@ import static org.cdpg.dx.database.elastic.util.Constants.TYPE_KEYWORD;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
@@ -45,7 +43,6 @@ import org.cdpg.dx.aaa.item.model.Item;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.item.util.ItemFactory;
 import org.cdpg.dx.aaa.item.util.PatchItemRequest;
-import org.cdpg.dx.aaa.token.model.ItemInfo;
 import org.cdpg.dx.acl.accessRequest.dao.model.AssetType;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.model.VerifyPolicyDto;
@@ -458,7 +455,7 @@ public class ItemServiceImpl implements ItemService {
                     id,
                     roles,
                     errorMsg);
-                promise.fail(new DxBadRequestException(errorMsg));
+                promise.fail(new DxNotFoundException(errorMsg));
               } else {
                 LOGGER.debug("Update item with ID: {}", id);
                 String docId = result.getDocId();
@@ -466,7 +463,7 @@ public class ItemServiceImpl implements ItemService {
                 QueryModel patchQueryModel = new QueryModel();
                 patchQueryModel.createQueryModelFromDocument(patchItemRequest.getRequestBody());
                 elasticsearchService
-                    .updateDocument(docIndex, docId, patchQueryModel)
+                    .patchDocument(docIndex, docId, patchQueryModel)
                     .onSuccess(
                         v -> {
                           LOGGER.debug("Item with ID {} updated successfully", id);
@@ -861,7 +858,7 @@ public class ItemServiceImpl implements ItemService {
             "dislikeDelta", dislikeDelta));
 
     elasticsearchService
-        .updateDocument(docIndex, entityId.toString(), updateQueryModel)
+        .patchDocument(docIndex, entityId.toString(), updateQueryModel)
         .onSuccess(v -> promise.complete())
         .onFailure(promise::fail);
 
@@ -932,7 +929,7 @@ public class ItemServiceImpl implements ItemService {
             "delta", delta));
 
     elasticsearchService
-        .updateDocument(docIndex, entityId.toString(), updateModel)
+        .patchDocument(docIndex, entityId.toString(), updateModel)
         .onSuccess(v -> promise.complete())
         .onFailure(promise::fail);
 

@@ -466,7 +466,7 @@ public class CentralItemServiceImpl implements ItemService {
                 QueryModel patchQueryModel = new QueryModel();
                 patchQueryModel.createQueryModelFromDocument(patchItemRequest.getRequestBody());
                 centralElasticsearchService
-                    .updateDocument(docIndex, docId, patchQueryModel)
+                    .patchDocument(docIndex, docId, patchQueryModel)
                     .onSuccess(
                         v -> {
                           LOGGER.debug("Item with ID {} updated successfully", id);
@@ -862,7 +862,7 @@ public class CentralItemServiceImpl implements ItemService {
             "dislikeDelta", dislikeDelta));
 
     centralElasticsearchService
-        .updateDocument(docIndex, entityId.toString(), updateQueryModel)
+        .patchDocument(docIndex, entityId.toString(), updateQueryModel)
         .onSuccess(v -> promise.complete())
         .onFailure(promise::fail);
 
@@ -933,7 +933,7 @@ public class CentralItemServiceImpl implements ItemService {
             "delta", delta));
 
     centralElasticsearchService
-        .updateDocument(docIndex, entityId.toString(), updateModel)
+        .patchDocument(docIndex, entityId.toString(), updateModel)
         .onSuccess(v -> promise.complete())
         .onFailure(promise::fail);
 
