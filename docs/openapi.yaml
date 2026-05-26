@@ -438,7 +438,7 @@ paths:
     post:
       summary: Create Asset Request
       tags:
-        - Asset APIs
+        - Ingestion type(API/SFTP) APIs
       operationId: post-auth-v2-asset-request
       description: |
         Creates a data ingestion request(SFTP/API) for the authenticated user.
@@ -517,10 +517,10 @@ paths:
         - authorization: []
     get:
       tags:
-        - Asset APIs
+        - Ingestion type(API/SFTP) APIs
       summary: List Org Admin User Asset Requests
       description: |
-        Lists all the latest asset requests made by the org admin user calling the API, regardless of the request status.
+        Lists all the latest asset requests made by the cos_admin/org_admin/provider user calling the API, regardless of the request status.
         **Log Type:** `USER_ACTION`
       operationId: get-auth-v2-asset-request
       parameters:
@@ -585,10 +585,10 @@ paths:
     put:
       summary: Update Asset Request Status
       tags:
-        - Asset APIs
+        - Ingestion type(API/SFTP) APIs
       operationId: put-auth-v2-asset-request
       description: |
-        Updates the status of an existing data ingestion access request by ID.
+        Cos Admin updates the status of an existing data ingestion access request by ID.
         **Log Type:** `USER_ACTION`
       parameters:
         - name: id
@@ -654,7 +654,7 @@ paths:
         - authorization: []
     delete:
       tags:
-        - Asset APIs
+        - Ingestion type(API/SFTP) APIs
       summary: Delete User Asset Request
       description: |
         delete the pending asset requests made by the user calling the API.
@@ -18501,23 +18501,49 @@ components:
     DelegationRole:
       type: string
       enum:
-        - cos_admin
-        - org_admin
-        - provider
         - consumer
-      description: Delegation role
+        - provider
+        - org_admin
+        - cos_admin
+        - compute
+      description: |
+        Role to delegate. Each role restricts which scopes are allowed in `constraints`.
+
+        | Role | Allowed Scopes |
+        |------|---------------|
+        | `consumer` | `data-access` |
+        | `provider` | `own-asset-management` |
+        | `org_admin` | `org-user-management`, `org-asset-management`, `org-asset-publish`, `own-asset-management`, `org-publisher-management` |
+        | `cos_admin` | `org-management`, `asset-publish`, `asset-management`, `user-management`, `publisher-management`, `role-management`, `credit-management`, `compute-management` |
+        | `compute` | `compute-management` |
+
+        > **Note:** `own-asset-management` is shared by `provider` and `org-admin`.
+        > `compute-management` is shared by `cos-admin` and `compute`.
+        > This mapping is enforced server-side — the API will reject scopes not allowed for the given role.
+
+
+
+
+
     DelegationScope:
       type: string
+      description: Scope to delegate. Must be valid for the role specified in the same constraint block.
       enum:
-        - cos-admin-access
-        - org-admin-access
-        - asset-management
-        - compute-management
-        - user-management
         - data-access
-        - api
-        - subs
-      description: Allowed scope values across all roles
+        - own-asset-management
+        - org-user-management
+        - org-asset-management
+        - org-asset-publish
+        - org-publisher-management
+        - org-management
+        - asset-publish
+        - asset-management
+        - user-management
+        - publisher-management
+        - role-management
+        - credit-management
+        - compute-management
+
     DelegationEntityType:
       type: string
       enum:
