@@ -371,6 +371,103 @@
         --header ''token: <token>''
 
         '
+  patch:
+    tags:
+    - CAT Entity
+    description: |
+      Update metadata fields of an owned catalogue item.
+
+      - Asset owners (`provider`) can update any field except `publishStatus` and restricted fields.
+      - Admins (`org_admin`, `cos_admin`) can also update `publishStatus`.
+      - The following fields cannot be updated via this API: `providerUserId`, `organizationId`, `itemCreatedAt`, `metrics`.
+      - `lastUpdated` is automatically set to the current UTC time.
+    operationId: patch item metadata
+    security:
+    - authorization: []
+    parameters:
+    - name: id
+      in: query
+      description: ID of the catalogue item to update
+      required: true
+      schema:
+        type: string
+        format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            minProperties: 1
+            description: Fields to update. Any item metadata field is allowed except providerUserId, organizationId, itemCreatedAt, and metrics.
+          example:
+            label: Updated Asset Label
+            shortDescription: Updated short description
+            publishStatus: ACTIVE
+    responses:
+      '200':
+        description: Item metadata updated successfully
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/successResponseWithObjects
+            example:
+              type: dx:controlPlane:success
+              title: Success
+              detail: 'Success: Item patched successfully'
+              results:
+              - id: f5600bf0-7312-4b09-9583-ba742281ebf1
+      '400':
+        description: Invalid request or missing fields
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/invalidIdErrorResponse
+            example:
+              type: dx:controlPlane:badRequest
+              title: Bad Request
+              detail: Missing or malformed request
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing Bearer token
+      '403':
+        description: Forbidden – attempting to update a restricted field or publishStatus without admin role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: dx:controlPlane:forbidden
+              title: Forbidden
+              detail: Providers cannot patch publishStatus
+      '404':
+        description: Item not found
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: dx:controlPlane:notFound
+              title: Not Found
+              detail: Item not found
+    x-codeSamples:
+    - lang: cURL
+      label: patch item metadata
+      source: |
+        curl --location --request PATCH 'https://${HOSTNAME}/iudx/v2/cat/item?id=uuid' \
+        --header 'Authorization: Bearer <token>' \
+        --header 'Content-Type: application/json' \
+        --data '{
+          "label": "Updated Asset Label",
+          "shortDescription": "Updated short description"
+        }'
 /items/scripts/download/{filename}:
   get:
     tags:

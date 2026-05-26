@@ -208,6 +208,10 @@ paths:
     $ref: paths/platform-provider-requests.yaml#/~1auth~1v2~1user~1platform~1provider-requests
   /iudx/v2/cat/getAllAssets:
     $ref: paths/platform-assets.yaml#/~1iudx~1v2~1cat~1getAllAssets
+  /iudx/v2/cat/assets/share:
+    $ref: paths/share-assets.yaml#/~1iudx~1v2~1cat~1assets~1share
+  /iudx/v2/cat/assets/shared-with-me:
+    $ref: paths/share-assets.yaml#/~1iudx~1v2~1cat~1assets~1shared-with-me
   /iudx/v2/resource_servers:
     $ref: paths/resource-servers.yaml#/~1iudx~1v2~1resource_servers
   /iudx/v2/resource_servers/{id}:
