@@ -40,7 +40,12 @@ tags:
 - name: Activity Logs
 - name: Activity Report
 - name: App
-- name: Asset APIs
+  description: |
+    App IDs provide a way to grant restricted, scoped access to platform APIs without exposing
+    the user's primary credentials. A user creates an App ID with a specific set of roles and
+    scopes, then shares the `appId` and `appSecret` with another user or service. The recipient
+    can then use these credentials to access platform APIs — but only within the roles and scopes
+    defined at the time the App ID was created.
 - name: CAT Entity
 - name: Certificate API
 - name: Client APIs
@@ -74,6 +79,7 @@ tags:
 - name: Summary
 - name: token
 - name: User Interactions
+- name: Ingestion type(API/SFTP) APIs
 paths:
   /iudx/v2/auth/app:
     $ref: paths/app.yaml#/~1iudx~1v2~1auth~1app

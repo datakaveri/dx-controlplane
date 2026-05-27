@@ -6,9 +6,12 @@
     operationId: post-appId
     security:
     - authorization: []
-    description: 'Creates an appId for the authenticated user. The operation is idempotent.
+    description: |
+      Creates a new App ID for the authenticated user with a defined expiry. The App ID is
+      paired with an App Secret at creation time — together these act as credentials that can
+      be shared with another user or service to grant them restricted access scoped to the
+      roles and permissions defined in this App ID. Requires an authenticated user token.
 
-      '
     requestBody:
       required: true
       content:
@@ -59,11 +62,14 @@
     operationId: get-appId
     security:
     - authorization: []
-    description: 'Retrieve all appIds created by the authenticated user. Supports
-      pagination via `page` and `size` query parameters. Requires an authenticated
-      user token.
+    description: |
 
-      '
+      Retrieves all App IDs created by the authenticated user, including their current status
+      (active or disabled), expiry timestamps, and associated scopes. Supports pagination via
+      `page` and `size` query parameters and sorting via the `sorting` parameter.
+      Requires an authenticated user token.
+
+
     parameters:
     - $ref: ../components/parameters.yaml#/PageParam
     - $ref: ../components/parameters.yaml#/SizeParam
@@ -115,9 +121,12 @@
     operationId: delete-appId
     security:
     - authorization: []
-    description: 'Remove an appId owned by the authenticated user.
+    description: |
+      Permanently removes an App ID owned by the authenticated user. Once deleted, any user
+      or service using this `appId` and `appSecret` pair will immediately lose access to all
+      APIs they were accessing through it. This action cannot be undone.
+      Requires an authenticated user token.
 
-      '
     parameters:
     - name: appId
       in: path
@@ -127,6 +136,26 @@
         format: uuid
       description: Unique identifier of the appId
     responses:
+      '200':
+        description: AppId status deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                detail:
+                  type: string
+                  example: Deleted app id status successfully
+            example:
+              type: dx:controlPlane:success
+              title: Success
+              detail: Deleted app id status successfully
       '204':
         description: AppId deleted successfully
       '400':
@@ -170,9 +199,12 @@
     operationId: update-appId-status
     security:
     - authorization: []
-    description: 'Change/Update appId status owned by the authenticated user.
-
-      '
+    description: |
+      Enables or disables an App ID owned by the authenticated user. Setting status to `disable`
+            temporarily blocks all access for anyone using this `appId` and `appSecret` without
+            permanently deleting it. Setting it back to `active` restores access. Use this to
+            temporarily revoke access without losing the App ID configuration.
+            Requires an authenticated user token.
     parameters:
     - name: appId
       in: path
@@ -191,6 +223,26 @@
         - active
         - disable
     responses:
+      '200':
+        description: AppId status updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                detail:
+                  type: string
+                  example: Updated app id status successfully
+            example:
+              type: dx:controlPlane:success
+              title: Success
+              detail: Updated app id status successfully
       '204':
         description: AppId status updated successfully
       '400':
@@ -236,12 +288,13 @@
     operationId: post-appId-dxUser
     security:
     - authorization: []
-    description: 'Authenticates the app using appId and appSecret, and returns the
-      resolved
-
-      user context with app-specific roles and scopes.
-
-      '
+    description: |
+      Authenticates a request using an `appId` and `appSecret` pair and returns the resolved
+            user context for that app, including the user's profile, organisation details, and the
+            specific roles and scopes permitted by this App ID. This endpoint is used by any user
+            or service that has been given an `appId` and `appSecret` to obtain a scoped user context
+            before making further API calls. The returned scopes are strictly limited to what was
+            defined when the App ID was created — no additional permissions can be derived from this context.
     requestBody:
       required: true
       content:

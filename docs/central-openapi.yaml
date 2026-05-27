@@ -50,7 +50,10 @@ paths:
       security:
         - authorization: []
       description: |
-        Creates an appId for the authenticated user. The operation is idempotent.
+        Creates a new App ID for the authenticated user with a defined expiry. The App ID is
+        paired with an App Secret at creation time — together these act as credentials that can
+        be shared with another user or service to grant them restricted access scoped to the
+        roles and permissions defined in this App ID. Requires an authenticated user token.
       requestBody:
         required: true
         content:
@@ -106,7 +109,11 @@ paths:
       security:
         - authorization: []
       description: |
-        Retrieve all appIds created by the authenticated user. Supports pagination via `page` and `size` query parameters. Requires an authenticated user token.
+
+        Retrieves all App IDs created by the authenticated user, including their current status
+        (active or disabled), expiry timestamps, and associated scopes. Supports pagination via
+        `page` and `size` query parameters and sorting via the `sorting` parameter.
+        Requires an authenticated user token.
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
@@ -157,7 +164,10 @@ paths:
       security:
         - authorization: []
       description: |
-        Remove an appId owned by the authenticated user.
+        Permanently removes an App ID owned by the authenticated user. Once deleted, any user
+        or service using this `appId` and `appSecret` pair will immediately lose access to all
+        APIs they were accessing through it. This action cannot be undone.
+        Requires an authenticated user token.
       parameters:
         - name: appId
           in: path
@@ -167,6 +177,26 @@ paths:
             format: uuid
           description: Unique identifier of the appId
       responses:
+        '200':
+          description: AppId status deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  detail:
+                    type: string
+                    example: Deleted app id status successfully
+              example:
+                type: dx:controlPlane:success
+                title: Success
+                detail: Deleted app id status successfully
         '204':
           description: AppId deleted successfully
         '400':
@@ -208,7 +238,11 @@ paths:
       security:
         - authorization: []
       description: |
-        Change/Update appId status owned by the authenticated user.
+        Enables or disables an App ID owned by the authenticated user. Setting status to `disable`
+              temporarily blocks all access for anyone using this `appId` and `appSecret` without
+              permanently deleting it. Setting it back to `active` restores access. Use this to
+              temporarily revoke access without losing the App ID configuration.
+              Requires an authenticated user token.
       parameters:
         - name: appId
           in: path
@@ -227,6 +261,26 @@ paths:
               - active
               - disable
       responses:
+        '200':
+          description: AppId status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  detail:
+                    type: string
+                    example: Updated app id status successfully
+              example:
+                type: dx:controlPlane:success
+                title: Success
+                detail: Updated app id status successfully
         '204':
           description: AppId status updated successfully
         '400':
