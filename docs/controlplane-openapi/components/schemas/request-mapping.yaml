@@ -1,0 +1,45 @@
+GetRequestTypeMappingsResponse:
+  type: object
+  required:
+    - type
+    - title
+    - result
+    - paginationInfo
+  properties:
+    type:
+      type: string
+      example: urn:dx:ControlPlane:success
+    title:
+      type: string
+      example: Success
+    result:
+      type: array
+      items:
+        $ref: ../components/schemas/request-mapping.yaml#/RequestTypeMapping
+    paginationInfo:
+      $ref: ../components/schemas/pagination.yaml#/PaginationInfo
+
+RequestTypeMapping:
+  type: object
+  properties:
+    id:
+      type: integer
+      description: Unique identifier for request type mapping
+      example: 1
+    type_key:
+      type: string
+      description: Stable key used by backend flows
+      example: join_org
+    display_name:
+      type: string
+      description: Human readable request type label
+      example: Organisation Join Request
+    is_active:
+      type: boolean
+      description: Flag indicating if this type is enabled
+      example: true
+    created_at:
+      type: string
+      format: date-time
+      description: Creation timestamp in UTC
+      example: '2026-04-28T04:00:00Z'

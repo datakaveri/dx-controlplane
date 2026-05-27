@@ -55,6 +55,10 @@ tags:
       Conversations are threaded message exchanges tied to entity-driven requests such as joining an organisation, creating an organisation, or submitting a credit request. Each conversation is scoped to a request_id and supports root-level messages and nested replies up to 2 levels deep. Messages can be posted by requesters or approvers, and can optionally be marked as internal notes visible only to the approvers.
   - name: Credit APIs
   - name: Delegation APIs
+    description: |
+      Delegation allows an authenticated user (the **delegator**) to grant another user (the **delegate**)
+      the ability to act on their behalf. Delegations are scoped by role and optionally further restricted
+      by specific scopes and entity types, each with their own expiry.
   - name: Discovery – My Assets
   - name: Discovery – Public
   - name: KYC APIs
@@ -3084,9 +3088,7 @@ paths:
   /iudx/v2/auth/delegation:
     post:
       summary: Grant delegation to another user (Delegator)
-      description: |
-        Creates a delegation grant that allows another user (the delegate) to act on behalf of the caller (the delegator). The delegation can optionally be scoped to specific roles and constraints with per-constraint expiry. Requires an authenticated user token.
-        **Log Type:** `USER_ACTION`
+      description: 'Creates a delegation grant that allows another user (the delegate) to act on behalf of the caller (the delegator). The delegation can be granted at a broad role level or further restricted to specific scopes and entity types, each with an independent expiry. The global `expiry_at` applies to the entire delegation; individual constraint-level `expiry_at` values override this for that specific scope. Requires an authenticated user token. **Log Type:** `USER_ACTION` '
       tags:
         - Delegation APIs
       operationId: post-auth-v2-delegation
@@ -3425,7 +3427,7 @@ paths:
             --header 'Authorization: Bearer <keycloak_token>'
     delete:
       summary: Delete a Delegation Grant
-      description: Revoke a delegation grant. Only the delegator (user who granted the delegation) can delete it. This will remove all associated scopes from the delegate user in Keycloak.
+      description: Revoke a delegation grant. Only the delegator (user who granted the delegation) can delete it.
       tags:
         - Delegation APIs
       operationId: delete-auth-v2-delegation-id
@@ -18900,19 +18902,36 @@ components:
         - org_admin
         - provider
         - consumer
-      description: Delegation role
+        - compute
+      description: |
+        Role of the delegator. Each role is permitted to delegate only specific scopes.
+
+        | Role        | Allowed Scopes                                                                                                                                                  |
+        |-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+        | `consumer`  | `data-access`                                                                                                                                                   |
+        | `provider`  | `own-asset-management`                                                                                                                                          |
+        | `org_admin` | `org-user-management`, `org-asset-management`, `org-asset-publish`, `own-asset-management`, `org-publisher-management`                                         |
+        | `cos_admin` | `org-management`, `asset-publish`, `asset-management`, `user-management`, `publisher-management`, `role-management`, `credit-management`, `compute-management` |
+        | `compute`   | `compute-management`                                                                                                                                            |
     DelegationScope:
       type: string
       enum:
-        - cos-admin-access
-        - org-admin-access
-        - asset-management
-        - compute-management
-        - user-management
         - data-access
-        - api
-        - subs
-      description: Allowed scope values across all roles
+        - own-asset-management
+        - org-user-management
+        - org-asset-management
+        - org-asset-publish
+        - org-publisher-management
+        - org-management
+        - asset-publish
+        - asset-management
+        - user-management
+        - publisher-management
+        - role-management
+        - credit-management
+        - compute-management
+      description: |
+        Scope of access being delegated. Each scope is restricted to specific roles.Check the roles description for more information.
     DelegationEntityType:
       type: string
       enum:
@@ -18921,7 +18940,16 @@ components:
         - adex:AiModel
         - adex:DataBank
         - adex:Apps
-      description: Entity type for scoped delegation
+      description: |
+        The type of entity this delegation is scoped to.
+
+        | Entity Type      | Description                                      |
+        |------------------|--------------------------------------------------|
+        | `org`            | Organisation-level delegation                    |
+        | `provider`       | Provider-level delegation                        |
+        | `adex:AiModel`   | Delegation scoped to an AI Model asset           |
+        | `adex:DataBank`  | Delegation scoped to a DataBank asset            |
+        | `adex:Apps`      | Delegation scoped to an Apps asset               |
     UserInteractionRequest:
       type: object
       required:

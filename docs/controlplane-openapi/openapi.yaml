@@ -55,6 +55,10 @@ tags:
     marked as internal notes visible only to the approvers.
 - name: Credit APIs
 - name: Delegation APIs
+  description: |
+    Delegation allows an authenticated user (the **delegator**) to grant another user (the **delegate**)
+    the ability to act on their behalf. Delegations are scoped by role and optionally further restricted
+    by specific scopes and entity types, each with their own expiry.
 - name: Discovery – My Assets
 - name: Discovery – Public
 - name: KYC APIs
