@@ -1,0 +1,77 @@
+AclServer:
+  type: object
+  required:
+  - id
+  - name
+  - url
+  - owner_id
+  - visibility
+  - status
+  - created_at
+  - updated_at
+  properties:
+    id:
+      type: string
+      format: uuid
+    name:
+      type: string
+      example: DX ACL APD Server
+    url:
+      type: string
+      example: acl-apd.iudx.io
+    owner_id:
+      type: string
+      format: uuid
+    visibility:
+      type: string
+      enum:
+      - PUBLIC
+      - PRIVATE
+      example: PUBLIC
+    status:
+      type: string
+      enum:
+      - PENDING
+      - ACTIVE
+      - INACTIVE
+      example: ACTIVE
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+AclServerCreateRequest:
+  type: object
+  required:
+  - name
+  - url
+  - visibility
+  properties:
+    name:
+      type: string
+      example: DX ACL APD Server
+    url:
+      type: string
+      example: acl-apd.iudx.io
+    visibility:
+      type: string
+      enum:
+      - PUBLIC
+      - PRIVATE
+      example: PUBLIC
+AclServerResponse:
+  type: object
+  required:
+  - type
+  - title
+  - result
+  properties:
+    type:
+      type: string
+      example: dx:controlPlane:success
+    title:
+      type: string
+      example: Success
+    result:
+      $ref: '#/AclServer'

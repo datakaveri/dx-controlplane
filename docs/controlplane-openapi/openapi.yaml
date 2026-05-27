@@ -35,6 +35,34 @@ info:
 servers:
 - url: https://${HOSTNAME}
   description: dynamic server url
+tags:
+- name: ACL Servers
+- name: Activity Logs
+- name: Activity Report
+- name: App
+- name: Asset APIs
+- name: CAT Entity
+- name: Certificate API
+- name: Client APIs
+- name: Compute APIs
+- name: Conversations
+- name: Credit APIs
+- name: Delegation APIs
+- name: Discovery – My Assets
+- name: Discovery – Public
+- name: KYC APIs
+- name: Leaderboard
+- name: List Available Filters
+- name: Organisation APIs
+- name: Organisation Assets Management
+- name: Platform Assets Management
+- name: Platform Provider Requests
+- name: Resource Servers
+- name: Role APIs
+- name: Subscriptions
+- name: Summary
+- name: token
+- name: User Interactions
 paths:
   /iudx/v2/auth/app:
     $ref: paths/app.yaml#/~1iudx~1v2~1auth~1app
@@ -172,8 +200,18 @@ paths:
     $ref: paths/organisations.yaml#/~1iudx~1v2~1auth~1organisations~1{id}~1join_requests~1report
   /iudx/v2/auth/organization/user/provider_role/requests/report:
     $ref: paths/organisations.yaml#/~1iudx~1v2~1auth~1organization~1user~1provider_role~1requests~1report
+  /auth/v2/platform/provider-requests:
+    $ref: paths/platform-provider-requests.yaml#/~1auth~1v2~1platform~1provider-requests
+  /auth/v2/platform/provider-requests/{id}:
+    $ref: paths/platform-provider-requests.yaml#/~1auth~1v2~1platform~1provider-requests~1{id}
+  /auth/v2/user/platform/provider-requests:
+    $ref: paths/platform-provider-requests.yaml#/~1auth~1v2~1user~1platform~1provider-requests
   /iudx/v2/cat/getAllAssets:
     $ref: paths/platform-assets.yaml#/~1iudx~1v2~1cat~1getAllAssets
+  /iudx/v2/cat/assets/share:
+    $ref: paths/share-assets.yaml#/~1iudx~1v2~1cat~1assets~1share
+  /iudx/v2/cat/assets/shared-with-me:
+    $ref: paths/share-assets.yaml#/~1iudx~1v2~1cat~1assets~1shared-with-me
   /iudx/v2/resource_servers:
     $ref: paths/resource-servers.yaml#/~1iudx~1v2~1resource_servers
   /iudx/v2/resource_servers/{id}:
@@ -208,6 +246,20 @@ paths:
     $ref: paths/subscriptions.yaml#/~1iudx~1v2~1subscriptions~1{subscriptionId}
   /iudx/v2/dashboard/usage-summary:
     $ref: paths/summary.yaml#/~1iudx~1v2~1dashboard~1usage-summary
+  /iudx/v2/acl_servers:
+    $ref: paths/acl-servers.yaml#/~1iudx~1v2~1acl_servers
+  /iudx/v2/acl_servers/{id}:
+    $ref: paths/acl-servers.yaml#/~1iudx~1v2~1acl_servers~1{id}
+  /iudx/v2/auth/app/user:
+    $ref: paths/app.yaml#/~1iudx~1v2~1auth~1app~1user
+  /iudx/v2/cat/item/available-name:
+    $ref: paths/catalogue.yaml#/~1iudx~1v2~1cat~1item~1available-name
+  /iudx/v2/requests/{request_id}/conversations:
+    $ref: paths/conversations.yaml#/~1iudx~1v2~1requests~1{request_id}~1conversations
+  /iudx/v2/requests/{request_id}/conversations/{msg_id}:
+    $ref: paths/conversations.yaml#/~1iudx~1v2~1requests~1{request_id}~1conversations~1{msg_id}
+  /iudx/v2/requests/{request_id}/conversations/{msg_id}/reply:
+    $ref: paths/conversations.yaml#/~1iudx~1v2~1requests~1{request_id}~1conversations~1{msg_id}~1reply
 components:
   securitySchemes:
     $ref: components/security-schemes.yaml
@@ -599,3 +651,15 @@ components:
       $ref: components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse409
     NgsiLdSubscriptionErrorResponse500:
       $ref: components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse500
+    AclServer:
+      $ref: components/schemas/acl-server.yaml#/AclServer
+    AclServerCreateRequest:
+      $ref: components/schemas/acl-server.yaml#/AclServerCreateRequest
+    AclServerResponse:
+      $ref: components/schemas/acl-server.yaml#/AclServerResponse
+    ConversationMessage:
+      $ref: components/schemas/conversation.yaml#/ConversationMessage
+    ThreadedReplies:
+      $ref: components/schemas/conversation.yaml#/ThreadedReplies
+    ThreadedMessage:
+      $ref: components/schemas/conversation.yaml#/ThreadedMessage

@@ -22,7 +22,10 @@ public enum OrganisationAuditOperation
   DELETE_PENDING_ORG_JOIN_REQUEST("Delete pending org join request"),
   DELETE_PENDING_PROVIDER_REQUEST("Delete pending org join request"),
   DELETE_ORG("Delete Organisation"),
-  UPDATE_ORG("Update org details");
+  UPDATE_ORG("Update org details"),
+  REQUEST_PLATFORM_PROVIDER_ROLE("Request for platform provider role"),
+  GET_PLATFORM_PROVIDER_REQS("Get platform provider role requests"),
+  UPDATE_PLATFORM_PROVIDER_REQUEST("Update platform provider role request");
   ;
 
 

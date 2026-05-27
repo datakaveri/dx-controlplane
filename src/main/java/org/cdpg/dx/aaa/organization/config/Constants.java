@@ -183,19 +183,42 @@ public final class Constants {
 
   public static final Set<String> ALLOWED_SORT_FEILDS_ORG = Set.of("createdAt", "orgName", "entityType", "orgSector");
 
+  // Provider request table name (fixes bug: was pointing to organization_create_requests)
+  public static final String PROVIDER_REQUEST_TABLE = "provider_requests";
+
+  // provider_type discriminator column
+  public static final String PROVIDER_TYPE          = "provider_type";
+  public static final String PROVIDER_TYPE_ORG      = "org";
+  public static final String PROVIDER_TYPE_PLATFORM = "platform";
+
   public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_PROVIDER_ROLE_REQUEST = Map.of(
     "status", STATUS,
     "delegatorId", "delegatorId"
   );
-    public static final Map<String, String> API_TO_DB_PROVIDER_ROLE_REQUEST = Map.ofEntries(
+
+  public static final Map<String, String> API_TO_DB_PROVIDER_ROLE_REQUEST = Map.ofEntries(
             Map.entry("userId", USER_ID),
             Map.entry("orgID", ORGANIZATION_ID),
             Map.entry("status", STATUS),
             Map.entry("createdAt", CREATED_AT),
             Map.entry("updatedAt", UPDATED_AT)
-    );
+  );
 
   public static final Set<String> ALLOWED_SORT_FIELDS_PROVIDER_ROLE_REQUEST = Set.of("createdAt", "updatedAt");
+
+  // Platform provider request filter maps (COS Admin view)
+  public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_PLATFORM_PROVIDER_REQUEST = Map.of(
+    "status", STATUS,
+    "userId", USER_ID
+  );
+
+  public static final Map<String, String> API_TO_DB_PLATFORM_PROVIDER_REQUEST = Map.ofEntries(
+    Map.entry("userId",       USER_ID),
+    Map.entry("status",       STATUS),
+    Map.entry("providerType", PROVIDER_TYPE),
+    Map.entry("createdAt",    CREATED_AT),
+    Map.entry("updatedAt",    UPDATED_AT)
+  );
 
   public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_COMPUTE_ROLE = Map.of(
           "userName", USER_NAME,

@@ -1,0 +1,92 @@
+ConversationMessage:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      example: c0ca7a6c-597f-4e03-b861-bb912b3cb1ec
+    request_type:
+      type: string
+      example: org_join
+    parent_msg_id:
+      type: string
+      format: uuid
+      nullable: true
+      example: null
+    sender_id:
+      type: string
+      format: uuid
+      example: 1dc28cc6-d614-461a-9b8f-d6110feb3e2f
+    sender_role:
+      type: string
+      example: new user
+    actor:
+      type: string
+      enum:
+      - requester
+      - approver
+      example: requester
+    message_type:
+      type: string
+      enum:
+      - text
+      - question
+      - answer
+      - info_request
+      - note
+      - system
+      example: question
+    content:
+      type: string
+      example: Do I need to add my phone number?
+    is_internal:
+      type: boolean
+      example: false
+    has_replies:
+      type: boolean
+      example: true
+    reply_count:
+      type: integer
+      description: Direct children count only, not full subtree
+      example: 4
+    created_at:
+      type: string
+      format: date-time
+      example: '2026-05-07T08:00:00Z'
+ThreadedReplies:
+  type: object
+  properties:
+    result:
+      type: array
+      items:
+        $ref: '#/ConversationMessage'
+    paginationInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        size:
+          type: integer
+          example: 3
+        totalCount:
+          type: integer
+          description: Total direct replies for this message
+          example: 4
+        totalPages:
+          type: integer
+          example: 2
+        hasNext:
+          type: boolean
+          description: true if there are more replies beyond the 3 shown
+          example: true
+        hasPrevious:
+          type: boolean
+          example: false
+ThreadedMessage:
+  allOf:
+  - $ref: '#/ConversationMessage'
+  - type: object
+    properties:
+      replies:
+        $ref: '#/ThreadedReplies'

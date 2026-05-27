@@ -10,10 +10,13 @@ import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.GET_ITEM;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.GET_ITEM_WITH_ACCESS;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.IS_DELEGATOR;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.PATCH_ITEM;
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.PATCH_ITEM_META_DATA;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.RESULT;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.UPDATE_ITEM;
 import static org.cdpg.dx.aaa.common.Constants.*;
+import static org.cdpg.dx.aaa.item.util.ItemExistenceValidator.getUtcDatetimeAsString;
 import static org.cdpg.dx.database.elastic.util.Constants.DATA_UPLOAD_STATUS;
+import static org.cdpg.dx.database.elastic.util.Constants.PUBLISH_STATUS;
 import static org.cdpg.dx.database.elastic.util.Constants.VERIFIED_BY;
 
 import io.vertx.core.Future;
@@ -148,6 +151,13 @@ public class ItemController implements ApiController {
         .handler(assetManagementAccess)
         .handler(verifyItemTypeAndRole)
         .handler(this::handleCreateOrUpdateItem);
+
+    builder
+        .operation(PATCH_ITEM_META_DATA)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(assetManagementAccess)
+        .handler(verifyItemTypeAndRole)
+        .handler(this::handlePatchItemMetaData);
 
     builder
         .operation(PATCH_ITEM)
@@ -299,6 +309,88 @@ public class ItemController implements ApiController {
       }
     }
 
+    PatchItemRequest patchItemRequest =
+        new PatchItemRequest(id, orgId.get(), userId, body, allowedRoles);
+    itemService
+        .patchItem(patchItemRequest)
+        .onSuccess(
+            elasticsearchResponse -> {
+              JsonObject itemJson = elasticsearchResponse.getSource();
+              UserActivityAuditLogBuilder auditLogBuilder =
+                  ItemAuditLogHelper.buildItemAudit(ctx, itemJson, ItemAuditOperation.UPDATE);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+              ResponseBuilder.sendSuccess(
+                  ctx,
+                  "Success: Item patched successfully",
+                  new JsonArray().add(new JsonObject().put(ID, id)),
+                  this.urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Patch item failed", err);
+              ctx.fail(err);
+            });
+  }
+
+  private void handlePatchItemMetaData(RoutingContext ctx) {
+    LOGGER.debug("Handling patch item");
+    String id = ctx.queryParams().get(ID);
+
+    if (id == null || id.isBlank()) {
+      ctx.fail(new DxBadRequestException(DETAIL_ID_NOT_FOUND));
+      return;
+    }
+
+    JsonObject body = ctx.body().asJsonObject();
+    LOGGER.debug("Patch item request body: {}", body);
+    if (body == null || body.isEmpty()) {
+      ctx.fail(new DxBadRequestException("Missing or malformed request"));
+      return;
+    }
+
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    List<String> allowedRoles = dxUser.roles();
+    boolean isAdmin =
+        allowedRoles.contains(DxRole.ORG_ADMIN.value())
+            || allowedRoles.contains(DxRole.COS_ADMIN.value());
+
+    String userId = dxUser.sub().toString();
+    AtomicReference<String> orgId = new AtomicReference<>("");
+    // orgId = user.organisationId();
+
+    // Fetch orgId from Keycloak
+    keycloakUserService
+        .getUserById(UUID.fromString(userId))
+        .onSuccess(
+            keycloakUser -> {
+              orgId.set(keycloakUser.organisationId());
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Failed to fetch user from Keycloak", err);
+              ctx.fail(err);
+            });
+
+    LOGGER.debug("Keycloak ID: {},12aa: {}", orgId, id);
+
+    if (!isAdmin && body.containsKey(PUBLISH_STATUS)) {
+      ctx.fail(new DxForbiddenException(
+          "Providers cannot patch publishStatus"));
+      return;
+    }
+
+    // Restricted fields
+    Set<String> restrictedFields =
+        Set.of(PROVIDER_USER_ID, ORGANIZATION_ID, ITEM_CREATED_AT, METRICS);
+
+    for (String field : restrictedFields) {
+      if (body.containsKey(field)) {
+        ctx.fail(new DxForbiddenException(field + " cannot be updated using PATCH /item"));
+        return;
+      }
+    }
+
+    body.put(LAST_UPDATED, getUtcDatetimeAsString());
     PatchItemRequest patchItemRequest =
         new PatchItemRequest(id, orgId.get(), userId, body, allowedRoles);
     itemService

@@ -1,0 +1,335 @@
+/auth/v2/platform/provider-requests:
+  post:
+    tags:
+    - Platform Provider Requests
+    summary: Submit a platform provider role request
+    description: |
+      Allows a consumer (not yet part of any organisation) to request the Provider role
+      directly via the platform track. Requires KYC verification.
+    operationId: post-auth-v2-platform-provider-requests
+    security:
+    - authorization: []
+    responses:
+      '200':
+        description: Platform provider role request created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                detail:
+                  type: string
+                  example: Created Request
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+      '403':
+        description: Forbidden – KYC not completed
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+      '409':
+        description: A pending or granted provider role request already exists
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+  get:
+    tags:
+    - Platform Provider Requests
+    summary: List platform provider role requests
+    description: |
+      Returns a paginated list of provider role requests submitted via the platform track
+      (i.e., without an organisation). Only accessible by COS Admins.
+    operationId: get-auth-v2-platform-provider-requests
+    security:
+    - authorization: []
+    parameters:
+    - name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    - name: size
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 10
+    - name: status
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [pending, granted, rejected]
+    - name: userId
+      in: query
+      required: false
+      schema:
+        type: string
+        format: uuid
+    - name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        description: 'Sort by field and order, e.g. createdAt:desc'
+    responses:
+      '200':
+        description: Paginated list of platform provider role requests
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                result:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      user_id:
+                        type: string
+                        format: uuid
+                      provider_type:
+                        type: string
+                        example: platform
+                      status:
+                        type: string
+                        example: pending
+                      created_at:
+                        type: string
+                        format: date-time
+                      updated_at:
+                        type: string
+                        format: date-time
+                paginationInfo:
+                  type: object
+                  properties:
+                    page:
+                      type: integer
+                    size:
+                      type: integer
+                    totalCount:
+                      type: integer
+                    totalPages:
+                      type: integer
+                    hasNext:
+                      type: boolean
+                    hasPrevious:
+                      type: boolean
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+      '403':
+        description: Forbidden – user does not have COS Admin role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+
+/auth/v2/platform/provider-requests/{id}:
+  put:
+    tags:
+    - Platform Provider Requests
+    summary: Approve or reject a platform provider role request
+    description: |
+      Allows a COS Admin to approve (`granted`) or reject (`rejected`) a platform provider
+      role request. On approval, the PROVIDER role is assigned in Keycloak.
+    operationId: put-auth-v2-platform-provider-requests
+    security:
+    - authorization: []
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - status
+            properties:
+              status:
+                type: string
+                enum: [granted, rejected]
+          examples:
+            Approve:
+              value:
+                status: granted
+            Reject:
+              value:
+                status: rejected
+    responses:
+      '200':
+        description: Platform provider role request updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                detail:
+                  type: string
+                  example: Platform provider role request updated
+      '400':
+        description: Bad request – invalid status value
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+      '403':
+        description: Forbidden – user does not have COS Admin role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+      '404':
+        description: No request found with the given ID
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+
+/auth/v2/user/platform/provider-requests:
+  get:
+    tags:
+    - Platform Provider Requests
+    summary: Get own platform provider role request
+    description: |
+      Returns the consumer's own pending platform provider role request, if one exists.
+    operationId: get-auth-v2-user-platform-provider-requests
+    security:
+    - authorization: []
+    responses:
+      '200':
+        description: The consumer's pending platform provider role request
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                result:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    user_id:
+                      type: string
+                      format: uuid
+                    provider_type:
+                      type: string
+                      example: platform
+                    status:
+                      type: string
+                      example: pending
+                    created_at:
+                      type: string
+                      format: date-time
+                    updated_at:
+                      type: string
+                      format: date-time
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+      '404':
+        description: No pending platform provider request found for this user
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+  delete:
+    tags:
+    - Platform Provider Requests
+    summary: Withdraw own platform provider role request
+    description: |
+      Allows a consumer to withdraw their own pending platform provider role request.
+      Only requests in `pending` status can be deleted.
+    operationId: delete-auth-v2-user-platform-provider-requests
+    security:
+    - authorization: []
+    responses:
+      '200':
+        description: Platform provider role request deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                detail:
+                  type: string
+                  example: Platform provider role request deleted successfully
+      '400':
+        description: Request is not in pending status and cannot be deleted
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+      '404':
+        description: No pending platform provider request found for this user
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
