@@ -106,10 +106,11 @@ paths:
       security:
         - authorization: []
       description: |
-        Retrieve all appIds created by the authenticated user.
+        Retrieve all appIds created by the authenticated user. Supports pagination via `page` and `size` query parameters. Requires an authenticated user token.
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
       responses:
         '200':
           description: Successfully retrieved apps
@@ -263,7 +264,7 @@ paths:
     post:
       summary: Create Asset Request
       tags:
-        - Asset APIs
+        - Ingestion type(API/SFTP) APIs
       operationId: post-auth-v2-asset-request
       description: |
         Creates a data ingestion request(SFTP/API) for the authenticated user.
@@ -342,11 +343,10 @@ paths:
         - authorization: []
     get:
       tags:
-        - Asset APIs
+        - Ingestion type(API/SFTP) APIs
       summary: List Org Admin User Asset Requests
       description: |
-        Lists all the latest asset requests made by the org admin user calling the API, regardless of the request status.
-        **Log Type:** `USER_ACTION`
+        Lists all the latest asset requests made by the cos_admin/org_admin/provider user calling the API, regardless of the request status. **Log Type:** `USER_ACTION`
       operationId: get-auth-v2-asset-request
       parameters:
         - $ref: '#/components/parameters/PageParam'
@@ -399,21 +399,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/updateNotificationBadRequest'
         '401':
-          description: Unauthorized – Token invalid or expired, or caller lacks permission
+          description: Unauthorized - Token invalid or expired, or caller lacks permission
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - User does not have the org_admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
       security:
         - authorization: []
   /iudx/v2/auth/asset/request/{id}:
     put:
       summary: Update Asset Request Status
       tags:
-        - Asset APIs
+        - Ingestion type(API/SFTP) APIs
       operationId: put-auth-v2-asset-request
       description: |
-        Updates the status of an existing data ingestion access request by ID.
+        **Cos_admin** Updates the status of an existing data ingestion access request by ID.
         **Log Type:** `USER_ACTION`
       parameters:
         - name: id
@@ -479,10 +485,10 @@ paths:
         - authorization: []
     delete:
       tags:
-        - Asset APIs
+        - Ingestion type(API/SFTP) APIs
       summary: Delete User Asset Request
       description: |
-        delete the pending asset requests made by the user calling the API.
+        Delete a pending asset request made by the authenticated user. Only requests in `PENDING` status can be deleted. Requires an authenticated user token.
         **Log Type:** `USER_ACTION`
       operationId: delete-auth-v2-asset-request
       parameters:
@@ -504,11 +510,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/updateNotificationBadRequest'
         '401':
-          description: Unauthorized – Token invalid or expired, or caller lacks permission
+          description: Unauthorized - Token invalid or expired, or caller lacks permission
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - User cannot delete this asset request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '404':
+          description: Not Found - Asset request not found or not in deletable state
       security:
         - authorization: []
   /iudx/v2/auditing/consumer/activity:
@@ -1141,6 +1155,103 @@ paths:
           source: |
             curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/cat/item?id=uuid' \
             --header 'token: <token>'
+    patch:
+      tags:
+        - CAT Entity
+      description: |
+        Update metadata fields of an owned catalogue item.
+
+        - Asset owners (`provider`) can update any field except `publishStatus` and restricted fields.
+        - Admins (`org_admin`, `cos_admin`) can also update `publishStatus`.
+        - The following fields cannot be updated via this API: `providerUserId`, `organizationId`, `itemCreatedAt`, `metrics`.
+        - `lastUpdated` is automatically set to the current UTC time.
+      operationId: patch item metadata
+      security:
+        - authorization: []
+      parameters:
+        - name: id
+          in: query
+          description: ID of the catalogue item to update
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              description: Fields to update. Any item metadata field is allowed except providerUserId, organizationId, itemCreatedAt, and metrics.
+            example:
+              label: Updated Asset Label
+              shortDescription: Updated short description
+              publishStatus: ACTIVE
+      responses:
+        '200':
+          description: Item metadata updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/successResponseWithObjects'
+              example:
+                type: dx:controlPlane:success
+                title: Success
+                detail: 'Success: Item patched successfully'
+                results:
+                  - id: f5600bf0-7312-4b09-9583-ba742281ebf1
+        '400':
+          description: Invalid request or missing fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/invalidIdErrorResponse'
+              example:
+                type: dx:controlPlane:badRequest
+                title: Bad Request
+                detail: Missing or malformed request
+        '401':
+          description: Missing or invalid authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing Bearer token
+        '403':
+          description: Forbidden – attempting to update a restricted field or publishStatus without admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:forbidden
+                title: Forbidden
+                detail: Providers cannot patch publishStatus
+        '404':
+          description: Item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:notFound
+                title: Not Found
+                detail: Item not found
+      x-codeSamples:
+        - lang: cURL
+          label: patch item metadata
+          source: |
+            curl --location --request PATCH 'https://${HOSTNAME}/iudx/v2/cat/item?id=uuid' \
+            --header 'Authorization: Bearer <token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "label": "Updated Asset Label",
+              "shortDescription": "Updated short description"
+            }'
   /items/scripts/download/{filename}:
     get:
       tags:
@@ -1373,17 +1484,6 @@ paths:
                           minLength: 1
                 required:
                   - keys
-                x-examples:
-                  example-1: null
-                  keys:
-                    - kty: EC
-                      x5t#S256: tCrGI3X7KS4WhHwGqR89Z6lWwPidOAb_CFYCzQpQN3M
-                      crv: P-256
-                      kid: ES256
-                      x5c:
-                        - MIIBnDCCAT+gAwIBAgIEEC1BXTAMBggqhkjOPQQDAgUAMEIxCTAHBgNVBAYTADEJMAcGA1UECBMAMQkwBwYDVQQHEwAxCTAHBgNVBAoTADEJMAcGA1UECxMAMQkwBwYDVQQDEwAwHhcNMjMwNjA1MDUwODQ4WhcNMjQwNjA0MDUwODQ4WjBCMQkwBwYDVQQGEwAxCTAHBgNVBAgTADEJMAcGA1UEBxMAMQkwBwYDVQQKEwAxCTAHBgNVBAsTADEJMAcGA1UEAxMAMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAErVwOLOln7NhUdfZOQFfTOtJ62AgdKUeYZm8DgWCWJHaaXT95dipr94zJM+inSuqohVFCTxjajdTH8/O9JO43rKMhMB8wHQYDVR0OBBYEFNH2u8eeqj3509HAFJQS4F5NF4TQMAwGCCqGSM49BAMCBQADSQAwRgIhAL7zHYdN6PFTccFm1y07X0t2mJxNfgOaxihTi2tA9D8AAiEAomGmBvXA72X1gfhK3dhaDSd52BN1fUP/ALYNiyuXHg0=
-                      x: rVwOLOln7NhUdfZOQFfTOtJ62AgdKUeYZm8DgWCWJHY
-                      'y': ml0_eXYqa_eMyTPop0rqqIVRQk8Y2o3Ux_PzvSTuN6w
               examples:
                 Certificate:
                   value:
@@ -1409,10 +1509,13 @@ paths:
       operationId: post-auth-v2-token
       tags:
         - token
+      description: |
+        Issue a JWT access token using client credentials. Supports three modes: (1) **Identity token** - provide only clientId and clientSecret to get an identity token, (2) **Access token** - additionally provide an `itemId` in the request body to get an access token scoped to a specific resource, (3) **Delegate access token** - additionally provide a `delegationId` header to act on behalf of a delegator. The token is signed using ES256 and can be validated using the public key from `/auth/v2/jwks`.
       parameters:
         - in: header
           name: clientId
           required: true
+          description: UUID of the client obtained from the client registration API
           schema:
             type: string
             format: uuid
@@ -1421,10 +1524,18 @@ paths:
         - in: header
           name: clientSecret
           required: true
+          description: Secret key associated with the clientId
           schema:
             type: string
             minLength: 10
             maxLength: 100
+        - in: header
+          name: delegationId
+          required: false
+          description: UUID of the delegation grant. Required when requesting a delegate access token on behalf of a delegator.
+          schema:
+            type: string
+            format: uuid
       responses:
         '200':
           description: Success
@@ -1451,7 +1562,26 @@ paths:
                         example: jwt
                       expires_in_minutes:
                         type: integer
+                        description: Token validity period in minutes
                         example: 60
+        '400':
+          description: Bad Request - Missing or invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized - Invalid client credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
       x-codeSamples:
         - lang: curl
           label: Identity token request
@@ -1544,9 +1674,7 @@ paths:
       tags:
         - Client APIs
       description: |
-        Create a new client in the system.
-        Requires a valid authorization token.
-        The client will be created with a unique ID and secret.
+        Create a new client credential (clientId and clientSecret) for the authenticated user. The generated credentials can be used to obtain access tokens via the `/auth/v2/token` endpoint. Requires a valid authorization token.
       operationId: post-create-client-secret
       security:
         - authorization: []
@@ -1586,8 +1714,30 @@ paths:
                         type: string
                         format: date-time
                         example: '2025-10-29T11:38:48.246431'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
         '401':
-          description: Unauthorized – missing or invalid token
+          description: Unauthorized - Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
       x-codeSamples:
         - lang: curl
           label: Example request
@@ -1596,196 +1746,74 @@ paths:
             --header 'Authorization: Bearer <token>'
   /iudx/v2/auth/user/compute/requests:
     get:
-      summary: 'User: Get All ComputeRole Requests'
+      summary: Get the current user's compute role requests
       description: |
-        This api helps a user to check all compute requests made by them.
+        Returns a paginated list of compute role requests submitted by the currently authenticated user. Supports filtering by status and pagination. Requires an authenticated user token.
         **Log Type:** `COMPUTE`
       tags:
         - Compute APIs
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    result:
-                      - id: 25fcafb9-d65e-454f-9196-8648dcf08854
-                        userId: 436cb796-5826-458b-a914-a54721f70997
-                        userName: test test
-                        status: pending
-                        approvedBy: null
-                        createdAt: '2025-06-04T10:54:53.301846'
-                        updatedAt: '2025-06-04T10:54:53.301846'
-                        tableName: compute_role
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  result:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        userId:
-                          type: string
-                        userName:
-                          type: string
-                        status:
-                          type: string
-                        approvedBy:
-                          type: string
-                        createdAt:
-                          type: string
-                        updatedAt:
-                          type: string
-                        tableName:
-                          type: string
-                  paginationInfo:
-                    type: object
-                    x-stoplight:
-                      id: dvchbrtielggu
-                    properties:
-                      page:
-                        type: integer
-                        x-stoplight:
-                          id: jsb48m8i9u6tf
-                      size:
-                        type: integer
-                        x-stoplight:
-                          id: kvq43ldkz27sd
-                      totalPages:
-                        type: integer
-                        x-stoplight:
-                          id: q0k9gr696ttcb
-                      totalCount:
-                        type: integer
-                        x-stoplight:
-                          id: 35bjtleqjjbku
-                      hasNext:
-                        type: boolean
-                        x-stoplight:
-                          id: sxydke5qcz876
-                      hasPrevious:
-                        type: boolean
-                        x-stoplight:
-                          id: bxo6cgx6zpp4r
-              examples:
-                Example 1:
-                  value:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    result:
-                      - id: 25fcafb9-d65e-454f-9196-8648dcf08854
-                        userId: 436cb796-5826-458b-a914-a54721f70997
-                        userName: test test
-                        status: pending
-                        approvedBy: null
-                        createdAt: '2025-06-04T10:54:53.301846'
-                        updatedAt: '2025-06-04T10:54:53.301846'
-                        tableName: compute_role
-                    paginationInfo:
-                      page: 1
-                      size: 1
-                      totalCount: 346
-                      totalPages: 346
-                      hasNext: true
-                      hasPrevious: false
       operationId: get-auth-v2-user-compute-role-request
       security:
         - authorization: []
-  /iudx/v2/auth/compute/requests:
-    get:
-      summary: Get All Pending ComputeRole Requests (COS ADMIN)
-      description: |
-        This api helps COS ADMIN get all the pending compute role requests.
-        **Log Type:** `COMPUTE`
-      tags:
-        - Compute APIs
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+        - $ref: '#/components/parameters/StatusParam'
       responses:
         '200':
-          description: OK
+          description: Compute role requests retrieved successfully
           content:
             application/json:
               schema:
                 type: object
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    result:
-                      - id: 25fcafb9-d65e-454f-9196-8648dcf08854
-                        userId: 436cb796-5826-458b-a914-a54721f70997
-                        userName: test test
-                        status: pending
-                        approvedBy: null
-                        createdAt: '2025-06-04T10:54:53.301846'
-                        updatedAt: '2025-06-04T10:54:53.301846'
-                        tableName: compute_role
                 properties:
                   type:
                     type: string
+                    description: URN indicating the response status
                   title:
                     type: string
+                    description: Human-readable response title
                   result:
                     type: array
+                    description: List of compute role request records
                     items:
                       type: object
                       properties:
                         id:
                           type: string
+                          format: uuid
+                          description: Unique identifier of the compute role request
                         userId:
                           type: string
+                          format: uuid
+                          description: UUID of the user who submitted the request
                         userName:
                           type: string
+                          description: Display name of the requesting user
                         status:
                           type: string
+                          description: Current status of the request (pending, granted, rejected)
                         approvedBy:
                           type: string
+                          format: uuid
+                          nullable: true
+                          description: UUID of the admin who approved the request, or null if not yet processed
                         createdAt:
                           type: string
+                          format: date-time
+                          description: Timestamp when the request was created
                         updatedAt:
                           type: string
+                          format: date-time
+                          description: Timestamp when the request was last updated
                         tableName:
                           type: string
+                          description: Internal table name for the record
                   paginationInfo:
-                    type: object
-                    x-stoplight:
-                      id: dvchbrtielggu
-                    properties:
-                      page:
-                        type: integer
-                        x-stoplight:
-                          id: jsb48m8i9u6tf
-                      size:
-                        type: integer
-                        x-stoplight:
-                          id: kvq43ldkz27sd
-                      totalPages:
-                        type: integer
-                        x-stoplight:
-                          id: q0k9gr696ttcb
-                      totalCount:
-                        type: integer
-                        x-stoplight:
-                          id: 35bjtleqjjbku
-                      hasNext:
-                        type: boolean
-                        x-stoplight:
-                          id: sxydke5qcz876
-                      hasPrevious:
-                        type: boolean
-                        x-stoplight:
-                          id: bxo6cgx6zpp4r
+                    $ref: '#/components/schemas/PaginationInfo'
               examples:
-                Example 1:
+                success:
                   value:
                     type: urn:dx:ControlPlane:success
                     title: Success
@@ -1800,24 +1828,43 @@ paths:
                         tableName: compute_role
                     paginationInfo:
                       page: 1
-                      size: 1
+                      size: 10
                       totalCount: 346
-                      totalPages: 346
+                      totalPages: 35
                       hasNext: true
                       hasPrevious: false
+        '400':
+          description: Bad Request - Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalBadRequest'
+        '401':
+          description: Unauthorized - Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+  /iudx/v2/auth/compute/requests:
+    get:
+      summary: Get all compute role requests (COS Admin)
+      description: |
+        Returns a paginated list of all compute role requests across all users. Supports filtering by status and pagination. Requires `cos_admin` role.
+        **Log Type:** `COMPUTE`
+      tags:
+        - Compute APIs
       operationId: get-auth-v2-compute-role-request
       security:
         - authorization: []
-    post:
-      summary: Create Compute Role Request (USER)
-      tags:
-        - Compute APIs
-      description: |
-        This api helps user to create request to get a compute role.
-        **Log Type:** `COMPUTE`
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+        - $ref: '#/components/parameters/StatusParam'
+        - $ref: '#/components/parameters/SearchTermParam'
       responses:
         '200':
-          description: OK
+          description: Compute role requests retrieved successfully
           content:
             application/json:
               schema:
@@ -1825,42 +1872,147 @@ paths:
                 properties:
                   type:
                     type: string
+                    description: URN indicating the response status
                   title:
                     type: string
+                    description: Human-readable response title
                   result:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                      userId:
-                        type: string
-                      userName:
-                        type: string
-                      status:
-                        type: string
-                      approvedBy:
-                        type: string
-                      createdAt:
-                        type: string
-                      updatedAt:
-                        type: string
-                      tableName:
-                        type: string
-                x-examples:
-                  Example 1:
+                    type: array
+                    description: List of compute role request records
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                          description: Unique identifier of the compute role request
+                        userId:
+                          type: string
+                          format: uuid
+                          description: UUID of the requesting user
+                        userName:
+                          type: string
+                          description: Display name of the requesting user
+                        status:
+                          type: string
+                          description: Current status of the request (pending, granted, rejected)
+                        approvedBy:
+                          type: string
+                          format: uuid
+                          nullable: true
+                          description: UUID of the admin who approved the request, or null if not yet processed
+                        createdAt:
+                          type: string
+                          format: date-time
+                          description: Timestamp when the request was created
+                        updatedAt:
+                          type: string
+                          format: date-time
+                          description: Timestamp when the request was last updated
+                        tableName:
+                          type: string
+                          description: Internal table name for the record
+                  paginationInfo:
+                    $ref: '#/components/schemas/PaginationInfo'
+              examples:
+                success:
+                  value:
                     type: urn:dx:ControlPlane:success
                     title: Success
                     result:
-                      id: 25fcafb9-d65e-454f-9196-8648dcf08854
-                      userId: 436cb796-5826-458b-a914-a54721f70997
-                      userName: test test
-                      status: pending
-                      approvedBy: null
-                      createdAt: '2025-06-04T10:54:53.301846'
-                      updatedAt: '2025-06-04T10:54:53.301846'
-                      tableName: compute_role
+                      - id: 25fcafb9-d65e-454f-9196-8648dcf08854
+                        userId: 436cb796-5826-458b-a914-a54721f70997
+                        userName: test test
+                        status: pending
+                        approvedBy: null
+                        createdAt: '2025-06-04T10:54:53.301846'
+                        updatedAt: '2025-06-04T10:54:53.301846'
+                        tableName: compute_role
+                    paginationInfo:
+                      page: 1
+                      size: 10
+                      totalCount: 346
+                      totalPages: 35
+                      hasNext: true
+                      hasPrevious: false
+        '400':
+          description: Bad Request - Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalBadRequest'
+        '401':
+          description: Unauthorized - Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - Caller does not have `cos_admin` role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/createNotificationForbidden'
+    post:
+      summary: Create a compute role request (User)
+      tags:
+        - Compute APIs
+      description: |
+        Submits a new request for the compute role. The request will be reviewed by a COS Admin who can grant or reject it. Once granted, the user gains access to compute/sandbox functionality. Requires an authenticated user token.
+        **Log Type:** `COMPUTE`
+      operationId: post-auth-v2-compute-role-request
+      security:
+        - authorization: []
+      responses:
+        '200':
+          description: Compute role request created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    description: URN indicating the response status
+                  title:
+                    type: string
+                    description: Human-readable response title
+                  result:
+                    type: object
+                    description: The newly created compute role request
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        description: Unique identifier of the created request
+                      userId:
+                        type: string
+                        format: uuid
+                        description: UUID of the requesting user
+                      userName:
+                        type: string
+                        description: Display name of the requesting user
+                      status:
+                        type: string
+                        description: Status of the request (will be `pending` upon creation)
+                      approvedBy:
+                        type: string
+                        format: uuid
+                        nullable: true
+                        description: Will be null upon creation
+                      createdAt:
+                        type: string
+                        format: date-time
+                        description: Timestamp when the request was created
+                      updatedAt:
+                        type: string
+                        format: date-time
+                        description: Timestamp when the request was last updated
+                      tableName:
+                        type: string
+                        description: Internal table name for the record
               examples:
-                Example 1:
+                success:
                   value:
                     type: urn:dx:ControlPlane:success
                     title: Success
@@ -1873,54 +2025,39 @@ paths:
                       createdAt: '2025-06-04T10:54:53.301846'
                       updatedAt: '2025-06-04T10:54:53.301846'
                       tableName: compute_role
-      operationId: post-auth-v2-compute-role-request
-      security:
-        - authorization: []
+        '400':
+          description: Bad Request - Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalBadRequest'
+        '401':
+          description: Unauthorized - Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
   /iudx/v2/auth/compute/requests/{id}:
     parameters:
       - name: id
         in: path
         required: true
-        description: UUID of the request
+        description: UUID of the compute role request to update
         schema:
           type: string
           format: uuid
     put:
-      summary: Update Compute Roles (COS ADMIN)
+      summary: Approve or reject a compute role request (COS Admin)
       tags:
         - Compute APIs
       description: |
-        This api helps COS ADMIN to update the users with compute role by granting/rejecting the compute role request.
+        Allows a COS Admin to grant or reject a pending compute role request. The `status` field in the request body should be set to `granted` or `rejected`. Requires `cos_admin` role.
         **Log Type:** `COMPUTE`
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  detail:
-                    type: string
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    detail: 'Updated Resquest '
-              examples:
-                Example 1:
-                  value:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    detail: 'Updated Resquest '
       operationId: put-auth-v2-compute-role-request
       security:
         - authorization: []
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -1928,32 +2065,103 @@ paths:
               properties:
                 status:
                   type: string
+                  description: New status for the compute role request. Must be `granted` or `rejected`.
+                  enum:
+                    - granted
+                    - rejected
               required:
                 - status
             examples:
-              Example 1:
+              grant:
+                summary: Grant compute role
                 value:
                   status: granted
-  /iudx/v2/auth/compute/requests/report:
-    get:
-      summary: Get Report for Compute Requests
-      description: Csv file for a list of activity logs for Compute Request.
-      tags:
-        - Compute APIs
+              reject:
+                summary: Reject compute role
+                value:
+                  status: rejected
       responses:
         '200':
-          description: OK
+          description: Compute role request updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    description: URN indicating the response status
+                  title:
+                    type: string
+                    description: Human-readable response title
+                  detail:
+                    type: string
+                    description: Description of the action taken
+              examples:
+                success:
+                  value:
+                    type: urn:dx:ControlPlane:success
+                    title: Success
+                    detail: Updated Request
+        '400':
+          description: Bad Request - Invalid status value or request format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalBadRequest'
+        '401':
+          description: Unauthorized - Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - Caller does not have `cos_admin` role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/createNotificationForbidden'
+  /iudx/v2/auth/compute/requests/report:
+    get:
+      summary: Download compute requests report (COS Admin)
+      description: Returns a CSV file containing compute role request activity logs. Requires `cos_admin` role. Useful for auditing and generating reports of all compute role requests.
+      tags:
+        - Compute APIs
       operationId: get-auth-v2-compute-requests-report
       security:
         - authorization: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParamReport'
+        - $ref: '#/components/parameters/SortingParam'
+        - $ref: '#/components/parameters/StatusParam'
+      responses:
+        '200':
+          description: CSV report generated successfully
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Unauthorized - Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - Caller does not have `cos_admin` role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/createNotificationForbidden'
   /iudx/v2/auth/user/credit/balance:
     get:
       operationId: get-auth-v2-user-credit-balance
-      summary: Get the specified user's credit balance
+      summary: Get the current user's credit balance
       description: |
-        Returns the credit balance for the specified user (KYC-verified).
-
-         **Log Type:** `COMPUTE`
+        Returns the credit balance for the currently authenticated user. The user must have completed KYC verification to access this endpoint. Requires an authenticated user token.
+        **Log Type:** `COMPUTE`
       tags:
         - Credit APIs
       security:
@@ -1969,8 +2177,17 @@ paths:
                   balance:
                     type: number
                     format: double
+                    description: Current credit balance of the user
+              examples:
+                success:
+                  value:
+                    balance: 10000
         '401':
-          description: Unauthorized or KYC not verified
+          description: Unauthorized - Token invalid/expired or KYC not verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
         '404':
           description: User credit record not found
         '500':
@@ -1980,17 +2197,16 @@ paths:
       - name: id
         in: path
         required: true
-        description: UUID of the User
+        description: UUID of the user whose credit balance is to be fetched
         schema:
           type: string
           format: uuid
     get:
       operationId: get-auth-v2-admin-user-credit-balance
-      summary: Get the specified user's credit balance (COS ADMIN)
+      summary: Get a user's credit balance by ID (COS Admin)
       description: |
-        Returns the credit balance for the specified user (KYC-verified).
-
-         **Log Type:** `COMPUTE`
+        Returns the credit balance for the specified user. Requires `cos_admin` role. The target user must have completed KYC verification.
+        **Log Type:** `COMPUTE`
       tags:
         - Credit APIs
       security:
@@ -2006,97 +2222,91 @@ paths:
                   balance:
                     type: number
                     format: double
+                    description: Current credit balance of the user
+              examples:
+                success:
+                  value:
+                    balance: 10000
         '401':
-          description: Unauthorized or KYC not verified
+          description: Unauthorized - Token invalid/expired or KYC not verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - Caller does not have `cos_admin` role
         '404':
           description: User credit record not found
         '500':
           description: Internal server error
   /iudx/v2/auth/user/credit/request:
     get:
-      summary: 'User: Get all pending credit requests'
+      summary: Get the current user's credit requests
       description: |
-        Get all the pending credit requests of the user
+        Returns a paginated list of credit requests submitted by the currently authenticated user. Supports filtering by status and pagination. Requires an authenticated user token.
         **Log Type:** `COMPUTE`
       tags:
         - Credit APIs
+      operationId: get-auth-v2-user-credit
+      security:
+        - authorization: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+        - $ref: '#/components/parameters/StatusParam'
       responses:
         '200':
-          description: OK
+          description: Credit requests retrieved successfully
           content:
             application/json:
               schema:
                 type: object
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    result:
-                      - id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
-                        userId: 436cb796-5826-458b-a914-a54721f70997
-                        userName: test test
-                        amount: 10000
-                        status: pending
-                        requestedAt: '2025-06-04T09:47:27.323861'
-                        processedAt: '2025-06-04T09:47:27.323861'
-                        tableName: credit_requests
                 properties:
                   type:
                     type: string
+                    description: URN indicating the response status
                   title:
                     type: string
+                    description: Human-readable response title
                   result:
                     type: array
+                    description: List of credit request records
                     items:
                       type: object
                       properties:
                         id:
                           type: string
+                          format: uuid
+                          description: Unique identifier of the credit request
                         userId:
                           type: string
+                          format: uuid
+                          description: UUID of the user who submitted the request
                         userName:
                           type: string
+                          description: Display name of the requesting user
                         amount:
                           type: integer
+                          description: Requested credit amount
                         status:
                           type: string
+                          description: Current status of the request (pending, granted, rejected)
                         requestedAt:
                           type: string
+                          format: date-time
+                          description: Timestamp when the request was submitted
                         processedAt:
                           type: string
+                          format: date-time
+                          description: Timestamp when the request was processed
                         tableName:
                           type: string
+                          description: Internal table name for the record
                   paginationInfo:
-                    type: object
-                    x-stoplight:
-                      id: my3px3mqewfgl
-                    properties:
-                      page:
-                        type: integer
-                        x-stoplight:
-                          id: 9goqrkh1sslar
-                      size:
-                        type: integer
-                        x-stoplight:
-                          id: ilgv9t0luge3z
-                      totalPages:
-                        type: integer
-                        x-stoplight:
-                          id: wuibbpgtxgiua
-                      totalCount:
-                        type: integer
-                        x-stoplight:
-                          id: 9v8m5zcqo3hz8
-                      hasNext:
-                        type: boolean
-                        x-stoplight:
-                          id: 6grp7j6i0idak
-                      hasPrevious:
-                        type: boolean
-                        x-stoplight:
-                          id: jerroo5o1sohq
+                    $ref: '#/components/schemas/PaginationInfo'
               examples:
-                Example 1:
+                success:
                   value:
                     type: urn:dx:ControlPlane:success
                     title: Success
@@ -2109,46 +2319,54 @@ paths:
                         requestedAt: '2025-06-04T09:47:27.323861'
                         processedAt: '2025-06-04T09:47:27.323861'
                         tableName: credit_requests
-                    'null': null
                     paginationInfo:
                       page: 1
-                      size: 1
+                      size: 10
                       totalCount: 346
-                      totalPages: 346
+                      totalPages: 35
                       hasNext: true
                       hasPrevious: false
-      operationId: get-auth-v2-user-credit
-      security:
-        - authorization: []
+        '400':
+          description: Bad Request - Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalBadRequest'
+        '401':
+          description: Unauthorized - Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
   /iudx/v2/auth/user/credit/request/{id}:
     delete:
       tags:
         - Credit APIs
-      summary: 'User: Delete Pending Credit Request'
+      summary: Delete a pending credit request (User)
       description: |
-        delete the pending credit requests made by the user calling the API.
+        Deletes a pending credit request submitted by the currently authenticated user. Only requests with `pending` status can be deleted. Requires an authenticated user token.
         **Log Type:** `COMPUTE`
       operationId: delete-auth-v2-user-credit
       parameters:
         - name: id
           in: path
           required: true
-          description: Unique ID of the credit request
+          description: UUID of the credit request to delete
           schema:
             type: string
             format: uuid
             pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       responses:
         '200':
-          description: OK - Successfully deleted asset request.
+          description: Credit request deleted successfully
         '400':
-          description: Bad Request – Schema validation failed or incorrect query parameters
+          description: Bad Request - Schema validation failed or incorrect query parameters
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/updateNotificationBadRequest'
         '401':
-          description: Unauthorized – Token invalid or expired, or caller lacks permission
+          description: Unauthorized - Token invalid or expired, or caller lacks permission
           content:
             application/json:
               schema:
@@ -2157,89 +2375,73 @@ paths:
         - authorization: []
   /iudx/v2/auth/credit/request:
     get:
-      summary: Get all credit requests by status (COS ADMIN)
+      summary: Get all credit requests (COS Admin)
       description: |
-        Get all the credit requests.
+        Returns a paginated list of all credit requests across all users. Supports filtering by status and pagination. Requires `cos_admin` role.
         **Log Type:** `COMPUTE`
       tags:
         - Credit APIs
+      operationId: get-auth-v2-credit
+      security:
+        - authorization: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+        - $ref: '#/components/parameters/StatusParam'
+        - $ref: '#/components/parameters/SearchTermParam'
       responses:
         '200':
-          description: OK
+          description: Credit requests retrieved successfully
           content:
             application/json:
               schema:
                 type: object
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    result:
-                      - id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
-                        userId: 436cb796-5826-458b-a914-a54721f70997
-                        userName: test test
-                        amount: 10000
-                        status: pending
-                        requestedAt: '2025-06-04T09:47:27.323861'
-                        processedAt: '2025-06-04T09:47:27.323861'
-                        tableName: credit_requests
                 properties:
                   type:
                     type: string
+                    description: URN indicating the response status
                   title:
                     type: string
+                    description: Human-readable response title
                   result:
                     type: array
+                    description: List of credit request records
                     items:
                       type: object
                       properties:
                         id:
                           type: string
+                          format: uuid
+                          description: Unique identifier of the credit request
                         userId:
                           type: string
+                          format: uuid
+                          description: UUID of the requesting user
                         userName:
                           type: string
+                          description: Display name of the requesting user
                         amount:
                           type: integer
+                          description: Requested credit amount
                         status:
                           type: string
+                          description: Current status of the request (pending, granted, rejected)
                         requestedAt:
                           type: string
+                          format: date-time
+                          description: Timestamp when the request was submitted
                         processedAt:
                           type: string
+                          format: date-time
+                          description: Timestamp when the request was processed
                         tableName:
                           type: string
+                          description: Internal table name for the record
                   paginationInfo:
-                    type: object
-                    x-stoplight:
-                      id: my3px3mqewfgl
-                    properties:
-                      page:
-                        type: integer
-                        x-stoplight:
-                          id: 9goqrkh1sslar
-                      size:
-                        type: integer
-                        x-stoplight:
-                          id: ilgv9t0luge3z
-                      totalPages:
-                        type: integer
-                        x-stoplight:
-                          id: wuibbpgtxgiua
-                      totalCount:
-                        type: integer
-                        x-stoplight:
-                          id: 9v8m5zcqo3hz8
-                      hasNext:
-                        type: boolean
-                        x-stoplight:
-                          id: 6grp7j6i0idak
-                      hasPrevious:
-                        type: boolean
-                        x-stoplight:
-                          id: jerroo5o1sohq
+                    $ref: '#/components/schemas/PaginationInfo'
               examples:
-                Example 1:
+                success:
                   value:
                     type: urn:dx:ControlPlane:success
                     title: Success
@@ -2252,27 +2454,40 @@ paths:
                         requestedAt: '2025-06-04T09:47:27.323861'
                         processedAt: '2025-06-04T09:47:27.323861'
                         tableName: credit_requests
-                    'null': null
                     paginationInfo:
                       page: 1
-                      size: 1
+                      size: 10
                       totalCount: 346
-                      totalPages: 346
+                      totalPages: 35
                       hasNext: true
                       hasPrevious: false
-      operationId: get-auth-v2-credit
-      security:
-        - authorization: []
+        '400':
+          description: Bad Request - Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalBadRequest'
+        '401':
+          description: Unauthorized - Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - Caller does not have `cos_admin` role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/createNotificationForbidden'
     post:
-      summary: Create Credit Request
+      summary: Create a credit request (User)
       tags:
         - Credit APIs
       description: |
-        This api helps users create credit request. The cos admin can then review and take action on those requests.
+        Submits a new credit request for the currently authenticated user. The request will be reviewed by a COS Admin who can grant or reject it. Requires an authenticated user token with KYC verification.
         **Log Type:** `COMPUTE`
       requestBody:
-        description: |
-          - `additional_info` : Optional extra details about requester and intent
+        description: Optional additional information about the credit request purpose.
         content:
           application/json:
             schema:
@@ -2280,12 +2495,11 @@ paths:
               additionalProperties: false
               properties:
                 additional_info:
-                  description: |
-                    Used to define additional information to access data for educational, research, testing, non-commercial, or academic purposes.
+                  description: Additional context about the credit request, such as intended use for educational, research, testing, non-commercial, or academic purposes.
                   type: object
       responses:
         '200':
-          description: OK
+          description: Credit request created successfully
           content:
             application/json:
               schema:
@@ -2293,39 +2507,41 @@ paths:
                 properties:
                   type:
                     type: string
+                    description: URN indicating the response status
                   title:
                     type: string
+                    description: Human-readable response title
                   result:
                     type: object
+                    description: The newly created credit request
                     properties:
                       id:
                         type: string
+                        format: uuid
+                        description: Unique identifier of the created credit request
                       userId:
                         type: string
+                        format: uuid
+                        description: UUID of the requesting user
                       userName:
                         type: string
+                        description: Display name of the requesting user
                       status:
                         type: string
+                        description: Status of the request (will be `pending` upon creation)
                       requestedAt:
                         type: string
+                        format: date-time
+                        description: Timestamp when the request was submitted
                       processedAt:
                         type: string
+                        format: date-time
+                        description: Timestamp when the request was processed
                       tableName:
                         type: string
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    result:
-                      id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
-                      userId: 436cb796-5826-458b-a914-a54721f70997
-                      userName: test test
-                      status: pending
-                      requestedAt: '2025-06-04T09:47:27.323861'
-                      processedAt: '2025-06-04T09:47:27.323861'
-                      tableName: credit_requests
+                        description: Internal table name for the record
               examples:
-                Example 1:
+                success:
                   value:
                     type: urn:dx:ControlPlane:success
                     title: Success
@@ -2337,82 +2553,28 @@ paths:
                       requestedAt: '2025-06-04T09:47:27.323861'
                       processedAt: '2025-06-04T09:47:27.323861'
                       tableName: credit_requests
+        '400':
+          description: Bad Request - Schema validation or missing/invalid fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalBadRequest'
+        '401':
+          description: Unauthorized - Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
       operationId: post-auth-v2-credit-request
       security:
         - authorization: []
     put:
-      summary: Update Credit Request Status (COS ADMIN)
+      summary: Approve or reject a credit request (COS Admin)
       description: |
-        This api helps COS ADMIN to update the credit requests and add credits or reject the request of the users.
+        Allows a COS Admin to grant or reject a pending credit request. When granting, the `amount` and `expiration_date` must be provided. When rejecting, only the `id` and `status` are required. Requires `cos_admin` role.
         **Log Type:** `COMPUTE`
       tags:
         - Credit APIs
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  result:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                      userId:
-                        type: string
-                      amount:
-                        type: integer
-                      transactedBy:
-                        type: string
-                      transactionStatus:
-                        type: string
-                      transactionType:
-                        type: string
-                      createdAt:
-                        type: string
-                      requestedAt:
-                        type: string
-                      updatedBalance:
-                        type: integer
-                      tableName:
-                        type: string
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    result:
-                      id: 8e6d2003-88ae-47ee-9779-c21d9c3a4091
-                      userId: 436cb796-5826-458b-a914-a54721f70997
-                      amount: 10000
-                      transactedBy: a2899137-8458-40a6-9be8-084cfd1890e5
-                      transactionStatus: success
-                      transactionType: credit
-                      createdAt: '2025-06-04T10:45:06.361576'
-                      requestedAt: '2025-06-04T09:47:27.323861'
-                      updatedBalance: 20000
-                      tableName: credit_transactions
-              examples:
-                Example 1:
-                  value:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    result:
-                      id: 8e6d2003-88ae-47ee-9779-c21d9c3a4091
-                      userId: 436cb796-5826-458b-a914-a54721f70997
-                      amount: 10000
-                      transactedBy: a2899137-8458-40a6-9be8-084cfd1890e5
-                      transactionStatus: success
-                      transactionType: credit
-                      createdAt: '2025-06-04T10:45:06.361576'
-                      requestedAt: '2025-06-04T09:47:27.323861'
-                      updatedBalance: 20000
-                      tableName: credit_transactions
       operationId: put-auth-v2-credit-request
       security:
         - authorization: []
@@ -2423,21 +2585,25 @@ paths:
             schema:
               oneOf:
                 - type: object
+                  title: Grant credit request
+                  description: Grant a credit request with amount and expiration date
                   properties:
                     id:
                       type: string
                       format: uuid
-                      description: ID of the credit request to be updated.
+                      description: UUID of the credit request to approve
                     status:
                       type: string
                       enum:
                         - granted
+                      description: Set to `granted` to approve the request
                     amount:
                       type: number
                       format: double
+                      description: Amount of credits to grant to the user
                     expiration_date:
                       type: string
-                      description: ISO-8601 LocalDateTime (no timezone)
+                      description: Expiration date for the granted credits in ISO-8601 LocalDateTime format (no timezone)
                       pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
                   required:
                     - status
@@ -2446,37 +2612,38 @@ paths:
                     - id
                   additionalProperties: false
                 - type: object
+                  title: Reject credit request
+                  description: Reject a credit request
                   properties:
                     status:
                       type: string
                       enum:
                         - rejected
+                      description: Set to `rejected` to deny the request
                     id:
                       type: string
                       format: uuid
-                      description: ID of the credit request to be updated
+                      description: UUID of the credit request to reject
                   required:
                     - status
                     - id
                   additionalProperties: false
             examples:
-              Example 1:
+              grant:
+                summary: Grant a credit request
                 value:
                   id: ac1e0e2d-c4cc-4008-951f-62916f0d06e7
                   status: granted
                   amount: 10000
                   expiration_date: '2025-12-31T23:59:59'
-  /iudx/v2/auth/admin/user/credit/deduct:
-    put:
-      summary: Deduct User Credit (COS ADMIN)
-      description: |
-        This api helps COS ADMIN to deduct the credits of a user.
-        **Log Type:** `COMPUTE`
-      tags:
-        - Credit APIs
+              reject:
+                summary: Reject a credit request
+                value:
+                  id: ac1e0e2d-c4cc-4008-951f-62916f0d06e7
+                  status: rejected
       responses:
         '200':
-          description: OK
+          description: Credit request updated successfully
           content:
             application/json:
               schema:
@@ -2484,33 +2651,179 @@ paths:
                 properties:
                   type:
                     type: string
+                    description: URN indicating the response status
                   title:
                     type: string
+                    description: Human-readable response title
                   result:
                     type: object
+                    description: The credit transaction details
                     properties:
                       id:
                         type: string
+                        format: uuid
+                        description: Transaction identifier
                       userId:
                         type: string
+                        format: uuid
+                        description: UUID of the user who received the credit
                       amount:
                         type: integer
+                        description: Amount of credits transacted
                       transactedBy:
                         type: string
+                        format: uuid
+                        description: UUID of the admin who processed the request
                       transactionStatus:
                         type: string
+                        description: Status of the transaction (e.g., `success`)
                       transactionType:
                         type: string
+                        description: Type of the transaction (`credit` or `debit`)
                       createdAt:
                         type: string
+                        format: date-time
+                        description: Timestamp when the transaction was created
                       requestedAt:
                         type: string
+                        format: date-time
+                        description: Timestamp of the original credit request
                       updatedBalance:
                         type: integer
+                        description: User's credit balance after the transaction
                       tableName:
                         type: string
-                x-examples:
-                  Example 1:
+                        description: Internal table name for the record
+              examples:
+                success:
+                  value:
+                    type: urn:dx:ControlPlane:success
+                    title: Success
+                    result:
+                      id: 8e6d2003-88ae-47ee-9779-c21d9c3a4091
+                      userId: 436cb796-5826-458b-a914-a54721f70997
+                      amount: 10000
+                      transactedBy: a2899137-8458-40a6-9be8-084cfd1890e5
+                      transactionStatus: success
+                      transactionType: credit
+                      createdAt: '2025-06-04T10:45:06.361576'
+                      requestedAt: '2025-06-04T09:47:27.323861'
+                      updatedBalance: 20000
+                      tableName: credit_transactions
+        '400':
+          description: Bad Request - Schema validation or missing/invalid fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalBadRequest'
+        '401':
+          description: Unauthorized - Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - Caller does not have `cos_admin` role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/createNotificationForbidden'
+  /iudx/v2/auth/admin/user/credit/deduct:
+    put:
+      summary: Deduct credits from a user's balance (COS Admin)
+      description: |
+        Deducts a specified amount of credits from a user's balance. Requires `cos_admin` role. The target user is identified by `user_id` in the request body.
+        **Log Type:** `COMPUTE`
+      tags:
+        - Credit APIs
+      operationId: put-auth-v2-user-credit
+      security:
+        - authorization: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  format: double
+                  description: Amount to deduct from the user's credit balance
+                user_id:
+                  type: string
+                  format: uuid
+                  description: UUID of the user whose credits are to be deducted
+                requested_at:
+                  type: string
+                  description: Timestamp of when the deduction was requested, in ISO-8601 LocalDateTime format (no timezone)
+                  pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
+              required:
+                - amount
+                - user_id
+                - requested_at
+            examples:
+              deduct:
+                value:
+                  amount: 50
+                  user_id: 436cb796-5826-458b-a914-a54721f70997
+                  requested_at: '2025-05-29T19:07:00'
+      responses:
+        '200':
+          description: Credits deducted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    description: URN indicating the response status
+                  title:
+                    type: string
+                    description: Human-readable response title
+                  result:
+                    type: object
+                    description: The debit transaction details
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        description: Transaction identifier
+                      userId:
+                        type: string
+                        format: uuid
+                        description: UUID of the user whose credits were deducted
+                      amount:
+                        type: integer
+                        description: Amount of credits deducted
+                      transactedBy:
+                        type: string
+                        format: uuid
+                        description: UUID of the admin who performed the deduction
+                      transactionStatus:
+                        type: string
+                        description: Status of the transaction (e.g., `success`)
+                      transactionType:
+                        type: string
+                        description: Type of the transaction (`debit`)
+                      createdAt:
+                        type: string
+                        format: date-time
+                        description: Timestamp when the transaction was created
+                      requestedAt:
+                        type: string
+                        format: date-time
+                        description: Timestamp of the original deduction request
+                      updatedBalance:
+                        type: integer
+                        description: User's credit balance after the deduction
+                      tableName:
+                        type: string
+                        description: Internal table name for the record
+              examples:
+                success:
+                  value:
                     type: urn:dx:ControlPlane:success
                     title: Success
                     result:
@@ -2524,45 +2837,37 @@ paths:
                       requestedAt: '2025-05-29T19:07:00'
                       updatedBalance: 19950
                       tableName: credit_transactions
-      operationId: put-auth-v2-user-credit
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                amount:
-                  type: number
-                  format: double
-                  description: Amount to be deducted from the user's credit balance.
-                user_id:
-                  type: string
-                  format: uuid
-                  description: User id of the user whose credit is to be deducted.
-                requested_at:
-                  type: string
-                  description: ISO-8601 LocalDateTime (no timezone)
-                  pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
-              required:
-                - amount
-                - user_id
-                - requested_at
-            examples:
-              Example 1:
-                value:
-                  amount: 50
-                  user_id: 436cb796-5826-458b-a914-a54721f70997
-                  requested_at: '2025-05-29T19:07:00'
-      security:
-        - authorization: []
+        '400':
+          description: Bad Request - Schema validation or missing/invalid fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalBadRequest'
+        '401':
+          description: Unauthorized - Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - Caller does not have `cos_admin` role or insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/createNotificationForbidden'
   /iudx/v2/auth/admin/user/credit/add:
     put:
       operationId: put-auth-v2-user-credit-add
-      summary: Add credits to user's balance amount
+      summary: Add credits to a user's balance (COS Admin)
       description: |
-        Adds credits to the specified user's balance.
+        Adds a specified amount of credits to a user's balance. Requires `cos_admin` role. The target user is identified by `user_id` in the request body.
         **Log Type:** `COMPUTE`
+      tags:
+        - Credit APIs
+      security:
+        - authorization: []
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -2571,30 +2876,28 @@ paths:
                 amount:
                   type: number
                   format: double
-                  description: Amount to be added to the user's credit balance.
+                  description: Amount of credits to add to the user's balance
                 requested_at:
                   type: string
-                  description: ISO-8601 LocalDateTime (no timezone)
+                  description: Timestamp of when the credit addition was requested, in ISO-8601 LocalDateTime format (no timezone)
                   pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
                 user_id:
                   type: string
                   format: uuid
-                  description: UUID of the user whose credit balance is to be updated.
+                  description: UUID of the user whose balance is to be credited
               required:
                 - amount
                 - user_id
                 - requested_at
             examples:
-              Example 1:
+              addCredits:
                 value:
                   amount: 50
                   user_id: 436cb796-5826-458b-a914-a54721f70997
                   requested_at: '2025-05-29T19:07:00'
-      tags:
-        - Credit APIs
       responses:
         '200':
-          description: OK
+          description: Credits added successfully
           content:
             application/json:
               schema:
@@ -2602,101 +2905,112 @@ paths:
                 properties:
                   type:
                     type: string
+                    description: URN indicating the response status
                   title:
                     type: string
+                    description: Human-readable response title
                   result:
                     type: object
+                    description: The credit transaction details
                     properties:
                       id:
                         type: string
+                        format: uuid
+                        description: Transaction identifier
                       userId:
                         type: string
+                        format: uuid
+                        description: UUID of the user who received credits
                       amount:
                         type: integer
+                        description: Amount of credits added
                       transactedBy:
                         type: string
+                        format: uuid
+                        description: UUID of the admin who performed the addition
                       transactionStatus:
                         type: string
+                        description: Status of the transaction (e.g., `success`)
                       transactionType:
                         type: string
+                        description: Type of the transaction (`credit`)
                       createdAt:
                         type: string
+                        format: date-time
+                        description: Timestamp when the transaction was created
                       requestedAt:
                         type: string
+                        format: date-time
+                        description: Timestamp of the original credit request
                       updatedBalance:
                         type: integer
+                        description: User's credit balance after the addition
                       tableName:
                         type: string
-              x-examples:
-                Example 1:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  result:
-                    id: bbc203ba-b7e2-43aa-9533-da2dee243bc7
-                    userId: 436cb796-5826-458b-a914-a54721f70997
-                    amount: 50
-                    transactedBy: a2899137-8458-40a6-9be8-084cfd1890e5
-                    transactionStatus: success
-                    transactionType: credit
-                    createdAt: '2025-06-04T10:51:42.343373'
-                    requestedAt: '2025-05-29T19:07:00'
-                    updatedBalance: 19950
-                    tableName: credit_transactions
+                        description: Internal table name for the record
+              examples:
+                success:
+                  value:
+                    type: urn:dx:ControlPlane:success
+                    title: Success
+                    result:
+                      id: bbc203ba-b7e2-43aa-9533-da2dee243bc7
+                      userId: 436cb796-5826-458b-a914-a54721f70997
+                      amount: 50
+                      transactedBy: a2899137-8458-40a6-9be8-084cfd1890e5
+                      transactionStatus: success
+                      transactionType: credit
+                      createdAt: '2025-06-04T10:51:42.343373'
+                      requestedAt: '2025-05-29T19:07:00'
+                      updatedBalance: 19950
+                      tableName: credit_transactions
         '400':
-          description: Bad Request – Schema validation or missing/invalid fields
+          description: Bad Request - Schema validation or missing/invalid fields
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/generalBadRequest'
-              examples:
-                Example:
-                  value:
-                    type: urn:dx:asset:badRequest
-                    title: Bad Request
-                    detail: Request could not be created, as the assetId or type is invalid
         '401':
-          description: Unauthorized – Token invalid/expired or user not authorized
+          description: Unauthorized - Token invalid/expired or user not authorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
         '403':
-          description: Forbidden – User cannot do the transaction
+          description: Forbidden - Caller does not have `cos_admin` role
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/createNotificationForbidden'
-      security:
-        - authorization: []
   /iudx/v2/auth/user/compute/requests/{id}:
     delete:
       tags:
         - Credit APIs
-      summary: 'User: Delete Pending Compute Request'
+      summary: Delete a pending compute request (User)
       description: |
-        delete the pending compute requests made by the user calling the API.
+        Deletes a pending compute request submitted by the currently authenticated user. Only requests with `pending` status can be deleted. Requires an authenticated user token.
         **Log Type:** `COMPUTE`
       operationId: delete-auth-v2-user-compute-role-request
       parameters:
         - name: id
           in: path
           required: true
-          description: Unique ID of the compute request
+          description: UUID of the compute request to delete
           schema:
             type: string
             format: uuid
             pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       responses:
         '200':
-          description: OK - Successfully deleted compute request.
+          description: Compute request deleted successfully
         '400':
-          description: Bad Request – Schema validation failed or incorrect query parameters
+          description: Bad Request - Schema validation failed or incorrect query parameters
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/updateNotificationBadRequest'
         '401':
-          description: Unauthorized – Token invalid or expired, or caller lacks permission
+          description: Unauthorized - Token invalid or expired, or caller lacks permission
           content:
             application/json:
               schema:
@@ -2705,19 +3019,44 @@ paths:
         - authorization: []
   /iudx/v2/auth/credit/request/report:
     get:
-      summary: Get Report for Credit Requests
-      description: Csv file for a list of activity logs for Credit Request.
+      summary: Download credit requests report (COS Admin)
+      description: Returns a CSV file containing credit request activity logs. Requires `cos_admin` role. Useful for auditing and generating reports of all credit transactions.
       tags:
         - Credit APIs
-      responses:
-        '200':
-          description: OK
       operationId: get-auth-v2-credit-request-report
       security:
         - authorization: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParamReport'
+        - $ref: '#/components/parameters/SortingParam'
+        - $ref: '#/components/parameters/StatusParam'
+      responses:
+        '200':
+          description: CSV report generated successfully
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Unauthorized - Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - Caller does not have `cos_admin` role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/createNotificationForbidden'
   /iudx/v2/auth/delegation:
     post:
-      summary: Grant Delegation to another User
+      summary: Grant delegation to another user (Delegator)
+      description: |
+        Creates a delegation grant that allows another user (the delegate) to act on behalf of the caller (the delegator). The delegation can optionally be scoped to specific roles and constraints with per-constraint expiry. Requires an authenticated user token.
+        **Log Type:** `USER_ACTION`
       tags:
         - Delegation APIs
       operationId: post-auth-v2-delegation
@@ -2811,14 +3150,25 @@ paths:
         '201':
           description: Delegation created successfully
         '400':
-          description: Invalid request
+          description: Bad Request - Invalid request body, missing required fields, or malformed UUIDs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalBadRequest'
         '401':
-          description: Unauthorized
+          description: Unauthorized - Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - Caller does not have permission to create delegations
         '404':
-          description: Delegate user not found
+          description: Delegate user not found - The specified delegate_id does not correspond to an existing user
   /iudx/v2/auth/delegation/delegate:
     get:
-      summary: Get All Delegations of the Delegate
+      summary: Get all delegations where the current user is the delegate
+      description: Returns a list of all delegation grants where the currently authenticated user is the delegate (i.e., the user who was granted delegation rights). Requires an authenticated user token.
       operationId: get-auth-v2-delegation-delegate
       tags:
         - Delegation APIs
@@ -2871,6 +3221,12 @@ paths:
                     nullable: true
                     description: Timestamp when revoked
                     example: '2025-07-01T09:00:00Z'
+        '401':
+          description: Unauthorized - Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
       x-codeSamples:
         - lang: cURL
           label: get all delegation grants cURL
@@ -2879,7 +3235,8 @@ paths:
             --header 'Authorization: Bearer <keycloak_token>'
   /iudx/v2/auth/delegation/delegator:
     get:
-      summary: Get All Delegations of the Delegator
+      summary: Get all delegations where the current user is the delegator
+      description: Returns a list of all delegation grants where the currently authenticated user is the delegator (i.e., the user who created the delegation). Requires an authenticated user token.
       operationId: get-auth-v2-delegation-delegator
       tags:
         - Delegation APIs
@@ -2932,6 +3289,12 @@ paths:
                     nullable: true
                     description: Timestamp when revoked
                     example: '2025-07-01T09:00:00Z'
+        '401':
+          description: Unauthorized - Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
       x-codeSamples:
         - lang: cURL
           label: get all delegation grants cURL
@@ -2947,7 +3310,8 @@ paths:
         required: true
         description: UUID of the delegation_id
     get:
-      summary: Get Delegation Grant by ID
+      summary: Get a delegation grant by ID
+      description: Returns the details of a specific delegation grant identified by its UUID. Requires an authenticated user token. Only the delegator or delegate of this grant can view it.
       operationId: get-auth-v2-delegation-id
       tags:
         - Delegation APIs
@@ -3001,6 +3365,12 @@ paths:
                         format: date-time
                         nullable: true
                         example: '2025-07-01T09:00:00Z'
+        '401':
+          description: Unauthorized - Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
         '404':
           description: Delegation grant not found
           content:
@@ -3692,20 +4062,7 @@ paths:
                       type: object
                       additionalProperties: true
                   paginationInfo:
-                    type: object
-                    properties:
-                      page:
-                        type: integer
-                      size:
-                        type: integer
-                      totalCount:
-                        type: integer
-                      totalPages:
-                        type: integer
-                      hasNext:
-                        type: boolean
-                      hasPrevious:
-                        type: boolean
+                    $ref: '#/components/schemas/PaginationInfo'
               example:
                 type: dx:controlPlane:success
                 title: Success
@@ -4349,6 +4706,7 @@ paths:
               - BOOKMARK
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
       responses:
         '200':
           description: Successfully retrieved user interaction status
@@ -4442,7 +4800,7 @@ paths:
         - User Interactions
       summary: Post user feedback on entity
       description: |
-        Submit user feedback for a specific data asset, including an optional star rating (1-5) and/or a structured action subtype with associated data. User should be the one who has already interacted with the asset before.
+        Submit user feedback for a specific data asset, including an optional star rating (1-5) and/or a structured action subtype with associated data. The user must have already interacted with the asset (e.g., via download or API access). Requires an authenticated user token.
       operationId: post-user-feedback
       security:
         - authorization: []
@@ -4458,15 +4816,18 @@ paths:
                 asset_id:
                   type: string
                   format: uuid
-                  description: UUID of the asset
+                  description: UUID of the asset to provide feedback on
                 entity_rating:
                   type: integer
                   minimum: 1
                   maximum: 5
+                  description: Star rating from 1 (lowest) to 5 (highest)
                 action_subtype:
                   type: string
+                  description: Structured feedback category (e.g., data quality, documentation)
                 action_subdata:
                   type: object
+                  description: Additional structured data associated with the feedback
       responses:
         '200':
           description: Feedback successfully recorded
@@ -4485,6 +4846,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
         '500':
           description: Internal Server Error
           content:
@@ -4496,7 +4863,7 @@ paths:
         - User Interactions
       summary: Get user feedback
       description: |
-        Retrieve paginated user feedback with optional filters by user, asset, or action subtype.
+        Retrieve paginated user feedback with optional filters by user, asset, or action subtype. Requires an authenticated user token.
       operationId: get-user-feedback
       security:
         - authorization: []
@@ -4600,7 +4967,7 @@ paths:
         - User Interactions
       summary: Post provider feedback on entity
       description: |
-        Submit provider feedback for a specific data asset, including an optional star rating (1-5) and/or a structured action subtype with associated data. User should be the one who has already interacted with the asset before.
+        Submit provider feedback for a specific data asset, including an optional star rating (1-5) and/or a structured action subtype with associated data. The user must be the asset owner or a provider who has interacted with the asset. Requires an authenticated user token with `provider` or `org_admin` role.
       operationId: post-provider-feedback
       security:
         - authorization: []
@@ -4627,6 +4994,7 @@ paths:
                   description: Type of feedback
                 data:
                   type: object
+                  description: Structured feedback data (content varies by feedback type)
       responses:
         '200':
           description: Feedback successfully recorded
@@ -4645,6 +5013,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
         '500':
           description: Internal Server Error
           content:
@@ -4656,7 +5030,7 @@ paths:
         - User Interactions
       summary: Get provider feedback
       description: |
-        Retrieve paginated provider feedback with optional filters by user, asset, or type.
+        Retrieve paginated provider feedback with optional filters by user, asset, or type. Requires an authenticated user token.
       operationId: get-provider-feedback
       security:
         - authorization: []
@@ -4700,6 +5074,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
         '500':
           description: Internal Server Error
           content:
@@ -4708,7 +5088,7 @@ paths:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
       x-codeSamples:
         - lang: cURL
-          label: Get user feedback
+          label: Get provider feedback
           source: |
             curl --location 'https://${HOSTNAME}/iudx/v2/provider/feedback?asset_id=811e9876-9381-4a25-8ad1-e8b289616ab8&type=bookmark&page=1&size=10'
     delete:
@@ -4759,13 +5139,34 @@ paths:
       summary: Verify KYC
       tags:
         - KYC APIs
+      description: |
+        Initiate KYC verification for the authenticated user by providing an authorization code and a code verifier obtained from the KYC provider. On success, the user's KYC status is updated. Requires an authenticated user token.
       responses:
         '200':
-          description: OK
+          description: KYC verification initiated successfully
+        '400':
+          description: Bad Request - Invalid or missing auth_code or code_verifier
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized - Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
       operationId: post-auth-v2-kyc-verify
       security:
         - authorization: []
       requestBody:
+        description: Authorization code and code verifier from the KYC provider
         content:
           application/json:
             schema:
@@ -4773,23 +5174,51 @@ paths:
               properties:
                 auth_code:
                   type: string
+                  description: Authorization code received from the KYC provider
                 code_verifier:
                   type: string
+                  description: PKCE code verifier used during the KYC authorization flow
+              required:
+                - auth_code
+                - code_verifier
   /iudx/v2/auth/kyc/confirm/{id}:
     get:
       summary: Confirm KYC verification
       tags:
         - KYC APIs
+      description: |
+        Confirm a pending KYC verification by its unique identifier. This is typically called after the initial KYC verification request has been processed. Requires an authenticated user token.
       responses:
         '200':
-          description: OK
+          description: KYC verification confirmed successfully
+        '400':
+          description: Bad Request - Invalid KYC verification ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized - Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '404':
+          description: Not Found - KYC verification not found
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
       operationId: get-auth-v2-kyc-confirm
       parameters:
-        - schema:
-            type: string
-          name: id
+        - name: id
           in: path
           required: true
+          description: Unique identifier of the KYC verification to confirm
+          schema:
+            type: string
       security:
         - authorization: []
   /iudx/v2/auth/kyc/revoke:
@@ -4797,9 +5226,29 @@ paths:
       summary: Revoke KYC Verification
       tags:
         - KYC APIs
+      description: |
+        Revoke a previously completed KYC verification for the authenticated user. This resets the user's KYC status. Requires an authenticated user token with appropriate privileges.
       responses:
         '200':
-          description: OK
+          description: KYC verification revoked successfully
+        '401':
+          description: Unauthorized - Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '403':
+          description: Forbidden - Insufficient permissions to revoke KYC
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
       operationId: post-auth-v2-kyc-revoke
       security:
         - authorization: []
@@ -4809,7 +5258,7 @@ paths:
         - Leaderboard
       summary: Get leaderboard for assets
       description: |
-        Retrieve the leaderboard for assets based on various criteria such as most viewed, most downloaded, highest rated, etc.
+        Retrieve the leaderboard for assets ranked by various criteria such as most viewed, most downloaded, or highest rated. Supports filtering by asset type, access policy, organization type, and time range. No authentication required.
       operationId: get-asset-leaderboard
       parameters:
         - name: assetType
@@ -4843,7 +5292,7 @@ paths:
                 - PII
         - name: organizationType
           in: query
-          description: Filter by aorganizationType (repeatable)
+          description: Filter by organization type (repeatable)
           required: false
           style: form
           explode: true
@@ -4856,7 +5305,7 @@ paths:
                 - Public
                 - Academic
                 - Institution
-                - NGO/Non-profit"
+                - NGO/Non-profit
                 - NA
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
@@ -4893,7 +5342,7 @@ paths:
         - Leaderboard
       summary: Get leaderboard for providers
       description: |
-        Retrieve the leaderboard for data providers based on various criteria such as most viewed, most downloaded, highest rated, etc.
+        Retrieve the leaderboard for data providers ranked by various criteria such as most viewed, most downloaded, or highest rated. Supports filtering by asset type, organization type, and time range. No authentication required.
       operationId: get-provider-leaderboard
       parameters:
         - name: assetType
@@ -4912,7 +5361,7 @@ paths:
                 - USECASE
         - name: organizationType
           in: query
-          description: Filter by aorganizationType (repeatable)
+          description: Filter by organization type (repeatable)
           required: false
           style: form
           explode: true
@@ -4925,7 +5374,7 @@ paths:
                 - Public
                 - Academic
                 - Institution
-                - NGO/Non-profit"
+                - NGO/Non-profit
                 - NA
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
@@ -4962,12 +5411,12 @@ paths:
         - Leaderboard
       summary: Get leaderboard for organisations
       description: |
-        Retrieve the leaderboard for data providers based on various criteria such as most viewed, most downloaded, highest rated, etc.
+        Retrieve the leaderboard for organisations ranked by various criteria such as contribution, most viewed, or most downloaded. Supports filtering by organization type, asset type, and time range. No authentication required.
       operationId: get-organisation-leaderboard
       parameters:
         - name: organizationType
           in: query
-          description: Filter by aorganizationType (repeatable)
+          description: Filter by organization type (repeatable)
           required: false
           style: form
           explode: true
@@ -4980,7 +5429,7 @@ paths:
                 - Public
                 - Academic
                 - Institution
-                - NGO/Non-profit"
+                - NGO/Non-profit
                 - NA
         - name: assetType
           in: query
@@ -5092,20 +5541,7 @@ paths:
                       type: object
                       additionalProperties: true
                   paginationInfo:
-                    type: object
-                    properties:
-                      page:
-                        type: integer
-                      size:
-                        type: integer
-                      totalCount:
-                        type: integer
-                      totalPages:
-                        type: integer
-                      hasNext:
-                        type: boolean
-                      hasPrevious:
-                        type: boolean
+                    $ref: '#/components/schemas/PaginationInfo'
               example:
                 type: dx:controlPlane:success
                 title: Success
@@ -5174,6 +5610,12 @@ paths:
                 type: dx:controlPlane:notAuthorized
                 title: Not Authorized
                 detail: Missing Bearer token
+        '403':
+          description: Forbidden - User does not have the org_admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
       x-codeSamples:
         - lang: cURL
           label: get organisation assets
@@ -5321,9 +5763,15 @@ paths:
                 type: dx:controlPlane:notAuthorized
                 title: Not Authorized
                 detail: Missing Bearer token
+        '403':
+          description: Forbidden - User does not have the org_admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
       x-codeSamples:
         - lang: cURL
-          label: get organisation assets
+          label: get organisation assets with filters
           source: |
             curl --location --request POST 'https://example
             .com/iudx/v2/cat/organisation/asset?size=100&page=1' \
@@ -5454,12 +5902,12 @@ paths:
             }'
   /iudx/v2/auth/organisations/requests:
     get:
-      summary: 'AAA-001-PF Admin: Get Organisation Creation requests'
+      summary: Get all organisation creation requests (COS Admin)
       tags:
         - Organisation APIs
       operationId: get-auth-v2-organisations-request
       description: |
-        Returns a paginated list of organisation creation requests.
+        Returns a paginated list of organisation creation requests. Supports filtering by entity type, status, name, and sector. Requires `cos_admin` role.
         **Log Type:** `USER_ACTION`
       parameters:
         - $ref: '#/components/parameters/PageParam'
@@ -5469,6 +5917,7 @@ paths:
         - $ref: '#/components/parameters/StatusParam'
         - $ref: '#/components/parameters/OrgNameParam'
         - $ref: '#/components/parameters/OrgSectorParam'
+        - $ref: '#/components/parameters/SearchTermParam'
       responses:
         '200':
           description: OK
@@ -5476,99 +5925,90 @@ paths:
             application/json:
               schema:
                 type: object
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    result:
-                      - id: 41290efb-057b-4296-872c-a764f6ff5615
-                        requestedBy: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                        name: Quant Sandbox
-                        logoPath: /logos/ai.png
-                        entityType: Private
-                        orgSector: Technology
-                        websiteLink: https://ai.example.com
-                        address: 123 Quant Labs, Bangalore, India
-                        certificatePath: /documents/certificate.pdf
-                        pancardPath: /documents/pancard.pdf
-                        relevantDocPath: null
-                        status: pending
-                        userName: test test
-                        empId: EMP12345
-                        jobTitle: Manager
-                        orgManagerphoneNo: +91-9876543210
-                        managerEmail: manager@gmail.com
-                        orgDocuments: null
-                        createdAt: '2025-06-03T16:01:59.532782'
-                        updatedAt: '2025-06-03T16:01:59.532782'
-                        tableName: organization_create_requests
                 properties:
                   type:
                     type: string
+                    description: URN indicating the response status
                   title:
                     type: string
+                    description: Human-readable response title
                   result:
                     type: array
+                    description: List of organisation creation request records
                     items:
                       type: object
                       properties:
                         id:
                           type: string
+                          format: uuid
+                          description: Unique identifier of the creation request
                         requestedBy:
                           type: string
+                          format: uuid
+                          description: UUID of the user who submitted the request
                         name:
                           type: string
+                          description: Name of the organisation
                         logoPath:
                           type: string
+                          description: Path to the organisation logo
                         entityType:
                           type: string
+                          description: Type of the organisation (e.g., Private, Public, Startup)
                         orgSector:
                           type: string
+                          description: Sector of the organisation (e.g., Technology, Healthcare)
                         websiteLink:
                           type: string
+                          description: Website URL of the organisation
                         address:
                           type: string
+                          description: Physical address of the organisation
                         certificatePath:
                           type: string
+                          description: Path to the organisation certificate document
                         pancardPath:
                           type: string
+                          description: Path to the PAN card document
                         relevantDocPath:
                           type: string
+                          nullable: true
+                          description: Path to any relevant supporting document
                         status:
                           type: string
+                          description: Current status of the request (pending, granted, rejected)
                         userName:
                           type: string
+                          description: Display name of the requesting user
                         empId:
                           type: string
+                          description: Employee ID of the requesting user
                         jobTitle:
                           type: string
+                          description: Job title of the requesting user
                         orgManagerphoneNo:
                           type: string
+                          description: Phone number of the organisation manager
                         managerEmail:
                           type: string
+                          description: Email of the organisation manager
                         orgDocuments:
                           type: string
+                          nullable: true
+                          description: Path to organisation documents
                         createdAt:
                           type: string
+                          format: date-time
+                          description: Timestamp when the request was created
                         updatedAt:
                           type: string
+                          format: date-time
+                          description: Timestamp when the request was last updated
                         tableName:
                           type: string
+                          description: Internal table name for the record
                   paginationInfo:
-                    type: object
-                    properties:
-                      page:
-                        type: integer
-                      size:
-                        type: integer
-                      totalCount:
-                        type: integer
-                      totalPages:
-                        type: integer
-                      hasNext:
-                        type: boolean
-                      hasPrevious:
-                        type: boolean
+                    $ref: '#/components/schemas/PaginationInfo'
               examples:
                 Example 1:
                   value:
@@ -5604,19 +6044,25 @@ paths:
                       hasNext: true
                       hasPrevious: false
         '401':
-          description: Unauthorized – Token invalid/expired or user not authorized
+          description: Unauthorized - Token invalid/expired or user not authorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - Caller does not have `cos_admin` role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/createNotificationForbidden'
       security:
         - authorization: []
     post:
-      summary: 'AAA-002-New User: New organisation creation request'
+      summary: Submit a new organisation creation request (User)
       tags:
         - Organisation APIs
       description: |
-        Submits a new organisation creation request by the authenticated user.
+        Submits a new organisation creation request by the authenticated user. The request will be reviewed by a COS Admin who can approve or reject it. Requires an authenticated user token.
         **Log Type:** `USER_ACTION`
       operationId: post-auth-v2-organisations-request
       requestBody:
@@ -5827,9 +6273,9 @@ paths:
         - authorization: []
   /iudx/v2/auth/organisations/requests/approve:
     post:
-      summary: 'AAA-003-PF Admin: Approve creation of new organisation'
+      summary: Approve or reject an organisation creation request (COS Admin)
       description: |
-        This API allows an AAA-003-PF Admin to approve or reject a pending organization creation request. The request body must include the `req_id` of the organization request and the `status` (granted or rejected). A successful response indicates that the organization request has been updated.
+        Approves or rejects a pending organisation creation request. The request body must include the `req_id` and the `status` (`granted` or `rejected`). Requires `cos_admin` role.
         **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
@@ -5865,11 +6311,6 @@ paths:
                     type: string
                   detail:
                     type: string
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    detail: Updated Sucessfully
               examples:
                 Example 1:
                   value:
@@ -5914,8 +6355,14 @@ paths:
                     type: urn:dx:as:InvalidAuthenticationToken
                     title: Token authentication failed
                     detail: Inactive Token
+        '403':
+          description: Forbidden - Caller does not have `cos_admin` role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/createNotificationForbidden'
         '409':
-          description: Conflict
+          description: Conflict - Organisation with the same name already exists
           content:
             application/json:
               schema:
@@ -5925,22 +6372,22 @@ paths:
                     type: string
                   title:
                     type: string
-                  '':
+                  detail:
                     type: string
               examples:
-                Example 1:
+                conflict:
                   value:
                     type: urn:dx:ControlPlane:conflict
                     title: Conflict
                     detail: 'ERROR: duplicate key value violates unique constraint "organizations_name_key" (23505)'
   /iudx/v2/auth/user/organisations/requests:
     get:
-      summary: 'User: Get its Organisation Creation requests'
+      summary: Get the current user's organisation creation requests
       tags:
         - Organisation APIs
       operationId: get-auth-v2-user-organisations-request
       description: |
-        This request lists all the organisation creation requests made by that user.
+        Returns a list of organisation creation requests submitted by the currently authenticated user. Requires an authenticated user token.
         **Log Type:** `USER_ACTION`
       responses:
         '200':
@@ -5949,32 +6396,6 @@ paths:
             application/json:
               schema:
                 type: object
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    result:
-                      - id: 41290efb-057b-4296-872c-a764f6ff5615
-                        requestedBy: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                        name: Quant Sandbox
-                        logoPath: /logos/ai.png
-                        entityType: Private
-                        orgSector: Technology
-                        websiteLink: https://ai.example.com
-                        address: 123 Quant Labs, Bangalore, India
-                        certificatePath: /documents/certificate.pdf
-                        pancardPath: /documents/pancard.pdf
-                        relevantDocPath: null
-                        status: pending
-                        userName: test test
-                        empId: EMP12345
-                        jobTitle: Manager
-                        orgManagerphoneNo: +91-9876543210
-                        managerEmail: manager@gmail.com
-                        orgDocuments: null
-                        createdAt: '2025-06-03T16:01:59.532782'
-                        updatedAt: '2025-06-03T16:01:59.532782'
-                        tableName: organization_create_requests
                 properties:
                   type:
                     type: string
@@ -6099,19 +6520,18 @@ paths:
         - authorization: []
   /iudx/v2/auth/user/organisations/join_requests:
     get:
-      summary: 'User: Get all Join requests for an organisation'
+      summary: Get the current user's organisation join requests
       description: |
-        This API allows a user to view all its organization join requests made by it. **Log Type:** `USER_ACTION`
+        Returns a list of organisation join requests submitted by the currently authenticated user. Requires an authenticated user token.
+        **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
       parameters:
-        - name: delegatorId
-          in: query
-          description: Unique ID of the delegator
-          schema:
-            type: string
-            format: uuid
-            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+        - $ref: '#/components/parameters/DelegatorIdParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+        - $ref: '#/components/parameters/StatusParam'
       responses:
         '200':
           description: OK
@@ -6119,23 +6539,6 @@ paths:
             application/json:
               schema:
                 type: object
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    result:
-                      - id: 5fc228bb-9a20-4052-968e-427c733d2264
-                        organizationId: e87246e2-5da5-40b0-973c-690d2f48f879
-                        userId: ac2f3390-c7b0-4d4e-bb72-0bb8d9170309
-                        userName: coder coder
-                        status: pending
-                        jobTitle: Employee
-                        empId: EMP8790
-                        officialEmail: member@gmail.com
-                        requestedAt: '2025-06-03T16:35:48.404509'
-                        processedAt: '2025-06-03T16:35:48.404509'
-                        roles: []
-                        tableName: organization_join_requests
                 properties:
                   type:
                     type: string
@@ -6268,7 +6671,7 @@ paths:
           format: uuid
           pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
     get:
-      summary: 'AAA-004-Org Admin: Get all Join requests for an organisation'
+      summary: Get all join requests for an organisation (Org Admin)
       description: |
         This API allows an organization administrator to retrieve all join requests for a specific organization, identified by its `id` in the path parameter. Requests can optionally be filtered by their `status` (e.g., pending, granted, rejected). It provides details about each join request, including the user who requested to join, their current status, job title, employee ID, official email, and any assigned roles. Pagination information is also included in the response.
         **Log Type:** `USER_ACTION`
@@ -6283,6 +6686,10 @@ paths:
               - pending
               - granted
               - rejected
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+        - $ref: '#/components/parameters/SearchTermParam'
       tags:
         - Organisation APIs
       responses:
@@ -6292,23 +6699,6 @@ paths:
             application/json:
               schema:
                 type: object
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    result:
-                      - id: 5fc228bb-9a20-4052-968e-427c733d2264
-                        organizationId: e87246e2-5da5-40b0-973c-690d2f48f879
-                        userId: ac2f3390-c7b0-4d4e-bb72-0bb8d9170309
-                        userName: coder coder
-                        status: pending
-                        jobTitle: Employee
-                        empId: EMP8790
-                        officialEmail: member@gmail.com
-                        requestedAt: '2025-06-03T16:35:48.404509'
-                        processedAt: '2025-06-03T16:35:48.404509'
-                        roles: []
-                        tableName: organization_join_requests
                 properties:
                   type:
                     type: string
@@ -6409,7 +6799,7 @@ paths:
       security:
         - authorization: []
     post:
-      summary: 'AAA-005-Consumer: Create Request to Join an Organisation'
+      summary: Submit a request to join an organisation (User)
       description: |
         This API allows an authenticated user to submit a request to join a specific organization, identified by its `id` in the path parameter. The request includes the user's job title and employee ID. The organization administrator will then review and process this join request.
         **Log Type:** `USER_ACTION`
@@ -6457,13 +6847,8 @@ paths:
                     type: string
                   detail:
                     type: string
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    detail: Created Join request
               examples:
-                Example 1:
+                success:
                   value:
                     type: urn:dx:ControlPlane:success
                     title: Success
@@ -6479,7 +6864,7 @@ paths:
                     type: string
                   title:
                     type: string
-                  '':
+                  detail:
                     type: string
               examples:
                 Example 1:
@@ -6524,13 +6909,8 @@ paths:
                     type: string
                   detail:
                     type: string
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:conflict
-                    title: Conflict
-                    detail: 'ERROR: duplicate key value violates unique constraint "organization_join_requests_user_id_key" (23505)'
               examples:
-                Example 1:
+                conflict:
                   value:
                     type: urn:dx:ControlPlane:conflict
                     title: Conflict
@@ -6562,7 +6942,7 @@ paths:
           format: uuid
         description: UUID of the organization
     put:
-      summary: 'AAA-006-OrgAdmin: Approve or update status of a join request'
+      summary: Approve or reject a join request (Org Admin)
       description: |
         This API allows an organization administrator to approve or reject a specific join request for their organization. The organization is identified by `id` and the join request by `req_id` in the path parameters. This operation updates the status of an existing join request.
         **Log Type:** `USER_ACTION`
@@ -6602,13 +6982,8 @@ paths:
                     type: string
                   detail:
                     type: string
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    detail: Approved Organisation Join Request
               examples:
-                Example 1:
+                success:
                   value:
                     type: urn:dx:ControlPlane:success
                     title: Success
@@ -6639,17 +7014,18 @@ paths:
                     type: string
                   detail:
                     type: string
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:notAuthorized
-                    title: Not Authorized
-                    detail: Unauthorized
               examples:
-                Example 1:
+                unauthorized:
                   value:
                     type: urn:dx:ControlPlane:notAuthorized
                     title: Not Authorized
                     detail: Unauthorized
+        '403':
+          description: Forbidden - Caller is not the organisation admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/createNotificationForbidden'
         '404':
           description: Join request not found
   /iudx/v2/auth/organisation/join-request/{id}:
@@ -6767,12 +7143,19 @@ paths:
         - authorization: []
   /iudx/v2/auth/organisations:
     get:
-      summary: 'AAA-007-Consumer: List All Organisations'
+      summary: List all organisations (Authenticated User)
       description: |
         This API allows authenticated users to retrieve a list of all registered organizations. It provides details such as the organization's name, logo, entity type, sector, and website. Pagination information is also included in the response. This endpoint does not require a request body.
         **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+        - $ref: '#/components/parameters/SearchTermParam'
+        - $ref: '#/components/parameters/EntityTypeParam'
+        - $ref: '#/components/parameters/OrgSectorParam'
       responses:
         '200':
           description: OK - Successfully fetched all organizations.
@@ -6857,32 +7240,6 @@ paths:
                       hasPrevious:
                         type: boolean
                         description: Indicates if previous pages exist.
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    result:
-                      - id: e87246e2-5da5-40b0-973c-690d2f48f879
-                        orgName: Quant Sandbox
-                        orgLogo: /logos/ai.png
-                        entityType: Private
-                        orgSector: Technology
-                        websiteLink: https://ai.example.com
-                        address: 123 Quant Labs, Bangalore, India
-                        certificatePath: /documents/certificate.pdf
-                        pancardPath: /documents/pancard.pdf
-                        relevantDocPath: null
-                        orgDocuments: null
-                        createdAt: '2025-06-03T16:28:24.205541'
-                        updatedAt: '2025-06-03T16:28:24.205541'
-                        tableName: organizations
-                    paginationInfo:
-                      page: 1
-                      size: 1
-                      totalCount: 346
-                      totalPages: 346
-                      hasNext: true
-                      hasPrevious: false
       operationId: get-auth-v2-org
       security:
         - authorization: []
@@ -6902,7 +7259,7 @@ paths:
           format: uuid
           pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
     delete:
-      summary: 'AAA-008-PFAdmin: Delete organisation by ID'
+      summary: Delete an organisation by ID (COS Admin)
       description: |
         This API allows an PFAdmin to delete an organization by its unique identifier (ID). The ID of the organization to be deleted is provided as a path parameter. A successful response indicates that the organization has been deleted.
         **Log Type:** `USER_ACTION`
@@ -6915,7 +7272,7 @@ paths:
       security:
         - authorization: []
     put:
-      summary: AAA-009-OrgAdmin:Update Organisation by ID
+      summary: Update organisation details by ID (Org Admin)
       description: |
         This API allows updating the details of an existing organization identified by its unique ID. The ID of the organization to be updated is provided as a path parameter. The request body should contain the updated organization details. A successful response indicates that the organization has been updated.
         **Log Type:** `USER_ACTION`
@@ -6934,11 +7291,8 @@ paths:
                 name:
                   type: string
                   description: Name of the organization.
-              x-examples:
-                Example 1:
-                  name: Etimes4
             examples:
-              Example 1:
+              updateName:
                 value:
                   name: Etimes4
       responses:
@@ -6984,27 +7338,8 @@ paths:
                         type: string
                       tableName:
                         type: string
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    result:
-                      id: e87246e2-5da5-40b0-973c-690d2f48f879
-                      orgName: Etimes4
-                      orgLogo: /logos/ai.png
-                      entityType: Private
-                      orgSector: Technology
-                      websiteLink: https://ai.example.com
-                      address: 123 Quant Labs, Bangalore, India
-                      certificatePath: /documents/certificate.pdf
-                      pancardPath: /documents/pancard.pdf
-                      relevantDocPath: null
-                      orgDocuments: null
-                      createdAt: '2025-06-03T16:28:24.205541'
-                      updatedAt: '2025-06-03T16:28:24.205541'
-                      tableName: organizations
               examples:
-                Example 1:
+                success:
                   value:
                     type: urn:dx:ControlPlane:success
                     title: Success
@@ -7025,7 +7360,7 @@ paths:
                       tableName: organizations
       operationId: put-auth-v2-organisations-id
     get:
-      summary: 'AAA-010-PFAdmin: Get Organisation By ID'
+      summary: Get organisation details by ID (COS Admin)
       description: |
         This API allows retrieving the details of a specific organization by its unique identifier (ID). The ID of the organization to be retrieved is provided as a path parameter. A successful response includes the organization's details such as name, logo, entity type, sector, and website.
         **Log Type:** `USER_ACTION`
@@ -7046,22 +7381,6 @@ paths:
             application/json:
               schema:
                 type: object
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    result:
-                      id: e87246e2-5da5-40b0-973c-690d2f48f879
-                      name: Quant Sandbox
-                      logo_path: /logos/ai.png
-                      entity_type: Private
-                      org_sector: Technology
-                      website_link: https://ai.example.com
-                      address: 123 Quant Labs, Bangalore, India
-                      certificate_path: /documents/certificate.pdf
-                      pancard_path: /documents/pancard.pdf
-                      created_at: '2025-06-03T16:28:24.205541'
-                      updated_at: '2025-06-03T16:28:24.205541'
                 properties:
                   type:
                     type: string
@@ -7161,12 +7480,18 @@ paths:
           type: string
           format: uuid
     get:
-      summary: 'AAA-011-OrgAdmin: List organisation Users'
+      summary: List organisation users (Org Admin)
       description: |
         This API allows an organization administrator to retrieve a list of all users associated with a specific organization, identified by its `id` in the path parameter. The response includes details about each user, such as their role within the organization, job title, employee ID, official email, and account status. Pagination information is also included in the response.
         **Log Type:** `USER_ACTION`
       tags:
         - Organisation APIs
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+        - $ref: '#/components/parameters/SearchTermParam'
+        - $ref: '#/components/parameters/DelegatorIdParam'
       responses:
         '200':
           description: OK
@@ -7174,25 +7499,6 @@ paths:
             application/json:
               schema:
                 type: object
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    result:
-                      - id: 81980801-85b6-4b7d-ae54-5df38a3535bd
-                        organizationId: e87246e2-5da5-40b0-973c-690d2f48f879
-                        userId: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                        userName: test test
-                        role: ADMIN
-                        jobTitle: Manager
-                        empId: EMP12345
-                        orgManagerPhoneNo: +91-9876543210
-                        officialEmail: user@gmail.com
-                        createdAt: '2025-06-03T16:28:24.852025'
-                        updatedAt: '2025-06-03T16:28:24.852025'
-                        roles: []
-                        tableName: organization_users
-                        accountEnabled: true
                 properties:
                   type:
                     type: string
@@ -7449,7 +7755,7 @@ paths:
         - authorization: []
   /iudx/v2/auth/organization/user/provider_role/requests:
     post:
-      summary: AAA-015-Any User:Create a Provider Role Request
+      summary: Create a provider role request (User)
       description: |
         This API allows a user to submit a role upgrade request from Consumer to Provider within their organization. Once the organization administrator(`org_admin`) approves the request, the user will be granted the Provider role for the respective organization. A successful response indicates that the request has been successfully submitted.
         **Log Type:** `USER_ACTION`
@@ -7472,19 +7778,14 @@ paths:
                     type: string
                   detail:
                     type: string
-                x-examples:
-                  Example 1:
-                    type: urn:dx:controlPanel:success
-                    title: Success
-                    detail: Created request
               examples:
-                Example 1:
+                success:
                   value:
                     type: urn:dx:controlPanel:success
                     title: Success
                     detail: Created request
     get:
-      summary: 'AAA-014-OrgAdmin: Get All pending provider role requests'
+      summary: Get all pending provider role requests (Org Admin)
       description: |
         This API allows a org admin to retrieve all pending provider role requests from users in its organization. A successful response returns a list of pending requests with details such as user ID, user name, organization ID, organization name, status, and timestamps.
         **Log Type:** `USER_ACTION`
@@ -7534,7 +7835,7 @@ paths:
         - authorization: []
   /iudx/v2/auth/organization/user/provider_role/requests/{id}:
     put:
-      summary: 'AAA-016-OrgAdmin: Update a Provider Role Request'
+      summary: Update a provider role request (Org Admin)
       description: |
         This API allows a organization administrator to update the status of a specific provider role request. The request is identified by its `id` in the path parameter. The request body should contain the new status for the provider role request. A successful response indicates that the provider role request has been updated.
         **Log Type:** `USER_ACTION`
@@ -7569,13 +7870,8 @@ paths:
                     type: string
                   detail:
                     type: string
-                x-examples:
-                  Example 1:
-                    type: urn:dx:controlPanel:success
-                    title: Success
-                    detail: Provider role updated
               examples:
-                Example 1:
+                success:
                   value:
                     type: urn:dx:controlPanel:success
                     title: Success
@@ -7629,7 +7925,7 @@ paths:
   /iudx/v2/auth/organization/user/provider:
     post:
       operationId: post-auth-v2-organization-user-provider
-      summary: 'AAA-017-OrgAdmin: Grant provider role to user'
+      summary: Grant provider role to a user (Org Admin)
       description: |
         This endpoint allows organization admin grants provider role to user in its organization.
         **Log Type:** `USER_ACTION`
@@ -8165,22 +8461,40 @@ paths:
                   injection_type: api
                   created_at: '2025-12-16T07:00:14.225681'
                   updated_at: '2025-12-16T07:00:14.225681'
+        '400':
+          description: Bad Request - Missing or invalid fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized - Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingToken:
+                  value:
+                    type: dx:controlPlane:notAuthorized
+                    title: Not Authorized
+                    detail: Missing Bearer token
         '403':
           description: Forbidden - User does not have the required role
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                    example: dx:controlPlane:forbidden
-                  title:
-                    type: string
-                    example: Forbidden
-                  detail:
-                    type: string
-                    example: User does not have the required role.
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
       x-codeSamples:
         - lang: cURL
           label: Create Resource Server
@@ -8242,22 +8556,38 @@ paths:
                   injection_type: api
                   created_at: '2025-12-16T07:14:25.034849'
                   updated_at: '2025-12-16T07:14:25.034849'
+        '401':
+          description: Unauthorized - Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingToken:
+                  value:
+                    type: dx:controlPlane:notAuthorized
+                    title: Not Authorized
+                    detail: Missing Bearer token
         '403':
           description: Forbidden - User does not have the required role
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                    example: dx:controlPlane:forbidden
-                  title:
-                    type: string
-                    example: Forbidden
-                  detail:
-                    type: string
-                    example: User does not have the required role.
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
+        '404':
+          description: Not Found - Resource server not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: dx:controlPlane:notFound
+                title: Not Found
+                detail: Resource server not found
       x-codeSamples:
         - lang: cURL
           label: Get Resource Server by ID
@@ -8366,7 +8696,7 @@ paths:
           format: uuid
           pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
     delete:
-      summary: 'AAA-012-OrgAdmin: Delete User by ID'
+      summary: Delete a user from an organisation (Org Admin)
       description: |
         This API allows an organization administrator to delete a specific user from their organization, identified by the user's `user_id` and the organization's `id` in the path parameters. A successful response indicates that the user has been deleted from the organization.
         **Log Type:** `USER_ACTION`
@@ -8389,13 +8719,8 @@ paths:
                   detail:
                     type: string
                     description: Details about the deletion operation.
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    detail: Deleted Organisation User
               examples:
-                Example 1:
+                success:
                   value:
                     type: urn:dx:ControlPlane:success
                     title: Success
@@ -8404,7 +8729,7 @@ paths:
       security:
         - authorization: []
     put:
-      summary: 'AAA-013-OrgAdmin: Update Organization User Role'
+      summary: Update a user's role within an organisation (Org Admin)
       description: |
         This API allows an organization administrator to update the role of a specific user within their organization. The user is identified by their `user_id` and the organization by its `id` in the path parameters. The request body should contain the new role for the user. A successful response indicates that the user's role has been updated.
         **Log Type:** `USER_ACTION`
@@ -8427,13 +8752,8 @@ paths:
                   detail:
                     type: string
                     description: Details about the update operation.
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    detail: Updated Organisation User Role
               examples:
-                Example 1:
+                success:
                   value:
                     type: urn:dx:ControlPlane:success
                     title: Success
@@ -8699,41 +9019,6 @@ paths:
             application/json:
               schema:
                 type: object
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    result:
-                      roles:
-                        - offline_access
-                        - compute
-                        - consumer
-                        - default-roles-myrealm
-                        - uma_authorization
-                      organisationId: ''
-                      organisationName: ''
-                      sub: 436cb796-5826-458b-a914-a54721f70997
-                      emailVerified: true
-                      kycVerified: false
-                      name: test test
-                      preferredUsername: test
-                      givenName: test
-                      familyName: test
-                      email: testing@gmail.com
-                      pendingRoles: []
-                      organisation:
-                        id: 98e74f31-4e40-4615-85b8-61256f0bc7c4
-                        organisationId: e87246e2-5da5-40b0-973c-690d2f48f879
-                        userId: 436cb796-5826-458b-a914-a54721f70997
-                        userName: test test
-                        status: granted
-                        jobTitle: Employee
-                        empId: EMP8790
-                        requestedAt: '2025-06-04T06:13:58.917342'
-                        processedAt: '2025-06-04T06:13:58.917342'
-                        request_type: organisation_join
-                      createdAt: '2025-06-04T06:12:48.991'
-                      kycData: {}
                 properties:
                   type:
                     type: string
@@ -8857,24 +9142,19 @@ paths:
               properties:
                 first_name:
                   type: string
-                  x-stoplight:
-                    id: pdtm28py9tigj
+                  description: Updated first name
                 last_name:
                   type: string
-                  x-stoplight:
-                    id: l8unuppdsu8n6
+                  description: Updated last name
                 twitter_account:
                   type: string
-                  x-stoplight:
-                    id: dxe1oy55b3ovw
+                  description: Twitter/X profile URL or handle
                 linkedin_account:
                   type: string
-                  x-stoplight:
-                    id: gvxoaj47lbpib
+                  description: LinkedIn profile URL
                 github_account:
                   type: string
-                  x-stoplight:
-                    id: 66hcqj28wo7vu
+                  description: GitHub profile URL or username
   /iudx/v2/auth/user/password:
     put:
       summary: (User) Change Password
@@ -9006,30 +9286,6 @@ paths:
                       kycData:
                         type: object
                         properties: {}
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    result:
-                      roles:
-                        - cos_admin
-                        - offline_access
-                        - default-roles-myrealm
-                        - uma_authorization
-                      organisationId: ''
-                      organisationName: ''
-                      sub: a2899137-8458-40a6-9be8-084cfd1890e5
-                      emailVerified: false
-                      kycVerified: false
-                      name: User user
-                      preferredUsername: user
-                      givenName: User
-                      familyName: user
-                      email: user@gmail.com
-                      pendingRoles: []
-                      organisation: {}
-                      createdAt: '2025-05-21T09:33:12.073'
-                      kycData: {}
       operationId: get-auth-v2-user-id-admin
       parameters:
         - schema:
@@ -9041,56 +9297,24 @@ paths:
         - authorization: []
   /iudx/v2/auth/admin/user:
     get:
-      summary: (COS Admin) Get All Users Info
+      summary: Get all users (COS Admin)
       description: |
-        Retrieves the profile and account details of all users. Accessible only by COS Admin.
+        Returns a paginated list of all users with their profile and account details. Supports filtering by search term. Requires `cos_admin` role.
         **Log Type:** `USER_ACTION`
       tags:
         - Role APIs
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+        - $ref: '#/components/parameters/SearchTermParam'
       responses:
         '200':
-          description: Get All users info
+          description: All users info retrieved successfully
           content:
-            application/x-www-form-urlencoded:
+            application/json:
               schema:
                 type: object
-                x-examples:
-                  Example 1:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    result:
-                      - organisationId: org-123
-                        organisationName: ''
-                        sub: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                        emailVerified: false
-                        kycVerified: true
-                        name: test test
-                        preferredUsername: testuser
-                        givenName: test
-                        familyName: test
-                        email: test@gmail.com
-                        pending_roles: []
-                        organisation:
-                          id: 4202493c-7c64-49b0-8f61-2000ca3d147c
-                          requestedBy: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                          name: Quants Sandbox
-                          logoPath: /logos/ai.png
-                          entityType: Private
-                          orgSector: Technology
-                          websiteLink: https://ai.example.com
-                          address: 123 Quant Labs, Bangalore, India
-                          certificatePath: /documents/certificate.pdf
-                          pancardPath: /documents/pancard.pdf
-                          status: pending
-                          userName: test test
-                          empId: EMP12345
-                          jobTitle: Manager
-                          orgManagerphoneNo: +91-9876543210
-                          createdAt: '2025-06-03T16:25:25.167724'
-                          updatedAt: '2025-06-03T16:25:25.167724'
-                          request_type: organisation_create
-                        createdAt: null
-                        kycInformation: {}
                 properties:
                   type:
                     type: string
@@ -9169,34 +9393,7 @@ paths:
                         kycInformation:
                           type: object
                   paginationInfo:
-                    type: object
-                    x-stoplight:
-                      id: q5nv96hnpwunm
-                    properties:
-                      page:
-                        type: integer
-                        x-stoplight:
-                          id: qr8qhteoqy2g9
-                      size:
-                        type: integer
-                        x-stoplight:
-                          id: ogsnoc6zb4i5r
-                      totalPages:
-                        type: integer
-                        x-stoplight:
-                          id: qyz4oigpr2pld
-                      totalCount:
-                        type: integer
-                        x-stoplight:
-                          id: wn8hfnis26t2t
-                      hasNext:
-                        type: boolean
-                        x-stoplight:
-                          id: lzh9xiuynbj2d
-                      hasPrevious:
-                        type: boolean
-                        x-stoplight:
-                          id: cbvofwsy8sllb
+                    $ref: '#/components/schemas/PaginationInfo'
               examples:
                 Example 1:
                   value:
@@ -9235,24 +9432,37 @@ paths:
                           request_type: organisation_create
                         createdAt: null
                         kycInformation: {}
-            application/postscript:
+        '401':
+          description: Unauthorized - Token invalid or expired
+          content:
+            application/json:
               schema:
-                type: object
-                properties: {}
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - Caller does not have `cos_admin` role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/createNotificationForbidden'
       operationId: get-auth-v2-admin-user
       security:
         - authorization: []
   /iudx/v2/auth/user/basic:
     get:
-      summary: (All Users) Get basic user information
+      summary: Get basic user information (All Users)
       description: |
-        Returns paginated list of users with UUID, name, username, and email.
+        Returns a paginated list of users with basic details (UUID, name, username, email). Supports text search across user fields. Requires an authenticated user token.
         **Log Type:** `USER_ACTION`
       tags:
         - Role APIs
       operationId: get-auth-v2-user-search
       security:
         - authorization: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+        - $ref: '#/components/parameters/SearchTermParam'
       responses:
         '200':
           description: Successfully retrieved user information
@@ -9635,7 +9845,7 @@ paths:
       tags:
         - Subscriptions
       summary: Create subscription
-      description: Create a new subscription to do streaming, used as consumer api's.
+      description: Create a new data subscription for streaming. This is a consumer API that allows users to subscribe to entities for real-time data streaming. Requires an authenticated user token with consumer role.
       operationId: postSubscriptions
       security:
         - authorization: []
@@ -9685,21 +9895,21 @@ paths:
     get:
       tags:
         - Subscriptions
-      summary: List of all subscription queues (based on user id)
+      summary: List all subscriptions for the current user
       operationId: getAllSubscriptionQueues
       security:
         - authorization: []
       parameters:
         - name: limit
           in: query
-          description: Limit the no of data to be shown
+          description: Maximum number of subscription records to return per request. Default is 100.
           schema:
             type: integer
             minimum: 1
             default: 100
         - name: offset
           in: query
-          description: Offset to see more data
+          description: Number of records to skip before returning results. Use with `limit` for pagination.
           schema:
             type: integer
             minimum: 0
@@ -9724,7 +9934,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/NgsiLdSubscriptionErrorResponse500'
       description: |
-        This API could be used by a consumer to get the list of all the data subscription under the given user. The API could be used by the subscriber by providing the user access token.
+        Returns a list of all data subscriptions for the currently authenticated user. Use `limit` and `offset` for pagination. Requires an authenticated user token with consumer role.
   /iudx/v2/subscriptions/{subscriptionId}:
     get:
       tags:
@@ -9794,7 +10004,7 @@ paths:
           schema:
             type: string
       requestBody:
-        description: ''
+        description: Updated subscription entity list or expiry configuration
         content:
           application/json:
             schema:
@@ -9884,7 +10094,7 @@ paths:
   /iudx/v2/dashboard/usage-summary:
     get:
       summary: Get usage summary for dashboard
-      description: Returns aggregated usage metrics (count and size) for different time windows used by the main dashboard.
+      description: Returns aggregated usage metrics (count and size) for different time windows used by the main dashboard. Provides data for total usage, last year, last 6 months, last month, last week, and yesterday. No authentication required.
       operationId: get-dashboard-usage-summary
       tags:
         - Summary
@@ -10505,7 +10715,8 @@ components:
     UserIdParam:
       name: userId
       in: query
-      description: id of the user(UUID) for whom to fetch activity logs
+      description: UUID of the user for whom to fetch activity logs. Must be a valid v4 UUID.
+      required: false
       schema:
         type: string
         format: uuid
@@ -10513,8 +10724,7 @@ components:
     AssetTypeParam:
       name: assetType
       in: query
-      description: |
-        The type of asset to filter the activity logs. This parameter allows filtering by specific asset types.
+      description: Filter results by asset type. Use this to narrow down responses to a specific category of asset.
       required: false
       schema:
         type: string
@@ -10525,8 +10735,7 @@ components:
     SandboxTypeParam:
       name: sandboxType
       in: query
-      description: |
-        Sandbox execution type used to filter audit logs. Possible values indicate the compute environment.
+      description: Filter audit logs by sandbox compute environment type (CPU or GPU).
       required: false
       schema:
         type: string
@@ -10536,8 +10745,7 @@ components:
     AssetAccessPolicyParam:
       name: accessPolicy
       in: query
-      description: |
-        The access policy of the asset to filter the activity logs. This parameter allows filtering by specific access policies such as `OPEN`, `RESTRICTED`, `PRIVATE`, `PII`.
+      description: Filter results by the access policy of the asset. Allowed values are `OPEN` (publicly accessible), `RESTRICTED` (requires approval), `PRIVATE` (owner-only), and `PII` (contains personally identifiable information).
       required: false
       schema:
         type: string
@@ -10549,32 +10757,29 @@ components:
     RoleParam:
       name: role
       in: query
-      description: |
-        This parameter allows filtering by specific role.
+      description: Filter results by a specific user role (e.g., `consumer`, `provider`, `org_admin`, `cos_admin`).
       required: false
       schema:
         type: string
     ActionParam:
       name: action
       in: query
-      description: |
-        The type of action to filter the activity logs. This parameter allows filtering by specific action, such as `View`, `Download`, `Upload`, `Update`,`Delete` etc.
+      description: Filter activity logs by action type. Common values include `View`, `Download`, `Upload`, `Update`, and `Delete`.
       required: false
       schema:
         type: string
     LogTypeParam:
       name: logType
       in: query
-      description: |
-        The type of log to filter the activity logs. This parameter allows filtering by specific log types, such as `ASSET`, `USER_ACTION`, and `COMPUTE`.
+      description: Filter activity logs by log category. Common values are `ASSET` (asset-related events), `USER_ACTION` (user management events), and `COMPUTE` (compute/sandbox events).
       required: false
       schema:
         type: string
     OrganizationIdParam:
       name: orgId
       in: query
-      description: |
-        The unique identifier (UUID) of the organization for which to fetch activity logs. Use this parameter to filter activity logs belonging to a specific organization.
+      description: UUID of the organization to filter results by. Use this to scope activity logs or other data to a specific organization.
+      required: false
       schema:
         type: string
         format: uuid
@@ -10582,7 +10787,7 @@ components:
     PageParam:
       name: page
       in: query
-      description: Page number for pagination
+      description: Page number for pagination (1-based). The first page is `1`. If omitted, defaults to `1`.
       required: false
       schema:
         type: integer
@@ -10591,45 +10796,51 @@ components:
     SizeParam:
       name: size
       in: query
-      description: Page size for pagination
+      description: Number of items to return per page. Defaults to `1000`. A recommended value for most use cases is between 10 and 25. Maximum allowed value is `1000`.
       required: false
       schema:
         type: integer
         default: 1000
         minimum: 1
+        maximum: 1000
     SizeParamReport:
       name: size
       in: query
-      description: Page size for pagination , used as limit for query request
+      description: Number of items to return per page for report endpoints. Acts as a limit on the query. Defaults to `1000`. Maximum allowed value is `1000`.
       required: false
       schema:
         type: integer
         default: 1000
         minimum: 1
+        maximum: 1000
     SortingParam:
       name: sort
       in: query
-      description: 'This parameter allows sorting the results by up to 3 fields, separated by a semicolon (`;`). The format for each field is `fieldName:asc` or `fieldName:desc`. For example: `createdAt:desc;assetType:asc;userId:desc` will sort by creation date (descending), then asset type (ascending), then user ID (descending).'
+      description: 'Sort results by up to 3 fields, separated by a semicolon (`;`). Each field uses the format `fieldName:asc` or `fieldName:desc`. Common sortable fields include `createdAt`, `updatedAt`, `status`, and `name`. Example: `createdAt:desc;status:asc` sorts by creation date descending, then by status ascending.'
       required: false
       schema:
         type: string
+      example: createdAt:desc;status:asc
     TimeParam:
       name: time
       in: query
-      description: This parameter specifies the <b>start time</b> for the temporal-query in `ISO8601` format.
+      description: Start time for temporal filtering in ISO 8601 format (e.g., `2025-01-01T00:00:00`). Used together with `timerel` to define a time range.
+      required: false
       schema:
         type: string
+        format: date-time
     EndTimeParam:
       name: endtime
       in: query
-      description: This parameter specifies the <b>endtime</b> for the temporal-query in `ISO8601` format.
+      description: End time for temporal filtering in ISO 8601 format (e.g., `2025-12-31T23:59:59`). Required when `timerel=between`.
+      required: false
       schema:
         type: string
+        format: date-time
     TimeRelParam:
       name: timerel
       in: query
-      description: |
-        The temporal relation type to be applied for the time filter. Must be one of: <b>between</b>, <b>before</b>, or <b>after</b>. <b>between</b> must be used with both `time` and `endtime`. <b>before</b> or <b>after</b> must be used with only `time`.
+      description: Temporal relation for time-based filtering. Use `between` with both `time` and `endtime` to define a range. Use `before` or `after` with only `time` to filter records before or after a point in time.
       required: false
       schema:
         type: string
@@ -10640,33 +10851,52 @@ components:
     OrgNameParam:
       name: name
       in: query
-      description: |
-        The name of the organization sector to filter by.
-        This parameter is used to filter entities based on their organizational sector.
+      description: Filter organizations by name. Performs a case-insensitive partial match on the organization name.
       required: false
       schema:
         type: string
     EntityTypeParam:
       name: entity_type
       in: query
-      description: The type of entity to filter by. This parameter is used to filter entities based on their type.
+      description: Filter by organization entity type (e.g., `Private`, `Public`, `Government`, `Startup`, `Academic`).
       required: false
       schema:
         type: string
     OrgSectorParam:
       name: org_sector
       in: query
-      description: The sector of the organization to filter by. This parameter is used to filter entities based on their organizational sector.
+      description: Filter by organization sector (e.g., `Technology`, `Healthcare`, `Education`, `Research & Development`).
       required: false
       schema:
         type: string
     StatusParam:
       name: status
       in: query
-      description: The status of the asset request to filter by. This parameter is used to filter asset requests based on their status such as 'pending' , 'granted' and 'rejected'.
+      description: Filter requests by their current processing status. Use `pending` for unprocessed requests, `granted` for approved requests, or `rejected` for denied requests.
       required: false
       schema:
         type: string
+        enum:
+          - pending
+          - granted
+          - rejected
+    SearchTermParam:
+      name: search_term
+      in: query
+      description: Free-text search term to filter list results. Performs a case-insensitive partial match across key fields such as name, email, or title.
+      required: false
+      schema:
+        type: string
+      example: quantum
+    DelegatorIdParam:
+      name: delegatorId
+      in: query
+      description: UUID of the delegator. When a delegate (a user who has been granted delegation rights) performs an action on behalf of another user, this parameter identifies the original delegating user. Required when acting under delegation.
+      required: false
+      schema:
+        type: string
+        format: uuid
+        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
   schemas:
     AssetSummary:
       type: object
@@ -10912,33 +11142,6 @@ components:
         - title
         - results
         - paginationInfo
-      x-examples:
-        Example:
-          type: urn:dx:acl:success
-          title: User permission requests
-          results:
-            - requestId: e4619679-f5d9-4eff-9f79-bbded6130bb1
-              itemId: string
-              itemType: RESOURCE_GROUP
-              status: pending
-              expiryDuration: string
-              constraints:
-                access:
-                  - api
-                  - sub
-                  - file
-              user:
-                id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
-                email: user@example.com
-                name:
-                  firstName: string
-                  lastName: string
-              owner:
-                id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
-                email: user@example.com
-                name:
-                  firstName: string
-                  lastName: string
     AppTokenRequest:
       type: object
       required:
@@ -12899,16 +13102,6 @@ components:
           description: A human readable title to the message response.
       required:
         - type
-      x-examples:
-        Example 1:
-          type: dx:controlPlane:success
-          title: Success
-          totalHits: 10
-          results:
-            - id: uuid
-              name: wifi-location
-              type:
-                - iudx:Resource
       example:
         type: dx:controlPlane:success
         title: Success
@@ -17375,12 +17568,12 @@ components:
     DelegationScope:
       type: string
       enum:
-        - cos_admin_access
-        - org_admin_access
-        - asset_management
-        - compute_management
-        - user_management
-        - data_access
+        - cos-admin-access
+        - org-admin-access
+        - asset-management
+        - compute-management
+        - user-management
+        - data-access
         - api
         - subs
       description: Allowed scope values across all roles
@@ -18169,7 +18362,7 @@ components:
         hasPrevious:
           type: boolean
           description: Indicates whether a previous page exists
-          example: fals
+          example: false
     GetPaginationInfo:
       type: object
       description: Pagination metadata for list responses

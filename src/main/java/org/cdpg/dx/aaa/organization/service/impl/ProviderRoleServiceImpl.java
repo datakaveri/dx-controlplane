@@ -262,6 +262,40 @@ public class ProviderRoleServiceImpl implements ProviderRoleService {
   }
 
   @Override
+  public Future<ProviderRoleRequest> getPlatformProviderRoleRequestByUserId(UUID userId) {
+    Map<String, Object> filter = Map.of(
+      USER_ID, userId.toString(),
+      Constants.STATUS, Status.PENDING.getStatus(),
+      Constants.PROVIDER_TYPE, Constants.PROVIDER_TYPE_PLATFORM
+    );
+    return providerRequestDAO.getAllWithFilters(filter)
+      .compose(requests -> {
+        if (requests.isEmpty()) {
+          return Future.failedFuture(new DxNotFoundException(
+            "No pending platform provider request found for userId: " + userId));
+        }
+        return Future.succeededFuture(requests.get(0));
+      });
+  }
+
+  @Override
+  public Future<Boolean> hasPendingPlatformProviderRole(UUID userId) {
+    Map<String, Object> filterMap = Map.of(
+      Constants.STATUS,        Status.PENDING.getStatus(),
+      USER_ID,                 userId.toString(),
+      Constants.PROVIDER_TYPE, Constants.PROVIDER_TYPE_PLATFORM
+    );
+    return providerRequestDAO.getAllWithFilters(filterMap)
+      .map(list -> !list.isEmpty());
+  }
+
+  @Override
+  public Future<PaginatedResult<ProviderRoleRequest>> getAllPlatformProviderRequests(
+      PaginatedRequest paginatedRequest) {
+    return providerRequestDAO.getAllWithFilters(paginatedRequest);
+  }
+
+  @Override
   public Future<Boolean> deleteProviderRoleRequestById(UUID id) {
     return providerRequestDAO.delete(id)
       .compose(deleted -> {

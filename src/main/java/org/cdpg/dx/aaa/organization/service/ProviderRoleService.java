@@ -30,4 +30,10 @@ public interface ProviderRoleService {
   Future<Boolean> deleteProviderRoleRequest(UUID orgId, UUID userId);
 
   Future<Boolean> deleteProviderRoleRequestById(UUID id);
+
+  Future<Boolean> hasPendingPlatformProviderRole(UUID userId);
+
+  Future<PaginatedResult<ProviderRoleRequest>> getAllPlatformProviderRequests(PaginatedRequest request);
+
+  Future<ProviderRoleRequest> getPlatformProviderRoleRequestByUserId(UUID userId);
 }

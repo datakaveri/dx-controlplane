@@ -50,8 +50,18 @@ paths:
     $ref: paths/access-request.yaml#/~1iudx~1acl~1apd~1v2~1access_request~1consumer
   /iudx/acl/apd/v2/access_request/has_access:
     $ref: paths/access-request.yaml#/~1iudx~1acl~1apd~1v2~1access_request~1has_access
+  /iudx/acl/apd/v2/access_request/platform:
+    $ref: paths/access-request.yaml#/~1iudx~1acl~1apd~1v2~1access_request~1platform
   /iudx/acl/apd/v2/policy:
     $ref: paths/policy.yaml#/~1iudx~1acl~1apd~1v2~1policy
+  /iudx/acl/apd/v2/policy/consumer:
+    $ref: paths/policy.yaml#/~1iudx~1acl~1apd~1v2~1policy~1consumer
+  /iudx/acl/apd/v2/policy/organisation:
+    $ref: paths/policy.yaml#/~1iudx~1acl~1apd~1v2~1policy~1organisation
+  /iudx/acl/apd/v2/policy/platform:
+    $ref: paths/policy.yaml#/~1iudx~1acl~1apd~1v2~1policy~1platform
+  /iudx/acl/apd/v2/policy/provider:
+    $ref: paths/policy.yaml#/~1iudx~1acl~1apd~1v2~1policy~1provider
   /iudx/acl/apd/v2/verify:
     $ref: paths/verify.yaml#/~1iudx~1acl~1apd~1v2~1verify
 components:
@@ -249,3 +259,13 @@ components:
       $ref: components/schemas.yaml#/invalidResponseForWrongLimitValues
     invalidResponseForWrongOffsetValues:
       $ref: components/schemas.yaml#/invalidResponseForWrongOffsetValues
+    PolicyListResponse:
+      $ref: components/schemas.yaml#/PolicyListResponse
+    Policy:
+      $ref: components/schemas.yaml#/Policy
+    PolicyUser:
+      $ref: components/schemas.yaml#/PolicyUser
+    PolicyAsset:
+      $ref: components/schemas.yaml#/PolicyAsset
+    PaginationInfo:
+      $ref: components/schemas.yaml#/PaginationInfo

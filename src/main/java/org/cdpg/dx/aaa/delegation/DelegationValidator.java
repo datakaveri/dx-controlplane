@@ -91,7 +91,7 @@ public class DelegationValidator {
         switch (normalizedScope) {
 
           // user/org ownership validation
-          case "user-management", "org-user-management", "org-publisher-management" ->
+          case "org-user-management" ->
             validations.add(validateOrgOwnership(actorId, entityIdList));
 
           // item access validation

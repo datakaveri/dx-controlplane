@@ -1,0 +1,483 @@
+/iudx/v2/requests/{request_id}/conversations:
+  get:
+    tags:
+    - Conversations
+    operationId: get-threaded-message
+    summary: Get all messages
+    description: 'Paginated conversation thread for a request. Returns root messages
+      with up to 2 levels of nested replies. Each level shows first 3 replies inline.
+      Use has_more and page param to load more.
+
+      '
+    security:
+    - authorization: []
+    parameters:
+    - name: request_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    - $ref: '../components/parameters.yaml#/PageParam'
+    - $ref: '../components/parameters.yaml#/SizeParam'
+    responses:
+      '200':
+        description: Conversation messages fetched successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                result:
+                  type: array
+                  items:
+                    $ref: '../components/schemas/conversation.yaml#/ThreadedMessage'
+                paginationInfo:
+                  $ref: '../components/schemas/pagination.yaml#/PaginationInfo'
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/GenericBadRequestResponse'
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/UnauthorizedResponse'
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/InternalServerErrorResponse'
+  post:
+    tags:
+    - Conversations
+    operationId: post-request-conversation
+    summary: Create message
+    description: Post a new message, question, answer, or internal note.
+    security:
+    - authorization: []
+    parameters:
+    - name: request_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              parent_msg_id:
+                type: string
+                format: uuid
+                nullable: true
+              sender_role:
+                type: string
+              message_type:
+                type: string
+              request_type:
+                type: string
+              content:
+                type: string
+              internal_note:
+                type: boolean
+    responses:
+      '200':
+        description: Message created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                result:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    requestType:
+                      type: string
+                      example: join_orgs
+                    requestTypeId:
+                      type: string
+                      format: uuid
+                    parentMsgId:
+                      type: string
+                      format: uuid
+                      nullable: true
+                    senderId:
+                      type: string
+                      format: uuid
+                    senderRole:
+                      type: string
+                      example: requester
+                    messageType:
+                      type: string
+                      example: text
+                    content:
+                      type: string
+                    isInternal:
+                      type: boolean
+                    createdAt:
+                      type: string
+                      format: date-time
+                    replyCount:
+                      type: integer
+                    hasReplies:
+                      type: boolean
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/GenericBadRequestResponse'
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/UnauthorizedResponse'
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/InternalServerErrorResponse'
+/iudx/v2/requests/{request_id}/conversations/{msg_id}:
+  get:
+    tags:
+    - Conversations
+    operationId: get-request-conversation-by-id
+    summary: Get single message
+    description: Fetch a specific message with its replies.
+    security:
+    - authorization: []
+    parameters:
+    - name: request_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    - name: msg_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    responses:
+      '200':
+        description: Conversation message fetched successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                result:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                      example: c0ca7a6c-597f-4e03-b861-bb912b3cb1ec
+                    requestType:
+                      type: string
+                    senderId:
+                      type: string
+                      format: uuid
+                      example: 1dc28cc6-d614-461a-9b8f-d6110feb3e2f
+                    senderRole:
+                      type: string
+                      example: new user
+                    messageType:
+                      type: string
+                      example: question
+                    content:
+                      type: string
+                      example: do ggggg have to add my phone number also ?
+                    isInternal:
+                      type: boolean
+                      example: false
+                    createdAt:
+                      type: string
+                      format: date-time
+                      example: '2026-05-05T08:52:22.936019Z'
+  put:
+    tags:
+    - Conversations
+    operationId: put-request-conversation
+    summary: Update message
+    description: Edit message content (within allowed time window).
+    security:
+    - authorization: []
+    parameters:
+    - name: request_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    - name: msg_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            minProperties: 1
+            properties:
+              content:
+                type: string
+                nullable: true
+                additionalProperties: true
+              metadata:
+                type: object
+                nullable: true
+                additionalProperties: true
+              is_internal:
+                type: boolean
+                nullable: true
+                additionalProperties: true
+    responses:
+      '200':
+        description: Message updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                result:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    requestType:
+                      type: string
+                      example: join_orgs
+                    requestTypeId:
+                      type: string
+                      format: uuid
+                    parentMsgId:
+                      type: string
+                      format: uuid
+                      nullable: true
+                    senderId:
+                      type: string
+                      format: uuid
+                    senderRole:
+                      type: string
+                      example: approver
+                    messageType:
+                      type: string
+                      example: question
+                    content:
+                      type: string
+                    isInternal:
+                      type: boolean
+                    createdAt:
+                      type: string
+                      format: date-time
+                    replyCount:
+                      type: integer
+                      example: 0
+                    hasReplies:
+                      type: boolean
+                      example: false
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/GenericBadRequestResponse'
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/UnauthorizedResponse'
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/InternalServerErrorResponse'
+  delete:
+    tags:
+    - Conversations
+    operationId: delete-request-conversation
+    summary: Delete message
+    description: Soft delete a message (admin only).
+    security:
+    - authorization: []
+    parameters:
+    - name: request_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: msg_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    responses:
+      '200':
+        description: Conversation message deleted
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: urn:dx:as:Success
+                title:
+                  type: string
+                  example: Success
+                detail:
+                  type: string
+                  example: Conversation message deleted successfully
+/iudx/v2/requests/{request_id}/conversations/{msg_id}/reply:
+  post:
+    tags:
+    - Conversations
+    operationId: post-request-conversation-reply
+    summary: Reply to message
+    description: Reply to a specific question or message (sets parent_msg_id).
+    security:
+    - authorization: []
+    parameters:
+    - name: request_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    - name: msg_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              sender_role:
+                type: string
+              message_type:
+                type: string
+              content:
+                type: string
+              internal_note:
+                type: boolean
+    responses:
+      '200':
+        description: Reply created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                result:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    requestType:
+                      type: string
+                      example: join_orgs
+                    requestTypeId:
+                      type: string
+                      format: uuid
+                    parentMsgId:
+                      type: string
+                      format: uuid
+                    senderId:
+                      type: string
+                      format: uuid
+                    senderRole:
+                      type: string
+                      example: requester
+                    messageType:
+                      type: string
+                      example: text
+                    content:
+                      type: string
+                    isInternal:
+                      type: boolean
+                    createdAt:
+                      type: string
+                      format: date-time
+                    replyCount:
+                      type: integer
+                      example: 0
+                    hasReplies:
+                      type: boolean
+                      example: false
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/GenericBadRequestResponse'
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/UnauthorizedResponse'
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/InternalServerErrorResponse'

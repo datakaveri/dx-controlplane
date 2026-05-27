@@ -94,6 +94,8 @@ public class UserServiceImpl implements UserService {
 
     if (orgId != null) {
       pendingProvider = organizationService.hasPendingProviderRole(dxUser.sub(), orgId);
+    } else {
+      pendingProvider = organizationService.hasPendingPlatformProviderRole(dxUser.sub());
     }
 
     Future<Boolean> pendingCompute = creditService.hasPendingComputeRequest(dxUser.sub());

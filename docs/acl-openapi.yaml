@@ -567,12 +567,6 @@ paths:
             enum:
               - adex:DataBank
               - adex:AiModel
-        - name: organizationId
-          in: query
-          description: Filter access requests by organization ID of the asset. Displays all requests if not specified.
-          required: false
-          schema:
-            type: string
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
         - $ref: '#/components/parameters/SortingParam'
@@ -614,8 +608,6 @@ paths:
                           assetName: Ice Estimation Model
                           assetType: adex:AiModel
                           shortDescription: This is a test AI model for estimating percentage of ice on Pluto
-                          organization: CDPG, IISC
-                          organizationId: 74e3b919-1d1b-44de-ace1-504f1887fdd3
                         expiryAt: '3000-03-05T20:00:19'
                         updatedAt: '2025-06-04T07:25:08.663637'
                         createdAt: '2025-06-04T09:10:57.267564'
@@ -912,12 +904,6 @@ paths:
             enum:
               - adex:DataBank
               - adex:AiModel
-        - name: organizationId
-          in: query
-          description: Filter access requests by organization ID of the asset. Displays all requests if not specified.
-          required: false
-          schema:
-            type: string
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
         - $ref: '#/components/parameters/SortingParam'
@@ -959,8 +945,6 @@ paths:
                           assetName: Ice Estimation Model
                           assetType: adex:AiModel
                           shortDescription: This is a test AI model for estimating percentage of ice on Pluto
-                          organization: CDPG, IISC
-                          organizationId: 74e3b919-1d1b-44de-ace1-504f1887fdd3
                         expiryAt: '3000-03-05T20:00:19'
                         updatedAt: '2025-06-04T07:25:08.663637'
                         createdAt: '2025-06-04T09:10:57.267564'
@@ -1004,177 +988,18 @@ paths:
         - lang: cURL
           label: Get access requests
           source: |
-            curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/organisation' \
+            curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/provider' \
           '--header ''Authorization': <tokenValue>'
         - lang: cURL
           label: Get access request with status
           source: |
-            curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/organisation?requestStatus=GRANTED' \
+            curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/provider?requestStatus=GRANTED' \
           '--header ''Authorization': <tokenValue>'
         - lang: cURL
           label: With pagination query params
           source: |
-            curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/organisation?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc' \
+            curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/provider?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc' \
           '--header ''Authorization': <tokenValue>'
-  /iudx/acl/apd/v2/access_request/platform:
-    get:
-      tags:
-        - Access Request
-      summary: List Platform Access Requests (COS Admin)
-      description: |
-        Lists all the latest access requests for assets across the DX platform,
-        regardless of their current state.
-
-        This endpoint is accessible only to users with the `cos_admin` role and
-        provides a platform-wide view of access requests across all organizations.
-
-        <br>
-        <br>
-
-        `Note:` The response includes access requests from all organizations on the platform.
-        Optionally, results can be filtered using query parameters such as requestStatus,
-        assetType, and temporal filters.
-      operationId: get-auth-v2-access-requests-platform
-      parameters:
-        - name: requestStatus
-          in: query
-          description: Status of the access request. Displays all the access requests
-            if status is not specified
-          required: false
-          schema:
-            type: string
-            enum:
-              - PENDING
-              - GRANTED
-              - REJECTED
-              - WITHDRAWN
-        - name: assetType
-          in: query
-          description: Type of the asset for which the access request is made. Displays
-            all the access requests if assetType is not specified
-          required: false
-          schema:
-            type: string
-            enum:
-              - adex:DataBank
-              - adex:AiModel
-        - name: organizationId
-          in: query
-          description: Filter access requests by organization ID of the asset. Displays all requests if not specified.
-          required: false
-          schema:
-            type: string
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParam'
-        - $ref: '#/components/parameters/SortingParam'
-        - $ref: '#/components/parameters/TimeParam'
-        - $ref: '#/components/parameters/EndTimeParam'
-        - $ref: '#/components/parameters/TimeRelParam'
-      responses:
-        '200':
-          description: 'OK
-
-              - Successfully fetched all the access requests of consumers across the platform'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccessRequest'
-              examples:
-                ListResults:
-                  value:
-                    type: urn:dx:AclApd:success
-                    title: Success
-                    results:
-                      - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
-                        requestStatus: GRANTED
-                        requestType: DOWNLOAD
-                        additionalInfo:
-                          name: Miles Morales,
-                          email: miles.morales@acmecorp.org,
-                          phoneNo: 9876543210,
-                          purpose: academia,
-                          description: AI model would be used for non-commercial, academia
-                            purposes to test the application abcd
-                        user:
-                          consumerId: a13eb955-c691-4fd3-b200-f18bc78810b5
-                          consumerFirstName: Plutonian
-                          consumerLastName: Resident
-                          consumerEmail: scroopy@noopers.com
-                          consumerOrganization: Scroopy Noopers Corp
-                        asset:
-                          itemId: 316cd4eb-71b3-42c2-beb2-785a77999321
-                          assetName: Ice Estimation Model
-                          assetType: adex:AiModel
-                          shortDescription: This is a test AI model for estimating percentage
-                            of ice on Pluto
-                          organization: CDPG, IISC
-                          organizationId: 74e3b919-1d1b-44de-ace1-504f1887fdd3
-                        expiryAt: '3000-03-05T20:00:19'
-                        updatedAt: '2025-06-04T07:25:08.663637'
-                        createdAt: '2025-06-04T09:10:57.267564'
-                    paginationInfo:
-                      page: 1
-                      size: 1
-                      totalCount: 3
-                      totalPages: 3
-                      hasNext: true
-                      hasPrevious: false
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '400':
-          description: Bad Request- Schema validation, missing or incorrect fields
-            & values
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/updateNotificationBadRequest'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-        '401':
-          description: '- Unauthorized - `token` invalid/expired'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Unauthorized'
-          headers:
-            Content-Type:
-              schema:
-                type: string
-              description: application/json
-      security:
-        - authorization: [ ]
-      x-codeSamples:
-        - lang: cURL
-          label: Get access requests
-          source: 'curl --location --request GET 
-          ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/platform''
-            \
-
-            '
-          --header 'Authorization: <tokenValue>'
-        - lang: cURL
-          label: Get access request with status
-          source: 'curl --location --request GET 
-            ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/platform?requestStatus=GRANTED''
-            \
-
-            '
-          --header 'Authorization: <tokenValue>'
-        - lang: cURL
-          label: With pagination query params
-          source: 'curl --location --request GET 
-            ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/platform?requestStatus=PENDING
-            &timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
-            \
-
-            '
-          --header 'Authorization: <tokenValue>'
   /iudx/acl/apd/v2/access_request/consumer:
     get:
       tags:
@@ -1203,12 +1028,6 @@ paths:
             enum:
               - adex:DataBank
               - adex:AiModel
-        - name: organizationId
-          in: query
-          description: Filter access requests by organization ID of the asset. Displays all requests if not specified.
-          required: false
-          schema:
-            type: string
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
         - $ref: '#/components/parameters/SortingParam'
@@ -1248,8 +1067,6 @@ paths:
                           assetName: Ice Estimation Model
                           assetType: adex:AiModel
                           shortDescription: This is a test AI model for estimating percentage of ice on Pluto
-                          organization: CDPG, IISC
-                          organizationId: 74e3b919-1d1b-44de-ace1-504f1887fdd3
                         expiryAt: '3000-03-05T20:00:19'
                         updatedAt: '2025-06-04T07:25:08.663637'
                         createdAt: '2025-06-04T09:10:57.267564'
@@ -1332,53 +1149,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/checkAccessRequestSuccessResponse'
-              examples:
-                Independent User Access:
-                  value:
-                    type: dx:aclApd:success
-                    title: Success
-                    detail: User has access to the given asset!
-                    result:
-                      - policyId: caa261ec-28f6-4567-9825-a5ecd75e6bba
-                        constraints:
-                          access:
-                            - accessType: api
-                        expiryAt: '2026-08-05T20:00:19'
-                    paginationInfo:
-                      page: 1
-                      size: 1
-                      totalCount: 1
-                      totalPages: 1
-                      hasNext: false
-                      hasPrevious: false
-
-                Org Level Policy Access:
-                  value:
-                    type: dx:aclApd:success
-                    title: Success
-                    detail: User has access to the given asset!
-                    result:
-                      - policyId: c26acea7-8992-47b2-9113-0c6255cfeee3
-                        constraints:
-                          access:
-                            - accessType: api
-                              expiry: 1735689600
-                              limits:
-                                apiHits: 100
-                          subjects:
-                            allowedOrgIds:
-                              - 2accd360-d791-4364-b18b-530b1b148cb9
-                            allowedRoles:
-                              - org_admin
-                              - provider
-                        expiryAt: '2026-08-04T20:00:19'
-                    paginationInfo:
-                      page: 1
-                      size: 1
-                      totalCount: 1
-                      totalPages: 1
-                      hasNext: false
-                      hasPrevious: false
           headers:
             Content-Type:
               schema:
@@ -1440,217 +1210,197 @@ paths:
             --header 'Authorization: <tokenValue>' \
             --header 'Content-Type: application/json' \
               --data-raw '<payload>'
+  /iudx/acl/apd/v2/access_request/platform:
+    get:
+      tags:
+        - Access Request
+      summary: List Platform Access Requests (COS Admin)
+      description: |
+        Lists all the latest access requests for assets across the DX platform,
+        regardless of their current state.
+
+        This endpoint is accessible only to users with the `cos_admin` role and
+        provides a platform-wide view of access requests across all organizations.
+
+        <br>
+        <br>
+
+        `Note:` The response includes access requests from all organizations on the platform.
+        Optionally, results can be filtered using query parameters such as requestStatus,
+        assetType, and temporal filters.
+      operationId: get-auth-v2-access-requests-platform
+      parameters:
+        - name: requestStatus
+          in: query
+          description: Status of the access request. Displays all the access requests if status is not specified
+          required: false
+          schema:
+            type: string
+            enum:
+              - PENDING
+              - GRANTED
+              - REJECTED
+              - WITHDRAWN
+        - name: assetType
+          in: query
+          description: Type of the asset for which the access request is made. Displays all the access requests if assetType is not specified
+          required: false
+          schema:
+            type: string
+            enum:
+              - adex:DataBank
+              - adex:AiModel
+        - name: organizationId
+          in: query
+          description: Filter access requests by organization ID of the asset. Displays all requests if not specified.
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+        - $ref: '#/components/parameters/TimeParam'
+        - $ref: '#/components/parameters/EndTimeParam'
+        - $ref: '#/components/parameters/TimeRelParam'
+      responses:
+        '200':
+          description: |-
+            OK
+            - Successfully fetched all the access requests of consumers across the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessRequest'
+              examples:
+                ListResults:
+                  value:
+                    type: urn:dx:AclApd:success
+                    title: Success
+                    results:
+                      - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
+                        requestStatus: GRANTED
+                        requestType: DOWNLOAD
+                        additionalInfo:
+                          name: Miles Morales,
+                          email: miles.morales@acmecorp.org,
+                          phoneNo: 9876543210,
+                          purpose: academia,
+                          description: AI model would be used for non-commercial, academia purposes to test the application abcd
+                        user:
+                          consumerId: a13eb955-c691-4fd3-b200-f18bc78810b5
+                          consumerFirstName: Plutonian
+                          consumerLastName: Resident
+                          consumerEmail: scroopy@noopers.com
+                          consumerOrganization: Scroopy Noopers Corp
+                        asset:
+                          itemId: 316cd4eb-71b3-42c2-beb2-785a77999321
+                          assetName: Ice Estimation Model
+                          assetType: adex:AiModel
+                          shortDescription: This is a test AI model for estimating percentage of ice on Pluto
+                          organization: CDPG, IISC
+                          organizationId: 74e3b919-1d1b-44de-ace1-504f1887fdd3
+                        expiryAt: '3000-03-05T20:00:19'
+                        updatedAt: '2025-06-04T07:25:08.663637'
+                        createdAt: '2025-06-04T09:10:57.267564'
+                    paginationInfo:
+                      page: 1
+                      size: 1
+                      totalCount: 3
+                      totalPages: 3
+                      hasNext: true
+                      hasPrevious: false
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+        '400':
+          description: Bad Request- Schema validation, missing or incorrect fields & values
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/updateNotificationBadRequest'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+        '401':
+          description: '- Unauthorized - `token` invalid/expired'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+      security:
+        - authorization: []
+      x-codeSamples:
+        - lang: cURL
+          label: Get access requests
+          source: |
+            curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/platform' \
+          '--header ''Authorization': <tokenValue>'
+        - lang: cURL
+          label: Get access request with status
+          source: |
+            curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/platform?requestStatus=GRANTED' \
+          '--header ''Authorization': <tokenValue>'
+        - lang: cURL
+          label: With pagination query params
+          source: |
+            curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/platform?requestStatus=PENDING &timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc' \
+          '--header ''Authorization': <tokenValue>'
   /iudx/acl/apd/v2/policy:
     post:
       tags:
         - Policies
       summary: Create Policy
-      operationId: post-auth-v1-policies
       description: |-
 
-        Creates one or more access policies for resources owned by the provider.
+        The `Create Policy` API allows a `provider` or an authorized `delegate`
+        to create an **ACTIVE access policy** for a resource owned by the provider.
 
-        This API allows a `provider` or an authorized `delegate`
-        to define fine-grained access control rules for resources,
-        AI models, or resource groups.
+        When a policy is successfully created:
 
-        A policy determines:
-        - Who can access a resource
-        - How the resource can be accessed
-        - Access validity duration
-        - Usage restrictions and limits
-
-        Each successfully created policy is stored with status `ACTIVE`
-        and internally linked to one or more access rules used during
-        authorization and policy verification.
-
-        ---
-
-        ## Supported Policy Types
-
-        The API supports two policy models.
-
-        ### 1. INDIVIDUAL Policy
-
-        An `INDIVIDUAL` policy grants access directly to a specific user.
-
-        Characteristics:
-        - `userId` is mandatory
-        - Access evaluation is performed using the provided `userId`
-        - `constraints.subjects` is optional
-        - Commonly used for granting access to a single consumer
-
-        Example use cases:
-        - Granting access to a specific customer
-        - Providing temporary trial access
-        - Issuing subscription access to a single user
-
-        ### 2. GROUP Policy
-
-        A `GROUP` policy grants access to users matching one or more
-        subject constraints.
-
-        Characteristics:
-        - `userId` is not required
-        - `constraints.subjects` is mandatory
-        - Access evaluation is performed using subject matching
-        - Supports organization-level and role-based access control
-
-        Example use cases:
-        - Granting access to all users of an organization
-        - Allowing all users with the `consumer` role
-        - Allowing access to a predefined user group
-
-        ---
+        - A new policy record is created with status = `ACTIVE`
+        - A corresponding access rule is created and linked to the policy
+        - The rule inherits the same lifecycle as the policy
 
         ## Policy Lifecycle
 
-        ### ACTIVE
+        - On creation → Policy status = `ACTIVE`
+        - On deletion → Policy status = `DELETED`
+        - On expiry → Policy remains `ACTIVE`, but is treated as invalid during verification
 
-        When a policy is successfully created:
-        - Policy status is set to `ACTIVE`
-        - Associated access rules are also created as `ACTIVE`
+        ### Expiry Handling
 
-        ACTIVE policies participate in authorization checks.
+        Policy expiry does not modify the stored status.
 
-        ### DELETED
+        Instead, during policy verification:
+        - The system checks whether `expiryAt` is greater than the current timestamp.
+        - If expired, the policy is treated as inactive for access evaluation.
+        - The database status remains unchanged.
 
-        When a policy is deleted:
-        - Policy status becomes `DELETED`
-        - All associated access rules are also marked `DELETED`
+        ### Rule Synchronization
 
-        Deleted policies are ignored during authorization evaluation.
-
-        ### EXPIRED
-
-        Policy expiry does not modify the stored database status.
-
-        During authorization:
-        - The system validates whether `expiryTime`
-          is greater than the current timestamp
-        - Expired policies are treated as inactive
-        - The stored status remains unchanged
-
-        ---
-
-        ## Batch Policy Creation
-
-        The request body contains a `request` array.
-
-        Each element in the array represents an independent
-        policy creation request.
-
-        The API supports batch policy creation, allowing multiple
-        policies to be created in a single API call.
-
-        Validation is performed independently for each request object.
-
-        ---
+        When a policy is marked as `DELETED`, all associated access rules are also marked as 
+        `DELETED`.
 
         ## Item Types
 
-        ### DATABANK
+        - `DATABANK`: Policy applies to individual resources.
+        - `AIMODEL`: Policy applies to resource groups.
 
-        Policy applies to individual resources or datasets.
+        ## Important Notes
 
-        ### AIMODEL
-
-        Policy applies to AI models or resource groups.
-
-        ---
-
-        ## Constraints Evaluation
-
-        The `constraints` object defines authorization rules.
-
-        A policy may contain:
-
-        - `subjects`
-          Defines who is eligible to access the resource
-
-        - `access`
-          Defines how the resource may be accessed
-
-        ### subjects
-
-        Subject constraints are used during authorization evaluation.
-
-        Access is granted when the requesting entity matches
-        one or more configured subject conditions.
-
-        Supported subject filters:
-
-        - `allowedOrgIds`
-          List of permitted organization IDs
-
-        - `allowedUserIds`
-          List of permitted user IDs
-
-        - `allowedRoles`
-          List of permitted platform roles
-
-        `subjects` is mandatory for `GROUP` policies.
-
-        ### access
-
-        Defines supported access mechanisms.
-
-        Supported access types:
-
-        - `api`
-          API-based access
-
-        - `file`
-          File download access
-
-        - `sub`
-          Subscription or streaming access
-
-        Each access entry may additionally define:
-
-        - `expiry`
-          Expiry timestamp in epoch seconds
-
-        - `limits`
-          Optional usage restrictions such as:
-          - `apiHits`
-          - `dataUsage`
-
-        ---
-
-        ## Validation Rules
-
-        ### INDIVIDUAL Policy
-
-        Requires:
-        - `policyType = INDIVIDUAL`
-        - `userId`
-
-        ### GROUP Policy
-
-        Requires:
-        - `policyType = GROUP`
-        - `constraints.subjects`
-
-        ### Duplicate Policy Restriction
-
-        Only one ACTIVE policy may exist for the same policy scope.
-
-        If a conflicting ACTIVE policy already exists,
-        the API returns `409 Conflict`.
-
-        ---
-
-        ## Authorization Requirements
-
-        This API may only be invoked by:
-
-        - A `provider`
-        - An authorized `delegate`
-
-        Additionally:
-        - The caller must own the resource
-        - Or be delegated access by the resource owner
+        - Only one policy can be created per request.
+        - Only one ACTIVE policy can exist per (user, itemId).
+        - If a valid ACTIVE policy already exists, a `409 Conflict` is returned.
+      operationId: post-auth-v1-policies
       parameters:
         - name: Authorization
           in: header
@@ -1668,7 +1418,7 @@ paths:
 
             ### User Policy Request:
 
-            - `userId`: The ID of the user for whom the policy is being defined.
+            - `userEmail`: The email ID of the user for whom the policy is being defined.
             - `itemId`: The UUID value of the item for which the policy is being established.
             - `itemType`: An enum value representing the type of the item.
             - `expiryTime`: An optional field, representing the policy's expiry time in ISO8601 format compatible with UTC (yyyy-MM-dd'T'HH:mm:ss). If not provided, a default expiry time is set for the policy.
@@ -1693,16 +1443,57 @@ paths:
                 request:
                   type: array
                   minItems: 1
+                  uniqueItems: true
                   items:
-                    oneOf:
-                      - $ref: '#/components/schemas/IndividualPolicyRequest'
-                      - $ref: '#/components/schemas/GroupPolicyRequest'
+                    type: object
+                    additionalProperties: false
+                    properties:
+                      userEmail:
+                        type: string
+                        pattern: ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$
+                        minLength: 1
+                      itemId:
+                        type: string
+                        pattern: ^[a-zA-Z0-9_*\-*\.\/]+$
+                        minLength: 1
+                        maxLength: 512
+                      itemType:
+                        enum:
+                          - AIMODEL
+                          - DATABANK
+                        minLength: 1
+                      expiryTime:
+                        type: string
+                        pattern: ^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24\:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$
+                        minLength: 1
+                      constraints:
+                        type: object
+                      additionalInfo:
+                        type: object
+                        description: Additional information to access data for educational, research or testing, non-commercial, academia purposes
+                        minProperties: 0
+                        maxProperties: 10
+                      providerComment:
+                        type: string
+                        description: Comment from the provider regarding the resource item, which can be used to provide additional information about the resource
+                        minLength: 1
+                        maxLength: 4000
+                      feedbackToConsumer:
+                        type: string
+                        description: Feedback from the provider to the consumer regarding the resource item, which can be used to provide additional information about the resource
+                        maxLength: 4000
+                        minLength: 1
+                    required:
+                      - userEmail
+                      - itemId
+                      - itemType
+                      - constraints
               required:
                 - request
               x-examples:
                 example-1:
                   request:
-                    - userId: <uuid>
+                    - userEmail: pqr@abc.com
                       itemId: example-resource-group
                       itemType: DATABANK
                       expiryTime: '2023-08-30T21:10:06'
@@ -1727,7 +1518,7 @@ paths:
                               dataUsage: 10:gb
                           - accessType: sub
                             expiry: 1735689600
-                    - userId: <uuid>
+                    - userEmail: test@demo.com
                       itemId: example-resource-group
                       itemType: DATABANK
                       expiryTime: '2023-08-30T21:10:06'
@@ -1756,7 +1547,7 @@ paths:
               Request for resource with additionalInfo:
                 value:
                   request:
-                    - userId: <uuid>
+                    - userEmail: abc@xyz.com
                       itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
                       itemType: DATABANK
                       expiryTime: '2022-08-04T20:00:19'
@@ -1788,7 +1579,7 @@ paths:
               Request for resource user policy:
                 value:
                   request:
-                    - userId: <uuid>
+                    - userEmail: abc@xyz.com
                       itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
                       itemType: DATABANK
                       expiryTime: '2022-10-10T04:00:19'
@@ -1868,7 +1659,7 @@ paths:
         - authorization: []
       x-codeSamples:
         - lang: cURL
-          label: Create INDIVIDUAL Policy
+          label: Create policy
           source: |
             curl --location 'https://${HOSTNAME}/iudx/acl/apd/v2/policy' \
             --header 'Authorization: Bearer <tokenValue>' \
@@ -1876,8 +1667,7 @@ paths:
             --data-raw '{
               "request": [
                 {
-                  "policyType": "INDIVIDUAL",
-                  "userId": "5067611f-0835-4cee-9b3e-fe81adab65f1",
+                  "userEmail": "consumer@example.com",
                   "itemId": "5011676f-0835-4cee-9b3e-fe81adab65f1",
                   "itemType": "DATABANK",
                   "expiryTime": "2026-08-04T20:00:19Z",
@@ -1885,67 +1675,77 @@ paths:
                     "access": [
                       {
                         "accessType": "api",
-                        "expiry": 1785873619,
-                        "limits": {
-                          "apiHits": 1000,
-                          "dataUsage": "100:gb"
-                        }
-                      },
-                      {
-                        "accessType": "file",
-                        "expiry": 1785873619,
-                        "limits": {
-                          "dataUsage": "10:gb"
-                        }
+                        "expiry": 1735689600
                       }
                     ]
-                  },
-                  "providerComment": "Access granted for analytics usage",
-                  "feedbackToConsumer": "Use only for internal testing"
+                  }
                 }
               ]
             }'
+    get:
+      tags:
+        - Policies
+      summary: Get Policies
+      description: |
+        Get all latest policies associated with a specific user. The response is determined by the user's roles:
 
+        - If the user is a `provider`, the response includes all policies created by the provider or their delegates.
+        - If the user is a `delegate`, the response comprises policies set by the delegate or set for the consumer on whose behalf the delegate is acting.
+        - If the user is a `consumer`, the response includes policies set for the consumer.
+
+        `Note`: Please note that the response displays the policies for a user concerning a specific server.
+      operationId: get-auth-v1-policies
+      parameters:
+        - name: Authorization
+          in: header
+          description: DX Auth issued identity token
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            pattern: Bearer [a-zA-Z0-9_*\-*\.\/]+$|^[a-zA-Z0-9_*\-*\.\/]+$
+      responses:
+        '200':
+          description: Policies have been successfully listed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getPolicySuccessResponseWithResourceType'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+        '401':
+          description: Unauthorized - `token` invalid/expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+        '404':
+          description: Not Found - Policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/policyNotFound'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+      security:
+        - authorization: []
+      x-codeSamples:
         - lang: cURL
-          label: Create GROUP Policy
+          label: get latest policies
           source: |
-            curl --location 'https://${HOSTNAME}/iudx/acl/apd/v2/policy' \
-            --header 'Authorization: Bearer <tokenValue>' \
-            --header 'Content-Type: application/json' \
-            --data-raw '{
-              "request": [
-                {
-                  "policyType": "GROUP",
-                  "itemId": "7f1f6f2d-6b6e-45c0-98a8-cdc8d3db0aa1",
-                  "itemType": "DATABANK",
-                  "expiryTime": "2026-12-31T23:59:59Z",
-                  "constraints": {
-                    "subjects": {
-                      "allowedOrgIds": [
-                        "2ef0f344-dc41-4369-a50b-1515a0db5db2"
-                      ],
-                      "allowedRoles": [
-                        "consumer"
-                      ]
-                    },
-                    "access": [
-                      {
-                        "accessType": "api",
-                        "expiry": 1785873619,
-                        "limits": {
-                          "apiHits": 5000
-                        }
-                      },
-                      {
-                        "accessType": "sub",
-                        "expiry": 1785873619
-                      }
-                    ]
-                  },
-                  "providerComment": "Organization-wide access for subscribed consumers"
-                }
-              ]
-            }'
+            curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/policy' \
+            --header 'Authorization: <tokenValue>'
     put:
       tags:
         - Policies
@@ -2066,7 +1866,7 @@ paths:
       description: |
         Lists all policies applicable to the consumer calling the API.
       security:
-        - authorization: [ ]
+        - authorization: []
       parameters:
         - name: status
           in: query
@@ -2098,49 +1898,6 @@ paths:
                 $ref: '#/components/schemas/PolicyListResponse'
         '401':
           description: Unauthorized
-  /iudx/acl/apd/v2/policy/provider:
-    get:
-      tags:
-        - Policies
-      operationId: get-policies-provider-api
-      summary: List Provider Policies
-      description: |
-        Lists all policies created by the provider or delegate calling the API.
-      security:
-        - authorization: [ ]
-      parameters:
-        - name: status
-          in: query
-          description: Status of the policy. Displays all the policies if status is not specified
-          required: false
-          schema:
-            type: string
-            enum:
-              - ACTIVE
-              - DELETED
-        - name: organizationId
-          in: query
-          description: Filter policies by organization ID of the asset. Displays all policies if not specified.
-          required: false
-          schema:
-            type: string
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParam'
-        - $ref: '#/components/parameters/SortingParam'
-        - $ref: '#/components/parameters/TimeParam'
-        - $ref: '#/components/parameters/EndTimeParam'
-        - $ref: '#/components/parameters/TimeRelParam'
-      responses:
-        '200':
-          description: Successfully fetched provider policies
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PolicyListResponse'
-        '401':
-          description: Unauthorized
-        '403':
-          description: Forbidden
   /iudx/acl/apd/v2/policy/organisation:
     get:
       tags:
@@ -2150,7 +1907,7 @@ paths:
       description: |
         Lists all policies for assets belonging to the organization of the org admin.
       security:
-        - authorization: [ ]
+        - authorization: []
       parameters:
         - name: status
           in: query
@@ -2193,7 +1950,7 @@ paths:
       description: |
         Lists all policies across the platform. Accessible only to COS Admin users.
       security:
-        - authorization: [ ]
+        - authorization: []
       parameters:
         - name: status
           in: query
@@ -2219,6 +1976,49 @@ paths:
       responses:
         '200':
           description: Successfully fetched platform policies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyListResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+  /iudx/acl/apd/v2/policy/provider:
+    get:
+      tags:
+        - Policies
+      operationId: get-policies-provider-api
+      summary: List Provider Policies
+      description: |
+        Lists all policies created by the provider or delegate calling the API.
+      security:
+        - authorization: []
+      parameters:
+        - name: status
+          in: query
+          description: Status of the policy. Displays all the policies if status is not specified
+          required: false
+          schema:
+            type: string
+            enum:
+              - ACTIVE
+              - DELETED
+        - name: organizationId
+          in: query
+          description: Filter policies by organization ID of the asset. Displays all policies if not specified.
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+        - $ref: '#/components/parameters/TimeParam'
+        - $ref: '#/components/parameters/EndTimeParam'
+        - $ref: '#/components/parameters/TimeRelParam'
+      responses:
+        '200':
+          description: Successfully fetched provider policies
           content:
             application/json:
               schema:
@@ -2420,150 +2220,7 @@ components:
       required: false
       schema:
         type: string
-    status:
-      name: status
-      in: query
-      schema:
-        type: string
-        enum: [ ACTIVE, DELETED ]
-      description: Filter by policy status
-    assetType:
-      name: assetType
-      in: query
-      schema:
-        type: string
-        enum: [ adex:DataBank, adex:AiModel ]
-      description: Type of asset
-    organizationId:
-      name: organizationId
-      in: query
-      schema:
-        type: string
-      description: Filter by organization ID
-    page:
-      name: page
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        default: 1
-    size:
-      name: size
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        default: 1000
-    sort:
-      name: sort
-      in: query
-      schema:
-        type: string
-      description: Sorting format field:asc;field:desc
-    time:
-      name: time
-      in: query
-      schema:
-        type: string
-        format: date-time
-    endtime:
-      name: endtime
-      in: query
-      schema:
-        type: string
-        format: date-time
-    timerel:
-      name: timerel
-      in: query
-      schema:
-        type: string
-        enum: [ between, before, after ]
-
   schemas:
-    BasePolicyRequest:
-      type: object
-      additionalProperties: false
-      properties:
-        policyType:
-          type: string
-          enum:
-            - INDIVIDUAL
-            - GROUP
-        itemId:
-          type: string
-          pattern: ^[a-zA-Z0-9_*\-*\.\/]+$
-          minLength: 1
-          maxLength: 512
-        itemType:
-          type: string
-          enum:
-            - AIMODEL
-            - DATABANK
-        expiryTime:
-          type: string
-          format: date-time
-        constraints:
-          type: object
-        additionalInfo:
-          type: object
-        providerComment:
-          type: string
-          minLength: 1
-          maxLength: 4000
-        feedbackToConsumer:
-          type: string
-          minLength: 1
-          maxLength: 4000
-      required:
-        - policyType
-        - itemId
-        - itemType
-        - constraints
-    IndividualPolicyRequest:
-      allOf:
-        - $ref: '#/components/schemas/BasePolicyRequest'
-        - type: object
-          properties:
-            policyType:
-              enum:
-                - INDIVIDUAL
-            userId:
-              type: string
-              format: uuid
-          required:
-            - userId
-    GroupPolicyRequest:
-      allOf:
-        - $ref: '#/components/schemas/BasePolicyRequest'
-        - type: object
-          properties:
-            policyType:
-              enum:
-                - GROUP
-            constraints:
-              type: object
-              required:
-                - subjects
-              properties:
-                subjects:
-                  type: object
-                  properties:
-                    allowedOrgIds:
-                      type: array
-                      items:
-                        type: string
-                        format: uuid
-
-                    allowedUserIds:
-                      type: array
-                      items:
-                        type: string
-                        format: uuid
-
-                    allowedRoles:
-                      type: array
-                      items:
-                        type: string
     AssetRequest:
       type: object
       properties:
@@ -2852,79 +2509,26 @@ components:
         title: Success
         detail: Request inserted successfully!
     checkAccessRequestSuccessResponse:
+      title: Create notification success
       type: object
-      additionalProperties: false
       properties:
         type:
           type: string
-          example: dx:aclApd:success
+          minLength: 1
         title:
           type: string
-          example: Success
+          minLength: 1
         detail:
           type: string
-          example: User has access to the given asset!
-        result:
-          type: array
-          items:
-            $ref: '#/components/schemas/accessPolicyResult'
-        paginationInfo:
-          $ref: '#/components/schemas/paginationInfo'
+          minLength: 1
       required:
         - type
         - title
         - detail
-        - result
-        - paginationInfo
-    accessPolicyResult:
-      type: object
-      additionalProperties: false
-      properties:
-        policyId:
-          type: string
-          format: uuid
-          example: caa261ec-28f6-4567-9825-a5ecd75e6bba
-        constraints:
-          type: object
-          description: Policy or rule constraints associated with the access
-        expiryAt:
-          type: string
-          format: date-time
-          nullable: true
-          example: '2026-08-05T20:00:19'
-      required:
-        - policyId
-        - constraints
-        - expiryAt
-    paginationInfo:
-      type: object
-      additionalProperties: false
-      properties:
-        page:
-          type: integer
-          example: 1
-        size:
-          type: integer
-          example: 1
-        totalCount:
-          type: integer
-          example: 1
-        totalPages:
-          type: integer
-          example: 1
-        hasNext:
-          type: boolean
-          example: false
-        hasPrevious:
-          type: boolean
-          example: false
-      required:
-        - page
-        - size
-        - totalCount
-        - totalPages
-        - hasNext
-        - hasPrevious
+      example:
+        type: urn:dx:AclApd:success
+        title: Success
+        detail: User has access to the given asset!
     createNotificationResourceNotFoundResponse:
       title: Create notification resource not found
       type: object
@@ -6527,10 +6131,8 @@ components:
       properties:
         policyId:
           type: string
-
         status:
           type: string
-
         additionalInfo:
           type: object
           properties:
@@ -6540,22 +6142,17 @@ components:
               type: string
             purposeOfRequest:
               type: string
-
         expiryAt:
           type: string
           format: date-time
-
         createdAt:
           type: string
           format: date-time
-
         updatedAt:
           type: string
           format: date-time
-
         user:
           $ref: '#/components/schemas/PolicyUser'
-
         asset:
           $ref: '#/components/schemas/PolicyAsset'
     PolicyUser:
@@ -6586,95 +6183,6 @@ components:
           type: string
         organizationId:
           type: string
-    PolicyConstraints:
-      type: object
-      description: |
-        Defines the access control rules associated with the policy.
-        
-        A policy may contain:
-        - `subjects`: Defines who can access the resource.
-        - `access`: Defines how the resource can be accessed.
-        
-        For `GROUP` policies, `subjects` is mandatory.
-        For `INDIVIDUAL` policies, `subjects` is optional because access is already scoped to `userId`.
-      additionalProperties: false
-      properties:
-        subjects:
-          $ref: '#/components/schemas/PolicySubjects'
-        access:
-          type: array
-          description: List of allowed access modes for the resource.
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/PolicyAccess'
-    PolicySubjects:
-      type: object
-      description: |
-        Defines subject-level restrictions for policy evaluation.
-        
-        Access is granted if the requesting entity matches one or more
-        configured subject constraints.
-      additionalProperties: false
-      properties:
-        allowedOrgIds:
-          type: array
-          description: List of organization IDs allowed to access the resource.
-          items:
-            type: string
-            format: uuid
-        allowedUserIds:
-          type: array
-          description: List of user IDs allowed to access the resource.
-          items:
-            type: string
-            format: uuid
-        allowedRoles:
-          type: array
-          description: List of user roles allowed to access the resource.
-          items:
-            type: string
-            example: consumer
-    PolicyAccess:
-        type: object
-        description: |
-          Defines the permitted access mode and optional usage limits.
-        additionalProperties: false
-        properties:
-          accessType:
-            type: string
-            enum:
-              - api
-              - file
-              - sub
-            description: |
-              Type of access permitted.
-              - `api` → API-based access
-              - `file` → File download access
-              - `sub` → Subscription/stream access
-          expiry:
-            type: integer
-            format: int64
-            description: Expiry timestamp in epoch seconds.
-          limits:
-            type: object
-            description: |
-              Optional usage limits associated with the access type.
-              Examples:
-              - `dataUsage`
-              - `apiHits`
-            additionalProperties: true
-    AccessObject:
-      type: object
-      properties:
-        accessType:
-          type: string
-        expiry:
-          type: integer
-        limits:
-          type: object
-          properties:
-            apiHits:
-              type: integer
     PaginationInfo:
       type: object
       properties:
