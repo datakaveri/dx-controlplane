@@ -89,8 +89,7 @@
     tags:
     - Ingestion type(API/SFTP) APIs
     summary: List Org Admin User Asset Requests
-    description: 'Lists all the latest asset requests made by the org admin user calling the API, regardless of the request status. Supports pagination, sorting, and temporal filtering. Requires an authenticated user token with `org_admin` role.
-
+    description: 'Lists all the latest asset requests made by the cos_admin/org_admin/provider user calling the API, regardless of the request status.
       **Log Type:** `USER_ACTION`
 
       '
@@ -165,7 +164,7 @@
     tags:
     - Ingestion type(API/SFTP) APIs
     operationId: put-auth-v2-asset-request
-    description: 'Updates the status of an existing data ingestion access request by ID.
+    description: '**Cos_admin** Updates the status of an existing data ingestion access request by ID.
 
       **Log Type:** `USER_ACTION`
 
