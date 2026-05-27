@@ -190,6 +190,13 @@
       "verticleInstances": 1,
       "isWorkerVerticle": false,
       "grpcPort": 9090,
+      "keycloakJwksUrl": "https://v2.dev.keycloak.iudx.io/auth/realms/iudx-v2/protocol/openid-connect/certs",
+      "grpcAllowedServiceClients": [
+        "svc-dx-dataplane",
+        "svc-ogc-resource-server",
+        "svc-file-server",
+        "svc-pdx"
+      ],
       "required": ["postgresOptions", "commonOptions", "keycloakOptions"]
     }
   ]

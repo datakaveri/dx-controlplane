@@ -7,11 +7,15 @@ import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.POSTGRES_SE
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.ServerInterceptors;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
+import io.vertx.core.json.JsonArray;
 import io.vertx.ext.web.client.WebClient;
 import java.io.IOException;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.appCredentials.dao.AppConstraintsDAO;
@@ -21,6 +25,8 @@ import org.cdpg.dx.aaa.appCredentials.dao.impl.AppCredentialsDAOImpl;
 import org.cdpg.dx.aaa.appCredentials.service.AppCredentialsService;
 import org.cdpg.dx.aaa.appCredentials.service.impl.AppCredentialsServiceImpl;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
+import org.cdpg.dx.aaa.grpc.auth.JwksCache;
+import org.cdpg.dx.aaa.grpc.auth.ServiceAuthInterceptor;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
@@ -63,7 +69,6 @@ public class GrpcServerVerticle extends AbstractVerticle {
     AppConstraintsDAO appConstraintsDAO = new AppConstraintsDAOImpl(postgresService);
     DataBrokerService dataBrokerService =
         DataBrokerService.createProxy(vertx, DATA_BROKER_SERVICE_ADDRESS);
-    // delegationValidator is only needed by createApp(); this verticle never calls it
     AppCredentialsService appCredentialsService =
         new AppCredentialsServiceImpl(
             null,
@@ -80,8 +85,38 @@ public class GrpcServerVerticle extends AbstractVerticle {
         new AppIdVerificationGrpcService(
             vertx, appCredentialsService, itemService, delegationService, keycloakUserService);
 
+    // JWKS URL — prefer explicit override, fall back to derived URL.
+    // VM Keycloak uses legacy /auth/ prefix; local Keycloak 26 start-dev does not.
+    // Always set keycloakJwksUrl explicitly in config to avoid ambiguity.
+    String keycloakUrl = config().getString("keycloakUrl", "http://localhost:8180");
+    String keycloakRealm = config().getString("keycloakRealm", "iudx-v2");
+    String jwksUrl =
+        config()
+            .getString(
+                "keycloakJwksUrl",
+                keycloakUrl + "/realms/" + keycloakRealm + "/protocol/openid-connect/certs");
+
+    JsonArray allowedClientsArray =
+        config()
+            .getJsonArray("grpcAllowedServiceClients", new JsonArray().add("svc-dx-dataplane"));
+    Set<String> allowedServiceClients =
+        allowedClientsArray.stream().map(Object::toString).collect(Collectors.toSet());
+
+    JwksCache jwksCache = new JwksCache(jwksUrl, 600);
+    ServiceAuthInterceptor authInterceptor =
+        new ServiceAuthInterceptor(jwksCache, allowedServiceClients);
+
+    LOGGER.info(
+        "gRPC ServiceAuthInterceptor configured: jwksUrl={} allowedClients={}",
+        jwksUrl,
+        allowedServiceClients);
+
     try {
-      grpcServer = ServerBuilder.forPort(grpcPort).addService(grpcService).build().start();
+      grpcServer =
+          ServerBuilder.forPort(grpcPort)
+              .addService(ServerInterceptors.intercept(grpcService, authInterceptor))
+              .build()
+              .start();
       LOGGER.info("AppId gRPC server started on port {}", grpcPort);
       startPromise.complete();
     } catch (IOException e) {
