@@ -2,7 +2,7 @@
   post:
     summary: Create Asset Request
     tags:
-    - Asset APIs
+    - Ingestion type(API/SFTP) APIs
     operationId: post-auth-v2-asset-request
     description: 'Creates a data ingestion request(SFTP/API) for the authenticated user.
 
@@ -87,7 +87,7 @@
     - authorization: []
   get:
     tags:
-    - Asset APIs
+    - Ingestion type(API/SFTP) APIs
     summary: List Org Admin User Asset Requests
     description: 'Lists all the latest asset requests made by the org admin user calling the API, regardless of the request status. Supports pagination, sorting, and temporal filtering. Requires an authenticated user token with `org_admin` role.
 
@@ -163,7 +163,7 @@
   put:
     summary: Update Asset Request Status
     tags:
-    - Asset APIs
+    - Ingestion type(API/SFTP) APIs
     operationId: put-auth-v2-asset-request
     description: 'Updates the status of an existing data ingestion access request by ID.
 
@@ -234,7 +234,7 @@
     - authorization: []
   delete:
     tags:
-    - Asset APIs
+    - Ingestion type(API/SFTP) APIs
     summary: Delete User Asset Request
     description: 'Delete a pending asset request made by the authenticated user. Only requests in `PENDING` status can be deleted. Requires an authenticated user token.
 
