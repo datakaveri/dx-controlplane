@@ -2,6 +2,7 @@ package org.cdpg.dx.aaa.appCredentials.handler;
 
 import static org.cdpg.dx.aaa.appCredentials.util.Constants.*;
 import static org.cdpg.dx.aaa.bookmarks.util.Constants.ALLOWED_FILTER_MAP_FOR_BOOKMARK_REQUEST;
+import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.ORG_ID;
 import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
@@ -12,10 +13,7 @@ import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,15 +51,17 @@ public class AppCredentialsHandler {
     }
 
     UUID userId;
+    String orgId;
     try {
       userId = UUID.fromString(user.subject());
+      orgId = user.principal().getString("organisation_id");
     } catch (IllegalArgumentException e) {
       LOGGER.error("Invalid user subject for UUID: {}", user.subject(), e);
       ctx.fail(new DxBadRequestException("Invalid user subject for UUID"));
       return;
     }
 
-      Set<String> user_roles = extractRoles(user);
+      List<String> user_roles = extractRoles(user);
 //      String role = getHighestRole(roles);
       JsonObject body = ctx.body().asJsonObject();
 
@@ -76,6 +76,7 @@ public class AppCredentialsHandler {
 
     body.put(USER_ID,userId);
     body.put(ROLE,role);
+    body.put(ORG_ID,orgId);
 
       try {
         delegationHandlerValidator.validateCreateDelegationGrantBody(userId, user_roles ,body);
@@ -169,8 +170,8 @@ public class AppCredentialsHandler {
       .onFailure(ctx::fail);
   }
 
-  public Set<String> extractRoles(User user) {
-    Set<String> roles = new HashSet<>();
+  public List<String> extractRoles(User user) {
+    List<String> roles = new ArrayList<>();
     JsonObject principal = user.principal();
     if (principal.containsKey("realm_access")) {
       JsonObject realmAccess = principal.getJsonObject("realm_access");

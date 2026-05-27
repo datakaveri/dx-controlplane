@@ -69,7 +69,7 @@ class DelegationServiceTest {
                 any(DelegationGrant.class),
                 any(JsonArray.class),
                 any(String.class),
-                any(Set.class)))
+                any(List.class)))
         .thenAnswer(invocation -> Future.succeededFuture(invocation.getArgument(0)));
 
     delegationService =
@@ -99,6 +99,8 @@ class DelegationServiceTest {
       UUID delegatorId = UUID.randomUUID();
       UUID delegateId = UUID.randomUUID();
       UUID delegationId = UUID.randomUUID();
+      String orgId = UUID.randomUUID().toString();
+
       LocalDateTime expiry = LocalDateTime.now().plusDays(30);
 
       DelegationGrant grant = buildGrant(delegationId, delegatorId, delegateId);
@@ -110,7 +112,7 @@ class DelegationServiceTest {
               .put("justification", "test justification")
               .put("expiry_at", expiry.format(FORMATTER));
 
-      Set<String> roles = Set.of("provider");
+      List<String> roles = List.of("provider");
 
       when(delegationGrantDAO.create(any(DelegationGrant.class)))
           .thenReturn(Future.succeededFuture(grant));
@@ -120,7 +122,7 @@ class DelegationServiceTest {
           .thenReturn(Future.succeededFuture(true));
 
       Future<JsonObject> future =
-          delegationService.createDelegationGrant(body, roles, new JsonArray());
+          delegationService.createDelegationGrant(body, roles, new JsonArray(),orgId);
 
       assertFutureSuccess(
           future,
@@ -137,6 +139,7 @@ class DelegationServiceTest {
     void createDelegation_failUnauthorized(VertxTestContext ctx) {
       UUID delegatorId = UUID.randomUUID();
       UUID delegateId = UUID.randomUUID();
+      String orgId = UUID.randomUUID().toString();
       LocalDateTime expiry = LocalDateTime.now().plusDays(30);
 
       JsonObject body =
@@ -146,7 +149,7 @@ class DelegationServiceTest {
               .put("justification", "test justification")
               .put("expiry_at", expiry.format(FORMATTER));
 
-      Set<String> roles = Set.of("provider");
+      List<String> roles = List.of("provider");
 
       JsonArray roleConstraints =
           new JsonArray()
@@ -168,7 +171,7 @@ class DelegationServiceTest {
           .thenReturn(Future.failedFuture(new DxForbiddenException("Not the owner")));
 
       Future<JsonObject> future =
-          delegationService.createDelegationGrant(body, roles, roleConstraints);
+          delegationService.createDelegationGrant(body, roles, roleConstraints,orgId);
 
       assertFutureFailure(
           future,

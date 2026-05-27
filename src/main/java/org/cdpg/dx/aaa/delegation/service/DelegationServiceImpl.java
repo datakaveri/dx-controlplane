@@ -149,7 +149,7 @@ public class DelegationServiceImpl implements DelegationService{
 
   @Override
   public Future<JsonObject> createDelegationGrant(
-      JsonObject delegationGrantBody, Set<String> delegatorRoles, JsonArray roleConstraints) {
+      JsonObject delegationGrantBody, List<String> delegatorRoles, JsonArray roleConstraints,String orgId) {
     LOGGER.info("Creating delegation grant: {}", delegationGrantBody);
 
     UUID delegatorId = UUID.fromString(delegationGrantBody.getString(DELEGATOR_ID));
@@ -175,7 +175,7 @@ public class DelegationServiceImpl implements DelegationService{
         );
 
     } else {
-      flow = delegationValidator.validateEntityOwnership(delegationGrantBody, delegatorRoles, roleConstraints)
+      flow = delegationValidator.validateEntityOwnership(delegationGrantBody, UUID.fromString(orgId), roleConstraints)
           .compose(v -> delegationGrantDAO.create(delegationGrant))
           .compose(created ->
             insertScopeConstraints(created.delegationId(),roleConstraints,delegationGrant.expiryAt()).map(v -> created)
@@ -508,7 +508,7 @@ public class DelegationServiceImpl implements DelegationService{
       .mapEmpty();
   }
 
-  private String getHighestRole(Set<String> roles) {
+  private String getHighestRole(List<String> roles) {
     if (roles.contains("cos_admin")) return "cos_admin";
     if (roles.contains("org_admin")) return "org_admin";
     if (roles.contains("provider")) return "provider";

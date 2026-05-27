@@ -7,13 +7,11 @@ import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
-import org.cdpg.dx.common.exception.DxNotFoundException;
-import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.stream.Collectors;
+
 import static org.cdpg.dx.aaa.delegation.util.Constants.DELEGATOR_ID;
 
 
@@ -36,7 +34,7 @@ public class DelegationValidator {
    */
   public Future<Void> validateEntityOwnership(
     JsonObject delegationGrant,
-    Set<String> delegatorRoles,
+    UUID orgId,
     JsonArray rolesArray
   ) {
 
@@ -45,13 +43,14 @@ public class DelegationValidator {
     UUID delegatorId =
       UUID.fromString(delegationGrant.getString(DELEGATOR_ID));
 
-    return validateConstraints(delegatorId, rolesArray);
+    return validateConstraints(delegatorId, rolesArray,orgId);
   }
 
 
   public Future<Void> validateConstraints(
     UUID actorId,
-    JsonArray rolesArray
+    JsonArray rolesArray,
+    UUID orgId
   ) {
 
     if (rolesArray == null || rolesArray.isEmpty()) {
@@ -91,21 +90,21 @@ public class DelegationValidator {
         switch (normalizedScope) {
 
           // user/org ownership validation
-          case "user-management", "org-user-management", "org-publisher-management" ->
+          case  "org-user-management" ->
             validations.add(validateOrgOwnership(actorId, entityIdList));
 
           // item access validation
           case "data-access" ->
-            validations.add(validateItemIdOwnership(actorId, entityIdList));
+            validations.add(validateAccessPolicyForItem(actorId, entityIdList));
 
-          // asset ownership validation
-          case "asset-management", "own-asset-management",
-               "org-asset-management", "org-asset-publish", "asset-publish" ->
-            validations.add(validateAssetRequestOwnership(actorId, entityIdList));
+          // items orgId should be equal to delegator or actor orgId
+          case "org-publisher-management",
+               "org-asset-management", "org-asset-publish" ->
+            validations.add(validateItemIdEqualsDelegatorOrgId(actorId, entityIdList,orgId));
 
           // platform-level scopes — no entity ownership check needed
-          case "compute-management", "credit-management",
-               "org-management", "publisher-management", "role-management" -> {
+          case "user-management","compute-management", "credit-management",
+               "org-management",  "asset-management","asset-publish", "publisher-management", "role-management"-> {
             LOGGER.debug("Skipping ownership validation for scope {}", scope);
           }
 
@@ -126,35 +125,66 @@ public class DelegationValidator {
 
 
 
-  private Future<Void> validateAssetRequestOwnership(UUID delegatorId, List<String> itemIds) {
-
-    LOGGER.info("Validating every asset ownership!");
+  private Future<Void> validateItemIdEqualsDelegatorOrgId(UUID delegatorId, List<String> itemIds,UUID orgId) {
+    LOGGER.info("Validate Item Id org equals delegator org!");
     if (itemIds == null || itemIds.isEmpty()) {
       return Future.failedFuture(new DxForbiddenException("No asset IDs provided"));
     }
 
-      String delegatorIdStr = delegatorId.toString();
-      List<Future> validations = new ArrayList<>();
+    String delegatorIdStr = delegatorId.toString();
+    List<Future> validations = new ArrayList<>();
+    String orgIdStr = orgId.toString();
 
-      for (String itemId : itemIds) {
-        GetItemRequest itemRequest = new GetItemRequest(itemId, delegatorIdStr);
-        Future<Void> validationFuture = itemService.getItemWithAccessChecks(itemRequest).compose(response -> {
+    for (String itemId : itemIds) {
+      GetItemRequest itemRequest = new GetItemRequest(itemId, delegatorIdStr);
 
+      Future<Void> validationFuture = itemService.getItem(itemRequest)
+        .compose(v -> {
+          LOGGER.info("response is {}",v.getResponse());
+          JsonObject response = v.getResponse(); // directly use it, no mapTo needed
           if (response == null) {
-            return Future.failedFuture(new DxBadRequestException("Response is empty for item: " + itemId));
+            return Future.failedFuture(
+              new DxBadRequestException("Response is empty for item: " + itemId));
           }
 
+//          LOGGER.info("response is {}",response);
+
+          JsonArray results = response.getJsonArray("results");
+          if (results == null || results.isEmpty()) {
+            return Future.failedFuture(
+              new DxBadRequestException("No result found for item: " + itemId));
+          }
+
+          JsonObject itemResult = results.getJsonObject(0);
+          if (itemResult == null) {
+            return Future.failedFuture(
+              new DxBadRequestException("Item not found for id: " + itemId));
+          }
+
+          String itemOrgId = results.getJsonObject(0).getString("organizationId");
+          if (itemOrgId == null) {
+            return Future.failedFuture(
+
+              new DxBadRequestException("Organization ID missing for item: " + itemId));
+          }
+
+          if(!orgIdStr.equals(itemOrgId))
+          {
+            return Future.failedFuture(
+              new DxBadRequestException("Organization ID missing for item: " + itemId));
+        }
+
           return Future.succeededFuture();
+
         });
 
-        validations.add(validationFuture);
-      }
+      validations.add(validationFuture);
+    }
 
-      return CompositeFuture.all(validations).mapEmpty();
-
+    return CompositeFuture.all(validations).mapEmpty();
   }
 
-  private Future<Void> validateItemIdOwnership(UUID delegatorId, List<String> itemIds) {
+  private Future<Void> validateAccessPolicyForItem(UUID delegatorId, List<String> itemIds) {
 
     LOGGER.info("Validate Item Id ownership !");
     if (itemIds == null || itemIds.isEmpty()) {
