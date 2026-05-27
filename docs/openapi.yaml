@@ -51,6 +51,8 @@ tags:
   - name: Client APIs
   - name: Compute APIs
   - name: Conversations
+    description: |
+      Conversations are threaded message exchanges tied to entity-driven requests such as joining an organisation, creating an organisation, or submitting a credit request. Each conversation is scoped to a request_id and supports root-level messages and nested replies up to 2 levels deep. Messages can be posted by requesters or approvers, and can optionally be marked as internal notes visible only to the approvers.
   - name: Credit APIs
   - name: Delegation APIs
   - name: Discovery – My Assets
@@ -11515,7 +11517,7 @@ paths:
       operationId: get-threaded-message
       summary: Get all messages
       description: |
-        Paginated conversation thread for a request. Returns root messages with up to 2 levels of nested replies. Each level shows first 3 replies inline. Use has_more and page param to load more.
+        Paginated conversation thread for a request. Conversations are initiated in the context of a specific entity-driven request — such as joining an organisation, creating an organisation, or submitting a credit request — identified by the request_id. Returns root messages with up to 2 levels of nested replies. Each level shows first 3 replies inline.
       security:
         - authorization: []
       parameters:
@@ -11570,7 +11572,8 @@ paths:
         - Conversations
       operationId: post-request-conversation
       summary: Create message
-      description: Post a new message, question, answer, or internal note.
+      description: |
+        Post a new message(of type question, answer, or internal note) within a request conversation. The sender_role must be either 'requester' or 'approver'. Set internal_note to true for notes visible only to users with role approver, or false for messages visible to all participants. Leave parent_msg_id as null to post a root-level message; provide a parent_msg_id to post as a reply to an existing message.
       security:
         - authorization: []
       parameters:
@@ -11586,21 +11589,42 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - sender_role
+                - message_type
+                - request_type
+                - content
               properties:
                 parent_msg_id:
                   type: string
                   format: uuid
                   nullable: true
+                  description: Null for root-level messages; provide a valid message UUID to post as a reply to an existing message.
                 sender_role:
                   type: string
+                  enum:
+                    - requester
+                    - approver
+                  description: Role of the sender. Must be either 'requester' or 'approver'.
                 message_type:
                   type: string
+                  enum:
+                    - text
+                    - question
+                    - answer
                 request_type:
                   type: string
+                  enum:
+                    - join_orgs
+                    - create_orgs
+                    - credit_request
+                  description: The type of entity-driven request this conversation belongs to.
                 content:
                   type: string
+                  description: The message body.
                 internal_note:
                   type: boolean
+                  description: Set to true for notes visible only to internal team members; false for messages visible to all participants.
       responses:
         '200':
           description: Message created successfully
@@ -11631,11 +11655,15 @@ paths:
                         type: string
                         format: uuid
                         nullable: true
+                        description: Null if this is a root-level message; otherwise the UUID of the parent message.
                       senderId:
                         type: string
                         format: uuid
                       senderRole:
                         type: string
+                        enum:
+                          - requester
+                          - approver
                         example: requester
                       messageType:
                         type: string
@@ -11644,6 +11672,9 @@ paths:
                         type: string
                       isInternal:
                         type: boolean
+                        enum:
+                          - true
+                          - false
                       createdAt:
                         type: string
                         format: date-time
@@ -11675,7 +11706,7 @@ paths:
         - Conversations
       operationId: get-request-conversation-by-id
       summary: Get single message
-      description: Fetch a specific message with its replies.
+      description: 'Fetch a specific message with its replies. Each message belongs to a conversation tied to an entity-driven request (e.g. org join, org creation, credit request) identified by request_id and message id.Any user can run this. '
       security:
         - authorization: []
       parameters:
@@ -11739,7 +11770,7 @@ paths:
         - Conversations
       operationId: put-request-conversation
       summary: Update message
-      description: Edit message content (within allowed time window).
+      description: The message created by the user earlier can be edited using this. 'content' , 'metadata' or 'is_internal' can be changed.
       security:
         - authorization: []
       parameters:
@@ -11774,6 +11805,9 @@ paths:
                 is_internal:
                   type: boolean
                   nullable: true
+                  enum:
+                    - true
+                    - false
                   additionalProperties: true
       responses:
         '200':
@@ -11850,7 +11884,7 @@ paths:
         - Conversations
       operationId: delete-request-conversation
       summary: Delete message
-      description: Soft delete a message (admin only).
+      description: Delete a message - by the user who created the message.
       security:
         - authorization: []
       parameters:
@@ -11888,7 +11922,8 @@ paths:
         - Conversations
       operationId: post-request-conversation-reply
       summary: Reply to message
-      description: Reply to a specific question or message (sets parent_msg_id).
+      description: |
+        Reply to a specific message or question. The msg_id in the path is automatically set as the parent_msg_id for this reply. The sender_role must be either 'requester' or 'approver'. Set internal_note to true to create a reply visible only to 'approver'; false to make it visible to all conversation participants(approver and requester).
       security:
         - authorization: []
       parameters:
@@ -11904,21 +11939,34 @@ paths:
           schema:
             type: string
             format: uuid
+          description: The UUID of the message being replied to. Automatically becomes the parent_msg_id of this reply.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - sender_role
+                - message_type
+                - content
               properties:
                 sender_role:
                   type: string
+                  enum:
+                    - requester
+                    - approver
+                  description: Role of the sender. Must be either 'requester' or 'approver'.
                 message_type:
                   type: string
+                  description: Type of the reply message.
                 content:
                   type: string
+                  description: The reply message body.
                 internal_note:
                   type: boolean
+                  description: |
+                    Set to true to mark this reply as an internal note — visible only to the approver. Set to false for replies visible to all conversation participants.
       responses:
         '200':
           description: Reply created successfully

@@ -46,6 +46,13 @@ tags:
 - name: Client APIs
 - name: Compute APIs
 - name: Conversations
+  description: >
+    Conversations are threaded message exchanges tied to entity-driven requests
+    such as joining an organisation, creating an organisation, or submitting a
+    credit request. Each conversation is scoped to a request_id and supports
+    root-level messages and nested replies up to 2 levels deep.
+    Messages can be posted by requesters or approvers, and can optionally be
+    marked as internal notes visible only to the approvers.
 - name: Credit APIs
 - name: Delegation APIs
 - name: Discovery – My Assets
