@@ -495,7 +495,7 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
 
   @Override
   public Future<DelegationGrant> publishScopesAndRolesToKeycloak(
-      DelegationGrant created, JsonArray roles, String highestRole, Set<String> delegatorRoles) {
+      DelegationGrant created, JsonArray roles, String highestRole, List<String> delegatorRoles) {
 
     // Fetch user ONCE
     UserRepresentation user =

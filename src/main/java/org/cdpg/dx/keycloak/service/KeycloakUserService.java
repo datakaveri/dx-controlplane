@@ -39,7 +39,7 @@ public interface KeycloakUserService {
     DelegationGrant created,
     JsonArray roles,
     String highestRole,
-    Set<String> delegatorRoles
+    List<String> delegatorRoles
   );
 //    Future<Boolean> addScopesToUser(UUID userId, List<String> scopes);
 }

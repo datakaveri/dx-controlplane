@@ -36,7 +36,7 @@ public interface DelegationService {
    */
   Future<JsonObject> findActiveDelegation(String delegatorId, String delegateeId);
 
-  Future<JsonObject> createDelegationGrant(JsonObject delegationGrant, Set<String> UserRoles, JsonArray roleConstraints);
+  Future<JsonObject> createDelegationGrant(JsonObject delegationGrant, List<String> UserRoles, JsonArray roleConstraints,String orgId);
 
   Future<JsonObject> getDelegationGrantById(String delegationId);
 

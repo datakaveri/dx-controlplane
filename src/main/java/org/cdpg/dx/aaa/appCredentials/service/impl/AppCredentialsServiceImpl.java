@@ -76,6 +76,8 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
 
     UUID userId = UUID.fromString(appCredentialsJson.getString(USER_ID));
 
+    UUID orgId= UUID.fromString(appCredentialsJson.getString("org_id"));
+
     JsonArray rolesArray = appCredentialsJson.getJsonArray(ROLES);
 
     boolean isWildcardApp =
@@ -101,7 +103,7 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
 
       flow =
         delegationValidator
-          .validateConstraints(userId, rolesArray)
+          .validateConstraints(userId, rolesArray,orgId)
           .compose(v -> appCredentialsDAO.create(appCredentials))
           .compose(savedApp ->
             insertAppConstraints(savedApp.appId(), rolesArray,expiry,userId)

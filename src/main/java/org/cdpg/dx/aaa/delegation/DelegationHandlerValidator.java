@@ -27,7 +27,7 @@ public class DelegationHandlerValidator {
   private static final Logger LOGGER = LogManager.getLogger(DelegationHandlerValidator.class);
 
 
-  public void validateCreateDelegationGrantBody(UUID userId, Set<String> delegatorRoles, JsonObject body) {
+  public void validateCreateDelegationGrantBody(UUID userId, List<String> delegatorRoles, JsonObject body) {
 
     //*****************************************************************************************************************
 
@@ -60,16 +60,20 @@ public class DelegationHandlerValidator {
     for (int i = 0; i < rolesArray.size(); i++) {
       JsonObject roleObj = rolesArray.getJsonObject(i);
       String role = roleObj.getString("role");
+      LOGGER.info("63 line role: {}",role);
+      LOGGER.info("64 line delegator roles: {}",delegatorRoles);
 
       if (role == null || role.isBlank()) {
         throw new DxBadRequestException("Role is required in roles array");
       }
 
-      if(delegatorRoles.contains("cos_admin"))
-      {
-        LOGGER.info("This user can have roles provider, org_admin and compute - no need to check the role provided in roles constraint ");
-      }
-      else if(!delegatorRoles.contains(role))
+//      if(delegatorRoles.contains("cos_admin"))
+//      {
+//        LOGGER.info("This user can have roles provider, org_admin and compute - no need to check the role provided in roles constraint ");
+         //return;
+//      }
+//      else
+        if(!delegatorRoles.contains(role))
       {
         throw new DxBadRequestException("The delegator/user doesnot have the role "+ role);
       }
@@ -162,16 +166,9 @@ public class DelegationHandlerValidator {
     });
   }
 
-  public Set<String> extractRoles(User user) {
-    Set<String> roles = new HashSet<>();
-    JsonObject principal = user.principal();
-    if (principal.containsKey("realm_access")) {
-      JsonObject realmAccess = principal.getJsonObject("realm_access");
-      if (realmAccess.containsKey("roles")) {
-        roles.addAll(realmAccess.getJsonArray("roles").getList());
-      }
-    }
-    return roles;
+  public List<String> extractRoles(DxUser user) {
+
+    return user.roles();
   }
 
 

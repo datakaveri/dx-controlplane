@@ -17,6 +17,7 @@ import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
+import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
@@ -169,13 +170,15 @@ public class DelegationHandler {
   public void createDelegationGrant(RoutingContext ctx) {
     LOGGER.info("Handler: createDelegationGrant");
 
-    User user = ctx.user();
-    UUID delegatorId = UUID.fromString(user.subject());
+    DxUser user = RoutingContextHelper.fromPrincipal(ctx);
+    LOGGER.info("user:{}",user.toJson());
+    UUID delegatorId = user.sub();
     JsonObject body = ctx.body().asJsonObject();
+    String orgId = user.organisationId();
 
     body.put(DELEGATOR_ID, delegatorId.toString());
 
-    Set<String> delegatorRoles = delegationHandlerValidator.extractRoles(user);
+    List<String> delegatorRoles = delegationHandlerValidator.extractRoles(user);
     body.put("delegator_id", delegatorId);
 
     try {
@@ -189,7 +192,7 @@ public class DelegationHandler {
     JsonArray rolesConstraints = body.getJsonArray("roles");
 
     delegationService
-        .createDelegationGrant(body, delegatorRoles, rolesConstraints)
+        .createDelegationGrant(body, delegatorRoles, rolesConstraints,orgId)
         .onSuccess(
             createdGrant -> {
               AuditLog auditLog =
