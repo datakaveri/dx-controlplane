@@ -73,6 +73,18 @@ tags:
 - name: Organisation Assets Management
 - name: Platform Assets Management
 - name: Platform Provider Requests
+  description: |
+    Platform Provider Requests allow consumers who are **not part of any organisation** to request
+    the Provider role directly through the platform track. This is an alternative to the
+    organisation-based provider request flow.
+
+    Two roles are involved:
+    - **Consumer** — submits, views, or withdraws their own request via `/auth/v2/user/platform/provider-requests`
+    - **COS Admin** — reviews, approves, or rejects all requests via `/auth/v2/admin/platform/provider-requests`
+
+    A user can only have one active (pending or granted) provider role request at a time, regardless
+    of whether it was submitted via the platform or organisation track. On approval, the `PROVIDER`
+    role is automatically assigned in Keycloak.
 - name: Resource Servers
 - name: Role APIs
 - name: Subscriptions
@@ -217,12 +229,12 @@ paths:
     $ref: paths/organisations.yaml#/~1iudx~1v2~1auth~1organisations~1{id}~1join_requests~1report
   /iudx/v2/auth/organization/user/provider_role/requests/report:
     $ref: paths/organisations.yaml#/~1iudx~1v2~1auth~1organization~1user~1provider_role~1requests~1report
-  /auth/v2/platform/provider-requests:
-    $ref: paths/platform-provider-requests.yaml#/~1auth~1v2~1platform~1provider-requests
-  /auth/v2/platform/provider-requests/{id}:
-    $ref: paths/platform-provider-requests.yaml#/~1auth~1v2~1platform~1provider-requests~1{id}
   /auth/v2/user/platform/provider-requests:
     $ref: paths/platform-provider-requests.yaml#/~1auth~1v2~1user~1platform~1provider-requests
+  /auth/v2/admin/platform/provider-requests:
+    $ref: paths/platform-provider-requests.yaml#/~1auth~1v2~1admin~1platform~1provider-requests
+  /auth/v2/admin/platform/provider-requests/{id}:
+    $ref: paths/platform-provider-requests.yaml#/~1auth~1v2~1admin~1platform~1provider-requests~1{id}
   /iudx/v2/cat/getAllAssets:
     $ref: paths/platform-assets.yaml#/~1iudx~1v2~1cat~1getAllAssets
   /iudx/v2/cat/assets/share:
