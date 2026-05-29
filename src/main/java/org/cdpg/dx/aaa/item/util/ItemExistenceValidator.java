@@ -71,12 +71,12 @@ public class ItemExistenceValidator {
             });
   }
 
-  public void validateApps(JsonObject request, String method, Promise<JsonObject> promise) {
+  public void validateApps(String userId, JsonObject request, String method, Promise<JsonObject> promise) {
     validateAndAddId(request, promise);
     setCommonFields(request, method);
 
     if (!REQUEST_POST.equalsIgnoreCase(method)) {
-      GetItemRequest getItemRequest = new GetItemRequest(request.getString(ID), null);
+      GetItemRequest getItemRequest = new GetItemRequest(request.getString(ID), userId);
       itemService
           .getItem(getItemRequest)
           .onFailure(promise::fail)
@@ -142,13 +142,14 @@ public class ItemExistenceValidator {
         (roles.contains(ORG_ADMIN) || roles.contains(COS_ADMIN)) ? ACTIVE : PENDING);
   }
 
-  public void validateAiModel(JsonObject request, String method, Promise<JsonObject> promise) {
+  public void validateAiModel(String userId, JsonObject request, String method,
+                              Promise<JsonObject> promise) {
 
     validateAndAddId(request, promise);
     setCommonFields(request, method);
 
     if (!REQUEST_POST.equalsIgnoreCase(method)) {
-      GetItemRequest getItemRequest = new GetItemRequest(request.getString(ID), null);
+      GetItemRequest getItemRequest = new GetItemRequest(request.getString(ID), userId);
       itemService
           .getItem(getItemRequest)
           .onFailure(promise::fail)
@@ -266,12 +267,13 @@ public class ItemExistenceValidator {
             });
   }
 
-  public void validateDataBank(JsonObject request, String method, Promise<JsonObject> promise) {
+  public void validateDataBank(String userId, JsonObject request, String method,
+                               Promise<JsonObject> promise) {
     validateAndAddId(request, promise);
     setCommonFields(request, method);
 
     if (!REQUEST_POST.equalsIgnoreCase(method)) {
-      GetItemRequest getItemRequest = new GetItemRequest(request.getString(ID), null);
+      GetItemRequest getItemRequest = new GetItemRequest(request.getString(ID), userId);
       itemService
           .getItem(getItemRequest)
           .onFailure(promise::fail)

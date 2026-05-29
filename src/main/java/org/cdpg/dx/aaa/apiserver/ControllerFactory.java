@@ -28,7 +28,6 @@ import org.cdpg.dx.aaa.central.catalogue.list.controller.CentralListController;
 import org.cdpg.dx.aaa.central.catalogue.list.factory.CentralListControllerFactory;
 import org.cdpg.dx.aaa.central.catalogue.search.controller.CentralSearchController;
 import org.cdpg.dx.aaa.central.catalogue.search.factory.CentralSearchControllerFactory;
-import org.cdpg.dx.aaa.clientSecret.controller.ClientController;
 import org.cdpg.dx.aaa.clientSecret.factory.ClientControllerFactory;
 import org.cdpg.dx.aaa.connector.service.ConnectorService;
 import org.cdpg.dx.aaa.connector.service.ConnectorServiceImpl;
@@ -56,7 +55,11 @@ import org.cdpg.dx.aaa.publicKey.factory.PublicKeycontrllerFactory;
 import org.cdpg.dx.aaa.resourceserver.factory.ResourceServerControllerFactory;
 import org.cdpg.dx.aaa.search.controller.SearchController;
 import org.cdpg.dx.aaa.search.factory.SearchControllerFactory;
+import org.cdpg.dx.aaa.shareAssets.dao.VisibilityDao;
+import org.cdpg.dx.aaa.shareAssets.dao.impl.VisibilityDaoImpl;
 import org.cdpg.dx.aaa.shareAssets.factory.VisibilityControllerFactory;
+import org.cdpg.dx.aaa.shareAssets.service.VisibilityService;
+import org.cdpg.dx.aaa.shareAssets.service.impl.VisibilityServiceImpl;
 import org.cdpg.dx.aaa.subscription.controller.SubscriptionController;
 import org.cdpg.dx.aaa.subscription.factory.SubscriptionControllerFactory;
 import org.cdpg.dx.aaa.summary.controller.SummaryController;
@@ -193,10 +196,15 @@ public class ControllerFactory {
     controllers.add(new AssetController(assetHandler, shared.auditingHandler()));
 
     // Catalogue (list, search, item CRUD)
+    VisibilityDao visibilityDao = new VisibilityDaoImpl(infra.pgService());
+    VisibilityService visibilityService = new VisibilityServiceImpl(visibilityDao,
+        shared.keycloakUserService(), shared.organizationService());
+
     ListController listController =
         ListControllerFactory.createListController(
             infra.esService(),
             shared.keycloakUserService(),
+            visibilityService,
             shared.auditingHandler(),
             docIndex,
             urnGenerator);
@@ -206,6 +214,7 @@ public class ControllerFactory {
         SearchControllerFactory.createSearchController(
             infra.esService(),
             shared.keycloakUserService(),
+            visibilityService,
             shared.auditingHandler(),
             docIndex,
             urnGenerator);

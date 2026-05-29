@@ -490,9 +490,12 @@ public class ItemController implements ApiController {
       String method,
       Promise<JsonObject> promise) {
     switch (itemType) {
-      case ITEM_TYPE_AI_MODEL -> itemExistenceValidator.validateAiModel(body, method, promise);
-      case ITEM_TYPE_DATA_BANK -> itemExistenceValidator.validateDataBank(body, method, promise);
-      case ITEM_TYPE_APPS -> itemExistenceValidator.validateApps(body, method, promise);
+      case ITEM_TYPE_AI_MODEL -> itemExistenceValidator.validateAiModel(ctx.user().subject(), body
+          , method, promise);
+      case ITEM_TYPE_DATA_BANK -> itemExistenceValidator.validateDataBank(ctx.user().subject(),
+          body, method, promise);
+      case ITEM_TYPE_APPS -> itemExistenceValidator.validateApps(ctx.user().subject(), body,
+          method, promise);
       default -> ctx.fail(new DxBadRequestException("Unsupported item type: " + itemType));
     }
   }
