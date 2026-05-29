@@ -1191,7 +1191,8 @@ paths:
 
         - Asset owners (`provider`) can update any field except `publishStatus` and restricted fields.
         - Admins (`org_admin`, `cos_admin`) can also update `publishStatus`.
-        - The following fields cannot be updated via this API: `providerUserId`, `organizationId`, `itemCreatedAt`, `metrics`.
+        - The following fields cannot be updated via this API: `ownerUserId`, `organizationId`, 
+        `itemCreatedAt`, `metrics`.
         - `lastUpdated` is automatically set to the current UTC time.
       operationId: patch item metadata
       security:
@@ -8813,7 +8814,7 @@ paths:
         - lang: cURL
           label: share asset with users
           source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/assets/share' \
+            curl --location 'https://${HOSTNAME}/iudx/v2/cat/assets/share' \
             --header 'Authorization: Bearer <token>' \
             --header 'Content-Type: application/json' \
             --data '{
@@ -8903,7 +8904,7 @@ paths:
         - lang: cURL
           label: revoke asset share
           source: |
-            curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/assets/share' \
+            curl --location --request DELETE 'https://${HOSTNAME}/cat/assets/share' \
             --header 'Authorization: Bearer <token>' \
             --header 'Content-Type: application/json' \
             --data '{
@@ -9010,7 +9011,8 @@ paths:
           label: get asset visibility details
           source: |
             curl --location --request GET \
-            'https://${HOSTNAME}/iudx/v2/assets/share?itemId=3fa85f64-5717-4562-b3fc-2c963f66afa6' \
+            'https://${HOSTNAME}/iudx/v2/cat/assets/share?itemId=3fa85f64-5717-4562-b3fc
+            -2c963f66afa6' \
             --header 'Authorization: Bearer <token>'
   /iudx/v2/cat/assets/shared-with-me:
     get:
@@ -9127,7 +9129,7 @@ paths:
         - lang: cURL
           label: get shared assets
           source: |
-            curl --location --request GET 'https://${HOSTNAME}/iudx/v2/assets/shared-with-me' \
+            curl --location --request GET 'https://${HOSTNAME}/iudx/v2/cat/assets/shared-with-me' \
             --header 'Authorization: Bearer <token>'
   /iudx/v2/resource_servers:
     get:

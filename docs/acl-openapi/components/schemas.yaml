@@ -878,50 +878,6 @@ policyNotFound:
     type: urn:dx:AclApd:notFound
     title: Not Found
     detail: Policy Not Found
-deletePolicyErrorResponse:
-  title: deletePolicyErrorResponse
-  type: object
-  additionalProperties: false
-  properties:
-    type:
-      type: string
-      minLength: 1
-    title:
-      type: string
-      minLength: 1
-    detail:
-      type: string
-      minLength: 1
-  required:
-  - type
-  - title
-  - detail
-  example:
-    type: urn:dx:apdServerPanel:success
-    title: Bad Request
-    detail: Policy could not be deleted, as policy is not ACTIVE
-deletePolicyNotFoundErrorResponse:
-  title: deletePolicyNotFoundErrorResponse
-  type: object
-  additionalProperties: false
-  properties:
-    type:
-      type: string
-      minLength: 1
-    title:
-      type: string
-      minLength: 1
-    detail:
-      type: string
-      minLength: 1
-  required:
-  - type
-  - title
-  - detail
-  example:
-    type: urn:dx:apdServerPanel:success
-    title: Not Found
-    detail: Policy could not be deleted, as it doesn't exist
 Unauthorized:
   type: object
   additionalProperties: false
@@ -986,43 +942,6 @@ createPolicyForbidden:
     type: urn:dx:apdServerPanel:forbidden
     title: Forbidden
     detail: 'Access Denied: You do not have ownership rights for this resource.'
-createPolicySuccessResponse:
-  title: complete
-  type: object
-  additionalProperties: false
-  properties:
-    type:
-      type: string
-    title:
-      type: string
-    detail:
-      type: string
-  required:
-  - type
-  - title
-  - detail
-  example:
-    type: urn:dx:apdServerPanel:success
-    title: Success
-    detail: Policy created successfully
-conflictResponse:
-  title: standardPolicyAlreadyExistErrorResponse
-  additionalProperties: false
-  properties:
-    type:
-      type: string
-    title:
-      type: string
-    detail:
-      type: string
-  required:
-  - type
-  - title
-  - detail
-  example:
-    type: urn:dx:apdServerPanel:conflict
-    title: Conflict
-    detail: Policy already exist for some of the request objects [bf9d8f85-b7b0-40bb-8197-0046725f1ca8]
 generalBadRequest:
   additionalProperties: false
   properties:
@@ -4004,6 +3923,171 @@ PolicyListResponse:
         $ref: '#/Policy'
     paginationInfo:
       $ref: '#/PaginationInfo'
+BasePolicyRequest:
+  type: object
+  additionalProperties: false
+  properties:
+    policyType:
+      type: string
+      enum:
+        - INDIVIDUAL
+        - GROUP
+    itemId:
+      type: string
+      pattern: ^[a-zA-Z0-9_*\-*\.\/]+$
+      minLength: 1
+      maxLength: 512
+    itemType:
+      type: string
+      enum:
+        - AIMODEL
+        - DATABANK
+    expiryTime:
+      type: string
+      format: date-time
+    constraints:
+      type: object
+    additionalInfo:
+      type: object
+    providerComment:
+      type: string
+      minLength: 1
+      maxLength: 4000
+    feedbackToConsumer:
+      type: string
+      minLength: 1
+      maxLength: 4000
+  required:
+    - policyType
+    - itemId
+    - itemType
+    - constraints
+IndividualPolicyRequest:
+    allOf:
+      - $ref: '#/BasePolicyRequest'
+      - type: object
+        properties:
+          policyType:
+            enum:
+              - INDIVIDUAL
+          userId:
+            type: string
+            format: uuid
+        required:
+          - userId
+GroupPolicyRequest:
+    allOf:
+      - $ref: '#/BasePolicyRequest'
+      - type: object
+        properties:
+          policyType:
+            enum:
+              - GROUP
+          constraints:
+            type: object
+            required:
+              - subjects
+            properties:
+              subjects:
+                type: object
+                properties:
+                  allowedOrgIds:
+                    type: array
+                    items:
+                      type: string
+                      format: uuid
+
+                  allowedUserIds:
+                    type: array
+                    items:
+                      type: string
+                      format: uuid
+
+                  allowedRoles:
+                    type: array
+                    items:
+                      type: string
+createPolicySuccessResponse:
+  title: complete
+  type: object
+  additionalProperties: false
+  properties:
+    type:
+      type: string
+    title:
+      type: string
+    detail:
+      type: string
+  required:
+    - type
+    - title
+    - detail
+  example:
+    type: urn:dx:apdServerPanel:success
+    title: Success
+    detail: Policy created successfully
+conflictResponse:
+  title: standardPolicyAlreadyExistErrorResponse
+  additionalProperties: false
+  properties:
+    type:
+      type: string
+    title:
+      type: string
+    detail:
+      type: string
+  required:
+    - type
+    - title
+    - detail
+  example:
+    type: urn:dx:apdServerPanel:conflict
+    title: Conflict
+    detail: Policy already exist for some of the request objects [bf9d8f85-b7b0-40bb-8197-0046725f1ca8]
+deletePolicyErrorResponse:
+  title: deletePolicyErrorResponse
+  type: object
+  additionalProperties: false
+  properties:
+    type:
+      type: string
+      minLength: 1
+    title:
+      type: string
+      minLength: 1
+    detail:
+      type: string
+      minLength: 1
+  required:
+    - type
+    - title
+    - detail
+  example:
+    type: urn:dx:apdServerPanel:success
+    title: Bad Request
+    detail: Policy could not be deleted, as policy is not ACTIVE
+deletePolicyNotFoundErrorResponse:
+  title: deletePolicyNotFoundErrorResponse
+  type: object
+  additionalProperties: false
+  properties:
+    type:
+      type: string
+      minLength: 1
+    title:
+      type: string
+      minLength: 1
+    detail:
+      type: string
+      minLength: 1
+  required:
+    - type
+    - title
+    - detail
+  example:
+    type: urn:dx:apdServerPanel:success
+    title: Not Found
+    detail: Policy could not be deleted, as it doesn't exist
 Policy:
   type: object
   properties:
