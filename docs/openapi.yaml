@@ -45,14 +45,25 @@ tags:
   - name: Activity Logs
   - name: Activity Report
   - name: App
-  - name: Asset APIs
+    description: |
+      App IDs provide a way to grant restricted, scoped access to platform APIs without exposing
+      the user's primary credentials. A user creates an App ID with a specific set of roles and
+      scopes, then shares the `appId` and `appSecret` with another user or service. The recipient
+      can then use these credentials to access platform APIs — but only within the roles and scopes
+      defined at the time the App ID was created.
   - name: CAT Entity
   - name: Certificate API
   - name: Client APIs
   - name: Compute APIs
   - name: Conversations
+    description: |
+      Conversations are threaded message exchanges tied to entity-driven requests such as joining an organisation, creating an organisation, or submitting a credit request. Each conversation is scoped to a request_id and supports root-level messages and nested replies up to 2 levels deep. Messages can be posted by requesters or approvers, and can optionally be marked as internal notes visible only to the approvers.
   - name: Credit APIs
   - name: Delegation APIs
+    description: |
+      Delegation allows an authenticated user (the **delegator**) to grant another user (the **delegate**)
+      the ability to act on their behalf. Delegations are scoped by role and optionally further restricted
+      by specific scopes and entity types, each with their own expiry.
   - name: Discovery – My Assets
   - name: Discovery – Public
   - name: KYC APIs
@@ -68,6 +79,7 @@ tags:
   - name: Summary
   - name: token
   - name: User Interactions
+  - name: Ingestion type(API/SFTP) APIs
 paths:
   /iudx/v2/auth/app:
     post:
@@ -78,7 +90,10 @@ paths:
       security:
         - authorization: []
       description: |
-        Creates an appId for the authenticated user. The operation is idempotent.
+        Creates a new App ID for the authenticated user with a defined expiry. The App ID is
+        paired with an App Secret at creation time — together these act as credentials that can
+        be shared with another user or service to grant them restricted access scoped to the
+        roles and permissions defined in this App ID. Requires an authenticated user token.
       requestBody:
         required: true
         content:
@@ -134,7 +149,11 @@ paths:
       security:
         - authorization: []
       description: |
-        Retrieve all appIds created by the authenticated user. Supports pagination via `page` and `size` query parameters. Requires an authenticated user token.
+
+        Retrieves all App IDs created by the authenticated user, including their current status
+        (active or disabled), expiry timestamps, and associated scopes. Supports pagination via
+        `page` and `size` query parameters and sorting via the `sorting` parameter.
+        Requires an authenticated user token.
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
@@ -185,7 +204,10 @@ paths:
       security:
         - authorization: []
       description: |
-        Remove an appId owned by the authenticated user.
+        Permanently removes an App ID owned by the authenticated user. Once deleted, any user
+        or service using this `appId` and `appSecret` pair will immediately lose access to all
+        APIs they were accessing through it. This action cannot be undone.
+        Requires an authenticated user token.
       parameters:
         - name: appId
           in: path
@@ -195,6 +217,26 @@ paths:
             format: uuid
           description: Unique identifier of the appId
       responses:
+        '200':
+          description: AppId status deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  detail:
+                    type: string
+                    example: Deleted app id status successfully
+              example:
+                type: dx:controlPlane:success
+                title: Success
+                detail: Deleted app id status successfully
         '204':
           description: AppId deleted successfully
         '400':
@@ -236,7 +278,11 @@ paths:
       security:
         - authorization: []
       description: |
-        Change/Update appId status owned by the authenticated user.
+        Enables or disables an App ID owned by the authenticated user. Setting status to `disable`
+              temporarily blocks all access for anyone using this `appId` and `appSecret` without
+              permanently deleting it. Setting it back to `active` restores access. Use this to
+              temporarily revoke access without losing the App ID configuration.
+              Requires an authenticated user token.
       parameters:
         - name: appId
           in: path
@@ -255,6 +301,26 @@ paths:
               - active
               - disable
       responses:
+        '200':
+          description: AppId status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  detail:
+                    type: string
+                    example: Updated app id status successfully
+              example:
+                type: dx:controlPlane:success
+                title: Success
+                detail: Updated app id status successfully
         '204':
           description: AppId status updated successfully
         '400':
@@ -295,11 +361,17 @@ paths:
         - Ingestion type(API/SFTP) APIs
       operationId: post-auth-v2-asset-request
       description: |
-        Creates a data ingestion request(SFTP/API) for the authenticated user.
+        Creates a data ingestion request (SFTP/API) for the authenticated user for a specific asset
+        in the catalogue. The request is created in `PENDING` status and must be approved by a `cos_admin`.
+
+        **Allowed Roles:** `provider`
+
         **Log Type:** `USER_ACTION`
       requestBody:
         description: |
-          - `asset_id` : The catalogue ID of the asset for which the request is to be created - `type` : The type of usage of asset - `additional_info` : Optional extra details about requester and intent
+          - `asset_id`: The catalogue ID of the asset for which the request is to be created
+          - `type`: The type of data ingestion — either `SFTP` or `API`
+          - `additional_info`: Optional extra details about the requester and intent (e.g. purpose, description)
         required: true
         content:
           application/json:
@@ -319,7 +391,8 @@ paths:
                   minLength: 1
                 additional_info:
                   description: |
-                    Used to define additional information to access data for educational, research, testing, non-commercial, or academic purposes.
+                    Used to define additional information to access data for educational, research,
+                    testing, non-commercial, or academic purposes.
                   type: object
               required:
                 - asset_id
@@ -372,9 +445,26 @@ paths:
     get:
       tags:
         - Ingestion type(API/SFTP) APIs
-      summary: List Org Admin User Asset Requests
+      summary: List Asset Requests
       description: |
-        Lists all the latest asset requests made by the cos_admin/org_admin/provider user calling the API, regardless of the request status. **Log Type:** `USER_ACTION`
+        Lists all the latest asset requests visible to the authenticated user, regardless of status.
+        Results are scoped by the caller's role — a `provider` sees only their own requests,
+        while `org_admin` and `cos_admin` can see requests across their scope.
+
+        **Allowed Roles:** `provider`, `org_admin`, `cos_admin`
+
+        Supports pagination and the following filter query parameters:
+
+        | Query Parameter | Description                                      |
+        |-----------------|--------------------------------------------------|
+        | `type`          | Filter by ingestion type — `SFTP` or `API`. Only this filter returns a filtered response. |
+        | `status`        | Filter by request status (e.g. `PENDING`, `GRANTED`, `REJECTED`) |
+        | `userId`        | Filter by the ID of the user who made the request |
+        | `assetId`       | Filter by the catalogue asset ID |
+        | `requestedAt`   | Filter by the time the request was made |
+        | `updatedAt`     | Filter by the last updated time |
+
+        **Log Type:** `USER_ACTION`
       operationId: get-auth-v2-asset-request
       parameters:
         - $ref: '#/components/parameters/PageParam'
@@ -383,9 +473,18 @@ paths:
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
         - $ref: '#/components/parameters/TimeRelParam'
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - SFTP
+              - API
+          description: Filter asset requests by ingestion type. This is the primary filter that returns a filtered response.
       responses:
         '200':
-          description: Successfully fetched all asset requests of the org admin user
+          description: Successfully fetched all asset requests
           content:
             application/json:
               schema:
@@ -433,7 +532,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
         '403':
-          description: Forbidden - User does not have the org_admin role
+          description: Forbidden - User does not have the required role
           content:
             application/json:
               schema:
@@ -447,7 +546,14 @@ paths:
         - Ingestion type(API/SFTP) APIs
       operationId: put-auth-v2-asset-request
       description: |
-        **Cos_admin** Updates the status of an existing data ingestion access request by ID.
+        Updates the status of an existing data ingestion access request by its ID.
+        Only a `cos_admin` with the `asset-management` scope can perform this action.
+        Use this to approve, reject, or update the state of a pending asset request.
+
+        **Allowed Roles:** `cos_admin`
+
+        **Required Scope:** `asset-management`
+
         **Log Type:** `USER_ACTION`
       parameters:
         - name: id
@@ -492,7 +598,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
         '403':
-          description: Forbidden – User not allowed to update this asset request
+          description: Forbidden – User does not have the cos_admin role or asset-management scope
           content:
             application/json:
               schema:
@@ -516,7 +622,13 @@ paths:
         - Ingestion type(API/SFTP) APIs
       summary: Delete User Asset Request
       description: |
-        Delete a pending asset request made by the authenticated user. Only requests in `PENDING` status can be deleted. Requires an authenticated user token.
+        Permanently deletes a pending asset request made by the authenticated user.
+        Only requests in `PENDING` status can be deleted — requests that have already been
+        approved or rejected cannot be removed. Only the `consumer` who created the request
+        can delete it. Requires an authenticated user token.
+
+        **Allowed Roles:** `consumer`
+
         **Log Type:** `USER_ACTION`
       operationId: delete-auth-v2-asset-request
       parameters:
@@ -530,7 +642,7 @@ paths:
             pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
       responses:
         '200':
-          description: OK - Successfully deleted asset request.
+          description: OK - Successfully deleted asset request
         '400':
           description: Bad Request – Schema validation failed or incorrect query parameters
           content:
@@ -3082,9 +3194,7 @@ paths:
   /iudx/v2/auth/delegation:
     post:
       summary: Grant delegation to another user (Delegator)
-      description: |
-        Creates a delegation grant that allows another user (the delegate) to act on behalf of the caller (the delegator). The delegation can optionally be scoped to specific roles and constraints with per-constraint expiry. Requires an authenticated user token.
-        **Log Type:** `USER_ACTION`
+      description: 'Creates a delegation grant that allows another user (the delegate) to act on behalf of the caller (the delegator). The delegation can be granted at a broad role level or further restricted to specific scopes and entity types, each with an independent expiry. The global `expiry_at` applies to the entire delegation; individual constraint-level `expiry_at` values override this for that specific scope. Requires an authenticated user token. **Log Type:** `USER_ACTION` '
       tags:
         - Delegation APIs
       operationId: post-auth-v2-delegation
@@ -3423,7 +3533,7 @@ paths:
             --header 'Authorization: Bearer <keycloak_token>'
     delete:
       summary: Delete a Delegation Grant
-      description: Revoke a delegation grant. Only the delegator (user who granted the delegation) can delete it. This will remove all associated scopes from the delegate user in Keycloak.
+      description: Revoke a delegation grant. Only the delegator (user who granted the delegation) can delete it.
       tags:
         - Delegation APIs
       operationId: delete-auth-v2-delegation-id
@@ -11264,8 +11374,12 @@ paths:
       security:
         - authorization: []
       description: |
-        Authenticates the app using appId and appSecret, and returns the resolved
-        user context with app-specific roles and scopes.
+        Authenticates a request using an `appId` and `appSecret` pair and returns the resolved
+              user context for that app, including the user's profile, organisation details, and the
+              specific roles and scopes permitted by this App ID. This endpoint is used by any user
+              or service that has been given an `appId` and `appSecret` to obtain a scoped user context
+              before making further API calls. The returned scopes are strictly limited to what was
+              defined when the App ID was created — no additional permissions can be derived from this context.
       requestBody:
         required: true
         content:
@@ -11515,7 +11629,7 @@ paths:
       operationId: get-threaded-message
       summary: Get all messages
       description: |
-        Paginated conversation thread for a request. Returns root messages with up to 2 levels of nested replies. Each level shows first 3 replies inline. Use has_more and page param to load more.
+        Paginated conversation thread for a request. Conversations are initiated in the context of a specific entity-driven request — such as joining an organisation, creating an organisation, or submitting a credit request — identified by the request_id. Returns root messages with up to 2 levels of nested replies. Each level shows first 3 replies inline.
       security:
         - authorization: []
       parameters:
@@ -11570,7 +11684,8 @@ paths:
         - Conversations
       operationId: post-request-conversation
       summary: Create message
-      description: Post a new message, question, answer, or internal note.
+      description: |
+        Post a new message(of type question, answer, or internal note) within a request conversation. The sender_role must be either 'requester' or 'approver'. Set internal_note to true for notes visible only to users with role approver, or false for messages visible to all participants. Leave parent_msg_id as null to post a root-level message; provide a parent_msg_id to post as a reply to an existing message.
       security:
         - authorization: []
       parameters:
@@ -11586,21 +11701,42 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - sender_role
+                - message_type
+                - request_type
+                - content
               properties:
                 parent_msg_id:
                   type: string
                   format: uuid
                   nullable: true
+                  description: Null for root-level messages; provide a valid message UUID to post as a reply to an existing message.
                 sender_role:
                   type: string
+                  enum:
+                    - requester
+                    - approver
+                  description: Role of the sender. Must be either 'requester' or 'approver'.
                 message_type:
                   type: string
+                  enum:
+                    - text
+                    - question
+                    - answer
                 request_type:
                   type: string
+                  enum:
+                    - join_orgs
+                    - create_orgs
+                    - credit_request
+                  description: The type of entity-driven request this conversation belongs to.
                 content:
                   type: string
+                  description: The message body.
                 internal_note:
                   type: boolean
+                  description: Set to true for notes visible only to internal team members; false for messages visible to all participants.
       responses:
         '200':
           description: Message created successfully
@@ -11631,11 +11767,15 @@ paths:
                         type: string
                         format: uuid
                         nullable: true
+                        description: Null if this is a root-level message; otherwise the UUID of the parent message.
                       senderId:
                         type: string
                         format: uuid
                       senderRole:
                         type: string
+                        enum:
+                          - requester
+                          - approver
                         example: requester
                       messageType:
                         type: string
@@ -11644,6 +11784,9 @@ paths:
                         type: string
                       isInternal:
                         type: boolean
+                        enum:
+                          - true
+                          - false
                       createdAt:
                         type: string
                         format: date-time
@@ -11675,7 +11818,7 @@ paths:
         - Conversations
       operationId: get-request-conversation-by-id
       summary: Get single message
-      description: Fetch a specific message with its replies.
+      description: 'Fetch a specific message with its replies. Each message belongs to a conversation tied to an entity-driven request (e.g. org join, org creation, credit request) identified by request_id and message id.Any user can run this. '
       security:
         - authorization: []
       parameters:
@@ -11739,7 +11882,7 @@ paths:
         - Conversations
       operationId: put-request-conversation
       summary: Update message
-      description: Edit message content (within allowed time window).
+      description: The message created by the user earlier can be edited using this. 'content' , 'metadata' or 'is_internal' can be changed.
       security:
         - authorization: []
       parameters:
@@ -11774,6 +11917,9 @@ paths:
                 is_internal:
                   type: boolean
                   nullable: true
+                  enum:
+                    - true
+                    - false
                   additionalProperties: true
       responses:
         '200':
@@ -11850,7 +11996,7 @@ paths:
         - Conversations
       operationId: delete-request-conversation
       summary: Delete message
-      description: Soft delete a message (admin only).
+      description: Delete a message - by the user who created the message.
       security:
         - authorization: []
       parameters:
@@ -11888,7 +12034,8 @@ paths:
         - Conversations
       operationId: post-request-conversation-reply
       summary: Reply to message
-      description: Reply to a specific question or message (sets parent_msg_id).
+      description: |
+        Reply to a specific message or question. The msg_id in the path is automatically set as the parent_msg_id for this reply. The sender_role must be either 'requester' or 'approver'. Set internal_note to true to create a reply visible only to 'approver'; false to make it visible to all conversation participants(approver and requester).
       security:
         - authorization: []
       parameters:
@@ -11904,21 +12051,34 @@ paths:
           schema:
             type: string
             format: uuid
+          description: The UUID of the message being replied to. Automatically becomes the parent_msg_id of this reply.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - sender_role
+                - message_type
+                - content
               properties:
                 sender_role:
                   type: string
+                  enum:
+                    - requester
+                    - approver
+                  description: Role of the sender. Must be either 'requester' or 'approver'.
                 message_type:
                   type: string
+                  description: Type of the reply message.
                 content:
                   type: string
+                  description: The reply message body.
                 internal_note:
                   type: boolean
+                  description: |
+                    Set to true to mark this reply as an internal note — visible only to the approver. Set to false for replies visible to all conversation participants.
       responses:
         '200':
           description: Reply created successfully
@@ -18852,19 +19012,36 @@ components:
         - org_admin
         - provider
         - consumer
-      description: Delegation role
+        - compute
+      description: |
+        Role of the delegator. Each role is permitted to delegate only specific scopes.
+
+        | Role        | Allowed Scopes                                                                                                                                                  |
+        |-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+        | `consumer`  | `data-access`                                                                                                                                                   |
+        | `provider`  | `own-asset-management`                                                                                                                                          |
+        | `org_admin` | `org-user-management`, `org-asset-management`, `org-asset-publish`, `own-asset-management`, `org-publisher-management`                                         |
+        | `cos_admin` | `org-management`, `asset-publish`, `asset-management`, `user-management`, `publisher-management`, `role-management`, `credit-management`, `compute-management` |
+        | `compute`   | `compute-management`                                                                                                                                            |
     DelegationScope:
       type: string
       enum:
-        - cos-admin-access
-        - org-admin-access
-        - asset-management
-        - compute-management
-        - user-management
         - data-access
-        - api
-        - subs
-      description: Allowed scope values across all roles
+        - own-asset-management
+        - org-user-management
+        - org-asset-management
+        - org-asset-publish
+        - org-publisher-management
+        - org-management
+        - asset-publish
+        - asset-management
+        - user-management
+        - publisher-management
+        - role-management
+        - credit-management
+        - compute-management
+      description: |
+        Scope of access being delegated. Each scope is restricted to specific roles.Check the roles description for more information.
     DelegationEntityType:
       type: string
       enum:
@@ -18873,7 +19050,16 @@ components:
         - adex:AiModel
         - adex:DataBank
         - adex:Apps
-      description: Entity type for scoped delegation
+      description: |
+        The type of entity this delegation is scoped to.
+
+        | Entity Type      | Description                                      |
+        |------------------|--------------------------------------------------|
+        | `org`            | Organisation-level delegation                    |
+        | `provider`       | Provider-level delegation                        |
+        | `adex:AiModel`   | Delegation scoped to an AI Model asset           |
+        | `adex:DataBank`  | Delegation scoped to a DataBank asset            |
+        | `adex:Apps`      | Delegation scoped to an Apps asset               |
     UserInteractionRequest:
       type: object
       required:

@@ -40,14 +40,30 @@ tags:
 - name: Activity Logs
 - name: Activity Report
 - name: App
-- name: Asset APIs
+  description: |
+    App IDs provide a way to grant restricted, scoped access to platform APIs without exposing
+    the user's primary credentials. A user creates an App ID with a specific set of roles and
+    scopes, then shares the `appId` and `appSecret` with another user or service. The recipient
+    can then use these credentials to access platform APIs — but only within the roles and scopes
+    defined at the time the App ID was created.
 - name: CAT Entity
 - name: Certificate API
 - name: Client APIs
 - name: Compute APIs
 - name: Conversations
+  description: >
+    Conversations are threaded message exchanges tied to entity-driven requests
+    such as joining an organisation, creating an organisation, or submitting a
+    credit request. Each conversation is scoped to a request_id and supports
+    root-level messages and nested replies up to 2 levels deep.
+    Messages can be posted by requesters or approvers, and can optionally be
+    marked as internal notes visible only to the approvers.
 - name: Credit APIs
 - name: Delegation APIs
+  description: |
+    Delegation allows an authenticated user (the **delegator**) to grant another user (the **delegate**)
+    the ability to act on their behalf. Delegations are scoped by role and optionally further restricted
+    by specific scopes and entity types, each with their own expiry.
 - name: Discovery – My Assets
 - name: Discovery – Public
 - name: KYC APIs
@@ -63,6 +79,7 @@ tags:
 - name: Summary
 - name: token
 - name: User Interactions
+- name: Ingestion type(API/SFTP) APIs
 paths:
   /iudx/v2/auth/app:
     $ref: paths/app.yaml#/~1iudx~1v2~1auth~1app

@@ -1,11 +1,14 @@
 /iudx/v2/auth/delegation:
   post:
     summary: Grant delegation to another user (Delegator)
-    description: 'Creates a delegation grant that allows another user (the delegate) to act on behalf of the caller (the delegator). The delegation can optionally be scoped to specific roles and constraints with per-constraint expiry. Requires an authenticated user token.
-
+    description:  'Creates a delegation grant that allows another user (the delegate) to act on behalf of the
+    caller (the delegator). The delegation can be granted at a broad role level or further restricted
+    to specific scopes and entity types, each with an independent expiry. The global `expiry_at`
+    applies to the entire delegation; individual constraint-level `expiry_at` values override this
+    for that specific scope. Requires an authenticated user token.
       **Log Type:** `USER_ACTION`
-
       '
+
     tags:
     - Delegation APIs
     operationId: post-auth-v2-delegation
@@ -350,8 +353,7 @@
         '
   delete:
     summary: Delete a Delegation Grant
-    description: Revoke a delegation grant. Only the delegator (user who granted the delegation) can delete it. This will
-      remove all associated scopes from the delegate user in Keycloak.
+    description: Revoke a delegation grant. Only the delegator (user who granted the delegation) can delete it.
     tags:
     - Delegation APIs
     operationId: delete-auth-v2-delegation-id
