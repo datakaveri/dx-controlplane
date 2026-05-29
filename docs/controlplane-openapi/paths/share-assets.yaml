@@ -146,7 +146,7 @@
       - lang: cURL
         label: share asset with users
         source: |
-          curl --location 'https://${HOSTNAME}/iudx/v2/assets/share' \
+          curl --location 'https://${HOSTNAME}/iudx/v2/cat/assets/share' \
           --header 'Authorization: Bearer <token>' \
           --header 'Content-Type: application/json' \
           --data '{
@@ -247,7 +247,7 @@
       - lang: cURL
         label: revoke asset share
         source: |
-          curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/assets/share' \
+          curl --location --request DELETE 'https://${HOSTNAME}/cat/assets/share' \
           --header 'Authorization: Bearer <token>' \
           --header 'Content-Type: application/json' \
           --data '{
@@ -360,7 +360,8 @@
         label: get asset visibility details
         source: |
           curl --location --request GET \
-          'https://${HOSTNAME}/iudx/v2/assets/share?itemId=3fa85f64-5717-4562-b3fc-2c963f66afa6' \
+          'https://${HOSTNAME}/iudx/v2/cat/assets/share?itemId=3fa85f64-5717-4562-b3fc
+          -2c963f66afa6' \
           --header 'Authorization: Bearer <token>'
 
 /iudx/v2/cat/assets/shared-with-me:
@@ -496,5 +497,5 @@
       - lang: cURL
         label: get shared assets
         source: |
-          curl --location --request GET 'https://${HOSTNAME}/iudx/v2/assets/shared-with-me' \
+          curl --location --request GET 'https://${HOSTNAME}/iudx/v2/cat/assets/shared-with-me' \
           --header 'Authorization: Bearer <token>'

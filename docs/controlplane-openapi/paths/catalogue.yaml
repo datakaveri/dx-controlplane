@@ -379,7 +379,8 @@
 
       - Asset owners (`provider`) can update any field except `publishStatus` and restricted fields.
       - Admins (`org_admin`, `cos_admin`) can also update `publishStatus`.
-      - The following fields cannot be updated via this API: `providerUserId`, `organizationId`, `itemCreatedAt`, `metrics`.
+      - The following fields cannot be updated via this API: `ownerUserId`, `organizationId`, 
+      `itemCreatedAt`, `metrics`.
       - `lastUpdated` is automatically set to the current UTC time.
     operationId: patch item metadata
     security:

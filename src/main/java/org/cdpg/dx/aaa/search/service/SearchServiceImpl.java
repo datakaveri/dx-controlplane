@@ -6,18 +6,19 @@ import static org.cdpg.dx.database.elastic.util.Constants.SOURCE_ONLY;
 import io.vertx.core.Future;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.search.util.ResponseModel;
+import org.cdpg.dx.aaa.shareAssets.service.VisibilityService;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxEsException;
-import org.cdpg.dx.database.elastic.model.ElasticsearchSearchResult;
-import org.cdpg.dx.database.postgres.models.OrderBy;
 import org.cdpg.dx.database.elastic.model.QueryDecoder;
 import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
 import org.cdpg.dx.database.elastic.model.QueryModel;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
+import org.cdpg.dx.database.postgres.models.OrderBy;
 
 public class SearchServiceImpl implements SearchService {
   private static final Logger LOGGER = LogManager.getLogger(SearchServiceImpl.class);
@@ -25,9 +26,14 @@ public class SearchServiceImpl implements SearchService {
   private final ElasticsearchService elasticsearchService;
   private final QueryDecoder queryDecoder;
   private final String docIndex;
+  private final VisibilityService visibilityService;
 
-  public SearchServiceImpl(ElasticsearchService elasticsearchService, String docIndex) {
+  public SearchServiceImpl(
+      ElasticsearchService elasticsearchService,
+      VisibilityService visibilityService,
+      String docIndex) {
     this.elasticsearchService = elasticsearchService;
+    this.visibilityService = visibilityService;
     this.queryDecoder = new QueryDecoder();
     this.docIndex = docIndex;
   }
@@ -35,18 +41,23 @@ public class SearchServiceImpl implements SearchService {
   @Override
   public Future<ResponseModel> postSearch(QueryDecoderRequestDTO requestDTO) {
     try {
-      QueryModel queryModel = buildQueryModel(requestDTO);
-      applySorting(queryModel, requestDTO);
+      return enrichSharedAssets(requestDTO)
+          .compose(
+              enrichedRequest -> {
+                QueryModel queryModel = buildQueryModel(enrichedRequest);
 
-      return elasticsearchService
-          .search(docIndex, queryModel, SOURCE_ONLY)
-          .map(
-              searchResult ->
-                  new ResponseModel(
-                      searchResult.getResults(),
-                      requestDTO.getSize(),
-                      requestDTO.getPage(),
-                      searchResult.getTotalHits()))
+                applySorting(queryModel, enrichedRequest);
+
+                return elasticsearchService
+                    .search(docIndex, queryModel, SOURCE_ONLY)
+                    .map(
+                        searchResult ->
+                            new ResponseModel(
+                                searchResult.getResults(),
+                                enrichedRequest.getSize(),
+                                enrichedRequest.getPage(),
+                                searchResult.getTotalHits()));
+              })
           .onFailure(err -> LOGGER.error("Search execution failed: {}", err.getMessage()));
 
     } catch (DxBadRequestException bre) {
@@ -111,39 +122,68 @@ public class SearchServiceImpl implements SearchService {
   }
 
   @Override
-  public Future<ResponseModel> postCount(QueryDecoderRequestDTO queryDecoderRequestDTO) {
+  public Future<ResponseModel> postCount(QueryDecoderRequestDTO requestDTO) {
+
     try {
-      String searchType = queryDecoderRequestDTO.getSearchType();
-      LOGGER.info("count search type {}", searchType);
 
-      QueryDecoder queryDecoder = new QueryDecoder();
-      QueryModel queryModel = queryDecoder.getQueryModel(queryDecoderRequestDTO);
+      LOGGER.info("count search type {}", requestDTO.getSearchType());
 
-      // Set count aggregation
-      queryModel.setAggregations(List.of(queryDecoder.setCountAggregations()));
+      return enrichSharedAssets(requestDTO)
+          .compose(
+              enrichedRequest -> {
+                QueryDecoder queryDecoder = new QueryDecoder();
 
-      return elasticsearchService
-          .search(docIndex, queryModel, COUNT_AGGREGATION_ONLY)
-          .map(
-              searchResult ->
-                  new ResponseModel(searchResult.getResults(), searchResult.getAggregations()))
-          .onFailure(err -> LOGGER.error("Count execution failed: {}", err.getMessage()));
+                QueryModel queryModel = queryDecoder.getQueryModel(enrichedRequest);
+
+                queryModel.setAggregations(List.of(queryDecoder.setCountAggregations()));
+
+                return elasticsearchService
+                    .search(docIndex, queryModel, COUNT_AGGREGATION_ONLY)
+                    .map(
+                        searchResult ->
+                            new ResponseModel(
+                                searchResult.getResults(), searchResult.getAggregations()));
+              })
+          .onFailure(err -> LOGGER.error("Count execution failed: {}", err.getMessage(), err));
 
     } catch (DxBadRequestException bre) {
-      // Thrown by QueryDecoder → return exact message
+
       LOGGER.error("Count request validation failed: {}", bre.getMessage());
+
       return Future.failedFuture(bre);
 
     } catch (DxEsException esEx) {
-      // Decorator / business validation failures → map to BadRequest
+
       LOGGER.error("Count query construction failed: {}", esEx.getMessage());
+
       return Future.failedFuture(new DxBadRequestException(esEx.getMessage()));
 
     } catch (Exception e) {
-      // Unexpected system errors
+
       LOGGER.error("Unexpected error during postCount: {}", e.getMessage(), e);
+
       return Future.failedFuture(new DxBadRequestException("Failed to process count request"));
     }
   }
 
+  private Future<QueryDecoderRequestDTO> enrichSharedAssets(QueryDecoderRequestDTO requestDTO) {
+    if (requestDTO.getAccessPolicyRequest() == null
+        || requestDTO.getAccessPolicyRequest().getSub() == null) {
+      return Future.succeededFuture(requestDTO);
+    }
+
+    UUID userId = UUID.fromString(requestDTO.getAccessPolicyRequest().getSub());
+
+    String orgId = requestDTO.getOrganisationId();
+
+    return visibilityService
+        .getAssetsSharedWithMe(userId, orgId)
+        .map(
+            visibilityList -> {
+              List<String> sharedIds =
+                  visibilityList.stream().map(v -> v.getItemId().toString()).distinct().toList();
+              requestDTO.getAccessPolicyRequest().setSharedItemIds(sharedIds);
+              return requestDTO;
+            });
+  }
 }

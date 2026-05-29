@@ -1,40 +1,227 @@
 /iudx/acl/apd/v2/policy:
   post:
     tags:
-    - Policies
+      - Policies
     summary: Create Policy
-    description: "\nThe `Create Policy` API allows a `provider` or an authorized `delegate`\n\
-      to create an **ACTIVE access policy** for a resource owned by the provider.\n\
-      \nWhen a policy is successfully created:\n\n- A new policy record is created\
-      \ with status = `ACTIVE`\n- A corresponding access rule is created and linked\
-      \ to the policy\n- The rule inherits the same lifecycle as the policy\n\n##\
-      \ Policy Lifecycle\n\n- On creation → Policy status = `ACTIVE`\n- On deletion\
-      \ → Policy status = `DELETED`\n- On expiry → Policy remains `ACTIVE`, but is\
-      \ treated as invalid during verification\n\n### Expiry Handling\n\nPolicy expiry\
-      \ does not modify the stored status.\n\nInstead, during policy verification:\n\
-      - The system checks whether `expiryAt` is greater than the current timestamp.\n\
-      - If expired, the policy is treated as inactive for access evaluation.\n- The\
-      \ database status remains unchanged.\n\n### Rule Synchronization\n\nWhen a policy\
-      \ is marked as `DELETED`, all associated access rules are also marked as \n\
-      `DELETED`.\n\n## Item Types\n\n- `DATABANK`: Policy applies to individual resources.\n\
-      - `AIMODEL`: Policy applies to resource groups.\n\n## Important Notes\n\n- Only\
-      \ one policy can be created per request.\n- Only one ACTIVE policy can exist\
-      \ per (user, itemId).\n- If a valid ACTIVE policy already exists, a `409 Conflict`\
-      \ is returned."
     operationId: post-auth-v1-policies
+    description: |
+      Creates one or more access policies for resources owned by the provider.
+
+      This API allows a `provider` or `org_admin`
+      to define fine-grained access control rules for resources,
+      AI models.
+
+      A policy determines:
+      - Who can access a resource
+      - How the resource can be accessed
+      - Access validity duration
+      - Usage restrictions and limits
+
+      Each successfully created policy is stored with status `ACTIVE`
+      and internally linked to one or more access rules used during
+      authorization and policy verification.
+
+      ---
+
+      ## Supported Policy Types
+
+      The API supports two policy models.
+
+      ### 1. INDIVIDUAL Policy
+
+      An `INDIVIDUAL` policy grants access directly to a specific user.
+
+      Characteristics:
+      - `userId` is mandatory
+      - Access evaluation is performed using the provided `userId`
+      - `constraints.subjects` is optional
+      - Commonly used for granting access to a single consumer
+
+      Example use cases:
+      - Granting access to a specific customer
+      - Providing temporary trial access
+      - Issuing subscription access to a single user
+
+      ### 2. GROUP Policy
+
+      A `GROUP` policy grants access to users matching one or more
+      subject constraints.
+
+      Characteristics:
+      - `userId` is not required
+      - `constraints.subjects` is mandatory
+      - Access evaluation is performed using subject matching
+      - Supports organization-level and role-based access control
+
+      Example use cases:
+      - Granting access to all users of an organization
+      - Allowing all users with the `consumer` role
+      - Allowing access to a predefined user group
+
+      ---
+
+      ## Policy Lifecycle
+
+      ### ACTIVE
+
+      When a policy is successfully created:
+      - Policy status is set to `ACTIVE`
+      - Associated access rules are also created as `ACTIVE`
+
+      ACTIVE policies participate in authorization checks.
+
+      ### DELETED
+
+      When a policy is deleted:
+      - Policy status becomes `DELETED`
+      - All associated access rules are also marked `DELETED`
+
+      Deleted policies are ignored during authorization evaluation.
+
+      ### EXPIRED
+
+      Policy expiry does not modify the stored database status.
+
+      During authorization:
+      - The system validates whether `expiryTime`
+        is greater than the current timestamp
+      - Expired policies are treated as inactive
+      - The stored status remains unchanged
+
+      ---
+
+      ## Batch Policy Creation
+
+      The request body contains a `request` array.
+
+      Each element in the array represents an independent
+      policy creation request.
+
+      The API supports batch policy creation, allowing multiple
+      policies to be created in a single API call.
+
+      Validation is performed independently for each request object.
+
+      ---
+
+      ## Item Types
+
+      ### DATABANK
+
+      Policy applies to individual resources or datasets.
+
+      ### AIMODEL
+
+      Policy applies to AI models
+
+      ---
+
+      ## Constraints Evaluation
+
+      The `constraints` object defines authorization rules.
+
+      A policy may contain:
+
+      - `subjects`
+        Defines who is eligible to access the resource
+
+      - `access`
+        Defines how the resource may be accessed
+
+      ### subjects
+
+      Subject constraints are used during authorization evaluation.
+
+      Access is granted when the requesting entity matches
+      one or more configured subject conditions.
+
+      Supported subject filters:
+
+      - `allowedOrgIds`
+        List of permitted organization IDs
+
+      - `allowedUserIds`
+        List of permitted user IDs
+
+      - `allowedRoles`
+        List of permitted platform roles
+
+      `subjects` is mandatory for `GROUP` policies.
+
+      ### access
+
+      Defines supported access mechanisms.
+
+      Supported access types:
+
+      - `api`
+        API-based access
+
+      - `file`
+        File download access
+
+      - `sub`
+        Subscription or streaming access
+
+      Each access entry may additionally define:
+
+      - `expiry`
+        Expiry timestamp in epoch seconds
+
+      - `limits`
+        Optional usage restrictions such as:
+        - `apiHits`
+        - `dataUsage`
+
+      ---
+
+      ## Validation Rules
+
+      ### INDIVIDUAL Policy
+
+      Requires:
+      - `policyType = INDIVIDUAL`
+      - `userId`
+
+      ### GROUP Policy
+
+      Requires:
+      - `policyType = GROUP`
+      - `constraints.subjects`
+
+      ### Duplicate Policy Restriction
+
+      Only one ACTIVE policy may exist for the
+      same policy scope.
+
+      If a conflicting ACTIVE policy already exists,
+      the API returns `409 Conflict`.
+
+      ---
+
+      ## Authorization Requirements
+
+      This API may only be invoked by:
+
+      - A `provider`
+      - An `org_admin`
+
+      Additionally:
+      - The caller must own the resource
+      - Or belong to the organization that owns the resource
     parameters:
-    - name: Authorization
-      in: header
-      description: DX Auth issued identity token
-      required: true
-      schema:
-        type: string
-        minLength: 1
-        pattern: Bearer [a-zA-Z0-9_*\-*\.\/]+$|^[a-zA-Z0-9_*\-*\.\/]+$
+      - name: Authorization
+        in: header
+        description: DX Auth issued identity token
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          pattern: Bearer [a-zA-Z0-9_*\-*\.\/]+$|^[a-zA-Z0-9_*\-*\.\/]+$
     requestBody:
       description: "**Request Body Details:**\n\n  The request body should be a JSON\
         \ object containing a JSON array of request.\n\n  ### User Policy Request:\n\
-        \n  - `userEmail`: The email ID of the user for whom the policy is being defined.\n\
+        \n  - `userId`: The ID of the user for whom the policy is being defined.\n\
         \  - `itemId`: The UUID value of the item for which the policy is being established.\n\
         \  - `itemType`: An enum value representing the type of the item.\n  - `expiryTime`:\
         \ An optional field, representing the policy's expiry time in ISO8601 format\
@@ -53,172 +240,127 @@
               request:
                 type: array
                 minItems: 1
-                uniqueItems: true
                 items:
-                  type: object
-                  additionalProperties: false
-                  properties:
-                    userEmail:
-                      type: string
-                      pattern: ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$
-                      minLength: 1
-                    itemId:
-                      type: string
-                      pattern: ^[a-zA-Z0-9_*\-*\.\/]+$
-                      minLength: 1
-                      maxLength: 512
-                    itemType:
-                      enum:
-                      - AIMODEL
-                      - DATABANK
-                      minLength: 1
-                    expiryTime:
-                      type: string
-                      pattern: ^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24\:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$
-                      minLength: 1
-                    constraints:
-                      type: object
-                    additionalInfo:
-                      type: object
-                      description: Additional information to access data for educational,
-                        research or testing, non-commercial, academia purposes
-                      minProperties: 0
-                      maxProperties: 10
-                    providerComment:
-                      type: string
-                      description: Comment from the provider regarding the resource
-                        item, which can be used to provide additional information
-                        about the resource
-                      minLength: 1
-                      maxLength: 4000
-                    feedbackToConsumer:
-                      type: string
-                      description: Feedback from the provider to the consumer regarding
-                        the resource item, which can be used to provide additional
-                        information about the resource
-                      maxLength: 4000
-                      minLength: 1
-                  required:
-                  - userEmail
-                  - itemId
-                  - itemType
-                  - constraints
+                  oneOf:
+                    - $ref: '../components/schemas.yaml#/IndividualPolicyRequest'
+                    - $ref: '../components/schemas.yaml#/GroupPolicyRequest'
             required:
-            - request
+              - request
             x-examples:
               example-1:
                 request:
-                - userEmail: pqr@abc.com
-                  itemId: example-resource-group
-                  itemType: DATABANK
-                  expiryTime: '2023-08-30T21:10:06'
-                  constraints:
-                    subjects:
-                      allowedOrgIds:
-                      - <uuid>
-                      - <uuid>
-                      allowedUserIds:
-                      - <uuid>
-                      allowedRoles:
-                      - consumer
-                    access:
-                    - accessType: api
-                      expiry: 1735689600
-                      limits:
-                        dataUsage: 100:gb
-                        apiHits: 100
-                    - accessType: file
-                      expiry: 1735689600
-                      limits:
-                        dataUsage: 10:gb
-                    - accessType: sub
-                      expiry: 1735689600
-                - userEmail: test@demo.com
-                  itemId: example-resource-group
-                  itemType: DATABANK
-                  expiryTime: '2023-08-30T21:10:06'
-                  constraints:
-                    subjects:
-                      allowedOrgIds:
-                      - <uuid>
-                      - <uuid>
-                      allowedUserIds:
-                      - <uuid>
-                      allowedRoles:
-                      - consumer
-                    access:
-                    - accessType: api
-                      expiry: 1735689600
-                      limits:
-                        dataUsage: 100:gb
-                        apiHits: 100
-                    - accessType: file
-                      expiry: 1735689600
-                      limits:
-                        dataUsage: 10:gb
-                    - accessType: sub
-                      expiry: 1735689600
+                  - userId: <uuid>
+                    policyType: GROUP
+                    itemId: example-resource-group
+                    itemType: DATABANK
+                    expiryTime: '2023-08-30T21:10:06'
+                    constraints:
+                      subjects:
+                        allowedOrgIds:
+                          - <uuid>
+                          - <uuid>
+                        allowedUserIds:
+                          - <uuid>
+                        allowedRoles:
+                          - consumer
+                      access:
+                        - accessType: api
+                          expiry: 1735689600
+                          limits:
+                            dataUsage: 100:gb
+                            apiHits: 100
+                        - accessType: file
+                          expiry: 1735689600
+                          limits:
+                            dataUsage: 10:gb
+                        - accessType: sub
+                          expiry: 1735689600
+                  - userId: <uuid>
+                    itemId: example-resource-group
+                    itemType: DATABANK
+                    expiryTime: '2023-08-30T21:10:06'
+                    constraints:
+                      subjects:
+                        allowedOrgIds:
+                          - <uuid>
+                          - <uuid>
+                        allowedUserIds:
+                          - <uuid>
+                        allowedRoles:
+                          - consumer
+                      access:
+                        - accessType: api
+                          expiry: 1735689600
+                          limits:
+                            dataUsage: 100:gb
+                            apiHits: 100
+                        - accessType: file
+                          expiry: 1735689600
+                          limits:
+                            dataUsage: 10:gb
+                        - accessType: sub
+                          expiry: 1735689600
           examples:
             Request for resource with additionalInfo:
               value:
                 request:
-                - userEmail: abc@xyz.com
-                  itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
-                  itemType: DATABANK
-                  expiryTime: '2022-08-04T20:00:19'
-                  constraints:
-                    subjects:
-                      allowedOrgIds:
-                      - <uuid>
-                      - <uuid>
-                      allowedUserIds:
-                      - <uuid>
-                      allowedRoles:
-                      - consumer
-                    access:
-                    - accessType: api
-                      expiry: 1735689600
-                      limits:
-                        dataUsage: 100:gb
-                        apiHits: 100
-                    - accessType: file
-                      expiry: 1735689600
-                      limits:
-                        dataUsage: 10:gb
-                    - accessType: sub
-                      expiry: 1735689600
-                  additionalInfo:
-                    name: Miles Davis
-                  providerComment: The resource is used for transportation data analysis
-                  feedbackToConsumer: This resource can be used for testing purposes
+                    policyType: GROUP
+                    itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
+                    itemType: DATABANK
+                    expiryTime: '2022-08-04T20:00:19'
+                    constraints:
+                      subjects:
+                        allowedOrgIds:
+                          - <uuid>
+                          - <uuid>
+                        allowedUserIds:
+                          - <uuid>
+                        allowedRoles:
+                          - consumer
+                      access:
+                        - accessType: api
+                          expiry: 1735689600
+                          limits:
+                            dataUsage: 100:gb
+                            apiHits: 100
+                        - accessType: file
+                          expiry: 1735689600
+                          limits:
+                            dataUsage: 10:gb
+                        - accessType: sub
+                          expiry: 1735689600
+                    additionalInfo:
+                      name: Miles Davis
+                    providerComment: The resource is used for transportation data analysis
+                    feedbackToConsumer: This resource can be used for testing purposes
             Request for resource user policy:
               value:
                 request:
-                - userEmail: abc@xyz.com
-                  itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
-                  itemType: DATABANK
-                  expiryTime: '2022-10-10T04:00:19'
-                  constraints:
-                    subjects:
-                      allowedOrgIds:
-                      - <uuid>
-                      - <uuid>
-                      allowedUserIds:
-                      - <uuid>
-                      allowedRoles:
-                      - consumer
-                    access:
-                    - accessType: api
-                      expiry: 1735689600
-                      limits:
-                        dataUsage: 100:gb
-                        apiHits: 100
-                    - accessType: file
-                      expiry: 1735689600
-                      limits:
-                        dataUsage: 10:gb
-                    - accessType: sub
-                      expiry: 1735689600
+                    policyType: GROUP
+                    itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
+                    itemType: DATABANK
+                    expiryTime: '2022-10-10T04:00:19'
+                    constraints:
+                      subjects:
+                        allowedOrgIds:
+                          - <uuid>
+                          - <uuid>
+                        allowedUserIds:
+                          - <uuid>
+                        allowedRoles:
+                          - consumer
+                      access:
+                        - accessType: api
+                          expiry: 1735689600
+                          limits:
+                            dataUsage: 100:gb
+                            apiHits: 100
+                        - accessType: file
+                          expiry: 1735689600
+                          limits:
+                            dataUsage: 10:gb
+                        - accessType: sub
+                          expiry: 1735689600
     responses:
       '200':
         description: The policy has been successfully created.
@@ -253,11 +395,12 @@
               type: string
             description: application/json
       '403':
-        description: '- If the user trying to set a policy does not have a  `provider`
-          or `delegate` role.
+        description: |
+          - If the user trying to create a policy does not have a `provider`
+            or `org_admin` role.
 
-          - If the user is neither the owner of the resource item/group or a delegate
-          to the owner of the resource item/group.'
+          - If the user is neither the owner of the resource item
+            nor belongs to the organization that owns the databank item/ ai model.
         content:
           application/json:
             schema:
@@ -274,158 +417,85 @@
             schema:
               $ref: ../components/schemas.yaml#/conflictResponse
     security:
-    - authorization: []
+      - authorization: []
     x-codeSamples:
-    - lang: cURL
-      label: Create policy
-      source: "curl --location 'https://${HOSTNAME}/iudx/acl/apd/v2/policy' \\\n--header\
+      - lang: cURL
+        label: Create INDIVIDUAL Policy
+        source: "curl --location 'https://${HOSTNAME}/iudx/acl/apd/v2/policy' \\\n--header\
         \ 'Authorization: Bearer <tokenValue>' \\\n--header 'Content-Type: application/json'\
-        \ \\\n--data-raw '{\n  \"request\": [\n    {\n      \"userEmail\": \"consumer@example.com\"\
-        ,\n      \"itemId\": \"5011676f-0835-4cee-9b3e-fe81adab65f1\",\n      \"itemType\"\
-        : \"DATABANK\",\n      \"expiryTime\": \"2026-08-04T20:00:19Z\",\n      \"\
-        constraints\": {\n        \"access\": [\n          {\n            \"accessType\"\
-        : \"api\",\n            \"expiry\": 1735689600\n          }\n        ]\n \
-        \     }\n    }\n  ]\n}'\n"
-  get:
-    tags:
-    - Policies
-    summary: Get Policies
-    description: 'Get all latest policies associated with a specific user. The response
-      is determined by the user''s roles:
-
-
-      - If the user is a `provider`, the response includes all policies created by
-      the provider or their delegates.
-
-      - If the user is a `delegate`, the response comprises policies set by the delegate
-      or set for the consumer on whose behalf the delegate is acting.
-
-      - If the user is a `consumer`, the response includes policies set for the consumer.
-
-
-      `Note`: Please note that the response displays the policies for a user concerning
-      a specific server.
-
-      '
-    operationId: get-auth-v1-policies
-    parameters:
-    - name: Authorization
-      in: header
-      description: DX Auth issued identity token
-      required: true
-      schema:
-        type: string
-        minLength: 1
-        pattern: Bearer [a-zA-Z0-9_*\-*\.\/]+$|^[a-zA-Z0-9_*\-*\.\/]+$
-    responses:
-      '200':
-        description: Policies have been successfully listed.
-        content:
-          application/json:
-            schema:
-              $ref: ../components/schemas.yaml#/getPolicySuccessResponseWithResourceType
-        headers:
-          Content-Type:
-            schema:
-              type: string
-            description: application/json
-      '401':
-        description: Unauthorized - `token` invalid/expired
-        content:
-          application/json:
-            schema:
-              $ref: ../components/schemas.yaml#/Unauthorized
-        headers:
-          Content-Type:
-            schema:
-              type: string
-            description: application/json
-      '404':
-        description: Not Found - Policy not found
-        content:
-          application/json:
-            schema:
-              $ref: ../components/schemas.yaml#/policyNotFound
-        headers:
-          Content-Type:
-            schema:
-              type: string
-            description: application/json
-    security:
-    - authorization: []
-    x-codeSamples:
-    - lang: cURL
-      label: get latest policies
-      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/acl/apd/v2/policy''
-        \
-
-        --header ''Authorization: <tokenValue>''
-
-        '
+        \ \\\n--data-raw '{\n  \"request\": [\n    {\n      \"policyType\": \"INDIVIDUAL\"\
+        ,\n      \"userId\": \"5067611f-0835-4cee-9b3e-fe81adab65f1\",\n      \"itemId\"\
+        : \"5011676f-0835-4cee-9b3e-fe81adab65f1\",\n      \"itemType\": \"DATABANK\"\
+        ,\n      \"expiryTime\": \"2026-08-04T20:00:19Z\",\n      \"constraints\"\
+        : {\n        \"access\": [\n          {\n            \"accessType\": \"api\"\
+        ,\n            \"expiry\": 1785873619,\n            \"limits\": {\n      \
+        \        \"apiHits\": 1000,\n              \"dataUsage\": \"100:gb\"\n   \
+        \         }\n          },\n          {\n            \"accessType\": \"file\"\
+        ,\n            \"expiry\": 1785873619,\n            \"limits\": {\n      \
+        \        \"dataUsage\": \"10:gb\"\n            }\n          }\n        ]\n\
+        \      },\n      \"providerComment\": \"Access granted for analytics usage\"\
+        ,\n      \"feedbackToConsumer\": \"Use only for internal testing\"\n    }\n\
+        \  ]\n}'\n"
+      - lang: cURL
+        label: Create GROUP Policy
+        source: "curl --location 'https://${HOSTNAME}/iudx/acl/apd/v2/policy' \\\n--header\
+        \ 'Authorization: Bearer <tokenValue>' \\\n--header 'Content-Type: application/json'\
+        \ \\\n--data-raw '{\n  \"request\": [\n    {\n      \"policyType\": \"GROUP\"\
+        ,\n      \"itemId\": \"7f1f6f2d-6b6e-45c0-98a8-cdc8d3db0aa1\",\n      \"itemType\"\
+        : \"DATABANK\",\n      \"expiryTime\": \"2026-12-31T23:59:59Z\",\n      \"\
+        constraints\": {\n        \"subjects\": {\n          \"allowedOrgIds\": [\n\
+        \            \"2ef0f344-dc41-4369-a50b-1515a0db5db2\"\n          ],\n    \
+        \      \"allowedRoles\": [\n            \"consumer\"\n          ]\n      \
+        \  },\n        \"access\": [\n          {\n            \"accessType\": \"\
+        api\",\n            \"expiry\": 1785873619,\n            \"limits\": {\n \
+        \             \"apiHits\": 5000\n            }\n          },\n          {\n\
+        \            \"accessType\": \"sub\",\n            \"expiry\": 1785873619\n\
+        \          }\n        ]\n      },\n      \"providerComment\": \"Organization-wide\
+        \ access for subscribed consumers\"\n    }\n  ]\n}'\n"
   put:
     tags:
-    - Policies
+      - Policies
     summary: Deactivate Policy
-    description: '
-
+    description: |
       This API performs a **soft delete** of an existing ACTIVE policy.
-
 
       Instead of permanently removing the policy from the system:
 
-
       - The policy status is updated from `ACTIVE` → `DELETE`
-
       - All access rules associated with the policy are also updated to `DELETE`
-
       - The policy record is retained for audit and traceability purposes
-
 
       ## Who Can Delete
 
-
-      - The resource `provider`
-
-      - An authorized `delegate` of the provider
-
-
-      ## Preconditions
-
-
+      - The resource `provider or org_admin of that organization`
       - The policy must exist
-
-      - The policy must belong to the requesting provider/delegate
-
+      - The policy must belong to the requesting provider or, in case of an `org_admin`, to their organization
       - The policy must currently be in `ACTIVE` state
-
 
       ## Effects
 
-
       - Access granted via this policy is immediately revoked
-
       - The policy cannot be reactivated via this API (a new policy must be created)
 
-
-      Users can retrieve the policy ID using the GET Policies API.'
+      Users can retrieve the policy ID using the GET Policies API.
     operationId: deactivate-auth-v1-policies
     parameters:
-    - name: Authorization
-      in: header
-      description: DX Auth issued identity token
-      required: true
-      schema:
-        type: string
-        minLength: 1
-        pattern: Bearer [a-zA-Z0-9_*\-*\.\/]+$|^[a-zA-Z0-9_*\-*\.\/]+$
-    - name: id
-      in: query
-      description: ID of the DX Entity
-      required: true
-      schema:
-        type: string
-        format: uuid
-        pattern: ^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$
+      - name: Authorization
+        in: header
+        description: DX Auth issued identity token
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          pattern: Bearer [a-zA-Z0-9_*\-*\.\/]+$|^[a-zA-Z0-9_*\-*\.\/]+$
+      - name: id
+        in: query
+        description: ID of the DX Entity
+        required: true
+        schema:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$
     responses:
       '200':
         description: Policy deactivated successfully.
@@ -455,8 +525,8 @@
             schema:
               type: string
             description: application/json
-      '404':
-        description: "Not Found\n  - Policy id does not exist"
+      '401':
+        description: "Unauthorized\n  - `token` invalid/expired"
         content:
           application/json:
             schema:
@@ -466,8 +536,8 @@
             schema:
               type: string
             description: application/json
-      '401':
-        description: "Unauthorized\n  - `token` invalid/expired"
+      '404':
+        description: "Not Found\n  - Policy id does not exist"
         content:
           application/json:
             schema:
@@ -478,11 +548,11 @@
               type: string
             description: application/json
     security:
-    - authorization: []
+      - authorization: []
     x-codeSamples:
-    - lang: cURL
-      label: Deactivate policy
-      source: 'curl --location --request PUT \
+      - lang: cURL
+        label: Deactivate policy
+        source: 'curl --location --request PUT \
 
         ''https://${HOSTNAME}/iudx/acl/apd/v2/policy?id=231f6eca-6276-4993-bfeb-53cbbbba6f06''
         \
@@ -493,51 +563,51 @@
 /iudx/acl/apd/v2/policy/consumer:
   get:
     tags:
-    - Policies
+      - Policies
     operationId: get-policies-consumer-api
     summary: List Consumer Policies
     description: 'Lists all policies applicable to the consumer calling the API.
 
       '
     security:
-    - authorization: []
+      - authorization: []
     parameters:
-    - name: status
-      in: query
-      description: Status of the policy. Displays all the policies if status is not
-        specified
-      required: false
-      schema:
-        type: string
-        enum:
-        - ACTIVE
-        - DELETED
-    - name: organizationId
-      in: query
-      description: Filter policies by organization ID of the asset. Displays all policies
-        if not specified.
-      required: false
-      schema:
-        type: string
-    - $ref: '../components/parameters.yaml#/PageParam'
-    - $ref: '../components/parameters.yaml#/SizeParam'
-    - $ref: '../components/parameters.yaml#/SortingParam'
-    - $ref: '../components/parameters.yaml#/TimeParam'
-    - $ref: '../components/parameters.yaml#/EndTimeParam'
-    - $ref: '../components/parameters.yaml#/TimeRelParam'
+      - name: status
+        in: query
+        description: Status of the policy. Displays all the policies if status is not
+          specified
+        required: false
+        schema:
+          type: string
+          enum:
+            - ACTIVE
+            - DELETED
+      - name: organizationId
+        in: query
+        description: Filter policies by organization ID of the asset. Displays all policies
+          if not specified.
+        required: false
+        schema:
+          type: string
+      - $ref: ../components/parameters.yaml#/PageParam
+      - $ref: ../components/parameters.yaml#/SizeParam
+      - $ref: ../components/parameters.yaml#/SortingParam
+      - $ref: ../components/parameters.yaml#/TimeParam
+      - $ref: ../components/parameters.yaml#/EndTimeParam
+      - $ref: ../components/parameters.yaml#/TimeRelParam
     responses:
       '200':
         description: Successfully fetched consumer policies
         content:
           application/json:
             schema:
-              $ref: '../components/schemas.yaml#/PolicyListResponse'
+              $ref: ../components/schemas.yaml#/PolicyListResponse
       '401':
         description: Unauthorized
 /iudx/acl/apd/v2/policy/organisation:
   get:
     tags:
-    - Policies
+      - Policies
     operationId: get-policies-org_admin-api
     summary: List Organization Policies
     description: 'Lists all policies for assets belonging to the organization of the
@@ -545,38 +615,38 @@
 
       '
     security:
-    - authorization: []
+      - authorization: []
     parameters:
-    - name: status
-      in: query
-      description: Status of the policy. Displays all the policies if status is not
-        specified
-      required: false
-      schema:
-        type: string
-        enum:
-        - ACTIVE
-        - DELETED
-    - name: organizationId
-      in: query
-      description: Filter policies by organization ID of the asset. Displays all policies
-        if not specified.
-      required: false
-      schema:
-        type: string
-    - $ref: '../components/parameters.yaml#/PageParam'
-    - $ref: '../components/parameters.yaml#/SizeParam'
-    - $ref: '../components/parameters.yaml#/SortingParam'
-    - $ref: '../components/parameters.yaml#/TimeParam'
-    - $ref: '../components/parameters.yaml#/EndTimeParam'
-    - $ref: '../components/parameters.yaml#/TimeRelParam'
+      - name: status
+        in: query
+        description: Status of the policy. Displays all the policies if status is not
+          specified
+        required: false
+        schema:
+          type: string
+          enum:
+            - ACTIVE
+            - DELETED
+      - name: organizationId
+        in: query
+        description: Filter policies by organization ID of the asset. Displays all policies
+          if not specified.
+        required: false
+        schema:
+          type: string
+      - $ref: ../components/parameters.yaml#/PageParam
+      - $ref: ../components/parameters.yaml#/SizeParam
+      - $ref: ../components/parameters.yaml#/SortingParam
+      - $ref: ../components/parameters.yaml#/TimeParam
+      - $ref: ../components/parameters.yaml#/EndTimeParam
+      - $ref: ../components/parameters.yaml#/TimeRelParam
     responses:
       '200':
         description: Successfully fetched organization policies
         content:
           application/json:
             schema:
-              $ref: '../components/schemas.yaml#/PolicyListResponse'
+              $ref: ../components/schemas.yaml#/PolicyListResponse
       '401':
         description: Unauthorized
       '403':
@@ -584,7 +654,7 @@
 /iudx/acl/apd/v2/policy/platform:
   get:
     tags:
-    - Policies
+      - Policies
     operationId: get-policies-cos_admin-api
     summary: List Platform Policies (COS Admin)
     description: 'Lists all policies across the platform. Accessible only to COS Admin
@@ -592,38 +662,38 @@
 
       '
     security:
-    - authorization: []
+      - authorization: []
     parameters:
-    - name: status
-      in: query
-      description: Status of the policy. Displays all the policies if status is not
-        specified
-      required: false
-      schema:
-        type: string
-        enum:
-        - ACTIVE
-        - DELETED
-    - name: organizationId
-      in: query
-      description: Filter policies by organization ID of the asset. Displays all policies
-        if not specified.
-      required: false
-      schema:
-        type: string
-    - $ref: '../components/parameters.yaml#/PageParam'
-    - $ref: '../components/parameters.yaml#/SizeParam'
-    - $ref: '../components/parameters.yaml#/SortingParam'
-    - $ref: '../components/parameters.yaml#/TimeParam'
-    - $ref: '../components/parameters.yaml#/EndTimeParam'
-    - $ref: '../components/parameters.yaml#/TimeRelParam'
+      - name: status
+        in: query
+        description: Status of the policy. Displays all the policies if status is not
+          specified
+        required: false
+        schema:
+          type: string
+          enum:
+            - ACTIVE
+            - DELETED
+      - name: organizationId
+        in: query
+        description: Filter policies by organization ID of the asset. Displays all policies
+          if not specified.
+        required: false
+        schema:
+          type: string
+      - $ref: ../components/parameters.yaml#/PageParam
+      - $ref: ../components/parameters.yaml#/SizeParam
+      - $ref: ../components/parameters.yaml#/SortingParam
+      - $ref: ../components/parameters.yaml#/TimeParam
+      - $ref: ../components/parameters.yaml#/EndTimeParam
+      - $ref: ../components/parameters.yaml#/TimeRelParam
     responses:
       '200':
         description: Successfully fetched platform policies
         content:
           application/json:
             schema:
-              $ref: '../components/schemas.yaml#/PolicyListResponse'
+              $ref: ../components/schemas.yaml#/PolicyListResponse
       '401':
         description: Unauthorized
       '403':
@@ -631,46 +701,45 @@
 /iudx/acl/apd/v2/policy/provider:
   get:
     tags:
-    - Policies
+      - Policies
     operationId: get-policies-provider-api
     summary: List Provider Policies
-    description: 'Lists all policies created by the provider or delegate calling the
-      API.
+    description: 'Lists all policies created by the provider calling the API.
 
       '
     security:
-    - authorization: []
+      - authorization: []
     parameters:
-    - name: status
-      in: query
-      description: Status of the policy. Displays all the policies if status is not
-        specified
-      required: false
-      schema:
-        type: string
-        enum:
-        - ACTIVE
-        - DELETED
-    - name: organizationId
-      in: query
-      description: Filter policies by organization ID of the asset. Displays all policies
-        if not specified.
-      required: false
-      schema:
-        type: string
-    - $ref: '../components/parameters.yaml#/PageParam'
-    - $ref: '../components/parameters.yaml#/SizeParam'
-    - $ref: '../components/parameters.yaml#/SortingParam'
-    - $ref: '../components/parameters.yaml#/TimeParam'
-    - $ref: '../components/parameters.yaml#/EndTimeParam'
-    - $ref: '../components/parameters.yaml#/TimeRelParam'
+      - name: status
+        in: query
+        description: Status of the policy. Displays all the policies if status is not
+          specified
+        required: false
+        schema:
+          type: string
+          enum:
+            - ACTIVE
+            - DELETED
+      - name: organizationId
+        in: query
+        description: Filter policies by organization ID of the asset. Displays all policies
+          if not specified.
+        required: false
+        schema:
+          type: string
+      - $ref: ../components/parameters.yaml#/PageParam
+      - $ref: ../components/parameters.yaml#/SizeParam
+      - $ref: ../components/parameters.yaml#/SortingParam
+      - $ref: ../components/parameters.yaml#/TimeParam
+      - $ref: ../components/parameters.yaml#/EndTimeParam
+      - $ref: ../components/parameters.yaml#/TimeRelParam
     responses:
       '200':
         description: Successfully fetched provider policies
         content:
           application/json:
             schema:
-              $ref: '../components/schemas.yaml#/PolicyListResponse'
+              $ref: ../components/schemas.yaml#/PolicyListResponse
       '401':
         description: Unauthorized
       '403':

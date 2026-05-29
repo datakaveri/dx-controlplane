@@ -15,6 +15,7 @@ import io.vertx.junit5.VertxTestContext;
 import java.util.Collections;
 import java.util.List;
 import org.cdpg.dx.aaa.common.ResponseModel;
+import org.cdpg.dx.aaa.shareAssets.service.VisibilityService;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.database.elastic.model.ElasticsearchSearchResult;
@@ -36,12 +37,13 @@ class ListServiceTest {
   @Mock private ElasticsearchService elasticsearchService;
 
   private ListServiceImpl listService;
+  private VisibilityService visibilityService;
 
   private static final String DOC_INDEX = "test-doc-index";
 
   @BeforeEach
   void setUp() {
-    listService = new ListServiceImpl(elasticsearchService, DOC_INDEX);
+    listService = new ListServiceImpl(elasticsearchService, visibilityService, DOC_INDEX);
   }
 
   // ---------------------------------------------------------------------------

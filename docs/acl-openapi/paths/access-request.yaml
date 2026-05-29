@@ -528,6 +528,12 @@
         enum:
         - adex:DataBank
         - adex:AiModel
+    - name: organizationId
+      in: query
+      description: Filter access requests by organization ID of the asset. Displays all requests if not specified.
+      required: false
+      schema:
+        type: string
     - $ref: ../components/parameters.yaml#/PageParam
     - $ref: ../components/parameters.yaml#/SizeParam
     - $ref: ../components/parameters.yaml#/SortingParam
@@ -571,6 +577,8 @@
                       assetType: adex:AiModel
                       shortDescription: This is a test AI model for estimating percentage
                         of ice on Pluto
+                      organization: CDPG, IISC
+                      organizationId: 74e3b919-1d1b-44de-ace1-504f1887fdd3
                     expiryAt: '3000-03-05T20:00:19'
                     updatedAt: '2025-06-04T07:25:08.663637'
                     createdAt: '2025-06-04T09:10:57.267564'
@@ -909,6 +917,12 @@
         enum:
         - adex:DataBank
         - adex:AiModel
+    - name: organizationId
+      in: query
+      description: Filter access requests by organization ID of the asset. Displays all requests if not specified.
+      required: false
+      schema:
+        type: string
     - $ref: ../components/parameters.yaml#/PageParam
     - $ref: ../components/parameters.yaml#/SizeParam
     - $ref: ../components/parameters.yaml#/SortingParam
@@ -953,6 +967,8 @@
                       assetType: adex:AiModel
                       shortDescription: This is a test AI model for estimating percentage
                         of ice on Pluto
+                      organization: CDPG, IISC
+                      organizationId: 74e3b919-1d1b-44de-ace1-504f1887fdd3
                     expiryAt: '3000-03-05T20:00:19'
                     updatedAt: '2025-06-04T07:25:08.663637'
                     createdAt: '2025-06-04T09:10:57.267564'
@@ -996,21 +1012,21 @@
     x-codeSamples:
     - lang: cURL
       label: Get access requests
-      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/provider''
+      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/organisation''
         \
 
         '
       --header 'Authorization: <tokenValue>'
     - lang: cURL
       label: Get access request with status
-      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/provider?requestStatus=GRANTED''
+      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/organisation?requestStatus=GRANTED''
         \
 
         '
       --header 'Authorization: <tokenValue>'
     - lang: cURL
       label: With pagination query params
-      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/provider?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
+      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/acl/apd/v2/access_request/organisation?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc''
         \
 
         '
@@ -1046,6 +1062,12 @@
         enum:
         - adex:DataBank
         - adex:AiModel
+    - name: organizationId
+      in: query
+      description: Filter access requests by organization ID of the asset. Displays all requests if not specified.
+      required: false
+      schema:
+        type: string
     - $ref: ../components/parameters.yaml#/PageParam
     - $ref: ../components/parameters.yaml#/SizeParam
     - $ref: ../components/parameters.yaml#/SortingParam
@@ -1087,6 +1109,8 @@
                       assetType: adex:AiModel
                       shortDescription: This is a test AI model for estimating percentage
                         of ice on Pluto
+                      organization: CDPG, IISC
+                      organizationId: 74e3b919-1d1b-44de-ace1-504f1887fdd3
                     expiryAt: '3000-03-05T20:00:19'
                     updatedAt: '2025-06-04T07:25:08.663637'
                     createdAt: '2025-06-04T09:10:57.267564'

@@ -19,6 +19,7 @@ public class QueryDecoderRequestDTO {
   private ResponseFilterRequestDTO responseFilterRequest;
   private List<OrderBy> sort;
   private boolean filterMyAssets;
+  private List<String> sharedItemIds;
 
   public QueryDecoderRequestDTO(
       String searchType,
@@ -189,5 +190,13 @@ public class QueryDecoderRequestDTO {
 
   public void setFilterMyAssets(boolean filterMyAssets) {
     this.filterMyAssets = filterMyAssets;
+  }
+
+  public List<String> getSharedItemIds() {
+    return sharedItemIds;
+  }
+
+  public void setSharedItemIds(List<String> sharedItemIds) {
+    this.sharedItemIds = sharedItemIds;
   }
 }

@@ -3,6 +3,7 @@ package org.cdpg.dx.database.elastic.model;
 import static org.cdpg.dx.aaa.common.Constants.PII;
 import static org.cdpg.dx.database.elastic.util.Constants.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
@@ -52,9 +53,31 @@ public class AccessPolicyQueryDecorator implements ElasticsearchQueryDecorator {
                 .setQueryParameters(Map.of(FIELD, PROVIDER_USER_ID, VALUE, sub));
         QueryModel privateOwned =
             new QueryModel(QueryType.BOOL).setMustQueries(List.of(privateAccess, ownerMatch));
+
+        List<QueryModel> shouldQueries =
+            new ArrayList<>(List.of(
+                publicAccess,
+                restrictedAccess,
+                privateOwned,
+                piiAccess));
+        List<String> sharedItemIds = request.getSharedItemIds();
+
+        if (sharedItemIds != null && !sharedItemIds.isEmpty()) {
+
+          QueryModel sharedItemsQuery =
+              new QueryModel(QueryType.TERMS)
+                  .setQueryParameters(
+                      Map.of(
+                          FIELD, ID_KEYWORD,
+                          VALUE, sharedItemIds));
+
+          shouldQueries.add(sharedItemsQuery);
+        }
+
         QueryModel accessFilter = new QueryModel(QueryType.BOOL);
-        accessFilter.setShouldQueries(List.of(publicAccess, restrictedAccess, privateOwned, piiAccess));
+        accessFilter.setShouldQueries(shouldQueries);
         accessFilter.setMinimumShouldMatch("1");
+
         queryMap.get(FilterType.MUST).add(accessFilter);
       }
     } else {
