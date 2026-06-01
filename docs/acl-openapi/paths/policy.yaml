@@ -265,16 +265,16 @@
                           - consumer
                       access:
                         - accessType: api
-                          expiry: 1735689600
+                          expiry: '2026-03-05T20:00:19'
                           limits:
                             dataUsage: 100:gb
                             apiHits: 100
                         - accessType: file
-                          expiry: 1735689600
+                          expiry: '2026-03-05T20:00:19'
                           limits:
                             dataUsage: 10:gb
                         - accessType: sub
-                          expiry: 1735689600
+                          expiry: '2026-03-05T20:00:19'
                   - userId: <uuid>
                     itemId: example-resource-group
                     itemType: DATABANK
@@ -290,16 +290,16 @@
                           - consumer
                       access:
                         - accessType: api
-                          expiry: 1735689600
+                          expiry: '2026-03-05T20:00:19'
                           limits:
                             dataUsage: 100:gb
                             apiHits: 100
                         - accessType: file
-                          expiry: 1735689600
+                          expiry: '2026-03-05T20:00:19'
                           limits:
                             dataUsage: 10:gb
                         - accessType: sub
-                          expiry: 1735689600
+                          expiry: '2026-03-05T20:00:19'
           examples:
             Request for resource with additionalInfo:
               value:
@@ -319,16 +319,16 @@
                           - consumer
                       access:
                         - accessType: api
-                          expiry: 1735689600
+                          expiry: '2026-03-05T20:00:19'
                           limits:
                             dataUsage: 100:gb
                             apiHits: 100
                         - accessType: file
-                          expiry: 1735689600
+                          expiry: '2026-03-05T20:00:19'
                           limits:
                             dataUsage: 10:gb
                         - accessType: sub
-                          expiry: 1735689600
+                          expiry: '2026-03-05T20:00:19'
                     additionalInfo:
                       name: Miles Davis
                     providerComment: The resource is used for transportation data analysis
@@ -351,16 +351,16 @@
                           - consumer
                       access:
                         - accessType: api
-                          expiry: 1735689600
+                          expiry: '2026-03-05T20:00:19'
                           limits:
                             dataUsage: 100:gb
                             apiHits: 100
                         - accessType: file
-                          expiry: 1735689600
+                          expiry: '2026-03-05T20:00:19'
                           limits:
                             dataUsage: 10:gb
                         - accessType: sub
-                          expiry: 1735689600
+                          expiry: '2026-03-05T20:00:19'
     responses:
       '200':
         description: The policy has been successfully created.
