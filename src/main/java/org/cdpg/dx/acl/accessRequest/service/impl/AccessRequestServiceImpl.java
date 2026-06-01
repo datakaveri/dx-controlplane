@@ -559,9 +559,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
                     new PolicyAccessInfo(
                         UUID.fromString(rule.getString(POLICY_ID)),
                         rule.getJsonObject(CONS, new JsonObject()),
-                        expiryAt != null
-                            ? LocalDateTime.parse(expiryAt)
-                            : null));
+                        expiryAt != null ? LocalDateTime.parse(expiryAt) : null));
               }
 
               boolean hasAccess =
@@ -704,15 +702,13 @@ public class AccessRequestServiceImpl implements AccessRequestService {
       if (provider == null
           || assetName.isEmpty()
           || catAssetType == null
-          || organizationId == null
           || shortDescription == null) {
         LOGGER.error("Asset metadata invalid for id: {}", id);
         LOGGER.error(
-            "Provider: {}, AssetName: {}, AssetType: {}, OrgId: {}, shortDescription : {}",
+            "Provider: {}, AssetName: {}, AssetType: {}, shortDescription : {}",
             provider,
             assetName,
             catAssetType,
-            organizationId,
             shortDescription);
         throw new DxInternalServerErrorException("Incomplete asset metadata from catalogue");
       }

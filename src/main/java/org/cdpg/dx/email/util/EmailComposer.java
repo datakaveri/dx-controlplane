@@ -50,9 +50,8 @@ public class EmailComposer {
     String statusMessage;
     String actionMessage;
 
-    LOGGER.info("ASSET_NAME: {}",emailRequest.assetName());
-    LOGGER.info("ASSET_EXPIRY: {}",emailRequest.expiryAt());
-
+    LOGGER.info("ASSET_NAME: {}", emailRequest.assetName());
+    LOGGER.info("ASSET_EXPIRY: {}", emailRequest.expiryAt());
 
     if (emailRequest.status() != null && emailRequest.status().equalsIgnoreCase("REJECTED")) {
       statusMessage = "Unfortunately, your request has been rejected by the provider";
@@ -169,15 +168,15 @@ public class EmailComposer {
                 UserDetails provider = result.resultAt(1);
                 Map<String, String> emailDetails =
                     Map.of(
-                        "PROVIDER_FIRST_NAME", provider.firstName(),
-                        "PROVIDER_LAST_NAME", provider.lastName(),
-                        "CONSUMER_FIRST_NAME", consumer.firstName(),
-                        "CONSUMER_LAST_NAME", consumer.lastName(),
-                        "CONSUMER_EMAIL_ID", consumer.userEmail(),
-                        "ASSET_NAME", emailRequest.assetName(),
-                        "ASSET_DESCRIPTION", emailRequest.shortDescription(),
-                        "PUBLISHER_PANEL_URL", publisherPanelUrl,
-                        "SENDER_NAME", senderName);
+                        "PROVIDER_FIRST_NAME", safe(provider.firstName()),
+                        "PROVIDER_LAST_NAME", safe(provider.lastName()),
+                        "CONSUMER_FIRST_NAME", safe(consumer.firstName()),
+                        "CONSUMER_LAST_NAME", safe(consumer.lastName()),
+                        "CONSUMER_EMAIL_ID", safe(consumer.userEmail()),
+                        "ASSET_NAME", safe(emailRequest.assetName()),
+                        "ASSET_DESCRIPTION", safe(emailRequest.shortDescription()),
+                        "PUBLISHER_PANEL_URL", safe(publisherPanelUrl),
+                        "SENDER_NAME", safe(senderName));
                 String htmlBody = TemplateCreator.render(emailTemplate, emailDetails);
                 MailMessage mailMessage =
                     createMailMessage(senderEmail, provider.userEmail(), supportEmailIds, htmlBody);
@@ -232,26 +231,37 @@ public class EmailComposer {
       getUserDetails(emailRequest.consumerUserId())
           .onSuccess(
               userDetails -> {
+                LOGGER.trace(
+                    "ConsumerAck email fields — consumerUserId={} firstName={} lastName={} assetName={} shortDescription={} platformName={} platformShortName={} dashboardUrl={} senderName={}",
+                    emailRequest.consumerUserId(),
+                    userDetails.firstName(),
+                    userDetails.lastName(),
+                    emailRequest.assetName(),
+                    emailRequest.shortDescription(),
+                    platformName,
+                    platformShortName,
+                    dashboardUrl,
+                    senderName);
                 Map<String, String> emailDetails =
                     Map.of(
                         "CONTACT_US_URL",
-                        config.getString("publisherPanelUrl") + "/contact-us",
+                        safe(config.getString("publisherPanelUrl")) + "/contact-us",
                         "CONSUMER_FIRST_NAME",
-                        userDetails.firstName(),
+                        safe(userDetails.firstName()),
                         "CONSUMER_LAST_NAME",
-                        userDetails.lastName(),
+                        safe(userDetails.lastName()),
                         "ASSET_NAME",
-                        emailRequest.assetName(),
+                        safe(emailRequest.assetName()),
                         "ASSET_DESCRIPTION",
-                        emailRequest.shortDescription(),
+                        safe(emailRequest.shortDescription()),
                         "PLATFORM_NAME",
-                        platformName,
+                        safe(platformName),
                         "PLATFORM_SHORT_NAME",
-                        platformShortName,
+                        safe(platformShortName),
                         "DASHBOARD_URL",
-                        dashboardUrl,
+                        safe(dashboardUrl),
                         "SENDER_NAME",
-                        senderName,
+                        safe(senderName),
                         "ACK_MESSAGE",
                         "Your access request has been successfully submitted and is currently under review.");
 
