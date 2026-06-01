@@ -34,7 +34,7 @@ public class ProviderController implements ApiController {
 
     var selfAccess = AuthorizationHandler.forScopes(Scopes.DATA_ACCESS);
     var orgAdminAccess = AuthorizationHandler.forScopes(Scopes.ORG_USER_MANAGEMENT);
-    var cosAdminAccess = AuthorizationHandler.forScopes(Scopes.ORG_MANAGEMENT);
+    var cosAdminAccess = AuthorizationHandler.forScopes(Scopes.USER_MANAGEMENT);
 
     /* =========================
      * Org-based provider requests (Consumer)
@@ -45,19 +45,19 @@ public class ProviderController implements ApiController {
         .handler(auditingHandler::handleApiAudit)
         .handler(selfAccess)
         .handler(kycVerification(isKycRequired))
-        .handler(providerRoleHandler::createProviderRequest);
+        .handler(providerRoleHandler::createOrgProviderRequest);
 
     routerBuilder
         .operation(OP_GET_USER_PROVIDER_REQUESTS)
         .handler(auditingHandler::handleApiAudit)
         .handler(selfAccess)
-        .handler(providerRoleHandler::getProviderRoleRequest);
+        .handler(providerRoleHandler::getOrgProviderRoleRequest);
 
     routerBuilder
         .operation(OP_DELETE_USER_PROVIDER_REQUEST)
         .handler(auditingHandler::handleApiAudit)
         .handler(selfAccess)
-        .handler(providerRoleHandler::deleteUserProviderRoleRequest);
+        .handler(providerRoleHandler::deleteOrgUserProviderRoleRequest);
 
     /* =========================
      * Org-based provider requests (Org Admin)
@@ -67,19 +67,19 @@ public class ProviderController implements ApiController {
         .operation(OP_GET_PROVIDER_REQUEST)
         .handler(auditingHandler::handleApiAudit)
         .handler(orgAdminAccess)
-        .handler(providerRoleHandler::getProviderRequest);
+        .handler(providerRoleHandler::getOrgProviderRequest);
 
     routerBuilder
         .operation(OP_UPDATE_PROVIDER_REQUEST)
         .handler(auditingHandler::handleApiAudit)
         .handler(orgAdminAccess)
-        .handler(providerRoleHandler::updateProviderRequest);
+        .handler(providerRoleHandler::updateOrgProviderRequest);
 
     routerBuilder
         .operation(OP_CREATE_PROVIDER_ROLE)
         .handler(auditingHandler::handleApiAudit)
         .handler(orgAdminAccess)
-        .handler(providerRoleHandler::createProviderRole);
+        .handler(providerRoleHandler::createProviderRoleWithinOrg);
 
     /* =========================
      * Platform provider requests (Consumer)
@@ -96,13 +96,13 @@ public class ProviderController implements ApiController {
         .operation(OP_GET_USER_PLATFORM_PROVIDER_REQUEST)
         .handler(auditingHandler::handleApiAudit)
         .handler(selfAccess)
-        .handler(providerRoleHandler::getUserPlatformProviderRequest);
+        .handler(providerRoleHandler::getPlatformUProviderRequest);
 
     routerBuilder
         .operation(OP_DELETE_USER_PLATFORM_PROVIDER_REQUEST)
         .handler(auditingHandler::handleApiAudit)
         .handler(selfAccess)
-        .handler(providerRoleHandler::deleteUserPlatformProviderRequest);
+        .handler(providerRoleHandler::deletePlatformUserProviderRequest);
 
     /* =========================
      * Platform provider requests (COS Admin)
@@ -112,12 +112,12 @@ public class ProviderController implements ApiController {
         .operation(OP_GET_PLATFORM_PROVIDER_REQUESTS)
         .handler(auditingHandler::handleApiAudit)
         .handler(cosAdminAccess)
-        .handler(providerRoleHandler::getPlatformProviderRequests);
+        .handler(providerRoleHandler::getPlatformProviderRequestsForAdmin);
 
     routerBuilder
         .operation(OP_UPDATE_PLATFORM_PROVIDER_REQUEST)
         .handler(auditingHandler::handleApiAudit)
         .handler(cosAdminAccess)
-        .handler(providerRoleHandler::updatePlatformProviderRequest);
+        .handler(providerRoleHandler::updatePlatformProviderRequestForAdmin);
   }
 }

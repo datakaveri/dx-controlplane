@@ -43,7 +43,6 @@ import static org.cdpg.dx.aaa.organization.config.Constants.CREATED_AT;
 import static org.cdpg.dx.aaa.organization.config.Constants.PROVIDER_TYPE;
 import static org.cdpg.dx.aaa.organization.config.Constants.PROVIDER_TYPE_PLATFORM;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
-import static org.cdpg.dx.keycloak.config.KeycloakConstants.ORGANISATION_ID;
 
 public class ProviderRoleHandler {
   private static final Logger LOGGER = LogManager.getLogger(ProviderRoleHandler.class);
@@ -64,7 +63,11 @@ public class ProviderRoleHandler {
     this.urnGenerator = urnGenerator;
   }
 
-  public void createProviderRequest(RoutingContext ctx) {
+  /**
+   * Consumer: submit a provider role request within their organisation. Requires the user to be an
+   * org member (organisationId present in token).
+   */
+  public void createOrgProviderRequest(RoutingContext ctx) {
 
     DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
     User user = ctx.user();
@@ -107,6 +110,7 @@ public class ProviderRoleHandler {
         .onFailure(ctx::fail);
   }
 
+  /** Consumer: submit a platform-level provider role request (no org membership required). */
   public void createPlatformProviderRequest(RoutingContext ctx) {
 
     DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
@@ -142,7 +146,8 @@ public class ProviderRoleHandler {
         .onFailure(ctx::fail);
   }
 
-  public void updateProviderRequest(RoutingContext ctx) {
+  /** Org Admin: approve or reject a pending org provider role request by request ID. */
+  public void updateOrgProviderRequest(RoutingContext ctx) {
 
     JsonObject orgRequestJson = ctx.body().asJsonObject();
     UUID reqId = RequestHelper.getPathParamAsUUID(ctx, "id");
@@ -168,7 +173,11 @@ public class ProviderRoleHandler {
         .onFailure(ctx::fail);
   }
 
-  public void getProviderRequest(RoutingContext ctx) {
+  /**
+   * Org Admin: list all provider role requests within their organisation (paginated), enriched with
+   * user roles and join request details (userName, jobTitle, empId).
+   */
+  public void getOrgProviderRequest(RoutingContext ctx) {
 
     DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
     String orgIdStr = dxUser.organisationId();
@@ -246,10 +255,19 @@ public class ProviderRoleHandler {
         .onFailure(ctx::fail);
   }
 
-  public void deleteUserProviderRoleRequest(RoutingContext ctx) {
+  /**
+   * Consumer: withdraw their own pending org provider role request. Only PENDING requests can be
+   * deleted. Requires org membership.
+   */
+  public void deleteOrgUserProviderRoleRequest(RoutingContext ctx) {
 
     DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
     UUID userId = dxUser.sub();
+
+    if (dxUser.organisationId() == null || dxUser.organisationId().isBlank()) {
+      ctx.fail(new DxForbiddenException("User is not part of any organisation"));
+      return;
+    }
 
     organizationService
         .getProviderRoleRequestByUserId(userId)
@@ -299,9 +317,18 @@ public class ProviderRoleHandler {
             });
   }
 
-  public void getProviderRoleRequest(RoutingContext ctx) {
+  /**
+   * Consumer: get their own pending org provider role request, enriched with user roles. Requires
+   * org membership.
+   */
+  public void getOrgProviderRoleRequest(RoutingContext ctx) {
     DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
     UUID userId = dxUser.sub();
+
+    if (dxUser.organisationId() == null || dxUser.organisationId().isBlank()) {
+      ctx.fail(new DxForbiddenException("User is not part of any organisation"));
+      return;
+    }
 
     organizationService
         .getProviderRoleRequestByUserId(userId)
@@ -341,7 +368,11 @@ public class ProviderRoleHandler {
             });
   }
 
-  public void createProviderRole(RoutingContext ctx) {
+  /**
+   * Org Admin: directly grant provider role to a user within their organisation, either by creating
+   * a new granted request or approving an existing pending one.
+   */
+  public void createProviderRoleWithinOrg(RoutingContext ctx) {
 
     JsonObject providerRequestJson = ctx.body().asJsonObject();
     ProviderRoleRequest providerRoleRequest = ProviderRoleRequest.fromJson(providerRequestJson);
@@ -372,25 +403,36 @@ public class ProviderRoleHandler {
             });
   }
 
-  public void getUserPlatformProviderRequest(RoutingContext ctx) {
+  /** Consumer: get their own pending platform provider role request, enriched with user roles. */
+  public void getPlatformUProviderRequest(RoutingContext ctx) {
     DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
     UUID userId = dxUser.sub();
 
     organizationService
         .getPlatformProviderRoleRequestByUserId(userId)
+        .compose(
+            request ->
+                userService
+                    .enrichWithUserRoles(
+                        List.of(request), ProviderRoleRequest::userId, ProviderRoleRequest::toJson)
+                    .map(list -> list.isEmpty() ? null : list.get(0)))
         .onSuccess(
-            request -> {
+            enriched -> {
               UserActivityAuditLogBuilder auditLogBuilder =
                   OrganizationAuditHelper.buildOrganisationAudit(
-                      ctx, request.toJson(), OrganisationAuditOperation.GET_PLATFORM_PROVIDER_REQS);
+                      ctx, enriched, OrganisationAuditOperation.GET_PLATFORM_PROVIDER_REQS);
               CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
-              ResponseBuilder.sendSuccess(ctx, request.toJson(), urnGenerator);
+              ResponseBuilder.sendSuccess(ctx, enriched, urnGenerator);
             })
         .onFailure(ctx::fail);
   }
 
-  public void deleteUserPlatformProviderRequest(RoutingContext ctx) {
+  /**
+   * Consumer: withdraw their own pending platform provider role request. Only PENDING requests can
+   * be deleted.
+   */
+  public void deletePlatformUserProviderRequest(RoutingContext ctx) {
     DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
     UUID userId = dxUser.sub();
 
@@ -429,7 +471,8 @@ public class ProviderRoleHandler {
             });
   }
 
-  public void getPlatformProviderRequests(RoutingContext ctx) {
+  /** COS Admin: list all platform provider role requests across all users (paginated), enriched with user roles. */
+  public void getPlatformProviderRequestsForAdmin(RoutingContext ctx) {
     PaginatedRequest request =
         PaginationRequestBuilder.from(ctx)
             .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_PLATFORM_PROVIDER_REQUEST)
@@ -443,20 +486,26 @@ public class ProviderRoleHandler {
 
     organizationService
         .getAllPlatformProviderRequests(request)
+        .compose(
+            result ->
+                userService
+                    .enrichWithUserRoles(
+                        result.data(), ProviderRoleRequest::userId, ProviderRoleRequest::toJson)
+                    .map(enriched -> Map.entry(enriched, result.paginationInfo())))
         .onSuccess(
-            result -> {
+            entry -> {
               UserActivityAuditLogBuilder auditLogBuilder =
                   OrganizationAuditHelper.buildOrganisationAudit(
                       ctx, new JsonObject(), OrganisationAuditOperation.GET_PLATFORM_PROVIDER_REQS);
               CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
-              ResponseBuilder.sendSuccess(
-                  ctx, result.data(), result.paginationInfo(), urnGenerator);
+              ResponseBuilder.sendSuccess(ctx, entry.getKey(), entry.getValue(), urnGenerator);
             })
         .onFailure(ctx::fail);
   }
 
-  public void updatePlatformProviderRequest(RoutingContext ctx) {
+  /** COS Admin: approve or reject a pending platform provider role request by request ID. */
+  public void updatePlatformProviderRequestForAdmin(RoutingContext ctx) {
     JsonObject body = ctx.body().asJsonObject();
     UUID reqId = RequestHelper.getPathParamAsUUID(ctx, "id");
     Status status = Status.fromString(body.getString("status"));

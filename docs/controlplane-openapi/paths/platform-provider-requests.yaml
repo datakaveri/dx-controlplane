@@ -1,11 +1,13 @@
-/auth/v2/platform/provider-requests:
+/iudx/v2/auth/user/platform/provider-requests:
   post:
     tags:
     - Platform Provider Requests
     summary: Submit a platform provider role request
     description: |
-      Allows a consumer (not yet part of any organisation) to request the Provider role
-      directly via the platform track. Requires KYC verification.
+      Submits a new platform provider role request on behalf of the authenticated consumer.
+      The user must not already have a pending or granted provider role request (org or platform).
+      KYC verification is required before a request can be submitted.
+      On success, a notification email is sent to the COS Admin for review.
     operationId: post-auth-v2-platform-provider-requests
     security:
     - authorization: []
@@ -27,30 +29,211 @@
                   type: string
                   example: Created Request
       '401':
-        description: Missing or invalid authentication token
+        description: Missing or invalid authorization token
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:InvalidAuthToken
+              title: Unauthorized
+              detail: Missing or invalid authorization token
       '403':
-        description: Forbidden – KYC not completed
+        description: Forbidden – KYC not completed or user not found
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:Forbidden
+              title: Forbidden
+              detail: KYC verification not completed
       '409':
         description: A pending or granted provider role request already exists
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:AlreadyExists
+              title: Conflict
+              detail: A pending or granted provider role request already exists for this user
+    x-codeSamples:
+    - lang: cURL
+      label: Submit Platform Provider Request
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/user/platform/provider-requests' \
+        --header 'Authorization: Bearer <your-token>'
+
   get:
     tags:
     - Platform Provider Requests
-    summary: List platform provider role requests
+    summary: Get own platform provider role request
     description: |
-      Returns a paginated list of provider role requests submitted via the platform track
-      (i.e., without an organisation). Only accessible by COS Admins.
+      Returns the authenticated consumer's own platform provider role request.
+      The response is enriched with the user's current Keycloak roles and account status.
+      Returns 404 if no request exists for the user.
+    operationId: get-auth-v2-user-platform-provider-requests
+    security:
+    - authorization: []
+    responses:
+      '200':
+        description: The consumer's platform provider role request
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                result:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                      example: 39358c41-84dd-42c4-b8c5-9a95afcf8fce
+                    user_id:
+                      type: string
+                      format: uuid
+                      example: 03cc4ca3-d1fb-4f8a-bd77-6b0441916bbd
+                    provider_type:
+                      type: string
+                      example: platform
+                    status:
+                      type: string
+                      example: pending
+                    created_at:
+                      type: string
+                      format: date-time
+                      example: "2026-05-29T12:08:28.595467"
+                    updated_at:
+                      type: string
+                      format: date-time
+                    roles:
+                      type: array
+                      items:
+                        type: string
+                      example: ["consumer", "offline_access", "default-roles-tgdex-pilot"]
+                    account_enabled:
+                      type: boolean
+                      example: true
+      '401':
+        description: Missing or invalid authorization token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:InvalidAuthToken
+              title: Unauthorized
+              detail: Missing or invalid authorization token
+      '403':
+        description: Forbidden – user is not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:Forbidden
+              title: Forbidden
+              detail: User is not authorized to access this resource
+      '404':
+        description: No platform provider request found for this user
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:NotFound
+              title: Not Found
+              detail: No pending platform provider request found for this user
+    x-codeSamples:
+    - lang: cURL
+      label: Get Own Platform Provider Request
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/user/platform/provider-requests' \
+        --header 'Authorization: Bearer <your-token>'
+
+  delete:
+    tags:
+    - Platform Provider Requests
+    summary: Withdraw own platform provider role request
+    description: |
+      Withdraws the authenticated consumer's own platform provider role request.
+      Only requests in `pending` status can be withdrawn — requests that have already been
+      approved (`granted`) or rejected cannot be deleted.
+    operationId: delete-auth-v2-user-platform-provider-requests
+    security:
+    - authorization: []
+    responses:
+      '200':
+        description: Platform provider role request deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                detail:
+                  type: string
+                  example: Platform provider role request deleted successfully
+      '400':
+        description: Request is not in pending status and cannot be withdrawn
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:BadRequest
+              title: Bad Request
+              detail: Only pending platform provider role requests can be deleted
+      '401':
+        description: Missing or invalid authorization token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:InvalidAuthToken
+              title: Unauthorized
+              detail: Missing or invalid authorization token
+      '404':
+        description: No pending platform provider request found for this user
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:NotFound
+              title: Not Found
+              detail: No pending platform provider request found for this user
+    x-codeSamples:
+    - lang: cURL
+      label: Withdraw Platform Provider Request
+      source: |
+        curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/auth/user/platform/provider-requests' \
+        --header 'Authorization: Bearer <your-token>'
+
+/iudx/v2/auth/admin/platform/provider-requests:
+  get:
+    tags:
+    - Platform Provider Requests
+    summary: List all platform provider role requests
+    description: |
+      Returns a paginated list of all platform provider role requests submitted by consumers
+      across the platform. Each entry is enriched with the requester's current Keycloak roles
+      and account status. Supports filtering by `status` and `userId`, and sorting by `createdAt`
+      or `updatedAt`. Only accessible by COS Admins.
     operationId: get-auth-v2-platform-provider-requests
     security:
     - authorization: []
@@ -109,9 +292,11 @@
                       id:
                         type: string
                         format: uuid
+                        example: 39358c41-84dd-42c4-b8c5-9a95afcf8fce
                       user_id:
                         type: string
                         format: uuid
+                        example: 03cc4ca3-d1fb-4f8a-bd77-6b0441916bbd
                       provider_type:
                         type: string
                         example: platform
@@ -121,9 +306,18 @@
                       created_at:
                         type: string
                         format: date-time
+                        example: "2026-05-29T12:08:28.595467"
                       updated_at:
                         type: string
                         format: date-time
+                      roles:
+                        type: array
+                        items:
+                          type: string
+                        example: ["consumer", "offline_access", "default-roles-tgdex-pilot"]
+                      account_enabled:
+                        type: boolean
+                        example: true
                 paginationInfo:
                   type: object
                   properties:
@@ -140,27 +334,45 @@
                     hasPrevious:
                       type: boolean
       '401':
-        description: Missing or invalid authentication token
+        description: Missing or invalid authorization token
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:InvalidAuthToken
+              title: Unauthorized
+              detail: Missing or invalid authorization token
       '403':
         description: Forbidden – user does not have COS Admin role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:Forbidden
+              title: Forbidden
+              detail: User does not have the required COS Admin role
+    x-codeSamples:
+    - lang: cURL
+      label: List All Platform Provider Requests
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/admin/platform/provider-requests?page=1&size=10&status=pending' \
+        --header 'Authorization: Bearer <your-token>'
 
-/auth/v2/platform/provider-requests/{id}:
-  put:
+/iudx/v2/auth/admin/platform/provider-requests/{id}:
+  patch:
     tags:
     - Platform Provider Requests
     summary: Approve or reject a platform provider role request
     description: |
-      Allows a COS Admin to approve (`granted`) or reject (`rejected`) a platform provider
-      role request. On approval, the PROVIDER role is assigned in Keycloak.
-    operationId: put-auth-v2-platform-provider-requests
+      Approves or rejects a specific platform provider role request identified by `id`.
+      Only COS Admins can perform this action.
+      - Setting status to `granted` assigns the `PROVIDER` role to the user in Keycloak and
+        sends an approval notification email to the user.
+      - Setting status to `rejected` sends a rejection notification email to the user.
+      Only requests in `pending` status can be updated.
+    operationId: patch-auth-v2-platform-provider-requests
     security:
     - authorization: []
     parameters:
@@ -212,124 +424,52 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:BadRequest
+              title: Bad Request
+              detail: Invalid status value. Allowed values are granted or rejected
       '401':
-        description: Missing or invalid authentication token
+        description: Missing or invalid authorization token
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:InvalidAuthToken
+              title: Unauthorized
+              detail: Missing or invalid authorization token
       '403':
         description: Forbidden – user does not have COS Admin role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:Forbidden
+              title: Forbidden
+              detail: User does not have the required COS Admin role
       '404':
         description: No request found with the given ID
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
-
-/auth/v2/user/platform/provider-requests:
-  get:
-    tags:
-    - Platform Provider Requests
-    summary: Get own platform provider role request
-    description: |
-      Returns the consumer's own pending platform provider role request, if one exists.
-    operationId: get-auth-v2-user-platform-provider-requests
-    security:
-    - authorization: []
-    responses:
-      '200':
-        description: The consumer's pending platform provider role request
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                  example: dx:controlPlane:success
-                title:
-                  type: string
-                  example: Success
-                result:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                      format: uuid
-                    user_id:
-                      type: string
-                      format: uuid
-                    provider_type:
-                      type: string
-                      example: platform
-                    status:
-                      type: string
-                      example: pending
-                    created_at:
-                      type: string
-                      format: date-time
-                    updated_at:
-                      type: string
-                      format: date-time
-      '401':
-        description: Missing or invalid authentication token
-        content:
-          application/json:
-            schema:
-              $ref: ../components/schemas/common.yaml#/ErrorResponse
-      '404':
-        description: No pending platform provider request found for this user
-        content:
-          application/json:
-            schema:
-              $ref: ../components/schemas/common.yaml#/ErrorResponse
-  delete:
-    tags:
-    - Platform Provider Requests
-    summary: Withdraw own platform provider role request
-    description: |
-      Allows a consumer to withdraw their own pending platform provider role request.
-      Only requests in `pending` status can be deleted.
-    operationId: delete-auth-v2-user-platform-provider-requests
-    security:
-    - authorization: []
-    responses:
-      '200':
-        description: Platform provider role request deleted successfully
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                  example: dx:controlPlane:success
-                title:
-                  type: string
-                  example: Success
-                detail:
-                  type: string
-                  example: Platform provider role request deleted successfully
-      '400':
-        description: Request is not in pending status and cannot be deleted
-        content:
-          application/json:
-            schema:
-              $ref: ../components/schemas/common.yaml#/ErrorResponse
-      '401':
-        description: Missing or invalid authentication token
-        content:
-          application/json:
-            schema:
-              $ref: ../components/schemas/common.yaml#/ErrorResponse
-      '404':
-        description: No pending platform provider request found for this user
-        content:
-          application/json:
-            schema:
-              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:NotFound
+              title: Not Found
+              detail: No provider role request found with the given ID
+    x-codeSamples:
+    - lang: cURL
+      label: Approve Platform Provider Request
+      source: |
+        curl --location --request PATCH 'https://${HOSTNAME}/iudx/v2/auth/admin/platform/provider-requests/<id>' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"status": "granted"}'
+    - lang: cURL
+      label: Reject Platform Provider Request
+      source: |
+        curl --location --request PATCH 'https://${HOSTNAME}/iudx/v2/auth/admin/platform/provider-requests/<id>' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"status": "rejected"}'

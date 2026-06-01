@@ -45,69 +45,95 @@ public class ProviderRoleServiceImpl implements ProviderRoleService {
   }
 
   @Override
-  public Future<ProviderRoleRequest> createProviderRequest(ProviderRoleRequest providerRoleRequest) {
-    Map<String, Object> filterMap = Map.of(USER_ID, providerRoleRequest.userId().toString());
+  public Future<ProviderRoleRequest> createProviderRequest(
+      ProviderRoleRequest providerRoleRequest) {
+    Map<String, Object> filterMap =
+        Map.of(
+            USER_ID,
+            providerRoleRequest.userId().toString(),
+            Constants.STATUS,
+            List.of(Status.PENDING.getStatus(), Status.GRANTED.getStatus()));
 
-    // check if there is a pending or granted request for the same user
-    // if yes then dont create a new request
-    // if status is rejected then only allow to create a new request
-
-    return providerRequestDAO.getAllWithFilters(filterMap)
-      .compose(requests -> {
-        if (!requests.isEmpty()) {
-          // If there is a pending or granted request, do not create a new one
-          ProviderRoleRequest existingRequest = requests.get(0);
-          if (Status.PENDING.getStatus().equals(existingRequest.status()) ||
-            Status.GRANTED.getStatus().equals(existingRequest.status())) {
-            return Future.failedFuture(new DxConflictException("A pending or granted provider role request already exists for this user"));
-          }
-          else if( Status.REJECTED.getStatus().equals(existingRequest.status())) {
-            // If the existing request is rejected, allow to create a new one
-            LOGGER.info("Existing request is rejected, allowing to create a new provider role request");
-            return providerRequestDAO.create(providerRoleRequest);
-          } else {
-            return Future.failedFuture(new DxConflictException("Provider role request is not in a state that allows creation of a new request"));
-          }
-        }
-        else {
-          // No existing requests found, proceed to create a new one
-          return providerRequestDAO.create(providerRoleRequest);
-        }
-      });
+    return providerRequestDAO
+        .getAllWithFilters(filterMap)
+        .compose(
+            requests -> {
+              if (!requests.isEmpty()) {
+                return Future.failedFuture(
+                    new DxConflictException(
+                        "A pending or granted provider role request already exists for this user"));
+              }
+              return providerRequestDAO.create(providerRoleRequest);
+            });
   }
 
   @Override
   public Future<Boolean> updateProviderRequestStatus(UUID requestId, Status status) {
-    Map<String, Object> conditionMap = Map.of(
-      Constants.ORG_CREATE_ID, requestId.toString()
-    );
-    Map<String, Object> updateDataMap = Map.of(
-      Constants.STATUS, status.getStatus(),
-      Constants.UPDATED_AT, FORMATTER.format(LocalDateTime.now())
-    );
+    return providerRequestDAO
+        .get(requestId)
+        .compose(
+            existing -> {
+              if (!Status.PENDING.getStatus().equals(existing.status())) {
+                return Future.failedFuture(
+                    new DxConflictException(
+                        "Only pending provider role requests can be updated. Current status: "
+                            + existing.status()));
+              }
 
-    return providerRequestDAO.update(conditionMap, updateDataMap)
-      .compose(updated -> {
-        if (Status.GRANTED.getStatus().equals(status.getStatus())) {
-          return providerRequestDAO.get(requestId)
-            .compose(providerRequest -> {
-              // Update role in Keycloak
-              return keycloakUserService.addRoleToUser(
-                  providerRequest.userId(),
-                  DxRole.PROVIDER
-                )
-                .compose(success -> {
-                  if (!success) {
-                    return Future.failedFuture("Failed to assign PROVIDER role in Keycloak");
-                  }
-                  return Future.succeededFuture(true);
-                });
-            });
-        }
+              Map<String, Object> conditionMap =
+                  Map.of(Constants.ORG_CREATE_ID, requestId.toString());
+              Map<String, Object> updateDataMap =
+                  Map.of(
+                      Constants.STATUS, status.getStatus(),
+                      Constants.UPDATED_AT, FORMATTER.format(LocalDateTime.now()));
 
-        return Future.succeededFuture(true);
-      })
-      .recover(ServiceErrorHelper.mapNotFound("No request found with given ID"));
+              return providerRequestDAO
+                  .update(conditionMap, updateDataMap)
+                  .compose(
+                      updated -> {
+                        if (Status.GRANTED.getStatus().equals(status.getStatus())) {
+                          return keycloakUserService
+                              .addRoleToUser(existing.userId(), DxRole.PROVIDER)
+                              .compose(
+                                  success -> {
+                                    if (!success) {
+                                      return Future.failedFuture(
+                                          "Failed to assign PROVIDER role in Keycloak");
+                                    }
+                                    return Future.succeededFuture(true);
+                                  })
+                              .recover(
+                                  err -> {
+                                    LOGGER.error(
+                                        "Keycloak role assignment failed for user {}, reverting DB status to pending: {}",
+                                        existing.userId(),
+                                        err.getMessage());
+                                    Map<String, Object> revertCondition =
+                                        Map.of(Constants.ORG_CREATE_ID, requestId.toString());
+                                    Map<String, Object> revertData =
+                                        Map.of(Constants.STATUS, Status.PENDING.getStatus());
+                                    return providerRequestDAO
+                                        .update(revertCondition, revertData)
+                                        .recover(
+                                            revertErr -> {
+                                              LOGGER.error(
+                                                  "CRITICAL: Failed to revert DB status for request {} after Keycloak failure. Manual intervention required. Revert error: {}",
+                                                  requestId,
+                                                  revertErr.getMessage());
+                                              return Future.failedFuture(
+                                                  new DxRuntimeException(
+                                                      "Keycloak role assignment failed and DB revert also failed for request: "
+                                                          + requestId,
+                                                      revertErr));
+                                            })
+                                        .compose(reverted -> Future.<Boolean>failedFuture(
+                                            new DxRuntimeException("Keycloak role assignment failed, DB status reverted to pending", err)));
+                                  });
+                        }
+                        return Future.succeededFuture(true);
+                      });
+            })
+        .recover(ServiceErrorHelper.mapNotFound("No request found with given ID"));
   }
 
   @Override
