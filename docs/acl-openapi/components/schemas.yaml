@@ -502,7 +502,7 @@ getPolicySuccessResponseWithResourceType:
           - consumer
         access:
         - accessType: sub
-          expiry: 1735689600
+          expiry: '2024-03-05T20:00:19'
       status: ACTIVE
       updatedAt: '2023-11-07T09:12:44.144204'
       createdAt: '2023-09-26T11:17:58.473452'
@@ -626,7 +626,7 @@ getPolicySuccessResponseWithResourceGroup:
           - consumer
         access:
         - accessType: sub
-          expiry: 1735689600
+          expiry: '2024-03-05T20:00:19'
       status: ACTIVE
       updatedAt: '2024-02-14T04:54:16.592540'
       createdAt: '2023-10-26T11:17:58.473452'
@@ -657,16 +657,16 @@ getPolicySuccessResponseWithResourceGroup:
           - consumer
         access:
         - accessType: api
-          expiry: 1735689600
+          expiry: '2024-03-05T20:00:19'
           limits:
             dataUsage: 100:gb
             apiHits: 100
         - accessType: file
-          expiry: 1735689600
+          expiry: '2024-03-05T20:00:19'
           limits:
             dataUsage: 10:gb
         - accessType: sub
-          expiry: 1735689600
+          expiry: '2024-03-05T20:00:19'
       status: ACTIVE
       updatedAt: '2023-11-07T09:12:44.144204'
       createdAt: '2023-09-26T11:17:58.473452'
@@ -1094,16 +1094,16 @@ AccessRequest:
             - consumer
           access:
           - accessType: api
-            expiry: 1735689600
+            expiry: '2024-03-05T20:00:19'
             limits:
               dataUsage: 100:gb
               apiHits: 100
           - accessType: file
-            expiry: 1735689600
+            expiry: '2024-03-05T20:00:19'
             limits:
               dataUsage: 10:gb
           - accessType: sub
-            expiry: 1735689600
+            expiry: '2024-03-05T20:00:19'
         user:
           id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
           email: user@example.com
@@ -3925,7 +3925,7 @@ PolicyListResponse:
       $ref: '#/PaginationInfo'
 BasePolicyRequest:
   type: object
-  additionalProperties: false
+  additionalProperties: true
   properties:
     policyType:
       type: string
@@ -3944,7 +3944,8 @@ BasePolicyRequest:
         - DATABANK
     expiryTime:
       type: string
-      format: date-time
+      description: ISO 8601 format timestamp to provide access to the
+        given asset
     constraints:
       type: object
     additionalInfo:
@@ -3966,6 +3967,7 @@ IndividualPolicyRequest:
     allOf:
       - $ref: '#/BasePolicyRequest'
       - type: object
+        additionalProperties: true
         properties:
           policyType:
             enum:
@@ -3979,6 +3981,7 @@ GroupPolicyRequest:
     allOf:
       - $ref: '#/BasePolicyRequest'
       - type: object
+        additionalProperties: true
         properties:
           policyType:
             enum:
@@ -4106,7 +4109,8 @@ Policy:
           type: string
     expiryAt:
       type: string
-      format: date-time
+      description: ISO 8601 format timestamp to provide access to the
+        given asset
     createdAt:
       type: string
       format: date-time

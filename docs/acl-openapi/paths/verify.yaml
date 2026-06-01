@@ -68,7 +68,7 @@
                     - consumer
                   access:
                   - accessType: sub
-                    expiry: 1735689600
+                    expiry: '2026-08-04T20:00:19'
                 expiryAt: '2026-08-04T20:00:19'
       '400':
         description: Bad Request

@@ -143,12 +143,12 @@ paths:
                         - consumer
                     access:
                       - accessType: api
-                        expiry: 1735689600
+                        expiry: '2026-03-05T20:00:19'
                         limits:
                           dataUsage: 100:gb
                           apiHits: 100
                       - accessType: sub
-                        expiry: 1735689600
+                        expiry: '2026-03-05T20:00:19'
       responses:
         '200':
           description: OK
@@ -348,12 +348,12 @@ paths:
                         - consumer
                     access:
                       - accessType: api
-                        expiry: 1735689600
+                        expiry: '2026-03-05T20:00:19'
                         limits:
                           dataUsage: 100:gb
                           apiHits: 100
                       - accessType: file
-                        expiry: 1735689600
+                        expiry: '2026-03-05T20:00:19'
                         limits:
                           dataUsage: 10:gb
               Update Rejected access request:
@@ -1656,16 +1656,16 @@ paths:
                             - consumer
                         access:
                           - accessType: api
-                            expiry: 1735689600
+                            expiry: '2026-03-05T20:00:19'
                             limits:
                               dataUsage: 100:gb
                               apiHits: 100
                           - accessType: file
-                            expiry: 1735689600
+                            expiry: '2026-03-05T20:00:19'
                             limits:
                               dataUsage: 10:gb
                           - accessType: sub
-                            expiry: 1735689600
+                            expiry: '2026-03-05T20:00:19'
                     - userId: <uuid>
                       itemId: example-resource-group
                       itemType: DATABANK
@@ -1681,16 +1681,16 @@ paths:
                             - consumer
                         access:
                           - accessType: api
-                            expiry: 1735689600
+                            expiry: '2026-03-05T20:00:19'
                             limits:
                               dataUsage: 100:gb
                               apiHits: 100
                           - accessType: file
-                            expiry: 1735689600
+                            expiry: '2026-03-05T20:00:19'
                             limits:
                               dataUsage: 10:gb
                           - accessType: sub
-                            expiry: 1735689600
+                            expiry: '2026-03-05T20:00:19'
             examples:
               Request for resource with additionalInfo:
                 value:
@@ -1710,16 +1710,16 @@ paths:
                           - consumer
                       access:
                         - accessType: api
-                          expiry: 1735689600
+                          expiry: '2026-03-05T20:00:19'
                           limits:
                             dataUsage: 100:gb
                             apiHits: 100
                         - accessType: file
-                          expiry: 1735689600
+                          expiry: '2026-03-05T20:00:19'
                           limits:
                             dataUsage: 10:gb
                         - accessType: sub
-                          expiry: 1735689600
+                          expiry: '2026-03-05T20:00:19'
                     additionalInfo:
                       name: Miles Davis
                     providerComment: The resource is used for transportation data analysis
@@ -1742,16 +1742,16 @@ paths:
                           - consumer
                       access:
                         - accessType: api
-                          expiry: 1735689600
+                          expiry: '2026-03-05T20:00:19'
                           limits:
                             dataUsage: 100:gb
                             apiHits: 100
                         - accessType: file
-                          expiry: 1735689600
+                          expiry: '2026-03-05T20:00:19'
                           limits:
                             dataUsage: 10:gb
                         - accessType: sub
-                          expiry: 1735689600
+                          expiry: '2026-03-05T20:00:19'
       responses:
         '200':
           description: The policy has been successfully created.
@@ -2227,7 +2227,7 @@ paths:
                         - consumer
                     access:
                       - accessType: sub
-                        expiry: 1735689600
+                        expiry: '2026-08-04T20:00:19'
                   expiryAt: '2026-08-04T20:00:19'
         '400':
           description: Bad Request
@@ -2860,7 +2860,7 @@ components:
                   - consumer
               access:
                 - accessType: sub
-                  expiry: 1735689600
+                  expiry: '2024-03-05T20:00:19'
             status: ACTIVE
             updatedAt: '2023-11-07T09:12:44.144204'
             createdAt: '2023-09-26T11:17:58.473452'
@@ -2984,7 +2984,7 @@ components:
                   - consumer
               access:
                 - accessType: sub
-                  expiry: 1735689600
+                  expiry: '2024-03-05T20:00:19'
             status: ACTIVE
             updatedAt: '2024-02-14T04:54:16.592540'
             createdAt: '2023-10-26T11:17:58.473452'
@@ -3015,16 +3015,16 @@ components:
                   - consumer
               access:
                 - accessType: api
-                  expiry: 1735689600
+                  expiry: '2024-03-05T20:00:19'
                   limits:
                     dataUsage: 100:gb
                     apiHits: 100
                 - accessType: file
-                  expiry: 1735689600
+                  expiry: '2024-03-05T20:00:19'
                   limits:
                     dataUsage: 10:gb
                 - accessType: sub
-                  expiry: 1735689600
+                  expiry: '2024-03-05T20:00:19'
             status: ACTIVE
             updatedAt: '2023-11-07T09:12:44.144204'
             createdAt: '2023-09-26T11:17:58.473452'
@@ -3532,16 +3532,16 @@ components:
                     - consumer
                 access:
                   - accessType: api
-                    expiry: 1735689600
+                    expiry: '2024-03-05T20:00:19'
                     limits:
                       dataUsage: 100:gb
                       apiHits: 100
                   - accessType: file
-                    expiry: 1735689600
+                    expiry: '2024-03-05T20:00:19'
                     limits:
                       dataUsage: 10:gb
                   - accessType: sub
-                    expiry: 1735689600
+                    expiry: '2024-03-05T20:00:19'
               user:
                 id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
                 email: user@example.com
@@ -6280,7 +6280,7 @@ components:
               type: string
         expiryAt:
           type: string
-          format: date-time
+          description: ISO 8601 format timestamp to provide access to the given asset
         createdAt:
           type: string
           format: date-time
@@ -6336,7 +6336,7 @@ components:
           type: boolean
     BasePolicyRequest:
       type: object
-      additionalProperties: false
+      additionalProperties: true
       properties:
         policyType:
           type: string
@@ -6355,7 +6355,7 @@ components:
             - DATABANK
         expiryTime:
           type: string
-          format: date-time
+          description: ISO 8601 format timestamp to provide access to the given asset
         constraints:
           type: object
         additionalInfo:
@@ -6377,6 +6377,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/BasePolicyRequest'
         - type: object
+          additionalProperties: true
           properties:
             policyType:
               enum:
@@ -6390,6 +6391,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/BasePolicyRequest'
         - type: object
+          additionalProperties: true
           properties:
             policyType:
               enum:

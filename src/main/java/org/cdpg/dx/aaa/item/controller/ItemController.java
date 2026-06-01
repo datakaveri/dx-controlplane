@@ -156,7 +156,6 @@ public class ItemController implements ApiController {
         .operation(PATCH_ITEM_META_DATA)
         .handler(auditingHandler::handleApiAudit)
         .handler(assetManagementAccess)
-        .handler(verifyItemTypeAndRole)
         .handler(this::handlePatchItemMetaData);
 
     builder
