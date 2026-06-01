@@ -69,36 +69,71 @@ public class ProviderRoleServiceImpl implements ProviderRoleService {
 
   @Override
   public Future<Boolean> updateProviderRequestStatus(UUID requestId, Status status) {
-    Map<String, Object> conditionMap = Map.of(
-      Constants.ORG_CREATE_ID, requestId.toString()
-    );
-    Map<String, Object> updateDataMap = Map.of(
-      Constants.STATUS, status.getStatus(),
-      Constants.UPDATED_AT, FORMATTER.format(LocalDateTime.now())
-    );
+    return providerRequestDAO
+        .get(requestId)
+        .compose(
+            existing -> {
+              if (!Status.PENDING.getStatus().equals(existing.status())) {
+                return Future.failedFuture(
+                    new DxConflictException(
+                        "Only pending provider role requests can be updated. Current status: "
+                            + existing.status()));
+              }
 
-    return providerRequestDAO.update(conditionMap, updateDataMap)
-      .compose(updated -> {
-        if (Status.GRANTED.getStatus().equals(status.getStatus())) {
-          return providerRequestDAO.get(requestId)
-            .compose(providerRequest -> {
-              // Update role in Keycloak
-              return keycloakUserService.addRoleToUser(
-                  providerRequest.userId(),
-                  DxRole.PROVIDER
-                )
-                .compose(success -> {
-                  if (!success) {
-                    return Future.failedFuture("Failed to assign PROVIDER role in Keycloak");
-                  }
-                  return Future.succeededFuture(true);
-                });
-            });
-        }
+              Map<String, Object> conditionMap =
+                  Map.of(Constants.ORG_CREATE_ID, requestId.toString());
+              Map<String, Object> updateDataMap =
+                  Map.of(
+                      Constants.STATUS, status.getStatus(),
+                      Constants.UPDATED_AT, FORMATTER.format(LocalDateTime.now()));
 
-        return Future.succeededFuture(true);
-      })
-      .recover(ServiceErrorHelper.mapNotFound("No request found with given ID"));
+              return providerRequestDAO
+                  .update(conditionMap, updateDataMap)
+                  .compose(
+                      updated -> {
+                        if (Status.GRANTED.getStatus().equals(status.getStatus())) {
+                          return keycloakUserService
+                              .addRoleToUser(existing.userId(), DxRole.PROVIDER)
+                              .compose(
+                                  success -> {
+                                    if (!success) {
+                                      return Future.failedFuture(
+                                          "Failed to assign PROVIDER role in Keycloak");
+                                    }
+                                    return Future.succeededFuture(true);
+                                  })
+                              .recover(
+                                  err -> {
+                                    LOGGER.error(
+                                        "Keycloak role assignment failed for user {}, reverting DB status to pending: {}",
+                                        existing.userId(),
+                                        err.getMessage());
+                                    Map<String, Object> revertCondition =
+                                        Map.of(Constants.ORG_CREATE_ID, requestId.toString());
+                                    Map<String, Object> revertData =
+                                        Map.of(Constants.STATUS, Status.PENDING.getStatus());
+                                    return providerRequestDAO
+                                        .update(revertCondition, revertData)
+                                        .recover(
+                                            revertErr -> {
+                                              LOGGER.error(
+                                                  "CRITICAL: Failed to revert DB status for request {} after Keycloak failure. Manual intervention required. Revert error: {}",
+                                                  requestId,
+                                                  revertErr.getMessage());
+                                              return Future.failedFuture(
+                                                  new DxRuntimeException(
+                                                      "Keycloak role assignment failed and DB revert also failed for request: "
+                                                          + requestId,
+                                                      revertErr));
+                                            })
+                                        .compose(reverted -> Future.<Boolean>failedFuture(
+                                            new DxRuntimeException("Keycloak role assignment failed, DB status reverted to pending", err)));
+                                  });
+                        }
+                        return Future.succeededFuture(true);
+                      });
+            })
+        .recover(ServiceErrorHelper.mapNotFound("No request found with given ID"));
   }
 
   @Override

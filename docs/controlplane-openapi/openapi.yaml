@@ -229,12 +229,12 @@ paths:
     $ref: paths/organisations.yaml#/~1iudx~1v2~1auth~1organisations~1{id}~1join_requests~1report
   /iudx/v2/auth/organization/user/provider_role/requests/report:
     $ref: paths/organisations.yaml#/~1iudx~1v2~1auth~1organization~1user~1provider_role~1requests~1report
-  /auth/v2/user/platform/provider-requests:
-    $ref: paths/platform-provider-requests.yaml#/~1auth~1v2~1user~1platform~1provider-requests
-  /auth/v2/admin/platform/provider-requests:
-    $ref: paths/platform-provider-requests.yaml#/~1auth~1v2~1admin~1platform~1provider-requests
-  /auth/v2/admin/platform/provider-requests/{id}:
-    $ref: paths/platform-provider-requests.yaml#/~1auth~1v2~1admin~1platform~1provider-requests~1{id}
+  /iudx/v2/auth/user/platform/provider-requests:
+    $ref: paths/platform-provider-requests.yaml#/~1iudx~1v2~1auth~1user~1platform~1provider-requests
+  /iudx/v2/auth/admin/platform/provider-requests:
+    $ref: paths/platform-provider-requests.yaml#/~1iudx~1v2~1auth~1admin~1platform~1provider-requests
+  /iudx/v2/auth/admin/platform/provider-requests/{id}:
+    $ref: paths/platform-provider-requests.yaml#/~1iudx~1v2~1auth~1admin~1platform~1provider-requests~1{id}
   /iudx/v2/cat/getAllAssets:
     $ref: paths/platform-assets.yaml#/~1iudx~1v2~1cat~1getAllAssets
   /iudx/v2/cat/assets/share:

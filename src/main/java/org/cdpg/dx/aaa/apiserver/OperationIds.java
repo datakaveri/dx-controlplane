@@ -86,7 +86,7 @@ public final class OperationIds {
 
   public static final String OP_GET_PLATFORM_PROVIDER_REQUESTS = "get-auth-v2-platform-provider-requests";
 
-  public static final String OP_UPDATE_PLATFORM_PROVIDER_REQUEST = "put-auth-v2-platform-provider-requests";
+  public static final String OP_UPDATE_PLATFORM_PROVIDER_REQUEST = "patch-auth-v2-platform-provider-requests";
 
   public static final String OP_GET_USER_PLATFORM_PROVIDER_REQUEST = "get-auth-v2-user-platform-provider-requests";
 

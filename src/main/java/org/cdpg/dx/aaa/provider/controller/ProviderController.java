@@ -34,7 +34,7 @@ public class ProviderController implements ApiController {
 
     var selfAccess = AuthorizationHandler.forScopes(Scopes.DATA_ACCESS);
     var orgAdminAccess = AuthorizationHandler.forScopes(Scopes.ORG_USER_MANAGEMENT);
-    var cosAdminAccess = AuthorizationHandler.forScopes(Scopes.ORG_MANAGEMENT);
+    var cosAdminAccess = AuthorizationHandler.forScopes(Scopes.USER_MANAGEMENT);
 
     /* =========================
      * Org-based provider requests (Consumer)

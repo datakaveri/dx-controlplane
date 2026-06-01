@@ -1,4 +1,4 @@
-/auth/v2/user/platform/provider-requests:
+/iudx/v2/auth/user/platform/provider-requests:
   post:
     tags:
     - Platform Provider Requests
@@ -11,9 +11,6 @@
     operationId: post-auth-v2-platform-provider-requests
     security:
     - authorization: []
-    x-curl-example: |
-      curl -X POST "https://<host>/auth/v2/user/platform/provider-requests" \
-        -H "Authorization: Bearer <token>"
     responses:
       '200':
         description: Platform provider role request created successfully
@@ -32,23 +29,42 @@
                   type: string
                   example: Created Request
       '401':
-        description: Missing or invalid authentication token
+        description: Missing or invalid authorization token
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:InvalidAuthToken
+              title: Unauthorized
+              detail: Missing or invalid authorization token
       '403':
         description: Forbidden – KYC not completed or user not found
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:Forbidden
+              title: Forbidden
+              detail: KYC verification not completed
       '409':
         description: A pending or granted provider role request already exists
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:AlreadyExists
+              title: Conflict
+              detail: A pending or granted provider role request already exists for this user
+    x-codeSamples:
+    - lang: cURL
+      label: Submit Platform Provider Request
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/user/platform/provider-requests' \
+        --header 'Authorization: Bearer <your-token>'
+
   get:
     tags:
     - Platform Provider Requests
@@ -60,9 +76,6 @@
     operationId: get-auth-v2-user-platform-provider-requests
     security:
     - authorization: []
-    x-curl-example: |
-      curl -X GET "https://<host>/auth/v2/user/platform/provider-requests" \
-        -H "Authorization: Bearer <token>"
     responses:
       '200':
         description: The consumer's platform provider role request
@@ -110,23 +123,42 @@
                       type: boolean
                       example: true
       '401':
-        description: Missing or invalid authentication token
+        description: Missing or invalid authorization token
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:InvalidAuthToken
+              title: Unauthorized
+              detail: Missing or invalid authorization token
       '403':
         description: Forbidden – user is not authenticated
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:Forbidden
+              title: Forbidden
+              detail: User is not authorized to access this resource
       '404':
-        description: No pending platform provider request found for this user
+        description: No platform provider request found for this user
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:NotFound
+              title: Not Found
+              detail: No pending platform provider request found for this user
+    x-codeSamples:
+    - lang: cURL
+      label: Get Own Platform Provider Request
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/user/platform/provider-requests' \
+        --header 'Authorization: Bearer <your-token>'
+
   delete:
     tags:
     - Platform Provider Requests
@@ -138,9 +170,6 @@
     operationId: delete-auth-v2-user-platform-provider-requests
     security:
     - authorization: []
-    x-curl-example: |
-      curl -X DELETE "https://<host>/auth/v2/user/platform/provider-requests" \
-        -H "Authorization: Bearer <token>"
     responses:
       '200':
         description: Platform provider role request deleted successfully
@@ -159,25 +188,43 @@
                   type: string
                   example: Platform provider role request deleted successfully
       '400':
-        description: Request is not in pending status and cannot be deleted
+        description: Request is not in pending status and cannot be withdrawn
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:BadRequest
+              title: Bad Request
+              detail: Only pending platform provider role requests can be deleted
       '401':
-        description: Missing or invalid authentication token
+        description: Missing or invalid authorization token
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:InvalidAuthToken
+              title: Unauthorized
+              detail: Missing or invalid authorization token
       '404':
         description: No pending platform provider request found for this user
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:NotFound
+              title: Not Found
+              detail: No pending platform provider request found for this user
+    x-codeSamples:
+    - lang: cURL
+      label: Withdraw Platform Provider Request
+      source: |
+        curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/auth/user/platform/provider-requests' \
+        --header 'Authorization: Bearer <your-token>'
 
-/auth/v2/admin/platform/provider-requests:
+/iudx/v2/auth/admin/platform/provider-requests:
   get:
     tags:
     - Platform Provider Requests
@@ -190,9 +237,6 @@
     operationId: get-auth-v2-platform-provider-requests
     security:
     - authorization: []
-    x-curl-example: |
-      curl -X GET "https://<host>/auth/v2/admin/platform/provider-requests?page=1&size=10&status=pending" \
-        -H "Authorization: Bearer <token>"
     parameters:
     - name: page
       in: query
@@ -290,20 +334,34 @@
                     hasPrevious:
                       type: boolean
       '401':
-        description: Missing or invalid authentication token
+        description: Missing or invalid authorization token
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:InvalidAuthToken
+              title: Unauthorized
+              detail: Missing or invalid authorization token
       '403':
         description: Forbidden – user does not have COS Admin role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:Forbidden
+              title: Forbidden
+              detail: User does not have the required COS Admin role
+    x-codeSamples:
+    - lang: cURL
+      label: List All Platform Provider Requests
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/admin/platform/provider-requests?page=1&size=10&status=pending' \
+        --header 'Authorization: Bearer <your-token>'
 
-/auth/v2/admin/platform/provider-requests/{id}:
-  put:
+/iudx/v2/auth/admin/platform/provider-requests/{id}:
+  patch:
     tags:
     - Platform Provider Requests
     summary: Approve or reject a platform provider role request
@@ -314,14 +372,9 @@
         sends an approval notification email to the user.
       - Setting status to `rejected` sends a rejection notification email to the user.
       Only requests in `pending` status can be updated.
-    operationId: put-auth-v2-platform-provider-requests
+    operationId: patch-auth-v2-platform-provider-requests
     security:
     - authorization: []
-    x-curl-example: |
-      curl -X PUT "https://<host>/auth/v2/admin/platform/provider-requests/<id>" \
-        -H "Authorization: Bearer <token>" \
-        -H "Content-Type: application/json" \
-        -d '{"status": "granted"}'
     parameters:
     - name: id
       in: path
@@ -371,21 +424,52 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:BadRequest
+              title: Bad Request
+              detail: Invalid status value. Allowed values are granted or rejected
       '401':
-        description: Missing or invalid authentication token
+        description: Missing or invalid authorization token
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:InvalidAuthToken
+              title: Unauthorized
+              detail: Missing or invalid authorization token
       '403':
         description: Forbidden – user does not have COS Admin role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:Forbidden
+              title: Forbidden
+              detail: User does not have the required COS Admin role
       '404':
         description: No request found with the given ID
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:NotFound
+              title: Not Found
+              detail: No provider role request found with the given ID
+    x-codeSamples:
+    - lang: cURL
+      label: Approve Platform Provider Request
+      source: |
+        curl --location --request PATCH 'https://${HOSTNAME}/iudx/v2/auth/admin/platform/provider-requests/<id>' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"status": "granted"}'
+    - lang: cURL
+      label: Reject Platform Provider Request
+      source: |
+        curl --location --request PATCH 'https://${HOSTNAME}/iudx/v2/auth/admin/platform/provider-requests/<id>' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"status": "rejected"}'
