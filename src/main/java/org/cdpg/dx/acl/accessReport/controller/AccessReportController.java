@@ -20,6 +20,7 @@ import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.model.Scopes;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
+import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 
 public class AccessReportController implements ApiController {
@@ -111,6 +112,10 @@ public class AccessReportController implements ApiController {
         .setChunked(true);
 
     String organisationId = RoutingContextHelper.fromPrincipal(routingContext).organisationId();
+    if (organisationId == null || organisationId.isBlank()) {
+      routingContext.fail(new DxForbiddenException("Organisation ID is required for this operation"));
+      return;
+    }
     Map<String, String> allowedFilters =
         Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE);
     Map<String, Object> additionalFilters = Map.of(DB_ASSET_ORGANIZATION_ID, organisationId);

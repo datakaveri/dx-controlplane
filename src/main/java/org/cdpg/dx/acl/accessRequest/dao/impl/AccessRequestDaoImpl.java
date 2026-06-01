@@ -85,17 +85,26 @@ public class AccessRequestDaoImpl extends AbstractBaseDAO<AccessRequestDto>
     get(requestId)
         .onSuccess(
             accessRequestDto -> {
-              boolean doesProviderOrganizationMatch =
-                  accessRequestDto.getItemOrganizationId() != null
-                      && accessRequestDto
-                          .getItemOrganizationId()
-                          .equals(providerOrganizationId.toString());
               boolean doesProviderIdMatch =
                   accessRequestDto.getProviderId() != null
                       && accessRequestDto.getProviderId().equals(providerId.toString());
-              /*if the provider ID does not match check if the user is org Admin */
-              if ((doesProviderIdMatch && doesProviderOrganizationMatch)
-                  || (isUserOrgAdmin && doesProviderOrganizationMatch)) {
+
+              boolean allowed;
+              if (providerOrganizationId == null) {
+                // independent provider: ownership is established by provider ID alone
+                allowed = doesProviderIdMatch;
+              } else {
+                boolean doesProviderOrganizationMatch =
+                    accessRequestDto.getItemOrganizationId() != null
+                        && accessRequestDto
+                            .getItemOrganizationId()
+                            .equals(providerOrganizationId.toString());
+                allowed =
+                    (doesProviderIdMatch && doesProviderOrganizationMatch)
+                        || (isUserOrgAdmin && doesProviderOrganizationMatch);
+              }
+
+              if (allowed) {
                 promise.complete(true);
               } else {
                 LOGGER.error(

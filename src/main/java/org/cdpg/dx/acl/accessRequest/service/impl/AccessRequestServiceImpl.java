@@ -168,11 +168,6 @@ public class AccessRequestServiceImpl implements AccessRequestService {
       JsonObject constraints,
       String providerComment,
       String feedbackToConsumer) {
-    if (providerOrganizationId == null) {
-      LOGGER.error("Provider organization ID is null for requestId: {}", requestId);
-      return Future.failedFuture(
-          new DxForbiddenException("Provider organization ID in the token, cannot be null"));
-    }
     // -------------------------
     // 1. Ownership Check (ensures that caller can act on request)
     // -------------------------
@@ -446,12 +441,6 @@ public class AccessRequestServiceImpl implements AccessRequestService {
       boolean isUserOrgAdmin,
       String providerComment,
       String feedbackToConsumer) {
-
-    if (providerOrganizationId == null) {
-      LOGGER.error("Provider organization ID is null for requestId: {}", requestId);
-      return Future.failedFuture(
-          new DxForbiddenException("Provider organization ID in the token cannot be null"));
-    }
 
     return accessRequestDao
         .ownershipCheck(requestId, providerId, providerOrganizationId, isUserOrgAdmin)
