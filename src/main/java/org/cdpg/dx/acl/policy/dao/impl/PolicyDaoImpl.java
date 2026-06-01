@@ -26,7 +26,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -143,34 +142,32 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
         createPolicyRequestList.stream()
             .map(
                 req -> {
-                  List<Object> values =
-                      Arrays.asList(
-                          req.getUserId(),
-                          req.getItemOrganizationId(),
-                          req.getItemId().toString(),
-                          userId.toString(),
-                          req.getExpiryTime().toString(),
-                          Optional.ofNullable(req.getConstraints()).orElse(new JsonObject()),
-                          ACTIVE,
-                          Optional.ofNullable(req.getAdditionalInfo()).orElse(new JsonObject()),
-                          Optional.ofNullable(req.getProviderComment()).orElse(""),
-                          Optional.ofNullable(req.getFeedbackToConsumer()).orElse(""));
+                  List<String> columns = new ArrayList<>();
+                  List<Object> values = new ArrayList<>();
+
+                  columns.add(DB_CONSUMER_ID);
+                  values.add(req.getUserId());
+
+                  // item_organization_id is null for independent providers — omit the column
+                  // so the DB defaults to NULL rather than causing a param count mismatch
+                  if (req.getItemOrganizationId() != null) {
+                    columns.add(DB_ASSET_ORGANIZATION_ID);
+                    values.add(req.getItemOrganizationId());
+                  }
+
+                  columns.add(DB_ITEM_ID);       values.add(req.getItemId().toString());
+                  columns.add(DB_OWNER_ID);       values.add(userId.toString());
+                  columns.add(DB_EXPIRY_AT);      values.add(req.getExpiryTime() != null ? req.getExpiryTime().toString() : null);
+                  columns.add(DB_CONSTRAINTS);    values.add(Optional.ofNullable(req.getConstraints()).orElse(new JsonObject()));
+                  columns.add(DB_STATUS);         values.add(ACTIVE);
+                  columns.add(DB_ADDITIONAL_INFO); values.add(Optional.ofNullable(req.getAdditionalInfo()).orElse(new JsonObject()));
+                  columns.add(DB_PROVIDER_COMMENT); values.add(Optional.ofNullable(req.getProviderComment()).orElse(""));
+                  columns.add(DB_FEEDBACK_TO_CONSUMER); values.add(Optional.ofNullable(req.getFeedbackToConsumer()).orElse(""));
 
                   InsertQuery insertQuery =
                       new InsertQuery()
                           .setTable(POLICY_TABLE)
-                          .setColumns(
-                              List.of(
-                                  DB_CONSUMER_ID,
-                                  DB_ASSET_ORGANIZATION_ID,
-                                  DB_ITEM_ID,
-                                  DB_OWNER_ID,
-                                  DB_EXPIRY_AT,
-                                  DB_CONSTRAINTS,
-                                  DB_STATUS,
-                                  DB_ADDITIONAL_INFO,
-                                  DB_PROVIDER_COMMENT,
-                                  DB_FEEDBACK_TO_CONSUMER))
+                          .setColumns(columns)
                           .setValues(values);
 
                   LOGGER.debug("Insert Policy Query: {}", insertQuery.toSQL());

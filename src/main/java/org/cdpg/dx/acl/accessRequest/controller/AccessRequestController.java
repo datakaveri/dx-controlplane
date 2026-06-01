@@ -49,6 +49,7 @@ import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.auth.model.Scopes;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.email.SendEmail;
+import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxValidationException;
 import org.cdpg.dx.common.model.DxUser;
@@ -381,15 +382,15 @@ public class AccessRequestController implements ApiController {
             })
         .onSuccess(
             provider -> {
+LOGGER.debug("provider : {}", provider);
               UUID providerOrganizationId =
-                  provider.organisationId() != null
+                  provider.organisationId() != null && !provider.organisationId().isBlank()
                       ? UUID.fromString(provider.organisationId())
                       : null;
+              LOGGER.debug("Updating provider organization id from Keycloak: {}", providerOrganizationId);
               boolean isUserOrgAdmin = provider.roles().contains(DxRole.ORG_ADMIN.value());
-
               if (status == Status.GRANTED) {
                 LocalDateTime expiryAt = parseAndValidateFutureTime(body.getString("expiryAt"));
-
                 accessRequestService
                     .approveAccessRequest(
                         providerId,

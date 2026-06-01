@@ -110,7 +110,6 @@ public class PolicyServiceImpl implements PolicyService {
   public Future<Void> createPolicy(List<CreatePolicyRequest> requests, DxUser caller) {
     // ownership checks -- caller must be owner or org delegate; simplified here
     UUID userId = caller.sub();
-    UUID userOrgId = UUID.fromString(caller.organisationId());
 
     Set<UUID> itemIds =
         requests.stream().map(CreatePolicyRequest::getItemId).collect(Collectors.toSet());
