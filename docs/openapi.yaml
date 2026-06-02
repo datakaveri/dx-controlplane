@@ -18574,7 +18574,6 @@ components:
         - description
         - tags
         - accessPolicy
-        - organizationType
         - modelType
         - fileFormat
         - industry
@@ -18735,7 +18734,6 @@ components:
         - description
         - tags
         - accessPolicy
-        - organizationType
         - fileFormat
         - industry
         - yearRange
@@ -18813,7 +18811,6 @@ components:
         - industry
         - shortDescription
         - description
-        - organizationType
         - accessPolicy
       properties:
         sections:
