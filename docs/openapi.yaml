@@ -10391,7 +10391,6 @@ paths:
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
-        - $ref: '#/components/parameters/SortingParam'
         - $ref: '#/components/parameters/SearchTermParam'
       responses:
         '200':
@@ -18575,7 +18574,6 @@ components:
         - description
         - tags
         - accessPolicy
-        - organizationType
         - modelType
         - fileFormat
         - industry
@@ -18736,7 +18734,6 @@ components:
         - description
         - tags
         - accessPolicy
-        - organizationType
         - fileFormat
         - industry
         - yearRange
@@ -18814,7 +18811,6 @@ components:
         - industry
         - shortDescription
         - description
-        - organizationType
         - accessPolicy
       properties:
         sections:
