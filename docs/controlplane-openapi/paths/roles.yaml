@@ -23,18 +23,27 @@
       pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
   delete:
     summary: Delete a user from an organisation (Org Admin)
-    description: 'This API allows an organization administrator to delete a specific user from their organization, identified
-      by the user''s `user_id` and the organization''s `id` in the path parameters. A successful response indicates that the
-      user has been deleted from the organization.
-
-      **Log Type:** `USER_ACTION`
-
-      '
     tags:
     - Organisation APIs
+    operationId: delete-auth-v2-organisations-users-id
+    description: |
+      Allows an organisation admin to permanently delete a user from their organisation.
+
+      The operation:
+      - Removes the user's provider role and join requests if applicable
+      - Deletes the user from Keycloak and the platform DB
+      - Validates the caller's org matches the `id` path param
+
+      **Log Type:** `USER_ACTION`
+    x-codeSamples:
+      - lang: cURL
+        label: Delete org user
+        source: |
+          curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/auth/organisations/{id}/users/{user_id}' \
+          --header 'Authorization: Bearer <your-token>'
     responses:
       '200':
-        description: OK
+        description: User deleted successfully
         content:
           application/json:
             schema:
@@ -42,36 +51,69 @@
               properties:
                 type:
                   type: string
-                  description: URN type of the response.
                 title:
                   type: string
-                  description: A human-readable title for the message response.
-                detail:
+                result:
                   type: string
-                  description: Details about the deletion operation.
             examples:
-              success:
+              Success:
                 value:
                   type: urn:dx:ControlPlane:success
                   title: Success
-                  detail: Deleted Organisation User
-    operationId: delete-auth-v2-organisations-users-id
+                  result: User deleted successfully from DB and Keycloak
+      '401':
+        description: Unauthorized - Token missing or invalid
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller is not an org admin or org ID mismatch
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
     security:
     - authorization: []
   put:
     summary: Update a user's role within an organisation (Org Admin)
-    description: 'This API allows an organization administrator to update the role of a specific user within their organization.
-      The user is identified by their `user_id` and the organization by its `id` in the path parameters. The request body
-      should contain the new role for the user. A successful response indicates that the user''s role has been updated.
-
-      **Log Type:** `USER_ACTION`
-
-      '
     tags:
     - Organisation APIs
+    operationId: put-auth-v2-organization-users-role
+    description: |
+      Allows an organisation admin to update the role of a specific user within their organisation.
+
+      Currently the only valid role value is `admin`.
+
+      **Log Type:** `USER_ACTION`
+    x-codeSamples:
+      - lang: cURL
+        label: Update org user role
+        source: |
+          curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/auth/organisations/{id}/users/{user_id}' \
+          --header 'Authorization: Bearer <your-token>' \
+          --header 'Content-Type: application/json' \
+          --data '{"role": "admin"}'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - role
+            properties:
+              role:
+                type: string
+                description: New role for the user within the organisation
+                example: admin
+          examples:
+            Update to admin:
+              value:
+                role: admin
     responses:
       '200':
-        description: OK
+        description: User role updated successfully
         content:
           application/json:
             schema:
@@ -79,58 +121,111 @@
               properties:
                 type:
                   type: string
-                  description: URN type of the response.
                 title:
                   type: string
-                  description: A human-readable title for the message response.
-                detail:
+                result:
                   type: string
-                  description: Details about the update operation.
             examples:
-              success:
+              Success:
                 value:
                   type: urn:dx:ControlPlane:success
                   title: Success
-                  detail: Updated Organisation User Role
-    operationId: put-auth-v2-organization-users-role
-    requestBody:
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              role:
-                type: string
-                description: New role for the user within the organization. Valid value is admin.
-          examples:
-            Example 1:
-              value:
-                role: admin
-    parameters:
-    - name: id
-      in: path
-      required: true
-      description: UUID of the organisation
-      schema:
-        type: string
-        format: uuid
-    - name: user_id
-      in: path
-      required: true
-      description: UUID of the User
-      schema:
-        type: string
-        format: uuid
+                  result: Updated Organisation User Role
+      '400':
+        description: Bad Request - Invalid role value
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/BadRequest
+      '401':
+        description: Unauthorized - Token missing or invalid
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller is not an org admin or org ID mismatch
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
     security:
     - authorization: []
   get:
     summary: (Org Admin) Get User Information
     tags:
     - Role APIs
+    operationId: get-auth-v2-organisations-id-users-user_id
+    description: |
+      Retrieves the full profile of a specific user within the caller's organisation.
+      Returns the same DxUser structure as `GET /iudx/v2/auth/user`, including pending roles and org request info.
+
+      **Log Type:** `USER_ACTION`
+    x-codeSamples:
+      - lang: cURL
+        label: Get org user info
+        source: |
+          curl --location 'https://${HOSTNAME}/iudx/v2/auth/organisations/{id}/users/{user_id}' \
+          --header 'Authorization: Bearer <your-token>'
     responses:
       '200':
-        description: OK
-    operationId: get-auth-v2-organisations-id-users-user_id
+        description: User information retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: object
+                  description: Full DxUser profile — same structure as GET /iudx/v2/auth/user result
+            examples:
+              Success:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                    roles:
+                    - consumer
+                    - provider
+                    organisationId: e87246e2-5da5-40b0-973c-690d2f48f879
+                    organisationName: Quants Sandbox
+                    sub: 436cb796-5826-458b-a914-a54721f70997
+                    emailVerified: true
+                    kycVerified: true
+                    name: Test User
+                    preferredUsername: testuser
+                    givenName: Test
+                    familyName: User
+                    email: test@example.com
+                    pending_roles: []
+                    organisation: {}
+                    kycInformation: {}
+                    createdAt: '2025-06-04T06:12:48.991'
+                    twitter_account: null
+                    linkedin_account: null
+                    github_account: null
+                    account_enabled: true
+                    did: null
+                    aud: null
+                    delegation_scope: []
+                    delegateeId: null
+                    appId: null
+      '401':
+        description: Unauthorized - Token missing or invalid
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller is not an org admin or org ID mismatch
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
     security:
     - authorization: []
 /iudx/v2/auth/user/custom/role:
@@ -346,13 +441,29 @@
 /iudx/v2/auth/user:
   get:
     summary: (User) Get User Information
+
+    operationId: get-auth-v2-user
     tags:
     - Role APIs
-    description: 'Retrieves the profile and account details of the currently authenticated user.
+    description: |
+      Retrieves the full profile and account details of the currently authenticated user from Keycloak and the platform.
+
+      The response includes:
+      - **Identity**: `sub` (UUID), `name`, `givenName`, `familyName`, `preferredUsername`, `email`
+      - **Roles**: Active Keycloak realm roles and `pending_roles` (roles awaiting approval: `provider`, `compute`)
+      - **Organisation**: Most recent pending organisation request (`organisation_join` or `organisation_create`), identified by `request_type`
+      - **Social accounts**: `twitter_account`, `linkedin_account`, `github_account`
+      - **KYC**: `kycVerified` flag and `kycInformation` object
+      - **Delegation**: `delegation_scope`, `delegateeId`, `appId` when acting as a delegatee
+      - **Account status**: `emailVerified`, `account_enabled`, `createdAt`
 
       **Log Type:** `USER_ACTION`
-
-      '
+    x-codeSamples:
+      - lang: cURL
+        label: Get authenticated user info
+        source: |
+          curl --location 'https://${HOSTNAME}/iudx/v2/auth/user' \
+          --header 'Authorization: Bearer <your-token>'
     responses:
       '200':
         description: OK
@@ -370,20 +481,24 @@
                   properties:
                     roles:
                       type: array
+                      description: Keycloak realm roles assigned to the user
                       items:
                         type: string
                     organisationId:
                       type: string
+                      description: UUID of the organisation the user belongs to
                     organisationName:
                       type: string
                     sub:
                       type: string
+                      description: UUID of the authenticated user (Keycloak subject)
                     emailVerified:
                       type: boolean
                     kycVerified:
                       type: boolean
                     name:
                       type: string
+                      description: Full name (givenName + familyName)
                     preferredUsername:
                       type: string
                     givenName:
@@ -392,92 +507,315 @@
                       type: string
                     email:
                       type: string
-                    pendingRoles:
+                    pending_roles:
                       type: array
+                      description: Roles with a pending approval request
                       items:
-                        type: object
+                        type: string
+                        enum:
+                          - provider
+                          - compute
                     organisation:
                       type: object
+                      description: >
+                        Most recent pending organisation request. Shape varies by
+                        `request_type`: `organisation_join` or `organisation_create`.
                       properties:
                         id:
                           type: string
-                        organisationId:
+                          description: UUID of the request record
+                        request_type:
                           type: string
-                        userId:
-                          type: string
-                        userName:
-                          type: string
+                          enum:
+                            - organisation_join
+                            - organisation_create
                         status:
                           type: string
                         jobTitle:
                           type: string
                         empId:
                           type: string
+                        userName:
+                          type: string
                         requestedAt:
                           type: string
                         processedAt:
                           type: string
-                        request_type:
+                        organisationId:
                           type: string
+                          description: Present when request_type is organisation_join
+                        userId:
+                          type: string
+                          description: Present when request_type is organisation_join
+                        officialEmail:
+                          type: string
+                          description: Present when request_type is organisation_join
+                        requestedBy:
+                          type: string
+                          description: Present when request_type is organisation_create
+                        name:
+                          type: string
+                          description: Organisation name; present when request_type is organisation_create
+                        logoPath:
+                          type: string
+                        entityType:
+                          type: string
+                        orgSector:
+                          type: string
+                        websiteLink:
+                          type: string
+                        address:
+                          type: string
+                        certificatePath:
+                          type: string
+                        pancardPath:
+                          type: string
+                        relevantDocPath:
+                          type: string
+                        orgManagerphoneNo:
+                          type: string
+                        orgDocuments:
+                          type: object
+                        managerEmail:
+                          type: string
+                        createdAt:
+                          type: string
+                        updatedAt:
+                          type: string
+                    kycInformation:
+                      type: object
+                      description: KYC details submitted by the user
                     createdAt:
                       type: string
-                    kycData:
-                      type: object
+                      description: Account creation timestamp (ISO 8601)
+                    twitter_account:
+                      type: string
+                    linkedin_account:
+                      type: string
+                    github_account:
+                      type: string
+                    account_enabled:
+                      type: boolean
+                      description: Whether the Keycloak account is active
+                    did:
+                      type: string
+                      description: Decentralised identifier
+                    aud:
+                      type: string
+                      description: Token audience
+                    delegation_scope:
+                      type: array
+                      description: Scopes granted via delegation
+                      items:
+                        type: string
+                    delegateeId:
+                      type: string
+                    appId:
+                      type: string
             examples:
-              Example 1:
+              Nothing pending (active member):
+                summary: User is an active org member with no pending requests
                 value:
                   type: urn:dx:ControlPlane:success
                   title: Success
                   result:
                     roles:
-                    - offline_access
-                    - compute
                     - consumer
-                    - default-roles-myrealm
-                    - uma_authorization
-                    organisationId: ''
-                    organisationName: ''
+                    - provider
+                    organisationId: e87246e2-5da5-40b0-973c-690d2f48f879
+                    organisationName: Quants Sandbox
+                    sub: 436cb796-5826-458b-a914-a54721f70997
+                    emailVerified: true
+                    kycVerified: true
+                    name: Test User
+                    preferredUsername: testuser
+                    givenName: Test
+                    familyName: User
+                    email: test@example.com
+                    pending_roles: []
+                    organisation: {}
+                    kycInformation: {}
+                    createdAt: '2025-06-04T06:12:48.991'
+                    twitter_account: null
+                    linkedin_account: null
+                    github_account: null
+                    account_enabled: true
+                    did: null
+                    aud: null
+                    delegation_scope: []
+                    delegateeId: null
+                    appId: null
+              Pending roles (provider and compute):
+                summary: User has pending provider and compute role requests
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                    roles:
+                    - consumer
+                    organisationId: e87246e2-5da5-40b0-973c-690d2f48f879
+                    organisationName: Quants Sandbox
                     sub: 436cb796-5826-458b-a914-a54721f70997
                     emailVerified: true
                     kycVerified: false
-                    name: test test
-                    preferredUsername: test
-                    givenName: test
-                    familyName: test
-                    email: testing@gmail.com
-                    pendingRoles: []
+                    name: Test User
+                    preferredUsername: testuser
+                    givenName: Test
+                    familyName: User
+                    email: test@example.com
+                    pending_roles:
+                    - provider
+                    - compute
+                    organisation: {}
+                    kycInformation: {}
+                    createdAt: '2025-06-04T06:12:48.991'
+                    twitter_account: null
+                    linkedin_account: null
+                    github_account: null
+                    account_enabled: true
+                    did: null
+                    aud: null
+                    delegation_scope: []
+                    delegateeId: null
+                    appId: null
+              Pending org join request:
+                summary: User has submitted an organisation join request awaiting approval
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                    roles:
+                    - consumer
+                    organisationId: e87246e2-5da5-40b0-973c-690d2f48f879
+                    organisationName: Quants Sandbox
+                    sub: 436cb796-5826-458b-a914-a54721f70997
+                    emailVerified: true
+                    kycVerified: false
+                    name: Test User
+                    preferredUsername: testuser
+                    givenName: Test
+                    familyName: User
+                    email: test@example.com
+                    pending_roles:
+                    - provider
                     organisation:
                       id: 98e74f31-4e40-4615-85b8-61256f0bc7c4
                       organisationId: e87246e2-5da5-40b0-973c-690d2f48f879
                       userId: 436cb796-5826-458b-a914-a54721f70997
-                      userName: test test
-                      status: granted
-                      jobTitle: Employee
-                      empId: EMP8790
+                      userName: Test User
+                      status: pending
+                      jobTitle: Engineer
+                      empId: EMP001
+                      officialEmail: test@example.com
                       requestedAt: '2025-06-04T06:13:58.917342'
-                      processedAt: '2025-06-04T06:13:58.917342'
+                      processedAt: null
                       request_type: organisation_join
+                    kycInformation: {}
                     createdAt: '2025-06-04T06:12:48.991'
-                    kycData: {}
-    operationId: get-auth-v2-user
+                    twitter_account: null
+                    linkedin_account: null
+                    github_account: null
+                    account_enabled: true
+                    did: null
+                    aud: null
+                    delegation_scope: []
+                    delegateeId: null
+                    appId: null
+              Pending org create request:
+                summary: User has submitted an organisation creation request awaiting approval
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                    roles:
+                    - consumer
+                    organisationId: ''
+                    organisationName: ''
+                    sub: 536cb796-5826-458b-a914-a54721f70998
+                    emailVerified: true
+                    kycVerified: false
+                    name: Jane Doe
+                    preferredUsername: janedoe
+                    givenName: Jane
+                    familyName: Doe
+                    email: jane@example.com
+                    pending_roles: []
+                    organisation:
+                      id: 11e74f31-4e40-4615-85b8-61256f0bc7c5
+                      requestedBy: 536cb796-5826-458b-a914-a54721f70998
+                      name: New Org Ltd
+                      logoPath: /logos/neworg.png
+                      entityType: Private
+                      orgSector: Technology
+                      websiteLink: https://neworg.example.com
+                      address: 456 Tech Park, Bengaluru
+                      certificatePath: /docs/cert.pdf
+                      pancardPath: /docs/pan.pdf
+                      status: pending
+                      userName: Jane Doe
+                      empId: EMP002
+                      jobTitle: Director
+                      orgManagerphoneNo: '+919876543210'
+                      managerEmail: jane@example.com
+                      createdAt: '2025-06-04T07:00:00.000'
+                      updatedAt: '2025-06-04T07:00:00.000'
+                      request_type: organisation_create
+                    kycInformation: {}
+                    createdAt: '2025-06-04T06:50:00.000'
+                    twitter_account: null
+                    linkedin_account: null
+                    github_account: null
+                    account_enabled: true
+                    did: null
+                    aud: null
+                    delegation_scope: []
+                    delegateeId: null
+                    appId: null
+      '401':
+        description: Unauthorized - Token missing or invalid
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Insufficient scope
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
     security:
     - authorization: []
   put:
     summary: (User) Update First Name, Last Name, Social Media Information
     tags:
     - Role APIs
-    description: 'Updates the first name, last name, and social media information of the currently authenticated user.
+    operationId: put-auth-v2-user
+    description: |
+      Updates the profile of the currently authenticated user in Keycloak.
+
+      The following fields can be updated:
+      - `first_name` / `last_name` — updated directly on the Keycloak user record
+      - `twitter_account`, `linkedin_account`, `github_account` — stored as Keycloak user attributes
+
+      All fields are optional. Only provided fields are updated; omitted fields are left unchanged.
 
       **Log Type:** `USER_ACTION`
-
-      '
-    responses:
-      '200':
-        description: OK
-    operationId: put-auth-v2-user
-    security:
-    - authorization: []
+    x-codeSamples:
+      - lang: cURL
+        label: Update user profile
+        source: |
+          curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/auth/user' \
+          --header 'Authorization: Bearer <your-token>' \
+          --header 'Content-Type: application/json' \
+          --data '{
+            "first_name": "John",
+            "last_name": "Doe",
+            "twitter_account": "https://twitter.com/johndoe",
+            "linkedin_account": "https://linkedin.com/in/johndoe",
+            "github_account": "https://github.com/johndoe"
+          }'
     requestBody:
+      required: true
       content:
         application/json:
           schema:
@@ -486,31 +824,91 @@
               first_name:
                 type: string
                 description: Updated first name
+                example: John
               last_name:
                 type: string
                 description: Updated last name
+                example: Doe
               twitter_account:
                 type: string
                 description: Twitter/X profile URL or handle
+                example: https://twitter.com/johndoe
               linkedin_account:
                 type: string
                 description: LinkedIn profile URL
+                example: https://linkedin.com/in/johndoe
               github_account:
                 type: string
                 description: GitHub profile URL or username
+                example: https://github.com/johndoe
+    responses:
+      '200':
+        description: User profile updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: string
+                  description: Success message
+            examples:
+              Success:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result: User info updated successfully
+      '400':
+        description: Bad Request - Invalid or malformed request body
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/BadRequest
+      '401':
+        description: Unauthorized - Token missing or invalid
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Insufficient scope
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
+    security:
+    - authorization: []
 /iudx/v2/auth/user/password:
   put:
     summary: (User) Change Password
-    description: 'Allows the logged-in user to change their password.
-
-      Only the new password needs to be provided.
-
-      '
     tags:
     - Role APIs
     operationId: put-auth-v2-user-password
-    security:
-    - authorization: []
+    description: |
+      Allows the currently authenticated user to change their Keycloak account password.
+
+      Only `new_password` is required. The password must satisfy the following policy:
+      - 8–20 characters long
+      - At least one uppercase letter
+      - At least one lowercase letter
+      - At least one digit
+      - At least one special character
+
+      **Log Type:** `USER_ACTION`
+    x-codeSamples:
+      - lang: cURL
+        label: Change password
+        source: |
+          curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/auth/user/password' \
+          --header 'Authorization: Bearer <your-token>' \
+          --header 'Content-Type: application/json' \
+          --data '{
+            "new_password": "Strong@123"
+          }'
     requestBody:
       required: true
       content:
@@ -522,10 +920,7 @@
             properties:
               new_password:
                 type: string
-                description: 'Password must be 8–20 characters long and include at least one uppercase letter, one lowercase
-                  letter, one number, and one special character.
-
-                  '
+                description: New password satisfying the platform password policy
                 minLength: 8
                 maxLength: 20
                 pattern: ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,20}$
@@ -540,33 +935,39 @@
               properties:
                 type:
                   type: string
-                  example: urn:dx:ControlPlane:success
                 title:
                   type: string
-                  example: Password Change Successful
                 result:
                   type: string
-                  example: Password updated successfully.
+                  description: Success message
+            examples:
+              Success:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result: User password updated successfully
       '400':
-        description: Bad Request - Failed password policy validation
+        description: Bad Request - Invalid or missing `new_password`, or password does not meet policy
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                  example: urn:dx:ControlPlane:error
-                title:
-                  type: string
-                  example: Password Change Failed
-                detail:
-                  type: string
-                  example: New password does not meet policy requirements.
+              $ref: ../components/schemas/common.yaml#/BadRequest
       '401':
-        description: Unauthorized - Missing or invalid authentication token
+        description: Unauthorized - Token missing or invalid
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Insufficient scope
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
       '500':
         description: Internal Server Error
+    security:
+    - authorization: []
 /iudx/v2/auth/admin/user/{id}:
   parameters:
   - schema:
@@ -578,14 +979,22 @@
     summary: (COS Admin) Get User Information
     tags:
     - Role APIs
-    description: 'Retrieves the profile and account details of a user. Accessible only by COS Admin.
+    operationId: get-auth-v2-user-id-admin
+    description: |
+      Retrieves the full profile and account details of a specific user by their UUID.
+      Accessible only by users with the `cos_admin` role.
+      Returns the same DxUser structure as `GET /iudx/v2/auth/user`, including pending roles and org info.
 
       **Log Type:** `USER_ACTION`
-
-      '
+    x-codeSamples:
+      - lang: cURL
+        label: Get user info by ID (Admin)
+        source: |
+          curl --location 'https://${HOSTNAME}/iudx/v2/auth/admin/user/{id}' \
+          --header 'Authorization: Bearer <your-token>'
     responses:
       '200':
-        description: OK
+        description: User information retrieved successfully
         content:
           application/json:
             schema:
@@ -622,38 +1031,100 @@
                       type: string
                     email:
                       type: string
-                    pendingRoles:
+                    pending_roles:
                       type: array
                       items:
-                        type: object
-                        properties: {}
+                        type: string
                     organisation:
                       type: object
-                      properties: {}
+                    kycInformation:
+                      type: object
                     createdAt:
                       type: string
-                    kycData:
-                      type: object
-                      properties: {}
-    operationId: get-auth-v2-user-id-admin
-    parameters:
-    - schema:
-        type: string
-      in: query
-      name: id
-      description: UUID of userId
+                    twitter_account:
+                      type: string
+                    linkedin_account:
+                      type: string
+                    github_account:
+                      type: string
+                    account_enabled:
+                      type: boolean
+                    did:
+                      type: string
+                    aud:
+                      type: string
+                    delegation_scope:
+                      type: array
+                      items:
+                        type: string
+                    delegateeId:
+                      type: string
+                    appId:
+                      type: string
+            examples:
+              Success:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                    roles:
+                    - consumer
+                    - provider
+                    organisationId: e87246e2-5da5-40b0-973c-690d2f48f879
+                    organisationName: Quants Sandbox
+                    sub: 436cb796-5826-458b-a914-a54721f70997
+                    emailVerified: true
+                    kycVerified: true
+                    name: Test User
+                    preferredUsername: testuser
+                    givenName: Test
+                    familyName: User
+                    email: test@example.com
+                    pending_roles: []
+                    organisation: {}
+                    kycInformation: {}
+                    createdAt: '2025-06-04T06:12:48.991'
+                    twitter_account: null
+                    linkedin_account: null
+                    github_account: null
+                    account_enabled: true
+                    did: null
+                    aud: null
+                    delegation_scope: []
+                    delegateeId: null
+                    appId: null
+      '401':
+        description: Unauthorized - Token missing or invalid
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller does not have `cos_admin` role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/createNotificationForbidden
     security:
     - authorization: []
 /iudx/v2/auth/admin/user:
   get:
     summary: Get all users (COS Admin)
-    description: 'Returns a paginated list of all users with their profile and account details. Supports filtering by search term. Requires `cos_admin` role.
-
-      **Log Type:** `USER_ACTION`
-
-      '
     tags:
     - Role APIs
+    operationId: get-auth-v2-admin-user
+    description: |
+      Returns a paginated list of all platform users enriched with full DxUser profile details.
+      Each user is fetched from Keycloak and enriched with pending roles and organisation info.
+      Supports optional text search via `search_term`. Requires `cos_admin` role.
+
+      **Log Type:** `USER_ACTION`
+    x-codeSamples:
+      - lang: cURL
+        label: Get all users (Admin)
+        source: |
+          curl --location 'https://${HOSTNAME}/iudx/v2/auth/admin/user?page=1&size=10' \
+          --header 'Authorization: Bearer <your-token>'
     parameters:
     - $ref: ../components/parameters.yaml#/PageParam
     - $ref: ../components/parameters.yaml#/SizeParam
@@ -675,6 +1146,10 @@
                   items:
                     type: object
                     properties:
+                      roles:
+                        type: array
+                        items:
+                          type: string
                       organisationId:
                         type: string
                       organisationName:
@@ -698,90 +1173,74 @@
                       pending_roles:
                         type: array
                         items:
-                          type: object
+                          type: string
                       organisation:
                         type: object
-                        properties:
-                          id:
-                            type: string
-                          requestedBy:
-                            type: string
-                          name:
-                            type: string
-                          logoPath:
-                            type: string
-                          entityType:
-                            type: string
-                          orgSector:
-                            type: string
-                          websiteLink:
-                            type: string
-                          address:
-                            type: string
-                          certificatePath:
-                            type: string
-                          pancardPath:
-                            type: string
-                          status:
-                            type: string
-                          userName:
-                            type: string
-                          empId:
-                            type: string
-                          jobTitle:
-                            type: string
-                          orgManagerphoneNo:
-                            type: string
-                          createdAt:
-                            type: string
-                          updatedAt:
-                            type: string
-                          request_type:
-                            type: string
-                      createdAt:
-                        type: string
                       kycInformation:
                         type: object
+                      createdAt:
+                        type: string
+                      twitter_account:
+                        type: string
+                      linkedin_account:
+                        type: string
+                      github_account:
+                        type: string
+                      account_enabled:
+                        type: boolean
+                      did:
+                        type: string
+                      aud:
+                        type: string
+                      delegation_scope:
+                        type: array
+                        items:
+                          type: string
+                      delegateeId:
+                        type: string
+                      appId:
+                        type: string
                 paginationInfo:
                   $ref: ../components/schemas/pagination.yaml#/PaginationInfo
             examples:
-              Example 1:
+              Success:
                 value:
                   type: urn:dx:ControlPlane:success
                   title: Success
                   result:
-                  - organisationId: org-123
-                    organisationName: ''
+                  - roles:
+                    - consumer
+                    - provider
+                    organisationId: e87246e2-5da5-40b0-973c-690d2f48f879
+                    organisationName: Quants Sandbox
                     sub: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                    emailVerified: false
+                    emailVerified: true
                     kycVerified: true
-                    name: test test
+                    name: Test User
                     preferredUsername: testuser
-                    givenName: test
-                    familyName: test
-                    email: test@gmail.com
+                    givenName: Test
+                    familyName: User
+                    email: test@example.com
                     pending_roles: []
-                    organisation:
-                      id: 4202493c-7c64-49b0-8f61-2000ca3d147c
-                      requestedBy: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                      name: Quants Sandbox
-                      logoPath: /logos/ai.png
-                      entityType: Private
-                      orgSector: Technology
-                      websiteLink: https://ai.example.com
-                      address: 123 Quant Labs, Bangalore, India
-                      certificatePath: /documents/certificate.pdf
-                      pancardPath: /documents/pancard.pdf
-                      status: pending
-                      userName: test test
-                      empId: EMP12345
-                      jobTitle: Manager
-                      orgManagerphoneNo: +91-9876543210
-                      createdAt: '2025-06-03T16:25:25.167724'
-                      updatedAt: '2025-06-03T16:25:25.167724'
-                      request_type: organisation_create
-                    createdAt: null
+                    organisation: {}
                     kycInformation: {}
+                    createdAt: '2025-06-04T06:12:48.991'
+                    twitter_account: null
+                    linkedin_account: null
+                    github_account: null
+                    account_enabled: true
+                    did: null
+                    aud: null
+                    delegation_scope: []
+                    delegateeId: null
+                    appId: null
+                  paginationInfo:
+                    page: 1
+                    size: 10
+                    totalCount: 42
+                    totalPages: 5
+                    hasNext: true
+                    hasPrevious: false
       '401':
         description: Unauthorized - Token invalid or expired
         content:
@@ -794,26 +1253,30 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/createNotificationForbidden
-    operationId: get-auth-v2-admin-user
     security:
     - authorization: []
 /iudx/v2/auth/user/basic:
   get:
     summary: Get basic user information (All Users)
-    description: 'Returns a paginated list of users with basic details (UUID, name, username, email). Supports text search across user fields. Requires an authenticated user token.
-
-      **Log Type:** `USER_ACTION`
-
-      '
     tags:
     - Role APIs
     operationId: get-auth-v2-user-search
-    security:
-    - authorization: []
+    description: |
+      Returns a paginated list of users with basic profile details fetched from Keycloak.
+      Requires an authenticated user token.
+
+      **Note:** `email` and `preferredUsername` are masked in the response (e.g. `john@xxxxxxx`) to protect user privacy.
+
+      **Log Type:** `USER_ACTION`
+    x-codeSamples:
+      - lang: cURL
+        label: Search users
+        source: |
+          curl --location 'https://${HOSTNAME}/iudx/v2/auth/user/basic?page=1&size=10&search_term=john' \
+          --header 'Authorization: Bearer <your-token>'
     parameters:
     - $ref: ../components/parameters.yaml#/PageParam
     - $ref: ../components/parameters.yaml#/SizeParam
-    - $ref: ../components/parameters.yaml#/SortingParam
     - $ref: ../components/parameters.yaml#/SearchTermParam
     responses:
       '200':
@@ -825,10 +1288,8 @@
               properties:
                 type:
                   type: string
-                  example: urn:dx:ControlPlane:success
                 title:
                   type: string
-                  example: Success
                 result:
                   type: array
                   items:
@@ -837,117 +1298,306 @@
                       sub:
                         type: string
                         format: uuid
-                        example: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
                       name:
                         type: string
-                        example: test test
                       preferredUsername:
                         type: string
-                        example: testuser
+                        description: Masked — username portion before `@` is preserved, domain replaced with `xxxxxxx`
                       givenName:
                         type: string
-                        example: test
                       familyName:
                         type: string
-                        example: test
                       email:
                         type: string
-                        format: email
-                        example: test@gmail.com
+                        description: Masked — domain portion replaced with `xxxxxxx`
                 paginationInfo:
-                  $ref: ../components/schemas/pagination.yaml#/PaginationInfoResponse
+                  $ref: ../components/schemas/pagination.yaml#/PaginationInfo
+            examples:
+              Success:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                  - sub: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                    name: Test User
+                    preferredUsername: testuser@xxxxxxx
+                    givenName: Test
+                    familyName: User
+                    email: testuser@xxxxxxx
+                  paginationInfo:
+                    page: 1
+                    size: 10
+                    totalCount: 25
+                    totalPages: 3
+                    hasNext: true
+                    hasPrevious: false
+      '401':
+        description: Unauthorized - Token missing or invalid
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+    security:
+    - authorization: []
 /iudx/v2/auth/user/update:
   post:
-    summary: (User) Deactivate User Account
-    description: 'Deactivates the currently authenticated user''s account.
-
-      **Log Type:** `USER_ACTION`
-
-      '
+    summary: (User) Activate/Deactivate Own Account
     tags:
     - Role APIs
+    operationId: post-auth-v2-user-update
+    description: |
+      Allows the currently authenticated user to activate or deactivate their own Keycloak account.
+
+      Valid values for `status`: `activate`, `deactivate`
+
+      On deactivate: disables Keycloak account, updates DB, sends deactivation email.
+      On activate: enables Keycloak account, updates DB, sends activation email.
+
+      **Log Type:** `USER_ACTION`
+    x-codeSamples:
+      - lang: cURL
+        label: Deactivate own account
+        source: |
+          curl --location --request POST 'https://${HOSTNAME}/iudx/v2/auth/user/update' \
+          --header 'Authorization: Bearer <your-token>' \
+          --header 'Content-Type: application/json' \
+          --data '{"status": "deactivate"}'
     requestBody:
-      description: Status type - Activate or Deactivate
       required: true
       content:
         application/json:
           schema:
             type: object
-            additionalProperties: false
+            required:
+            - status
             properties:
               status:
                 type: string
-            required:
-            - status
+                enum:
+                  - activate
+                  - deactivate
+                example: deactivate
     responses:
       '200':
-        description: OK
-    operationId: post-auth-v2-user-update
+        description: Account status updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: string
+            examples:
+              Deactivated:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result: User deactivated successfully
+              Activated:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result: User activated successfully
+      '400':
+        description: Bad Request - Invalid status value
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/BadRequest
+      '401':
+        description: Unauthorized - Token missing or invalid
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Insufficient scope
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
     security:
     - authorization: []
 /iudx/v2/auth/admin/{id}/update:
   post:
-    summary: (Admin) Deactivate/Activate User Account
-    description: 'Deactivates or activates a user account by ID. Accessible only by Admin.
-
-      **Log Type:** `USER_ACTION`
-
-      '
+    summary: (Admin) Activate/Deactivate User Account by ID
     tags:
     - Role APIs
+    operationId: post-auth-v2-admin-id-update
+    description: |
+      Allows a COS admin to activate or deactivate any user's Keycloak account by their UUID.
+
+      Valid values for `status`: `activate`, `deactivate`
+
+      On activate: enables Keycloak account, updates DB, sends admin activation email.
+      On deactivate: disables Keycloak account, updates DB, sends admin deactivation email.
+
+      **Log Type:** `USER_ACTION`
+    x-codeSamples:
+      - lang: cURL
+        label: Deactivate user by ID (Admin)
+        source: |
+          curl --location --request POST 'https://${HOSTNAME}/iudx/v2/auth/admin/{id}/update' \
+          --header 'Authorization: Bearer <your-token>' \
+          --header 'Content-Type: application/json' \
+          --data '{"status": "deactivate"}'
     parameters:
     - name: id
       in: path
       required: true
-      description: UUID of the user
+      description: UUID of the user to activate/deactivate
       schema:
         type: string
         format: uuid
     requestBody:
-      description: Status type - Activate or Deactivate
       required: true
       content:
         application/json:
           schema:
             type: object
-            additionalProperties: false
+            required:
+            - status
             properties:
               status:
                 type: string
-            required:
-            - status
+                enum:
+                  - activate
+                  - deactivate
+                example: activate
     responses:
       '200':
-        description: OK
-    operationId: post-auth-v2-admin-id-update
+        description: Account status updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: string
+            examples:
+              Activated:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result: User activated successfully
+              Deactivated:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result: User deactivated successfully
+      '400':
+        description: Bad Request - Invalid status value
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/BadRequest
+      '401':
+        description: Unauthorized - Token missing or invalid
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller does not have admin role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/createNotificationForbidden
     security:
     - authorization: []
 /iudx/v2/auth/user/delete:
   delete:
-    summary: (User) Delete User Account
+    summary: (User) Delete Own Account
     tags:
     - Role APIs
-    responses:
-      '200':
-        description: OK
     operationId: delete-auth-v2-user
-    description: 'Permanently deletes the currently authenticated user''s account.
+    description: |
+      Permanently deletes the currently authenticated user's account from Keycloak and the platform DB.
+
+      The operation:
+      - Validates the user is not an org admin or platform admin (blocked)
+      - If user belongs to an org: removes provider role, org join requests, compute requests
+      - Deletes user from Keycloak and cleans up all associated DB records
 
       **Log Type:** `USER_ACTION`
-
-      '
+    x-codeSamples:
+      - lang: cURL
+        label: Delete own account
+        source: |
+          curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/auth/user/delete' \
+          --header 'Authorization: Bearer <your-token>'
+    responses:
+      '200':
+        description: User account deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: string
+            examples:
+              Success:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result: User deleted successfully from Keycloak and DB
+      '400':
+        description: Bad Request - User is an org admin or platform admin and cannot be deleted
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/BadRequest
+      '401':
+        description: Unauthorized - Token missing or invalid
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Insufficient scope
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
     security:
     - authorization: []
 /iudx/v2/auth/user/description/info:
   post:
-    summary: (ADARV) Add user info
+    summary: (ADARV) Add user profile info
     tags:
     - Role APIs
     operationId: post-auth-v2-user-info
-    security:
-    - authorization: []
+    description: |
+      Creates an extended user profile record (about, experience, education, projects, publications, skills).
+      The `userId` is automatically taken from the JWT subject — do not pass it in the body.
+
+      **Log Type:** `USER_ACTION`
+    x-codeSamples:
+      - lang: cURL
+        label: Add user profile info
+        source: |
+          curl --location --request POST 'https://${HOSTNAME}/iudx/v2/auth/user/description/info' \
+          --header 'Authorization: Bearer <your-token>' \
+          --header 'Content-Type: application/json' \
+          --data '{
+            "about": "Researcher at ICMR",
+            "skills": ["Python", "Data Analysis"],
+            "experience": [{"role": "Researcher", "time": "2020–present", "location": "Delhi"}]
+          }'
     requestBody:
-      description: This endpoint allows adding user information.
       required: true
       content:
         application/json:
@@ -956,8 +1606,8 @@
             properties:
               about:
                 type: string
-                description: Short description about the user
-                example: Lorem ipsum, dolor sit amet consectetur adipisicing elit...
+                description: Short bio about the user
+                example: Researcher at ICMR with 5 years of experience
               experience:
                 type: array
                 description: List of work experiences
@@ -990,7 +1640,7 @@
                       example: Delhi
               projects:
                 type: array
-                description: List of projects completed by the user
+                description: Projects completed by the user
                 items:
                   type: object
                   properties:
@@ -1008,7 +1658,7 @@
                       example: Developed a system for secure data sharing
               publications:
                 type: array
-                description: List of publications by the user
+                description: Publications by the user
                 items:
                   type: object
                   properties:
@@ -1026,13 +1676,13 @@
                       example: Paper on privacy-preserving IoT data sharing
               skills:
                 type: array
-                description: List of user skills
+                description: List of skill tags
                 items:
                   type: string
-                  example: React
+                  example: Python
     responses:
-      '201':
-        description: User information created successfully
+      '200':
+        description: User profile info created successfully
         content:
           application/json:
             schema:
@@ -1040,21 +1690,51 @@
               properties:
                 type:
                   type: string
-                  example: success
                 title:
                   type: string
-                  example: User Information created successfully
                 result:
-                  type: object
+                  type: string
+            examples:
+              Success:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result: 'Success:Addtion of User Info'
+      '401':
+        description: Unauthorized - Token missing or invalid
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Insufficient scope
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
+    security:
+    - authorization: []
   patch:
-    summary: (ADARV)Update user info
+    summary: (ADARV) Update user profile info
     tags:
     - Role APIs
     operationId: patch-auth-v2-user-info
-    security:
-    - authorization: []
+    description: |
+      Partially updates the extended user profile. Only fields included in the request body are updated; omitted fields are left unchanged.
+
+      **Log Type:** `USER_ACTION`
+    x-codeSamples:
+      - lang: cURL
+        label: Update user profile info
+        source: |
+          curl --location --request PATCH 'https://${HOSTNAME}/iudx/v2/auth/user/description/info' \
+          --header 'Authorization: Bearer <your-token>' \
+          --header 'Content-Type: application/json' \
+          --data '{
+            "about": "Updated bio",
+            "skills": ["React", "Angular"]
+          }'
     requestBody:
-      description: This endpoint allows updating user information partially. Only fields included in the request will be updated.
       required: true
       content:
         application/json:
@@ -1063,83 +1743,62 @@
             properties:
               about:
                 type: string
-                description: Short description about the user
-                example: Updated description about the user
+                example: Updated bio
               experience:
                 type: array
-                description: List of work experiences to update
                 items:
                   type: object
                   properties:
                     role:
                       type: string
-                      example: Senior ICMR Researcher
                     time:
                       type: string
-                      example: Jan 2020–present (5yrs)
                     location:
                       type: string
-                      example: Delhi
               education:
                 type: array
-                description: Educational qualifications to update
                 items:
                   type: object
                   properties:
                     institute:
                       type: string
-                      example: IIT Delhi
                     time:
                       type: string
-                      example: 2016–2020
                     location:
                       type: string
-                      example: Delhi
               projects:
                 type: array
-                description: List of projects to update
                 items:
                   type: object
                   properties:
                     institute:
                       type: string
-                      example: ICMR
                     time:
                       type: string
-                      example: '2021'
                     location:
                       type: string
-                      example: Delhi
                     about:
                       type: string
-                      example: Improved secure data sharing system
               publications:
                 type: array
-                description: List of publications to update
                 items:
                   type: object
                   properties:
                     institute:
                       type: string
-                      example: ICMR
                     time:
                       type: string
-                      example: '2021'
                     location:
                       type: string
-                      example: Delhi
                     about:
                       type: string
-                      example: Paper on privacy-preserving IoT data sharing
               skills:
                 type: array
-                description: List of user skills to update
                 items:
                   type: string
-                  example: React
     responses:
       '200':
-        description: User info updated successfully
+        description: User profile info updated successfully
         content:
           application/json:
             schema:
@@ -1147,33 +1806,49 @@
               properties:
                 type:
                   type: string
-                  example: success
                 title:
                   type: string
-                  example: User info updated
                 result:
-                  type: object
-                  properties:
-                    about:
-                      type: string
-                      example: Updated description about the user
-                    skills:
-                      type: array
-                      items:
-                        type: string
-                      example:
-                      - React
-                      - Angular
+                  type: string
+            examples:
+              Success:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result: 'Success: User Info Updated'
+      '401':
+        description: Unauthorized - Token missing or invalid
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Insufficient scope
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
+    security:
+    - authorization: []
   get:
-    summary: (ADARV) Get user info
+    summary: (ADARV) Get user profile info
     tags:
     - Role APIs
     operationId: get-auth-v2-user-info
-    security:
-    - authorization: []
+    description: |
+      Retrieves the extended user profile (about, experience, education, projects, publications, skills) for the authenticated user.
+      Returns 404 if no profile record has been created yet.
+
+      **Log Type:** `USER_ACTION`
+    x-codeSamples:
+      - lang: cURL
+        label: Get user profile info
+        source: |
+          curl --location 'https://${HOSTNAME}/iudx/v2/auth/user/description/info' \
+          --header 'Authorization: Bearer <your-token>'
     responses:
       '200':
-        description: OK
+        description: User profile info retrieved successfully
         content:
           application/json:
             schema:
@@ -1181,20 +1856,82 @@
               properties:
                 type:
                   type: string
-                  example: success
                 title:
                   type: string
-                  example: Fetched user info
                 result:
                   type: object
                   properties:
+                    userId:
+                      type: string
+                      description: UUID of the user
                     about:
                       type: string
-                      example: Lorem ipsum...
+                    experience:
+                      type: array
+                      items:
+                        type: object
+                    education:
+                      type: array
+                      items:
+                        type: object
+                    projects:
+                      type: array
+                      items:
+                        type: object
+                    publications:
+                      type: array
+                      items:
+                        type: object
                     skills:
                       type: array
                       items:
                         type: string
-                      example:
-                      - React
-                      - Angular
+            examples:
+              Success:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                    userId: 436cb796-5826-458b-a914-a54721f70997
+                    about: Researcher at ICMR with 5 years of experience
+                    experience:
+                    - role: ICMR Researcher
+                      time: Jan 2020–present (4yrs)
+                      location: Delhi
+                    education:
+                    - institute: IIT Delhi
+                      time: 2016–2020
+                      location: Delhi
+                    projects:
+                    - institute: ICMR
+                      time: '2021'
+                      location: Delhi
+                      about: Developed a system for secure data sharing
+                    publications:
+                    - institute: ICMR
+                      time: '2021'
+                      location: Delhi
+                      about: Paper on privacy-preserving IoT data sharing
+                    skills:
+                    - Python
+                    - Data Analysis
+      '404':
+        description: Not Found - No profile info record exists for this user
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/NotFound
+      '401':
+        description: Unauthorized - Token missing or invalid
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Insufficient scope
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
+    security:
+    - authorization: []
