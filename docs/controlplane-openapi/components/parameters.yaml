@@ -110,19 +110,17 @@ SortingParam:
 TimeParam:
   name: time
   in: query
-  description: Start time for temporal filtering in ISO 8601 format (e.g., `2025-01-01T00:00:00`). Used together with `timerel` to define a time range.
-  required: false
+  description: This parameter specifies the <b>start time</b> for the temporal-query in `ISO8601` format.
   schema:
     type: string
-    format: date-time
+    example: 2025-01-01T00:00:00
 EndTimeParam:
   name: endtime
   in: query
-  description: End time for temporal filtering in ISO 8601 format (e.g., `2025-12-31T23:59:59`). Required when `timerel=between`.
-  required: false
+  description: This parameter specifies the <b>endtime</b> for the temporal-query in `ISO8601` format.
   schema:
     type: string
-    format: date-time
+    example: 2025-12-31T23:59:59
 TimeRelParam:
   name: timerel
   in: query
