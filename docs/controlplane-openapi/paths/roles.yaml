@@ -657,7 +657,6 @@
     parameters:
     - $ref: ../components/parameters.yaml#/PageParam
     - $ref: ../components/parameters.yaml#/SizeParam
-    - $ref: ../components/parameters.yaml#/SortingParam
     - $ref: ../components/parameters.yaml#/SearchTermParam
     responses:
       '200':
