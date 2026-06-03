@@ -7,20 +7,24 @@ ConversationMessage:
       example: c0ca7a6c-597f-4e03-b861-bb912b3cb1ec
     request_type:
       type: string
-      example: org_join
+      description: Type of request this conversation belongs to (e.g. join_orgs, create_orgs, credit_request)
+      example: join_orgs
+    request_type_id:
+      type: string
+      format: uuid
+      description: UUID of the specific request instance this conversation thread is attached to
+      example: 7a1b2c3d-4e5f-6789-abcd-ef0123456789
     parent_msg_id:
       type: string
       format: uuid
       nullable: true
+      description: UUID of the parent message for replies; null for root-level messages
       example: null
     sender_id:
       type: string
       format: uuid
       example: 1dc28cc6-d614-461a-9b8f-d6110feb3e2f
     sender_role:
-      type: string
-      example: new user
-    actor:
       type: string
       enum:
       - requester
@@ -41,14 +45,20 @@ ConversationMessage:
       example: Do I need to add my phone number?
     is_internal:
       type: boolean
+      description: If true, the message is visible only to approvers; if false, visible to all participants
       example: false
-    has_replies:
-      type: boolean
-      example: true
+    metadata:
+      type: object
+      nullable: true
+      description: Optional arbitrary JSON metadata attached to the message
     reply_count:
       type: integer
-      description: Direct children count only, not full subtree
+      description: Number of direct child replies to this message
       example: 4
+    hasReplies:
+      type: boolean
+      description: True if reply_count > 0
+      example: true
     created_at:
       type: string
       format: date-time
@@ -78,7 +88,7 @@ ThreadedReplies:
           example: 2
         hasNext:
           type: boolean
-          description: true if there are more replies beyond the 3 shown
+          description: true if there are more replies beyond the current page
           example: true
         hasPrevious:
           type: boolean
