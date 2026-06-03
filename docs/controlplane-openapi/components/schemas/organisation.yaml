@@ -1,0 +1,178 @@
+OrgCreateRequestItem:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique identifier of the creation request
+    requestedBy:
+      type: string
+      format: uuid
+      description: UUID of the user who submitted the request
+    name:
+      type: string
+      description: Name of the organisation
+    logoPath:
+      type: string
+      nullable: true
+      description: Path or URL to the organisation logo
+    entityType:
+      type: string
+      description: Type of entity (e.g. private, government, academic)
+    orgSector:
+      type: string
+      description: Sector the organisation operates in
+    websiteLink:
+      type: string
+      description: Official website URL
+    address:
+      type: string
+      description: Registered address
+    certificatePath:
+      type: string
+      description: Path to the registration certificate
+    pancardPath:
+      type: string
+      description: Path to the PAN card document
+    relevantDocPath:
+      type: string
+      nullable: true
+      description: Path to any other relevant document
+    status:
+      type: string
+      enum: [pending, granted, rejected]
+      description: Current status of the request
+    userName:
+      type: string
+      description: Display name of the requesting user (from Keycloak)
+    empId:
+      type: string
+      description: Employee ID of the applicant
+    jobTitle:
+      type: string
+      description: Job title of the applicant
+    orgManagerphoneNo:
+      type: string
+      nullable: true
+      description: Contact phone number of the org manager
+    managerEmail:
+      type: string
+      description: Official email of the organisation manager
+    orgDocuments:
+      type: string
+      description: Path to supporting organisation documents
+    createdAt:
+      type: string
+      format: date-time
+      description: Timestamp when the request was created
+    updatedAt:
+      type: string
+      format: date-time
+      description: Timestamp when the request was last updated
+OrgJoinRequestItem:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique identifier of the join request
+    organizationId:
+      type: string
+      format: uuid
+      description: UUID of the organisation being joined
+    userId:
+      type: string
+      format: uuid
+      description: UUID of the user who submitted the request
+    userName:
+      type: string
+      description: Display name of the requesting user
+    status:
+      type: string
+      enum: [pending, granted, rejected, withdrawn]
+      description: Current status of the join request
+    jobTitle:
+      type: string
+      description: Job title of the applicant within the organisation
+    empId:
+      type: string
+      description: Employee ID of the applicant
+    officialEmail:
+      type: string
+      description: Official email of the applicant within the organisation
+    requestedAt:
+      type: string
+      format: date-time
+      description: Timestamp when the request was submitted
+    processedAt:
+      type: string
+      format: date-time
+      nullable: true
+      description: Timestamp when the request was processed, or null if pending
+OrgItem:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    orgName:
+      type: string
+    orgLogo:
+      type: string
+      nullable: true
+    entityType:
+      type: string
+    orgSector:
+      type: string
+    websiteLink:
+      type: string
+    address:
+      type: string
+    certificatePath:
+      type: string
+    pancardPath:
+      type: string
+    relevantDocPath:
+      type: string
+      nullable: true
+    orgDocuments:
+      type: string
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+ProviderRoleRequestItem:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    userId:
+      type: string
+      format: uuid
+    orgId:
+      type: string
+      format: uuid
+      nullable: true
+      description: null for platform-track requests
+    providerType:
+      type: string
+      enum: [org, platform]
+    status:
+      type: string
+      enum: [pending, granted, rejected]
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+    roles:
+      type: array
+      items:
+        type: string
+      description: Platform-level Keycloak roles of the user
+    accountEnabled:
+      type: boolean

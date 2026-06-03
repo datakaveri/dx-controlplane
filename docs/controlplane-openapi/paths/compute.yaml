@@ -1,7 +1,8 @@
 /iudx/v2/auth/user/compute/requests:
   get:
-    summary: Get the current user's compute role requests
-    description: 'Returns a paginated list of compute role requests submitted by the currently authenticated user. Supports filtering by status and pagination. Requires an authenticated user token.
+    summary: Get the current user's compute role request
+    description: 'Returns the compute role request submitted by the currently authenticated
+      user. Returns 400 if no request is found. Requires an authenticated user token.
 
       **Log Type:** `COMPUTE`
 
@@ -9,16 +10,17 @@
     tags:
     - Compute APIs
     operationId: get-auth-v2-user-compute-role-request
+    x-codeSamples:
+    - lang: cURL
+      label: Get my compute role request
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/user/compute/requests' \
+        --header 'Authorization: Bearer <your-token>'
     security:
     - authorization: []
-    parameters:
-    - $ref: ../components/parameters.yaml#/PageParam
-    - $ref: ../components/parameters.yaml#/SizeParam
-    - $ref: ../components/parameters.yaml#/SortingParam
-    - $ref: ../components/parameters.yaml#/StatusParam
     responses:
       '200':
-        description: Compute role requests retrieved successfully
+        description: Compute role request retrieved successfully
         content:
           application/json:
             schema:
@@ -31,66 +33,57 @@
                   type: string
                   description: Human-readable response title
                 result:
-                  type: array
-                  description: List of compute role request records
-                  items:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        format: uuid
-                        description: Unique identifier of the compute role request
-                      userId:
-                        type: string
-                        format: uuid
-                        description: UUID of the user who submitted the request
-                      userName:
-                        type: string
-                        description: Display name of the requesting user
-                      status:
-                        type: string
-                        description: Current status of the request (pending, granted, rejected)
-                      approvedBy:
-                        type: string
-                        format: uuid
-                        nullable: true
-                        description: UUID of the admin who approved the request, or null if not yet processed
-                      createdAt:
-                        type: string
-                        format: date-time
-                        description: Timestamp when the request was created
-                      updatedAt:
-                        type: string
-                        format: date-time
-                        description: Timestamp when the request was last updated
-                      tableName:
-                        type: string
-                        description: Internal table name for the record
-                paginationInfo:
-                  $ref: ../components/schemas/pagination.yaml#/PaginationInfo
+                  type: object
+                  description: The user's compute role request record
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                      description: Unique identifier of the compute role request
+                    userId:
+                      type: string
+                      format: uuid
+                      description: UUID of the user who submitted the request
+                    userName:
+                      type: string
+                      description: Display name of the requesting user
+                    status:
+                      type: string
+                      enum: [pending, granted, rejected]
+                      description: Current status of the request
+                    approvedBy:
+                      type: string
+                      format: uuid
+                      nullable: true
+                      description: UUID of the admin who approved the request, or null if not yet processed
+                    additionalInfo:
+                      type: object
+                      nullable: true
+                      description: Optional additional context provided when submitting the request
+                    createdAt:
+                      type: string
+                      format: date-time
+                      description: Timestamp when the request was created
+                    updatedAt:
+                      type: string
+                      format: date-time
+                      description: Timestamp when the request was last updated
             examples:
               success:
                 value:
                   type: urn:dx:ControlPlane:success
                   title: Success
                   result:
-                  - id: 25fcafb9-d65e-454f-9196-8648dcf08854
+                    id: 25fcafb9-d65e-454f-9196-8648dcf08854
                     userId: 436cb796-5826-458b-a914-a54721f70997
                     userName: test test
                     status: pending
                     approvedBy: null
+                    additionalInfo: null
                     createdAt: '2025-06-04T10:54:53.301846'
                     updatedAt: '2025-06-04T10:54:53.301846'
-                    tableName: compute_role
-                  paginationInfo:
-                    page: 1
-                    size: 10
-                    totalCount: 346
-                    totalPages: 35
-                    hasNext: true
-                    hasPrevious: false
       '400':
-        description: Bad Request - Invalid query parameters
+        description: Bad Request - No compute request found or invalid parameters
         content:
           application/json:
             schema:
@@ -104,7 +97,8 @@
 /iudx/v2/auth/compute/requests:
   get:
     summary: Get all compute role requests (COS Admin)
-    description: 'Returns a paginated list of all compute role requests across all users. Supports filtering by status and pagination. Requires `cos_admin` role.
+    description: 'Returns a paginated list of all compute role requests across all users.
+      Supports filtering by status and search term. Requires `cos_admin` role.
 
       **Log Type:** `COMPUTE`
 
@@ -112,6 +106,12 @@
     tags:
     - Compute APIs
     operationId: get-auth-v2-compute-role-request
+    x-codeSamples:
+    - lang: cURL
+      label: Get all compute requests (admin)
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/compute/requests?status=pending&page=1&size=10' \
+        --header 'Authorization: Bearer <your-token>'
     security:
     - authorization: []
     parameters:
@@ -153,12 +153,17 @@
                         description: Display name of the requesting user
                       status:
                         type: string
-                        description: Current status of the request (pending, granted, rejected)
+                        enum: [pending, granted, rejected]
+                        description: Current status of the request
                       approvedBy:
                         type: string
                         format: uuid
                         nullable: true
                         description: UUID of the admin who approved the request, or null if not yet processed
+                      additionalInfo:
+                        type: object
+                        nullable: true
+                        description: Optional additional context provided when submitting the request
                       createdAt:
                         type: string
                         format: date-time
@@ -167,9 +172,6 @@
                         type: string
                         format: date-time
                         description: Timestamp when the request was last updated
-                      tableName:
-                        type: string
-                        description: Internal table name for the record
                 paginationInfo:
                   $ref: ../components/schemas/pagination.yaml#/PaginationInfo
             examples:
@@ -183,9 +185,10 @@
                     userName: test test
                     status: pending
                     approvedBy: null
+                    additionalInfo:
+                      purpose: research
                     createdAt: '2025-06-04T10:54:53.301846'
                     updatedAt: '2025-06-04T10:54:53.301846'
-                    tableName: compute_role
                   paginationInfo:
                     page: 1
                     size: 10
@@ -215,17 +218,48 @@
     summary: Create a compute role request (User)
     tags:
     - Compute APIs
-    description: 'Submits a new request for the compute role. The request will be reviewed by a COS Admin who can grant or reject it. Once granted, the user gains access to compute/sandbox functionality. Requires an authenticated user token.
+    description: 'Submits a new request for the compute role. If the user had a previously
+      rejected request it is re-activated to `pending` rather than creating a new
+      record. Requires an authenticated user token.
 
       **Log Type:** `COMPUTE`
 
       '
     operationId: post-auth-v2-compute-role-request
+    x-codeSamples:
+    - lang: cURL
+      label: Create compute role request
+      source: |
+        curl --location --request POST 'https://${HOSTNAME}/iudx/v2/auth/compute/requests' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"additional_info": {"purpose": "research", "project": "climate-modelling"}}'
     security:
     - authorization: []
+    requestBody:
+      required: false
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              additionalInfo:
+                type: object
+                nullable: true
+                description: Optional additional context about the compute role request purpose (e.g. research, educational use).
+          examples:
+            with_info:
+              summary: With additional info
+              value:
+                additionalInfo:
+                  purpose: research
+                  project: climate-modelling
+            without_info:
+              summary: No body required
+              value: {}
     responses:
       '200':
-        description: Compute role request created successfully
+        description: Compute role request created or re-activated successfully
         content:
           application/json:
             schema:
@@ -239,7 +273,7 @@
                   description: Human-readable response title
                 result:
                   type: object
-                  description: The newly created compute role request
+                  description: The newly created compute role request (returned when a new record is created).
                   properties:
                     id:
                       type: string
@@ -254,12 +288,17 @@
                       description: Display name of the requesting user
                     status:
                       type: string
-                      description: Status of the request (will be `pending` upon creation)
+                      enum: [pending]
+                      description: Always `pending` upon creation
                     approvedBy:
                       type: string
                       format: uuid
                       nullable: true
-                      description: Will be null upon creation
+                      description: null on creation
+                    additionalInfo:
+                      type: object
+                      nullable: true
+                      description: Additional context from the request body
                     createdAt:
                       type: string
                       format: date-time
@@ -268,11 +307,13 @@
                       type: string
                       format: date-time
                       description: Timestamp when the request was last updated
-                    tableName:
-                      type: string
-                      description: Internal table name for the record
+                detail:
+                  type: string
+                  description: Returned instead of result when a previously rejected request is re-activated.
+                  example: Compute Role Request created successfully
             examples:
-              success:
+              new_request:
+                summary: New compute role request created
                 value:
                   type: urn:dx:ControlPlane:success
                   title: Success
@@ -282,11 +323,18 @@
                     userName: test test
                     status: pending
                     approvedBy: null
+                    additionalInfo:
+                      purpose: research
                     createdAt: '2025-06-04T10:54:53.301846'
                     updatedAt: '2025-06-04T10:54:53.301846'
-                    tableName: compute_role
+              reactivated:
+                summary: Previously rejected request re-activated to pending
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  detail: Compute Role Request created successfully
       '400':
-        description: Bad Request - Invalid request
+        description: Bad Request - Invalid or missing request body
         content:
           application/json:
             schema:
@@ -302,7 +350,7 @@
   - name: id
     in: path
     required: true
-    description: UUID of the compute role request to update
+    description: UUID of the compute role request
     schema:
       type: string
       format: uuid
@@ -310,12 +358,29 @@
     summary: Approve or reject a compute role request (COS Admin)
     tags:
     - Compute APIs
-    description: 'Allows a COS Admin to grant or reject a pending compute role request. The `status` field in the request body should be set to `granted` or `rejected`. Requires `cos_admin` role.
+    description: 'Allows a COS Admin to grant or reject a pending compute role request.
+      When granted, the user receives the `compute` role in Keycloak. Requires `cos_admin`
+      role.
 
       **Log Type:** `COMPUTE`
 
       '
     operationId: put-auth-v2-compute-role-request
+    x-codeSamples:
+    - lang: cURL
+      label: Grant compute role
+      source: |
+        curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/auth/compute/requests/{id}' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"status": "granted"}'
+    - lang: cURL
+      label: Reject compute role
+      source: |
+        curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/auth/compute/requests/{id}' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"status": "rejected"}'
     security:
     - authorization: []
     requestBody:
@@ -327,7 +392,7 @@
             properties:
               status:
                 type: string
-                description: New status for the compute role request. Must be `granted` or `rejected`.
+                description: New status for the request. Must be `granted` or `rejected`.
                 enum:
                 - granted
                 - rejected
@@ -358,13 +423,18 @@
                   description: Human-readable response title
                 detail:
                   type: string
-                  description: Description of the action taken
+                  description: Message indicating the final status, e.g. "Compute Role Status granted"
             examples:
-              success:
+              granted:
                 value:
                   type: urn:dx:ControlPlane:success
                   title: Success
-                  detail: Updated Request
+                  detail: Compute Role Status granted
+              rejected:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  detail: Compute Role Status rejected
       '400':
         description: Bad Request - Invalid status value or request format
         content:
@@ -383,13 +453,26 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/createNotificationForbidden
+      '404':
+        description: Not Found - Compute role request with given ID does not exist
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/NotFound
 /iudx/v2/auth/compute/requests/report:
   get:
     summary: Download compute requests report (COS Admin)
-    description: 'Returns a CSV file containing compute role request activity logs. Requires `cos_admin` role. Useful for auditing and generating reports of all compute role requests.'
+    description: 'Returns a CSV file containing compute role request activity logs.
+      Requires `cos_admin` role.'
     tags:
     - Compute APIs
     operationId: get-auth-v2-compute-requests-report
+    x-codeSamples:
+    - lang: cURL
+      label: Download compute requests report
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/compute/requests/report?status=pending' \
+        --header 'Authorization: Bearer <your-token>'
     security:
     - authorization: []
     parameters:

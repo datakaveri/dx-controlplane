@@ -1,14 +1,17 @@
 /iudx/v2/auth/organisations/requests:
   get:
-    summary: Get all organisation creation requests (COS Admin)
     tags:
     - Organisation APIs
+    summary: Get all organisation creation requests (COS Admin)
     operationId: get-auth-v2-organisations-request
-    description: 'Returns a paginated list of organisation creation requests. Supports filtering by entity type, status, name, and sector. Requires `cos_admin` role.
+    description: |
+      Returns a paginated list of all organisation creation requests submitted on the platform.
+      Supports filtering by status, entity type, org name, sector, and free-text search.
+      Requires `cos_admin` role.
 
       **Log Type:** `USER_ACTION`
-
-      '
+    security:
+    - authorization: []
     parameters:
     - $ref: ../components/parameters.yaml#/PageParam
     - $ref: ../components/parameters.yaml#/SizeParam
@@ -18,9 +21,15 @@
     - $ref: ../components/parameters.yaml#/OrgNameParam
     - $ref: ../components/parameters.yaml#/OrgSectorParam
     - $ref: ../components/parameters.yaml#/SearchTermParam
+    x-codeSamples:
+    - lang: cURL
+      label: Get all org create requests
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/organisations/requests?status=pending&page=1&size=10' \
+        --header 'Authorization: Bearer <your-token>'
     responses:
       '200':
-        description: OK
+        description: Paginated list of organisation creation requests
         content:
           application/json:
             schema:
@@ -28,123 +37,44 @@
               properties:
                 type:
                   type: string
-                  description: URN indicating the response status
                 title:
                   type: string
-                  description: Human-readable response title
                 result:
                   type: array
-                  description: List of organisation creation request records
                   items:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        format: uuid
-                        description: Unique identifier of the creation request
-                      requestedBy:
-                        type: string
-                        format: uuid
-                        description: UUID of the user who submitted the request
-                      name:
-                        type: string
-                        description: Name of the organisation
-                      logoPath:
-                        type: string
-                        description: Path to the organisation logo
-                      entityType:
-                        type: string
-                        description: Type of the organisation (e.g., Private, Public, Startup)
-                      orgSector:
-                        type: string
-                        description: Sector of the organisation (e.g., Technology, Healthcare)
-                      websiteLink:
-                        type: string
-                        description: Website URL of the organisation
-                      address:
-                        type: string
-                        description: Physical address of the organisation
-                      certificatePath:
-                        type: string
-                        description: Path to the organisation certificate document
-                      pancardPath:
-                        type: string
-                        description: Path to the PAN card document
-                      relevantDocPath:
-                        type: string
-                        nullable: true
-                        description: Path to any relevant supporting document
-                      status:
-                        type: string
-                        description: Current status of the request (pending, granted, rejected)
-                      userName:
-                        type: string
-                        description: Display name of the requesting user
-                      empId:
-                        type: string
-                        description: Employee ID of the requesting user
-                      jobTitle:
-                        type: string
-                        description: Job title of the requesting user
-                      orgManagerphoneNo:
-                        type: string
-                        description: Phone number of the organisation manager
-                      managerEmail:
-                        type: string
-                        description: Email of the organisation manager
-                      orgDocuments:
-                        type: string
-                        nullable: true
-                        description: Path to organisation documents
-                      createdAt:
-                        type: string
-                        format: date-time
-                        description: Timestamp when the request was created
-                      updatedAt:
-                        type: string
-                        format: date-time
-                        description: Timestamp when the request was last updated
-                      tableName:
-                        type: string
-                        description: Internal table name for the record
+                    $ref: ../components/schemas/organisation.yaml#/OrgCreateRequestItem
                 paginationInfo:
                   $ref: ../components/schemas/pagination.yaml#/PaginationInfo
-            examples:
-              Example 1:
-                value:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  result:
-                  - id: 41290efb-057b-4296-872c-a764f6ff5615
-                    requestedBy: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                    name: Quant Sandbox
-                    logoPath: /logos/ai.png
-                    entityType: Private
-                    orgSector: Technology
-                    websiteLink: https://ai.example.com
-                    address: 123 Quant Labs, Bangalore, India
-                    certificatePath: /documents/certificate.pdf
-                    pancardPath: /documents/pancard.pdf
-                    relevantDocPath: null
-                    status: pending
-                    userName: test test
-                    empId: EMP12345
-                    jobTitle: Manager
-                    orgManagerphoneNo: +91-9876543210
-                    managerEmail: manager@gmail.com
-                    orgDocuments: null
-                    createdAt: '2025-06-03T16:01:59.532782'
-                    updatedAt: '2025-06-03T16:01:59.532782'
-                    tableName: organization_create_requests
-                  paginationInfo:
-                    page: 1
-                    size: 1
-                    totalCount: 346
-                    totalPages: 346
-                    hasNext: true
-                    hasPrevious: false
+            example:
+              type: urn:dx:ControlPlane:success
+              title: Success
+              result:
+              - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                requestedBy: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                name: Tech Solutions Pvt Ltd
+                entityType: private
+                orgSector: technology
+                websiteLink: https://techsolutions.example.com
+                address: 123 Tech Park, Bengaluru
+                certificatePath: /docs/cert.pdf
+                pancardPath: /docs/pan.pdf
+                empId: EMP001
+                jobTitle: CTO
+                managerEmail: manager@techsolutions.com
+                orgDocuments: /docs/org.pdf
+                status: pending
+                userName: John Doe
+                createdAt: '2025-06-04T10:54:53.301846'
+                updatedAt: '2025-06-04T10:54:53.301846'
+              paginationInfo:
+                page: 1
+                size: 10
+                totalCount: 42
+                totalPages: 5
+                hasNext: true
+                hasPrevious: false
       '401':
-        description: Unauthorized - Token invalid/expired or user not authorized
+        description: Unauthorized
         content:
           application/json:
             schema:
@@ -154,49 +84,46 @@
         content:
           application/json:
             schema:
-              $ref: ../components/schemas/common.yaml#/createNotificationForbidden
-    security:
-    - authorization: []
+              $ref: ../components/schemas/common.yaml#/Forbidden
   post:
-    summary: Submit a new organisation creation request (User)
     tags:
     - Organisation APIs
-    description: 'Submits a new organisation creation request by the authenticated user. The request will be reviewed by a COS Admin who can approve or reject it. Requires an authenticated user token.
+    summary: Submit an organisation creation request (User)
+    operationId: post-auth-v2-organisations-request
+    description: |
+      Submits a new request to create an organisation on the platform. The request will be
+      reviewed by a COS Admin who can approve or reject it.
+
+      **Validation rules:**
+      - User must not already have a pending or granted org create request
+      - Organisation name must be unique (case-insensitive, among pending/granted requests)
+      - Manager email must not already be in use by another active org request
+      - `requested_by` and `user_name` are set automatically from the authenticated token
 
       **Log Type:** `USER_ACTION`
-
-      '
-    operationId: post-auth-v2-organisations-request
+    security:
+    - authorization: []
+    x-codeSamples:
+    - lang: cURL
+      label: Submit org creation request
+      source: |
+        curl --location --request POST 'https://${HOSTNAME}/iudx/v2/auth/organisations/requests' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{
+          "name": "Tech Solutions Pvt Ltd",
+          "entity_type": "private",
+          "org_sector": "technology",
+          "website_link": "https://techsolutions.example.com",
+          "address": "123 Tech Park, Bengaluru",
+          "certificate_path": "/docs/cert.pdf",
+          "pancard_path": "/docs/pan.pdf",
+          "emp_id": "EMP001",
+          "job_title": "CTO",
+          "manager_email": "manager@techsolutions.com",
+          "organisation_documents": "/docs/org.pdf"
+        }'
     requestBody:
-      description: '- `name` : Name of the organization
-
-        - `logo_path` : Path to the logo of the organization
-
-        - `entity_type` : Type of the organization (e.g., Startup, Private, Government)
-
-        - `org_sector` : Sector of the organization (e.g., Technology, Healthcare)
-
-        - `website_link` : Website link of the organization
-
-        - `address` : Address of the organization
-
-        - `certificate_path` : Path to the certificate of the organization
-
-        - `pancard_path` : Path to the PAN card of the user
-
-        - `emp_id` : Employee ID of the organization
-
-        - `job_title` : Job title of the person making the request
-
-        - `phone_no` : Phone number of the organization
-
-        - `organisation_documents` : Path to the organization documents
-
-        - `manager_email` : Email of the organization manager
-
-        - `relevant_doc_path` : Path to any relevant document
-
-        '
       required: true
       content:
         application/json:
@@ -212,13 +139,919 @@
             - pancard_path
             - emp_id
             - job_title
-            - organisation_documents
             - manager_email
+            - organisation_documents
             properties:
               name:
                 type: string
+                description: Name of the organisation. Must be unique across all pending/granted requests.
+              entity_type:
+                type: string
+                description: Type of entity (e.g. private, government, academic, ngo).
+              org_sector:
+                type: string
+                description: Sector the organisation operates in (e.g. technology, healthcare).
+              website_link:
+                type: string
+                description: Official website URL of the organisation.
+              address:
+                type: string
+                description: Registered address of the organisation.
+              certificate_path:
+                type: string
+                description: File path or URL of the organisation's registration certificate.
+              pancard_path:
+                type: string
+                description: File path or URL of the PAN card.
+              emp_id:
+                type: string
+                description: Employee ID of the applicant within the organisation.
+              job_title:
+                type: string
+                description: Job title of the applicant.
+              manager_email:
+                type: string
+                description: Official email of the organisation manager. Must be unique.
+              organisation_documents:
+                type: string
+                description: Path or URL to supporting organisation documents.
               logo_path:
                 type: string
+                nullable: true
+                description: Optional path or URL to the organisation logo.
+              relevant_doc_path:
+                type: string
+                nullable: true
+                description: Optional path or URL to any other relevant document.
+              phone_no:
+                type: string
+                nullable: true
+                description: Optional contact phone number.
+    responses:
+      '200':
+        description: Organisation creation request submitted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  $ref: ../components/schemas/organisation.yaml#/OrgCreateRequestItem
+            example:
+              type: urn:dx:ControlPlane:success
+              title: Success
+              result:
+                id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                requestedBy: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                name: Tech Solutions Pvt Ltd
+                entityType: private
+                orgSector: technology
+                websiteLink: https://techsolutions.example.com
+                address: 123 Tech Park, Bengaluru
+                certificatePath: /docs/cert.pdf
+                pancardPath: /docs/pan.pdf
+                empId: EMP001
+                jobTitle: CTO
+                managerEmail: manager@techsolutions.com
+                orgDocuments: /docs/org.pdf
+                status: pending
+                userName: John Doe
+                createdAt: '2025-06-04T10:54:53.301846'
+                updatedAt: '2025-06-04T10:54:53.301846'
+      '400':
+        description: Bad Request - Body missing or invalid
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/generalBadRequest
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '409':
+        description: Conflict - Duplicate request, name, or manager email already in use
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/generalBadRequest
+/iudx/v2/auth/organisations/requests/approve:
+  post:
+    tags:
+    - Organisation APIs
+    summary: Approve or reject an organisation creation request (COS Admin)
+    operationId: post-auth-v2-approve-create_org
+    description: |
+      Allows a COS Admin to approve or reject a pending organisation creation request.
+      On approval, the organisation is created and the requester is notified.
+
+      **Log Type:** `USER_ACTION`
+    security:
+    - authorization: []
+    x-codeSamples:
+    - lang: cURL
+      label: Approve org creation request
+      source: |
+        curl --location --request POST 'https://${HOSTNAME}/iudx/v2/auth/organisations/requests/approve' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"req_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "status": "granted"}'
+    - lang: cURL
+      label: Reject org creation request
+      source: |
+        curl --location --request POST 'https://${HOSTNAME}/iudx/v2/auth/organisations/requests/approve' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"req_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "status": "rejected"}'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - req_id
+            - status
+            properties:
+              req_id:
+                type: string
+                format: uuid
+                description: UUID of the org creation request to approve or reject.
+              status:
+                type: string
+                enum: [granted, rejected]
+                description: New status for the request.
+    responses:
+      '200':
+        description: Request status updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                detail:
+                  type: string
+                  example: Updated Sucessfully
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller does not have `cos_admin` role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
+      '404':
+        description: Not Found - Request with given ID does not exist
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/NotFound
+/iudx/v2/auth/user/organisations/requests:
+  get:
+    tags:
+    - Organisation APIs
+    summary: Get the current user's organisation creation requests
+    operationId: get-auth-v2-user-organisations-request
+    description: |
+      Returns all organisation creation requests submitted by the currently authenticated user.
+      This is a non-paginated list.
+
+      **Log Type:** `USER_ACTION`
+    security:
+    - authorization: []
+    x-codeSamples:
+    - lang: cURL
+      label: Get my org creation requests
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/user/organisations/requests' \
+        --header 'Authorization: Bearer <your-token>'
+    responses:
+      '200':
+        description: List of the user's organisation creation requests
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: array
+                  items:
+                    $ref: ../components/schemas/organisation.yaml#/OrgCreateRequestItem
+            example:
+              type: urn:dx:ControlPlane:success
+              title: Success
+              result:
+              - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                requestedBy: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                name: Tech Solutions Pvt Ltd
+                status: pending
+                createdAt: '2025-06-04T10:54:53.301846'
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+/iudx/v2/auth/user/organisations/requests/{id}:
+  parameters:
+  - name: id
+    in: path
+    required: true
+    description: UUID of the organisation creation request to delete
+    schema:
+      type: string
+      format: uuid
+  delete:
+    tags:
+    - Organisation APIs
+    summary: Delete a pending organisation creation request (User)
+    operationId: delete-auth-v2-user-organisations-request
+    description: |
+      Deletes the user's own pending organisation creation request. Only `pending` requests
+      can be deleted. The caller must be the original requester.
+
+      **Log Type:** `USER_ACTION`
+    security:
+    - authorization: []
+    x-codeSamples:
+    - lang: cURL
+      label: Delete pending org creation request
+      source: |
+        curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/auth/user/organisations/requests/{id}' \
+        --header 'Authorization: Bearer <your-token>'
+    responses:
+      '200':
+        description: Organisation creation request deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                detail:
+                  type: string
+                  example: Organization request deleted successfully
+      '400':
+        description: Bad Request - Request not found or not in pending status
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/generalBadRequest
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller is not the original requester
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
+/iudx/v2/auth/user/organisations/join_requests:
+  get:
+    tags:
+    - Organisation APIs
+    summary: Get the current user's organisation join requests
+    operationId: get-auth-v2-user-organisations-join-requests
+    description: |
+      Returns all organisation join requests submitted by the currently authenticated user.
+      This is a non-paginated list.
+
+      **Log Type:** `USER_ACTION`
+    security:
+    - authorization: []
+    x-codeSamples:
+    - lang: cURL
+      label: Get my org join requests
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/user/organisations/join_requests' \
+        --header 'Authorization: Bearer <your-token>'
+    responses:
+      '200':
+        description: List of the user's organisation join requests
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: array
+                  items:
+                    $ref: ../components/schemas/organisation.yaml#/OrgJoinRequestItem
+            example:
+              type: urn:dx:ControlPlane:success
+              title: Success
+              result:
+              - id: 7a1b2c3d-4e5f-6789-abcd-ef0123456789
+                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                userId: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                userName: John Doe
+                status: pending
+                jobTitle: Software Engineer
+                empId: EMP001
+                officialEmail: john@techsolutions.com
+                requestedAt: '2025-06-04T10:54:53.301846'
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+/iudx/v2/auth/user/organisations/join_requests/{id}:
+  parameters:
+  - name: id
+    in: path
+    required: true
+    description: UUID of the organisation join request to delete
+    schema:
+      type: string
+      format: uuid
+  delete:
+    tags:
+    - Organisation APIs
+    summary: Delete a pending organisation join request (User)
+    operationId: delete-auth-v2-user-organisations-join-requests
+    description: |
+      Deletes the user's own pending organisation join request. Only `pending` requests
+      can be deleted. The caller must be the original requester.
+
+      **Log Type:** `USER_ACTION`
+    security:
+    - authorization: []
+    x-codeSamples:
+    - lang: cURL
+      label: Delete pending org join request
+      source: |
+        curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/auth/user/organisations/join_requests/{id}' \
+        --header 'Authorization: Bearer <your-token>'
+    responses:
+      '200':
+        description: Organisation join request deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                detail:
+                  type: string
+                  example: Join organisation request deleted successfully
+      '400':
+        description: Bad Request - Request not found or not in pending status
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/generalBadRequest
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller is not the original requester
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
+/iudx/v2/auth/organisations/{id}/join_requests:
+  parameters:
+  - name: id
+    in: path
+    required: true
+    description: UUID of the organisation
+    schema:
+      type: string
+      format: uuid
+  get:
+    tags:
+    - Organisation APIs
+    summary: Get join requests for an organisation (Org Admin)
+    operationId: get-auth-v2-organisations-join-requests
+    description: |
+      Returns a paginated list of join requests for the specified organisation.
+      The caller's organisation ID (from token) must match the `{id}` path parameter.
+      Results are enriched with user role information.
+
+      **Log Type:** `USER_ACTION`
+    security:
+    - authorization: []
+    parameters:
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    - $ref: ../components/parameters.yaml#/StatusParam
+    x-codeSamples:
+    - lang: cURL
+      label: Get org join requests
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/organisations/{id}/join_requests?status=pending&page=1&size=10' \
+        --header 'Authorization: Bearer <your-token>'
+    responses:
+      '200':
+        description: Paginated list of join requests for the organisation
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: array
+                  items:
+                    allOf:
+                    - $ref: ../components/schemas/organisation.yaml#/OrgJoinRequestItem
+                    - type: object
+                      properties:
+                        roles:
+                          type: array
+                          items:
+                            type: string
+                          description: Keycloak roles of the user
+                        accountEnabled:
+                          type: boolean
+                          description: Whether the user's account is active in Keycloak
+                paginationInfo:
+                  $ref: ../components/schemas/pagination.yaml#/PaginationInfo
+            example:
+              type: urn:dx:ControlPlane:success
+              title: Success
+              result:
+              - id: 7a1b2c3d-4e5f-6789-abcd-ef0123456789
+                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                userId: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                userName: John Doe
+                status: pending
+                jobTitle: Software Engineer
+                empId: EMP001
+                officialEmail: john@techsolutions.com
+                requestedAt: '2025-06-04T10:54:53.301846'
+                roles: [consumer]
+                accountEnabled: true
+              paginationInfo:
+                page: 1
+                size: 10
+                totalCount: 5
+                totalPages: 1
+                hasNext: false
+                hasPrevious: false
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller's org ID does not match path parameter
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
+  post:
+    tags:
+    - Organisation APIs
+    summary: Submit an organisation join request (User)
+    operationId: post-auth-v2-organisations-join-requests
+    description: |
+      Submits a request to join the specified organisation. The `user_id`, `user_name`,
+      and `organization_id` are set automatically from the token and path parameter.
+
+      **Validation rules:**
+      - User must not already have a pending or granted join request for this org
+      - `official_email` must not already be in use by another active join request
+
+      **Log Type:** `USER_ACTION`
+    security:
+    - authorization: []
+    x-codeSamples:
+    - lang: cURL
+      label: Submit org join request
+      source: |
+        curl --location --request POST 'https://${HOSTNAME}/iudx/v2/auth/organisations/{id}/join_requests' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"job_title": "Software Engineer", "emp_id": "EMP001", "official_email": "john@techsolutions.com"}'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - job_title
+            - emp_id
+            - official_email
+            properties:
+              job_title:
+                type: string
+                description: Job title of the applicant within the organisation.
+              emp_id:
+                type: string
+                description: Employee ID of the applicant.
+              official_email:
+                type: string
+                description: Official email of the applicant within the organisation. Must be unique.
+    responses:
+      '200':
+        description: Join request created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                detail:
+                  type: string
+                  example: Created Join request
+      '400':
+        description: Bad Request - Invalid request body
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/generalBadRequest
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '409':
+        description: Conflict - User already has an active join request or email already in use
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/generalBadRequest
+/iudx/v2/auth/organisations/{org_id}/join_requests/{req_id}:
+  parameters:
+  - name: org_id
+    in: path
+    required: true
+    description: UUID of the organisation
+    schema:
+      type: string
+      format: uuid
+  - name: req_id
+    in: path
+    required: true
+    description: UUID of the join request to approve or reject
+    schema:
+      type: string
+      format: uuid
+  put:
+    tags:
+    - Organisation APIs
+    summary: Approve or reject an organisation join request (Org Admin)
+    operationId: put-auth-v2-organisations-join-requests
+    description: |
+      Allows an org admin to approve or reject a pending join request for their organisation.
+      The caller's organisation ID (from token) must match the `{org_id}` path parameter.
+      An email notification is sent to the user upon status update.
+
+      **Log Type:** `USER_ACTION`
+    security:
+    - authorization: []
+    x-codeSamples:
+    - lang: cURL
+      label: Approve join request
+      source: |
+        curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/auth/organisations/{org_id}/join_requests/{req_id}' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"status": "granted"}'
+    - lang: cURL
+      label: Reject join request
+      source: |
+        curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/auth/organisations/{org_id}/join_requests/{req_id}' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"status": "rejected"}'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - status
+            properties:
+              status:
+                type: string
+                enum: [granted, rejected]
+                description: New status for the join request.
+    responses:
+      '200':
+        description: Join request status updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                detail:
+                  type: string
+                  example: Updated Organisation Join Request
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller's org ID does not match path parameter
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
+      '404':
+        description: Not Found - Request with given ID does not exist
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/NotFound
+/iudx/v2/auth/organisation/join-request/{id}:
+  parameters:
+  - name: id
+    in: path
+    required: true
+    description: UUID of the organisation join request to withdraw
+    schema:
+      type: string
+      format: uuid
+  put:
+    tags:
+    - Organisation APIs
+    summary: Withdraw an organisation join request (User)
+    operationId: withdraw-auth-v2-organisations-join-request
+    description: |
+      Allows the user to withdraw (set status to `withdrawn`) their own organisation
+      join request. This is different from deletion — the record is retained but
+      marked as withdrawn.
+
+      **Log Type:** `USER_ACTION`
+    security:
+    - authorization: []
+    x-codeSamples:
+    - lang: cURL
+      label: Withdraw join request
+      source: |
+        curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/auth/organisation/join-request/{id}' \
+        --header 'Authorization: Bearer <your-token>'
+    responses:
+      '200':
+        description: Join request withdrawn successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                detail:
+                  type: string
+                  example: Updated Organisation Join Request
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '404':
+        description: Not Found - Request with given ID does not exist
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/NotFound
+/iudx/v2/auth/organisations:
+  get:
+    tags:
+    - Organisation APIs
+    summary: List all organisations
+    operationId: get-auth-v2-org
+    description: |
+      Returns a paginated list of all approved organisations on the platform.
+      Returns a filtered view — sensitive fields (certificate, PAN card paths) are excluded.
+      Accessible by any authenticated user.
+
+      **Log Type:** `USER_ACTION`
+    security:
+    - authorization: []
+    parameters:
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    - $ref: ../components/parameters.yaml#/EntityTypeParam
+    - $ref: ../components/parameters.yaml#/OrgNameParam
+    - $ref: ../components/parameters.yaml#/OrgSectorParam
+    x-codeSamples:
+    - lang: cURL
+      label: List all organisations
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/organisations?page=1&size=10' \
+        --header 'Authorization: Bearer <your-token>'
+    responses:
+      '200':
+        description: Paginated list of organisations
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      orgName:
+                        type: string
+                      orgLogo:
+                        type: string
+                        nullable: true
+                      entityType:
+                        type: string
+                      orgSector:
+                        type: string
+                      websiteLink:
+                        type: string
+                      address:
+                        type: string
+                      relevantDocPath:
+                        type: string
+                        nullable: true
+                      createdAt:
+                        type: string
+                        format: date-time
+                      updatedAt:
+                        type: string
+                        format: date-time
+                paginationInfo:
+                  $ref: ../components/schemas/pagination.yaml#/PaginationInfo
+            example:
+              type: urn:dx:ControlPlane:success
+              title: Success
+              result:
+              - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                orgName: Tech Solutions Pvt Ltd
+                entityType: private
+                orgSector: technology
+                websiteLink: https://techsolutions.example.com
+                address: 123 Tech Park, Bengaluru
+                createdAt: '2025-06-04T10:54:53.301846'
+                updatedAt: '2025-06-04T10:54:53.301846'
+              paginationInfo:
+                page: 1
+                size: 10
+                totalCount: 25
+                totalPages: 3
+                hasNext: true
+                hasPrevious: false
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+/iudx/v2/auth/organisations/{id}:
+  parameters:
+  - name: id
+    in: path
+    required: true
+    description: UUID of the organisation
+    schema:
+      type: string
+      format: uuid
+  delete:
+    tags:
+    - Organisation APIs
+    summary: Delete an organisation
+    operationId: delete-auth-v2-organisations-id
+    description: |
+      Deletes an organisation by ID. Accessible by COS Admin (any org) or Org Admin
+      (only their own organisation). An Org Admin will receive 403 if the path `{id}`
+      does not match their own org ID from the token.
+
+      **Log Type:** `USER_ACTION`
+    security:
+    - authorization: []
+    x-codeSamples:
+    - lang: cURL
+      label: Delete organisation
+      source: |
+        curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/auth/organisations/{id}' \
+        --header 'Authorization: Bearer <your-token>'
+    responses:
+      '200':
+        description: Organisation deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                detail:
+                  type: string
+                  example: Organisation deleted Successfully!
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Org Admin tried to delete a different organisation
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
+      '404':
+        description: Not Found - Organisation with given ID does not exist
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/NotFound
+  put:
+    tags:
+    - Organisation APIs
+    summary: Update an organisation (COS Admin)
+    operationId: put-auth-v2-organisations-id
+    description: |
+      Updates organisation details. All fields are optional — only provided fields will
+      be updated. Requires `cos_admin` role.
+
+      **Log Type:** `USER_ACTION`
+    security:
+    - authorization: []
+    x-codeSamples:
+    - lang: cURL
+      label: Update organisation
+      source: |
+        curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/auth/organisations/{id}' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"name": "Updated Org Name", "website_link": "https://updated.example.com"}'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            minProperties: 1
+            properties:
+              name:
+                type: string
+                description: Updated organisation name.
+              logo_path:
+                type: string
+                nullable: true
               entity_type:
                 type: string
               org_sector:
@@ -231,39 +1064,12 @@
                 type: string
               pancard_path:
                 type: string
-              emp_id:
-                type: string
-              job_title:
-                type: string
-              phone_no:
-                type: string
-              organisation_documents:
-                type: string
-              manager_email:
-                type: string
               relevant_doc_path:
                 type: string
                 nullable: true
-          examples:
-            Example 1:
-              value:
-                name: Quantum Labs
-                logo_path: /assets/logos/quantumlabs.png
-                entity_type: Startup
-                org_sector: Research & Development
-                website_link: https://quantumlabs.io
-                address: 42 Tech Boulevard, Hyderabad, India
-                certificate_path: /docs/certificates/quantum_cert.pdf
-                pancard_path: /docs/ids/quantum_pancard.pdf
-                emp_id: EMP98765
-                job_title: Operations Lead
-                phone_no: +91-9123456789
-                organisation_documents: /docs/organisations/quantum_docs.zip
-                manager_email: manager@gmail.com
-                relevant_doc_path: null
     responses:
       '200':
-        description: OK
+        description: Organisation updated successfully
         content:
           application/json:
             schema:
@@ -278,12 +1084,12 @@
                   properties:
                     id:
                       type: string
-                    requestedBy:
+                      format: uuid
+                    orgName:
                       type: string
-                    name:
+                    orgLogo:
                       type: string
-                    logoPath:
-                      type: string
+                      nullable: true
                     entityType:
                       type: string
                     orgSector:
@@ -299,1170 +1105,59 @@
                     relevantDocPath:
                       type: string
                       nullable: true
-                    status:
-                      type: string
-                    userName:
-                      type: string
-                    empId:
-                      type: string
-                    jobTitle:
-                      type: string
-                    orgManagerphoneNo:
-                      type: string
-                    managerEmail:
-                      type: string
                     orgDocuments:
                       type: string
-                      nullable: true
                     createdAt:
                       type: string
+                      format: date-time
                     updatedAt:
                       type: string
-                    tableName:
-                      type: string
-            examples:
-              Example 1:
-                value:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  result:
-                    id: 4202493c-7c64-49b0-8f61-2000ca3d147c
-                    requestedBy: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                    name: Quants Sandbox
-                    logoPath: /logos/ai.png
-                    entityType: Private
-                    orgSector: Technology
-                    websiteLink: https://ai.example.com
-                    address: 123 Quant Labs, Bangalore, India
-                    certificatePath: /documents/certificate.pdf
-                    pancardPath: /documents/pancard.pdf
-                    relevantDocPath: null
-                    status: pending
-                    userName: test test
-                    empId: EMP12345
-                    jobTitle: Manager
-                    orgManagerphoneNo: +91-9876543210
-                    managerEmail: manager@gmail.com
-                    orgDocuments: null
-                    createdAt: '2025-06-03T16:25:25.167724'
-                    updatedAt: '2025-06-03T16:25:25.167724'
-                    tableName: organization_create_requests
-      '401':
-        description: Unauthorized
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                detail:
-                  type: string
-            examples:
-              Example 1:
-                value:
-                  type: urn:dx:as:InvalidAuthenticationToken
-                  title: Token authentication failed
-                  detail: Inactive Token
-      '409':
-        description: Conflict
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                detail:
-                  type: string
-            examples:
-              Example 1:
-                value:
-                  type: urn:dx:ControlPlane:conflict
-                  title: Conflict
-                  detail: 'ERROR: duplicate key value violates unique constraint "organization_create_requests_name_key" (23505)'
-    security:
-    - authorization: []
-/iudx/v2/auth/organisations/requests/approve:
-  post:
-    summary: Approve or reject an organisation creation request (COS Admin)
-    description: 'Approves or rejects a pending organisation creation request. The request body must include the `req_id` and the `status` (`granted` or `rejected`). Requires `cos_admin` role.
-
-      **Log Type:** `USER_ACTION`
-
-      '
-    tags:
-    - Organisation APIs
-    operationId: post-auth-v2-approve-create_org
-    security:
-    - authorization: []
-    requestBody:
-      description: 'The request body specifies the details for approving or rejecting an organization creation request. -
-        `req_id`: (Required) The unique ID of the organization creation request to be processed. - `status`: (Required) The
-        new status for the request. Valid values are `granted` or `rejected`.
-
-        '
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              req_id:
-                type: string
-              status:
-                type: string
-            required:
-            - req_id
-            - status
-    responses:
-      '201':
-        description: Created
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                detail:
-                  type: string
-            examples:
-              Example 1:
-                value:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  detail: Updated Sucessfully
+                      format: date-time
       '400':
         description: Bad Request
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                detail:
-                  type: string
-            examples:
-              Example 1:
-                value:
-                  type: urn:dx:ControlPlane:badRequest
-                  title: Bad Request
-                  detail: No request found with given ID
+              $ref: ../components/schemas/common.yaml#/generalBadRequest
       '401':
         description: Unauthorized
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                detail:
-                  type: string
-            examples:
-              Example 1:
-                value:
-                  type: urn:dx:as:InvalidAuthenticationToken
-                  title: Token authentication failed
-                  detail: Inactive Token
+              $ref: ../components/schemas/common.yaml#/Unauthorized
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
         content:
           application/json:
             schema:
-              $ref: ../components/schemas/common.yaml#/createNotificationForbidden
-      '409':
-        description: Conflict - Organisation with the same name already exists
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                detail:
-                  type: string
-            examples:
-              conflict:
-                value:
-                  type: urn:dx:ControlPlane:conflict
-                  title: Conflict
-                  detail: 'ERROR: duplicate key value violates unique constraint "organizations_name_key" (23505)'
-/iudx/v2/auth/user/organisations/requests:
-  get:
-    summary: Get the current user's organisation creation requests
-    tags:
-    - Organisation APIs
-    operationId: get-auth-v2-user-organisations-request
-    description: 'Returns a list of organisation creation requests submitted by the currently authenticated user. Requires an authenticated user token.
-
-      **Log Type:** `USER_ACTION`
-
-      '
-    responses:
-      '200':
-        description: OK
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                result:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                      requestedBy:
-                        type: string
-                      name:
-                        type: string
-                      logoPath:
-                        type: string
-                      entityType:
-                        type: string
-                      orgSector:
-                        type: string
-                      websiteLink:
-                        type: string
-                      address:
-                        type: string
-                      certificatePath:
-                        type: string
-                      pancardPath:
-                        type: string
-                      relevantDocPath:
-                        type: string
-                      status:
-                        type: string
-                      userName:
-                        type: string
-                      empId:
-                        type: string
-                      jobTitle:
-                        type: string
-                      orgManagerphoneNo:
-                        type: string
-                      managerEmail:
-                        type: string
-                      orgDocuments:
-                        type: string
-                      createdAt:
-                        type: string
-                      updatedAt:
-                        type: string
-                      tableName:
-                        type: string
-            examples:
-              Example 1:
-                value:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  result:
-                  - id: 41290efb-057b-4296-872c-a764f6ff5615
-                    requestedBy: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                    name: Quant Sandbox
-                    logoPath: /logos/ai.png
-                    entityType: Private
-                    orgSector: Technology
-                    websiteLink: https://ai.example.com
-                    address: 123 Quant Labs, Bangalore, India
-                    certificatePath: /documents/certificate.pdf
-                    pancardPath: /documents/pancard.pdf
-                    relevantDocPath: null
-                    status: pending
-                    userName: test test
-                    empId: EMP12345
-                    jobTitle: Manager
-                    orgManagerphoneNo: +91-9876543210
-                    managerEmail: manager@gmail.com
-                    orgDocuments: null
-                    createdAt: '2025-06-03T16:01:59.532782'
-                    updatedAt: '2025-06-03T16:01:59.532782'
-                    tableName: organization_create_requests
-      '401':
-        description: Unauthorized – Token invalid/expired or user not authorized
-        content:
-          application/json:
-            schema:
-              $ref: ../components/schemas/common.yaml#/Unauthorized
-    security:
-    - authorization: []
-/iudx/v2/auth/user/organisations/requests/{id}:
-  delete:
-    tags:
-    - Organisation APIs
-    summary: 'User: Delete Pending Organization Requests'
-    description: 'delete the pending organization requests made by the user calling the API.
-
-      **Log Type:** `USER_ACTION`
-
-      '
-    operationId: delete-auth-v2-user-organisations-request
-    parameters:
-    - name: id
-      in: path
-      required: true
-      description: Unique ID of the organization request
-      schema:
-        type: string
-        format: uuid
-        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
-    responses:
-      '200':
-        description: OK - Successfully deleted organization request.
-      '400':
-        description: Bad Request – Schema validation failed or incorrect query parameters
-        content:
-          application/json:
-            schema:
-              $ref: ../components/schemas/common.yaml#/updateNotificationBadRequest
-      '401':
-        description: Unauthorized – Token invalid or expired, or caller lacks permission
-        content:
-          application/json:
-            schema:
-              $ref: ../components/schemas/common.yaml#/Unauthorized
-    security:
-    - authorization: []
-/iudx/v2/auth/user/organisations/join_requests:
-  get:
-    summary: Get the current user's organisation join requests
-    description: 'Returns a list of organisation join requests submitted by the currently authenticated user. Requires an authenticated user token.
-
-      **Log Type:** `USER_ACTION`
-
-      '
-    tags:
-    - Organisation APIs
-    parameters:
-    - $ref: ../components/parameters.yaml#/DelegatorIdParam
-    - $ref: ../components/parameters.yaml#/PageParam
-    - $ref: ../components/parameters.yaml#/SizeParam
-    - $ref: ../components/parameters.yaml#/SortingParam
-    - $ref: ../components/parameters.yaml#/StatusParam
-    responses:
-      '200':
-        description: OK
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                result:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        description: Unique ID of the join request.
-                      organizationId:
-                        type: string
-                        description: UUID of the organization associated with the request.
-                      userId:
-                        type: string
-                        description: UUID of the user who made the join request.
-                      userName:
-                        type: string
-                        description: Name of the user who made the join request.
-                      status:
-                        type: string
-                        description: Current status of the join request (e.g., 'pending', 'granted', 'rejected').
-                      jobTitle:
-                        type: string
-                        description: Job title of the user.
-                      empId:
-                        type: string
-                        description: Employee ID of the user.
-                      officialEmail:
-                        type: string
-                        description: Official email of the user.
-                      requestedAt:
-                        type: string
-                        description: Timestamp when the join request was made.
-                      processedAt:
-                        type: string
-                        description: Timestamp when the join request was processed.
-                      roles:
-                        type: array
-                        items:
-                          type: string
-                        description: Roles associated with the user within the organization.
-                      tableName:
-                        type: string
-                        description: Internal table name for the request.
-            examples:
-              Example 1:
-                value:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  result:
-                  - id: 5fc228bb-9a20-4052-968e-427c733d2264
-                    organizationId: e87246e2-5da5-40b0-973c-690d2f48f879
-                    userId: ac2f3390-c7b0-4d4e-bb72-0bb8d9170309
-                    userName: coder coder
-                    status: pending
-                    jobTitle: Employee
-                    empId: EMP8790
-                    officialEmail: member@gmail.com
-                    requestedAt: '2025-06-03T16:35:48.404509'
-                    processedAt: '2025-06-03T16:35:48.404509'
-                    tableName: organization_join_requests
-                    roles:
-                    - consumer
-                    - provider
-                  paginationInfo:
-                    page: 1
-                    size: 1
-                    totalCount: 346
-                    totalPages: 346
-                    hasNext: true
-                    hasPrevious: false
-    operationId: get-auth-v2-user-organisations-join-requests
-    security:
-    - authorization: []
-/iudx/v2/auth/user/organisations/join_requests/{id}:
-  delete:
-    tags:
-    - Organisation APIs
-    summary: 'User: Delete Pending Organization Join Requests'
-    description: 'delete the pending organization requests made by the user calling the API. **Log Type:** `USER_ACTION`
-
-      '
-    operationId: delete-auth-v2-user-organisations-join-requests
-    parameters:
-    - name: id
-      in: path
-      required: true
-      description: Unique ID of the organization join request
-      schema:
-        type: string
-        format: uuid
-        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
-    responses:
-      '200':
-        description: OK - Successfully deleted organization join request.
-      '400':
-        description: Bad Request – Schema validation failed or incorrect query parameters
-        content:
-          application/json:
-            schema:
-              $ref: ../components/schemas/common.yaml#/updateNotificationBadRequest
-      '401':
-        description: Unauthorized – Token invalid or expired, or caller lacks permission
-        content:
-          application/json:
-            schema:
-              $ref: ../components/schemas/common.yaml#/Unauthorized
-    security:
-    - authorization: []
-/iudx/v2/auth/organisations/{id}/join_requests:
-  parameters:
-  - name: id
-    in: path
-    required: true
-    description: 'UUID of the organisation for which to retrieve/put join requests.
-
-      **Log Type:** `USER_ACTION`
-
-      '
-    schema:
-      type: string
-      format: uuid
-      pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
-  - name: delegatorId
-    in: query
-    description: Unique ID of the delegator
-    schema:
-      type: string
-      format: uuid
-      pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
-  get:
-    summary: Get all join requests for an organisation (Org Admin)
-    description: 'This API allows an organization administrator to retrieve all join requests for a specific organization,
-      identified by its `id` in the path parameter. Requests can optionally be filtered by their `status` (e.g., pending,
-      granted, rejected). It provides details about each join request, including the user who requested to join, their current
-      status, job title, employee ID, official email, and any assigned roles. Pagination information is also included in the
-      response.
-
-      **Log Type:** `USER_ACTION`
-
-      '
-    parameters:
-    - name: status
-      in: query
-      required: false
-      description: Filter join requests by their status.
-      schema:
-        type: string
-        enum:
-        - pending
-        - granted
-        - rejected
-    - $ref: ../components/parameters.yaml#/PageParam
-    - $ref: ../components/parameters.yaml#/SizeParam
-    - $ref: ../components/parameters.yaml#/SortingParam
-    - $ref: ../components/parameters.yaml#/SearchTermParam
-    tags:
-    - Organisation APIs
-    responses:
-      '200':
-        description: OK
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                result:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        description: Unique ID of the join request.
-                      organizationId:
-                        type: string
-                        description: UUID of the organization associated with the request.
-                      userId:
-                        type: string
-                        description: UUID of the user who made the join request.
-                      userName:
-                        type: string
-                        description: Name of the user who made the join request.
-                      status:
-                        type: string
-                        description: Current status of the join request (e.g., 'pending', 'granted', 'rejected').
-                      jobTitle:
-                        type: string
-                        description: Job title of the user.
-                      empId:
-                        type: string
-                        description: Employee ID of the user.
-                      officialEmail:
-                        type: string
-                        description: Official email of the user.
-                      requestedAt:
-                        type: string
-                        description: Timestamp when the join request was made.
-                      processedAt:
-                        type: string
-                        description: Timestamp when the join request was processed.
-                      roles:
-                        type: array
-                        items:
-                          type: string
-                        description: Roles associated with the user within the organization.
-                      tableName:
-                        type: string
-                        description: Internal table name for the request.
-                paginationInfo:
-                  type: object
-                  properties:
-                    page:
-                      type: integer
-                      description: Current page number.
-                    size:
-                      type: integer
-                      description: Number of items per page.
-                    totalCount:
-                      type: integer
-                      description: Total number of documents which matched the query.
-                    totalPages:
-                      type: integer
-                      description: Total number of pages available.
-                    hasNext:
-                      type: boolean
-                      description: Indicates if more pages are available.
-                    hasPrevious:
-                      type: boolean
-                      description: Indicates if previous pages exist.
-            examples:
-              Example 1:
-                value:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  result:
-                  - id: 5fc228bb-9a20-4052-968e-427c733d2264
-                    organizationId: e87246e2-5da5-40b0-973c-690d2f48f879
-                    userId: ac2f3390-c7b0-4d4e-bb72-0bb8d9170309
-                    userName: coder coder
-                    status: pending
-                    jobTitle: Employee
-                    empId: EMP8790
-                    officialEmail: member@gmail.com
-                    requestedAt: '2025-06-03T16:35:48.404509'
-                    processedAt: '2025-06-03T16:35:48.404509'
-                    tableName: organization_join_requests
-                    roles:
-                    - consumer
-                    - provider
-                  paginationInfo:
-                    page: 1
-                    size: 1
-                    totalCount: 346
-                    totalPages: 346
-                    hasNext: true
-                    hasPrevious: false
-    operationId: get-auth-v2-organisations-join-requests
-    security:
-    - authorization: []
-  post:
-    summary: Submit a request to join an organisation (User)
-    description: 'This API allows an authenticated user to submit a request to join a specific organization, identified by
-      its `id` in the path parameter. The request includes the user''s job title and employee ID. The organization administrator
-      will then review and process this join request.
-
-      **Log Type:** `USER_ACTION`
-
-      '
-    tags:
-    - Organisation APIs
-    requestBody:
-      description: 'The request body contains details about the user''s role within the organization they wish to join. -
-        `job_title`: (Required) The job title of the user within the organization. - `emp_id`: (Required) The employee ID
-        of the user within the organization. - `official_email`: (Required) The official email of the user within the organization.
-
-        '
-      required: true
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              job_title:
-                type: string
-                description: The job title of the user in the organization.
-              emp_id:
-                type: string
-                description: The employee ID of the user in the organization.
-              official_email:
-                type: string
-                description: The official email of the user in the organization.
-            required:
-            - job_title
-            - emp_id
-            - official_email
-          examples:
-            Example 1:
-              value:
-                job_title: Employee
-                emp_id: EMP8790
-                official_email: XYZ@gmail.com
-    responses:
-      '200':
-        description: Created
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                detail:
-                  type: string
-            examples:
-              success:
-                value:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  detail: Created Join request
-      '400':
-        description: Bad Request
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                detail:
-                  type: string
-            examples:
-              Example 1:
-                value:
-                  type: urn:dx:as:InvalidInput
-                  title: Invalid Organisation
-                  detail: The Organisation is invalid
-      '401':
-        description: Unauthorized
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                detail:
-                  type: string
-            examples:
-              Example 1:
-                value:
-                  type: urn:dx:as:InvalidAuthenticationToken
-                  title: Token authentication failed
-                  detail: Inactive Token
-              Example 2:
-                value:
-                  type: urn:dx:ControlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Unauthorized
-      '409':
-        description: Conflict
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                detail:
-                  type: string
-            examples:
-              conflict:
-                value:
-                  type: urn:dx:ControlPlane:conflict
-                  title: Conflict
-                  detail: 'ERROR: duplicate key value violates unique constraint "organization_join_requests_user_id_key" (23505)'
-    operationId: post-auth-v2-organisations-join-requests
-    security:
-    - authorization: []
-/iudx/v2/auth/organisations/{org_id}/join_requests/{req_id}:
-  parameters:
-  - name: req_id
-    in: path
-    required: true
-    schema:
-      type: string
-      format: uuid
-    description: Request ID of the join request to update.
-  - name: delegatorId
-    in: query
-    description: Unique ID of the delegator
-    schema:
-      type: string
-      format: uuid
-      pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
-  - name: org_id
-    in: path
-    required: true
-    schema:
-      type: string
-      format: uuid
-    description: UUID of the organization
-  put:
-    summary: Approve or reject a join request (Org Admin)
-    description: 'This API allows an organization administrator to approve or reject a specific join request for their organization.
-      The organization is identified by `id` and the join request by `req_id` in the path parameters. This operation updates
-      the status of an existing join request.
-
-      **Log Type:** `USER_ACTION`
-
-      '
-    tags:
-    - Organisation APIs
-    operationId: put-auth-v2-organisations-join-requests
-    security:
-    - authorization: []
-    requestBody:
-      description: 'The request body contains the new status for the join request. - `status`: (Required) The new status of
-        the join request. Valid values are `granted` or `rejected`.
-
-        '
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              status:
-                type: string
-                description: The new status of the join request.
-            required:
-            - status
-          examples:
-            Example 1:
-              value:
-                status: granted
-    responses:
-      '200':
-        description: Status updated successfully
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                detail:
-                  type: string
-            examples:
-              success:
-                value:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  detail: Approved Organisation Join Request
-      '400':
-        description: Invalid request or status
-        content:
-          application/json:
-            schema:
-              type: object
-              properties: {}
-            examples:
-              Example 1:
-                value:
-                  type: urn:dx:ControlPlane:badRequest
-                  title: Bad Request
-                  detail: No request found with given ID
-      '401':
-        description: Unauthorized
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                detail:
-                  type: string
-            examples:
-              unauthorized:
-                value:
-                  type: urn:dx:ControlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Unauthorized
-      '403':
-        description: Forbidden - Caller is not the organisation admin
-        content:
-          application/json:
-            schema:
-              $ref: ../components/schemas/common.yaml#/createNotificationForbidden
+              $ref: ../components/schemas/common.yaml#/Forbidden
       '404':
-        description: Join request not found
-/iudx/v2/auth/organisation/join-request/{id}:
-  patch:
-    summary: User withdraws organisation join request
-    description: 'Allows an authenticated user to withdraw their pending organisation join request. Only join requests in
-      a withdrawable state (e.g. PENDING) can be withdrawn.
-
-      **Log Type:** `USER_ACTION`
-
-      '
-    tags:
-    - Organisation APIs
-    parameters:
-    - name: id
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
-      description: Join request ID.
-    operationId: withdraw-auth-v2-organisations-join-request
-    requestBody:
-      required: true
-      description: 'Request body containing the new status of the join request. Only `withdrawn` is allowed.
-
-        '
-      content:
-        application/json:
-          schema:
-            type: object
-            required:
-            - status
-            properties:
-              status:
-                type: string
-                enum:
-                - withdrawn
-                description: New status of the join request.
-          examples:
-            withdraw:
-              value:
-                status: withdrawn
-    responses:
-      '200':
-        description: Join request withdrawn successfully
+        description: Not Found - Organisation with given ID does not exist
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                  example: urn:dx:ControlPlane:success
-                title:
-                  type: string
-                  example: Success
-                detail:
-                  type: string
-                  example: Withdrawn organisation join request
-      '400':
-        description: Invalid request or invalid state transition
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                detail:
-                  type: string
-            examples:
-              invalidState:
-                value:
-                  type: urn:dx:ControlPlane:badRequest
-                  title: Bad Request
-                  detail: Join request cannot be withdrawn in current state
-      '401':
-        description: Unauthorized
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                detail:
-                  type: string
-            examples:
-              unauthorized:
-                value:
-                  type: urn:dx:ControlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Unauthorized
-      '404':
-        description: Join request not found
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                detail:
-                  type: string
-            examples:
-              notFound:
-                value:
-                  type: urn:dx:ControlPlane:notFound
-                  title: Not Found
-                  detail: No join request found with given ID
-    security:
-    - authorization: []
-/iudx/v2/auth/organisations:
+              $ref: ../components/schemas/common.yaml#/NotFound
   get:
-    summary: List all organisations (Authenticated User)
-    description: 'This API allows authenticated users to retrieve a list of all registered organizations. It provides details
-      such as the organization''s name, logo, entity type, sector, and website. Pagination information is also included in
-      the response. This endpoint does not require a request body.
-
-      **Log Type:** `USER_ACTION`
-
-      '
     tags:
     - Organisation APIs
-    parameters:
-    - $ref: ../components/parameters.yaml#/PageParam
-    - $ref: ../components/parameters.yaml#/SizeParam
-    - $ref: ../components/parameters.yaml#/SortingParam
-    - $ref: ../components/parameters.yaml#/SearchTermParam
-    - $ref: ../components/parameters.yaml#/EntityTypeParam
-    - $ref: ../components/parameters.yaml#/OrgSectorParam
-    responses:
-      '200':
-        description: OK - Successfully fetched all organizations.
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                  description: URN type of the response.
-                title:
-                  type: string
-                  description: A human-readable title for the message response.
-                result:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        description: Unique ID of the organization.
-                      orgName:
-                        type: string
-                        description: Name of the organization.
-                      orgLogo:
-                        type: string
-                        description: Path to the organization's logo.
-                      entityType:
-                        type: string
-                        description: Type of the organization (e.g., 'Private', 'Public').
-                      orgSector:
-                        type: string
-                        description: Sector the organization belongs to.
-                      websiteLink:
-                        type: string
-                        description: Website link of the organization.
-                      address:
-                        type: string
-                        description: Address of the organization.
-                      certificatePath:
-                        type: string
-                        description: Path to the organization's certificate.
-                      pancardPath:
-                        type: string
-                        description: Path to the organization's PAN card document.
-                      relevantDocPath:
-                        type: string
-                        description: Path to any other relevant documents.
-                        nullable: true
-                      orgDocuments:
-                        type: string
-                        description: Any additional organization documents.
-                        nullable: true
-                      createdAt:
-                        type: string
-                        description: Timestamp when the organization was created.
-                      updatedAt:
-                        type: string
-                        description: Timestamp when the organization was last updated.
-                      tableName:
-                        type: string
-                        description: Internal table name for the organization.
-                paginationInfo:
-                  type: object
-                  properties:
-                    page:
-                      type: integer
-                      description: Current page number.
-                    size:
-                      type: integer
-                      description: Number of items per page.
-                    totalCount:
-                      type: integer
-                      description: Total number of documents which matched the query.
-                    totalPages:
-                      type: integer
-                      description: Total number of pages available.
-                    hasNext:
-                      type: boolean
-                      description: Indicates if more pages are available.
-                    hasPrevious:
-                      type: boolean
-                      description: Indicates if previous pages exist.
-    operationId: get-auth-v2-org
-    security:
-    - authorization: []
-/iudx/v2/auth/organisations/{id}:
-  parameters:
-  - schema:
-      type: string
-    name: id
-    in: path
-    required: true
-    description: UUID of organization
-  - name: delegatorId
-    in: query
-    description: Unique ID of the delegator
-    schema:
-      type: string
-      format: uuid
-      pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
-  delete:
-    summary: Delete an organisation by ID (COS Admin)
-    description: 'This API allows an PFAdmin to delete an organization by its unique identifier (ID). The ID of the organization
-      to be deleted is provided as a path parameter. A successful response indicates that the organization has been deleted.
+    summary: Get an organisation by ID
+    operationId: get-auth-v2-organisations-id
+    description: |
+      Returns the full details of a specific organisation by its UUID.
+      Accessible by any authenticated user.
 
       **Log Type:** `USER_ACTION`
-
-      '
-    tags:
-    - Organisation APIs
-    responses:
-      '200':
-        description: OK - Successfully deleted organization.
-    operationId: delete-auth-v2-organisations-id
     security:
     - authorization: []
-  put:
-    summary: Update organisation details by ID (Org Admin)
-    description: 'This API allows updating the details of an existing organization identified by its unique ID. The ID of
-      the organization to be updated is provided as a path parameter. The request body should contain the updated organization
-      details. A successful response indicates that the organization has been updated.
-
-      **Log Type:** `USER_ACTION`
-
-      '
-    tags:
-    - Organisation APIs
-    security:
-    - authorization: []
-    requestBody:
-      description: 'The request body specifies the entries which need to be updated by the user.They are optional.
-
-        '
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              name:
-                type: string
-                description: Name of the organization.
-          examples:
-            updateName:
-              value:
-                name: Etimes4
+    x-codeSamples:
+    - lang: cURL
+      label: Get organisation by ID
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/organisations/{id}' \
+        --header 'Authorization: Bearer <your-token>'
     responses:
       '200':
-        description: OK
+        description: Organisation details
         content:
           application/json:
             schema:
@@ -1477,10 +1172,12 @@
                   properties:
                     id:
                       type: string
+                      format: uuid
                     orgName:
                       type: string
                     orgLogo:
                       type: string
+                      nullable: true
                     entityType:
                       type: string
                     orgSector:
@@ -1495,150 +1192,42 @@
                       type: string
                     relevantDocPath:
                       type: string
+                      nullable: true
                     orgDocuments:
                       type: string
                     createdAt:
                       type: string
+                      format: date-time
                     updatedAt:
                       type: string
-                    tableName:
-                      type: string
-            examples:
-              success:
-                value:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  result:
-                    id: e87246e2-5da5-40b0-973c-690d2f48f879
-                    orgName: Etimes4
-                    orgLogo: /logos/ai.png
-                    entityType: Private
-                    orgSector: Technology
-                    websiteLink: https://ai.example.com
-                    address: 123 Quant Labs, Bangalore, India
-                    certificatePath: /documents/certificate.pdf
-                    pancardPath: /documents/pancard.pdf
-                    relevantDocPath: null
-                    orgDocuments: null
-                    createdAt: '2025-06-03T16:28:24.205541'
-                    updatedAt: '2025-06-03T16:28:24.205541'
-                    tableName: organizations
-    operationId: put-auth-v2-organisations-id
-  get:
-    summary: Get organisation details by ID (COS Admin)
-    description: 'This API allows retrieving the details of a specific organization by its unique identifier (ID). The ID
-      of the organization to be retrieved is provided as a path parameter. A successful response includes the organization''s
-      details such as name, logo, entity type, sector, and website.
-
-      **Log Type:** `USER_ACTION`
-
-      '
-    tags:
-    - Organisation APIs
-    parameters:
-    - name: id
-      in: path
-      required: true
-      description: UUID of the organization to which the join request belongs.
-      schema:
-        type: string
-        format: uuid
-    responses:
-      '200':
-        description: OK
+                      format: date-time
+            example:
+              type: urn:dx:ControlPlane:success
+              title: Success
+              result:
+                id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                orgName: Tech Solutions Pvt Ltd
+                entityType: private
+                orgSector: technology
+                websiteLink: https://techsolutions.example.com
+                address: 123 Tech Park, Bengaluru
+                certificatePath: /docs/cert.pdf
+                pancardPath: /docs/pan.pdf
+                orgDocuments: /docs/org.pdf
+                createdAt: '2025-06-04T10:54:53.301846'
+                updatedAt: '2025-06-04T10:54:53.301846'
+      '401':
+        description: Unauthorized
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                result:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                      description: Unique ID of the organization.
-                    name:
-                      type: string
-                      description: Name of the organization.
-                    logo_path:
-                      type: string
-                      description: Path to the organization's logo.
-                    entity_type:
-                      type: string
-                      description: Type of the organization (e.g., 'Private', 'Public').
-                    org_sector:
-                      type: string
-                      description: Sector the organization belongs to.
-                    website_link:
-                      type: string
-                      description: Website link of the organization.
-                    address:
-                      type: string
-                      description: Address of the organization.
-                    certificate_path:
-                      type: string
-                      description: Path to the organization's certificate.
-                    pancard_path:
-                      type: string
-                      description: Path to the organization's PAN card document.
-                    created_at:
-                      type: string
-                      description: Timestamp when the organization was created.
-                    updated_at:
-                      type: string
-                      description: Timestamp when the organization was last updated.
-                paginationInfo:
-                  type: object
-                  properties:
-                    page:
-                      type: integer
-                      description: Current page number.
-                    size:
-                      type: integer
-                      description: Number of items per page.
-                    totalCount:
-                      type: integer
-                      description: Total number of documents which matched the query.
-                    totalPages:
-                      type: integer
-                      description: Total number of pages available.
-                    hasNext:
-                      type: boolean
-                      description: Indicates if more pages are available.
-                    hasPrevious:
-                      type: boolean
-                      description: Indicates if previous pages exist.
-            examples:
-              Example 1:
-                value:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  result:
-                    id: e87246e2-5da5-40b0-973c-690d2f48f879
-                    name: Quant Sandbox
-                    logo_path: /logos/ai.png
-                    entity_type: Private
-                    org_sector: Technology
-                    website_link: https://ai.example.com
-                    address: 123 Quant Labs, Bangalore, India
-                    certificate_path: /documents/certificate.pdf
-                    pancard_path: /documents/pancard.pdf
-                    created_at: '2025-06-03T16:28:24.205541'
-                    updated_at: '2025-06-03T16:28:24.205541'
-                  paginationInfo:
-                    page: 1
-                    size: 1
-                    totalCount: 346
-                    totalPages: 346
-                    hasNext: true
-                    hasPrevious: false
-    operationId: get-auth-v2-organisations-id
-    security:
-    - authorization: []
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '404':
+        description: Not Found - Organisation with given ID does not exist
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/NotFound
 /iudx/v2/auth/organisations/{id}/users:
   parameters:
   - name: id
@@ -1649,26 +1238,31 @@
       type: string
       format: uuid
   get:
-    summary: List organisation users (Org Admin)
-    description: 'This API allows an organization administrator to retrieve a list of all users associated with a specific
-      organization, identified by its `id` in the path parameter. The response includes details about each user, such as their
-      role within the organization, job title, employee ID, official email, and account status. Pagination information is
-      also included in the response.
-
-      **Log Type:** `USER_ACTION`
-
-      '
     tags:
     - Organisation APIs
+    summary: Get users in an organisation (Org Admin)
+    operationId: get-auth-v2-org-users
+    description: |
+      Returns a paginated list of all users who are members of the specified organisation.
+      The caller's organisation ID (from token) must match the `{id}` path parameter.
+      Results are enriched with user role information from Keycloak.
+
+      **Log Type:** `USER_ACTION`
+    security:
+    - authorization: []
     parameters:
     - $ref: ../components/parameters.yaml#/PageParam
     - $ref: ../components/parameters.yaml#/SizeParam
     - $ref: ../components/parameters.yaml#/SortingParam
-    - $ref: ../components/parameters.yaml#/SearchTermParam
-    - $ref: ../components/parameters.yaml#/DelegatorIdParam
+    x-codeSamples:
+    - lang: cURL
+      label: Get org users
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/organisations/{id}/users?page=1&size=10' \
+        --header 'Authorization: Bearer <your-token>'
     responses:
       '200':
-        description: OK
+        description: Paginated list of users in the organisation
         content:
           application/json:
             schema:
@@ -1676,380 +1270,111 @@
               properties:
                 type:
                   type: string
-                  description: URN type of the response.
                 title:
                   type: string
-                  description: A human-readable title for the message response.
                 result:
                   type: array
-                  description: List of users associated with the organization.
                   items:
                     type: object
                     properties:
                       id:
                         type: string
-                        description: Unique ID of the organization user record.
+                        format: uuid
                       organizationId:
                         type: string
-                        description: UUID of the organization the user belongs to.
+                        format: uuid
                       userId:
                         type: string
-                        description: UUID of the user.
+                        format: uuid
                       userName:
                         type: string
-                        description: Name of the user.
                       role:
                         type: string
-                        description: Role of the user within the organization (e.g., 'ADMIN', 'MEMBER').
+                        enum: [member, admin]
+                        description: Role of the user within the organisation
                       jobTitle:
                         type: string
-                        description: Job title of the user within the organization.
                       empId:
                         type: string
-                        description: Employee ID of the user within the organization.
                       orgManagerPhoneNo:
                         type: string
-                        description: Phone number of the organization manager.
+                        nullable: true
                       officialEmail:
                         type: string
-                        description: Official email of the user within the organization.
                       createdAt:
                         type: string
-                        description: Timestamp when the user record was created.
+                        format: date-time
                       updatedAt:
                         type: string
-                        description: Timestamp when the user record was last updated.
+                        format: date-time
                       roles:
-                        type: object
-                        description: Roles associated with the user within the organization.
+                        type: array
+                        items:
+                          type: string
+                        description: Platform-level Keycloak roles of the user
                       accountEnabled:
                         type: boolean
-                        description: Indicates if the user's account is enabled.
-                      tableName:
-                        type: string
-                        description: Internal table name for the request.
                 paginationInfo:
-                  type: object
-                  properties:
-                    page:
-                      type: integer
-                      description: Current page number.
-                    size:
-                      type: integer
-                      description: Number of items per page.
-                    totalCount:
-                      type: integer
-                      description: Total number of documents which matched the query.
-                    totalPages:
-                      type: integer
-                      description: Total number of pages available.
-                    hasNext:
-                      type: boolean
-                      description: Indicates if more pages are available.
-                    hasPrevious:
-                      type: boolean
-                      description: Indicates if previous pages exist.
-            examples:
-              Example 1:
-                value:
-                  type: urn:dx:ControlPlane:success
-                  title: Success
-                  result:
-                  - id: 81980801-85b6-4b7d-ae54-5df38a3535bd
-                    organizationId: e87246e2-5da5-40b0-973c-690d2f48f879
-                    userId: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                    userName: test test
-                    role: ADMIN
-                    jobTitle: Manager
-                    empId: EMP12345
-                    orgManagerPhoneNo: +91-9876543210
-                    createdAt: '2025-06-03T16:28:24.852025'
-                    updatedAt: '2025-06-03T16:28:24.852025'
-                    roles:
-                    - consumer
-                    accountEnabled: true
-                    tableName: organization_users
-                  paginationInfo:
-                    page: 1
-                    size: 1
-                    totalCount: 346
-                    totalPages: 346
-                    hasNext: true
-                    hasPrevious: false
-      '400':
-        description: Bad Request
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                ? ''
-                : type: string
-            examples:
-              Example 1:
-                value:
-                  type: urn:dx:as:InvalidInput
-                  title: Invalid Organisation
-                  detail: The Organisation is invalid
+                  $ref: ../components/schemas/pagination.yaml#/PaginationInfo
+            example:
+              type: urn:dx:ControlPlane:success
+              title: Success
+              result:
+              - id: 9f1a2b3c-4d5e-6789-abcd-ef0123456789
+                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                userId: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                userName: John Doe
+                role: member
+                jobTitle: Software Engineer
+                empId: EMP001
+                officialEmail: john@techsolutions.com
+                createdAt: '2025-06-04T10:54:53.301846'
+                updatedAt: '2025-06-04T10:54:53.301846'
+                roles: [consumer]
+                accountEnabled: true
+              paginationInfo:
+                page: 1
+                size: 10
+                totalCount: 8
+                totalPages: 1
+                hasNext: false
+                hasPrevious: false
       '401':
         description: Unauthorized
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                detail:
-                  type: string
-            examples:
-              Example 1:
-                value:
-                  type: urn:dx:as:InvalidAuthenticationToken
-                  title: Token authentication failed
-                  detail: Inactive Token
-              Example 2:
-                value:
-                  type: urn:dx:ControlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Unauthorized
-      '409':
-        description: Conflict
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                detail:
-                  type: string
-    operationId: get-auth-v2-org-users
-    security:
-    - authorization: []
-/iudx/v2/auth/organization/user/provider_requests:
-  get:
-    summary: 'User: Get All pending provider role requests'
-    operationId: get-auth-v2-user-provider-requests
-    description: 'This API allows a user to retrieve its pending provider role requests. A successful response returns a list
-      of pending requests with details such as user ID, user name, organization ID, organization name, status, and timestamps.
-
-      **Log Type:** `USER_ACTION`
-
-      '
-    tags:
-    - Organisation APIs
-    parameters:
-    - name: delegatorId
-      in: query
-      description: Unique ID of the delegator
-      schema:
-        type: string
-        format: uuid
-        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
-    responses:
-      '200':
-        description: OK
-        content:
-          application/json:
-            schema:
-              type: object
-            examples:
-              Example 1:
-                value:
-                  type: urn:dx:controlPanel:success
-                  title: Success
-                  result:
-                  - id: e970320f-ffed-4946-ae68-cb13a9f7d7d2
-                    user_id: 719b5e7c-3a20-4f77-91f9-1f43ac4ef6a7
-                    organization_id: 0706147d-2c77-4165-8550-812804d114be
-                    status: granted
-                    created_at: 2025-08-25 05:28:20.356043
-                    updated_at: 2025-08-25 05:30:14.607398
-                    roles:
-                    - consumer
-                    - compute
-                    - provider
-                    account_enabled: true
-                  paginationInfo:
-                    page: 1
-                    size: 10
-                    totalCount: 2
-                    totalPages: 1
-                    hasNext: false
-                    hasPrevious: false
-    security:
-    - authorization: []
-/iudx/v2/auth/organization/user/provider-requests/{id}:
-  delete:
-    tags:
-    - Organisation APIs
-    summary: 'User: Delete Pending Provider Request'
-    description: 'delete the pending provider requests made by the user calling the API.
-
-      **Log Type:** `USER_ACTION`
-
-      '
-    operationId: delete-auth-v2-user-provider-requests
-    parameters:
-    - name: id
-      in: path
-      required: true
-      description: Unique ID of the provider request
-      schema:
-        type: string
-        format: uuid
-        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
-    - name: delegatorId
-      in: query
-      description: Unique ID of the delegator
-      schema:
-        type: string
-        format: uuid
-        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
-    responses:
-      '200':
-        description: OK - Successfully deleted provider request.
-      '400':
-        description: Bad Request – Schema validation failed or incorrect query parameters
-        content:
-          application/json:
-            schema:
-              $ref: ../components/schemas/common.yaml#/updateNotificationBadRequest
-      '401':
-        description: Unauthorized – Token invalid or expired, or caller lacks permission
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-    security:
-    - authorization: []
-/iudx/v2/auth/organization/user/provider_role/requests:
-  post:
-    summary: Create a provider role request (User)
-    description: 'This API allows a user to submit a role upgrade request from Consumer to Provider within their organization.
-      Once the organization administrator(`org_admin`) approves the request, the user will be granted the Provider role for
-      the respective organization. A successful response indicates that the request has been successfully submitted.
-
-      **Log Type:** `USER_ACTION`
-
-      '
-    tags:
-    - Organisation APIs
-    operationId: post-auth-v2-user-roles
-    security:
-    - authorization: []
-    responses:
-      '200':
-        description: OK
+      '403':
+        description: Forbidden - Caller's org ID does not match path parameter
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                detail:
-                  type: string
-            examples:
-              success:
-                value:
-                  type: urn:dx:controlPanel:success
-                  title: Success
-                  detail: Created request
+              $ref: ../components/schemas/common.yaml#/Forbidden
+/iudx/v2/auth/organization/user/provider_requests:
   get:
-    summary: Get all pending provider role requests (Org Admin)
-    description: 'This API allows a org admin to retrieve all pending provider role requests from users in its organization.
-      A successful response returns a list of pending requests with details such as user ID, user name, organization ID, organization
-      name, status, and timestamps.
-
-      **Log Type:** `USER_ACTION`
-
-      '
     tags:
     - Organisation APIs
-    parameters:
-    - name: delegatorId
-      in: query
-      description: Unique ID of the delegator
-      schema:
-        type: string
-        format: uuid
-        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
-    responses:
-      '200':
-        description: OK
-        content:
-          application/json:
-            schema:
-              type: object
-            examples:
-              Example 1:
-                value:
-                  type: urn:dx:controlPanel:success
-                  title: Success
-                  result:
-                  - id: e970320f-ffed-4946-ae68-cb13a9f7d7d2
-                    user_id: 719b5e7c-3a20-4f77-91f9-1f43ac4ef6a7
-                    organization_id: 0706147d-2c77-4165-8550-812804d114be
-                    status: granted
-                    created_at: 2025-08-25 05:28:20.356043
-                    updated_at: 2025-08-25 05:30:14.607398
-                    roles:
-                    - consumer
-                    - compute
-                    - provider
-                    account_enabled: true
-                  paginationInfo:
-                    page: 1
-                    size: 10
-                    totalCount: 2
-                    totalPages: 1
-                    hasNext: false
-                    hasPrevious: false
-    operationId: get-auth-v2-provider-requests
+    summary: Get the current user's provider role request (Org Member)
+    operationId: get-auth-v2-user-provider-requests
+    description: |
+      Returns the authenticated user's provider role request within their organisation.
+      Returns an empty object `{}` if no request is found.
+      The user must be a member of an organisation (orgId present in token).
+      Result is enriched with user role information.
+
+      **Log Type:** `USER_ACTION`
     security:
     - authorization: []
-/iudx/v2/auth/organization/user/provider_role/requests/{id}:
-  put:
-    summary: Update a provider role request (Org Admin)
-    description: 'This API allows a organization administrator to update the status of a specific provider role request. The
-      request is identified by its `id` in the path parameter. The request body should contain the new status for the provider
-      role request. A successful response indicates that the provider role request has been updated.
-
-      **Log Type:** `USER_ACTION`
-
-      '
-    tags:
-    - Organisation APIs
-    parameters:
-    - name: id
-      in: path
-      required: true
-      description: UUID of the request
-      schema:
-        type: string
-        format: uuid
-    - name: delegatorId
-      in: query
-      description: Unique ID of the delegator
-      schema:
-        type: string
-        format: uuid
-        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+    x-codeSamples:
+    - lang: cURL
+      label: Get my provider role request
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/organization/user/provider_requests' \
+        --header 'Authorization: Bearer <your-token>'
     responses:
       '200':
-        description: OK
+        description: The user's provider role request, or empty object if none found
         content:
           application/json:
             schema:
@@ -2059,35 +1384,80 @@
                   type: string
                 title:
                   type: string
-                detail:
-                  type: string
-            examples:
-              success:
-                value:
-                  type: urn:dx:controlPanel:success
-                  title: Success
-                  detail: Provider role updated
+                result:
+                  type: object
+                  nullable: true
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    userId:
+                      type: string
+                      format: uuid
+                    orgId:
+                      type: string
+                      format: uuid
+                      nullable: true
+                    providerType:
+                      type: string
+                      enum: [org, platform]
+                    status:
+                      type: string
+                      enum: [pending, granted, rejected]
+                    createdAt:
+                      type: string
+                      format: date-time
+                    updatedAt:
+                      type: string
+                      format: date-time
+                    roles:
+                      type: array
+                      items:
+                        type: string
+                    accountEnabled:
+                      type: boolean
       '401':
         description: Unauthorized
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                title:
-                  type: string
-                detail:
-                  type: string
-            examples:
-              Example 1:
-                value:
-                  type: urn:dx:as:InvalidAuthenticationToken
-                  title: Token authentication failed
-                  detail: Inactive Token
-      '409':
-        description: Conflict
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - User is not part of any organisation
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
+/iudx/v2/auth/organization/user/provider-requests/{id}:
+  parameters:
+  - name: id
+    in: path
+    required: true
+    description: UUID of the provider role request to delete
+    schema:
+      type: string
+      format: uuid
+  delete:
+    tags:
+    - Organisation APIs
+    summary: Delete a pending provider role request (Org Member)
+    operationId: delete-auth-v2-user-provider-requests
+    description: |
+      Deletes the user's own pending provider role request within their organisation.
+      Only `pending` requests can be deleted. The user must be a member of an organisation.
+
+      **Log Type:** `USER_ACTION`
+    security:
+    - authorization: []
+    x-codeSamples:
+    - lang: cURL
+      label: Delete pending provider role request
+      source: |
+        curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/auth/organization/user/provider-requests/{id}' \
+        --header 'Authorization: Bearer <your-token>'
+    responses:
+      '200':
+        description: Provider role request deleted successfully
         content:
           application/json:
             schema:
@@ -2099,119 +1469,511 @@
                   type: string
                 detail:
                   type: string
-    operationId: put-auth-v2-user-roles
-    security:
-    - authorization: []
-    requestBody:
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              status:
-                type: string
-                description: New status for the provider role request. Valid values are 'granted' or 'rejected'.
-            required:
-            - status
-/iudx/v2/auth/organization/user/provider:
+                  example: Provider Role Request deleted successfully
+      '400':
+        description: Bad Request - Only pending requests can be deleted
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/generalBadRequest
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - User is not part of any organisation
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
+      '404':
+        description: Not Found - No provider role request found for this user
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/NotFound
+/iudx/v2/auth/organization/user/provider_role/requests:
   post:
-    operationId: post-auth-v2-organization-user-provider
-    summary: Grant provider role to a user (Org Admin)
-    description: 'This endpoint allows organization admin grants provider role to user in its organization.
-
-      **Log Type:** `USER_ACTION`
-
-      '
     tags:
     - Organisation APIs
-    requestBody:
-      description: 'This endpoint allows organization admin grants provider role to user in its organization.
+    summary: Submit a provider role request within an organisation (Org Member)
+    operationId: post-auth-v2-user-roles
+    description: |
+      Submits a request for the provider role within the user's organisation.
+      No request body is needed — `user_id` and `organization_id` are taken from
+      the authenticated token. The user must be an org member.
 
-        '
+      **Log Type:** `USER_ACTION`
+    security:
+    - authorization: []
+    x-codeSamples:
+    - lang: cURL
+      label: Submit provider role request (org track)
+      source: |
+        curl --location --request POST 'https://${HOSTNAME}/iudx/v2/auth/organization/user/provider_role/requests' \
+        --header 'Authorization: Bearer <your-token>'
+    responses:
+      '200':
+        description: Provider role request submitted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                detail:
+                  type: string
+                  example: Created Request
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - User is not part of any organisation
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
+  get:
+    tags:
+    - Organisation APIs
+    summary: Get all provider role requests in an organisation (Org Admin)
+    operationId: get-auth-v2-provider-requests
+    description: |
+      Returns a paginated list of all provider role requests within the caller's organisation.
+      The org ID is taken from the caller's token. Results are enriched with user roles and
+      join request details (`userName`, `jobTitle`, `empId`).
+
+      **Log Type:** `USER_ACTION`
+    security:
+    - authorization: []
+    parameters:
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    - $ref: ../components/parameters.yaml#/StatusParam
+    x-codeSamples:
+    - lang: cURL
+      label: Get org provider role requests
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/organization/user/provider_role/requests?status=pending&page=1&size=10' \
+        --header 'Authorization: Bearer <your-token>'
+    responses:
+      '200':
+        description: Paginated list of provider role requests for the organisation
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      userId:
+                        type: string
+                        format: uuid
+                      orgId:
+                        type: string
+                        format: uuid
+                        nullable: true
+                      providerType:
+                        type: string
+                        enum: [org, platform]
+                      status:
+                        type: string
+                        enum: [pending, granted, rejected]
+                      createdAt:
+                        type: string
+                        format: date-time
+                      updatedAt:
+                        type: string
+                        format: date-time
+                      roles:
+                        type: array
+                        items:
+                          type: string
+                        description: Platform-level Keycloak roles of the requesting user
+                      accountEnabled:
+                        type: boolean
+                      userName:
+                        type: string
+                        description: User name from join request (if available)
+                      jobTitle:
+                        type: string
+                        description: Job title from join request (if available)
+                      empId:
+                        type: string
+                        description: Employee ID from join request (if available)
+                paginationInfo:
+                  $ref: ../components/schemas/pagination.yaml#/PaginationInfo
+            example:
+              type: urn:dx:ControlPlane:success
+              title: Success
+              result:
+              - id: 5b6c7d8e-9f0a-1b2c-3d4e-5f6a7b8c9d0e
+                userId: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                orgId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                providerType: org
+                status: pending
+                createdAt: '2025-06-04T10:54:53.301846'
+                roles: [consumer]
+                accountEnabled: true
+                userName: John Doe
+                jobTitle: Software Engineer
+                empId: EMP001
+              paginationInfo:
+                page: 1
+                size: 10
+                totalCount: 3
+                totalPages: 1
+                hasNext: false
+                hasPrevious: false
+      '400':
+        description: Bad Request - User not part of any organisation
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/generalBadRequest
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+/iudx/v2/auth/organization/user/provider_role/requests/{id}:
+  parameters:
+  - name: id
+    in: path
+    required: true
+    description: UUID of the provider role request
+    schema:
+      type: string
+      format: uuid
+  put:
+    tags:
+    - Organisation APIs
+    summary: Approve or reject a provider role request (Org Admin)
+    operationId: put-auth-v2-user-roles
+    description: |
+      Allows an org admin to approve or reject a pending provider role request.
+      An email notification is sent to the user upon status update.
+
+      **Log Type:** `USER_ACTION`
+    security:
+    - authorization: []
+    x-codeSamples:
+    - lang: cURL
+      label: Grant provider role
+      source: |
+        curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/auth/organization/user/provider_role/requests/{id}' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"status": "granted"}'
+    - lang: cURL
+      label: Reject provider role request
+      source: |
+        curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/auth/organization/user/provider_role/requests/{id}' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"status": "rejected"}'
+    requestBody:
       required: true
       content:
         application/json:
           schema:
             type: object
-            properties:
-              user_id:
-                type: string
-                description: UUID of the user to be granted provider role
-                example: 436cb796-5826-458b-a914-a54721f70997
-              organization_id:
-                type: string
-                description: UUID of the organization
-                example: 436cb796-5826-458b-a914-a54721f70997
-              status:
-                type: string
-                description: Status of the provider role request
-                example: granted
             required:
             - status
-            - organization_id
-            - user_id
+            properties:
+              status:
+                type: string
+                enum: [granted, rejected]
     responses:
       '200':
-        description: OK
+        description: Provider role request updated successfully
         content:
           application/json:
             schema:
-              type: string
-              example: Provider role granted successfully
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                detail:
+                  type: string
+                  example: Provider role updated
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller does not have org admin role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
+      '404':
+        description: Not Found - Request with given ID does not exist
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/NotFound
+/iudx/v2/auth/organization/user/provider:
+  post:
+    tags:
+    - Organisation APIs
+    summary: Directly grant provider role to an org member (Org Admin)
+    operationId: post-auth-v2-organization-user-provider
+    description: |
+      Allows an org admin to directly grant the provider role to an existing org member.
+      If the user has a pending provider role request, it is approved. Otherwise a new
+      granted request is created. The user must be a member of the caller's organisation.
+
+      **Log Type:** `USER_ACTION`
     security:
     - authorization: []
+    x-codeSamples:
+    - lang: cURL
+      label: Grant provider role directly
+      source: |
+        curl --location --request POST 'https://${HOSTNAME}/iudx/v2/auth/organization/user/provider' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"user_id": "c908f4ed-69ef-4d27-8e50-8f95f89b6c4d", "organization_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6"}'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - user_id
+            - organization_id
+            properties:
+              user_id:
+                type: string
+                format: uuid
+                description: UUID of the user to grant provider role to.
+              organization_id:
+                type: string
+                format: uuid
+                description: UUID of the organisation.
+              provider_type:
+                type: string
+                enum: [org, platform]
+                default: org
+                description: Type of provider role. Defaults to `org`.
+    responses:
+      '200':
+        description: Provider role granted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                detail:
+                  type: string
+                  example: Provider role granted successfully
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - User not in org or caller lacks permission
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
+      '404':
+        description: Not Found - User not found or no pending provider role request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/NotFound
 /iudx/v2/auth/organisations/requests/report:
   get:
-    summary: Get Report for Organsation Create Request
-    description: Csv file for a list of activity logs for Organsation Create Request.
     tags:
     - Organisation APIs
-    responses:
-      '200':
-        description: OK
+    summary: Download organisation creation requests report (COS Admin)
     operationId: get-auth-v2-organisations-requests-report
+    description: |
+      Returns a CSV file (`org_create_request_report.csv`) containing all
+      organisation creation request activity. Requires `cos_admin` role.
     security:
     - authorization: []
+    parameters:
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParamReport
+    - $ref: ../components/parameters.yaml#/SortingParam
+    - $ref: ../components/parameters.yaml#/StatusParam
+    x-codeSamples:
+    - lang: cURL
+      label: Download org create requests report
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/organisations/requests/report?status=pending' \
+        --header 'Authorization: Bearer <your-token>'
+    responses:
+      '200':
+        description: CSV report generated successfully
+        content:
+          text/csv:
+            schema:
+              type: string
+              format: binary
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller does not have `cos_admin` role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
 /iudx/v2/auth/organisations/report:
   get:
-    summary: Get Report for Organsations
-    description: Csv file for a list of activity logs for organization.
     tags:
     - Organisation APIs
-    responses:
-      '200':
-        description: OK
+    summary: Download organisations list report (COS Admin)
     operationId: get-auth-v2-organisations-report
+    description: |
+      Returns a CSV file (`org_report.csv`) containing all registered organisations.
+      Requires `cos_admin` role.
     security:
     - authorization: []
-/iudx/v2/auth/organisations/{id}/join_requests/report:
-  get:
-    summary: Get Report for Organsation Join Requests
-    description: Csv file for a list of activity logs for Organsation Join Request.
-    tags:
-    - Organisation APIs
+    x-codeSamples:
+    - lang: cURL
+      label: Download organisations report
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/organisations/report' \
+        --header 'Authorization: Bearer <your-token>'
     responses:
       '200':
-        description: OK
-    operationId: get-auth-v2-organisations-join_requests-report
-    security:
-    - authorization: []
+        description: CSV report generated successfully
+        content:
+          text/csv:
+            schema:
+              type: string
+              format: binary
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller does not have `cos_admin` role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
+/iudx/v2/auth/organisations/{id}/join_requests/report:
   parameters:
-  - schema:
-      type: string
-    name: id
+  - name: id
     in: path
     required: true
     description: UUID of the organisation
-/iudx/v2/auth/organization/user/provider_role/requests/report:
+    schema:
+      type: string
+      format: uuid
   get:
-    summary: Get Report for Provider Requests
-    description: Csv file for a list of activity logs for Provider Request.
     tags:
     - Organisation APIs
-    responses:
-      '200':
-        description: OK
-    operationId: get-auth-v2-organization-user-provider_role-requests-report
+    summary: Download organisation join requests report (COS Admin)
+    operationId: get-auth-v2-organisations-join_requests-report
+    description: |
+      Returns a CSV file (`org_join_request_report.csv`) containing all join request
+      activity for the specified organisation. Requires `cos_admin` role.
     security:
     - authorization: []
+    x-codeSamples:
+    - lang: cURL
+      label: Download org join requests report
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/organisations/{id}/join_requests/report' \
+        --header 'Authorization: Bearer <your-token>'
+    responses:
+      '200':
+        description: CSV report generated successfully
+        content:
+          text/csv:
+            schema:
+              type: string
+              format: binary
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller does not have `cos_admin` role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
+/iudx/v2/auth/organization/user/provider_role/requests/report:
+  get:
+    tags:
+    - Organisation APIs
+    summary: Download provider role requests report (COS Admin)
+    operationId: get-auth-v2-organization-user-provider_role-requests-report
+    description: |
+      Returns a CSV file (`provider_request_report.csv`) containing all provider role
+      request activity across all organisations. Requires `cos_admin` role.
+    security:
+    - authorization: []
+    x-codeSamples:
+    - lang: cURL
+      label: Download provider role requests report
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/organization/user/provider_role/requests/report' \
+        --header 'Authorization: Bearer <your-token>'
+    responses:
+      '200':
+        description: CSV report generated successfully
+        content:
+          text/csv:
+            schema:
+              type: string
+              format: binary
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller does not have `cos_admin` role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
+

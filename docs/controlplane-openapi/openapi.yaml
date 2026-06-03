@@ -37,8 +37,18 @@ servers:
   description: dynamic server url
 tags:
 - name: ACL Servers
+  description: |
+    Manage APD (Access Policy Decision) ACL server registrations. ACL servers enforce
+    authorization policies that decide which consumers can access which data resources.
+    Only `cos_admin` can register or delete ACL servers.
 - name: Activity Logs
+  description: |
+    Retrieve audit logs of user API activity. Consumers can view their own activity history;
+    COS Admins can view activity across all users. Supports time-based filtering and pagination.
 - name: Activity Report
+  description: |
+    Download CSV reports of platform activity logs for offline analysis and auditing.
+    Requires `cos_admin` role.
 - name: App
   description: |
     App IDs provide a way to grant restricted, scoped access to platform APIs without exposing
@@ -47,51 +57,159 @@ tags:
     can then use these credentials to access platform APIs — but only within the roles and scopes
     defined at the time the App ID was created.
 - name: CAT Entity
+  description: |
+    CRUD operations for catalogue items — the metadata documents that describe datasets,
+    resource groups, resource servers, and other data entities on the platform.
+    Providers manage their own items; COS Admins can manage any item.
+    Items follow the [JSON-LD](https://json-ld.org/) format with DX-defined annotations.
 - name: Certificate API
+  description: |
+    Public key certificate APIs. Exposes the JWKS endpoint (`/auth/v2/jwks`) for verifying
+    JWT token signatures using the platform's public key (ES256 algorithm).
 - name: Client APIs
+  description: |
+    Manage client secrets for programmatic, credential-based authentication.
+    Client credentials allow external services or scripts to authenticate without
+    requiring a user-level JWT token.
 - name: Compute APIs
+  description: |
+    Manage compute role requests. Users without the `compute` role can request it here.
+    COS Admins review and approve or reject requests. Once approved, the `compute` role
+    is assigned to the user in Keycloak, granting access to sandbox and compute infrastructure.
+
+    **Status values:** `pending` → `granted` or `rejected`
+
+    A previously rejected request can be re-submitted and is re-activated to `pending`
+    rather than creating a duplicate record.
 - name: Conversations
-  description: >
-    Conversations are threaded message exchanges tied to entity-driven requests
-    such as joining an organisation, creating an organisation, or submitting a
-    credit request. Each conversation is scoped to a request_id and supports
-    root-level messages and nested replies up to 2 levels deep.
-    Messages can be posted by requesters or approvers, and can optionally be
-    marked as internal notes visible only to the approvers.
+  description: |
+    Threaded message exchanges attached to entity-driven requests such as org join,
+    org create, and credit requests. Each conversation is scoped to a `request_id`.
+
+    - Supports root-level messages and nested replies.
+    - Senders identify as `requester` or `approver`.
+    - Messages can be marked `is_internal: true` to make them visible only to approvers.
+    - Metadata (arbitrary JSON) can be attached to any message.
 - name: Credit APIs
+  description: |
+    Manage the platform credit system used to control access to compute infrastructure.
+    Credits are granted by COS Admins and consumed when running compute workloads.
+
+    **Flows:**
+    - Users submit a credit request; COS Admins grant (with `amount` and `expiration_date`) or reject it.
+    - COS Admins can directly add or deduct credits from a user's balance.
+    - Users can query their current balance and request history.
+
+    **Status values:** `pending` → `granted` or `rejected`
 - name: Delegation APIs
   description: |
-    Delegation allows an authenticated user (the **delegator**) to grant another user (the **delegate**)
-    the ability to act on their behalf. Delegations are scoped by role and optionally further restricted
-    by specific scopes and entity types, each with their own expiry.
+    Delegation allows an authenticated user (the **delegator**) to grant another user
+    (the **delegate**) the ability to act on their behalf. Delegations are scoped by role
+    and optionally restricted by specific scopes and entity types, each with their own expiry.
 - name: Discovery – My Assets
+  description: |
+    Search and count APIs for catalogue assets scoped to the currently authenticated user —
+    assets they own, have been granted access to, or that match their roles and permissions.
 - name: Discovery – Public
+  description: |
+    Unauthenticated full-text and geo-based search and count APIs for discovering
+    publicly available catalogue assets across the platform.
 - name: KYC APIs
+  description: |
+    Know Your Customer (KYC) verification management. KYC is a prerequisite before users
+    can access credit balance, submit credit requests, or request the compute role.
+    COS Admins can initiate or revoke a user's KYC verification.
 - name: Leaderboard
+  description: |
+    Read-only leaderboard APIs that rank providers, organisations, and assets based on
+    platform interaction metrics such as views, likes, and usage frequency.
 - name: List Available Filters
+  description: |
+    Returns the set of attribute-based filter keys that can be used in catalogue
+    search queries (e.g. resource type, tags, domains).
 - name: Organisation APIs
+  description: |
+    Full lifecycle management of organisations on the platform.
+
+    **Flows covered:**
+    - Organisation creation requests (submit, admin approval, withdrawal)
+    - Organisation join requests (submit, admin approval, rejection, withdrawal)
+    - Member management (list users, update roles, remove users)
+    - Provider role requests within an organisation
+    - Reports for org create, join, and provider role request activity
+
+    **Roles involved:** Consumer, Org Admin, COS Admin
 - name: Organisation Assets Management
+  description: |
+    Browse and filter assets registered under a specific organisation.
+    Supports visibility control, pagination, and attribute-based filtering.
 - name: Platform Assets Management
+  description: |
+    Browse and filter all assets registered on the platform, regardless of organisation.
+    Intended for platform-wide discovery by admins and authorised users.
 - name: Platform Provider Requests
   description: |
-    Platform Provider Requests allow consumers who are **not part of any organisation** to request
-    the Provider role directly through the platform track. This is an alternative to the
-    organisation-based provider request flow.
+    Provider role requests for users who are **not part of any organisation**. This is the
+    platform track — an alternative to the organisation-based provider request flow.
 
-    Two roles are involved:
-    - **Consumer** — submits, views, or withdraws their own request via `/auth/v2/user/platform/provider-requests`
-    - **COS Admin** — reviews, approves, or rejects all requests via `/auth/v2/admin/platform/provider-requests`
+    - **Consumer** — submits, views, or withdraws their own request.
+    - **COS Admin** — reviews, approves, or rejects all requests.
 
-    A user can only have one active (pending or granted) provider role request at a time, regardless
-    of whether it was submitted via the platform or organisation track. On approval, the `PROVIDER`
-    role is automatically assigned in Keycloak.
+    On approval, the `PROVIDER` role is automatically assigned in Keycloak.
+    A user can only have one active (pending or granted) provider role request at a time,
+    across both platform and organisation tracks.
 - name: Resource Servers
+  description: |
+    Manage resource server registrations. A resource server represents a deployed data
+    endpoint that participates in the DX access control ecosystem for policy enforcement
+    and token validation. Only `cos_admin` can register or delete resource servers.
 - name: Role APIs
+  description: |
+    User profile management and custom role APIs.
+
+    **Covers:**
+    - Get and update user info (self and admin views)
+    - Password management
+    - Admin-level user lookups and status updates
+    - Custom role system: assign scoped custom roles to other users, list them, and delete them.
+      Custom roles are stored in the platform DB and also reflected in Keycloak attributes.
+- name: Share Assets
+  description: |
+    Control asset visibility across organisations and users. Providers can grant or revoke
+    access to their catalogue assets for specific organisations or individual users,
+    making assets discoverable to a targeted audience beyond the default visibility rules.
+- name: Shared Assets
+  description: |
+    View catalogue assets that have been explicitly shared with the currently authenticated
+    user by other providers or organisations.
 - name: Subscriptions
+  description: |
+    Manage NGSI-LD streaming subscriptions. Consumers subscribe to real-time data streams
+    from resource entities. Each subscription is identified by a queue name and is bound
+    to specific entity IDs and resource groups. Subscriptions can be created, listed,
+    retrieved by ID, updated, and deleted.
 - name: Summary
+  description: |
+    Dashboard summary APIs that aggregate platform-wide usage statistics — including
+    active users, published assets, and API call volumes — for admin dashboards.
 - name: token
+  description: |
+    JWT access token issuance APIs. Supports three token modes:
+
+    - **Identity token** — provide `clientId` and `clientSecret` to get a basic identity token.
+    - **Access token** — additionally provide an `itemId` to get a token scoped to a specific resource.
+    - **Delegation token** — additionally provide a `delegationId` header to act on behalf of a delegator.
+
+    Tokens are signed using ES256. Validate them against the JWKS endpoint (`/auth/v2/jwks`).
 - name: User Interactions
+  description: |
+    APIs for recording and querying user interactions with catalogue assets (views, likes, dislikes).
+    Also includes user and provider feedback submission and retrieval, and a metrics sync
+    endpoint that pushes interaction counts into aggregated stores used for leaderboard ranking.
 - name: Ingestion type(API/SFTP) APIs
+  description: |
+    Manage data ingestion adaptor registrations for API-based and SFTP-based ingestion pipelines.
+    Providers register adaptors to connect their data sources to the DX platform ingestion layer.
 paths:
   /iudx/v2/auth/app:
     $ref: paths/app.yaml#/~1iudx~1v2~1auth~1app

@@ -2,6 +2,12 @@
   get:
     operationId: get-auth-v2-user-credit-balance
     summary: Get the current user's credit balance
+    x-codeSamples:
+    - lang: cURL
+      label: Get my credit balance
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/user/credit/balance' \
+        --header 'Authorization: Bearer <your-token>'
     description: 'Returns the credit balance for the currently authenticated user. The user must have completed KYC verification to access this endpoint. Requires an authenticated user token.
 
       **Log Type:** `COMPUTE`
@@ -19,14 +25,46 @@
             schema:
               type: object
               properties:
-                balance:
-                  type: number
-                  format: double
-                  description: Current credit balance of the user
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: object
+                  description: The user's credit record
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                      description: Unique identifier of the credit record
+                    userId:
+                      type: string
+                      format: uuid
+                      description: UUID of the user
+                    balance:
+                      type: number
+                      format: double
+                      description: Current credit balance
+                    expirationDate:
+                      type: string
+                      format: date-time
+                      nullable: true
+                      description: Expiration date of the current credit grant
+                    updatedAt:
+                      type: string
+                      format: date-time
+                      description: Timestamp when the balance was last updated
             examples:
               success:
                 value:
-                  balance: 10000.0
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                    id: 9f1a2b3c-4d5e-6789-abcd-ef0123456789
+                    userId: 436cb796-5826-458b-a914-a54721f70997
+                    balance: 10000.0
+                    expirationDate: '2025-12-31T23:59:59'
+                    updatedAt: '2025-06-04T10:45:06.361576'
       '401':
         description: Unauthorized - Token invalid/expired or KYC not verified
         content:
@@ -35,8 +73,6 @@
               $ref: ../components/schemas/common.yaml#/Unauthorized
       '404':
         description: User credit record not found
-      '500':
-        description: Internal server error
 /iudx/v2/auth/admin/user/credit/balance/{id}:
   parameters:
   - name: id
@@ -49,6 +85,12 @@
   get:
     operationId: get-auth-v2-admin-user-credit-balance
     summary: Get a user's credit balance by ID (COS Admin)
+    x-codeSamples:
+    - lang: cURL
+      label: Get user credit balance (admin)
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/admin/user/credit/balance/{id}' \
+        --header 'Authorization: Bearer <your-token>'
     description: 'Returns the credit balance for the specified user. Requires `cos_admin` role. The target user must have completed KYC verification.
 
       **Log Type:** `COMPUTE`
@@ -66,14 +108,46 @@
             schema:
               type: object
               properties:
-                balance:
-                  type: number
-                  format: double
-                  description: Current credit balance of the user
+                type:
+                  type: string
+                title:
+                  type: string
+                result:
+                  type: object
+                  description: The user's credit record
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                      description: Unique identifier of the credit record
+                    userId:
+                      type: string
+                      format: uuid
+                      description: UUID of the user
+                    balance:
+                      type: number
+                      format: double
+                      description: Current credit balance
+                    expirationDate:
+                      type: string
+                      format: date-time
+                      nullable: true
+                      description: Expiration date of the current credit grant
+                    updatedAt:
+                      type: string
+                      format: date-time
+                      description: Timestamp when the balance was last updated
             examples:
               success:
                 value:
-                  balance: 10000.0
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                    id: 9f1a2b3c-4d5e-6789-abcd-ef0123456789
+                    userId: 436cb796-5826-458b-a914-a54721f70997
+                    balance: 10000.0
+                    expirationDate: '2025-12-31T23:59:59'
+                    updatedAt: '2025-06-04T10:45:06.361576'
       '401':
         description: Unauthorized - Token invalid/expired or KYC not verified
         content:
@@ -84,8 +158,6 @@
         description: Forbidden - Caller does not have `cos_admin` role
       '404':
         description: User credit record not found
-      '500':
-        description: Internal server error
 /iudx/v2/auth/user/credit/request:
   get:
     summary: Get the current user's credit requests
@@ -97,13 +169,14 @@
     tags:
     - Credit APIs
     operationId: get-auth-v2-user-credit
+    x-codeSamples:
+    - lang: cURL
+      label: Get my credit requests
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/user/credit/request' \
+        --header 'Authorization: Bearer <your-token>'
     security:
     - authorization: []
-    parameters:
-    - $ref: ../components/parameters.yaml#/PageParam
-    - $ref: ../components/parameters.yaml#/SizeParam
-    - $ref: ../components/parameters.yaml#/SortingParam
-    - $ref: ../components/parameters.yaml#/StatusParam
     responses:
       '200':
         description: Credit requests retrieved successfully
@@ -120,7 +193,7 @@
                   description: Human-readable response title
                 result:
                   type: array
-                  description: List of credit request records
+                  description: List of the user's credit request records
                   items:
                     type: object
                     properties:
@@ -135,12 +208,14 @@
                       userName:
                         type: string
                         description: Display name of the requesting user
-                      amount:
-                        type: integer
-                        description: Requested credit amount
+                      additionalInfo:
+                        type: object
+                        nullable: true
+                        description: Optional additional context provided when submitting the request
                       status:
                         type: string
-                        description: Current status of the request (pending, granted, rejected)
+                        enum: [pending, granted, rejected]
+                        description: Current status of the request
                       requestedAt:
                         type: string
                         format: date-time
@@ -148,12 +223,8 @@
                       processedAt:
                         type: string
                         format: date-time
-                        description: Timestamp when the request was processed
-                      tableName:
-                        type: string
-                        description: Internal table name for the record
-                paginationInfo:
-                  $ref: ../components/schemas/pagination.yaml#/PaginationInfo
+                        nullable: true
+                        description: Timestamp when the request was processed, or null if still pending
             examples:
               success:
                 value:
@@ -163,24 +234,11 @@
                   - id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
                     userId: 436cb796-5826-458b-a914-a54721f70997
                     userName: test test
-                    amount: 10000
+                    additionalInfo:
+                      purpose: research
                     status: pending
                     requestedAt: '2025-06-04T09:47:27.323861'
-                    processedAt: '2025-06-04T09:47:27.323861'
-                    tableName: credit_requests
-                  paginationInfo:
-                    page: 1
-                    size: 10
-                    totalCount: 346
-                    totalPages: 35
-                    hasNext: true
-                    hasPrevious: false
-      '400':
-        description: Bad Request - Invalid query parameters
-        content:
-          application/json:
-            schema:
-              $ref: ../components/schemas/common.yaml#/generalBadRequest
+                    processedAt: null
       '401':
         description: Unauthorized - Token invalid or expired
         content:
@@ -198,6 +256,12 @@
 
       '
     operationId: delete-auth-v2-user-credit
+    x-codeSamples:
+    - lang: cURL
+      label: Delete pending credit request
+      source: |
+        curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/auth/user/credit/request/{id}' \
+        --header 'Authorization: Bearer <your-token>'
     parameters:
     - name: id
       in: path
@@ -210,18 +274,34 @@
     responses:
       '200':
         description: Credit request deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                detail:
+                  type: string
+                  example: Pending Credit Request deleted successfully
       '400':
-        description: Bad Request - Schema validation failed or incorrect query parameters
+        description: Bad Request - Only pending requests can be deleted
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/updateNotificationBadRequest
       '401':
-        description: Unauthorized - Token invalid or expired, or caller lacks permission
+        description: Unauthorized - Token invalid or expired
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller did not submit this request
+      '404':
+        description: Not Found - Credit request with given ID does not exist
     security:
     - authorization: []
 /iudx/v2/auth/credit/request:
@@ -235,6 +315,12 @@
     tags:
     - Credit APIs
     operationId: get-auth-v2-credit
+    x-codeSamples:
+    - lang: cURL
+      label: Get all credit requests (admin)
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/credit/request?status=pending&page=1&size=10' \
+        --header 'Authorization: Bearer <your-token>'
     security:
     - authorization: []
     parameters:
@@ -274,12 +360,14 @@
                       userName:
                         type: string
                         description: Display name of the requesting user
-                      amount:
-                        type: integer
-                        description: Requested credit amount
+                      additionalInfo:
+                        type: object
+                        nullable: true
+                        description: Optional additional context provided when submitting the request
                       status:
                         type: string
-                        description: Current status of the request (pending, granted, rejected)
+                        enum: [pending, granted, rejected]
+                        description: Current status of the request
                       requestedAt:
                         type: string
                         format: date-time
@@ -287,10 +375,8 @@
                       processedAt:
                         type: string
                         format: date-time
-                        description: Timestamp when the request was processed
-                      tableName:
-                        type: string
-                        description: Internal table name for the record
+                        nullable: true
+                        description: Timestamp when the request was processed, or null if still pending
                 paginationInfo:
                   $ref: ../components/schemas/pagination.yaml#/PaginationInfo
             examples:
@@ -302,11 +388,11 @@
                   - id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
                     userId: 436cb796-5826-458b-a914-a54721f70997
                     userName: test test
-                    amount: 10000
+                    additionalInfo:
+                      purpose: research
                     status: pending
                     requestedAt: '2025-06-04T09:47:27.323861'
-                    processedAt: '2025-06-04T09:47:27.323861'
-                    tableName: credit_requests
+                    processedAt: null
                   paginationInfo:
                     page: 1
                     size: 10
@@ -349,7 +435,7 @@
             type: object
             additionalProperties: false
             properties:
-              additional_info:
+              additionalInfo:
                 description: Additional context about the credit request, such as intended use for educational, research, testing, non-commercial, or academic purposes.
                 type: object
     responses:
@@ -381,9 +467,14 @@
                     userName:
                       type: string
                       description: Display name of the requesting user
+                    additionalInfo:
+                      type: object
+                      nullable: true
+                      description: Additional context provided in the request body
                     status:
                       type: string
-                      description: Status of the request (will be `pending` upon creation)
+                      enum: [pending]
+                      description: Always `pending` upon creation
                     requestedAt:
                       type: string
                       format: date-time
@@ -391,10 +482,8 @@
                     processedAt:
                       type: string
                       format: date-time
-                      description: Timestamp when the request was processed
-                    tableName:
-                      type: string
-                      description: Internal table name for the record
+                      nullable: true
+                      description: null on creation
             examples:
               success:
                 value:
@@ -404,10 +493,11 @@
                     id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
                     userId: 436cb796-5826-458b-a914-a54721f70997
                     userName: test test
+                    additionalInfo:
+                      purpose: research
                     status: pending
                     requestedAt: '2025-06-04T09:47:27.323861'
-                    processedAt: '2025-06-04T09:47:27.323861'
-                    tableName: credit_requests
+                    processedAt: null
       '400':
         description: Bad Request - Schema validation or missing/invalid fields
         content:
@@ -421,6 +511,14 @@
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
     operationId: post-auth-v2-credit-request
+    x-codeSamples:
+    - lang: cURL
+      label: Create credit request
+      source: |
+        curl --location --request POST 'https://${HOSTNAME}/iudx/v2/auth/credit/request' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"additional_info": {"purpose": "research", "description": "Data analysis project"}}'
     security:
     - authorization: []
   put:
@@ -433,6 +531,21 @@
     tags:
     - Credit APIs
     operationId: put-auth-v2-credit-request
+    x-codeSamples:
+    - lang: cURL
+      label: Grant credit request
+      source: |
+        curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/auth/credit/request' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"id": "ac1e0e2d-c4cc-4008-951f-62916f0d06e7", "status": "granted", "amount": 10000.0, "expiration_date": "2025-12-31T23:59:59"}'
+    - lang: cURL
+      label: Reject credit request
+      source: |
+        curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/auth/credit/request' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"id": "ac1e0e2d-c4cc-4008-951f-62916f0d06e7", "status": "rejected"}'
     security:
     - authorization: []
     requestBody:
@@ -492,7 +605,7 @@
                 id: ac1e0e2d-c4cc-4008-951f-62916f0d06e7
                 status: granted
                 amount: 10000.0
-                expiration_date: '2025-12-31T23:59:59'
+                expirationDate: '2025-12-31T23:59:59'
             reject:
               summary: Reject a credit request
               value:
@@ -523,20 +636,23 @@
                     userId:
                       type: string
                       format: uuid
-                      description: UUID of the user who received the credit
+                      description: UUID of the user
                     amount:
-                      type: integer
+                      type: number
+                      format: double
                       description: Amount of credits transacted
                     transactedBy:
                       type: string
                       format: uuid
-                      description: UUID of the admin who processed the request
+                      description: UUID of the admin who performed the transaction
                     transactionStatus:
                       type: string
-                      description: Status of the transaction (e.g., `success`)
+                      enum: [success, failure]
+                      description: Status of the transaction
                     transactionType:
                       type: string
-                      description: Type of the transaction (`credit` or `debit`)
+                      enum: [credit, debit]
+                      description: Type of the transaction
                     createdAt:
                       type: string
                       format: date-time
@@ -544,13 +660,11 @@
                     requestedAt:
                       type: string
                       format: date-time
-                      description: Timestamp of the original credit request
+                      description: Timestamp of the original request
                     updatedBalance:
-                      type: integer
+                      type: number
+                      format: double
                       description: User's credit balance after the transaction
-                    tableName:
-                      type: string
-                      description: Internal table name for the record
             examples:
               success:
                 value:
@@ -559,14 +673,13 @@
                   result:
                     id: 8e6d2003-88ae-47ee-9779-c21d9c3a4091
                     userId: 436cb796-5826-458b-a914-a54721f70997
-                    amount: 10000
+                    amount: 10000.0
                     transactedBy: a2899137-8458-40a6-9be8-084cfd1890e5
                     transactionStatus: success
                     transactionType: credit
                     createdAt: '2025-06-04T10:45:06.361576'
                     requestedAt: '2025-06-04T09:47:27.323861'
-                    updatedBalance: 20000
-                    tableName: credit_transactions
+                    updatedBalance: 20000.0
       '400':
         description: Bad Request - Schema validation or missing/invalid fields
         content:
@@ -596,6 +709,14 @@
     tags:
     - Credit APIs
     operationId: put-auth-v2-user-credit
+    x-codeSamples:
+    - lang: cURL
+      label: Deduct credits from user
+      source: |
+        curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/auth/admin/user/credit/deduct' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"user_id": "436cb796-5826-458b-a914-a54721f70997", "amount": 50.0, "requested_at": "2025-05-29T19:07:00"}'
     security:
     - authorization: []
     requestBody:
@@ -625,8 +746,8 @@
             deduct:
               value:
                 amount: 50.0
-                user_id: 436cb796-5826-458b-a914-a54721f70997
-                requested_at: '2025-05-29T19:07:00'
+                userId: 436cb796-5826-458b-a914-a54721f70997
+                requestedAt: '2025-05-29T19:07:00'
     responses:
       '200':
         description: Credits deducted successfully
@@ -654,7 +775,8 @@
                       format: uuid
                       description: UUID of the user whose credits were deducted
                     amount:
-                      type: integer
+                      type: number
+                      format: double
                       description: Amount of credits deducted
                     transactedBy:
                       type: string
@@ -662,10 +784,12 @@
                       description: UUID of the admin who performed the deduction
                     transactionStatus:
                       type: string
-                      description: Status of the transaction (e.g., `success`)
+                      enum: [success, failure]
+                      description: Status of the transaction
                     transactionType:
                       type: string
-                      description: Type of the transaction (`debit`)
+                      enum: [debit]
+                      description: Always `debit` for this operation
                     createdAt:
                       type: string
                       format: date-time
@@ -675,11 +799,9 @@
                       format: date-time
                       description: Timestamp of the original deduction request
                     updatedBalance:
-                      type: integer
+                      type: number
+                      format: double
                       description: User's credit balance after the deduction
-                    tableName:
-                      type: string
-                      description: Internal table name for the record
             examples:
               success:
                 value:
@@ -694,8 +816,7 @@
                     transactionType: debit
                     createdAt: '2025-06-04T10:51:42.343373'
                     requestedAt: '2025-05-29T19:07:00'
-                    updatedBalance: 19950
-                    tableName: credit_transactions
+                    updatedBalance: 19950.0
       '400':
         description: Bad Request - Schema validation or missing/invalid fields
         content:
@@ -718,6 +839,14 @@
   put:
     operationId: put-auth-v2-user-credit-add
     summary: Add credits to a user's balance (COS Admin)
+    x-codeSamples:
+    - lang: cURL
+      label: Add credits to user
+      source: |
+        curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/auth/admin/user/credit/add' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"user_id": "436cb796-5826-458b-a914-a54721f70997", "amount": 50.0, "requested_at": "2025-05-29T19:07:00"}'
     description: 'Adds a specified amount of credits to a user''s balance. Requires `cos_admin` role. The target user is identified by `user_id` in the request body.
 
       **Log Type:** `COMPUTE`
@@ -783,7 +912,8 @@
                       format: uuid
                       description: UUID of the user who received credits
                     amount:
-                      type: integer
+                      type: number
+                      format: double
                       description: Amount of credits added
                     transactedBy:
                       type: string
@@ -791,10 +921,12 @@
                       description: UUID of the admin who performed the addition
                     transactionStatus:
                       type: string
-                      description: Status of the transaction (e.g., `success`)
+                      enum: [success, failure]
+                      description: Status of the transaction
                     transactionType:
                       type: string
-                      description: Type of the transaction (`credit`)
+                      enum: [credit]
+                      description: Always `credit` for this operation
                     createdAt:
                       type: string
                       format: date-time
@@ -802,13 +934,11 @@
                     requestedAt:
                       type: string
                       format: date-time
-                      description: Timestamp of the original credit request
+                      description: Timestamp of the original credit addition request
                     updatedBalance:
-                      type: integer
+                      type: number
+                      format: double
                       description: User's credit balance after the addition
-                    tableName:
-                      type: string
-                      description: Internal table name for the record
             examples:
               success:
                 value:
@@ -823,8 +953,7 @@
                     transactionType: credit
                     createdAt: '2025-06-04T10:51:42.343373'
                     requestedAt: '2025-05-29T19:07:00'
-                    updatedBalance: 19950
-                    tableName: credit_transactions
+                    updatedBalance: 20050.0
       '400':
         description: Bad Request - Schema validation or missing/invalid fields
         content:
@@ -854,6 +983,12 @@
 
       '
     operationId: delete-auth-v2-user-compute-role-request
+    x-codeSamples:
+    - lang: cURL
+      label: Delete pending compute request
+      source: |
+        curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/auth/user/compute/requests/{id}' \
+        --header 'Authorization: Bearer <your-token>'
     parameters:
     - name: id
       in: path
@@ -866,18 +1001,34 @@
     responses:
       '200':
         description: Compute request deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                detail:
+                  type: string
+                  example: Pending Compute Request deleted successfully
       '400':
-        description: Bad Request - Schema validation failed or incorrect query parameters
+        description: Bad Request - Only pending compute requests can be deleted
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/updateNotificationBadRequest
       '401':
-        description: Unauthorized - Token invalid or expired, or caller lacks permission
+        description: Unauthorized - Token invalid or expired
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller did not submit this compute request
+      '404':
+        description: Not Found - Compute request with given ID does not exist
     security:
     - authorization: []
 /iudx/v2/auth/credit/request/report:
@@ -887,6 +1038,12 @@
     tags:
     - Credit APIs
     operationId: get-auth-v2-credit-request-report
+    x-codeSamples:
+    - lang: cURL
+      label: Download credit requests report
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/auth/credit/request/report?status=granted' \
+        --header 'Authorization: Bearer <your-token>'
     security:
     - authorization: []
     parameters:
