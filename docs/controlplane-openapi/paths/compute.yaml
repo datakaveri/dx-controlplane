@@ -28,9 +28,11 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                   description: URN indicating the response status
                 title:
                   type: string
+                  example: Success
                   description: Human-readable response title
                 result:
                   type: object
@@ -130,9 +132,11 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                   description: URN indicating the response status
                 title:
                   type: string
+                  example: Success
                   description: Human-readable response title
                 result:
                   type: array
@@ -267,9 +271,11 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                   description: URN indicating the response status
                 title:
                   type: string
+                  example: Success
                   description: Human-readable response title
                 result:
                   type: object
@@ -417,9 +423,11 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                   description: URN indicating the response status
                 title:
                   type: string
+                  example: Success
                   description: Human-readable response title
                 detail:
                   type: string

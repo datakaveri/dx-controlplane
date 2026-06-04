@@ -2043,9 +2043,11 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                     description: URN indicating the response status
                   title:
                     type: string
+                    example: Success
                     description: Human-readable response title
                   result:
                     type: object
@@ -2145,9 +2147,11 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                     description: URN indicating the response status
                   title:
                     type: string
+                    example: Success
                     description: Human-readable response title
                   result:
                     type: array
@@ -2281,9 +2285,11 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                     description: URN indicating the response status
                   title:
                     type: string
+                    example: Success
                     description: Human-readable response title
                   result:
                     type: object
@@ -2428,9 +2434,11 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                     description: URN indicating the response status
                   title:
                     type: string
+                    example: Success
                     description: Human-readable response title
                   detail:
                     type: string
@@ -6466,8 +6474,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: array
                     items:
@@ -6626,8 +6636,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     $ref: '#/components/schemas/OrgCreateRequestItem'
               example:
@@ -6727,8 +6739,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   detail:
                     type: string
                     example: Organisation create request approved successfully
@@ -6779,8 +6793,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: array
                     items:
@@ -6837,8 +6853,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   detail:
                     type: string
                     example: Organization request deleted successfully
@@ -6889,8 +6907,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: array
                     items:
@@ -6951,8 +6971,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   detail:
                     type: string
                     example: Join organisation request deleted successfully
@@ -7017,8 +7039,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: array
                     items:
@@ -7125,8 +7149,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   detail:
                     type: string
                     example: Created Join request
@@ -7217,8 +7243,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   detail:
                     type: string
                     example: Organisation join request approved successfully
@@ -7278,8 +7306,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   detail:
                     type: string
                     example: Organisation join request withdrawn successfully
@@ -7332,8 +7362,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: array
                     items:
@@ -7429,8 +7461,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   detail:
                     type: string
                     example: Organisation deleted Successfully!
@@ -7511,8 +7545,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: object
                     properties:
@@ -7599,8 +7635,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: object
                     properties:
@@ -7704,8 +7742,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: array
                     items:
@@ -7819,8 +7859,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: object
                     nullable: true
@@ -7907,8 +7949,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   detail:
                     type: string
                     example: Provider Role Request deleted successfully
@@ -7966,8 +8010,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   detail:
                     type: string
                     example: Provider role request submitted successfully
@@ -8017,8 +8063,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: array
                     items:
@@ -8164,8 +8212,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   detail:
                     type: string
                     example: Provider role request approved successfully
@@ -8244,8 +8294,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   detail:
                     type: string
                     example: Provider role granted successfully
@@ -10066,8 +10118,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: string
               examples:
@@ -10136,8 +10190,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: string
               examples:
@@ -10192,8 +10248,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: object
                     description: Full DxUser profile — same structure as GET /iudx/v2/auth/user result
@@ -10483,8 +10541,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: object
                     properties:
@@ -10859,8 +10919,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: string
                     description: Success message
@@ -10943,8 +11005,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: string
                     description: Success message
@@ -11010,8 +11074,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: object
                     properties:
@@ -11147,8 +11213,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: array
                     items:
@@ -11296,8 +11364,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: array
                     items:
@@ -11395,8 +11465,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: string
               examples:
@@ -11486,8 +11558,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: string
               examples:
@@ -11552,8 +11626,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: string
               examples:
@@ -11698,8 +11774,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: string
               examples:
@@ -11814,8 +11892,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: string
               examples:
@@ -11864,8 +11944,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: object
                     properties:

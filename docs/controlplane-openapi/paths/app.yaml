@@ -327,8 +327,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 result:
                   type: object
                   properties:
