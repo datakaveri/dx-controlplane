@@ -599,12 +599,11 @@ public class AccessRequestServiceImpl implements AccessRequestService {
               }
 
               UUID itemId = UUID.fromString(request.getItemId());
-              UUID ownerId = UUID.fromString(request.getProviderId());
               String consumerId = request.getConsumerId();
 
               // Delete policy if exists
               return policyDao
-                  .deActivatePolicyByUserAndItem(itemId, ownerId, consumerId)
+                  .deActivatePolicyByUserAndItem(itemId, requestId, consumerId)
                   .compose(
                       queryResult -> {
                         if (queryResult.getRows() == null || queryResult.getRows().isEmpty()) {
