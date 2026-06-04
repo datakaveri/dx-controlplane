@@ -37,8 +37,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 result:
                   type: array
                   items:
@@ -197,8 +199,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 result:
                   $ref: ../components/schemas/organisation.yaml#/OrgCreateRequestItem
             example:
@@ -296,8 +300,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 detail:
                   type: string
                   example: Organisation create request approved successfully
@@ -348,8 +354,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 result:
                   type: array
                   items:
@@ -406,8 +414,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 detail:
                   type: string
                   example: Organization request deleted successfully
@@ -458,8 +468,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 result:
                   type: array
                   items:
@@ -520,8 +532,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 detail:
                   type: string
                   example: Join organisation request deleted successfully
@@ -586,8 +600,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 result:
                   type: array
                   items:
@@ -693,8 +709,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 detail:
                   type: string
                   example: Created Join request
@@ -783,8 +801,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 detail:
                   type: string
                   example: Organisation join request approved successfully
@@ -844,8 +864,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 detail:
                   type: string
                   example: Organisation join request withdrawn successfully
@@ -898,8 +920,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 result:
                   type: array
                   items:
@@ -995,8 +1019,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 detail:
                   type: string
                   example: Organisation deleted Successfully!
@@ -1077,8 +1103,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 result:
                   type: object
                   properties:
@@ -1165,8 +1193,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 result:
                   type: object
                   properties:
@@ -1270,8 +1300,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 result:
                   type: array
                   items:
@@ -1382,8 +1414,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 result:
                   type: object
                   nullable: true
@@ -1465,8 +1499,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 detail:
                   type: string
                   example: Provider Role Request deleted successfully
@@ -1524,8 +1560,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 detail:
                   type: string
                   example: Provider role request submitted successfully
@@ -1575,8 +1613,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 result:
                   type: array
                   items:
@@ -1714,8 +1754,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 detail:
                   type: string
                   example: Provider role request approved successfully
@@ -1792,8 +1834,10 @@
               properties:
                 type:
                   type: string
+                  example: dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 detail:
                   type: string
                   example: Provider role granted successfully
