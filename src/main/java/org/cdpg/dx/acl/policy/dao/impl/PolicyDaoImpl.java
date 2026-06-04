@@ -145,8 +145,10 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
                   List<String> columns = new ArrayList<>();
                   List<Object> values = new ArrayList<>();
 
-                  columns.add(DB_CONSUMER_ID);
-                  values.add(req.getUserId());
+                  if (req.getUserId() != null) {
+                    columns.add(DB_CONSUMER_ID);
+                    values.add(req.getUserId());
+                  }
 
                   // item_organization_id is null for independent providers — omit the column
                   // so the DB defaults to NULL rather than causing a param count mismatch
@@ -154,17 +156,29 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
                     columns.add(DB_ASSET_ORGANIZATION_ID);
                     values.add(req.getItemOrganizationId());
                   }
+                  if (req.getRequestId() != null) {
+                    columns.add(DB_REQUEST_ID);
+                    values.add(req.getRequestId());
+                  }
 
-                  columns.add(DB_ITEM_ID);       values.add(req.getItemId().toString());
-                  columns.add(DB_OWNER_ID);       values.add(userId.toString());
-                  columns.add(DB_EXPIRY_AT);      values.add(req.getExpiryTime() != null ? req.getExpiryTime().toString() : null);
-                  columns.add(DB_CONSTRAINTS);    values.add(Optional.ofNullable(req.getConstraints()).orElse(new JsonObject()));
-                  columns.add(DB_STATUS);         values.add(ACTIVE);
-                  columns.add(DB_REQUEST_ID);     values.add(req.getRequestId());
-                  columns.add(DB_POLICY_TYPE);    values.add(req.getPolicyType());
-                  columns.add(DB_ADDITIONAL_INFO); values.add(Optional.ofNullable(req.getAdditionalInfo()).orElse(new JsonObject()));
-                  columns.add(DB_PROVIDER_COMMENT); values.add(Optional.ofNullable(req.getProviderComment()).orElse(""));
-                  columns.add(DB_FEEDBACK_TO_CONSUMER); values.add(Optional.ofNullable(req.getFeedbackToConsumer()).orElse(""));
+                  columns.add(DB_ITEM_ID);
+                  values.add(req.getItemId().toString());
+                  columns.add(DB_OWNER_ID);
+                  values.add(userId.toString());
+                  columns.add(DB_EXPIRY_AT);
+                  values.add(req.getExpiryTime() != null ? req.getExpiryTime().toString() : null);
+                  columns.add(DB_CONSTRAINTS);
+                  values.add(Optional.ofNullable(req.getConstraints()).orElse(new JsonObject()));
+                  columns.add(DB_STATUS);
+                  values.add(ACTIVE);
+                  columns.add(DB_POLICY_TYPE);
+                  values.add(req.getPolicyType());
+                  columns.add(DB_ADDITIONAL_INFO);
+                  values.add(Optional.ofNullable(req.getAdditionalInfo()).orElse(new JsonObject()));
+                  columns.add(DB_PROVIDER_COMMENT);
+                  values.add(Optional.ofNullable(req.getProviderComment()).orElse(""));
+                  columns.add(DB_FEEDBACK_TO_CONSUMER);
+                  values.add(Optional.ofNullable(req.getFeedbackToConsumer()).orElse(""));
 
                   InsertQuery insertQuery =
                       new InsertQuery()
@@ -302,7 +316,7 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
 
   @Override
   public Future<QueryResult> deActivatePolicyByUserAndItem(
-      UUID itemId, UUID ownerId, String userId) {
+      UUID itemId, UUID requestId, String userId) {
 
     Condition condition =
         new Condition()
@@ -315,9 +329,9 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
                         .setOperator(Condition.Operator.EQUALS)
                         .setValues(List.of(itemId.toString())),
                     new Condition()
-                        .setColumn(DB_OWNER_ID)
+                        .setColumn(DB_REQUEST_ID)
                         .setOperator(Condition.Operator.EQUALS)
-                        .setValues(List.of(ownerId.toString())),
+                        .setValues(List.of(requestId.toString())),
                     new Condition()
                         .setColumn(DB_CONSUMER_ID)
                         .setOperator(Condition.Operator.EQUALS)
