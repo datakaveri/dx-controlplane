@@ -156,7 +156,10 @@ public class OrganizationCreateRequestHandler {
 
               CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
-              ResponseBuilder.sendSuccess(ctx, "Updated Sucessfully", urnGenerator);
+              String message = status == Status.GRANTED
+                ? "Organisation create request approved successfully"
+                : "Organisation create request rejected successfully";
+              ResponseBuilder.sendSuccess(ctx, message, urnGenerator);
               Future<Void> future =
                   emailComposer.sendUserEmailForOrgCreateRequestApproval(requestId, status);
             })

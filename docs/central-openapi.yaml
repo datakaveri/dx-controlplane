@@ -95,7 +95,7 @@ paths:
         - lang: cURL
           label: Create AppId
           source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/app' \
+            curl --location 'https://${HOSTNAME}/iudx/v2/auth/app' \
             --header 'Authorization: Bearer <token>' \
             --header 'Content-Type: application/json' \
             --data '{
@@ -153,7 +153,7 @@ paths:
         - lang: cURL
           label: Get AppIds
           source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/app' \
+            curl --location 'https://${HOSTNAME}/iudx/v2/auth/app' \
             --header 'Authorization: Bearer <token>'
   /iudx/v2/auth/app/{appId}:
     delete:
@@ -228,7 +228,7 @@ paths:
           label: Delete AppId
           source: |
             curl --location --request DELETE \
-            'https://${HOSTNAME}/iudx/v2/app/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9' \
+            'https://${HOSTNAME}/iudx/v2/auth/app/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9' \
             --header 'Authorization: Bearer <token>'
     patch:
       tags:
@@ -276,11 +276,11 @@ paths:
                     example: Success
                   detail:
                     type: string
-                    example: Updated app id status successfully
+                    example: App credentials status updated to active successfully
               example:
                 type: dx:controlPlane:success
                 title: Success
-                detail: Updated app id status successfully
+                detail: App credentials status updated to active successfully
         '204':
           description: AppId status updated successfully
         '400':
@@ -312,7 +312,7 @@ paths:
           label: Update AppId Status
           source: |
             curl --location --request PATCH \
-            'https://${HOSTNAME}/iudx/v2/app/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9?status=disable' \
+            'https://${HOSTNAME}/iudx/v2/auth/app/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9?status=disable' \
             --header 'Authorization: Bearer <token>'
   /iudx/v2/auth/asset/request:
     post:
@@ -2154,7 +2154,7 @@ paths:
                   detail:
                     type: string
                     description: Returned instead of result when a previously rejected request is re-activated.
-                    example: Compute Role Request created successfully
+                    example: Compute role request submitted successfully
               examples:
                 new_request:
                   summary: New compute role request created
@@ -2176,7 +2176,7 @@ paths:
                   value:
                     type: urn:dx:ControlPlane:success
                     title: Success
-                    detail: Compute Role Request created successfully
+                    detail: Compute role request submitted successfully
         '400':
           description: Bad Request - Invalid or missing request body
           content:
@@ -2263,18 +2263,18 @@ paths:
                     description: Human-readable response title
                   detail:
                     type: string
-                    description: Message indicating the final status, e.g. "Compute Role Status granted"
+                    description: Message indicating the final status
               examples:
                 granted:
                   value:
                     type: urn:dx:ControlPlane:success
                     title: Success
-                    detail: Compute Role Status granted
+                    detail: Compute role request approved successfully
                 rejected:
                   value:
                     type: urn:dx:ControlPlane:success
                     title: Success
-                    detail: Compute Role Status rejected
+                    detail: Compute role request rejected successfully
         '400':
           description: Bad Request - Invalid status value or request format
           content:
@@ -6560,7 +6560,7 @@ paths:
                     type: string
                   detail:
                     type: string
-                    example: Updated Sucessfully
+                    example: Organisation create request approved successfully
         '401':
           description: Unauthorized
           content:
@@ -7050,7 +7050,7 @@ paths:
                     type: string
                   detail:
                     type: string
-                    example: Updated Organisation Join Request
+                    example: Organisation join request approved successfully
         '401':
           description: Unauthorized
           content:
@@ -7111,7 +7111,7 @@ paths:
                     type: string
                   detail:
                     type: string
-                    example: Updated Organisation Join Request
+                    example: Organisation join request withdrawn successfully
         '401':
           description: Unauthorized
           content:
@@ -7799,7 +7799,7 @@ paths:
                     type: string
                   detail:
                     type: string
-                    example: Created Request
+                    example: Provider role request submitted successfully
         '401':
           description: Unauthorized
           content:
@@ -7997,7 +7997,7 @@ paths:
                     type: string
                   detail:
                     type: string
-                    example: Provider role updated
+                    example: Provider role request approved successfully
         '401':
           description: Unauthorized
           content:
@@ -10602,7 +10602,7 @@ paths:
                   value:
                     type: urn:dx:ControlPlane:success
                     title: Success
-                    result: Success:Addtion of User Info
+                    result: User info added successfully
         '401':
           description: Unauthorized - Token missing or invalid
           content:
@@ -10718,7 +10718,7 @@ paths:
                   value:
                     type: urn:dx:ControlPlane:success
                     title: Success
-                    result: 'Success: User Info Updated'
+                    result: User info updated successfully
         '401':
           description: Unauthorized - Token missing or invalid
           content:

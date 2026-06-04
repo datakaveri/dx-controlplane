@@ -308,10 +308,10 @@ public class OrganizationJoinRequestHandler {
                 LOGGER.error(
                   "Email send failed", err));
 
-          ResponseBuilder.sendSuccess(
-            ctx,
-            "Updated Organisation Join Request",
-            urnGenerator);
+          String message = status == Status.GRANTED
+            ? "Organisation join request approved successfully"
+            : "Organisation join request rejected successfully";
+          ResponseBuilder.sendSuccess(ctx, message, urnGenerator);
         })
       .onFailure(ctx::fail);
   }
@@ -331,10 +331,7 @@ public class OrganizationJoinRequestHandler {
             ctx, new JsonObject().put(ID,orgJoinReqId.toString()), OrganisationAuditOperation.WITHDRAW_PENDING_ORG_JOIN_REQUEST);
         CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
-        ResponseBuilder.sendSuccess(
-          ctx,
-          "Updated Organisation Join Request",
-          urnGenerator);
+        ResponseBuilder.sendSuccess(ctx, "Organisation join request withdrawn successfully", urnGenerator);
       })
       .onFailure(ctx::fail);
   }

@@ -27,7 +27,7 @@
                   example: Success
                 detail:
                   type: string
-                  example: Created Request
+                  example: Provider role request submitted successfully
       '401':
         description: Missing or invalid authorization token
         content:
@@ -417,7 +417,7 @@
                   example: Success
                 detail:
                   type: string
-                  example: Platform provider role request updated
+                  example: Provider role request approved successfully
       '400':
         description: Bad request – invalid status value
         content:
