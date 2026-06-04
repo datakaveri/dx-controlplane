@@ -17,6 +17,8 @@ import org.cdpg.dx.catalogueService.models.ItemType;
 public class CreatePolicyRequest {
   private static long defaultExpiryDays;
   private String userId;
+  private String requestId;
+  private String policyType;
   private String itemOrganizationId;
   private UUID itemId;
   private ItemType itemType;
@@ -32,6 +34,8 @@ public class CreatePolicyRequest {
     createPolicyRequest.setConstraints(jsonObject.getJsonObject("constraints"));
     createPolicyRequest.setUserId(jsonObject.getString("userId"));
     createPolicyRequest.setItemId(jsonObject.getString("itemId"));
+    createPolicyRequest.setRequestId(jsonObject.getString("requestId"));
+    createPolicyRequest.setPolicyType(jsonObject.getString("policyType"));
     createPolicyRequest.setItemOrganizationId(jsonObject.getString("itemOrganizationId"));
     createPolicyRequest.setAdditionalInfo(jsonObject.getJsonObject("additionalInfo", null));
     createPolicyRequest.setProviderComment(jsonObject.getString("providerComment", null));
@@ -64,6 +68,22 @@ public class CreatePolicyRequest {
 
   public void setUserId(String userId) {
     this.userId = userId;
+  }
+
+  public String getRequestId() {
+    return requestId;
+  }
+
+  public void setRequestId(String requestId) {
+    this.requestId = requestId;
+  }
+
+  public String getPolicyType() {
+    return policyType;
+  }
+
+  public void setPolicyType(String policyType) {
+    this.policyType = policyType;
   }
 
   public UUID getItemId() {
@@ -162,6 +182,8 @@ public class CreatePolicyRequest {
     return "CreatePolicyRequest{" +
         "userId='" + userId + '\'' +
         ", itemId=" + itemId +
+        ", requestId=" + requestId +
+        ", policyType=" + policyType +
         ", itemOrganizationId=" + itemOrganizationId +
         ", itemType=" + itemType +
         ", expiryTime=" + expiryTime +

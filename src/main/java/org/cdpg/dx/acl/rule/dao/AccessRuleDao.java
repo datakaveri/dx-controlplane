@@ -5,13 +5,14 @@ import io.vertx.core.json.JsonObject;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import org.cdpg.dx.acl.policy.dao.model.PolicyDto;
 import org.cdpg.dx.database.postgres.models.QueryResult;
 
 public interface AccessRuleDao {
 
   Future<Boolean> ruleMatches(UUID itemId, String userId, String orgId, List<String> roles);
 
-  Future<JsonObject> findMatchingRule(UUID itemId, String userId, String orgId, List<String> roles);
+  Future<PolicyDto> findMatchingRule(UUID itemId, String userId, String orgId, List<String> roles);
 
   Future<Void> createRule(
       UUID policyId,

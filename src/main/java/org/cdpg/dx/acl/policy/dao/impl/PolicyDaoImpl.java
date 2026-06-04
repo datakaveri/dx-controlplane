@@ -14,7 +14,9 @@ import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ITEM_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_OWNER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_POLICY_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_POLICY_TYPE;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_PROVIDER_COMMENT;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.POLICY_TABLE;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.USER_TABLE;
@@ -152,6 +154,8 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
                           req.getExpiryTime().toString(),
                           Optional.ofNullable(req.getConstraints()).orElse(new JsonObject()),
                           ACTIVE,
+                          req.getRequestId(),
+                          req.getPolicyType(),
                           Optional.ofNullable(req.getAdditionalInfo()).orElse(new JsonObject()),
                           Optional.ofNullable(req.getProviderComment()).orElse(""),
                           Optional.ofNullable(req.getFeedbackToConsumer()).orElse(""));
@@ -168,6 +172,8 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
                                   DB_EXPIRY_AT,
                                   DB_CONSTRAINTS,
                                   DB_STATUS,
+                                  DB_REQUEST_ID,
+                                  DB_POLICY_TYPE,
                                   DB_ADDITIONAL_INFO,
                                   DB_PROVIDER_COMMENT,
                                   DB_FEEDBACK_TO_CONSUMER))
@@ -420,7 +426,7 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
   }
 
   @Override
-  public Future<List<PolicyAccessInfo>> getMatchingPolicies(UUID itemId, String consumerId) {
+  public Future<List<PolicyDto>> getMatchingPolicies(UUID itemId, String consumerId) {
 
     LocalDateTime now = LocalDateTime.now();
 
@@ -436,24 +442,20 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
     SelectQuery query =
         new SelectQuery()
             .setTable(POLICY_TABLE)
-            .setColumns(List.of(DB_ID, DB_CONSTRAINTS, DB_EXPIRY_AT))
+            .setColumns(List.of("*"))
             .setCondition(finalCondition);
 
     return postgresService
         .select(query, false)
         .compose(
             result -> {
-              List<PolicyAccessInfo> policies = new ArrayList<>();
+              List<PolicyDto> policies = new ArrayList<>();
 
               for (Object rowObj : result.getRows()) {
 
                 JsonObject row = (JsonObject) rowObj;
 
-                policies.add(
-                    new PolicyAccessInfo(
-                        UUID.fromString(row.getString(DB_ID)),
-                        row.getJsonObject(DB_CONSTRAINTS),
-                        LocalDateTime.parse(row.getString(DB_EXPIRY_AT))));
+                policies.add(new PolicyDto(row));
               }
 
               return Future.succeededFuture(policies);

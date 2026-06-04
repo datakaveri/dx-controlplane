@@ -1,11 +1,17 @@
 package org.cdpg.dx.acl.policy.dao.model;
 
+import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_EMAIL;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_FIRST_NAME;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_LAST_NAME;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_ORGANIZATION;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ADDITIONAL_INFO;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_EMAIL;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_FIRST_NAME;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_LAST_NAME;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_ORGANIZATION;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.OWNER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.POLICY_TABLE;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.USER;
 
@@ -19,12 +25,18 @@ import org.cdpg.dx.database.postgres.util.EntityUtil;
 public class PolicyDto implements BaseEntity<PolicyDto> {
 
   private String policyId;
+  private String requestId;
+  private String policyType;
   private String itemId;
   private String itemType;
   private LocalDateTime expiryAt;
   private JsonObject constraints;
   private JsonObject additionalInfo;
   private String providerId;
+  private String providerEmail;
+  private String providerFirstName;
+  private String providerLastName;
+  private String providerOrganization;
   private String status;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
@@ -46,6 +58,8 @@ public class PolicyDto implements BaseEntity<PolicyDto> {
 
   public PolicyDto(JsonObject row) {
     this.policyId = row.getString("_id");
+    this.requestId = row.getString("request_id");
+    this.policyType = row.getString("policy_type");
     this.itemId = row.getString("item_id");
     this.itemType = row.getString("itemType");
     this.status = row.getString("status");
@@ -69,8 +83,8 @@ public class PolicyDto implements BaseEntity<PolicyDto> {
       this.consumerId = row.getString("consumer_id");
     }
 
-    if (row.containsKey("provider_id")) {
-      this.provider = row.getJsonObject("provider_id");
+    if (row.containsKey("owner_id")) {
+      this.providerId = row.getString("owner_id");
     }
   }
 
@@ -78,6 +92,8 @@ public class PolicyDto implements BaseEntity<PolicyDto> {
   public Map<String, Object> toNonEmptyFieldsMap() {
     Map<String, Object> map = new HashMap<>();
     EntityUtil.putIfPresent(map, "policyId", policyId);
+    EntityUtil.putIfPresent(map, "policyType", policyType);
+    EntityUtil.putIfPresent(map, "requestId", requestId);
     EntityUtil.putIfPresent(map, "itemId", itemId);
     EntityUtil.putIfPresent(map, "itemType", itemType);
     EntityUtil.putIfPresent(map, "status", status);
@@ -91,20 +107,27 @@ public class PolicyDto implements BaseEntity<PolicyDto> {
   public JsonObject toJson() {
     return new JsonObject()
         .put("policyId", policyId)
+        .put("requestId", requestId)
+        .put("policyType", policyType)
         .put("status", status)
         .put("constraints", constraints)
         .put(ADDITIONAL_INFO, additionalInfo)
         .put(
-            USER,
+            CONSUMER,
             new JsonObject()
-                // .put(PROVIDER_ID, getProviderId())
-                //                    put(PROVIDER_ORGANIZATION, getProviderOrganization())
                 .put(CONSUMER_ID, getConsumerId())
                 .put(CONSUMER_FIRST_NAME, getConsumerFirstName())
                 .put(CONSUMER_LAST_NAME, getConsumerLastName())
                 .put(CONSUMER_EMAIL, getConsumerEmail())
                 .put(CONSUMER_ORGANIZATION, getConsumerOrganization()))
-
+        .put(
+            USER,
+            new JsonObject()
+                .put(OWNER_ID, getProviderId())
+                .put(OWNER_FIRST_NAME, getProviderFirstName())
+                .put(OWNER_LAST_NAME, getProviderLastName())
+                .put(OWNER_EMAIL, getProviderEmail())
+                .put(OWNER_ORGANIZATION, getProviderOrganization()))
         .put("asset", new JsonObject()
             .put("itemId", itemId)
             .put("assetName", assetName)
@@ -258,6 +281,60 @@ public class PolicyDto implements BaseEntity<PolicyDto> {
 
   public PolicyDto setAdditionalInfo(JsonObject additionalInfo) {
     this.additionalInfo = additionalInfo;
+    return this;
+  }
+
+  public String getRequestId() {
+    return requestId;
+  }
+
+  public PolicyDto setRequestId(String requestId) {
+    this.requestId = requestId;
+    return this;
+  }
+
+  public String getPolicyType() {
+    return policyType;
+  }
+
+  public PolicyDto setPolicyType(String policyType) {
+    this.policyType = policyType;
+    return this;
+  }
+
+  public String getProviderEmail() {
+    return providerEmail;
+  }
+
+  public PolicyDto setProviderEmail(String providerEmail) {
+    this.providerEmail = providerEmail;
+    return this;
+  }
+
+  public String getProviderFirstName() {
+    return providerFirstName;
+  }
+
+  public PolicyDto setProviderFirstName(String providerFirstName) {
+    this.providerFirstName = providerFirstName;
+    return this;
+  }
+
+  public String getProviderLastName() {
+    return providerLastName;
+  }
+
+  public PolicyDto setProviderLastName(String providerLastName) {
+    this.providerLastName = providerLastName;
+    return this;
+  }
+
+  public String getProviderOrganization() {
+    return providerOrganization;
+  }
+
+  public PolicyDto setProviderOrganization(String providerOrganization) {
+    this.providerOrganization = providerOrganization;
     return this;
   }
 }

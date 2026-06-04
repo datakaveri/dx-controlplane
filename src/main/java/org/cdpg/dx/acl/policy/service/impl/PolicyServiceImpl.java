@@ -21,6 +21,7 @@ import static org.cdpg.dx.acl.accessRequest.config.Constants.USER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSTRAINTS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_FIRST_NAME;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CONSTRAINTS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CONSUMER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_EXPIRY_AT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ID;
@@ -34,7 +35,6 @@ import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.LAST_NAME;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ORGANIZATION;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.OWNER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.POLICY_ID;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.USER_EMAIL_ID;
 import static org.cdpg.dx.auth.model.DxRole.CONSUMER;
 import static org.cdpg.dx.auth.model.DxRole.PROVIDER;
 import static org.cdpg.dx.catalogueService.config.Constants.ASSET_NAME_KEY;
@@ -57,6 +57,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -77,6 +78,7 @@ import org.cdpg.dx.common.HttpStatusCode;
 import org.cdpg.dx.common.ResponseUrn;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxInternalServerErrorException;
+import org.cdpg.dx.common.exception.DxValidationException;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.model.ResourceObj;
 import org.cdpg.dx.common.request.PaginatedRequest;
@@ -140,6 +142,11 @@ public class PolicyServiceImpl implements PolicyService {
                       .collect(
                           Collectors.toMap(ResourceObj::getItemId, ResourceObj::getOrganizationId));
 
+              // Create lookup map
+              Map<UUID, ResourceObj> resourceMap =
+                  resourceObjs.stream()
+                      .collect(Collectors.toMap(ResourceObj::getItemId, Function.identity()));
+
               // Enrich requests
               requests.forEach(
                   req -> {
@@ -150,6 +157,14 @@ public class PolicyServiceImpl implements PolicyService {
                     if (!itemOrgMap.containsKey(req.getItemId())) {
                       throw new IllegalStateException("Missing orgId for item: " + req.getItemId());
                     }
+
+                    // Access type validation
+                    ResourceObj resourceObj = resourceMap.get(req.getItemId());
+
+                    Set<String> allowedAccessTypes =
+                        getAllowedAccessTypes(resourceObj.getResourceServers());
+
+                    validateAccessConstraints(req.getConstraints(), allowedAccessTypes);
                   });
 
               boolean isOwner = providerIds.stream().allMatch(id -> id.equals(userId));
@@ -172,19 +187,40 @@ public class PolicyServiceImpl implements PolicyService {
         .compose(
             queryResult -> {
               JsonArray existingPolicies = queryResult.getRows();
+
               if (existingPolicies != null && !existingPolicies.isEmpty()) {
-                List<String> existingIds =
-                    existingPolicies.stream()
-                        .map(obj -> ((JsonObject) obj).getString("_id"))
-                        .collect(Collectors.toList());
-                LOGGER.error("Policy already exists for items: {}", existingIds);
-                return Future.failedFuture(
-                    generateErrorResponse(
-                        CONFLICT,
-                        "Policy already exists for some of the requested items: " + existingIds));
+
+                Set<String> conflictingAccessTypes = new HashSet<>();
+
+                for (CreatePolicyRequest request : requests) {
+
+                  Set<String> requestedTypes = extractAccessTypes(request.getConstraints());
+
+                  for (Object obj : existingPolicies) {
+
+                    JsonObject row = (JsonObject) obj;
+
+                    JsonObject existingConstraints =
+                        row.getJsonObject(DB_CONSTRAINTS, new JsonObject());
+
+                    Set<String> existingTypes = extractAccessTypes(existingConstraints);
+
+                    existingTypes.retainAll(requestedTypes);
+
+                    conflictingAccessTypes.addAll(existingTypes);
+                  }
+                }
+
+                if (!conflictingAccessTypes.isEmpty()) {
+
+                  return Future.failedFuture(
+                      generateErrorResponse(
+                          CONFLICT,
+                          "Active policy already exists for accessType(s): "
+                              + String.join(", ", conflictingAccessTypes)));
+                }
               }
 
-              // No duplicates found → insert new policies
               return policyDao.insertPolicies(requests, userId);
             })
         .onSuccess(
@@ -220,6 +256,65 @@ public class PolicyServiceImpl implements PolicyService {
 
               return CompositeFuture.all(ruleFutures).mapEmpty();
             });
+  }
+
+  private Set<String> getAllowedAccessTypes(JsonArray resourceServers) {
+    Set<String> set = new HashSet<>();
+
+    for (int i = 0; i < resourceServers.size(); i++) {
+      JsonObject rs = resourceServers.getJsonObject(i);
+
+      JsonArray accessTypes = rs.getJsonArray("accessTypes", new JsonArray());
+      for (int j = 0; j < accessTypes.size(); j++) {
+        set.add(accessTypes.getString(j));
+      }
+    }
+
+    return set; // Example: ["api", "sub", "file", "async"]
+  }
+
+  private void validateAccessConstraints(JsonObject constraints, Set<String> allowedAccessTypes) {
+
+    if (constraints == null || !constraints.containsKey("access")) {
+      return;
+    }
+
+    JsonArray requested = constraints.getJsonArray("access", new JsonArray());
+
+    for (int i = 0; i < requested.size(); i++) {
+
+      JsonObject accessObj = requested.getJsonObject(i);
+      String type = accessObj.getString("accessType");
+
+      if (!allowedAccessTypes.contains(type)) {
+        throw new DxValidationException(
+            "Requested access type '" + type + "' is not allowed for this resource");
+      }
+    }
+  }
+
+  private Set<String> extractAccessTypes(JsonObject constraints) {
+
+    Set<String> accessTypes = new HashSet<>();
+
+    if (constraints == null) {
+      return accessTypes;
+    }
+
+    JsonArray access = constraints.getJsonArray("access", new JsonArray());
+
+    for (int i = 0; i < access.size(); i++) {
+
+      JsonObject obj = access.getJsonObject(i);
+
+      String type = obj.getString("accessType");
+
+      if (type != null) {
+        accessTypes.add(type);
+      }
+    }
+
+    return accessTypes;
   }
 
   private Future<Void> validateOrgAdminAccess(List<ResourceObj> resources, DxUser caller) {
@@ -258,7 +353,7 @@ public class PolicyServiceImpl implements PolicyService {
     }
 
     // Fetch items from catalogue directly
-    return fetchResourcesFromCatalogue(itemIdList)
+    return fetchResourcesFromCatalogue(itemIdList, user.sub().toString())
         .compose(
             resourceObjs -> {
               Set<UUID> providerIdSet = new HashSet<>();
@@ -299,10 +394,10 @@ public class PolicyServiceImpl implements PolicyService {
             });
   }
 
-  public Future<List<ResourceObj>> fetchResourcesFromCatalogue(Set<UUID> ids) {
+  public Future<List<ResourceObj>> fetchResourcesFromCatalogue(Set<UUID> ids, String userId) {
     List<Future> futures =
         ids.stream()
-            .map(this::fetchAndValidateResource) // fetch each UUID
+            .map(id -> fetchAndValidateResource(id, userId)) // fetch each UUID
             .collect(Collectors.toList());
 
     // Combine all futures
@@ -315,16 +410,22 @@ public class PolicyServiceImpl implements PolicyService {
   }
 
   /** Fetch a single resource using ItemService and apply all catalogue validations */
-  private Future<ResourceObj> fetchAndValidateResource(UUID id) {
+  private Future<ResourceObj> fetchAndValidateResource(UUID id, String userId) {
     Promise<ResourceObj> promise = Promise.promise();
 
-    GetItemRequest request = new GetItemRequest(id.toString(), "");
+    GetItemRequest request = new GetItemRequest(id.toString(), userId);
     itemService
         .getItem(request)
         .onFailure(
             ar -> {
-              LOGGER.error(ar.getCause().getLocalizedMessage());
-              LOGGER.error("fetchItem error : {}", ar.getMessage());
+              LOGGER.error("fetchItem error", ar);
+
+              if (ar.getCause() != null) {
+                LOGGER.error("Cause : {}", ar.getCause().getLocalizedMessage());
+              }
+
+              LOGGER.error("Message : {}", ar.getMessage());
+
               promise.fail(INTERNAL_SERVER_ERROR.getDescription());
             })
         .onSuccess(
@@ -371,12 +472,14 @@ public class PolicyServiceImpl implements PolicyService {
                 }
 
                 // Extract resource servers
+                JsonArray resourceServers =
+                    resultJson.getJsonArray("resourceServer", new JsonArray());
+
                 resServerUrls =
-                    resultJson.getJsonArray("resourceServer").stream()
+                    resourceServers.stream()
                         .map(obj -> ((JsonObject) obj).getString("url"))
                         .filter(Objects::nonNull)
                         .toList();
-
                 if (resServerUrls.isEmpty()) {
                   promise.fail(
                       generateFailureMessage(
@@ -406,7 +509,8 @@ public class PolicyServiceImpl implements PolicyService {
                   } else if (type.equalsIgnoreCase(ITEM_TYPE_APPS)) {
                     itemType = ItemType.APPS;
                   }
-                  ResourceObj resourceObj = new ResourceObj(id, provider, resServerUrls, itemType);
+                  ResourceObj resourceObj =
+                      new ResourceObj(id, provider, resServerUrls, resourceServers, itemType);
                   if (resultJson.getString(ORGANIZATION_ID) != null) {
                     resourceObj.setOrganizationId(
                         UUID.fromString(resultJson.getString(ORGANIZATION_ID)));
@@ -700,34 +804,63 @@ public class PolicyServiceImpl implements PolicyService {
 
     for (PolicyDto dto : pagedResult.data()) {
 
-      if (dto.getConsumerId() == null) continue;
+      // Consumer enrichment
+      if (dto.getConsumerId() != null) {
+        Future<Void> consumerFuture =
+            keycloakUserService
+                .getUserById(UUID.fromString(dto.getConsumerId()))
+                .onSuccess(
+                    user -> {
+                      dto.setConsumerEmail(user.email());
+                      dto.setConsumerFirstName(user.givenName());
+                      dto.setConsumerLastName(user.familyName());
+                      dto.setConsumerOrganization(user.organisationName());
+                    })
+                .recover(
+                    err -> {
+                      LOGGER.warn(
+                          "Failed to fetch consumer {}: {}", dto.getConsumerId(), err.getMessage());
 
-      Future<Void> future =
-          keycloakUserService
-              .getUserById(UUID.fromString(dto.getConsumerId()))
-              .onSuccess(
-                  user -> {
-                    dto.setConsumerEmail(user.email());
-                    dto.setConsumerFirstName(user.givenName());
-                    dto.setConsumerLastName(user.familyName());
-                    dto.setConsumerOrganization(user.organisationName());
-                  })
-              .recover(
-                  err -> {
-                    LOGGER.warn(
-                        "Failed to fetch user {}: {}", dto.getConsumerId(), err.getMessage());
+                      dto.setConsumerEmail(null);
+                      dto.setConsumerFirstName(null);
+                      dto.setConsumerLastName(null);
+                      dto.setConsumerOrganization(null);
 
-                    // Keep fields empty/null if user no longer exists
-                    dto.setConsumerEmail(null);
-                    dto.setConsumerFirstName(null);
-                    dto.setConsumerLastName(null);
-                    dto.setConsumerOrganization(null);
+                      return Future.succeededFuture();
+                    })
+                .mapEmpty();
 
-                    return Future.succeededFuture();
-                  })
-              .mapEmpty();
+        futures.add(consumerFuture);
+      }
 
-      futures.add(future);
+      // Owner enrichment
+      if (dto.getProviderId() != null) {
+        Future<Void> ownerFuture =
+            keycloakUserService
+                .getUserById(UUID.fromString(dto.getProviderId()))
+                .onSuccess(
+                    user -> {
+                      dto.setProviderEmail(user.email());
+                      dto.setProviderFirstName(user.givenName());
+                      dto.setProviderLastName(user.familyName());
+                      dto.setProviderOrganization(user.organisationName());
+                    })
+                .recover(
+                    err -> {
+                      LOGGER.warn(
+                          "Failed to fetch owner {}: {}", dto.getProviderId(), err.getMessage());
+
+                      dto.setProviderEmail(null);
+                      dto.setProviderFirstName(null);
+                      dto.setProviderLastName(null);
+                      dto.setProviderOrganization(null);
+
+                      return Future.succeededFuture();
+                    })
+                .mapEmpty();
+
+        futures.add(ownerFuture);
+      }
     }
 
     return Future.all(futures).map(v -> pagedResult);
