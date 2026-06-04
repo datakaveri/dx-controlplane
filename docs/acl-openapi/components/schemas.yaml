@@ -791,7 +791,7 @@ deletePolicy:
   example:
     type: urn:dx:apdServerPanel:success
     title: Success
-    detail: Policy deactivated successfully
+    detail: Policy deleted successfully
 deletePolicyInvalidUserResponse:
   title: deletePolicyInvalidUserResponse
   type: object

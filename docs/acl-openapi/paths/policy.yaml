@@ -498,7 +498,7 @@
           pattern: ^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$
     responses:
       '200':
-        description: Policy deactivated successfully.
+        description: Policy deleted successfully.
         content:
           application/json:
             schema:

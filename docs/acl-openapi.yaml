@@ -1933,7 +1933,7 @@ paths:
             pattern: ^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$
       responses:
         '200':
-          description: Policy deactivated successfully.
+          description: Policy deleted successfully.
           content:
             application/json:
               schema:
@@ -3149,7 +3149,7 @@ components:
       example:
         type: urn:dx:apdServerPanel:success
         title: Success
-        detail: Policy deactivated successfully
+        detail: Policy deleted successfully
     deletePolicyInvalidUserResponse:
       title: deletePolicyInvalidUserResponse
       type: object
