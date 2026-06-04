@@ -192,7 +192,7 @@ public class UserHandler {
           AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
             RoutingContextHelper.getRequestPath(ctx), "POST", "Credit Request Created");
           RoutingContextHelper.setAuditingLog(ctx, auditLog);
-          ResponseBuilder.sendSuccess(ctx, "Success:Addtion of User Info", this.urnGenerator);
+          ResponseBuilder.sendSuccess(ctx, "User info added successfully", this.urnGenerator);
         })
       .onFailure(ctx::fail);
 
@@ -226,7 +226,7 @@ public class UserHandler {
           "PATCH",
           "User Info Updated");
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, "Success: User Info Updated", this.urnGenerator);
+        ResponseBuilder.sendSuccess(ctx, "User info updated successfully", this.urnGenerator);
       })
       .onFailure(ctx::fail);
   }

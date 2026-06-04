@@ -188,10 +188,10 @@ tags:
     from resource entities. Each subscription is identified by a queue name and is bound
     to specific entity IDs and resource groups. Subscriptions can be created, listed,
     retrieved by ID, updated, and deleted.
-- name: Summary
-  description: |
-    Dashboard summary APIs that aggregate platform-wide usage statistics — including
-    active users, published assets, and API call volumes — for admin dashboards.
+#- name: Summary
+  #description: |
+    #Dashboard summary APIs that aggregate platform-wide usage statistics — including
+    #active users, published assets, and API call volumes — for admin dashboards.
 - name: token
   description: |
     JWT access token issuance APIs. Supports three token modes:
@@ -391,14 +391,14 @@ paths:
     $ref: paths/subscriptions.yaml#/~1iudx~1v2~1subscriptions
   /iudx/v2/subscriptions/{subscriptionId}:
     $ref: paths/subscriptions.yaml#/~1iudx~1v2~1subscriptions~1{subscriptionId}
-  /iudx/v2/dashboard/usage-summary:
-    $ref: paths/summary.yaml#/~1iudx~1v2~1dashboard~1usage-summary
+  #/iudx/v2/dashboard/usage-summary:
+    #$ref: paths/summary.yaml#/~1iudx~1v2~1dashboard~1usage-summary
   /iudx/v2/acl_servers:
     $ref: paths/acl-servers.yaml#/~1iudx~1v2~1acl_servers
   /iudx/v2/acl_servers/{id}:
     $ref: paths/acl-servers.yaml#/~1iudx~1v2~1acl_servers~1{id}
-  /iudx/v2/auth/app/user:
-    $ref: paths/app.yaml#/~1iudx~1v2~1auth~1app~1user
+  #/iudx/v2/auth/app/user:
+    #$ref: paths/app.yaml#/~1iudx~1v2~1auth~1app~1user
   /iudx/v2/cat/item/available-name:
     $ref: paths/catalogue.yaml#/~1iudx~1v2~1cat~1item~1available-name
   /iudx/v2/requests/{request_id}/conversations:

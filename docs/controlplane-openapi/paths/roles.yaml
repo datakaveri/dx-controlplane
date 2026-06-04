@@ -1699,7 +1699,7 @@
                 value:
                   type: urn:dx:ControlPlane:success
                   title: Success
-                  result: 'Success:Addtion of User Info'
+                  result: User info added successfully
       '401':
         description: Unauthorized - Token missing or invalid
         content:
@@ -1815,7 +1815,7 @@
                 value:
                   type: urn:dx:ControlPlane:success
                   title: Success
-                  result: 'Success: User Info Updated'
+                  result: User info updated successfully
       '401':
         description: Unauthorized - Token missing or invalid
         content:

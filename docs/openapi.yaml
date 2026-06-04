@@ -193,10 +193,6 @@ tags:
       from resource entities. Each subscription is identified by a queue name and is bound
       to specific entity IDs and resource groups. Subscriptions can be created, listed,
       retrieved by ID, updated, and deleted.
-  - name: Summary
-    description: |
-      Dashboard summary APIs that aggregate platform-wide usage statistics — including
-      active users, published assets, and API call volumes — for admin dashboards.
   - name: token
     description: |
       JWT access token issuance APIs. Supports three token modes:
@@ -270,7 +266,7 @@ paths:
         - lang: cURL
           label: Create AppId
           source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/app' \
+            curl --location 'https://${HOSTNAME}/iudx/v2/auth/app' \
             --header 'Authorization: Bearer <token>' \
             --header 'Content-Type: application/json' \
             --data '{
@@ -328,7 +324,7 @@ paths:
         - lang: cURL
           label: Get AppIds
           source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/app' \
+            curl --location 'https://${HOSTNAME}/iudx/v2/auth/app' \
             --header 'Authorization: Bearer <token>'
   /iudx/v2/auth/app/{appId}:
     delete:
@@ -403,7 +399,7 @@ paths:
           label: Delete AppId
           source: |
             curl --location --request DELETE \
-            'https://${HOSTNAME}/iudx/v2/app/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9' \
+            'https://${HOSTNAME}/iudx/v2/auth/app/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9' \
             --header 'Authorization: Bearer <token>'
     patch:
       tags:
@@ -451,11 +447,11 @@ paths:
                     example: Success
                   detail:
                     type: string
-                    example: Updated app id status successfully
+                    example: App credentials status updated to active successfully
               example:
                 type: dx:controlPlane:success
                 title: Success
-                detail: Updated app id status successfully
+                detail: App credentials status updated to active successfully
         '204':
           description: AppId status updated successfully
         '400':
@@ -487,7 +483,7 @@ paths:
           label: Update AppId Status
           source: |
             curl --location --request PATCH \
-            'https://${HOSTNAME}/iudx/v2/app/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9?status=disable' \
+            'https://${HOSTNAME}/iudx/v2/auth/app/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9?status=disable' \
             --header 'Authorization: Bearer <token>'
   /iudx/v2/auth/asset/request:
     post:
@@ -2329,7 +2325,7 @@ paths:
                   detail:
                     type: string
                     description: Returned instead of result when a previously rejected request is re-activated.
-                    example: Compute Role Request created successfully
+                    example: Compute role request submitted successfully
               examples:
                 new_request:
                   summary: New compute role request created
@@ -2351,7 +2347,7 @@ paths:
                   value:
                     type: urn:dx:ControlPlane:success
                     title: Success
-                    detail: Compute Role Request created successfully
+                    detail: Compute role request submitted successfully
         '400':
           description: Bad Request - Invalid or missing request body
           content:
@@ -2438,18 +2434,18 @@ paths:
                     description: Human-readable response title
                   detail:
                     type: string
-                    description: Message indicating the final status, e.g. "Compute Role Status granted"
+                    description: Message indicating the final status
               examples:
                 granted:
                   value:
                     type: urn:dx:ControlPlane:success
                     title: Success
-                    detail: Compute Role Status granted
+                    detail: Compute role request approved successfully
                 rejected:
                   value:
                     type: urn:dx:ControlPlane:success
                     title: Success
-                    detail: Compute Role Status rejected
+                    detail: Compute role request rejected successfully
         '400':
           description: Bad Request - Invalid status value or request format
           content:
@@ -6735,7 +6731,7 @@ paths:
                     type: string
                   detail:
                     type: string
-                    example: Updated Sucessfully
+                    example: Organisation create request approved successfully
         '401':
           description: Unauthorized
           content:
@@ -7225,7 +7221,7 @@ paths:
                     type: string
                   detail:
                     type: string
-                    example: Updated Organisation Join Request
+                    example: Organisation join request approved successfully
         '401':
           description: Unauthorized
           content:
@@ -7286,7 +7282,7 @@ paths:
                     type: string
                   detail:
                     type: string
-                    example: Updated Organisation Join Request
+                    example: Organisation join request withdrawn successfully
         '401':
           description: Unauthorized
           content:
@@ -7974,7 +7970,7 @@ paths:
                     type: string
                   detail:
                     type: string
-                    example: Created Request
+                    example: Provider role request submitted successfully
         '401':
           description: Unauthorized
           content:
@@ -8172,7 +8168,7 @@ paths:
                     type: string
                   detail:
                     type: string
-                    example: Provider role updated
+                    example: Provider role request approved successfully
         '401':
           description: Unauthorized
           content:
@@ -8461,7 +8457,7 @@ paths:
                     example: Success
                   detail:
                     type: string
-                    example: Created Request
+                    example: Provider role request submitted successfully
         '401':
           description: Missing or invalid authorization token
           content:
@@ -8858,7 +8854,7 @@ paths:
                     example: Success
                   detail:
                     type: string
-                    example: Platform provider role request updated
+                    example: Provider role request approved successfully
         '400':
           description: Bad request – invalid status value
           content:
@@ -11711,7 +11707,7 @@ paths:
                   value:
                     type: urn:dx:ControlPlane:success
                     title: Success
-                    result: Success:Addtion of User Info
+                    result: User info added successfully
         '401':
           description: Unauthorized - Token missing or invalid
           content:
@@ -11827,7 +11823,7 @@ paths:
                   value:
                     type: urn:dx:ControlPlane:success
                     title: Success
-                    result: 'Success: User Info Updated'
+                    result: User info updated successfully
         '401':
           description: Unauthorized - Token missing or invalid
           content:
@@ -12198,31 +12194,6 @@ paths:
         #### Delete Subscription
         To delete the subscription list, the provider must present the `subscriptionId` and `token`.
       deprecated: false
-  /iudx/v2/dashboard/usage-summary:
-    get:
-      summary: Get usage summary for dashboard
-      description: Returns aggregated usage metrics (count and size) for different time windows used by the main dashboard. Provides data for total usage, last year, last 6 months, last month, last week, and yesterday. No authentication required.
-      operationId: get-dashboard-usage-summary
-      tags:
-        - Summary
-      responses:
-        '200':
-          description: List of admin activity logs
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/dashboardUsageSummarySuccessResponse'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InternalServerErrorResponse'
-      x-codeSamples:
-        - lang: cURL
-          label: Fetch Dashboard Usage Summary
-          source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/dashboard/usage-summary'
   /iudx/v2/acl_servers:
     get:
       summary: List ACL Servers
@@ -12545,185 +12516,6 @@ paths:
             curl --location --request DELETE \
             'https://${HOSTNAME}/iudx/v2/acl_servers/7e9f1f76-baa1-4230-817f-f61ef3c0c411' \
             --header 'Authorization: Bearer <YOUR_ACCESS_TOKEN>'
-  /iudx/v2/auth/app/user:
-    post:
-      tags:
-        - App
-      summary: DxUser from App constraints
-      operationId: post-appId-dxUser
-      security:
-        - authorization: []
-      description: |
-        Authenticates a request using an `appId` and `appSecret` pair and returns the resolved
-              user context for that app, including the user's profile, organisation details, and the
-              specific roles and scopes permitted by this App ID. This endpoint is used by any user
-              or service that has been given an `appId` and `appSecret` to obtain a scoped user context
-              before making further API calls. The returned scopes are strictly limited to what was
-              defined when the App ID was created — no additional permissions can be derived from this context.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - appId
-                - appSecret
-              properties:
-                appId:
-                  type: string
-                  format: uuid
-                  example: 7c9e6679-7425-40de-944b-e07fc1f90ae7
-                appSecret:
-                  type: string
-                  example: s3cr3t-app-key
-            examples:
-              Example 1:
-                value:
-                  appId: 7c9e6679-7425-40de-944b-e07fc1f90ae7
-                  appSecret: s3cr3t-app-key
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  result:
-                    type: object
-                    properties:
-                      roles:
-                        type: array
-                        items:
-                          type: string
-                      organisationId:
-                        type: string
-                      organisationName:
-                        type: string
-                      sub:
-                        type: string
-                        format: uuid
-                      emailVerified:
-                        type: boolean
-                      kycVerified:
-                        type: boolean
-                      name:
-                        type: string
-                      preferredUsername:
-                        type: string
-                      givenName:
-                        type: string
-                      familyName:
-                        type: string
-                      email:
-                        type: string
-                        format: email
-                      organisation:
-                        type: object
-                        properties:
-                          id:
-                            type: string
-                          organisationId:
-                            type: string
-                          userId:
-                            type: string
-                          userName:
-                            type: string
-                          status:
-                            type: string
-                          jobTitle:
-                            type: string
-                          empId:
-                            type: string
-                          requestedAt:
-                            type: string
-                          processedAt:
-                            type: string
-                          request_type:
-                            type: string
-                      createdAt:
-                        type: string
-                      kycData:
-                        type: object
-                      scopes:
-                        type: array
-                        items:
-                          type: string
-                        description: App-specific scopes from appConstraints
-              examples:
-                Example 1:
-                  value:
-                    type: urn:dx:ControlPlane:success
-                    title: Success
-                    result:
-                      roles:
-                        - consumer
-                      organisationId: e87246e2-5da5-40b0-973c-690d2f48f879
-                      organisationName: Test Org
-                      sub: 436cb796-5826-458b-a914-a54721f70997
-                      emailVerified: true
-                      kycVerified: false
-                      name: test test
-                      preferredUsername: test
-                      givenName: test
-                      familyName: test
-                      email: testing@gmail.com
-                      organisation:
-                        id: 98e74f31-4e40-4615-85b8-61256f0bc7c4
-                        organisationId: e87246e2-5da5-40b0-973c-690d2f48f879
-                        userId: 436cb796-5826-458b-a914-a54721f70997
-                        userName: test test
-                        status: granted
-                        jobTitle: Employee
-                        empId: EMP8790
-                        requestedAt: '2025-06-04T06:13:58.917342'
-                        processedAt: '2025-06-04T06:13:58.917342'
-                        request_type: organisation_join
-                      createdAt: '2025-06-04T06:12:48.991'
-                      kycData: {}
-                      scopes:
-                        - user-management
-                        - data-access
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericBadRequestResponse'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UnauthorizedResponse'
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ForbiddenResponse'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InternalServerErrorResponse'
-      x-codeSamples:
-        - lang: cURL
-          label: Authenticate App and Resolve User
-          source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/auth/app/user' \
-            --header 'Authorization: Bearer <token>' \
-            --header 'Content-Type: application/json' \
-            --data '{
-              "appId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
-              "appSecret": "s3cr3t-app-key"
-            }'
   /iudx/v2/cat/item/available-name:
     get:
       tags:

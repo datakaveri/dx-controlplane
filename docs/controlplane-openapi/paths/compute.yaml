@@ -310,7 +310,7 @@
                 detail:
                   type: string
                   description: Returned instead of result when a previously rejected request is re-activated.
-                  example: Compute Role Request created successfully
+                  example: Compute role request submitted successfully
             examples:
               new_request:
                 summary: New compute role request created
@@ -332,7 +332,7 @@
                 value:
                   type: urn:dx:ControlPlane:success
                   title: Success
-                  detail: Compute Role Request created successfully
+                  detail: Compute role request submitted successfully
       '400':
         description: Bad Request - Invalid or missing request body
         content:
@@ -423,18 +423,18 @@
                   description: Human-readable response title
                 detail:
                   type: string
-                  description: Message indicating the final status, e.g. "Compute Role Status granted"
+                  description: Message indicating the final status
             examples:
               granted:
                 value:
                   type: urn:dx:ControlPlane:success
                   title: Success
-                  detail: Compute Role Status granted
+                  detail: Compute role request approved successfully
               rejected:
                 value:
                   type: urn:dx:ControlPlane:success
                   title: Success
-                  detail: Compute Role Status rejected
+                  detail: Compute role request rejected successfully
       '400':
         description: Bad Request - Invalid status value or request format
         content:

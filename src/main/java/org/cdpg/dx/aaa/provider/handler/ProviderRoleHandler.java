@@ -102,7 +102,7 @@ public class ProviderRoleHandler {
                       ctx, requests.toJson(), OrganisationAuditOperation.REQUEST_PROVIDER_ROLE);
               CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
-              ResponseBuilder.sendSuccess(ctx, "Created Request", urnGenerator);
+              ResponseBuilder.sendSuccess(ctx, "Provider role request submitted successfully", urnGenerator);
               emailComposer
                   .sendEmailForProviderRole(providerRoleRequest, user)
                   .onFailure(err -> LOGGER.error("Provider role email failed", err));
@@ -138,7 +138,7 @@ public class ProviderRoleHandler {
                       OrganisationAuditOperation.REQUEST_PLATFORM_PROVIDER_ROLE);
               CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
-              ResponseBuilder.sendSuccess(ctx, "Created Request", urnGenerator);
+              ResponseBuilder.sendSuccess(ctx, "Provider role request submitted successfully", urnGenerator);
               emailComposer
                   .sendEmailForPlatformProviderRole(providerRoleRequest, user)
                   .onFailure(err -> LOGGER.error("Platform provider role email failed", err));
@@ -168,7 +168,10 @@ public class ProviderRoleHandler {
                   .sendUserEmailForProviderRoleApproval(reqId, status)
                   .onFailure(err -> LOGGER.error("Email send failed", err));
 
-              ResponseBuilder.sendSuccess(ctx, "Provider role updated", urnGenerator);
+              String message = status == Status.GRANTED
+                  ? "Provider role request approved successfully"
+                  : "Provider role request rejected successfully";
+              ResponseBuilder.sendSuccess(ctx, message, urnGenerator);
             })
         .onFailure(ctx::fail);
   }
@@ -525,8 +528,10 @@ public class ProviderRoleHandler {
                   .sendUserEmailForProviderRoleApproval(reqId, status)
                   .onFailure(err -> LOGGER.error("Email send failed", err));
 
-              ResponseBuilder.sendSuccess(
-                  ctx, "Platform provider role request updated", urnGenerator);
+              String message = status == Status.GRANTED
+                  ? "Provider role request approved successfully"
+                  : "Provider role request rejected successfully";
+              ResponseBuilder.sendSuccess(ctx, message, urnGenerator);
             })
         .onFailure(ctx::fail);
   }

@@ -300,7 +300,7 @@
                   type: string
                 detail:
                   type: string
-                  example: Updated Sucessfully
+                  example: Organisation create request approved successfully
       '401':
         description: Unauthorized
         content:
@@ -787,7 +787,7 @@
                   type: string
                 detail:
                   type: string
-                  example: Updated Organisation Join Request
+                  example: Organisation join request approved successfully
       '401':
         description: Unauthorized
         content:
@@ -848,7 +848,7 @@
                   type: string
                 detail:
                   type: string
-                  example: Updated Organisation Join Request
+                  example: Organisation join request withdrawn successfully
       '401':
         description: Unauthorized
         content:
@@ -1528,7 +1528,7 @@
                   type: string
                 detail:
                   type: string
-                  example: Created Request
+                  example: Provider role request submitted successfully
       '401':
         description: Unauthorized
         content:
@@ -1718,7 +1718,7 @@
                   type: string
                 detail:
                   type: string
-                  example: Provider role updated
+                  example: Provider role request approved successfully
       '401':
         description: Unauthorized
         content:

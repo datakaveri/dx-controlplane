@@ -165,7 +165,7 @@ public class AppCredentialsHandler {
       .onSuccess(
         handler -> {
           LOGGER.info("AppCredentials status updated for userId: {} and appId : {}  with status: {}", userId, appId,status);
-          ResponseBuilder.sendSuccess(ctx, "Updated app id status successfully" ,urnGenerator);
+          ResponseBuilder.sendSuccess(ctx, "App credentials status updated to " + status + " successfully", urnGenerator);
         })
       .onFailure(ctx::fail);
   }
