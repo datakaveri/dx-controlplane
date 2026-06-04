@@ -167,11 +167,6 @@ public class AccessRequestServiceImpl implements AccessRequestService {
       JsonObject constraints,
       String providerComment,
       String feedbackToConsumer) {
-    if (providerOrganizationId == null) {
-      LOGGER.error("Provider organization ID is null for requestId: {}", requestId);
-      return Future.failedFuture(
-          new DxForbiddenException("Provider organization ID in the token, cannot be null"));
-    }
     // -------------------------
     // 1. Ownership Check (ensures that caller can act on request)
     // -------------------------
@@ -587,12 +582,6 @@ public class AccessRequestServiceImpl implements AccessRequestService {
       String providerComment,
       String feedbackToConsumer) {
 
-    if (providerOrganizationId == null) {
-      LOGGER.error("Provider organization ID is null for requestId: {}", requestId);
-      return Future.failedFuture(
-          new DxForbiddenException("Provider organization ID in the token cannot be null"));
-    }
-
     return accessRequestDao
         .ownershipCheck(requestId, providerId, providerOrganizationId, isUserOrgAdmin)
         .compose(
@@ -855,15 +844,13 @@ public class AccessRequestServiceImpl implements AccessRequestService {
       if (provider == null
           || assetName.isEmpty()
           || catAssetType == null
-          || organizationId == null
           || shortDescription == null) {
         LOGGER.error("Asset metadata invalid for id: {}", id);
         LOGGER.error(
-            "Provider: {}, AssetName: {}, AssetType: {}, OrgId: {}, shortDescription : {}",
+            "Provider: {}, AssetName: {}, AssetType: {}, shortDescription : {}",
             provider,
             assetName,
             catAssetType,
-            organizationId,
             shortDescription);
         throw new DxInternalServerErrorException("Incomplete asset metadata from catalogue");
       }

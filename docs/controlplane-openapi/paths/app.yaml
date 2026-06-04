@@ -52,7 +52,7 @@
     x-codeSamples:
     - lang: cURL
       label: Create AppId
-      source: "curl --location 'https://${HOSTNAME}/iudx/v2/app' \\\n--header 'Authorization:\
+      source: "curl --location 'https://${HOSTNAME}/iudx/v2/auth/app' \\\n--header 'Authorization:\
         \ Bearer <token>' \\\n--header 'Content-Type: application/json' \\\n--data\
         \ '{\n  \"expiry_at\": \"2026-12-31T23:59:59Z\"\n}'\n"
   get:
@@ -108,7 +108,7 @@
     x-codeSamples:
     - lang: cURL
       label: Get AppIds
-      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/app'' \
+      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/auth/app'' \
 
         --header ''Authorization: Bearer <token>''
 
@@ -187,7 +187,7 @@
       label: Delete AppId
       source: 'curl --location --request DELETE \
 
-        ''https://${HOSTNAME}/iudx/v2/app/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9'' \
+        ''https://${HOSTNAME}/iudx/v2/auth/app/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9'' \
 
         --header ''Authorization: Bearer <token>''
 
@@ -238,11 +238,11 @@
                   example: Success
                 detail:
                   type: string
-                  example: Updated app id status successfully
+                  example: App credentials status updated to active successfully
             example:
               type: dx:controlPlane:success
               title: Success
-              detail: Updated app id status successfully
+              detail: App credentials status updated to active successfully
       '204':
         description: AppId status updated successfully
       '400':
@@ -274,7 +274,7 @@
       label: Update AppId Status
       source: 'curl --location --request PATCH \
 
-        ''https://${HOSTNAME}/iudx/v2/app/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9?status=disable''
+        ''https://${HOSTNAME}/iudx/v2/auth/app/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9?status=disable''
         \
 
         --header ''Authorization: Bearer <token>''

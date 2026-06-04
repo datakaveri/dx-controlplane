@@ -5334,7 +5334,6 @@ exampleEntityAIModel:
   - description
   - tags
   - accessPolicy
-  - organizationType
   - modelType
   - fileFormat
   - industry
@@ -5499,7 +5498,6 @@ exampleEntityDataBank:
   - description
   - tags
   - accessPolicy
-  - organizationType
   - fileFormat
   - industry
   - yearRange
@@ -5577,7 +5575,6 @@ exampleEntityPotentialApps:
   - industry
   - shortDescription
   - description
-  - organizationType
   - accessPolicy
   properties:
     sections:

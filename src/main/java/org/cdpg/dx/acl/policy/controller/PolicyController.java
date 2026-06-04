@@ -223,6 +223,10 @@ public class PolicyController implements ApiController {
     User user = ctx.user();
 
     String organizationId = RoutingContextHelper.fromPrincipal(ctx).organisationId();
+    if (organizationId == null || organizationId.isBlank()) {
+      ctx.fail(new DxForbiddenException("Organisation ID is required for this operation"));
+      return;
+    }
     Map<String, String> allowedFilters =
         Map.of("status", DB_STATUS, "organizationId", DB_ASSET_ORGANIZATION_ID);
     Map<String, Object> additionalFilters = Map.of(DB_ASSET_ORGANIZATION_ID, organizationId);

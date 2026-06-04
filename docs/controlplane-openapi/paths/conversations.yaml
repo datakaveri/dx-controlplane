@@ -3,10 +3,17 @@
     tags:
     - Conversations
     operationId: get-threaded-message
-    summary: Get all messages
-    description: 'Paginated conversation thread for a request. Conversations are initiated in the context of a specific entity-driven request
-     — such as joining an organisation, creating an organisation, or submitting a credit request — identified by the request_id.
-    Returns root messages with up to 2 levels of nested replies. Each level shows first 3 replies inline.
+    summary: Get all messages for a request
+    x-codeSamples:
+    - lang: cURL
+      label: Get conversation thread
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/requests/{request_id}/conversations?page=1&size=10' \
+        --header 'Authorization: Bearer <your-token>'
+    description: 'Returns a paginated conversation thread for the given request. Conversations
+      are tied to entity-driven requests such as joining an organisation, creating
+      an organisation, or submitting a credit request. Returns root messages with
+      nested replies. Any authenticated user can call this.
 
       '
     security:
@@ -15,6 +22,7 @@
     - name: request_id
       in: path
       required: true
+      description: UUID of the request (org join, org create, credit request, etc.)
       schema:
         type: string
         format: uuid
@@ -30,7 +38,7 @@
               properties:
                 type:
                   type: string
-                  example: dx:controlPlane:success
+                  example: urn:dx:ControlPlane:success
                 title:
                   type: string
                   example: Success
@@ -62,18 +70,28 @@
     tags:
     - Conversations
     operationId: post-request-conversation
-    summary: Create message
+    summary: Create a message in a request conversation
+    x-codeSamples:
+    - lang: cURL
+      label: Post a message
+      source: |
+        curl --location --request POST 'https://${HOSTNAME}/iudx/v2/requests/{request_id}/conversations' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"sender_role": "requester", "message_type": "question", "request_type": "join_orgs", "content": "Do I need to attach additional documents?", "is_internal": false}'
     description: >
-      Post a new message(of type question, answer, or internal note) within a request conversation.
-      The sender_role must be either 'requester' or 'approver'.
-      Set internal_note to true for notes visible only to users with role approver, or false for messages visible to all participants.
-      Leave parent_msg_id as null to post a root-level message; provide a parent_msg_id to post as a reply to an existing message.
+      Post a new message within a request conversation. The `sender_role` must be
+      either `requester` or `approver`. Set `is_internal` to `true` for notes visible
+      only to approvers, or `false` for messages visible to all participants. Leave
+      `parent_msg_id` null to post a root-level message; provide it to post as a
+      reply.
     security:
     - authorization: []
     parameters:
     - name: request_id
       in: path
       required: true
+      description: UUID of the request this message belongs to
       schema:
         type: string
         format: uuid
@@ -84,33 +102,38 @@
           schema:
             type: object
             required:
-              - sender_role
-              - message_type
-              - request_type
-              - content
+            - sender_role
+            - message_type
+            - request_type
+            - content
             properties:
               parent_msg_id:
                 type: string
                 format: uuid
                 nullable: true
-                description: Null for root-level messages; provide a valid message UUID to post as a reply to an existing message.
+                description: Null for root-level messages; provide a valid message UUID to post as a reply.
               sender_role:
                 type: string
-                enum: [ requester, approver ]
-                description: Role of the sender. Must be either 'requester' or 'approver'.
+                enum: [requester, approver]
+                description: Role of the sender.
               message_type:
                 type: string
-                enum: [ text, question, answer ]
+                enum: [text, question, answer, info_request, note, system]
+                description: Type of the message.
               request_type:
                 type: string
-                enum: [ join_orgs, create_orgs, credit_request ]
-                description: The type of entity-driven request this conversation belongs to.
+                enum: [join_orgs, create_orgs, credit_request]
+                description: The type of request this conversation belongs to.
               content:
                 type: string
                 description: The message body.
-              internal_note:
+              is_internal:
                 type: boolean
-                description: Set to true for notes visible only to internal team members; false for messages visible to all participants.
+                description: Set to true for notes visible only to approvers; false for messages visible to all participants.
+              metadata:
+                type: object
+                nullable: true
+                description: Optional arbitrary JSON metadata to attach to the message.
     responses:
       '200':
         description: Message created successfully
@@ -121,7 +144,7 @@
               properties:
                 type:
                   type: string
-                  example: dx:controlPlane:success
+                  example: urn:dx:ControlPlane:success
                 title:
                   type: string
                   example: Success
@@ -131,39 +154,47 @@
                     id:
                       type: string
                       format: uuid
-                    requestType:
+                    request_type:
                       type: string
                       example: join_orgs
-                    requestTypeId:
+                    request_type_id:
                       type: string
                       format: uuid
-                    parentMsgId:
+                    parent_msg_id:
                       type: string
                       format: uuid
                       nullable: true
-                      description: Null if this is a root-level message; otherwise the UUID of the parent message.
-                    senderId:
+                      description: Null if this is a root-level message.
+                    sender_id:
                       type: string
                       format: uuid
-                    senderRole:
+                    sender_role:
                       type: string
-                      enum: [ requester, approver ]
+                      enum: [requester, approver]
                       example: requester
-                    messageType:
+                    message_type:
                       type: string
                       example: text
                     content:
                       type: string
-                    isInternal:
+                    is_internal:
                       type: boolean
-                      enum: [ true, false ]
-                    createdAt:
+                    metadata:
+                      type: object
+                      nullable: true
+                    created_at:
                       type: string
                       format: date-time
-                    replyCount:
+                    reply_count:
                       type: integer
+                      example: 0
                     hasReplies:
                       type: boolean
+                      example: false
+                    replies:
+                      type: array
+                      items: {}
+                      example: []
       '400':
         description: Bad Request
         content:
@@ -187,21 +218,31 @@
     tags:
     - Conversations
     operationId: get-request-conversation-by-id
-    summary: Get single message
-    description: 'Fetch a specific message with its replies. Each message belongs to a conversation tied to an entity-driven request (e.g. org join, org creation, credit request)
-    identified by request_id and message id.Any user can run this. '
+    summary: Get a single conversation message
+    x-codeSamples:
+    - lang: cURL
+      label: Get message by ID
+      source: |
+        curl --location 'https://${HOSTNAME}/iudx/v2/requests/{request_id}/conversations/{msg_id}' \
+        --header 'Authorization: Bearer <your-token>'
+    description: 'Fetch a specific message by its ID. Any authenticated user can call
+      this.
+
+      '
     security:
     - authorization: []
     parameters:
     - name: request_id
       in: path
       required: true
+      description: UUID of the request this message belongs to
       schema:
         type: string
         format: uuid
     - name: msg_id
       in: path
       required: true
+      description: UUID of the message to fetch
       schema:
         type: string
         format: uuid
@@ -215,7 +256,7 @@
               properties:
                 type:
                   type: string
-                  example: dx:controlPlane:success
+                  example: urn:dx:ControlPlane:success
                 title:
                   type: string
                   example: Success
@@ -226,34 +267,90 @@
                       type: string
                       format: uuid
                       example: c0ca7a6c-597f-4e03-b861-bb912b3cb1ec
-                    requestType:
+                    request_type:
                       type: string
-                    senderId:
+                      example: join_orgs
+                    request_type_id:
+                      type: string
+                      format: uuid
+                      example: 7a1b2c3d-4e5f-6789-abcd-ef0123456789
+                    parent_msg_id:
+                      type: string
+                      format: uuid
+                      nullable: true
+                      example: null
+                    sender_id:
                       type: string
                       format: uuid
                       example: 1dc28cc6-d614-461a-9b8f-d6110feb3e2f
-                    senderRole:
+                    sender_role:
                       type: string
-                      example: new user
-                    messageType:
+                      enum: [requester, approver]
+                      example: requester
+                    message_type:
                       type: string
                       example: question
                     content:
                       type: string
-                      example: do ggggg have to add my phone number also ?
-                    isInternal:
+                      example: Do I need to add my phone number also?
+                    is_internal:
                       type: boolean
                       example: false
-                    createdAt:
+                    metadata:
+                      type: object
+                      nullable: true
+                    reply_count:
+                      type: integer
+                      example: 2
+                    hasReplies:
+                      type: boolean
+                      example: true
+                    replies:
+                      type: array
+                      items: {}
+                      example: []
+                    created_at:
                       type: string
                       format: date-time
                       example: '2026-05-05T08:52:22.936019Z'
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/UnauthorizedResponse'
+      '404':
+        description: Not Found - Message with given ID does not exist
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/InternalServerErrorResponse'
   put:
     tags:
     - Conversations
     operationId: put-request-conversation
-    summary: Update message
-    description: The message created by the user earlier can be edited using this. 'content' , 'metadata' or 'is_internal' can be changed.
+    summary: Update a conversation message
+    x-codeSamples:
+    - lang: cURL
+      label: Update message content
+      source: |
+        curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/requests/{request_id}/conversations/{msg_id}' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"content": "Updated message content"}'
+    - lang: cURL
+      label: Mark message as internal
+      source: |
+        curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/requests/{request_id}/conversations/{msg_id}' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"is_internal": true}'
+    description: >
+      Update an existing message. Only the original sender can edit their own message.
+      `content`, `metadata`, or `is_internal` can be changed. At least one field
+      must be provided.
     security:
     - authorization: []
     parameters:
@@ -280,16 +377,12 @@
               content:
                 type: string
                 nullable: true
-                additionalProperties: true
               metadata:
                 type: object
                 nullable: true
-                additionalProperties: true
               is_internal:
                 type: boolean
                 nullable: true
-                enum: [ true, false ]
-                additionalProperties: true
     responses:
       '200':
         description: Message updated successfully
@@ -300,7 +393,7 @@
               properties:
                 type:
                   type: string
-                  example: dx:controlPlane:success
+                  example: urn:dx:ControlPlane:success
                 title:
                   type: string
                   example: Success
@@ -310,38 +403,45 @@
                     id:
                       type: string
                       format: uuid
-                    requestType:
+                    request_type:
                       type: string
                       example: join_orgs
-                    requestTypeId:
+                    request_type_id:
                       type: string
                       format: uuid
-                    parentMsgId:
+                    parent_msg_id:
                       type: string
                       format: uuid
                       nullable: true
-                    senderId:
+                    sender_id:
                       type: string
                       format: uuid
-                    senderRole:
+                    sender_role:
                       type: string
-                      example: approver
-                    messageType:
+                      enum: [requester, approver]
+                    message_type:
                       type: string
                       example: question
                     content:
                       type: string
-                    isInternal:
+                    is_internal:
                       type: boolean
-                    createdAt:
+                    metadata:
+                      type: object
+                      nullable: true
+                    created_at:
                       type: string
                       format: date-time
-                    replyCount:
+                    reply_count:
                       type: integer
                       example: 0
                     hasReplies:
                       type: boolean
                       example: false
+                    replies:
+                      type: array
+                      items: {}
+                      example: []
       '400':
         description: Bad Request
         content:
@@ -354,6 +454,10 @@
           application/json:
             schema:
               $ref: '../components/schemas/common.yaml#/UnauthorizedResponse'
+      '403':
+        description: Forbidden - Caller is not the message owner
+      '404':
+        description: Not Found - Message with given ID does not exist
       '500':
         description: Internal Server Error
         content:
@@ -364,8 +468,15 @@
     tags:
     - Conversations
     operationId: delete-request-conversation
-    summary: Delete message
-    description: Delete a message - by the user who created the message.
+    summary: Delete a conversation message
+    x-codeSamples:
+    - lang: cURL
+      label: Delete message
+      source: |
+        curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/requests/{request_id}/conversations/{msg_id}' \
+        --header 'Authorization: Bearer <your-token>'
+    description: >
+      Delete a message. Only the original sender can delete their own message.
     security:
     - authorization: []
     parameters:
@@ -374,6 +485,7 @@
       required: true
       schema:
         type: string
+        format: uuid
     - name: msg_id
       in: path
       required: true
@@ -382,7 +494,7 @@
         format: uuid
     responses:
       '200':
-        description: Conversation message deleted
+        description: Conversation message deleted successfully
         content:
           application/json:
             schema:
@@ -390,40 +502,64 @@
               properties:
                 type:
                   type: string
-                  example: urn:dx:as:Success
+                  example: urn:dx:ControlPlane:success
                 title:
                   type: string
                   example: Success
-                detail:
+                result:
                   type: string
-                  example: Conversation message deleted successfully
+                  example: Conversation message deleted
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/UnauthorizedResponse'
+      '403':
+        description: Forbidden - Caller is not the message owner
+      '404':
+        description: Not Found - Message with given ID does not exist
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/InternalServerErrorResponse'
 /iudx/v2/requests/{request_id}/conversations/{msg_id}/reply:
   post:
     tags:
-      - Conversations
+    - Conversations
     operationId: post-request-conversation-reply
-    summary: Reply to message
+    summary: Reply to a conversation message
+    x-codeSamples:
+    - lang: cURL
+      label: Reply to message
+      source: |
+        curl --location --request POST 'https://${HOSTNAME}/iudx/v2/requests/{request_id}/conversations/{msg_id}/reply' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"sender_role": "approver", "message_type": "answer", "content": "Yes, please attach your ID proof.", "is_internal": false}'
     description: >
-      Reply to a specific message or question. The msg_id in the path is automatically
-      set as the parent_msg_id for this reply. The sender_role must be either 'requester'
-      or 'approver'. Set internal_note to true to create a reply visible only to 'approver';
-      false to make it visible to all conversation participants(approver and requester).
+      Post a reply to an existing message. The `msg_id` in the path is automatically
+      used as the `parent_msg_id` for this reply. Set `is_internal` to `true` to
+      create a reply visible only to approvers.
     security:
-      - authorization: []
+    - authorization: []
     parameters:
-      - name: request_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-      - name: msg_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-        description: The UUID of the message being replied to. Automatically becomes the parent_msg_id of this reply.
+    - name: request_id
+      in: path
+      required: true
+      description: UUID of the request this conversation belongs to
+      schema:
+        type: string
+        format: uuid
+    - name: msg_id
+      in: path
+      required: true
+      description: UUID of the message being replied to. Automatically set as parent_msg_id of this reply.
+      schema:
+        type: string
+        format: uuid
     requestBody:
       required: true
       content:
@@ -431,25 +567,28 @@
           schema:
             type: object
             required:
-              - sender_role
-              - message_type
-              - content
+            - sender_role
+            - message_type
+            - content
             properties:
               sender_role:
                 type: string
                 enum: [requester, approver]
-                description: Role of the sender. Must be either 'requester' or 'approver'.
+                description: Role of the sender.
               message_type:
                 type: string
+                enum: [text, question, answer, info_request, note, system]
                 description: Type of the reply message.
               content:
                 type: string
                 description: The reply message body.
-              internal_note:
+              is_internal:
                 type: boolean
-                description: >
-                  Set to true to mark this reply as an internal note — visible only to the
-                  approver. Set to false for replies visible to all conversation participants.
+                description: Set to true to mark this reply as internal (visible only to approvers).
+              metadata:
+                type: object
+                nullable: true
+                description: Optional arbitrary JSON metadata to attach to the reply.
     responses:
       '200':
         description: Reply created successfully
@@ -460,7 +599,7 @@
               properties:
                 type:
                   type: string
-                  example: dx:controlPlane:success
+                  example: urn:dx:ControlPlane:success
                 title:
                   type: string
                   example: Success
@@ -470,37 +609,46 @@
                     id:
                       type: string
                       format: uuid
-                    requestType:
+                    request_type:
                       type: string
                       example: join_orgs
-                    requestTypeId:
+                    request_type_id:
                       type: string
                       format: uuid
-                    parentMsgId:
+                    parent_msg_id:
                       type: string
                       format: uuid
-                    senderId:
+                      description: UUID of the message this is a reply to.
+                    sender_id:
                       type: string
                       format: uuid
-                    senderRole:
+                    sender_role:
                       type: string
+                      enum: [requester, approver]
                       example: requester
-                    messageType:
+                    message_type:
                       type: string
                       example: text
                     content:
                       type: string
-                    isInternal:
+                    is_internal:
                       type: boolean
-                    createdAt:
+                    metadata:
+                      type: object
+                      nullable: true
+                    created_at:
                       type: string
                       format: date-time
-                    replyCount:
+                    reply_count:
                       type: integer
                       example: 0
                     hasReplies:
                       type: boolean
                       example: false
+                    replies:
+                      type: array
+                      items: {}
+                      example: []
       '400':
         description: Bad Request
         content:
@@ -513,6 +661,8 @@
           application/json:
             schema:
               $ref: '../components/schemas/common.yaml#/UnauthorizedResponse'
+      '404':
+        description: Not Found - Parent message with given ID does not exist
       '500':
         description: Internal Server Error
         content:

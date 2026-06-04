@@ -50,7 +50,6 @@ import org.cdpg.dx.aaa.list.factory.ListControllerFactory;
 import org.cdpg.dx.aaa.organization.controller.OrganizationReportController;
 import org.cdpg.dx.aaa.organization.factory.OrganizationControllerFactory;
 import org.cdpg.dx.aaa.organization.factory.OrganizationReportControllerFactory;
-import org.cdpg.dx.aaa.publicKey.controller.PublicController;
 import org.cdpg.dx.aaa.publicKey.factory.PublicKeycontrllerFactory;
 import org.cdpg.dx.aaa.resourceserver.factory.ResourceServerControllerFactory;
 import org.cdpg.dx.aaa.search.controller.SearchController;
@@ -60,16 +59,13 @@ import org.cdpg.dx.aaa.shareAssets.dao.impl.VisibilityDaoImpl;
 import org.cdpg.dx.aaa.shareAssets.factory.VisibilityControllerFactory;
 import org.cdpg.dx.aaa.shareAssets.service.VisibilityService;
 import org.cdpg.dx.aaa.shareAssets.service.impl.VisibilityServiceImpl;
-import org.cdpg.dx.aaa.subscription.controller.SubscriptionController;
 import org.cdpg.dx.aaa.subscription.factory.SubscriptionControllerFactory;
-import org.cdpg.dx.aaa.summary.controller.SummaryController;
 import org.cdpg.dx.aaa.summary.factroy.SummaryControllerFactory;
 import org.cdpg.dx.aaa.token.controller.TokenController;
 import org.cdpg.dx.aaa.token.factory.AppTokenControllerFactory;
 import org.cdpg.dx.aaa.token.factory.TokenControllerFactory;
 import org.cdpg.dx.aaa.user.factory.UserControllerFactory;
 import org.cdpg.dx.apiserver.ApiController;
-import org.cdpg.dx.auth.authentication.handler.AuthenticationHandler;
 import org.cdpg.dx.common.URNGenerator;
 
 /**
@@ -197,8 +193,9 @@ public class ControllerFactory {
 
     // Catalogue (list, search, item CRUD)
     VisibilityDao visibilityDao = new VisibilityDaoImpl(infra.pgService());
-    VisibilityService visibilityService = new VisibilityServiceImpl(visibilityDao,
-        shared.keycloakUserService(), shared.organizationService());
+    VisibilityService visibilityService =
+        new VisibilityServiceImpl(
+            visibilityDao, shared.keycloakUserService(), shared.organizationService());
 
     ListController listController =
         ListControllerFactory.createListController(
@@ -279,12 +276,15 @@ public class ControllerFactory {
         ResourceServerControllerFactory.createController(
             infra.pgService(), shared.auditingHandler(), urnGenerator));
 
-    //Share Assets
+    // Share Assets
     controllers.add(
-        VisibilityControllerFactory.createController(infra.pgService(), infra.esService(),
-            shared.keycloakUserService(), shared.organizationService(),
-            docIndex, urnGenerator)
-    );
+        VisibilityControllerFactory.createController(
+            infra.pgService(),
+            infra.esService(),
+            shared.keycloakUserService(),
+            shared.organizationService(),
+            docIndex,
+            urnGenerator));
 
     // Client secrets
     controllers.add(ClientControllerFactory.create(infra.pgService(), urnGenerator));
@@ -350,7 +350,7 @@ public class ControllerFactory {
             infra.dataBrokerService()));
 
     // Summary / dashboard
-    controllers.add(SummaryControllerFactory.create(infra.pgService(), urnGenerator));
+   // controllers.add(SummaryControllerFactory.create(infra.pgService(), urnGenerator));
 
     // Leaderboard
     controllers.add(LeaderboardControllerFactory.create(infra.pgService(), urnGenerator));

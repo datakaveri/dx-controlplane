@@ -124,11 +124,7 @@ public class ComputeRoleHandler {
         );
         RoutingContextHelper.setAuditingLog(ctx, auditLog);
 
-        ResponseBuilder.sendSuccess(
-          ctx,
-          "Compute Role Request created successfully",
-          this.urnGenerator
-        );
+        ResponseBuilder.sendSuccess(ctx, "Compute role request submitted successfully", this.urnGenerator);
       })
       .onFailure(ctx::fail);
   }
@@ -185,7 +181,10 @@ public class ComputeRoleHandler {
 
         CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
-        ResponseBuilder.sendSuccess(ctx, "Compute Role Status " + status.getStatus(), this.urnGenerator);
+        String message = status == Status.GRANTED
+          ? "Compute role request approved successfully"
+          : "Compute role request rejected successfully";
+        ResponseBuilder.sendSuccess(ctx, message, this.urnGenerator);
         Future<Void> future = emailComposer.sendUserEmailForComputeRoleApproval(requestId, status);
       })
       .onFailure(ctx::fail);

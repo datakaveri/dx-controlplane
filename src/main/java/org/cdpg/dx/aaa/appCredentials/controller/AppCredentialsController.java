@@ -28,10 +28,10 @@ public class AppCredentialsController implements ApiController {
         .handler(appAccess)
         .handler(appCredentialsHandler::createApp);
 
-    builder
-      .operation(OperationIds.OP_POST_APPID_DX_USER)
-      .handler(appAccess)
-      .handler(appCredentialsHandler::postDxUserInfo);
+    /*builder
+    .operation(OperationIds.OP_POST_APPID_DX_USER)
+    .handler(appAccess)
+    .handler(appCredentialsHandler::postDxUserInfo);*/
 
     builder
         .operation(OperationIds.OP_GET_APPID)
