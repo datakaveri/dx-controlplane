@@ -14,6 +14,7 @@ public class Constants {
           Map.entry("additionalInfo", DB_ADDITIONAL_INFO),
           Map.entry("providerId", DB_PROVIDER_ID),
           Map.entry("consumerId", DB_CONSUMER_ID),
+          Map.entry("ownerId", DB_OWNER_ID),
           Map.entry("itemId", DB_ITEM_ID),
           Map.entry("assetName", DB_ASSET_NAME),
           Map.entry("assetType", DB_ASSET_TYPE),
