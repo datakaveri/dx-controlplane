@@ -3,15 +3,37 @@
     tags:
     - Access Request
     summary: Create Access Request
-    description: "\nConsumers can create an access request to request access to a\
-      \ provider’s resource.\n\nWhen an access request is created:\n\n- The request\
-      \ status is set to `PENDING`\n- The provider is notified\n\n## Important Rules\n\
-      \n- A consumer cannot create an access request for their own resource.\n- If\
-      \ an ACTIVE policy already exists for the consumer and resource,\n  the request\
-      \ will be rejected with `409 Conflict`.\n\n## Request Lifecycle\n\n- `PENDING`\
-      \ → Awaiting provider action\n- `GRANTED` → Policy is created automatically\n\
-      - `REJECTED` → No policy is created\n\nThe request does not grant access by\
-      \ itself. Access is granted only\nwhen the provider approves the request."
+    description: |
+      Consumers can create an access request to request access to a provider's resource.
+
+      When an access request is created:
+
+      * The request status is set to `PENDING`.
+      * The provider is notified for review.
+
+      Access Type Handling:
+
+      * Access requests are evaluated independently for each requested access type.
+      * Consumers can raise multiple access requests for the same resource, provided the requested access types are different.
+      * Requests are allowed for access types that are neither pending approval nor already granted.
+
+      Conflict Handling:
+
+      * A request is rejected if any requested access type already has a pending access request.
+      * A request is rejected if any requested access type is already granted through an active policy.
+      * Conflict responses identify the specific access type(s) that caused the request to be rejected.
+
+      Important Rules:
+
+      * A consumer cannot create an access request for their own resource.
+
+      Request Lifecycle:
+
+      * `PENDING` → Awaiting provider action.
+      * `GRANTED` → Policy is created automatically.
+      * `REJECTED` → No policy is created.
+
+      Creating an access request does not grant access. Access is granted only when the provider approves the request.
     operationId: post-auth-v2-access-requests
     requestBody:
       description: '- `itemId` : The catalogue ID of the asset for which the request
@@ -43,7 +65,11 @@
                 maxProperties: 10
               constraints:
                 type: object
-                description: Optional access constraints requested by the consumer
+                description: |
+                  Optional constraints requested by the consumer.
+
+                  Requested access types must be supported by the resource.
+                  These constraints may be modified by the provider during approval.
                 additionalProperties: true
             required:
             - itemId
@@ -57,7 +83,7 @@
               value:
                 itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
                 requestType: DOWNLOAD
-            Create Access Request with additionalInfo:
+            Create Access Request with additionalInfo and constraints:
               value:
                 itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
                 requestType: DOWNLOAD
@@ -159,13 +185,27 @@
               type: string
             description: application/json
       '409':
-        description: 'Conflict
+        description: |
+          Conflict
 
-          - The policy or request for the given resource was previously created'
+          - One or more requested access types already have a pending access request.
+          - One or more requested access types are already granted through an active policy.
         content:
           application/json:
             schema:
-              $ref: ../components/schemas.yaml#/createNotificationConflictResponse
+              $ref: '../components/schemas.yaml#/createNotificationConflictResponse'
+            examples:
+              PendingRequestConflict:
+                value:
+                  type: dx:aclApd:conflict
+                  title: Conflict
+                  detail: 'Pending access requests exist for: api.'
+
+              ActivePolicyConflict:
+                value:
+                  type: dx:aclApd:conflict
+                  title: Conflict
+                  detail: 'Active access already granted for: api.'
         headers:
           Content-Type:
             schema:
@@ -187,43 +227,38 @@
     tags:
     - Access Request
     summary: Update Access Request
-    description: '
+    description: |
+      Providers or organization administrators belonging to the provider's organization
+      can approve or reject `PENDING` access requests for resources they own.
 
-      Providers or authorized delegates can approve or reject **PENDING**
+      If approved:
 
-      access requests for resources they own.
+      * The request status is updated to `GRANTED`.
+      * A policy with status `ACTIVE` is created automatically.
+      * The policy expires based on the provided `expiryAt`.
 
+      Consumers may request preferred constraints while creating an access request.
+      During approval, the provider may accept, modify, or override those constraints.
 
-      ## If Approved (`status = granted`)
+      Constraints provided during approval may define:
 
+      * Access permissions (access types, expiry, limits, etc.).
+      * Subject restrictions (allowed users, organizations, or roles).
 
-      - The request status is updated to `GRANTED`
+      These constraints are used to create the resulting policy and access rule.
 
-      - A new policy is created with status = `ACTIVE`
+      If access constraints are provided during approval, the specified access types
+      must be supported by the resource. Otherwise, the request is rejected.
 
-      - A corresponding access rule is created
+      If access constraints are not provided during approval, access is granted for all
+      access types supported by the resource.
 
-      - The policy and rule will expire based on the provided `expiryAt`
+      If rejected:
 
-      - Constraints provided in this request override consumer-suggested constraints
+      * The request status is updated to `REJECTED`.
+      * No policy or access rule is created.
 
-
-      ## If Rejected (`status = rejected`)
-
-
-      - The request status is updated to `REJECTED`
-
-      - No policy is created
-
-      - No access rule is created
-
-
-      ## Important
-
-
-      - Only requests in `PENDING` state can be updated
-
-      - Providers can only act on requests for resources they own'
+      Only requests in `PENDING` state can be updated.
     operationId: put-auth-v2-access-requests
     requestBody:
       description: '- `requestId` :  ID of the request. Can get this `id` by using
@@ -257,8 +292,16 @@
                     given asset
                 constraints:
                   type: object
-                  description: Access constraints that the provider can apply (e.g.,
-                    allowed access types)
+                  description: |
+                    Optional constraints to be applied to the generated policy and access rule.
+
+                    Constraints may define access permissions (access types, expiry, limits)
+                    and subject restrictions (allowed users, organizations, or roles).
+
+                    These constraints override any consumer-requested constraints.
+
+                    Access types specified here must be supported by the resource.
+                    If omitted, access is granted for all access types supported by the resource.
                   additionalProperties: true
               required:
               - requestId
@@ -337,6 +380,17 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/updateNotificationBadRequest
+            examples:
+              MalformedRequest:
+                value:
+                  type: urn:dx:AclApd:badRequest
+                  title: Bad Request
+                  detail: Missing or malformed request
+              InvalidAccessType:
+                value:
+                  type: urn:dx:AclApd:badRequest
+                  title: Bad Request
+                  detail: Requested access type 'sub' is not allowed for this resource
         headers:
           Content-Type:
             schema:
@@ -1168,8 +1222,20 @@
     tags:
     - Access Request
     summary: Check Access Request
-    description: Checks if the access requests that were previously created by consumer
-      or consumer delegate, has been approved by the provider or provider delegate
+    description: |
+      Determines the current access state of the authenticated consumer for a given asset.
+
+      The API evaluates active access policies and pending access requests applicable
+      to the consumer and returns the current access status.
+
+      The response may contain:
+
+      - One or more active policies granting access to the asset.
+      - One or more pending access requests awaiting provider approval.
+      - No access and no pending requests.
+
+      When active policies exist, detailed policy, owner, and asset information is returned.
+      When pending requests exist, detailed request, consumer, and asset information is returned.
     operationId: post-auth-v2-access-requests-has-access
     requestBody:
       description: '- `itemId` : The catalogue ID of the asset for which the request
@@ -1198,7 +1264,7 @@
                 itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
     responses:
       '200':
-        description: OK
+        description: User has access to the asset through one or more active policies.
         content:
           application/json:
             schema:
@@ -1243,14 +1309,51 @@
               type: string
             description: application/json
       '403':
-        description: 'Forbidden
+        description: |
+          Forbidden
 
-          - User''s access request is still in pending status or has been rejected
-          by the provider of the resource'
+          One of the following conditions applies:
+
+          - Access request(s) for the asset are still pending approval.
+          - The consumer does not currently have access to the asset.
         content:
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/checkAccessRequestNotFoundResponse
+            examples:
+              accessRequestNotFoundResponse:
+                value:
+                  type: dx:aclApd:no-access
+                  title: Forbidden
+                  detail: User does not have access to the given item
+
+              accessRequestPendingResponse:
+                value:
+                  type: dx:aclApd:access-pending
+                  title: Forbidden
+                  detail: Access request is still pending for the given item
+                  result:
+                    hasPendingRequests: true
+                    pendingRequests:
+                      - requestId: c1d1531d-a293-4e9f-8f5e-72538f999a29
+                        requestStatus: PENDING
+                        requestType: DOWNLOAD
+                        constraints:
+                          access:
+                            - accessType: file
+                        user:
+                          consumerId: c43dfe14-5f4f-4b77-90e1-f9945574d226
+                          consumerFirstName: User
+                          consumerLastName: Test
+                          consumerEmail: sample@gmal.com
+                        asset:
+                          itemId: 96c1c3d4-3856-491a-9340-405e35db80c2
+                          assetName: Subdistrict Weather Information for multiple access requests testing
+                          assetType: adex:DataBank
+                          shortDescription: Daily aggregated temperature and rainfall data at subdistrict level.
+                          organizationId: a87e6ca1-cbbe-49d5-a474-2caaaadb191e
+                        createdAt: "2026-06-04T12:13:22.12143"
+                        updatedAt: "2026-06-04T12:13:22.12143"
         headers:
           Content-Type:
             schema:
