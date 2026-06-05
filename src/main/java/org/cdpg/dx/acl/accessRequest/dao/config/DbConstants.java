@@ -47,6 +47,8 @@ public class DbConstants {
   public static final String REQUEST_STATUS = "requestStatus";
   public static final String REQUEST_TYPE = "requestType";
   public static final String ADDITIONAL_INFO = "additionalInfo";
+  public static final String PROVIDER_COMMENT = "providerComment";
+  public static final String FEEDBACK_TO_CONSUMER = "feedbackToConsumer";
   public static final String USER = "user";
   public static final String PROVIDER_ID = "providerId";
   public static final String CONSUMER = "consumer";

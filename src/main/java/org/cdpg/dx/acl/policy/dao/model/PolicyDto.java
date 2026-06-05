@@ -6,14 +6,17 @@ import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_FIRST_NAME;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_LAST_NAME;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_ORGANIZATION;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ADDITIONAL_INFO;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_EMAIL;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_FIRST_NAME;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_LAST_NAME;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_ORGANIZATION;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_FEEDBACK_TO_CONSUMER;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_PROVIDER_COMMENT;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.FEEDBACK_TO_CONSUMER;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.OWNER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.POLICY_TABLE;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.PROVIDER_COMMENT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.USER;
 
 import io.vertx.core.json.JsonObject;
@@ -33,16 +36,18 @@ public class PolicyDto implements BaseEntity<PolicyDto> {
   private LocalDateTime expiryAt;
   private JsonObject constraints;
   private JsonObject additionalInfo;
-  private String providerId;
-  private String providerEmail;
-  private String providerFirstName;
-  private String providerLastName;
-  private String providerOrganization;
+  private String providerComment;
+  private String feedbackToConsumer;
+  private String ownerId;
+  private String ownerEmail;
+  private String ownerFirstName;
+  private String ownerLastName;
+  private String ownerOrganization;
   private String status;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
   private JsonObject consumer;
-  private JsonObject provider;
+  private JsonObject owner;
   private String assetName;
   private String assetType;
   private String itemOrganizationId;
@@ -79,13 +84,15 @@ public class PolicyDto implements BaseEntity<PolicyDto> {
 
     this.constraints = row.getJsonObject("constraints");
     this.additionalInfo = row.getJsonObject("additional_info");
+    this.providerComment = row.getString(DB_PROVIDER_COMMENT);
+    this.feedbackToConsumer = row.getString(DB_FEEDBACK_TO_CONSUMER);
 
     if (row.containsKey("consumer_id")) {
       this.consumerId = row.getString("consumer_id");
     }
 
     if (row.containsKey("owner_id")) {
-      this.providerId = row.getString("owner_id");
+      this.ownerId = row.getString("owner_id");
     }
   }
 
@@ -101,6 +108,8 @@ public class PolicyDto implements BaseEntity<PolicyDto> {
     EntityUtil.putIfPresent(map, "expiryAt", expiryAt);
     EntityUtil.putIfPresent(map, "constraints", constraints);
     EntityUtil.putIfPresent(map, "additionalInfo", additionalInfo);
+    EntityUtil.putIfPresent(map, "providerComment", providerComment);
+    EntityUtil.putIfPresent(map, "feedbackToConsumer", feedbackToConsumer);
 
     return map;
   }
@@ -113,6 +122,8 @@ public class PolicyDto implements BaseEntity<PolicyDto> {
         .put("status", status)
         .put("constraints", constraints)
         .put(ADDITIONAL_INFO, additionalInfo)
+        .put(PROVIDER_COMMENT, providerComment)
+        .put(FEEDBACK_TO_CONSUMER, feedbackToConsumer)
         .put(
             USER,
             new JsonObject()
@@ -124,11 +135,11 @@ public class PolicyDto implements BaseEntity<PolicyDto> {
         .put(
             OWNER,
             new JsonObject()
-                .put(OWNER_ID, getProviderId())
-                .put(OWNER_FIRST_NAME, getProviderFirstName())
-                .put(OWNER_LAST_NAME, getProviderLastName())
-                .put(OWNER_EMAIL, getProviderEmail())
-                .put(OWNER_ORGANIZATION, getProviderOrganization()))
+                .put(OWNER_ID, getOwnerId())
+                .put(OWNER_FIRST_NAME, getOwnerFirstName())
+                .put(OWNER_LAST_NAME, getOwnerLastName())
+                .put(OWNER_EMAIL, getOwnerEmail())
+                .put(OWNER_ORGANIZATION, getOwnerOrganization()))
         .put("asset", new JsonObject()
             .put("itemId", itemId)
             .put("assetName", assetName)
@@ -148,6 +159,25 @@ public class PolicyDto implements BaseEntity<PolicyDto> {
   }
 
   // Getters and setters
+
+  public String getProviderComment() {
+    return providerComment;
+  }
+
+  public PolicyDto setProviderComment(String providerComment) {
+    this.providerComment = providerComment;
+    return this;
+  }
+
+  public String getFeedbackToConsumer() {
+    return feedbackToConsumer;
+  }
+
+  public PolicyDto setFeedbackToConsumer(String feedbackToConsumer) {
+    this.feedbackToConsumer = feedbackToConsumer;
+    return this;
+  }
+
   public String getPolicyId() { return policyId; }
   public PolicyDto setPolicyId(String policyId) { this.policyId = policyId; return this; }
 
@@ -175,8 +205,8 @@ public class PolicyDto implements BaseEntity<PolicyDto> {
   public JsonObject getConsumer() { return consumer; }
   public PolicyDto setConsumer(JsonObject consumer) { this.consumer = consumer; return this; }
 
-  public JsonObject getProvider() { return provider; }
-  public PolicyDto setProvider(JsonObject provider) { this.provider = provider; return this; }
+  public JsonObject getOwner() { return owner; }
+  public PolicyDto setOwner(JsonObject owner) { this.owner = owner; return this; }
 
   public String getAssetName() {
     return assetName;
@@ -223,13 +253,13 @@ public class PolicyDto implements BaseEntity<PolicyDto> {
     return this;
   }
 
-  public PolicyDto setProviderId(String providerId) {
-    this.providerId = providerId;
-    return this;
+  public String getOwnerId() {
+    return ownerId;
   }
 
-  public String getProviderId() {
-    return providerId;
+  public PolicyDto setOwnerId(String ownerId) {
+    this.ownerId = ownerId;
+    return this;
   }
 
   public String getConsumerId() {
@@ -303,39 +333,39 @@ public class PolicyDto implements BaseEntity<PolicyDto> {
     return this;
   }
 
-  public String getProviderEmail() {
-    return providerEmail;
+  public String getOwnerEmail() {
+    return ownerEmail;
   }
 
-  public PolicyDto setProviderEmail(String providerEmail) {
-    this.providerEmail = providerEmail;
+  public PolicyDto setOwnerEmail(String ownerEmail) {
+    this.ownerEmail = ownerEmail;
     return this;
   }
 
-  public String getProviderFirstName() {
-    return providerFirstName;
+  public String getOwnerFirstName() {
+    return ownerFirstName;
   }
 
-  public PolicyDto setProviderFirstName(String providerFirstName) {
-    this.providerFirstName = providerFirstName;
+  public PolicyDto setOwnerFirstName(String ownerFirstName) {
+    this.ownerFirstName = ownerFirstName;
     return this;
   }
 
-  public String getProviderLastName() {
-    return providerLastName;
+  public String getOwnerLastName() {
+    return ownerLastName;
   }
 
-  public PolicyDto setProviderLastName(String providerLastName) {
-    this.providerLastName = providerLastName;
+  public PolicyDto setOwnerLastName(String ownerLastName) {
+    this.ownerLastName = ownerLastName;
     return this;
   }
 
-  public String getProviderOrganization() {
-    return providerOrganization;
+  public String getOwnerOrganization() {
+    return ownerOrganization;
   }
 
-  public PolicyDto setProviderOrganization(String providerOrganization) {
-    this.providerOrganization = providerOrganization;
+  public PolicyDto setOwnerOrganization(String ownerOrganization) {
+    this.ownerOrganization = ownerOrganization;
     return this;
   }
 }

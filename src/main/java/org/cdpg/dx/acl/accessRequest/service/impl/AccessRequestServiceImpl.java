@@ -897,7 +897,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
                       dto.setShortDescription(asset.getShortDescription());
                       dto.setItemOrganizationId(asset.getOrganizationId());
                       dto.setItemOrganizationName(asset.getOrganizationName());
-                      dto.setProviderId(asset.getProviderId());
+                      dto.setOwnerId(asset.getProviderId());
                     }
                   })
               .onFailure(
@@ -951,26 +951,26 @@ public class AccessRequestServiceImpl implements AccessRequestService {
       }
 
       // Owner enrichment
-      if (dto.getProviderId() != null) {
+      if (dto.getOwnerId() != null) {
         Future<Void> ownerFuture =
             keycloakUserService
-                .getUserById(UUID.fromString(dto.getProviderId()))
+                .getUserById(UUID.fromString(dto.getOwnerId()))
                 .onSuccess(
                     user -> {
-                      dto.setProviderEmail(user.email());
-                      dto.setProviderFirstName(user.givenName());
-                      dto.setProviderLastName(user.familyName());
-                      dto.setProviderOrganization(user.organisationName());
+                      dto.setOwnerEmail(user.email());
+                      dto.setOwnerFirstName(user.givenName());
+                      dto.setOwnerLastName(user.familyName());
+                      dto.setOwnerOrganization(user.organisationName());
                     })
                 .recover(
                     err -> {
                       LOGGER.warn(
-                          "Failed to fetch owner {}: {}", dto.getProviderId(), err.getMessage());
+                          "Failed to fetch owner {}: {}", dto.getOwnerId(), err.getMessage());
 
-                      dto.setProviderEmail(null);
-                      dto.setProviderFirstName(null);
-                      dto.setProviderLastName(null);
-                      dto.setProviderOrganization(null);
+                      dto.setOwnerEmail(null);
+                      dto.setOwnerFirstName(null);
+                      dto.setOwnerLastName(null);
+                      dto.setOwnerOrganization(null);
 
                       return Future.succeededFuture();
                     })

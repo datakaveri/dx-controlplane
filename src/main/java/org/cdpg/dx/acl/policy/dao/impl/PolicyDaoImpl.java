@@ -67,7 +67,6 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
         new Condition(
             List.of(
                 new Condition(DB_ITEM_ID, Condition.Operator.EQUALS, List.of(itemId.toString())),
-                new Condition(DB_OWNER_ID, Condition.Operator.EQUALS, List.of(ownerId.toString())),
                 new Condition(DB_STATUS, Condition.Operator.EQUALS, List.of(ACTIVE)),
                 new Condition(DB_CONSUMER_ID, Condition.Operator.EQUALS, List.of(userId)),
                 new Condition(
@@ -109,7 +108,6 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
         new Condition(
             List.of(
                 new Condition(DB_ITEM_ID, Condition.Operator.EQUALS, itemIds),
-                new Condition(DB_OWNER_ID, Condition.Operator.EQUALS, List.of(ownerId.toString())),
                 new Condition(DB_STATUS, Condition.Operator.EQUALS, List.of(ACTIVE)),
                 new Condition(DB_CONSUMER_ID, Condition.Operator.EQUALS, consumerIds),
                 new Condition(DB_EXPIRY_AT, Condition.Operator.GREATER,

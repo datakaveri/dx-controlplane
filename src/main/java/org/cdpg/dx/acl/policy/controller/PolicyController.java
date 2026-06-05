@@ -384,18 +384,30 @@ public class PolicyController implements ApiController {
   private void handleDeletePolicy(RoutingContext ctx) {
     String policyId = ctx.queryParams().get(ID);
     DxUser user = RoutingContextHelper.fromPrincipal(ctx);
-    policyService
-        .deActivatePolicy(policyId, user)
-        .onComplete(
-            handler -> {
-              if (handler.succeeded()) {
-                LOGGER.info("Deactivating policy succeeded");
-                ResponseBuilder.sendSuccess(ctx, "Policy deleted successfully", urnGenerator);
-              } else {
-                LOGGER.error("Delete policy failed : {} ", handler.cause().getMessage());
-                handleFailureResponse(ctx, handler.cause().getMessage());
-              }
-            });
+
+    keycloakUserService
+        .getUserById(user.sub())
+        .onFailure(
+            err -> {
+              LOGGER.error("Failed to fetch user from Keycloak", err);
+              ctx.fail(new DxForbiddenException("Invalid user"));
+            })
+        .onSuccess(
+            keycloakUser ->
+                policyService
+                    .deActivatePolicy(policyId, keycloakUser)
+                    .onComplete(
+                        handler -> {
+                          if (handler.succeeded()) {
+                            LOGGER.info("Deactivating policy succeeded");
+                            ResponseBuilder.sendSuccess(
+                                ctx, "Policy deleted successfully", urnGenerator);
+                          } else {
+                            LOGGER.error(
+                                "Delete policy failed : {} ", handler.cause().getMessage());
+                            handleFailureResponse(ctx, handler.cause().getMessage());
+                          }
+                        }));
   }
 
   private void verifyRequestHandler(RoutingContext ctx) {
