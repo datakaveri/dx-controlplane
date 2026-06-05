@@ -368,7 +368,7 @@ public class CentralItemServiceImpl implements ItemService {
                                         policyObj -> {
                                           JsonObject item = response.getSource();
                                           // append policyId, constraints and expiryAt
-                                          item.put(POLICIES, new JsonArray().add(policyObj));
+                                          item.put(POLICIES, new JsonArray().add(policyObj.toJson()));
                                           response.setSource(item);
 
                                           return succeededResponse(response, totalHits);

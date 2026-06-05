@@ -14,7 +14,9 @@ import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ITEM_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_OWNER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_POLICY_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_POLICY_TYPE;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_PROVIDER_COMMENT;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.POLICY_TABLE;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.USER_TABLE;
@@ -33,13 +35,11 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.acl.accessRequest.dao.model.PolicyAccessInfo;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.model.PolicyDto;
 import org.cdpg.dx.acl.policy.service.model.CreatePolicyRequest;
 import org.cdpg.dx.common.HttpStatusCode;
 import org.cdpg.dx.common.exception.BaseDxException;
-import org.cdpg.dx.common.exception.DxForbiddenNoAccessException;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.database.postgres.base.dao.AbstractBaseDAO;
 import org.cdpg.dx.database.postgres.models.Condition;
@@ -145,8 +145,10 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
                   List<String> columns = new ArrayList<>();
                   List<Object> values = new ArrayList<>();
 
-                  columns.add(DB_CONSUMER_ID);
-                  values.add(req.getUserId());
+                  if (req.getUserId() != null) {
+                    columns.add(DB_CONSUMER_ID);
+                    values.add(req.getUserId());
+                  }
 
                   // item_organization_id is null for independent providers — omit the column
                   // so the DB defaults to NULL rather than causing a param count mismatch
@@ -154,15 +156,29 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
                     columns.add(DB_ASSET_ORGANIZATION_ID);
                     values.add(req.getItemOrganizationId());
                   }
+                  if (req.getRequestId() != null) {
+                    columns.add(DB_REQUEST_ID);
+                    values.add(req.getRequestId());
+                  }
 
-                  columns.add(DB_ITEM_ID);       values.add(req.getItemId().toString());
-                  columns.add(DB_OWNER_ID);       values.add(userId.toString());
-                  columns.add(DB_EXPIRY_AT);      values.add(req.getExpiryTime() != null ? req.getExpiryTime().toString() : null);
-                  columns.add(DB_CONSTRAINTS);    values.add(Optional.ofNullable(req.getConstraints()).orElse(new JsonObject()));
-                  columns.add(DB_STATUS);         values.add(ACTIVE);
-                  columns.add(DB_ADDITIONAL_INFO); values.add(Optional.ofNullable(req.getAdditionalInfo()).orElse(new JsonObject()));
-                  columns.add(DB_PROVIDER_COMMENT); values.add(Optional.ofNullable(req.getProviderComment()).orElse(""));
-                  columns.add(DB_FEEDBACK_TO_CONSUMER); values.add(Optional.ofNullable(req.getFeedbackToConsumer()).orElse(""));
+                  columns.add(DB_ITEM_ID);
+                  values.add(req.getItemId().toString());
+                  columns.add(DB_OWNER_ID);
+                  values.add(userId.toString());
+                  columns.add(DB_EXPIRY_AT);
+                  values.add(req.getExpiryTime() != null ? req.getExpiryTime().toString() : null);
+                  columns.add(DB_CONSTRAINTS);
+                  values.add(Optional.ofNullable(req.getConstraints()).orElse(new JsonObject()));
+                  columns.add(DB_STATUS);
+                  values.add(ACTIVE);
+                  columns.add(DB_POLICY_TYPE);
+                  values.add(req.getPolicyType());
+                  columns.add(DB_ADDITIONAL_INFO);
+                  values.add(Optional.ofNullable(req.getAdditionalInfo()).orElse(new JsonObject()));
+                  columns.add(DB_PROVIDER_COMMENT);
+                  values.add(Optional.ofNullable(req.getProviderComment()).orElse(""));
+                  columns.add(DB_FEEDBACK_TO_CONSUMER);
+                  values.add(Optional.ofNullable(req.getFeedbackToConsumer()).orElse(""));
 
                   InsertQuery insertQuery =
                       new InsertQuery()
@@ -300,7 +316,7 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
 
   @Override
   public Future<QueryResult> deActivatePolicyByUserAndItem(
-      UUID itemId, UUID ownerId, String userId) {
+      UUID itemId, UUID requestId, String userId) {
 
     Condition condition =
         new Condition()
@@ -313,9 +329,9 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
                         .setOperator(Condition.Operator.EQUALS)
                         .setValues(List.of(itemId.toString())),
                     new Condition()
-                        .setColumn(DB_OWNER_ID)
+                        .setColumn(DB_REQUEST_ID)
                         .setOperator(Condition.Operator.EQUALS)
-                        .setValues(List.of(ownerId.toString())),
+                        .setValues(List.of(requestId.toString())),
                     new Condition()
                         .setColumn(DB_CONSUMER_ID)
                         .setOperator(Condition.Operator.EQUALS)
@@ -364,7 +380,7 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
 
     if (policyIds != null && !policyIds.isEmpty()) {
       orConditions.add(
-          new Condition(DB_ID, Condition.Operator.EQUALS, new ArrayList<>(policyIds)));
+          new Condition(DB_ID, Condition.Operator.IN, new ArrayList<>(policyIds)));
     }
 
     if (consumerId != null) {
@@ -417,7 +433,7 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
   }
 
   @Override
-  public Future<List<PolicyAccessInfo>> getMatchingPolicies(UUID itemId, String consumerId) {
+  public Future<List<PolicyDto>> getMatchingPolicies(UUID itemId, String consumerId) {
 
     LocalDateTime now = LocalDateTime.now();
 
@@ -433,24 +449,20 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
     SelectQuery query =
         new SelectQuery()
             .setTable(POLICY_TABLE)
-            .setColumns(List.of(DB_ID, DB_CONSTRAINTS, DB_EXPIRY_AT))
+            .setColumns(List.of("*"))
             .setCondition(finalCondition);
 
     return postgresService
         .select(query, false)
         .compose(
             result -> {
-              List<PolicyAccessInfo> policies = new ArrayList<>();
+              List<PolicyDto> policies = new ArrayList<>();
 
               for (Object rowObj : result.getRows()) {
 
                 JsonObject row = (JsonObject) rowObj;
 
-                policies.add(
-                    new PolicyAccessInfo(
-                        UUID.fromString(row.getString(DB_ID)),
-                        row.getJsonObject(DB_CONSTRAINTS),
-                        LocalDateTime.parse(row.getString(DB_EXPIRY_AT))));
+                policies.add(new PolicyDto(row));
               }
 
               return Future.succeededFuture(policies);

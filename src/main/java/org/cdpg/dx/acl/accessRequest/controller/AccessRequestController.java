@@ -12,6 +12,7 @@ import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ASSET_ORGA
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ASSET_TYPE;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CREATED_AT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_EXPIRY_AT;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ITEM_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_UPDATED_AT;
 import static org.cdpg.dx.acl.accessRequest.util.Constants.API_TO_DB_MAP;
@@ -39,6 +40,7 @@ import org.cdpg.dx.acl.accessRequest.dao.model.Status;
 import org.cdpg.dx.acl.accessRequest.model.AccessRequestAuditOperation;
 import org.cdpg.dx.acl.accessRequest.service.AccessRequestService;
 import org.cdpg.dx.acl.accessRequest.util.AccessRequestAuditLogHelper;
+import org.cdpg.dx.acl.policy.dao.model.PolicyDto;
 import org.cdpg.dx.acl.policy.util.UserAccessHandler;
 import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
@@ -60,6 +62,7 @@ import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.CpRoutingContextHelper;
 import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
+import org.cdpg.dx.database.postgres.models.PaginatedResult;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
@@ -209,8 +212,15 @@ public class AccessRequestController implements ApiController {
     User user = ctx.user();
 
     Map<String, String> allowedFilters =
-        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE, "organizationId",
-            DB_ASSET_ORGANIZATION_ID);
+        Map.of(
+            "requestStatus",
+            DB_STATUS,
+            "assetType",
+            DB_ASSET_TYPE,
+            "organizationId",
+            DB_ASSET_ORGANIZATION_ID,
+            "itemId",
+            DB_ITEM_ID);
     Map<String, Object> additionalFilters = Map.of("provider_id", user.subject());
     Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
     Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
@@ -256,8 +266,15 @@ public class AccessRequestController implements ApiController {
 
     String organizationId = RoutingContextHelper.fromPrincipal(ctx).organisationId();
     Map<String, String> allowedFilters =
-        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE, "organizationId",
-            DB_ASSET_ORGANIZATION_ID);
+        Map.of(
+            "requestStatus",
+            DB_STATUS,
+            "assetType",
+            DB_ASSET_TYPE,
+            "organizationId",
+            DB_ASSET_ORGANIZATION_ID,
+            "itemId",
+            DB_ITEM_ID);
     Map<String, Object> additionalFilters = Map.of(DB_ASSET_ORGANIZATION_ID, organizationId);
     Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
     Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
@@ -303,8 +320,15 @@ public class AccessRequestController implements ApiController {
     User user = ctx.user();
 
     Map<String, String> allowedFilters =
-        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE, "organizationId",
-            DB_ASSET_ORGANIZATION_ID);
+        Map.of(
+            "requestStatus",
+            DB_STATUS,
+            "assetType",
+            DB_ASSET_TYPE,
+            "organizationId",
+            DB_ASSET_ORGANIZATION_ID,
+            "itemId",
+            DB_ITEM_ID);
     Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
     Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
 
@@ -344,17 +368,48 @@ public class AccessRequestController implements ApiController {
 
   private void checkAccessRequestHandler(RoutingContext ctx) {
     LOGGER.info("Handling checkAccessRequest request...");
+
     JsonObject body = ctx.body().asJsonObject();
     String itemId = body.getString("itemId");
     UUID consumerId = UUID.fromString(ctx.user().subject());
 
     accessRequestService
         .checkAccessRequest(consumerId, itemId)
+        .compose(
+            response -> {
+              if (response.getPolicies() == null || response.getPolicies().isEmpty()) {
+                return Future.succeededFuture(response);
+              }
+
+              PaginatedResult<PolicyDto> pagedResult =
+                  new PaginatedResult<>(null, response.getPolicies());
+
+              return accessRequestService
+                  .enrichPolicyRequestsWithItemDetails(pagedResult)
+                  .compose(accessRequestService::enrichPolicyRequestsWithUserInfo)
+                  .map(
+                      enriched -> {
+                        response.setPolicies(enriched.data());
+                        return response;
+                      });
+            })
         .onSuccess(
             response -> {
-              ResponseBuilder.sendSuccess(
-                  ctx, "User has access to the given asset!", response.getResults(),
-                  response.getPaginationInfo(), urnGenerator);
+              String message = "User has access to the given asset!";
+
+              boolean hasPolicies =
+                  response.getPolicies() != null && !response.getPolicies().isEmpty();
+
+              if (!hasPolicies && response.isHasPendingRequests()) {
+                ResponseBuilder.sendForbiddenAccessPending(
+                    ctx,
+                    "Access request is still pending for the given item",
+                    response.toJson(),
+                    urnGenerator);
+                return;
+              }
+
+              ResponseBuilder.sendSuccess(ctx, message, response.toJson(), urnGenerator);
             })
         .onFailure(
             err -> {
@@ -572,8 +627,15 @@ LOGGER.debug("provider : {}", provider);
     User user = ctx.user();
 
     Map<String, String> allowedFilters =
-        Map.of("requestStatus", DB_STATUS, "assetType", DB_ASSET_TYPE, "organizationId",
-            DB_ASSET_ORGANIZATION_ID);
+        Map.of(
+            "requestStatus",
+            DB_STATUS,
+            "assetType",
+            DB_ASSET_TYPE,
+            "organizationId",
+            DB_ASSET_ORGANIZATION_ID,
+            "itemId",
+            DB_ITEM_ID);
     Map<String, Object> additionalFilters = Map.of("consumer_id", user.subject());
     Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
     Set<String> allowedSortFields = API_TO_DB_MAP.keySet();

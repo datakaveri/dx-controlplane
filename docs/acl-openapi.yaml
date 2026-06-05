@@ -58,29 +58,37 @@ paths:
       tags:
         - Access Request
       summary: Create Access Request
-      description: |-
-
-        Consumers can create an access request to request access to a provider’s resource.
+      description: |
+        Consumers can create an access request to request access to a provider's resource.
 
         When an access request is created:
 
-        - The request status is set to `PENDING`
-        - The provider is notified
+        * The request status is set to `PENDING`.
+        * The provider is notified for review.
 
-        ## Important Rules
+        Access Type Handling:
 
-        - A consumer cannot create an access request for their own resource.
-        - If an ACTIVE policy already exists for the consumer and resource,
-          the request will be rejected with `409 Conflict`.
+        * Access requests are evaluated independently for each requested access type.
+        * Consumers can raise multiple access requests for the same resource, provided the requested access types are different.
+        * Requests are allowed for access types that are neither pending approval nor already granted.
 
-        ## Request Lifecycle
+        Conflict Handling:
 
-        - `PENDING` → Awaiting provider action
-        - `GRANTED` → Policy is created automatically
-        - `REJECTED` → No policy is created
+        * A request is rejected if any requested access type already has a pending access request.
+        * A request is rejected if any requested access type is already granted through an active policy.
+        * Conflict responses identify the specific access type(s) that caused the request to be rejected.
 
-        The request does not grant access by itself. Access is granted only
-        when the provider approves the request.
+        Important Rules:
+
+        * A consumer cannot create an access request for their own resource.
+
+        Request Lifecycle:
+
+        * `PENDING` → Awaiting provider action.
+        * `GRANTED` → Policy is created automatically.
+        * `REJECTED` → No policy is created.
+
+        Creating an access request does not grant access. Access is granted only when the provider approves the request.
       operationId: post-auth-v2-access-requests
       requestBody:
         description: |
@@ -108,7 +116,11 @@ paths:
                   maxProperties: 10
                 constraints:
                   type: object
-                  description: Optional access constraints requested by the consumer
+                  description: |
+                    Optional constraints requested by the consumer.
+
+                    Requested access types must be supported by the resource.
+                    These constraints may be modified by the provider during approval.
                   additionalProperties: true
               required:
                 - itemId
@@ -122,7 +134,7 @@ paths:
                 value:
                   itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
                   requestType: DOWNLOAD
-              Create Access Request with additionalInfo:
+              Create Access Request with additionalInfo and constraints:
                 value:
                   itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
                   requestType: DOWNLOAD
@@ -221,13 +233,26 @@ paths:
                 type: string
               description: application/json
         '409':
-          description: |-
+          description: |
             Conflict
-            - The policy or request for the given resource was previously created
+
+            - One or more requested access types already have a pending access request.
+            - One or more requested access types are already granted through an active policy.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/createNotificationConflictResponse'
+              examples:
+                PendingRequestConflict:
+                  value:
+                    type: dx:aclApd:conflict
+                    title: Conflict
+                    detail: 'Pending access requests exist for: api.'
+                ActivePolicyConflict:
+                  value:
+                    type: dx:aclApd:conflict
+                    title: Conflict
+                    detail: 'Active access already granted for: api.'
           headers:
             Content-Type:
               schema:
@@ -255,29 +280,38 @@ paths:
       tags:
         - Access Request
       summary: Update Access Request
-      description: |-
+      description: |
+        Providers or organization administrators belonging to the provider's organization
+        can approve or reject `PENDING` access requests for resources they own.
 
-        Providers or authorized delegates can approve or reject **PENDING**
-        access requests for resources they own.
+        If approved:
 
-        ## If Approved (`status = granted`)
+        * The request status is updated to `GRANTED`.
+        * A policy with status `ACTIVE` is created automatically.
+        * The policy expires based on the provided `expiryAt`.
 
-        - The request status is updated to `GRANTED`
-        - A new policy is created with status = `ACTIVE`
-        - A corresponding access rule is created
-        - The policy and rule will expire based on the provided `expiryAt`
-        - Constraints provided in this request override consumer-suggested constraints
+        Consumers may request preferred constraints while creating an access request.
+        During approval, the provider may accept, modify, or override those constraints.
 
-        ## If Rejected (`status = rejected`)
+        Constraints provided during approval may define:
 
-        - The request status is updated to `REJECTED`
-        - No policy is created
-        - No access rule is created
+        * Access permissions (access types, expiry, limits, etc.).
+        * Subject restrictions (allowed users, organizations, or roles).
 
-        ## Important
+        These constraints are used to create the resulting policy and access rule.
 
-        - Only requests in `PENDING` state can be updated
-        - Providers can only act on requests for resources they own
+        If access constraints are provided during approval, the specified access types
+        must be supported by the resource. Otherwise, the request is rejected.
+
+        If access constraints are not provided during approval, access is granted for all
+        access types supported by the resource.
+
+        If rejected:
+
+        * The request status is updated to `REJECTED`.
+        * No policy or access rule is created.
+
+        Only requests in `PENDING` state can be updated.
       operationId: put-auth-v2-access-requests
       requestBody:
         description: |-
@@ -306,7 +340,16 @@ paths:
                       description: ISO 8601 format timestamp to provide access to the given asset
                     constraints:
                       type: object
-                      description: Access constraints that the provider can apply (e.g., allowed access types)
+                      description: |
+                        Optional constraints to be applied to the generated policy and access rule.
+
+                        Constraints may define access permissions (access types, expiry, limits)
+                        and subject restrictions (allowed users, organizations, or roles).
+
+                        These constraints override any consumer-requested constraints.
+
+                        Access types specified here must be supported by the resource.
+                        If omitted, access is granted for all access types supported by the resource.
                       additionalProperties: true
                   required:
                     - requestId
@@ -384,6 +427,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/updateNotificationBadRequest'
+              examples:
+                MalformedRequest:
+                  value:
+                    type: urn:dx:AclApd:badRequest
+                    title: Bad Request
+                    detail: Missing or malformed request
+                InvalidAccessType:
+                  value:
+                    type: urn:dx:AclApd:badRequest
+                    title: Bad Request
+                    detail: Requested access type 'sub' is not allowed for this resource
           headers:
             Content-Type:
               schema:
@@ -1141,7 +1195,20 @@ paths:
       tags:
         - Access Request
       summary: Check Access Request
-      description: Checks if the access requests that were previously created by consumer or consumer delegate, has been approved by the provider or provider delegate
+      description: |
+        Determines the current access state of the authenticated consumer for a given asset.
+
+        The API evaluates active access policies and pending access requests applicable
+        to the consumer and returns the current access status.
+
+        The response may contain:
+
+        - One or more active policies granting access to the asset.
+        - One or more pending access requests awaiting provider approval.
+        - No access and no pending requests.
+
+        When active policies exist, detailed policy, owner, and asset information is returned.
+        When pending requests exist, detailed request, consumer, and asset information is returned.
       operationId: post-auth-v2-access-requests-has-access
       requestBody:
         description: |
@@ -1168,7 +1235,7 @@ paths:
                   itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
       responses:
         '200':
-          description: OK
+          description: User has access to the asset through one or more active policies.
           content:
             application/json:
               schema:
@@ -1212,13 +1279,50 @@ paths:
                 type: string
               description: application/json
         '403':
-          description: |-
+          description: |
             Forbidden
-            - User's access request is still in pending status or has been rejected by the provider of the resource
+
+            One of the following conditions applies:
+
+            - Access request(s) for the asset are still pending approval.
+            - The consumer does not currently have access to the asset.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/checkAccessRequestNotFoundResponse'
+              examples:
+                accessRequestNotFoundResponse:
+                  value:
+                    type: dx:aclApd:no-access
+                    title: Forbidden
+                    detail: User does not have access to the given item
+                accessRequestPendingResponse:
+                  value:
+                    type: dx:aclApd:access-pending
+                    title: Forbidden
+                    detail: Access request is still pending for the given item
+                    result:
+                      hasPendingRequests: true
+                      pendingRequests:
+                        - requestId: c1d1531d-a293-4e9f-8f5e-72538f999a29
+                          requestStatus: PENDING
+                          requestType: DOWNLOAD
+                          constraints:
+                            access:
+                              - accessType: file
+                          user:
+                            consumerId: c43dfe14-5f4f-4b77-90e1-f9945574d226
+                            consumerFirstName: User
+                            consumerLastName: Test
+                            consumerEmail: sample@gmal.com
+                          asset:
+                            itemId: 96c1c3d4-3856-491a-9340-405e35db80c2
+                            assetName: Subdistrict Weather Information for multiple access requests testing
+                            assetType: adex:DataBank
+                            shortDescription: Daily aggregated temperature and rainfall data at subdistrict level.
+                            organizationId: a87e6ca1-cbbe-49d5-a474-2caaaadb191e
+                          createdAt: '2026-06-04T12:13:22.12143'
+                          updatedAt: '2026-06-04T12:13:22.12143'
           headers:
             Content-Type:
               schema:
@@ -1385,210 +1489,77 @@ paths:
       summary: Create Policy
       operationId: post-auth-v1-policies
       description: |
-        Creates one or more access policies for resources owned by the provider.
+        Creates one or more ACTIVE access policies for DATABANK, AIMODEL resources.
 
-        This API allows a `provider` or `org_admin`
-        to define fine-grained access control rules for resources,
-        AI models.
+        This API can be invoked by:
 
-        A policy determines:
-        - Who can access a resource
-        - How the resource can be accessed
-        - Access validity duration
-        - Usage restrictions and limits
+        - The resource owner (`provider`)
+        - An `org_admin` belonging to the same organization as the resource
 
-        Each successfully created policy is stored with status `ACTIVE`
-        and internally linked to one or more access rules used during
-        authorization and policy verification.
+        A policy defines:
 
-        ---
+        - Who can access the resource
+        - Which access types are allowed
+        - Optional usage limits and expiry conditions
 
-        ## Supported Policy Types
+        ## Policy Types
 
-        The API supports two policy models.
+        ### INDIVIDUAL
 
-        ### 1. INDIVIDUAL Policy
+        Grants access to a specific user.
 
-        An `INDIVIDUAL` policy grants access directly to a specific user.
+        - `userId` is required
+        - Access is evaluated for the specified user
 
-        Characteristics:
-        - `userId` is mandatory
-        - Access evaluation is performed using the provided `userId`
-        - `constraints.subjects` is optional
-        - Commonly used for granting access to a single consumer
+        ### GROUP
 
-        Example use cases:
-        - Granting access to a specific customer
-        - Providing temporary trial access
-        - Issuing subscription access to a single user
+        Grants access to users matching subject criteria.
 
-        ### 2. GROUP Policy
+        - `constraints.subjects` is required
+        - Supports organization, user, and role-based access control
 
-        A `GROUP` policy grants access to users matching one or more
-        subject constraints.
+        When `constraints.subjects` is provided, the system automatically creates
+        access rules linked to the policy for subject-based authorization.
 
-        Characteristics:
-        - `userId` is not required
-        - `constraints.subjects` is mandatory
-        - Access evaluation is performed using subject matching
-        - Supports organization-level and role-based access control
+        ## Access Types
 
-        Example use cases:
-        - Granting access to all users of an organization
-        - Allowing all users with the `consumer` role
-        - Allowing access to a predefined user group
+        Access types are defined under `constraints.access`.
 
-        ---
-
-        ## Policy Lifecycle
-
-        ### ACTIVE
-
-        When a policy is successfully created:
-        - Policy status is set to `ACTIVE`
-        - Associated access rules are also created as `ACTIVE`
-
-        ACTIVE policies participate in authorization checks.
-
-        ### DELETED
-
-        When a policy is deleted:
-        - Policy status becomes `DELETED`
-        - All associated access rules are also marked `DELETED`
-
-        Deleted policies are ignored during authorization evaluation.
-
-        ### EXPIRED
-
-        Policy expiry does not modify the stored database status.
-
-        During authorization:
-        - The system validates whether `expiryTime`
-          is greater than the current timestamp
-        - Expired policies are treated as inactive
-        - The stored status remains unchanged
-
-        ---
-
-        ## Batch Policy Creation
-
-        The request body contains a `request` array.
-
-        Each element in the array represents an independent
-        policy creation request.
-
-        The API supports batch policy creation, allowing multiple
-        policies to be created in a single API call.
-
-        Validation is performed independently for each request object.
-
-        ---
-
-        ## Item Types
-
-        ### DATABANK
-
-        Policy applies to individual resources or datasets.
-
-        ### AIMODEL
-
-        Policy applies to AI models
-
-        ---
-
-        ## Constraints Evaluation
-
-        The `constraints` object defines authorization rules.
-
-        A policy may contain:
-
-        - `subjects`
-          Defines who is eligible to access the resource
-
-        - `access`
-          Defines how the resource may be accessed
-
-        ### subjects
-
-        Subject constraints are used during authorization evaluation.
-
-        Access is granted when the requesting entity matches
-        one or more configured subject conditions.
-
-        Supported subject filters:
-
-        - `allowedOrgIds`
-          List of permitted organization IDs
-
-        - `allowedUserIds`
-          List of permitted user IDs
-
-        - `allowedRoles`
-          List of permitted platform roles
-
-        `subjects` is mandatory for `GROUP` policies.
-
-        ### access
-
-        Defines supported access mechanisms.
-
-        Supported access types:
+        Supported values depend on the resource metadata and may include:
 
         - `api`
-          API-based access
-
         - `file`
-          File download access
-
         - `sub`
-          Subscription or streaming access
 
-        Each access entry may additionally define:
+        Each requested access type must be supported by the resource.
+        Otherwise the request is rejected with `400 Bad Request`.
 
-        - `expiry`
-          Expiry timestamp in epoch seconds
+        ## Batch Creation
 
-        - `limits`
-          Optional usage restrictions such as:
-          - `apiHits`
-          - `dataUsage`
+        Multiple policies may be created in a single request using the `request` array.
 
-        ---
+        Each policy request is validated independently.
 
-        ## Validation Rules
+        ## Conflict Behaviour
 
-        ### INDIVIDUAL Policy
+        Only one ACTIVE policy may exist for the same resource and access type combination.
 
-        Requires:
-        - `policyType = INDIVIDUAL`
-        - `userId`
-
-        ### GROUP Policy
-
-        Requires:
-        - `policyType = GROUP`
-        - `constraints.subjects`
-
-        ### Duplicate Policy Restriction
-
-        Only one ACTIVE policy may exist for the
-        same policy scope.
-
-        If a conflicting ACTIVE policy already exists,
+        If an ACTIVE policy already exists for any requested access type,
         the API returns `409 Conflict`.
 
-        ---
+        Example:
 
-        ## Authorization Requirements
+        - Existing policy: `api`
+        - New policy request: `api`, `file`
 
-        This API may only be invoked by:
+        Result:
 
-        - A `provider`
-        - An `org_admin`
+        - Conflict for `api`
+        - Request is rejected
 
-        Additionally:
-        - The caller must own the resource
-        - Or belong to the organization that owns the resource
+        ## Restrictions
+        - Resource ownership is mandatory for providers
+        - `org_admin` users may manage only resources belonging to their organization
       parameters:
         - name: Authorization
           in: header
@@ -1801,7 +1772,13 @@ paths:
                 type: string
               description: application/json
         '409':
-          description: '- If a valid policy already exists.'
+          description: |
+            Conflict
+
+            An ACTIVE policy already exists for one or more requested access types.
+
+            Policies are validated per access type. A duplicate ACTIVE policy
+            cannot be created for the same resource and access type combination.
           content:
             application/json:
               schema:
@@ -1890,7 +1867,7 @@ paths:
     put:
       tags:
         - Policies
-      summary: Deactivate Policy
+      summary: Delete Policy
       description: |
         This API performs a **soft delete** of an existing ACTIVE policy.
 
@@ -1933,7 +1910,7 @@ paths:
             pattern: ^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$
       responses:
         '200':
-          description: Policy deactivated successfully.
+          description: Policy deleted successfully.
           content:
             application/json:
               schema:
@@ -1988,7 +1965,7 @@ paths:
         - authorization: []
       x-codeSamples:
         - lang: cURL
-          label: Deactivate policy
+          label: Delete policy
           source: |
             curl --location --request PUT \
             'https://${HOSTNAME}/iudx/acl/apd/v2/policy?id=231f6eca-6276-4993-bfeb-53cbbbba6f06' \
@@ -2530,10 +2507,6 @@ components:
         - type
         - title
         - detail
-      example:
-        type: urn:dx:AclApd:badRequest
-        title: Bad Request
-        detail: Missing or malformed request
     reportGenerationBadRequest:
       title: Report generation bad request
       type: object
@@ -2645,26 +2618,83 @@ components:
         title: Success
         detail: Request inserted successfully!
     checkAccessRequestSuccessResponse:
-      title: Create notification success
+      title: Has access success response
+      description: |
+        Returned when the consumer has one or more active policies granting access
+        to the requested asset.
+
+        The response includes matching policy details and may additionally indicate
+        whether pending access requests exist for other access types.
       type: object
       properties:
         type:
           type: string
-          minLength: 1
         title:
           type: string
-          minLength: 1
         detail:
           type: string
-          minLength: 1
+        result:
+          type: object
       required:
         - type
         - title
         - detail
       example:
-        type: urn:dx:AclApd:success
+        type: dx:aclApd:success
         title: Success
         detail: User has access to the given asset!
+        result:
+          policies:
+            - policyId: bd43e4ce-1e47-428f-818d-bc30c3f81b4d
+              policyType: GROUP
+              status: ACTIVE
+              constraints:
+                access:
+                  - accessType: api
+                subjects:
+                  allowedOrgIds:
+                    - 2accd360-d791-4364-b18b-530b1b148cb9
+                  allowedRoles:
+                    - provider
+              additionalInfo:
+                name: Org Mem
+              owner:
+                ownerId: 2f945b7d-0cc8-4c5d-9a3e-53fa88e6e9b2
+                ownerFirstName: Org
+                ownerLastName: Mem
+                ownerEmail: orgm@gmail.com
+                ownerOrganization: Test Organisation
+              asset:
+                itemId: 96c1c3d4-3856-491a-9340-405e35db80c2
+                assetName: Subdistrict Weather Information for multiple access requests testing
+                assetType: adex:DataBank
+                shortDescription: Daily aggregated temperature and rainfall data at subdistrict level.
+                organization: Test Organisation
+                organizationId: a87e6ca1-cbbe-49d5-a474-2caaaadb191e
+              expiryAt: '2026-08-04T20:00:19'
+              createdAt: '2026-06-04T12:35:20.878145'
+              updatedAt: '2026-06-04T12:35:20.878145'
+          hasPendingRequests: true
+          pendingRequests:
+            - requestId: c1d1531d-a293-4e9f-8f5e-72538f999a29
+              requestStatus: PENDING
+              requestType: DOWNLOAD
+              constraints:
+                access:
+                  - accessType: file
+              user:
+                consumerId: c43dfe14-5f4f-4b77-90e1-f9945574d226
+                consumerFirstName: User
+                consumerLastName: Test
+                consumerEmail: sample@gmal.com
+              asset:
+                itemId: 96c1c3d4-3856-491a-9340-405e35db80c2
+                assetName: Subdistrict Weather Information for multiple access requests testing
+                assetType: adex:DataBank
+                shortDescription: Daily aggregated temperature and rainfall data at subdistrict level.
+                organizationId: a87e6ca1-cbbe-49d5-a474-2caaaadb191e
+              createdAt: '2026-06-04T12:13:22.12143'
+              updatedAt: '2026-06-04T12:13:22.12143'
     createNotificationResourceNotFoundResponse:
       title: Create notification resource not found
       type: object
@@ -2688,7 +2718,15 @@ components:
         title: Not Found
         detail: Catalogue item not found
     checkAccessRequestNotFoundResponse:
-      title: Create notification resource not found
+      title: Has Access Forbidden Response
+      description: |
+        Returned when the consumer does not currently have access to the requested asset.
+
+        This may occur when:
+
+        - All access request(s) have been rejected by the provider.
+        - No access request has been created for the asset.
+        - No active policy exists for the consumer.
       type: object
       properties:
         type:
@@ -2705,7 +2743,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:no-access
+        type: dx:aclApd:no-access
         title: Forbidden
         detail: User does not have access to the given item
     createNotificationForbidden:
@@ -2748,10 +2786,6 @@ components:
         - type
         - title
         - detail
-      example:
-        type: urn:dx:AclApd:conflict
-        title: Conflict
-        detail: Access request already exists
     getPolicySuccessResponseWithResourceType:
       title: get policy for resource item type.
       additionalProperties: false
@@ -3149,7 +3183,7 @@ components:
       example:
         type: urn:dx:apdServerPanel:success
         title: Success
-        detail: Policy deactivated successfully
+        detail: Policy deleted successfully
     deletePolicyInvalidUserResponse:
       title: deletePolicyInvalidUserResponse
       type: object
@@ -3377,9 +3411,9 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:apdServerPanel:conflict
+        type: urn:dx:AclApd:conflict
         title: Conflict
-        detail: Policy already exist for some of the request objects [bf9d8f85-b7b0-40bb-8197-0046725f1ca8]
+        detail: 'Active policy already exists for accessType(s): api, file'
     generalBadRequest:
       additionalProperties: false
       properties:
@@ -6287,6 +6321,8 @@ components:
         updatedAt:
           type: string
           format: date-time
+        owner:
+          $ref: '#/components/schemas/PolicyOwner'
         user:
           $ref: '#/components/schemas/PolicyUser'
         asset:
@@ -6418,3 +6454,16 @@ components:
                       type: array
                       items:
                         type: string
+    PolicyOwner:
+      type: object
+      properties:
+        ownerId:
+          type: string
+        ownerFirstName:
+          type: string
+        ownerLastName:
+          type: string
+        ownerEmail:
+          type: string
+        ownerOrganization:
+          type: string

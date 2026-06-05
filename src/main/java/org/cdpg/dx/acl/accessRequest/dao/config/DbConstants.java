@@ -15,6 +15,7 @@ public class DbConstants {
   public static final String DB_OWNER_ID = "owner_id";
   public static final String DB_USER_EMAIL_ID = "user_emailid";
   public static final String DB_POLICY_ID = "policy_id";
+  public static final String DB_POLICY_TYPE = "policy_type";
   public static final String DB_PROVIDER_ID = "provider_id";
   public static final String DB_CONSUMER_ID = "consumer_id";
   public static final String DB_ITEM_ID = "item_id";

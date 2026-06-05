@@ -8,7 +8,6 @@ import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ACSESS_RULE_A
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ALLOWED_ORG_IDS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ALLOWED_ROLES;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ALLOWED_USER_IDS;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CONSTRAINTS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_EXPIRY_AT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ID;
@@ -20,8 +19,7 @@ import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ROLE;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_RULE_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_USER_ID;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.EXPIRY_AT;
-import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.POLICY_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.POLICY_TABLE;
 
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
@@ -33,6 +31,7 @@ import java.util.Set;
 import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.acl.policy.dao.model.PolicyDto;
 import org.cdpg.dx.acl.rule.dao.AccessRuleDao;
 import org.cdpg.dx.database.postgres.models.Condition;
 import org.cdpg.dx.database.postgres.models.InsertQuery;
@@ -130,12 +129,14 @@ public class AccessRuleDaoImpl implements AccessRuleDao {
   // ============================================================
   // FIND MATCHING RULE
   // ============================================================
+
   @Override
-  public Future<JsonObject> findMatchingRule(
+  public Future<PolicyDto> findMatchingRule(
       UUID itemId, String userId, String orgId, List<String> roles) {
 
     List<Join> joins =
         List.of(
+            new Join(Join.JoinType.INNER, POLICY_TABLE, "P", "R.policy_id", "_id"),
             new Join(Join.JoinType.LEFT, ACSESS_RULE_ALLOWED_USER_TABLE, "U", "R._id", DB_RULE_ID),
             new Join(Join.JoinType.LEFT, ACCESS_RULE_ALLOWED_ORG_TABLE, "O", "R._id", DB_RULE_ID),
             new Join(
@@ -181,7 +182,20 @@ public class AccessRuleDaoImpl implements AccessRuleDao {
         new SelectQuery()
             .setTable(ACCESS_RULE_TABLE)
             .setTableAlias("R")
-            .setColumns(List.of("R.expiry_at", "R.constraints", "R.policy_id"))
+            .setColumns(
+                List.of(
+                    "P._id",
+                    "P.request_id",
+                    "P.policy_type",
+                    "P.item_id",
+                    "P.status",
+                    "P.expiry_at",
+                    "P.constraints",
+                    "P.additional_info",
+                    "P.created_at",
+                    "P.updated_at",
+                    "P.consumer_id",
+                    "P.owner_id"))
             .setJoins(joins)
             .setCondition(finalCondition)
             .setLimit(1);
@@ -196,17 +210,7 @@ public class AccessRuleDaoImpl implements AccessRuleDao {
 
               JsonObject row = (JsonObject) result.getRows().getList().getFirst();
 
-              JsonObject rule =
-                  new JsonObject()
-                      .put(POLICY_ID, row.getString(DB_POLICY_ID))
-                      .put(
-                          CONS,
-                          row.getString(DB_CONSTRAINTS) != null
-                              ? new JsonObject(row.getString(DB_CONSTRAINTS))
-                              : new JsonObject())
-                      .put(EXPIRY_AT, row.getString(DB_EXPIRY_AT));
-
-              return rule;
+              return new PolicyDto(row);
             })
         .onFailure(err -> LOGGER.error("findMatchingRule failed", err));
   }

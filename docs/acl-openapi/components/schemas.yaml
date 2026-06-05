@@ -171,10 +171,6 @@ updateNotificationBadRequest:
   - type
   - title
   - detail
-  example:
-    type: urn:dx:AclApd:badRequest
-    title: Bad Request
-    detail: Missing or malformed request
 reportGenerationBadRequest:
   title: Report generation bad request
   type: object
@@ -286,26 +282,121 @@ createNotificationSuccessResponse:
     title: Success
     detail: Request inserted successfully!
 checkAccessRequestSuccessResponse:
-  title: Create notification success
+  title: Has access success response
+  description: |
+    Returned when the consumer has one or more active policies granting access
+    to the requested asset.
+    
+    The response includes matching policy details and may additionally indicate
+    whether pending access requests exist for other access types.
   type: object
   properties:
     type:
       type: string
-      minLength: 1
     title:
       type: string
-      minLength: 1
     detail:
       type: string
-      minLength: 1
+    result:
+      type: object
   required:
-  - type
-  - title
-  - detail
+    - type
+    - title
+    - detail
   example:
-    type: urn:dx:AclApd:success
+    type: dx:aclApd:success
     title: Success
     detail: User has access to the given asset!
+    result:
+      policies:
+        - policyId: bd43e4ce-1e47-428f-818d-bc30c3f81b4d
+          policyType: GROUP
+          status: ACTIVE
+          constraints:
+            access:
+              - accessType: api
+            subjects:
+              allowedOrgIds:
+                - 2accd360-d791-4364-b18b-530b1b148cb9
+              allowedRoles:
+                - provider
+          additionalInfo:
+            name: Org Mem
+          owner:
+            ownerId: 2f945b7d-0cc8-4c5d-9a3e-53fa88e6e9b2
+            ownerFirstName: Org
+            ownerLastName: Mem
+            ownerEmail: orgm@gmail.com
+            ownerOrganization: Test Organisation
+          asset:
+            itemId: 96c1c3d4-3856-491a-9340-405e35db80c2
+            assetName: Subdistrict Weather Information for multiple access requests testing
+            assetType: adex:DataBank
+            shortDescription: Daily aggregated temperature and rainfall data at subdistrict level.
+            organization: Test Organisation
+            organizationId: a87e6ca1-cbbe-49d5-a474-2caaaadb191e
+          expiryAt: "2026-08-04T20:00:19"
+          createdAt: "2026-06-04T12:35:20.878145"
+          updatedAt: "2026-06-04T12:35:20.878145"
+      hasPendingRequests: true
+      pendingRequests:
+        - requestId: c1d1531d-a293-4e9f-8f5e-72538f999a29
+          requestStatus: PENDING
+          requestType: DOWNLOAD
+          constraints:
+            access:
+              - accessType: file
+          user:
+            consumerId: c43dfe14-5f4f-4b77-90e1-f9945574d226
+            consumerFirstName: User
+            consumerLastName: Test
+            consumerEmail: sample@gmal.com
+          asset:
+            itemId: 96c1c3d4-3856-491a-9340-405e35db80c2
+            assetName: Subdistrict Weather Information for multiple access requests testing
+            assetType: adex:DataBank
+            shortDescription: Daily aggregated temperature and rainfall data at subdistrict level.
+            organizationId: a87e6ca1-cbbe-49d5-a474-2caaaadb191e
+          createdAt: "2026-06-04T12:13:22.12143"
+          updatedAt: "2026-06-04T12:13:22.12143"
+checkAccessRequestPendingResponse:
+  title: Access request pending response
+  type: object
+  properties:
+    type:
+      type: string
+    title:
+      type: string
+    detail:
+      type: string
+    result:
+      type: object
+  example:
+    type: dx:aclApd:access-pending
+    title: Forbidden
+    detail: Access request is still pending for the given item
+    result:
+      hasPendingRequests: true
+      pendingRequests:
+        - requestId: c1d1531d-a293-4e9f-8f5e-72538f999a29
+          requestStatus: PENDING
+          requestType: DOWNLOAD
+          constraints:
+            access:
+              - accessType: file
+          user:
+            consumerId: c43dfe14-5f4f-4b77-90e1-f9945574d226
+            consumerFirstName: User
+            consumerLastName: Test
+            consumerEmail: sample@gmal.com
+          asset:
+            itemId: 96c1c3d4-3856-491a-9340-405e35db80c2
+            assetName: Subdistrict Weather Information for multiple access requests testing
+            assetType: adex:DataBank
+            shortDescription: Daily aggregated temperature and rainfall data at subdistrict level.
+            organizationId: a87e6ca1-cbbe-49d5-a474-2caaaadb191e
+          createdAt: "2026-06-04T12:13:22.12143"
+          updatedAt: "2026-06-04T12:13:22.12143"
 createNotificationResourceNotFoundResponse:
   title: Create notification resource not found
   type: object
@@ -329,7 +420,15 @@ createNotificationResourceNotFoundResponse:
     title: Not Found
     detail: Catalogue item not found
 checkAccessRequestNotFoundResponse:
-  title: Create notification resource not found
+  title: Has Access Forbidden Response
+  description: |
+    Returned when the consumer does not currently have access to the requested asset.
+
+    This may occur when:
+
+    - All access request(s) have been rejected by the provider.
+    - No access request has been created for the asset.
+    - No active policy exists for the consumer.
   type: object
   properties:
     type:
@@ -346,7 +445,7 @@ checkAccessRequestNotFoundResponse:
   - title
   - detail
   example:
-    type: urn:dx:AclApd:no-access
+    type: dx:aclApd:no-access
     title: Forbidden
     detail: User does not have access to the given item
 createNotificationForbidden:
@@ -390,10 +489,6 @@ createNotificationConflictResponse:
   - type
   - title
   - detail
-  example:
-    type: urn:dx:AclApd:conflict
-    title: Conflict
-    detail: Access request already exists
 getPolicySuccessResponseWithResourceType:
   title: get policy for resource item type.
   additionalProperties: false
@@ -791,7 +886,7 @@ deletePolicy:
   example:
     type: urn:dx:apdServerPanel:success
     title: Success
-    detail: Policy deactivated successfully
+    detail: Policy deleted successfully
 deletePolicyInvalidUserResponse:
   title: deletePolicyInvalidUserResponse
   type: object
@@ -4044,9 +4139,9 @@ conflictResponse:
     - title
     - detail
   example:
-    type: urn:dx:apdServerPanel:conflict
+    type: urn:dx:AclApd:conflict
     title: Conflict
-    detail: Policy already exist for some of the request objects [bf9d8f85-b7b0-40bb-8197-0046725f1ca8]
+    detail: 'Active policy already exists for accessType(s): api, file'
 deletePolicyErrorResponse:
   title: deletePolicyErrorResponse
   type: object
@@ -4117,10 +4212,25 @@ Policy:
     updatedAt:
       type: string
       format: date-time
+    owner:
+      $ref: '#/PolicyOwner'
     user:
       $ref: '#/PolicyUser'
     asset:
       $ref: '#/PolicyAsset'
+PolicyOwner:
+  type: object
+  properties:
+    ownerId:
+      type: string
+    ownerFirstName:
+      type: string
+    ownerLastName:
+      type: string
+    ownerEmail:
+      type: string
+    ownerOrganization:
+      type: string
 PolicyUser:
   type: object
   properties:

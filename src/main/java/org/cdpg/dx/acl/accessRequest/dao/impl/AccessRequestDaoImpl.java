@@ -1,19 +1,22 @@
 package org.cdpg.dx.acl.accessRequest.dao.impl;
 
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.*;
+import static org.cdpg.dx.database.postgres.models.Condition.Operator.EQUALS;
+import static org.cdpg.dx.database.postgres.models.Condition.Operator.IN;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
 import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
+import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestSummary;
 import org.cdpg.dx.acl.accessRequest.dao.model.Status;
 import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.database.postgres.base.dao.AbstractBaseDAO;
@@ -43,17 +46,17 @@ public class AccessRequestDaoImpl extends AbstractBaseDAO<AccessRequestDto>
         new Condition()
             .setColumn(DB_STATUS)
             .setValues(List.of(Status.GRANTED, Status.PENDING))
-            .setOperator(Condition.Operator.IN);
+            .setOperator(IN);
     Condition conditionWithConsumer =
         new Condition()
             .setColumn(DB_CONSUMER_ID)
             .setValues(List.of(consumerId.toString()))
-            .setOperator(Condition.Operator.EQUALS);
+            .setOperator(EQUALS);
     Condition conditionWithItemId =
         new Condition()
             .setColumn(DB_ITEM_ID)
             .setValues(List.of(itemId.toString()))
-            .setOperator(Condition.Operator.EQUALS);
+            .setOperator(EQUALS);
 
     condition
         .setConditions(List.of(conditionWithStatus, conditionWithConsumer, conditionWithItemId))
@@ -72,6 +75,38 @@ public class AccessRequestDaoImpl extends AbstractBaseDAO<AccessRequestDto>
               }
               return Future.succeededFuture(false);
             });
+  }
+
+  public Future<List<AccessRequestDto>> getActivePendingRequests(UUID consumerId, UUID itemId) {
+    Condition condition =
+        new Condition()
+            .setGroup(true)
+            .setLogicalOperator(Condition.LogicalOperator.AND)
+            .setConditions(
+                List.of(
+                    new Condition()
+                        .setColumn(DB_CONSUMER_ID)
+                        .setValues(List.of(consumerId.toString()))
+                        .setOperator(EQUALS),
+                    new Condition()
+                        .setColumn(DB_ITEM_ID)
+                        .setValues(List.of(itemId.toString()))
+                        .setOperator(EQUALS),
+                    new Condition()
+                        .setColumn(DB_STATUS)
+                        .setValues(List.of(Status.PENDING.getStatus()))
+                        .setOperator(IN)));
+
+    SelectQuery query =
+        new SelectQuery().setTable(tableName).setColumns(List.of("*")).setCondition(condition);
+
+    return postgresService
+        .select(query, false)
+        .map(
+            result ->
+                result.getRows().stream()
+                    .map(row -> new AccessRequestDto((JsonObject) row))
+                    .toList());
   }
 
   // select * from request where request_id = given id AND provider_id = id AND itemOrgId =
@@ -143,7 +178,7 @@ public class AccessRequestDaoImpl extends AbstractBaseDAO<AccessRequestDto>
                   new Condition()
                       .setColumn(DB_REQUEST_ID)
                       .setValues(List.of(requestId.toString()))
-                      .setOperator(Condition.Operator.EQUALS);
+                      .setOperator(EQUALS);
               UpdateQuery updateQuery =
                   new UpdateQuery()
                       .setCondition(requestIdCondition)
@@ -169,14 +204,11 @@ public class AccessRequestDaoImpl extends AbstractBaseDAO<AccessRequestDto>
         new Condition().setGroup(true).setLogicalOperator(Condition.LogicalOperator.AND);
     condition.setConditions(
         List.of(
-            new Condition()
-                .setColumn(DB_ITEM_ID)
-                .setValues(List.of(itemId))
-                .setOperator(Condition.Operator.EQUALS),
+            new Condition().setColumn(DB_ITEM_ID).setValues(List.of(itemId)).setOperator(EQUALS),
             new Condition()
                 .setColumn(DB_CONSUMER_ID)
                 .setValues(List.of(consumerId))
-                .setOperator(Condition.Operator.EQUALS)));
+                .setOperator(EQUALS)));
 
     SelectQuery selectQuery =
         new SelectQuery()
@@ -234,6 +266,69 @@ public class AccessRequestDaoImpl extends AbstractBaseDAO<AccessRequestDto>
                   itemId);
               return Future.failedFuture(
                   new DxForbiddenNoAccessException("User does not have access to the given item"));
+            });
+  }
+
+  public Future<AccessRequestSummary> getAccessSummary(String consumerId, String itemId) {
+
+    LocalDateTime now = LocalDateTime.now();
+
+    Condition condition =
+        new Condition().setGroup(true).setLogicalOperator(Condition.LogicalOperator.AND);
+
+    condition.setConditions(
+        List.of(
+            new Condition().setColumn(DB_ITEM_ID).setValues(List.of(itemId)).setOperator(EQUALS),
+            new Condition()
+                .setColumn(DB_CONSUMER_ID)
+                .setValues(List.of(consumerId))
+                .setOperator(EQUALS)));
+
+    SelectQuery selectQuery =
+        new SelectQuery()
+            .setTable(tableName)
+            .setColumns(List.of("*"))
+            .setOrderBy(List.of(new OrderBy(DB_UPDATED_AT, OrderBy.Direction.DESC)))
+            .setCondition(condition);
+
+    return postgresService
+        .select(selectQuery, false)
+        .map(
+            queryResult -> {
+              boolean hasAccess = false;
+              boolean hasRejectedRequests = false;
+              List<AccessRequestDto> pendingRequests = new ArrayList<>();
+
+              if (queryResult == null || queryResult.getRows().isEmpty()) {
+
+                return new AccessRequestSummary(false, false, false, List.of());
+              }
+
+              for (Object object : queryResult.getRows()) {
+
+                JsonObject row = (JsonObject) object;
+
+                Status status = Status.fromString(row.getString(DB_STATUS));
+
+                if (Status.GRANTED.equals(status)) {
+
+                  String expiryAt = row.getString(DB_EXPIRY_AT);
+
+                  if (expiryAt != null && LocalDateTime.parse(expiryAt).isAfter(now)) {
+
+                    hasAccess = true;
+                  }
+
+                } else if (Status.PENDING.equals(status)) {
+
+                  pendingRequests.add(new AccessRequestDto(row));
+                } else if (Status.REJECTED.equals(status)) {
+                  hasRejectedRequests = true;
+                }
+              }
+
+              return new AccessRequestSummary(
+                  hasAccess, !pendingRequests.isEmpty(), hasRejectedRequests, pendingRequests);
             });
   }
 }

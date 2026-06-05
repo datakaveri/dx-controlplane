@@ -390,7 +390,7 @@ public class PolicyController implements ApiController {
             handler -> {
               if (handler.succeeded()) {
                 LOGGER.info("Deactivating policy succeeded");
-                ResponseBuilder.sendSuccess(ctx, "Policy deactivated successfully", urnGenerator);
+                ResponseBuilder.sendSuccess(ctx, "Policy deleted successfully", urnGenerator);
               } else {
                 LOGGER.error("Delete policy failed : {} ", handler.cause().getMessage());
                 handleFailureResponse(ctx, handler.cause().getMessage());

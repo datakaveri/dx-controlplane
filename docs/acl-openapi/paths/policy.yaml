@@ -5,210 +5,77 @@
     summary: Create Policy
     operationId: post-auth-v1-policies
     description: |
-      Creates one or more access policies for resources owned by the provider.
+      Creates one or more ACTIVE access policies for DATABANK, AIMODEL resources.
 
-      This API allows a `provider` or `org_admin`
-      to define fine-grained access control rules for resources,
-      AI models.
+      This API can be invoked by:
 
-      A policy determines:
-      - Who can access a resource
-      - How the resource can be accessed
-      - Access validity duration
-      - Usage restrictions and limits
+      - The resource owner (`provider`)
+      - An `org_admin` belonging to the same organization as the resource
 
-      Each successfully created policy is stored with status `ACTIVE`
-      and internally linked to one or more access rules used during
-      authorization and policy verification.
+      A policy defines:
 
-      ---
+      - Who can access the resource
+      - Which access types are allowed
+      - Optional usage limits and expiry conditions
 
-      ## Supported Policy Types
+      ## Policy Types
 
-      The API supports two policy models.
+      ### INDIVIDUAL
 
-      ### 1. INDIVIDUAL Policy
+      Grants access to a specific user.
 
-      An `INDIVIDUAL` policy grants access directly to a specific user.
+      - `userId` is required
+      - Access is evaluated for the specified user
 
-      Characteristics:
-      - `userId` is mandatory
-      - Access evaluation is performed using the provided `userId`
-      - `constraints.subjects` is optional
-      - Commonly used for granting access to a single consumer
+      ### GROUP
 
-      Example use cases:
-      - Granting access to a specific customer
-      - Providing temporary trial access
-      - Issuing subscription access to a single user
+      Grants access to users matching subject criteria.
 
-      ### 2. GROUP Policy
+      - `constraints.subjects` is required
+      - Supports organization, user, and role-based access control
 
-      A `GROUP` policy grants access to users matching one or more
-      subject constraints.
+      When `constraints.subjects` is provided, the system automatically creates
+      access rules linked to the policy for subject-based authorization.
 
-      Characteristics:
-      - `userId` is not required
-      - `constraints.subjects` is mandatory
-      - Access evaluation is performed using subject matching
-      - Supports organization-level and role-based access control
+      ## Access Types
 
-      Example use cases:
-      - Granting access to all users of an organization
-      - Allowing all users with the `consumer` role
-      - Allowing access to a predefined user group
+      Access types are defined under `constraints.access`.
 
-      ---
-
-      ## Policy Lifecycle
-
-      ### ACTIVE
-
-      When a policy is successfully created:
-      - Policy status is set to `ACTIVE`
-      - Associated access rules are also created as `ACTIVE`
-
-      ACTIVE policies participate in authorization checks.
-
-      ### DELETED
-
-      When a policy is deleted:
-      - Policy status becomes `DELETED`
-      - All associated access rules are also marked `DELETED`
-
-      Deleted policies are ignored during authorization evaluation.
-
-      ### EXPIRED
-
-      Policy expiry does not modify the stored database status.
-
-      During authorization:
-      - The system validates whether `expiryTime`
-        is greater than the current timestamp
-      - Expired policies are treated as inactive
-      - The stored status remains unchanged
-
-      ---
-
-      ## Batch Policy Creation
-
-      The request body contains a `request` array.
-
-      Each element in the array represents an independent
-      policy creation request.
-
-      The API supports batch policy creation, allowing multiple
-      policies to be created in a single API call.
-
-      Validation is performed independently for each request object.
-
-      ---
-
-      ## Item Types
-
-      ### DATABANK
-
-      Policy applies to individual resources or datasets.
-
-      ### AIMODEL
-
-      Policy applies to AI models
-
-      ---
-
-      ## Constraints Evaluation
-
-      The `constraints` object defines authorization rules.
-
-      A policy may contain:
-
-      - `subjects`
-        Defines who is eligible to access the resource
-
-      - `access`
-        Defines how the resource may be accessed
-
-      ### subjects
-
-      Subject constraints are used during authorization evaluation.
-
-      Access is granted when the requesting entity matches
-      one or more configured subject conditions.
-
-      Supported subject filters:
-
-      - `allowedOrgIds`
-        List of permitted organization IDs
-
-      - `allowedUserIds`
-        List of permitted user IDs
-
-      - `allowedRoles`
-        List of permitted platform roles
-
-      `subjects` is mandatory for `GROUP` policies.
-
-      ### access
-
-      Defines supported access mechanisms.
-
-      Supported access types:
+      Supported values depend on the resource metadata and may include:
 
       - `api`
-        API-based access
-
       - `file`
-        File download access
-
       - `sub`
-        Subscription or streaming access
 
-      Each access entry may additionally define:
+      Each requested access type must be supported by the resource.
+      Otherwise the request is rejected with `400 Bad Request`.
 
-      - `expiry`
-        Expiry timestamp in epoch seconds
+      ## Batch Creation
 
-      - `limits`
-        Optional usage restrictions such as:
-        - `apiHits`
-        - `dataUsage`
+      Multiple policies may be created in a single request using the `request` array.
 
-      ---
+      Each policy request is validated independently.
 
-      ## Validation Rules
+      ## Conflict Behaviour
 
-      ### INDIVIDUAL Policy
+      Only one ACTIVE policy may exist for the same resource and access type combination.
 
-      Requires:
-      - `policyType = INDIVIDUAL`
-      - `userId`
-
-      ### GROUP Policy
-
-      Requires:
-      - `policyType = GROUP`
-      - `constraints.subjects`
-
-      ### Duplicate Policy Restriction
-
-      Only one ACTIVE policy may exist for the
-      same policy scope.
-
-      If a conflicting ACTIVE policy already exists,
+      If an ACTIVE policy already exists for any requested access type,
       the API returns `409 Conflict`.
 
-      ---
+      Example:
 
-      ## Authorization Requirements
+      - Existing policy: `api`
+      - New policy request: `api`, `file`
 
-      This API may only be invoked by:
+      Result:
 
-      - A `provider`
-      - An `org_admin`
+      - Conflict for `api`
+      - Request is rejected
 
-      Additionally:
-      - The caller must own the resource
-      - Or belong to the organization that owns the resource
+      ## Restrictions
+      - Resource ownership is mandatory for providers
+      - `org_admin` users may manage only resources belonging to their organization
     parameters:
       - name: Authorization
         in: header
@@ -411,7 +278,13 @@
               type: string
             description: application/json
       '409':
-        description: '- If a valid policy already exists.'
+        description: |
+          Conflict
+
+          An ACTIVE policy already exists for one or more requested access types.
+
+          Policies are validated per access type. A duplicate ACTIVE policy
+          cannot be created for the same resource and access type combination.
         content:
           application/json:
             schema:
@@ -455,7 +328,7 @@
   put:
     tags:
       - Policies
-    summary: Deactivate Policy
+    summary: Delete Policy
     description: |
       This API performs a **soft delete** of an existing ACTIVE policy.
 
@@ -498,7 +371,7 @@
           pattern: ^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$
     responses:
       '200':
-        description: Policy deactivated successfully.
+        description: Policy deleted successfully.
         content:
           application/json:
             schema:
@@ -551,7 +424,7 @@
       - authorization: []
     x-codeSamples:
       - lang: cURL
-        label: Deactivate policy
+        label: Delete policy
         source: 'curl --location --request PUT \
 
         ''https://${HOSTNAME}/iudx/acl/apd/v2/policy?id=231f6eca-6276-4993-bfeb-53cbbbba6f06''

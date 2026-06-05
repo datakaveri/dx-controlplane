@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
 import org.cdpg.dx.acl.accessRequest.dao.model.HasAccessResponse;
 import org.cdpg.dx.acl.accessRequest.dao.model.PolicyAccessInfo;
+import org.cdpg.dx.acl.policy.dao.model.PolicyDto;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.model.RequestType;
 import org.cdpg.dx.common.request.PaginatedRequest;
@@ -39,5 +40,10 @@ public interface AccessRequestService {
   Future<PaginatedResult<AccessRequestDto>> enrichAccessRequestsWithItemDetails(
       PaginatedResult<AccessRequestDto> pagedResult);
 
+  Future<PaginatedResult<PolicyDto>> enrichPolicyRequestsWithItemDetails(
+      PaginatedResult<PolicyDto> pagedResult);
+
+  Future<PaginatedResult<PolicyDto>> enrichPolicyRequestsWithUserInfo(
+      PaginatedResult<PolicyDto> pagedResult);
 
 }

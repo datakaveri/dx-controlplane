@@ -114,6 +114,8 @@ public class Constants {
   public static final String OWNER_EMAIL_ID = "ownerEmailId";
   public static final String OWNER_FIRST_NAME = "ownerFirstName";
   public static final String OWNER_LAST_NAME = "ownerLastName";
+  public static final String OWNER_EMAIL = "ownerEmail";
+  public static final String OWNER_ORGANIZATION = "ownerOrganization";
   public static final String CONSUMER_EMAIL_ID = "consumerEmailId";
   public static final String CONSUMER_FIRST_NAME = "consumerFirstName";
   public static final String CONSUMER_LAST_NAME = "consumerLastName";
