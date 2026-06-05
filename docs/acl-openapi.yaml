@@ -1948,6 +1948,31 @@ paths:
               schema:
                 type: string
               description: application/json
+        '403':
+          description: |
+            Forbidden
+              - Policy does not belong to the user
+              - User is not authorized to delete the policy
+              - User is not an org admin of the policy owner's organization
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:aclApd:forbidden
+                  title:
+                    type: string
+                    example: Forbidden
+                  detail:
+                    type: string
+                    example: Failure, as policy doesn't belong to the user or organisation
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
         '404':
           description: |-
             Not Found

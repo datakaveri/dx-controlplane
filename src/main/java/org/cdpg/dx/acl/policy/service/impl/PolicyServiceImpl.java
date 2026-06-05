@@ -21,6 +21,7 @@ import static org.cdpg.dx.acl.accessRequest.config.Constants.USER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSTRAINTS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_FIRST_NAME;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ASSET_ORGANIZATION_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CONSTRAINTS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CONSUMER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_EXPIRY_AT;
@@ -641,24 +642,29 @@ public class PolicyServiceImpl implements PolicyService {
               LOGGER.debug("Row: {}", row);
               String ownerId = row.getString(DB_OWNER_ID);
               String status = row.getString(DB_STATUS);
+              String assetOrgId = row.getString(DB_ASSET_ORGANIZATION_ID);
+              boolean isOwner = ownerId.equals(user.sub().toString());
+              boolean isOrgAdmin =
+                  user.roles().contains("org_admin") && assetOrgId.equals(user.organisationId());
 
-              /* does the policy belong to the owner who is requesting */
-              if (ownerId.equals(user.sub().toString())) {
-                /* is policy in ACTIVE status */
-                if (!ACTIVE.equalsIgnoreCase(status)) {
-                  LOGGER.error("Failure : policy is not active");
-                  return Future.failedFuture(
-                      getFailureResponse(
-                          new JsonObject(), FAILURE_MESSAGE + ", as policy is not ACTIVE"));
-                }
-              } else {
-                LOGGER.error("Failure : policy does not belong to the user");
+              if (!isOwner && !isOrgAdmin) {
+                LOGGER.error("Failure : policy does not belong to the user or organisation");
                 return Future.failedFuture(
                     new JsonObject()
                         .put(TYPE, HttpStatusCode.FORBIDDEN.getValue())
                         .put(TITLE, ResponseUrn.FORBIDDEN_URN.getUrn())
-                        .put(DETAIL, FAILURE_MESSAGE + ", as policy doesn't belong to the user")
+                        .put(
+                            DETAIL,
+                            FAILURE_MESSAGE
+                                + ", as policy doesn't belong to the user or organisation")
                         .encode());
+              }
+
+              if (!ACTIVE.equalsIgnoreCase(status)) {
+                LOGGER.error("Failure : policy is not active");
+                return Future.failedFuture(
+                    getFailureResponse(
+                        new JsonObject(), FAILURE_MESSAGE + ", as policy is not ACTIVE"));
               }
 
               // Passed all checks → proceed to delete
@@ -781,7 +787,7 @@ public class PolicyServiceImpl implements PolicyService {
                       dto.setShortDescription(asset.getShortDescription());
                       dto.setItemOrganizationId(asset.getOrganizationId());
                       dto.setItemOrganizationName(asset.getOrganizationName());
-                      dto.setProviderId(asset.getProviderId());
+                      dto.setOwnerId(asset.getProviderId());
                     }
                   })
               .onFailure(
@@ -835,26 +841,26 @@ public class PolicyServiceImpl implements PolicyService {
       }
 
       // Owner enrichment
-      if (dto.getProviderId() != null) {
+      if (dto.getOwnerId() != null) {
         Future<Void> ownerFuture =
             keycloakUserService
-                .getUserById(UUID.fromString(dto.getProviderId()))
+                .getUserById(UUID.fromString(dto.getOwnerId()))
                 .onSuccess(
                     user -> {
-                      dto.setProviderEmail(user.email());
-                      dto.setProviderFirstName(user.givenName());
-                      dto.setProviderLastName(user.familyName());
-                      dto.setProviderOrganization(user.organisationName());
+                      dto.setOwnerEmail(user.email());
+                      dto.setOwnerFirstName(user.givenName());
+                      dto.setOwnerLastName(user.familyName());
+                      dto.setOwnerOrganization(user.organisationName());
                     })
                 .recover(
                     err -> {
                       LOGGER.warn(
-                          "Failed to fetch owner {}: {}", dto.getProviderId(), err.getMessage());
+                          "Failed to fetch owner {}: {}", dto.getOwnerId(), err.getMessage());
 
-                      dto.setProviderEmail(null);
-                      dto.setProviderFirstName(null);
-                      dto.setProviderLastName(null);
-                      dto.setProviderOrganization(null);
+                      dto.setOwnerEmail(null);
+                      dto.setOwnerFirstName(null);
+                      dto.setOwnerLastName(null);
+                      dto.setOwnerOrganization(null);
 
                       return Future.succeededFuture();
                     })
