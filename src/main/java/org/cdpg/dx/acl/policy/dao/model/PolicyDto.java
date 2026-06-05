@@ -1,5 +1,6 @@
 package org.cdpg.dx.acl.policy.dao.model;
 
+import static org.cdpg.dx.aaa.common.Constants.OWNER;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_EMAIL;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_FIRST_NAME;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_LAST_NAME;
@@ -113,7 +114,7 @@ public class PolicyDto implements BaseEntity<PolicyDto> {
         .put("constraints", constraints)
         .put(ADDITIONAL_INFO, additionalInfo)
         .put(
-            CONSUMER,
+            USER,
             new JsonObject()
                 .put(CONSUMER_ID, getConsumerId())
                 .put(CONSUMER_FIRST_NAME, getConsumerFirstName())
@@ -121,7 +122,7 @@ public class PolicyDto implements BaseEntity<PolicyDto> {
                 .put(CONSUMER_EMAIL, getConsumerEmail())
                 .put(CONSUMER_ORGANIZATION, getConsumerOrganization()))
         .put(
-            USER,
+            OWNER,
             new JsonObject()
                 .put(OWNER_ID, getProviderId())
                 .put(OWNER_FIRST_NAME, getProviderFirstName())
