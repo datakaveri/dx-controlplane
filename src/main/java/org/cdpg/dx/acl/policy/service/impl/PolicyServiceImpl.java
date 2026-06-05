@@ -639,7 +639,6 @@ public class PolicyServiceImpl implements PolicyService {
                         .encode());
               }
               JsonObject row = result.getRows().getJsonObject(0);
-              LOGGER.debug("Row: {}", row);
               String ownerId = row.getString(DB_OWNER_ID);
               String status = row.getString(DB_STATUS);
               String assetOrgId = row.getString(DB_ASSET_ORGANIZATION_ID);
@@ -647,6 +646,16 @@ public class PolicyServiceImpl implements PolicyService {
               boolean isOrgAdmin =
                   user.roles().contains("org_admin") && assetOrgId.equals(user.organisationId());
 
+              LOGGER.debug(
+                  "ownerId={}, status={}, assetOrgId={}, userId={}, userOrgId={}, roles={}, isOwner={}, isOrgAdmin={}",
+                  ownerId,
+                  status,
+                  assetOrgId,
+                  user.sub(),
+                  user.organisationId(),
+                  user.roles(),
+                  isOwner,
+                  isOrgAdmin);
               if (!isOwner && !isOrgAdmin) {
                 LOGGER.error("Failure : policy does not belong to the user or organisation");
                 return Future.failedFuture(
@@ -787,7 +796,6 @@ public class PolicyServiceImpl implements PolicyService {
                       dto.setShortDescription(asset.getShortDescription());
                       dto.setItemOrganizationId(asset.getOrganizationId());
                       dto.setItemOrganizationName(asset.getOrganizationName());
-                      dto.setOwnerId(asset.getProviderId());
                     }
                   })
               .onFailure(
