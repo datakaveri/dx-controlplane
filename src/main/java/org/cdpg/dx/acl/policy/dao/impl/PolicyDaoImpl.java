@@ -380,7 +380,7 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
 
     if (policyIds != null && !policyIds.isEmpty()) {
       orConditions.add(
-          new Condition(DB_ID, Condition.Operator.EQUALS, new ArrayList<>(policyIds)));
+          new Condition(DB_ID, Condition.Operator.IN, new ArrayList<>(policyIds)));
     }
 
     if (consumerId != null) {
