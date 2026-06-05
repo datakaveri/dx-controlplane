@@ -287,7 +287,9 @@ public class PolicyServiceImpl implements PolicyService {
 
       if (!allowedAccessTypes.contains(type)) {
         throw new DxValidationException(
-            "Requested access type '" + type + "' is not allowed for this resource");
+            generateErrorResponse(
+                BAD_REQUEST,
+                "Requested access type '" + type + "' is not allowed for this resource"));
       }
     }
   }
