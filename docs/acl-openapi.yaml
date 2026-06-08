@@ -2043,7 +2043,13 @@ paths:
       operationId: get-policies-org_admin-api
       summary: List Organization Policies
       description: |
-        Lists all policies for assets belonging to the organization of the org admin.
+        Lists the latest policies associated with assets belonging to the organization.
+
+        Organization administrators can view policies created by both providers and
+        organization administrators for assets within their organization.
+
+        The optional `ownerId` query parameter can be used to filter policies by
+        the policy creator.
       security:
         - authorization: []
       parameters:
@@ -2062,6 +2068,21 @@ paths:
           required: false
           schema:
             type: string
+        - name: ownerId
+          in: query
+          description: |
+            Filter policies by the owner who created the policy.
+
+            This parameter can be used by organization administrators to distinguish
+            between policies created by different owners within the organization,
+            such as provider-created policies and organization-admin-created policies.
+
+            If not specified, policies created by all owners within the organization
+            are returned.
+          required: false
+          schema:
+            type: string
+            example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
         - $ref: '#/components/parameters/SortingParam'
