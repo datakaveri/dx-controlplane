@@ -8,7 +8,9 @@ import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_AI_MODEL;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_APPS;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
 import static org.cdpg.dx.aaa.common.Constants.LAST_UPDATED;
+import static org.cdpg.dx.aaa.common.Constants.METRICS;
 import static org.cdpg.dx.aaa.common.Constants.NAME;
+import static org.cdpg.dx.aaa.common.Constants.PROVIDER_USER_ID;
 import static org.cdpg.dx.aaa.common.Constants.REQUEST_POST;
 import static org.cdpg.dx.aaa.common.Constants.TYPE;
 import static org.cdpg.dx.aaa.common.Constants.UUID_PATTERN;
@@ -405,6 +407,8 @@ public class ItemExistenceValidator {
 
     // Preserve itemCreatedAt
     request.put(ITEM_CREATED_AT, existing.getString(ITEM_CREATED_AT));
+    request.put(PROVIDER_USER_ID, existing.getString(PROVIDER_USER_ID));
+    request.put(METRICS, existing.getJsonObject(METRICS));
 
     // Preserve publishStatus
     request.put(PUBLISH_STATUS, existing.getString(PUBLISH_STATUS, PENDING));
