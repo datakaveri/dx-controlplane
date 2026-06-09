@@ -263,7 +263,8 @@ public class ControllerFactory {
             isCentralCatEnabled,
             isEdgeCatalogue,
             isStandalone,
-            shared.delegationService());
+            shared.delegationService(),
+            shared.emailComposer());
     controllers.add(itemController);
 
     // Acl server

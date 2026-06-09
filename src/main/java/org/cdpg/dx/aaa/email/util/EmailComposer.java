@@ -165,6 +165,50 @@ public class EmailComposer {
         .send();
   }
 
+  /**
+   * Notify the appropriate admin when a provider creates a new asset.
+   *
+   * <p>If the creator belongs to an organization ({@code orgId} present) the org admin is notified;
+   * otherwise (a platform provider) the COS/platform admin is notified.
+   */
+  public Future<Void> sendEmailForItemCreation(User user, String orgId, String itemName) {
+    if (orgId != null && !orgId.isBlank()) {
+      return getOrgAdminEmail(UUID.fromString(orgId))
+          .compose(orgAdminEmail -> itemCreationEmail(orgAdminEmail, user, itemName).send());
+    }
+    return itemCreationEmail(cosAdminEmailId, user, itemName).send();
+  }
+
+  private EmailTemplateBuilder itemCreationEmail(String recipient, User user, String itemName) {
+    return newEmail()
+        .template("templates/request-item-creation.html")
+        .to(recipient)
+        .subject("New Asset Created")
+        .variable("ADMIN_FIRST_NAME", "Admin")
+        .variable("ADMIN_LAST_NAME", "")
+        .variable("USER_FIRST_NAME", user.principal().getString("name"))
+        .variable("USER_EMAIL_ID", user.principal().getString("email"))
+        .variable("ITEM_NAME", itemName == null ? "" : itemName)
+        .variable("ADMIN_PORTAL_URL", adminPortalUrl)
+        .variable("SENDER_NAME", senderName)
+        .variable("DETAILS_MESSAGE", detailsMessage());
+  }
+
+    public Future<Void> sendEmailForAssetRequest(User user) {
+        return newEmail()
+                .template("templates/request-asset.html")
+                .to(cosAdminEmailId)
+                .subject("Asset Request")
+                .variable("ADMIN_FIRST_NAME", "Admin")
+                .variable("ADMIN_LAST_NAME", "")
+                .variable("USER_FIRST_NAME", user.principal().getString("name"))
+                .variable("USER_EMAIL_ID", user.principal().getString("email"))
+                .variable("ADMIN_PORTAL_URL", adminPortalUrl)
+                .variable("SENDER_NAME", senderName)
+                .variable("DETAILS_MESSAGE", detailsMessage())
+                .send();
+    }
+
   // ────────────────────────── APPROVAL EMAILS ──────────────────────────
 
   public Future<Void> sendUserEmailForOrgJoinRequestApproval(
@@ -288,29 +332,49 @@ public class EmailComposer {
   public Future<Void> sendUserEmailForProviderRoleApproval(
       UUID reqId, org.cdpg.dx.aaa.organization.models.Status status) {
 
-    return organizationService.getProviderRequestById(reqId)
-        .compose(providerReq -> userService.getUserInfoByID(providerReq.userId())
-            .compose(userInfo -> {
-              String subject = "Provider Role Request Status Update";
-              String approvedMsg = status.equals(
-                  org.cdpg.dx.aaa.organization.models.Status.GRANTED)
-                  ? String.format(
-                      "You can now access the the %s platform  as a Provider.%n%n",
-                      platformName)
-                  : "";
+    return organizationService
+        .getProviderRequestById(reqId)
+        .compose(
+            providerReq ->
+                userService
+                    .getUserInfoByID(providerReq.userId())
+                    .compose(
+                        userInfo -> {
+                          boolean isPlatformProvider =
+                              org.cdpg.dx.aaa.organization.config.Constants.PROVIDER_TYPE_PLATFORM
+                                  .equalsIgnoreCase(providerReq.providerType());
+                          String subject = "Provider Role Request Status Update";
 
-              return newEmail()
-                  .template("templates/approved-pending-role.html")
-                  .to(userInfo.email())
-                  .subject(subject)
-                  .variable("USER_FIRST_NAME", userInfo.name())
-                  .variable("ADMIN_PORTAL_URL", adminPortalUrl)
-                  .variable("SENDER_NAME", senderName)
-                  .variable("STATUS", status.getStatus())
-                  .variable("APPROVED_MESSAGE", approvedMsg)
-                  .variable("SUBJECT", subject)
-                  .send();
-            }));
+                          String requestLine =
+                              isPlatformProvider
+                                  ? String.format(
+                                      "Your provider role request for the Platform has been %s by the Platform Administrator.",
+                                      status.getStatus())
+                                  : String.format(
+                                      "Your provider role request for the organization has been %s by your"
+                                          + " Organization Manager.",
+                                      status.getStatus());
+
+                          String approvedMsg =
+                              status.equals(org.cdpg.dx.aaa.organization.models.Status.GRANTED)
+                                  ? String.format(
+                                      "You can now access the %s platform as a Provider.%n%n",
+                                      platformName)
+                                  : "";
+
+                          return newEmail()
+                              .template("templates/approved-pending-role.html")
+                              .to(userInfo.email())
+                              .subject(subject)
+                              .variable("USER_FIRST_NAME", userInfo.name())
+                              .variable("ADMIN_PORTAL_URL", adminPortalUrl)
+                              .variable("SENDER_NAME", senderName)
+                              .variable("STATUS", status.getStatus())
+                              .variable("REQUEST_LINE", requestLine)
+                              .variable("APPROVED_MESSAGE", approvedMsg)
+                              .variable("SUBJECT", subject)
+                              .send();
+                        }));
   }
 
   public Future<Void> sendUserEmailForOrgCreateRequestApproval(
@@ -342,6 +406,67 @@ public class EmailComposer {
                   .variable("SUBJECT", subject)
                   .send();
             }));
+  }
+
+  public Future<Void> sendUserEmailForAssetRequestApproval(
+      UUID providerUserId, org.cdpg.dx.aaa.asset.models.Status status) {
+
+    if (providerUserId == null) {
+      return Future.failedFuture("User ID is null for asset request approval email");
+    }
+
+    return userService.getUserInfoByID(providerUserId)
+        .compose(userInfo -> {
+          String subject = "Asset Request Status Update";
+          String approvedMsg = status.equals(org.cdpg.dx.aaa.asset.models.Status.GRANTED)
+              ? String.format(
+                  "You can now access the requested asset on the %s platform.%n%n",
+                  platformName)
+              : "";
+
+          return newEmail()
+              .template("templates/approved-asset-request.html")
+              .to(userInfo.email())
+              .subject(subject)
+              .variable("USER_FIRST_NAME", userInfo.name())
+              .variable("ADMIN_PORTAL_URL", adminPortalUrl)
+              .variable("SENDER_NAME", senderName)
+              .variable("STATUS", status.getStatus())
+              .variable("APPROVED_MESSAGE", approvedMsg)
+              .variable("SUBJECT", subject)
+              .send();
+        });
+  }
+
+  public Future<Void> sendEmailForItemPublishStatus(
+      UUID ownerUserId, String itemName, String publishStatus) {
+
+    if (ownerUserId == null) {
+      return Future.failedFuture("Owner user ID is null for item publish status email");
+    }
+
+    return userService.getUserInfoByID(ownerUserId)
+        .compose(userInfo -> {
+          String resolvedStatus = publishStatus == null ? "" : publishStatus.toLowerCase();
+          String subject = "Asset Publish Status Update";
+          String approvedMsg = "approved".equalsIgnoreCase(publishStatus)
+              ? String.format(
+                  "Your asset is now published and available on the %s platform.%n%n",
+                  platformName)
+              : "";
+
+          return newEmail()
+              .template("templates/item-publish-status.html")
+              .to(userInfo.email())
+              .subject(subject)
+              .variable("USER_FIRST_NAME", userInfo.name())
+              .variable("ITEM_NAME", itemName == null ? "" : itemName)
+              .variable("STATUS", resolvedStatus)
+              .variable("APPROVED_MESSAGE", approvedMsg)
+              .variable("ADMIN_PORTAL_URL", adminPortalUrl)
+              .variable("SENDER_NAME", senderName)
+              .send();
+        });
   }
 
   // ────────────────────────── USER STATUS EMAILS ──────────────────────────

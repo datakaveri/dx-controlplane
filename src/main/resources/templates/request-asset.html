@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Asset Request Notification</title>
+  <style>
+    body {
+        font-family: Arial, sans-serif;
+        color: #333333;
+        line-height: 1.6;
+    }
+    .container {
+        width: 80%;
+        margin: auto;
+    }
+    .header {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 15px;
+    }
+    .footer {
+        margin-top: 30px;
+        font-size: 14px;
+        color: #777777;
+    }
+    a {
+        color: #1a73e8;
+        text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <p class="header">Asset Request</p>
+
+  <p>Hello ${ADMIN_FIRST_NAME} ${ADMIN_LAST_NAME},</p>
+
+  <p>
+    <strong>${USER_FIRST_NAME}</strong> (Email: <a href="mailto:${USER_EMAIL_ID}">${USER_EMAIL_ID}</a>) has submitted an asset request that is awaiting your review.
+  </p>
+
+  <p>
+    ${DETAILS_MESSAGE}
+  </p>
+
+  <p>
+    Please visit:<br/>
+    <a href="${ADMIN_PORTAL_URL}">${ADMIN_PORTAL_URL}</a>
+  </p>
+
+  <p class="footer">
+    Regards,<br/>
+    ${SENDER_NAME}
+  </p>
+</div>
+</body>
+</html>

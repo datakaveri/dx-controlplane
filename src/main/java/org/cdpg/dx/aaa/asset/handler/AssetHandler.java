@@ -51,15 +51,18 @@ public class AssetHandler {
   private final KeycloakUserService keycloakUserService;
   private final URNGenerator urnGenerator;
 
-
-  public AssetHandler(AssetService assetService, ItemService itemService, EmailComposer emailComposer, KeycloakUserService keycloakUserService, URNGenerator urnGenerator) {
+  public AssetHandler(
+      AssetService assetService,
+      ItemService itemService,
+      EmailComposer emailComposer,
+      KeycloakUserService keycloakUserService,
+      URNGenerator urnGenerator) {
     this.emailComposer = emailComposer;
     this.assetService = assetService;
     this.itemService = itemService;
     this.keycloakUserService = keycloakUserService;
     this.urnGenerator = urnGenerator;
   }
-
 
   public void createAssetRequest(RoutingContext ctx) {
 
@@ -123,6 +126,8 @@ public class AssetHandler {
 
           CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
           ResponseBuilder.sendSuccess(ctx, "Created Asset Request", urnGenerator);
+
+          emailComposer.sendEmailForAssetRequest(user);
         }).onFailure(ctx::fail);
 
       }
@@ -238,6 +243,13 @@ public class AssetHandler {
 
       CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
       ResponseBuilder.sendSuccess(ctx, "Asset Request updated", urnGenerator);
+
+      assetService.getAssetRequestDetailsById(requestId)
+        .onSuccess(assetRequest ->
+          emailComposer.sendUserEmailForAssetRequestApproval(assetRequest.userId(), status))
+        .onFailure(err ->
+          LOGGER.error("Failed to send asset request status email for request {}: {}",
+            requestId, err.getMessage(), err));
 
     }).onFailure(err -> {
       LOGGER.error("Failed to update asset request status: {}", err.getMessage(), err);

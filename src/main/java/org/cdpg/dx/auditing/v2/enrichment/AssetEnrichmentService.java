@@ -1,6 +1,7 @@
 package org.cdpg.dx.auditing.v2.enrichment;
 
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,8 +33,11 @@ public class AssetEnrichmentService {
 
     if (entity == null
         || entity.getAssetId() == null
-        || entity.getAction().equalsIgnoreCase("DELETE")) {
-      LOGGER.debug("Asset enrichment skipped (no assetId) or delete action");
+        || entity.getAction().equalsIgnoreCase("DELETE")
+        || entity.getAction().equalsIgnoreCase("CREATE")) {
+      // CREATE and DELETE asset fields are populated at source (ItemAuditLogHelper); skipping the
+      // Elasticsearch lookup here avoids racing with index refresh on freshly-created items.
+      LOGGER.debug("Asset enrichment skipped (no assetId, or create/delete populated at source)");
       return Future.succeededFuture(entity);
     }
 
@@ -69,7 +73,17 @@ public class AssetEnrichmentService {
   private ActivityAuditLogEntity applyAssetInfo(
       ActivityAuditLogEntity entity, JsonObject response) {
 
-    JsonObject itemJson = response.getJsonArray("results").getJsonObject(0);
+    JsonArray results = response == null ? null : response.getJsonArray("results");
+    JsonObject itemJson = (results == null || results.isEmpty()) ? null : results.getJsonObject(0);
+
+    if (itemJson == null) {
+      // Item not found in Elasticsearch (e.g. not yet indexed, or already deleted). Leave asset
+      // fields unset rather than NPE-ing; audit log is still persisted with the assetId.
+      LOGGER.warn(
+          "Asset enrichment found no item for assetId={}; proceeding without asset details",
+          entity.getAssetId());
+      return entity;
+    }
 
     // ---- Asset basics ----
     entity.setAssetName(itemJson.getString("name"));
