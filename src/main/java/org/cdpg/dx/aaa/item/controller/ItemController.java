@@ -44,6 +44,7 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.common.VerifyItemTypeAndRole;
 import org.cdpg.dx.aaa.delegation.ItemOwnershipValidator;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
+import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.item.enums.ItemAuditOperation;
 import org.cdpg.dx.aaa.item.model.Item;
 import org.cdpg.dx.aaa.item.service.ItemFetchService;
@@ -88,6 +89,7 @@ public class ItemController implements ApiController {
   private final ItemOwnershipValidator itemOwnershipValidator;
   private final VerifyItemTypeAndRole verifyItemTypeAndRole = new VerifyItemTypeAndRole();
   private final KeycloakUserService keycloakUserService;
+  private final EmailComposer emailComposer;
 
   public ItemController(
       AuditingHandler auditingHandler,
@@ -100,7 +102,8 @@ public class ItemController implements ApiController {
       URNGenerator urnGenerator,
       ItemRegistryService itemRegistryService,
       DelegationService delegationService,
-      KeycloakUserService keycloakUserService) {
+      KeycloakUserService keycloakUserService,
+      EmailComposer emailComposer) {
     this.auditingHandler = auditingHandler;
     this.itemService = itemService;
     this.centralItemService = centralItemService;
@@ -117,6 +120,7 @@ public class ItemController implements ApiController {
         new ItemFetchService(itemService, centralItemService, isCentralCatEnabled);
     this.delegationService = delegationService;
     this.keycloakUserService = keycloakUserService;
+    this.emailComposer = emailComposer;
   }
 
   @Override
@@ -258,6 +262,39 @@ public class ItemController implements ApiController {
             });
   }
 
+  /**
+   * Notify the relevant admin when a provider creates a new asset. Org providers (creator has an
+   * organization) notify their org admin; platform providers notify the COS/platform admin. No
+   * email is sent when the creator is acting as an org/platform admin.
+   */
+  private void notifyAdminOnItemCreation(RoutingContext ctx, JsonObject itemJson) {
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    List<String> roles = dxUser.roles();
+    boolean isAdmin =
+        roles.contains(DxRole.ORG_ADMIN.value()) || roles.contains(DxRole.COS_ADMIN.value());
+    boolean isProvider = roles.contains(DxRole.PROVIDER.value());
+
+    if (!isProvider || isAdmin) {
+      return; // only providers (not admins) trigger creation notifications
+    }
+
+    String orgId = ctx.get(ORGANIZATION_ID);
+    if (orgId == null || orgId.isBlank()) {
+      orgId = dxUser.organisationId();
+    }
+    String itemName = itemJson.getString(NAME);
+
+    emailComposer
+        .sendEmailForItemCreation(ctx.user(), orgId, itemName)
+        .onFailure(
+            err ->
+                LOGGER.error(
+                    "Failed to send item creation notification for item {}: {}",
+                    itemJson.getString(ID),
+                    err.getMessage(),
+                    err));
+  }
+
   private void handlePatchItem(RoutingContext ctx) {
     LOGGER.debug("Handling patch item");
     String id = ctx.queryParams().get(ID);
@@ -323,6 +360,31 @@ public class ItemController implements ApiController {
                   "Success: Item patched successfully",
                   new JsonArray().add(new JsonObject().put(ID, id)),
                   this.urnGenerator);
+
+              // Notify the asset owner (provider) when an admin approves/rejects the item
+              // by patching its publishStatus. Providers cannot patch publishStatus, so the
+              // presence of this field implies an admin (COS_ADMIN or ORG_ADMIN) decision.
+              if (body.containsKey(PUBLISH_STATUS)) {
+                String ownerUserId = itemJson.getString(PROVIDER_USER_ID);
+                String itemName = itemJson.getString(NAME);
+                String publishStatus = body.getString(PUBLISH_STATUS);
+                if (ownerUserId != null && !ownerUserId.isBlank()) {
+                  emailComposer
+                      .sendEmailForItemPublishStatus(
+                          UUID.fromString(ownerUserId), itemName, publishStatus)
+                      .onFailure(
+                          mailErr ->
+                              LOGGER.error(
+                                  "Failed to send item publish status email to owner {} for item"
+                                      + " {}: {}",
+                                  ownerUserId,
+                                  id,
+                                  mailErr.getMessage(),
+                                  mailErr));
+                } else {
+                  LOGGER.warn("No owner found on item {} to notify of publish status change", id);
+                }
+              }
             })
         .onFailure(
             err -> {
@@ -373,8 +435,7 @@ public class ItemController implements ApiController {
     LOGGER.debug("Keycloak ID: {},12aa: {}", orgId, id);
 
     if (!isAdmin && body.containsKey(PUBLISH_STATUS)) {
-      ctx.fail(new DxForbiddenException(
-          "Providers cannot patch publishStatus"));
+      ctx.fail(new DxForbiddenException("Providers cannot patch publishStatus"));
       return;
     }
 
@@ -489,12 +550,12 @@ public class ItemController implements ApiController {
       String method,
       Promise<JsonObject> promise) {
     switch (itemType) {
-      case ITEM_TYPE_AI_MODEL -> itemExistenceValidator.validateAiModel(ctx.user().subject(), body
-          , method, promise);
-      case ITEM_TYPE_DATA_BANK -> itemExistenceValidator.validateDataBank(ctx.user().subject(),
-          body, method, promise);
-      case ITEM_TYPE_APPS -> itemExistenceValidator.validateApps(ctx.user().subject(), body,
-          method, promise);
+      case ITEM_TYPE_AI_MODEL ->
+          itemExistenceValidator.validateAiModel(ctx.user().subject(), body, method, promise);
+      case ITEM_TYPE_DATA_BANK ->
+          itemExistenceValidator.validateDataBank(ctx.user().subject(), body, method, promise);
+      case ITEM_TYPE_APPS ->
+          itemExistenceValidator.validateApps(ctx.user().subject(), body, method, promise);
       default -> ctx.fail(new DxBadRequestException("Unsupported item type: " + itemType));
     }
   }
@@ -542,6 +603,8 @@ public class ItemController implements ApiController {
 
                 ResponseBuilder.sendCreated(
                     ctx, "Success: Item created", item.toJson(), this.urnGenerator);
+
+                notifyAdminOnItemCreation(ctx, item.toJson());
               });
         }
       } else {
@@ -639,6 +702,8 @@ public class ItemController implements ApiController {
                   ItemAuditLogHelper.buildItemAudit(ctx, item.toJson(), ItemAuditOperation.CREATE);
               CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
               ResponseBuilder.sendSuccess(ctx, response.toJson(), this.urnGenerator);
+
+              notifyAdminOnItemCreation(ctx, item.toJson());
             })
         .onFailure(err -> ctx.fail(err));
   }

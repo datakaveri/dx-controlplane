@@ -4,6 +4,7 @@ import io.vertx.ext.web.client.WebClient;
 import org.cdpg.dx.aaa.connector.service.ConnectorService;
 import org.cdpg.dx.aaa.delegation.ItemOwnershipValidator;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
+import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.ingestion.service.IngestionService;
 import org.cdpg.dx.aaa.item.controller.ItemController;
 import org.cdpg.dx.aaa.item.service.ItemRegistryService;
@@ -43,7 +44,8 @@ public class ItemControllerFactory {
       boolean isCentralCatEnabled,
       boolean isEdgeCatalogue,
       boolean isStandalone,
-      DelegationService delegationService) {
+      DelegationService delegationService,
+      EmailComposer emailComposer) {
     PolicyDao policyDao = new PolicyDaoImpl(pgService);
     ItemService itemService =
         new ItemServiceImpl(
@@ -86,6 +88,7 @@ public class ItemControllerFactory {
         urnGenerator,
         orchestrationService,
         delegationService,
-        keycloakUserService);
+        keycloakUserService,
+        emailComposer);
   }
 }

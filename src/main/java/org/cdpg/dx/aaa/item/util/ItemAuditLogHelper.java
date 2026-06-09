@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.cdpg.dx.aaa.item.enums.ItemAuditOperation;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
+import org.cdpg.dx.auditing.v2.util.AssetTypeUtil;
 import org.cdpg.dx.auditing.v2.util.AuditLogHelper;
 
 public final class ItemAuditLogHelper {
@@ -38,7 +39,12 @@ public final class ItemAuditLogHelper {
         .withAction(operation.value())
         .withAssetId(safeUuid(itemJson.getString(ID)));
 
-    if (ItemAuditOperation.DELETE.equals(operation)) {
+    if (ItemAuditOperation.CREATE.equals(operation)) {
+      // Populate asset fields directly from the freshly-created item so the audit log is complete
+      // without waiting for Elasticsearch to index the new item (which races with audit
+      // consumption and previously left these fields null). Mirrors AssetEnrichmentService.
+      applyAssetInfo(builder, itemJson);
+    } else if (ItemAuditOperation.DELETE.equals(operation)) {
       String rawType = itemJson.getJsonArray(TYPE).getString(0);
       String type = ASSET_TYPE_MAPPING.getOrDefault(rawType, "UNKNOWN");
 
@@ -48,6 +54,25 @@ public final class ItemAuditLogHelper {
     }
 
     return builder.build();
+  }
+
+  /**
+   * Populates the full set of asset fields from the item JSON, mirroring the mapping in {@code
+   * AssetEnrichmentService.applyAssetInfo}. Fields absent from the item JSON (e.g. {@code
+   * ownerUserName}) are simply left unset.
+   */
+  private static void applyAssetInfo(
+      UserActivityAuditLogBuilder.Builder builder, JsonObject itemJson) {
+    builder
+        .withAssetName(itemJson.getString(NAME))
+        .withAssetShortDescription(itemJson.getString("shortDescription"))
+        .withAssetType(AssetTypeUtil.extractAssetType(itemJson))
+        .withAssetAccessPolicy(itemJson.getString("accessPolicy"))
+        .withAssetOrgId(safeUuid(itemJson.getString("organizationId")))
+        .withAssetOrgName(itemJson.getString("organization"))
+        .withAssetOrgType(itemJson.getString("organizationType"))
+        .withAssetProviderId(safeUuid(itemJson.getString("ownerUserId")))
+        .withAssetProviderName(itemJson.getString("ownerUserName"));
   }
 
 
