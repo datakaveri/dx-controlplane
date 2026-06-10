@@ -136,7 +136,6 @@ public final class Constants {
   public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_ORG_USERS = Map.of(
     "organizationId", ORGANIZATION_ID,
     "userId", USER_ID,
-    "userName", USER_NAME,
     "role", ROLE,
     "delegatorId" , "delegatorId"
   );
