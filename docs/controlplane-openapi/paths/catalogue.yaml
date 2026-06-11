@@ -522,20 +522,38 @@
   get:
     tags:
     - CAT Entity
-    description: "Get an item with **access policy enforcement**. - If `accessPolicy=open`,\
-      \ the item is accessible to anyone. - If `accessPolicy=restricted`, user access\
-      \ will be validated. - If `accessPolicy=private`, only the owner or users with\
-      \ admin roles(either cos_admin or org_admin) can access it.\nIf a Bearer token\
-      \ is provided in the Authorization header, the request will be authenticated,\
-      \ and access checks will be performed accordingly.\n❗ For items with `accessPolicy=restricted`\
-      \ or `accessPolicy=private`, a valid token **must** be provided. Otherwise,\
-      \ the request will be rejected with a **401 Unauthorized** error.\n### Delegator\
-      \ Access\n- If `isDelegator=true`, the caller is treated as a delegator accessing\n\
-      \  the item on behalf of a **delegate**.\n- In this case, `did` is mandatory.\
-      \ - Delegation scopes are validated to ensure the delegator has access to\n\
-      \  the requested item.\n- If delegation does not exist or scope does not permit\
-      \ access,\n  the request will be rejected with **403 Forbidden**.\n\n**Log Type:**\
-      \ `ASSET`\n"
+    description: |
+      Get an item with **access policy enforcement**.
+
+      Access is evaluated based on the item's `accessPolicy` and the identity of the caller.
+
+      - If `accessPolicy=open`, the item is accessible to anyone.
+      - If `accessPolicy=restricted`, access is granted only if the caller:
+        - has an active policy for the item,
+        - is the owner of the item, or
+        - has an administrative role (`org_admin` or `cos_admin`).
+      - If `accessPolicy=private`, access is granted only to:
+        - the owner of the item, or
+        - users with administrative roles (`org_admin` or `cos_admin`).
+
+      If a Bearer token is provided in the Authorization header, the request is authenticated and access checks are performed accordingly.
+
+      For items with `accessPolicy=restricted` or `accessPolicy=private`, a valid token **must** be provided. Otherwise, the request is rejected with **401 Unauthorized**.
+
+      When access is granted, the response may include:
+
+      - Applicable policy details.
+      - Ownership access flag.
+      - Administrative access flag.
+
+      ### Delegator Access
+
+      - If `isDelegator=true`, the caller is treated as a delegator accessing the item on behalf of a delegate.
+      - In this case, `did` is mandatory.
+      - Delegation scopes are validated to ensure the delegator has access to the requested item.
+      - If delegation does not exist or the scope does not permit access, the request is rejected with **403 Forbidden**.
+
+      **Log Type:** `ASSET`
     operationId: get item with accessPolicy
     security:
     - optionalAuth: []

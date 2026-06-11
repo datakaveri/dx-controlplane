@@ -198,9 +198,18 @@ public class ItemServiceImpl implements ItemService {
           new DxUnauthorizedException("Authorization token is required for private item"));
     }
     if (ownershipCheck(ownerUserId, request.getSubId(), request.getRoles())) {
-      LOGGER.debug("Ownership check passed for item with ID: {}", request.getItemId());
-      ResponseModel responseModel = new ResponseModel(List.of(response), 1, 1, totalHits);
-      return Future.succeededFuture(responseModel);
+
+      boolean isOwner = ownerUserId.equalsIgnoreCase(request.getSubId());
+
+      boolean isAdmin =
+          request.getRoles() != null
+              && request.getRoles().stream()
+                  .anyMatch(
+                      role -> role.equalsIgnoreCase(COS_ADMIN) || role.equalsIgnoreCase(ORG_ADMIN));
+
+      setAccessFlags(response, isOwner, isAdmin);
+
+      return Future.succeededFuture(new ResponseModel(List.of(response), 1, 1, totalHits));
     } else {
       LOGGER.warn("Ownership check failed for item with ID: {}", request.getItemId());
       return Future.failedFuture(new DxForbiddenException("User doesn't have access to this item"));
@@ -247,11 +256,19 @@ public class ItemServiceImpl implements ItemService {
     }
 
     // Allow the owner direct access
-    if (subId.equalsIgnoreCase(ownerUserId)) {
+    if (ownershipCheck(ownerUserId, request.getSubId(), request.getRoles())) {
+
+      boolean isOwner = ownerUserId.equalsIgnoreCase(request.getSubId());
+      boolean isAdmin =
+          request.getRoles() != null
+              && request.getRoles().stream()
+                  .anyMatch(
+                      role -> role.equalsIgnoreCase(COS_ADMIN) || role.equalsIgnoreCase(ORG_ADMIN));
+
+      setAccessFlags(response, isOwner, isAdmin);
       LOGGER.debug(
           "Restricted item access granted: User {} is the owner of item {}",
-          subId,
-          request.getItemId());
+          subId, request.getItemId());
       ResponseModel responseModel = new ResponseModel(List.of(response), 1, 1, totalHits);
       return Future.succeededFuture(responseModel);
     }
@@ -393,6 +410,15 @@ public class ItemServiceImpl implements ItemService {
     response.setSource(item);
 
     return succeededResponse(response, totalHits);
+  }
+
+  private void setAccessFlags(
+      ElasticsearchResponse response, boolean hasOwnerAccess, boolean hasAdminAccess) {
+
+    JsonObject item = response.getSource();
+    item.put("hasOwnerAccess", hasOwnerAccess);
+    item.put("hasAdminAccess", hasAdminAccess);
+    response.setSource(item);
   }
 
   // --- Helpers ---

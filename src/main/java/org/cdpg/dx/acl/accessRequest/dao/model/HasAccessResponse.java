@@ -9,6 +9,8 @@ import org.cdpg.dx.common.util.PaginationInfo;
 public class HasAccessResponse {
   private List<PolicyDto> policies;
   private boolean hasPendingRequests;
+  private boolean hasOwnerAccess;
+  private boolean hasAdminAccess;
 
   private List<AccessRequestDto> pendingRequests;
   private PaginationInfo paginationInfo;
@@ -65,6 +67,8 @@ public class HasAccessResponse {
     }
 
     response.put("hasPendingRequests", hasPendingRequests);
+    response.put("hasOwnerAccess", hasOwnerAccess);
+    response.put("hasAdminAccess", hasAdminAccess);
 
     if (pendingRequests != null) {
       response.put(
@@ -79,5 +83,21 @@ public class HasAccessResponse {
     }
 
     return response;
+  }
+
+  public boolean isHasOwnerAccess() {
+    return hasOwnerAccess;
+  }
+
+  public void setHasOwnerAccess(boolean hasOwnerAccess) {
+    this.hasOwnerAccess = hasOwnerAccess;
+  }
+
+  public boolean isHasAdminAccess() {
+    return hasAdminAccess;
+  }
+
+  public void setHasAdminAccess(boolean hasAdminAccess) {
+    this.hasAdminAccess = hasAdminAccess;
   }
 }

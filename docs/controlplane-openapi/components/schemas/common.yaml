@@ -3790,6 +3790,18 @@ successResponseForGetDataBankEntityWithAccess:
           lastUpdated:
             type: string
             description: Last updated timestamp (human-readable)
+          hasOwnerAccess:
+            type: boolean
+            description: |
+              Indicates whether the authenticated user is the owner of the item.
+              This flag is returned only when the request is authenticated.
+
+          hasAdminAccess:
+            type: boolean
+            description: |
+              Indicates whether the authenticated user has administrative access
+              to the item (for example, org_admin or cos_admin).
+              This flag is returned only when the request is authenticated.
           policies:
             type: array
             description: List of policies applicable to the item (present only for RESTRICTED accessPolicy)
@@ -3888,6 +3900,8 @@ successResponseForGetDataBankEntityWithAccess:
       dataUploadStatus: false
       itemCreatedAt: 2024-01-05T02:09:10+0530
       lastUpdated: 15 December, 2025 - 05:04 PM
+      hasAdminAccess: false
+      hasOwnerAccess: false
       policies:
       - policyId: fc6eaf20-98e5-4ef0-b09b-f78d7c73b28c
         expiryAt: '2026-09-05T20:00:19'

@@ -1403,16 +1403,35 @@ paths:
       tags:
         - CAT Entity
       description: |
-        Get an item with **access policy enforcement**. - If `accessPolicy=open`, the item is accessible to anyone. - If `accessPolicy=restricted`, user access will be validated. - If `accessPolicy=private`, only the owner or users with admin roles(either cos_admin or org_admin) can access it.
-        If a Bearer token is provided in the Authorization header, the request will be authenticated, and access checks will be performed accordingly.
-        ❗ For items with `accessPolicy=restricted` or `accessPolicy=private`, a valid token **must** be provided. Otherwise, the request will be rejected with a **401 Unauthorized** error.
+        Get an item with **access policy enforcement**.
+
+        Access is evaluated based on the item's `accessPolicy` and the identity of the caller.
+
+        - If `accessPolicy=open`, the item is accessible to anyone.
+        - If `accessPolicy=restricted`, access is granted only if the caller:
+          - has an active policy for the item,
+          - is the owner of the item, or
+          - has an administrative role (`org_admin` or `cos_admin`).
+        - If `accessPolicy=private`, access is granted only to:
+          - the owner of the item, or
+          - users with administrative roles (`org_admin` or `cos_admin`).
+
+        If a Bearer token is provided in the Authorization header, the request is authenticated and access checks are performed accordingly.
+
+        For items with `accessPolicy=restricted` or `accessPolicy=private`, a valid token **must** be provided. Otherwise, the request is rejected with **401 Unauthorized**.
+
+        When access is granted, the response may include:
+
+        - Applicable policy details.
+        - Ownership access flag.
+        - Administrative access flag.
+
         ### Delegator Access
-        - If `isDelegator=true`, the caller is treated as a delegator accessing
-          the item on behalf of a **delegate**.
-        - In this case, `did` is mandatory. - Delegation scopes are validated to ensure the delegator has access to
-          the requested item.
-        - If delegation does not exist or scope does not permit access,
-          the request will be rejected with **403 Forbidden**.
+
+        - If `isDelegator=true`, the caller is treated as a delegator accessing the item on behalf of a delegate.
+        - In this case, `did` is mandatory.
+        - Delegation scopes are validated to ensure the delegator has access to the requested item.
+        - If delegation does not exist or the scope does not permit access, the request is rejected with **403 Forbidden**.
 
         **Log Type:** `ASSET`
       operationId: get item with accessPolicy
@@ -16514,6 +16533,17 @@ components:
               lastUpdated:
                 type: string
                 description: Last updated timestamp (human-readable)
+              hasOwnerAccess:
+                type: boolean
+                description: |
+                  Indicates whether the authenticated user is the owner of the item.
+                  This flag is returned only when the request is authenticated.
+              hasAdminAccess:
+                type: boolean
+                description: |
+                  Indicates whether the authenticated user has administrative access
+                  to the item (for example, org_admin or cos_admin).
+                  This flag is returned only when the request is authenticated.
               policies:
                 type: array
                 description: List of policies applicable to the item (present only for RESTRICTED accessPolicy)
@@ -16612,6 +16642,8 @@ components:
             dataUploadStatus: false
             itemCreatedAt: 2024-01-05T02:09:10+0530
             lastUpdated: 15 December, 2025 - 05:04 PM
+            hasAdminAccess: false
+            hasOwnerAccess: false
             policies:
               - policyId: fc6eaf20-98e5-4ef0-b09b-f78d7c73b28c
                 expiryAt: '2026-09-05T20:00:19'
