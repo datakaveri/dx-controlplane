@@ -21,6 +21,7 @@ import org.cdpg.dx.auditing.v2.enrichment.UserEnrichmentService;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.databroker.listeners.AuditMessageConsumer;
+import org.cdpg.dx.databroker.listeners.GatewayLogConsumer;
 import org.cdpg.dx.databroker.listeners.EmailMessageConsumer;
 import org.cdpg.dx.databroker.listeners.LeaderboardConsumer;
 import org.cdpg.dx.databroker.verticle.BaseDataBrokerVerticle;
@@ -79,6 +80,12 @@ public class DataBrokerVerticle extends BaseDataBrokerVerticle {
             new LeaderboardWriterService(leaderboardDaoV2),
             config().getString("leaderboardQueue", "leaderboard"));
     leaderboardConsumer.start();
+
+    // Gateway security-log consumer (events from dx-gateway-go)
+    String gatewayLogQueue = config().getString("gatewayLogQueue", "gateway-logs");
+    GatewayLogConsumer gatewayLogConsumer =
+        new GatewayLogConsumer(internalClient, gatewayLogQueue, pgService);
+    gatewayLogConsumer.start();
 
     // Email consumer
     EmailService emailService = EmailService.createProxy(vertx, EMAIL_SERVICE_ADDRESS);
