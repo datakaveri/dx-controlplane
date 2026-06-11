@@ -320,6 +320,79 @@ public class AppIdVerificationGrpcService
     return Future.succeededFuture(app);
   }
 
+  /* ── GetItem ─────────────────────────────────────────────────────────── */
+
+  /**
+   * Catalogue item lookup for external PAPs (e.g. dx-acl-go). Mirrors the
+   * field extraction PolicyServiceImpl#fetchAndValidateResource performs on
+   * the raw catalogue document, but over gRPC instead of the in-process
+   * Vert.x ItemService proxy.
+   */
+  @Override
+  public void getItem(
+      org.cdpg.dx.auth.appid.v1.GetItemRequest request,
+      StreamObserver<org.cdpg.dx.auth.appid.v1.GetItemResponse> observer) {
+    String itemId = request.getItemId();
+    String userId = request.getUserId();
+
+    if (itemId == null || itemId.isBlank()) {
+      respond(observer, failGetItem("NOT_FOUND"));
+      return;
+    }
+
+    vertxContext.runOnContext(
+        ignored ->
+            itemService
+                .getItem(new GetItemRequest(itemId, userId == null ? "" : userId))
+                .onSuccess(
+                    response -> {
+                      List<JsonObject> docs =
+                          response.getElasticsearchResponses().stream()
+                              .filter(java.util.Objects::nonNull)
+                              .toList();
+                      if (docs.isEmpty()) {
+                        respond(observer, failGetItem("NOT_FOUND"));
+                        return;
+                      }
+                      JsonObject item = docs.get(0);
+
+                      String type = "";
+                      JsonArray typeArray = item.getJsonArray("type");
+                      if (typeArray != null && !typeArray.isEmpty()) {
+                        type = typeArray.getString(0);
+                      }
+                      JsonArray resourceServer =
+                          item.getJsonArray("resourceServer", new JsonArray());
+
+                      respond(
+                          observer,
+                          org.cdpg.dx.auth.appid.v1.GetItemResponse.newBuilder()
+                              .setFound(true)
+                              .setItemId(item.getString("id", itemId))
+                              .setItemType(type == null ? "" : type.toUpperCase())
+                              .setProviderUserId(item.getString("ownerUserId", ""))
+                              .setOrganizationId(item.getString("organizationId", ""))
+                              .setOrganizationName(item.getString("organization", ""))
+                              .setResourceServerJson(resourceServer.encode())
+                              .setApdUrl(item.getString("apdURL", ""))
+                              .setAssetName(item.getString("name", ""))
+                              .setShortDescription(item.getString("shortDescription", ""))
+                              .build());
+                    })
+                .onFailure(
+                    err -> {
+                      LOGGER.error("GetItem failed for itemId={}: {}", itemId, err.getMessage());
+                      respond(observer, failGetItem("INTERNAL_ERROR"));
+                    }));
+  }
+
+  private org.cdpg.dx.auth.appid.v1.GetItemResponse failGetItem(String errorCode) {
+    return org.cdpg.dx.auth.appid.v1.GetItemResponse.newBuilder()
+        .setFound(false)
+        .setErrorCode(errorCode)
+        .build();
+  }
+
   /* ── Helpers ─────────────────────────────────────────────────────────── */
 
   private <T> void respond(StreamObserver<T> observer, T response) {
