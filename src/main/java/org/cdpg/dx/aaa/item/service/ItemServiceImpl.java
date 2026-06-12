@@ -255,17 +255,17 @@ public class ItemServiceImpl implements ItemService {
           new DxUnauthorizedException("Authorization token is required for restricted/pii item"));
     }
 
+    boolean isOwner = ownerUserId.equalsIgnoreCase(request.getSubId());
+    boolean isAdmin =
+        request.getRoles() != null
+            && request.getRoles().stream()
+                .anyMatch(
+                    role -> role.equalsIgnoreCase(COS_ADMIN) || role.equalsIgnoreCase(ORG_ADMIN));
+
+    setAccessFlags(response, isOwner, isAdmin);
+
     // Allow the owner direct access
     if (ownershipCheck(ownerUserId, request.getSubId(), request.getRoles())) {
-
-      boolean isOwner = ownerUserId.equalsIgnoreCase(request.getSubId());
-      boolean isAdmin =
-          request.getRoles() != null
-              && request.getRoles().stream()
-                  .anyMatch(
-                      role -> role.equalsIgnoreCase(COS_ADMIN) || role.equalsIgnoreCase(ORG_ADMIN));
-
-      setAccessFlags(response, isOwner, isAdmin);
       LOGGER.debug(
           "Restricted item access granted: User {} is the owner of item {}",
           subId, request.getItemId());
