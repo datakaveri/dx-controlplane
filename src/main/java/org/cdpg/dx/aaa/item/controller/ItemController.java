@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.item.controller;
 
+import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.AUDIT_ENABLED;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.CHECK_ITEM_NAME_AVAILABILITY;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.CONTEXT;
 import static org.cdpg.dx.aaa.apiserver.config.ApiConstants.CREATE_ITEM;
@@ -41,6 +42,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.apiserver.config.ApiConstants;
 import org.cdpg.dx.aaa.common.VerifyItemTypeAndRole;
 import org.cdpg.dx.aaa.delegation.ItemOwnershipValidator;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
@@ -835,7 +837,9 @@ public class ItemController implements ApiController {
   }
 
   private void handleGetItem(RoutingContext ctx) {
-    String itemId = ctx.queryParams().get("id");
+    String itemId = ctx.queryParams().get(ApiConstants.ID);
+    String auditEnabledParam = ctx.queryParams().get(AUDIT_ENABLED);
+    boolean auditEnabled = auditEnabledParam == null || Boolean.parseBoolean(auditEnabledParam);
     LOGGER.debug("Received GET request for item with ID '{}'", itemId);
 
     if (itemId == null || itemId.isBlank()) {
@@ -868,7 +872,7 @@ public class ItemController implements ApiController {
                 LOGGER.debug("Item retrieved successfully for ID '{}'", itemId);
                 JsonObject itemJson =
                     responseModel.getResponse().getJsonArray(RESULTS).getJsonObject(0);
-                if (ctx.user() != null) {
+                if (ctx.user() != null && auditEnabled) {
                   UserActivityAuditLogBuilder auditLogBuilder =
                       ItemAuditLogHelper.buildItemAudit(ctx, itemJson, ItemAuditOperation.VIEW);
                   CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
