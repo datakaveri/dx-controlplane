@@ -284,11 +284,16 @@ createNotificationSuccessResponse:
 checkAccessRequestSuccessResponse:
   title: Has access success response
   description: |
-    Returned when the consumer has one or more active policies granting access
-    to the requested asset.
+    Returned when the caller has access to the requested asset.
     
-    The response includes matching policy details and may additionally indicate
-    whether pending access requests exist for other access types.
+    Access may be granted through:
+    - One or more active policies
+    - Asset ownership
+    - Administrative privileges (org_admin or cos_admin)
+    
+    The response includes the source of access along with any matching
+    policy details and may additionally indicate whether pending access
+    requests exist for other access types.
   type: object
   properties:
     type:
@@ -308,6 +313,8 @@ checkAccessRequestSuccessResponse:
     title: Success
     detail: User has access to the given asset!
     result:
+      hasOwnerAccess: false
+      hasAdminAccess: false
       policies:
         - policyId: bd43e4ce-1e47-428f-818d-bc30c3f81b4d
           policyType: GROUP

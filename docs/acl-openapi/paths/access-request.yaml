@@ -1223,19 +1223,30 @@
     - Access Request
     summary: Check Access Request
     description: |
-      Determines the current access state of the authenticated consumer for a given asset.
+      Determines the current access state of the authenticated user for a given asset.
 
-      The API evaluates active access policies and pending access requests applicable
-      to the consumer and returns the current access status.
+      The API evaluates all applicable access mechanisms and returns the user's current access status.
+
+      Access may be granted through:
+
+      - Active policies associated with the user.
+      - Asset ownership.
+      - Administrative privileges (`org_admin` or `cos_admin`).
 
       The response may contain:
 
       - One or more active policies granting access to the asset.
+      - Access granted through ownership or administrative privileges.
       - One or more pending access requests awaiting provider approval.
       - No access and no pending requests.
 
-      When active policies exist, detailed policy, owner, and asset information is returned.
-      When pending requests exist, detailed request, consumer, and asset information is returned.
+      When access is granted through policies or rules, the response includes the applicable policy details.
+
+      When access is granted through ownership or administrative privileges, the response includes
+      the corresponding access indicators (`hasOwnerAccess`, `hasAdminAccess`) and any applicable
+      access metadata.
+
+      When pending requests exist, detailed request, consumer, owner, and asset information is returned.
     operationId: post-auth-v2-access-requests-has-access
     requestBody:
       description: '- `itemId` : The catalogue ID of the asset for which the request

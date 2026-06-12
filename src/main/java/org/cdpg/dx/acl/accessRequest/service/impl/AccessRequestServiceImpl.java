@@ -10,6 +10,8 @@ import static org.cdpg.dx.catalogueService.config.Constants.ORGANIZATION_ID;
 import static org.cdpg.dx.catalogueService.config.Constants.OWNER_ID;
 import static org.cdpg.dx.catalogueService.config.Constants.SHORT_DESCRIPTION;
 import static org.cdpg.dx.catalogueService.config.Constants.TYPE;
+import static org.cdpg.dx.database.elastic.util.Constants.COS_ADMIN;
+import static org.cdpg.dx.database.elastic.util.Constants.ORG_ADMIN;
 
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
@@ -49,6 +51,7 @@ import org.cdpg.dx.common.exception.DxForbiddenNoAccessException;
 import org.cdpg.dx.common.exception.DxInternalServerErrorException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.DxValidationException;
+import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.model.RequestType;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
@@ -650,6 +653,19 @@ public class AccessRequestServiceImpl implements AccessRequestService {
 
     UUID itemUuid = UUID.fromString(itemId);
 
+    Future<DxUser> userFuture = keycloakUserService.getUserById(consumerId);
+
+    Future<JsonObject> itemFuture =
+        itemService
+            .getItem(new GetItemRequest(itemId, consumerId.toString()))
+            .map(
+                response -> {
+                  if (response.getElasticsearchResponses().isEmpty()) {
+                    throw new DxNotFoundException("Item not found");
+                  }
+                  return response.getElasticsearchResponses().getFirst();
+                });
+
     Future<AccessRequestSummary> accessRequestSummaryFuture =
         accessRequestDao
             .getAccessSummary(consumerId.toString(), itemId)
@@ -659,8 +675,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
         policyDao.getMatchingPolicies(itemUuid, consumerId.toString()).otherwise(List.of());
 
     Future<PolicyDto> ruleFuture =
-        keycloakUserService
-            .getUserById(consumerId)
+        userFuture
             .compose(
                 fullUser ->
                     accessRuleDao.findMatchingRule(
@@ -670,14 +685,26 @@ public class AccessRequestServiceImpl implements AccessRequestService {
                         fullUser.roles()))
             .otherwiseEmpty();
 
-    return Future.all(accessRequestSummaryFuture, policiesFuture, ruleFuture)
+    return Future.all(
+            userFuture, itemFuture, accessRequestSummaryFuture, policiesFuture, ruleFuture)
         .compose(
             composite -> {
-              AccessRequestSummary accessSummary = composite.resultAt(0);
+              DxUser user = composite.resultAt(0);
+              JsonObject item = composite.resultAt(1);
+              AccessRequestSummary accessSummary = composite.resultAt(2);
+              List<PolicyDto> policiesAccessInfo = composite.resultAt(3);
+              PolicyDto rule = composite.resultAt(4);
 
-              List<PolicyDto> policiesAccessInfo = composite.resultAt(1);
-
-              PolicyDto rule = composite.resultAt(2);
+              String ownerUserId = item.getString(OWNER_ID);
+              boolean hasOwnerAccess =
+                  ownerUserId != null && ownerUserId.equalsIgnoreCase(user.sub().toString());
+              boolean hasAdminAccess =
+                  user.roles() != null
+                      && user.roles().stream()
+                          .anyMatch(
+                              role ->
+                                  role.equalsIgnoreCase(COS_ADMIN)
+                                      || role.equalsIgnoreCase(ORG_ADMIN));
 
               List<AccessRequestDto> pendingRequests = accessSummary.getPendingRequests();
 
@@ -689,7 +716,9 @@ public class AccessRequestServiceImpl implements AccessRequestService {
               }
 
               boolean hasAccess =
-                  accessSummary.isHasGrantedAccess()
+                  hasOwnerAccess
+                      || hasAdminAccess
+                      || accessSummary.isHasGrantedAccess()
                       || !policiesAccessInfo.isEmpty()
                       || rule != null;
               boolean hasPendingRequests = accessSummary.isHasPendingRequests();
@@ -710,7 +739,8 @@ public class AccessRequestServiceImpl implements AccessRequestService {
               }
 
               HasAccessResponse response = new HasAccessResponse();
-
+              response.setHasOwnerAccess(hasOwnerAccess);
+              response.setHasAdminAccess(hasAdminAccess);
               response.setPolicies(policies);
               response.setHasPendingRequests(hasPendingRequests);
               response.setPendingRequests(pendingRequests);
