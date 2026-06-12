@@ -205,14 +205,16 @@
   get:
     tags:
     - CAT Entity
-    description: 'Get an item given the ID.
+    description: |
+      Get an item given the ID.
 
-      If a Bearer token is provided in the Authorization header, the request will
-      be authenticated and an audit log entry will be created for a **View** operation.
+      If a Bearer token is provided in the Authorization header, the request
+      will be authenticated.
+
+      Audit logging is enabled by default for authenticated requests.
+      To disable audit logging, set `auditEnabled=false`.
 
       **Log Type:** `ASSET`
-
-      '
     operationId: get item
     security:
     - optionalAuth: []
@@ -225,6 +227,15 @@
         type: string
         format: uuid
         pattern: ^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$
+    - name: auditEnabled
+      in: query
+      required: false
+      description: |
+        Enables or disables audit logging for the request.
+        Defaults to true when not provided.
+      schema:
+        type: boolean
+        default: true
     responses:
       '200':
         description: Found the item.

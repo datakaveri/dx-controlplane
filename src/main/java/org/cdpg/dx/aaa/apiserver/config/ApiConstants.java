@@ -246,6 +246,7 @@ public class ApiConstants {
   public static final String DID = "did";
   public static final String IS_DELEGATOR = "isDelegator";
   public static final String RESULT = "result";
+  public static final String AUDIT_ENABLED = "auditEnabled";
   public static final String ENCODED_KEY = "encodedKey";
   public static final String ENCODED_CIPHER_TEXT = "encodedCipherText";
   public static final String ENCRYPTED_DATA = "encryptedData";
