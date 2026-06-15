@@ -51,4 +51,5 @@ EXPOSE 8080 8443
 RUN useradd -r -u 1001 -g root aaa-user
 
 # Setting non-root user to use when container starts
+# testing cd
 USER aaa-user
