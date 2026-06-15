@@ -127,17 +127,24 @@ pipeline {
                   }
                 }
 
+          }
+        }
+
+      }
+    }
+
   }
 
   post{
     failure{
       script{
-        if (env.BRANCH_NAME == 'dev')
-        emailext recipientProviders: [buildUser(), developers()],
-        to: '$AAA_RECIPIENTS, $DEFAULT_RECIPIENTS',
-        subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!',
-        body: '''$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:
+        if (env.BRANCH_NAME == 'dev') {
+          emailext recipientProviders: [buildUser(), developers()],
+          to: '$AAA_RECIPIENTS, $DEFAULT_RECIPIENTS',
+          subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!',
+          body: '''$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:
 Check console output at $BUILD_URL to view the results.'''
+        }
       }
     }
   }
