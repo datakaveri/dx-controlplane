@@ -98,7 +98,7 @@ pipeline {
         stage('Continuous Deployment') {
           when {
             expression {
-              return env.BRANCH_NAME == 'dev' || env.BRANCH_NAME.startsWith('PR-')
+              return env.BRANCH_NAME == 'dev'
             }
           }
 
