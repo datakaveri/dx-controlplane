@@ -222,6 +222,8 @@ public class AppIdVerificationGrpcService
               Object policies = item.getValue("policies");
               String resourceServerJson = resourceServer != null ? resourceServer.toString() : "[]";
               String policiesJson = policies != null ? policies.toString() : "[]";
+              boolean hasOwnerAccess = Boolean.TRUE.equals(item.getBoolean("hasOwnerAccess"));
+              boolean hasAdminAccess = Boolean.TRUE.equals(item.getBoolean("hasAdminAccess"));
 
               return CheckItemAccessResponse.newBuilder()
                   .setSuccess(true)
@@ -229,6 +231,8 @@ public class AppIdVerificationGrpcService
                   .setAccessPolicy(accessPolicy)
                   .setResourceServerJson(resourceServerJson)
                   .setPoliciesJson(policiesJson)
+                  .setHasOwnerAccess(hasOwnerAccess)
+                  .setHasAdminAccess(hasAdminAccess)
                   .build();
             });
   }
