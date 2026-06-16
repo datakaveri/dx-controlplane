@@ -4,7 +4,7 @@ ARG VERSION="0.0.1-SNAPSHOT"
 FROM maven:3-eclipse-temurin-21 as builder
 
 WORKDIR /usr/share/app
-
+ 
 ARG CACHE_BUST=1
 
 # Clone dx-common inside Docker
