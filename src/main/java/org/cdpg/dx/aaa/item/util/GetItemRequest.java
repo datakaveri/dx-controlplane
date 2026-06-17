@@ -5,6 +5,7 @@ import java.util.List;
 public class GetItemRequest {
   private final String itemId;
   private final String subId;
+  private String organizationId;
   private String did; // delegator id, if present
   private List<String> roles;
   private String token;
@@ -43,5 +44,13 @@ public class GetItemRequest {
 
   public void setDid(String did) {
     this.did = did;
+  }
+
+  public String getOrganizationId() {
+    return organizationId;
+  }
+
+  public void setOrganizationId(String organizationId) {
+    this.organizationId = organizationId;
   }
 }

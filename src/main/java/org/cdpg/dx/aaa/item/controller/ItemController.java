@@ -859,10 +859,25 @@ public class ItemController implements ApiController {
       }
     }
 
-    GetItemRequest request = new GetItemRequest(itemId, subId);
-    request.setRoles(roles);
-    itemService
-        .getItem(request)
+    String finalSubId = subId;
+    List<String> finalRoles = roles;
+
+    Future<String> orgIdFuture =
+        finalSubId == null || finalSubId.isBlank()
+            ? Future.succeededFuture(null)
+            : keycloakUserService
+                .getUserById(UUID.fromString(finalSubId))
+                .map(DxUser::organisationId);
+
+    orgIdFuture
+        .compose(
+            organisationId -> {
+              GetItemRequest request = new GetItemRequest(itemId, finalSubId);
+              request.setRoles(finalRoles);
+              request.setOrganizationId(organisationId);
+
+              return itemService.getItem(request);
+            })
         .onSuccess(
             responseModel -> {
               if (responseModel.getTotalHits() == 0) {
@@ -907,6 +922,7 @@ public class ItemController implements ApiController {
 
     String itemId = routingContext.queryParams().get(ID);
     LOGGER.debug("Received GET request for item with ID '{}'", itemId);
+
     if (itemId == null || itemId.isBlank()) {
       routingContext.fail(new DxBadRequestException("Item ID is required"));
       return;
@@ -924,59 +940,78 @@ public class ItemController implements ApiController {
       did = dxUser.did(); // default: from token (access-token case)
     }
 
-    GetItemRequest request = new GetItemRequest(itemId, subId);
-    request.setRoles(roles);
-    request.setToken(token);
-    request.setDid(did);
+    final DxUser finalDxUser = dxUser;
+    final String finalSubId = subId;
+    final List<String> finalRoles = roles;
+    final String finalToken = token;
+    final String finalDid = did;
 
-    boolean isDelegator = Boolean.parseBoolean(routingContext.queryParams().get(IS_DELEGATOR));
-    String didFromParam = routingContext.queryParams().get(DID);
+    Future<String> orgIdFuture =
+        finalSubId == null || finalSubId.isBlank()
+            ? Future.succeededFuture(null)
+            : keycloakUserService
+                .getUserById(UUID.fromString(finalSubId))
+                .map(DxUser::organisationId);
 
-    // ---------------- Delegator flow ----------------
-    if (isDelegator) {
-      if (didFromParam == null || didFromParam.isBlank()) {
-        routingContext.fail(new DxBadRequestException("did is mandatory when isDelegator is true"));
-        return;
-      }
+    orgIdFuture
+        .compose(
+            organisationId -> {
+              GetItemRequest request = new GetItemRequest(itemId, finalSubId);
+              request.setRoles(finalRoles);
+              request.setToken(finalToken);
+              request.setDid(finalDid);
+              request.setOrganizationId(organisationId);
 
-      if (dxUser == null) {
-        routingContext.fail(
-            new DxUnauthorizedException("Identity token required for delegator access"));
-        return;
-      }
+              boolean isDelegator =
+                  Boolean.parseBoolean(routingContext.queryParams().get(IS_DELEGATOR));
+              String didFromParam = routingContext.queryParams().get(DID);
 
-      delegationService
-          .checkItemAccess(subId, didFromParam)
-          .onSuccess(
-              response -> {
-                JsonArray result = response.getJsonArray(RESULT);
-
-                // Defensive check
-                if (result == null) {
-                  routingContext.fail(new DxForbiddenException("Invalid delegation response"));
-                  return;
-                }
-
-                // "*" means all items allowed
-                if (!result.contains("*") && !result.contains(itemId)) {
-                  routingContext.fail(
-                      new DxForbiddenException("Delegator not authorized for this item"));
-                  return;
-                }
-
-                // Delegation validated — override did
-                request.setDid(didFromParam);
+              if (!isDelegator) {
                 executeGetItem(request, routingContext);
-              })
-          .onFailure(
-              err -> {
-                LOGGER.debug("Delegation access check failed", err);
-                routingContext.fail(new DxForbiddenException(err.getMessage()));
-              });
-      return;
-    }
-    // ---------------- Normal flow ----------------
-    executeGetItem(request, routingContext);
+                return Future.succeededFuture();
+              }
+
+              if (didFromParam == null || didFromParam.isBlank()) {
+                routingContext.fail(
+                    new DxBadRequestException("did is mandatory when isDelegator is true"));
+                return Future.succeededFuture();
+              }
+
+              if (finalDxUser == null) {
+                routingContext.fail(
+                    new DxUnauthorizedException("Identity token required for delegator access"));
+                return Future.succeededFuture();
+              }
+
+              return delegationService
+                  .checkItemAccess(finalSubId, didFromParam)
+                  .onSuccess(
+                      response -> {
+                        JsonArray result = response.getJsonArray(RESULT);
+
+                        if (result == null) {
+                          routingContext.fail(
+                              new DxForbiddenException("Invalid delegation response"));
+                          return;
+                        }
+
+                        // "*" means all items allowed
+                        if (!result.contains("*") && !result.contains(itemId)) {
+                          routingContext.fail(
+                              new DxForbiddenException("Delegator not authorized for this item"));
+                          return;
+                        }
+
+                        request.setDid(didFromParam);
+                        executeGetItem(request, routingContext);
+                      })
+                  .mapEmpty();
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Failed to resolve organisation details", err);
+              routingContext.fail(err);
+            });
   }
 
   private void executeGetItem(GetItemRequest request, RoutingContext routingContext) {

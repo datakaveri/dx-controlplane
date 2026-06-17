@@ -148,9 +148,10 @@ public class ItemServiceImpl implements ItemService {
           JsonObject source = elasticResponse.getSource();
           String accessPolicy = source.getString(ACCESS_POLICY);
           String ownerUserId = source.getString(PROVIDER_USER_ID);
+          String itemOrgId = source.getString(ORGANIZATION_ID);
           if (accessPolicy.equalsIgnoreCase(PRIVATE)) {
             return getResponseWhenResourceIsPrivate(
-                ownerUserId, request, elasticResponse, totalHits);
+                ownerUserId, itemOrgId, request, elasticResponse, totalHits);
           }
           return getResponseWhenResourceIsPublic(accessPolicy, totalHits, elasticResponse);
         });
@@ -178,34 +179,49 @@ public class ItemServiceImpl implements ItemService {
           JsonObject source = elasticResponse.getSource();
           String accessPolicy = source.getString(ACCESS_POLICY);
           String ownerUserId = source.getString(PROVIDER_USER_ID);
+          String itemOrganizationId = source.getString(ORGANIZATION_ID);
           if (accessPolicy.equalsIgnoreCase(PRIVATE)) {
             return getResponseWhenResourceIsPrivate(
-                ownerUserId, request, elasticResponse, totalHits);
+                ownerUserId, itemOrganizationId, request, elasticResponse, totalHits);
           } else if (accessPolicy.equalsIgnoreCase(RESTRICTED)
               || accessPolicy.equalsIgnoreCase(PII)) {
             return getResponseWhenResourceIsRestricted(
-                ownerUserId, request, totalHits, elasticResponse);
+                ownerUserId, itemOrganizationId, request, totalHits, elasticResponse);
           }
           return getResponseWhenResourceIsPublic(accessPolicy, totalHits, elasticResponse);
         });
   }
 
   public Future<ResponseModel> getResponseWhenResourceIsPrivate(
-      String ownerUserId, GetItemRequest request, ElasticsearchResponse response, int totalHits) {
+      String ownerUserId,
+      String itemOrganizationId,
+      GetItemRequest request,
+      ElasticsearchResponse response,
+      int totalHits) {
     if (request.getSubId() == null || request.getSubId().isEmpty()) {
       LOGGER.warn("Private item access denied: Missing token (subId is null/empty)");
       return Future.failedFuture(
           new DxUnauthorizedException("Authorization token is required for private item"));
     }
-    if (ownershipCheck(ownerUserId, request.getSubId(), request.getRoles())) {
+    if (ownershipCheck(
+        ownerUserId,
+        request.getSubId(),
+        request.getRoles(),
+        itemOrganizationId,
+        request.getOrganizationId())) {
 
       boolean isOwner = ownerUserId.equalsIgnoreCase(request.getSubId());
 
-      boolean isAdmin =
+      boolean isCosAdmin =
           request.getRoles() != null
-              && request.getRoles().stream()
-                  .anyMatch(
-                      role -> role.equalsIgnoreCase(COS_ADMIN) || role.equalsIgnoreCase(ORG_ADMIN));
+              && request.getRoles().stream().anyMatch(role -> role.equalsIgnoreCase(COS_ADMIN));
+
+      boolean isOrgAdmin =
+          request.getRoles() != null
+              && request.getRoles().stream().anyMatch(role -> role.equalsIgnoreCase(ORG_ADMIN))
+              && Objects.equals(itemOrganizationId, request.getOrganizationId());
+
+      boolean isAdmin = isCosAdmin || isOrgAdmin;
 
       setAccessFlags(response, isOwner, isAdmin);
 
@@ -216,18 +232,30 @@ public class ItemServiceImpl implements ItemService {
     }
   }
 
-  private boolean ownershipCheck(String ownerUserId, String subId, List<String> roles) {
+  private boolean ownershipCheck(
+      String ownerUserId,
+      String subId,
+      List<String> roles,
+      String ownerOrganizationId,
+      String userOrganizationId) {
     // Allow admin roles to bypass ownership restrictions
-    if (roles != null
-        && roles.stream()
-            .anyMatch(
-                role -> role.equalsIgnoreCase(COS_ADMIN) || role.equalsIgnoreCase(ORG_ADMIN))) {
-      LOGGER.info("Ownership check bypassed for admin role(s):");
+    boolean isCosAdmin =
+        roles != null && roles.stream().anyMatch(role -> role.equalsIgnoreCase(COS_ADMIN));
+
+    if (isCosAdmin) {
+      LOGGER.info("Ownership check bypassed for COS_ADMIN");
       return true;
     }
 
-    if (subId.isEmpty()) {
-      LOGGER.warn("Ownership check failed: No subId provided for private access policy");
+    boolean isOrgAdmin =
+        roles != null && roles.stream().anyMatch(role -> role.equalsIgnoreCase(ORG_ADMIN));
+
+    if (isOrgAdmin) {
+      return Objects.equals(ownerOrganizationId, userOrganizationId);
+    }
+
+    if (subId == null || subId.isEmpty()) {
+      LOGGER.warn("Ownership check failed: No subId provided for restricted/private assets");
       return false;
     }
     if (!ownerUserId.equalsIgnoreCase(subId)) {
@@ -246,7 +274,11 @@ public class ItemServiceImpl implements ItemService {
   }
 
   public Future<ResponseModel> getResponseWhenResourceIsRestricted(
-      String ownerUserId, GetItemRequest request, int totalHits, ElasticsearchResponse response) {
+      String ownerUserId,
+      String itemOrganizationId,
+      GetItemRequest request,
+      int totalHits,
+      ElasticsearchResponse response) {
     String subId = request.getSubId();
     String did = request.getDid();
     if (subId == null || subId.isEmpty()) {
@@ -256,16 +288,26 @@ public class ItemServiceImpl implements ItemService {
     }
 
     boolean isOwner = ownerUserId.equalsIgnoreCase(request.getSubId());
-    boolean isAdmin =
+    boolean isCosAdmin =
         request.getRoles() != null
-            && request.getRoles().stream()
-                .anyMatch(
-                    role -> role.equalsIgnoreCase(COS_ADMIN) || role.equalsIgnoreCase(ORG_ADMIN));
+            && request.getRoles().stream().anyMatch(role -> role.equalsIgnoreCase(COS_ADMIN));
+
+    boolean isOrgAdmin =
+        request.getRoles() != null
+            && request.getRoles().stream().anyMatch(role -> role.equalsIgnoreCase(ORG_ADMIN))
+            && Objects.equals(itemOrganizationId, request.getOrganizationId());
+
+    boolean isAdmin = isCosAdmin || isOrgAdmin;
 
     setAccessFlags(response, isOwner, isAdmin);
 
     // Allow the owner direct access
-    if (ownershipCheck(ownerUserId, request.getSubId(), request.getRoles())) {
+    if (ownershipCheck(
+        ownerUserId,
+        request.getSubId(),
+        request.getRoles(),
+        itemOrganizationId,
+        request.getOrganizationId())) {
       LOGGER.debug(
           "Restricted item access granted: User {} is the owner of item {}",
           subId, request.getItemId());
