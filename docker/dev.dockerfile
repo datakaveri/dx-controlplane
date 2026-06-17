@@ -4,7 +4,7 @@ ARG VERSION="0.0.1-SNAPSHOT"
 FROM maven:3-eclipse-temurin-21 as builder
 
 WORKDIR /usr/share/app
-
+ 
 ARG CACHE_BUST=1
 
 # Clone dx-common inside Docker
@@ -51,4 +51,5 @@ EXPOSE 8080 8443
 RUN useradd -r -u 1001 -g root aaa-user
 
 # Setting non-root user to use when container starts
+# testing cd
 USER aaa-user
