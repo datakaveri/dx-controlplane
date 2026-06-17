@@ -162,7 +162,7 @@ public class OrganizationMembershipServiceImpl implements OrganizationMembership
       .getAllWithFilters(filterParams)
       .compose(res -> {
 
-        if (res == null) {
+        if (res.isEmpty()) {
           return Future.failedFuture(
             new DxNotFoundException("No request found with given ID"));
         }

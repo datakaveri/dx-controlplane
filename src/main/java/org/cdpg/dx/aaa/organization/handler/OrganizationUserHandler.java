@@ -5,6 +5,7 @@ import static org.cdpg.dx.aaa.organization.config.Constants.ALLOWED_FILTER_MAP_F
 import static org.cdpg.dx.aaa.organization.config.Constants.API_TO_DB_ORG_USERS;
 import static org.cdpg.dx.aaa.organization.config.Constants.CREATED_AT;
 import static org.cdpg.dx.aaa.organization.config.Constants.ORGANIZATION_ID;
+import static org.cdpg.dx.aaa.organization.config.Constants.USER_NAME;
 import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
 import io.vertx.core.Future;
@@ -88,6 +89,7 @@ public class OrganizationUserHandler {
     PaginatedRequest request =
         PaginationRequestBuilder.from(ctx)
             .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_ORG_USERS)
+            .fuzzyFiltersDbMap(Map.of("userName", USER_NAME))
             .apiToDbMap(API_TO_DB_ORG_USERS)
             .additionalFilters(Map.of(ORGANIZATION_ID, orgId.toString()))
             .allowedTimeFields(Set.of(CREATED_AT))

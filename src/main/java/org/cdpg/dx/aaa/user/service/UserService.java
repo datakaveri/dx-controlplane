@@ -13,6 +13,7 @@ import org.cdpg.dx.database.postgres.models.PaginatedResult;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -43,16 +44,21 @@ public interface UserService {
             Function<T, JsonObject> baseJsonMapper
     ) {
         List<Future<JsonObject>> futures = items.stream()
-                .map(item ->
-                        getUserInfoByID(userIdExtractor.apply(item))
-                                .map(user -> {
-                                    JsonObject enriched = baseJsonMapper.apply(item);
-                                    LOGGER.debug("Enriching user roles for orgId: {}", user.organisationId());
-                                    enriched.put("roles", user.roles());
-                                    enriched.put("account_enabled", user.account_enabled());
-                                    return enriched;
-                                })
-                )
+                .map(item -> {
+                    UUID userId = userIdExtractor.apply(item);
+                    return getUserInfoByID(userId)
+                            .map(user -> {
+                                JsonObject enriched = baseJsonMapper.apply(item);
+                                LOGGER.debug("Enriching user roles for orgId: {}", user.organisationId());
+                                enriched.put("roles", user.roles());
+                                enriched.put("account_enabled", user.account_enabled());
+                                return enriched;
+                            })
+                            .recover(err -> {
+                                LOGGER.warn("User {} not found in Keycloak, excluding from response: {}", userId, err.getMessage());
+                                return Future.succeededFuture(null);
+                            });
+                })
                 .toList();
 
         return Future.all(futures)
@@ -60,6 +66,7 @@ public interface UserService {
                         IntStream.range(0, cf.size())
                                 .mapToObj(cf::resultAt)
                                 .map(result -> (JsonObject) result)
+                                .filter(Objects::nonNull)
                                 .toList()
                 );
     }
