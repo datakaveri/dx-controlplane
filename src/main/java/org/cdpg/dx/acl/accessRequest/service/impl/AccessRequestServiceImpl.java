@@ -698,13 +698,21 @@ public class AccessRequestServiceImpl implements AccessRequestService {
               String ownerUserId = item.getString(OWNER_ID);
               boolean hasOwnerAccess =
                   ownerUserId != null && ownerUserId.equalsIgnoreCase(user.sub().toString());
-              boolean hasAdminAccess =
+
+              String ownerOrgId = item.getString(ORGANIZATION_ID);
+              boolean isCosAdmin =
                   user.roles() != null
                       && user.roles().stream()
-                          .anyMatch(
-                              role ->
-                                  role.equalsIgnoreCase(COS_ADMIN)
-                                      || role.equalsIgnoreCase(ORG_ADMIN));
+                      .anyMatch(role -> role.equalsIgnoreCase(COS_ADMIN));
+
+              boolean isOrgAdmin =
+                  user.roles() != null
+                      && user.roles().stream()
+                      .anyMatch(role -> role.equalsIgnoreCase(ORG_ADMIN))
+                      && ownerOrgId != null
+                      && ownerOrgId.equalsIgnoreCase(user.organisationId());
+
+              boolean hasAdminAccess = isCosAdmin || isOrgAdmin;
 
               List<AccessRequestDto> pendingRequests = accessSummary.getPendingRequests();
 
