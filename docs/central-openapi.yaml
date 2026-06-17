@@ -7140,7 +7140,7 @@ paths:
         schema:
           type: string
           format: uuid
-    put:
+    patch:
       tags:
         - Organisation APIs
       summary: Withdraw an organisation join request (User)
@@ -7153,12 +7153,36 @@ paths:
         **Log Type:** `USER_ACTION`
       security:
         - authorization: []
+      requestBody:
+        required: true
+        description: |
+          Request body containing the new status of the join request. Only `withdrawn` is allowed.
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - withdrawn
+                  description: New status of the join request.
+            examples:
+              withdraw:
+                value:
+                  status: withdrawn
       x-codeSamples:
         - lang: cURL
           label: Withdraw join request
           source: |
-            curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/auth/organisation/join-request/{id}' \
-            --header 'Authorization: Bearer <your-token>'
+            curl --location --request PATCH 'https://${HOSTNAME}/iudx/v2/auth/organisation/join-request/{id}' \
+            --header 'Authorization: Bearer <your-token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "status": "withdrawn"
+            }'
       responses:
         '200':
           description: Join request withdrawn successfully
@@ -7176,12 +7200,24 @@ paths:
                   detail:
                     type: string
                     example: Organisation join request withdrawn successfully
+        '400':
+          description: Bad Request - Failed to withdraw join request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - Only pending join request can be withdrawn
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
         '404':
           description: Not Found - Request with given ID does not exist
           content:
