@@ -178,7 +178,7 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
                 usersResource().get(userId.toString()).roles().realmLevel().listEffective();
             return DxUserMapper.fromUserRepresentation(user, roles);
           } catch (Exception e) {
-            LOGGER.error("Failed to retrieve user with ID: {}", userId, e);
+            LOGGER.error("Failed to retrieve user with ID: {}", userId);
             throw new KeycloakServiceException("Failed to retrieve user with ID: " + userId, e);
           }
         });

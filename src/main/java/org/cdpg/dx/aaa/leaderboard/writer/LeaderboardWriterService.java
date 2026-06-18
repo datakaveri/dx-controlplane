@@ -3,9 +3,8 @@ package org.cdpg.dx.aaa.leaderboard.writer;
 import io.vertx.core.Future;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import org.cdpg.dx.aaa.leaderboard.model.LeaderboardEvent;
 import org.cdpg.dx.aaa.leaderboard.dao.*;
+import org.cdpg.dx.aaa.leaderboard.model.LeaderboardEvent;
 
 public class LeaderboardWriterService {
 
@@ -63,12 +62,12 @@ public class LeaderboardWriterService {
   }
 
   private boolean isEligible(LeaderboardEvent e) {
-    if (e.action().equalsIgnoreCase("DELETE")) {
+    if (e.action() != null && e.action().equalsIgnoreCase("DELETE")) {
       // For deletes, we want to process regardless of publish or data upload status to ensure
       // leaderboards are accurate
       return true;
     }
-    if (e.assetType().equalsIgnoreCase("USECASE")) {
+    if (e.assetType() != null && e.assetType().equalsIgnoreCase("USECASE")) {
       // For use cases, we only check publish status as data upload is not relevant
       return "ACTIVE".equalsIgnoreCase(e.publishStatus());
     }
