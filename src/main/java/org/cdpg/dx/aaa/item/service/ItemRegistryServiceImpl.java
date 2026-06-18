@@ -4,11 +4,14 @@ import static org.cdpg.dx.aaa.common.Constants.ID;
 import static org.cdpg.dx.database.elastic.util.Constants.DETAIL_ITEM_NOT_FOUND;
 
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
@@ -61,6 +64,7 @@ public class ItemRegistryServiceImpl implements ItemRegistryService {
     LOGGER.debug("Creating DataBank item");
     String userId = dataBankCreationRequest.getUserId();
     String itemId = item.getId();
+    String itemName = item.getName();
     LOGGER.debug("User ID: {}, Item ID: {}", userId, itemId);
     JsonArray resourceServers =
         dataBankCreationRequest.getOriginalBody().getJsonArray("resourceServer");
@@ -86,40 +90,66 @@ public class ItemRegistryServiceImpl implements ItemRegistryService {
 
     return validateItemIdDoesNotExist(itemId)
         .compose(v -> createInCentralIfEnabled(item))
-        .compose(v -> itemService.createItem(item)
-            .onSuccess(x -> localItemCreated.set(true)))
-        .compose(v ->
-            processResourceServersSequentially(
-                dataBankCreationRequest, resourceServers, requestBody, rollbackActions, response,
-                item
-            )
-        )
+        .compose(v -> itemService.createItem(item).onSuccess(x -> localItemCreated.set(true)))
+        .compose(
+            v ->
+                processResourceServersSequentially(
+                    dataBankCreationRequest,
+                    resourceServers,
+                    requestBody,
+                    rollbackActions,
+                    response,
+                    item))
         .map(v -> response)
-        .recover(err -> {
-          LOGGER.error("Error during item creation flow, starting rollbacks. Cause: {}",
-              err.getCause());
+        .recover(
+            err -> {
+              LOGGER.error(
+                  "Error during item creation flow, starting rollbacks. Cause: {}", err.getCause());
 
-          return performRollbacksSequentially(rollbackActions)
-              .compose(x -> {
-                if (localItemCreated.get()) {
-                  return itemService.deleteItem(itemId);
-                }
-                return Future.succeededFuture();
-              })
-              .compose(x -> {
-                if (isCentralCatEnabled && localItemCreated.get()) {
-                  return centralItemService.deleteItem(itemId)
-                      .recover(e -> {
-                        LOGGER.warn("Central rollback delete failed", e);
+              return performRollbacksSequentially(rollbackActions)
+                  .compose(
+                      x -> {
+                        if (!localItemCreated.get()) {
+                          return Future.succeededFuture();
+                        }
+
+                        Promise<Void> promise = Promise.promise();
+
+                        new Timer()
+                            .schedule(
+                                new TimerTask() {
+                                  @Override
+                                  public void run() {
+                                    itemService
+                                        .deleteItem(itemId, itemName)
+                                        .recover(
+                                            e -> {
+                                              LOGGER.warn("Local rollback delete failed", e);
+                                              return Future.succeededFuture();
+                                            })
+                                        .onSuccess(v -> promise.complete())
+                                        .onFailure(promise::fail);
+                                  }
+                                },
+                                2000);
+
+                        return promise.future();
+                      })
+                  .compose(
+                      x -> {
+                        if (isCentralCatEnabled && localItemCreated.get()) {
+                          return centralItemService
+                              .deleteItem(itemId, itemName)
+                              .recover(
+                                  e -> {
+                                    LOGGER.warn("Central rollback delete failed", e);
+                                    return Future.succeededFuture();
+                                  });
+                        }
                         return Future.succeededFuture();
-                      });
-                }
-                return Future.succeededFuture();
-              })
-              .compose(x -> Future.failedFuture(err));
-        });
-
-
+                      })
+                  .compose(x -> Future.failedFuture(err));
+            });
   }
 
   private Future<Void> validateItemIdDoesNotExist(String itemId) {

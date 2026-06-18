@@ -1,16 +1,14 @@
 package org.cdpg.dx.aaa.item.service.central;
 
-import static org.cdpg.dx.aaa.common.Constants.COS;
 import static org.cdpg.dx.aaa.common.Constants.FIELD;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_AI_MODEL;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_APPS;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
+import static org.cdpg.dx.aaa.common.Constants.NAME;
 import static org.cdpg.dx.aaa.common.Constants.PII;
 import static org.cdpg.dx.aaa.common.Constants.PRIVATE;
 import static org.cdpg.dx.aaa.common.Constants.PROVIDER;
 import static org.cdpg.dx.aaa.common.Constants.PROVIDER_USER_ID;
-import static org.cdpg.dx.aaa.common.Constants.RESOURCE_GRP;
-import static org.cdpg.dx.aaa.common.Constants.RESOURCE_SVR;
 import static org.cdpg.dx.aaa.common.Constants.RESTRICTED;
 import static org.cdpg.dx.aaa.common.Constants.VALUE;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.*;
@@ -58,12 +56,12 @@ import org.cdpg.dx.catalogueService.models.Asset;
 import org.cdpg.dx.catalogueService.models.ItemType;
 import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.model.DxUser;
-import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.elastic.model.BulkScriptUpdate;
 import org.cdpg.dx.database.elastic.model.BulkSyncResult;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.database.elastic.model.QueryDecoder;
 import org.cdpg.dx.database.elastic.model.QueryModel;
+import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.elastic.util.QueryType;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
@@ -488,7 +486,7 @@ public class CentralItemServiceImpl implements ItemService {
   }
 
   @Override
-  public Future<ElasticsearchResponse> deleteItem(String id) {
+  public Future<ElasticsearchResponse> deleteItem(String id, String name) {
     LOGGER.debug("Deleting item with ID: {}", id);
     Promise<ElasticsearchResponse> promise = Promise.promise();
 
@@ -496,26 +494,17 @@ public class CentralItemServiceImpl implements ItemService {
       return Future.failedFuture("ID not present in request");
     }
 
+    if (name == null || name.isBlank()) {
+      return Future.failedFuture("name isn't present in request");
+    }
+
     QueryModel boolQuery = new QueryModel(QueryType.BOOL);
     QueryModel idTermQuery = new QueryModel(QueryType.TERM);
     idTermQuery.setQueryParameters(Map.of(FIELD, ID_KEYWORD, VALUE, id));
-    QueryModel resourceGrpTermQuery = new QueryModel(QueryType.TERM);
-    resourceGrpTermQuery.setQueryParameters(Map.of(FIELD, RESOURCE_GRP + KEYWORD_KEY, VALUE, id));
-    QueryModel providerTermQuery = new QueryModel(QueryType.TERM);
-    providerTermQuery.setQueryParameters(Map.of(FIELD, PROVIDER + KEYWORD_KEY, VALUE, id));
-    QueryModel resourceSvrTermQuery = new QueryModel(QueryType.TERM);
-    resourceSvrTermQuery.setQueryParameters(Map.of(FIELD, RESOURCE_SVR + KEYWORD_KEY, VALUE, id));
-    QueryModel cosTermQuery = new QueryModel(QueryType.TERM);
-    cosTermQuery.setQueryParameters(Map.of(FIELD, COS + KEYWORD_KEY, VALUE, id));
+    QueryModel nameTermQuery = new QueryModel(QueryType.TERM);
+    nameTermQuery.setQueryParameters(Map.of(FIELD, NAME + KEYWORD_KEY, VALUE, name));
 
-    boolQuery.setShouldQueries(
-        List.of(
-            idTermQuery,
-            resourceGrpTermQuery,
-            providerTermQuery,
-            resourceSvrTermQuery,
-            cosTermQuery));
-
+    boolQuery.setShouldQueries(List.of(idTermQuery, nameTermQuery));
     QueryModel queryModel = new QueryModel();
     queryModel.setQueries(boolQuery);
 

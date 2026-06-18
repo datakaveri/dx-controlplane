@@ -595,7 +595,7 @@ public class ItemController implements ApiController {
               () -> itemService.createItem(item),
 
               // Central rollback
-              () -> centralItemService.deleteItem(item.getId()),
+              () -> centralItemService.deleteItem(item.getId(), item.getName()),
               ctx,
               res -> {
                 UserActivityAuditLogBuilder auditLogBuilder =
@@ -818,10 +818,10 @@ public class ItemController implements ApiController {
                   isCentralCatEnabled,
 
                   // Central delete
-                  () -> centralItemService.deleteItem(id),
+                  () -> centralItemService.deleteItem(id, itemSnapshot.getName()),
 
                   // Local delete
-                  () -> itemService.deleteItem(id),
+                  () -> itemService.deleteItem(id, itemSnapshot.getName()),
 
                   // Central rollback → re-create item
                   () -> centralItemService.createItem(itemSnapshot),
