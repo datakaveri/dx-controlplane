@@ -19,7 +19,7 @@ public interface ItemService {
 
     public Future<Void> updateItem(Item item);
 
-    public Future<ElasticsearchResponse> deleteItem(String id);
+    public Future<ElasticsearchResponse> deleteItem(String id, String name);
 
     Future<Item> itemWithTheNameExists(String type, String name);
 
