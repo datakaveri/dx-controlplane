@@ -8,6 +8,7 @@ import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ADDITIONAL
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ASSET_ORGANIZATION_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CONSTRAINTS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CONSUMER_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CREATED_AT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_EXPIRY_AT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_FEEDBACK_TO_CONSUMER;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ID;
@@ -78,7 +79,7 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
     SelectQuery query =
         new SelectQuery()
             .setTable(POLICY_TABLE)
-            .setColumns(List.of(DB_ID, DB_CONSTRAINTS, DB_EXPIRY_AT))
+            .setColumns(List.of(DB_ID, DB_CONSTRAINTS, DB_EXPIRY_AT, DB_CREATED_AT))
             .setCondition(condition);
 
     postgresService
