@@ -7,6 +7,7 @@ public class VerifyPolicyDto {
   private String type;
   private JsonObject constraints;
   private String expiryAt;
+  private String createdAt;
 
   public VerifyPolicyDto() {}
 
@@ -18,13 +19,16 @@ public class VerifyPolicyDto {
     this.type = json.getString("type");
     this.constraints = json.getJsonObject("constraints");
     this.expiryAt = json.getString("expiryAt");
+    this.createdAt = json.getString("createdAt");
   }
 
-  public VerifyPolicyDto(String policyId, String type, JsonObject constraints, String expiryAt) {
+  public VerifyPolicyDto(String policyId, String type, JsonObject constraints, String expiryAt,
+                         String createdAt) {
     this.policyId = policyId;
     this.type = type;
     this.constraints = constraints;
     this.expiryAt = expiryAt;
+    this.createdAt = createdAt;
   }
 
   public String getType() {
@@ -59,6 +63,14 @@ public class VerifyPolicyDto {
     this.policyId = policyId;
   }
 
+  public String getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(String createdAt) {
+    this.createdAt = createdAt;
+  }
+
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
 
@@ -73,6 +85,9 @@ public class VerifyPolicyDto {
     }
     if (expiryAt != null) {
       json.put("expiryAt", expiryAt);
+    }
+    if (createdAt != null) {
+      json.put("createdAt", createdAt);
     }
 
     return json;

@@ -393,7 +393,8 @@ public class CentralItemServiceImpl implements ItemService {
                 new JsonObject()
                     .put(POLICY_ID, dto.getPolicyId())
                     .put(CONS, dto.getConstraints())
-                    .put(EXPIRY_AT, dto.getExpiryAt())));
+                    .put(EXPIRY_AT, dto.getExpiryAt())
+                    .put(CREATED_AT, dto.getCreatedAt())));
 
     item.put(POLICIES, policies);
     response.setSource(item);

@@ -24,6 +24,7 @@ import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ASSET_ORGANIZATION_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CONSTRAINTS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CONSUMER_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CREATED_AT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_EXPIRY_AT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ITEM_ID;
@@ -732,7 +733,8 @@ public class PolicyServiceImpl implements PolicyService {
                               row.getString(DB_ID),
                               ResponseUrn.VERIFY_SUCCESS_URN.getUrn(),
                               row.getJsonObject(CONSTRAINTS),
-                              row.getString(DB_EXPIRY_AT)));
+                              row.getString(DB_EXPIRY_AT),
+                              row.getString(DB_CREATED_AT)));
                     }
                   }
 
@@ -763,7 +765,8 @@ public class PolicyServiceImpl implements PolicyService {
                         rule.getPolicyId(),
                         ResponseUrn.VERIFY_SUCCESS_URN.getUrn(),
                         rule.getConstraints(),
-                        rule.getExpiryAt().toString()));
+                        rule.getExpiryAt().toString(),
+                        rule.getCreatedAt().toString()));
               }
 
               if (policies.isEmpty()) {
