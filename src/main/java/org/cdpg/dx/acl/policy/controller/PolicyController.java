@@ -426,7 +426,7 @@ public class PolicyController implements ApiController {
               handler -> {
                 if (handler.succeeded()) {
                   LOGGER.info("Policy verified successfully ");
-                  ResponseBuilder.sendSuccess(ctx, handler.result().toJson(), urnGenerator);
+                  ResponseBuilder.sendSuccess(ctx, handler.result(), urnGenerator);
                 } else {
                   LOGGER.error("Policy could not be verified {}", handler.cause().getMessage());
                   handleFailureResponse(ctx, handler.cause().getMessage());

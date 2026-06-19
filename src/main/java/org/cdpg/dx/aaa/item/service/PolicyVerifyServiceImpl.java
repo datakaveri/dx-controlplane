@@ -25,6 +25,7 @@ import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 import org.apache.logging.log4j.LogManager;
@@ -49,7 +50,7 @@ public class PolicyVerifyServiceImpl implements PolicyVerifyService {
   }
 
   @Override
-  public Future<VerifyPolicyDto> verify(
+  public Future<List<VerifyPolicyDto>> verify(
       String apdUrl,
       DxUser requester,
       DxUser owner,
@@ -62,26 +63,41 @@ public class PolicyVerifyServiceImpl implements PolicyVerifyService {
           .initiateVerifyPolicy(
               owner.sub(), requester.sub().toString(), UUID.fromString(itemId), itemType, requester)
           .compose(
-              policyDto -> {
-                LOGGER.debug(
-                    "Internal APD verify response: {}", policyDto.toJson().encodePrettily());
-                String decision = policyDto.getType();
-                if (VERIFY_SUCCESS_URN.getUrn().equalsIgnoreCase(decision)) {
+              policyDtos -> {
+                LOGGER.debug("Internal APD verify response: {} policies found", policyDtos.size());
 
-                  JsonObject constraints = policyDto.getConstraints();
-                  LOGGER.info(
-                      "Policy verified successfully for user {}, constraints: {}",
-                      requester.sub(),
-                      constraints.encode());
-                  return Future.succeededFuture(policyDto);
-                } else {
-                  LOGGER.warn(
-                      "Policy verify denied for user {} with decision {}",
-                      requester.sub(),
-                      decision);
+                if (policyDtos.isEmpty()) {
+                  return Future.failedFuture(
+                      new DxForbiddenException("No ACTIVE policy exists for this user/item"));
+                }
+
+                List<VerifyPolicyDto> allowedPolicies =
+                    policyDtos.stream()
+                        .filter(
+                            policy ->
+                                VERIFY_SUCCESS_URN.getUrn().equalsIgnoreCase(policy.getType()))
+                        .toList();
+
+                if (allowedPolicies.isEmpty()) {
+                  LOGGER.warn("Policy verify denied for user {}", requester.sub());
+
                   return Future.failedFuture(
                       new DxForbiddenException("Access denied by policy verification"));
                 }
+
+                LOGGER.info(
+                    "Policy verified successfully for user {}, matched policies: {}",
+                    requester.sub(),
+                    allowedPolicies.size());
+
+                allowedPolicies.forEach(
+                    policy ->
+                        LOGGER.debug(
+                            "PolicyId={}, constraints={}",
+                            policy.getPolicyId(),
+                            policy.getConstraints()));
+
+                return Future.succeededFuture(allowedPolicies);
               })
           .recover(
               failure -> {
@@ -130,16 +146,24 @@ public class PolicyVerifyServiceImpl implements PolicyVerifyService {
                       accessArray = constraintsObj.getJsonArray(ACCESS);
                     }
 
+                    VerifyPolicyDto policyDto = new VerifyPolicyDto(result);
+
                     LOGGER.info(
-                        "APD allowed access for user {} with constraints {}",
+                        "APD allowed access for user {}, constraints: {}",
                         requester.sub(),
                         accessArray != null ? accessArray.encode() : "none");
 
-                    return Future.succeededFuture(new VerifyPolicyDto(result));
+                    LOGGER.debug(
+                        "External APD verify response: 1 policy found, policyId={}",
+                        policyDto.getPolicyId());
+
+                    return Future.succeededFuture(List.of(policyDto));
                   }
 
                   // Policy evaluated but denied
-                  LOGGER.warn("APD denied access: decision={}", decision);
+                  LOGGER.warn(
+                      "APD denied access for user {}: decision={}", requester.sub(), decision);
+
                   return Future.failedFuture(
                       new DxForbiddenException("Access denied by APD decision"));
                 }
