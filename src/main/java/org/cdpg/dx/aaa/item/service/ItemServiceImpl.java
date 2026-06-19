@@ -438,15 +438,20 @@ public class ItemServiceImpl implements ItemService {
   }
 
   private Future<ResponseModel> completePolicySuccess(
-      VerifyPolicyDto dto, ElasticsearchResponse response, int totalHits) {
+      List<VerifyPolicyDto> policyDtos, ElasticsearchResponse response, int totalHits) {
+
     JsonObject item = response.getSource();
+    JsonArray policies = new JsonArray();
 
-    JsonObject policyObj = new JsonObject();
-    policyObj.put(POLICY_ID, dto.getPolicyId());
-    policyObj.put(CONS, dto.getConstraints());
-    policyObj.put(EXPIRY_AT, dto.getExpiryAt());
+    policyDtos.forEach(
+        dto ->
+            policies.add(
+                new JsonObject()
+                    .put(POLICY_ID, dto.getPolicyId())
+                    .put(CONS, dto.getConstraints())
+                    .put(EXPIRY_AT, dto.getExpiryAt())));
 
-    item.put(POLICIES, new JsonArray().add(policyObj));
+    item.put(POLICIES, policies);
     response.setSource(item);
 
     return succeededResponse(response, totalHits);

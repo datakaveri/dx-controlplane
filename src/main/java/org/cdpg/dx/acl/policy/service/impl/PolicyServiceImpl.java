@@ -711,49 +711,75 @@ public class PolicyServiceImpl implements PolicyService {
 
   /** Verify if an ACTIVE policy exists for a given user/item pair. */
   @Override
-  public Future<VerifyPolicyDto> initiateVerifyPolicy(
+  public Future<List<VerifyPolicyDto>> initiateVerifyPolicy(
       UUID ownerId, String userId, UUID itemId, ItemType itemType, DxUser user) {
-    Promise<VerifyPolicyDto> promise = Promise.promise();
 
-    policyDao
-        .checkExistingPoliciesForIds(itemId, ownerId, userId)
-        .onSuccess(
-            queryResult -> {
-              JsonArray rows = queryResult.getRows();
-              if (rows != null && !rows.isEmpty()) {
-                JsonObject row = rows.getJsonObject(0);
-                UUID policyId = UUID.fromString(row.getString(DB_ID));
-                JsonObject constraints = row.getJsonObject(CONSTRAINTS);
-                String expiryAt = row.getString(DB_EXPIRY_AT);
+    Future<List<VerifyPolicyDto>> policiesFuture =
+        policyDao
+            .checkExistingPoliciesForIds(itemId, ownerId, userId)
+            .map(
+                queryResult -> {
+                  JsonArray rows = queryResult.getRows();
 
-                // Fetch full policy constraints (optional deep validation)
-                policyDao
-                    .verifyPolicy(policyId)
-                    .onSuccess(
-                        verifiedPolicy -> {
-                          VerifyPolicyDto verifyPolicyDto =
-                              new VerifyPolicyDto(
-                                  policyId.toString(),
-                                  ResponseUrn.VERIFY_SUCCESS_URN.getUrn(),
-                                  constraints,
-                                  expiryAt);
-                          promise.complete(verifyPolicyDto);
-                        })
-                    .onFailure(promise::fail);
+                  List<VerifyPolicyDto> policies = new ArrayList<>();
 
-              } else {
-                promise.fail(
+                  if (rows != null) {
+                    for (int i = 0; i < rows.size(); i++) {
+                      JsonObject row = rows.getJsonObject(i);
+
+                      policies.add(
+                          new VerifyPolicyDto(
+                              row.getString(DB_ID),
+                              ResponseUrn.VERIFY_SUCCESS_URN.getUrn(),
+                              row.getJsonObject(CONSTRAINTS),
+                              row.getString(DB_EXPIRY_AT)));
+                    }
+                  }
+
+                  return policies;
+                });
+
+    Future<PolicyDto> ruleFuture =
+        keycloakUserService
+            .getUserById(UUID.fromString(userId))
+            .compose(
+                fullUser ->
+                    accessRuleDao.findMatchingRule(
+                        itemId,
+                        fullUser.sub().toString(),
+                        fullUser.organisationId(),
+                        fullUser.roles()))
+            .otherwiseEmpty();
+
+    return Future.all(policiesFuture, ruleFuture)
+        .compose(
+            composite -> {
+              List<VerifyPolicyDto> policies = composite.resultAt(0);
+              PolicyDto rule = composite.resultAt(1);
+
+              if (rule != null && !rule.toJson().isEmpty()) {
+                policies.add(
+                    new VerifyPolicyDto(
+                        rule.getPolicyId(),
+                        ResponseUrn.VERIFY_SUCCESS_URN.getUrn(),
+                        rule.getConstraints(),
+                        rule.getExpiryAt().toString()));
+              }
+
+              if (policies.isEmpty()) {
+                return Future.failedFuture(
                     generateErrorResponse(
                         HttpStatusCode.FORBIDDEN, "No ACTIVE policy exists for this user/item"));
               }
+
+              return Future.succeededFuture(policies);
             })
-        .onFailure(
+        .recover(
             err -> {
               LOGGER.error("Error during initiateVerifyPolicy: {}", err.getMessage());
-              promise.fail(generateErrorResponse(INTERNAL_SERVER_ERROR, err.getMessage()));
+              return Future.failedFuture(
+                  generateErrorResponse(INTERNAL_SERVER_ERROR, err.getMessage()));
             });
-
-    return promise.future();
   }
 
   @Override

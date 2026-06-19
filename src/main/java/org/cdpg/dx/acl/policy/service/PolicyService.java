@@ -16,8 +16,9 @@ public interface PolicyService {
   Future<Void> createPolicy(List<CreatePolicyRequest> policy, DxUser caller);
   Future<List<PolicyDto>> getPolicy(DxUser caller);
   Future<Void> deActivatePolicy(String policyId, DxUser user);
-  Future<VerifyPolicyDto> initiateVerifyPolicy(UUID ownerId, String userEmail, UUID itemId,
-                                               ItemType itemType, DxUser user);
+
+  Future<List<VerifyPolicyDto>> initiateVerifyPolicy(
+      UUID ownerId, String userEmail, UUID itemId, ItemType itemType, DxUser user);
 
   Future<PaginatedResult<PolicyDto>> listPolicies(PaginatedRequest request);
   Future<PaginatedResult<PolicyDto>> listPolicies(
