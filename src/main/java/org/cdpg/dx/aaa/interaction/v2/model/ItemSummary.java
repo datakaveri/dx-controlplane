@@ -15,5 +15,7 @@ public record ItemSummary(
     String uploadedBy,
     JsonArray resourceServer,
     String fileFormat,
+    String industry,
+    JsonArray tags,
     String itemCreatedAt,
     JsonObject metrics) {}

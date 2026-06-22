@@ -1,14 +1,12 @@
 package org.cdpg.dx.auditing.v2.enrichment;
 
 import io.vertx.core.Future;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import org.cdpg.dx.auditing.v2.model.ActivityAuditLogEntity;
 import org.cdpg.dx.aaa.item.service.ItemService;
-import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.auditing.v2.util.AssetTypeUtil;
 
 import java.util.UUID;
@@ -41,18 +39,11 @@ public class AssetEnrichmentService {
       return Future.succeededFuture(entity);
     }
 
-    LOGGER.debug(
-        "Starting asset enrichment [assetId={}, userId={}]",
-        entity.getAssetId(),
-        entity.getUserId());
-
-    String userId = entity.getUserId() != null ? entity.getUserId().toString() : null;
-
-    GetItemRequest request = new GetItemRequest(entity.getAssetId().toString(), userId);
+    LOGGER.debug("Starting asset enrichment [assetId={}]", entity.getAssetId());
 
     return itemService
-        .getItem(request)
-        .map(item -> applyAssetInfo(entity, item.getResponse()))
+        .getItemSource(entity.getAssetId().toString())
+        .map(source -> applyAssetInfo(entity, source))
         .onSuccess(
             e ->
                 LOGGER.info(
@@ -70,15 +61,9 @@ public class AssetEnrichmentService {
             });
   }
 
-  private ActivityAuditLogEntity applyAssetInfo(
-      ActivityAuditLogEntity entity, JsonObject response) {
+  private ActivityAuditLogEntity applyAssetInfo(ActivityAuditLogEntity entity, JsonObject source) {
 
-    JsonArray results = response == null ? null : response.getJsonArray("results");
-    JsonObject itemJson = (results == null || results.isEmpty()) ? null : results.getJsonObject(0);
-
-    if (itemJson == null) {
-      // Item not found in Elasticsearch (e.g. not yet indexed, or already deleted). Leave asset
-      // fields unset rather than NPE-ing; audit log is still persisted with the assetId.
+    if (source == null) {
       LOGGER.warn(
           "Asset enrichment found no item for assetId={}; proceeding without asset details",
           entity.getAssetId());
@@ -86,19 +71,19 @@ public class AssetEnrichmentService {
     }
 
     // ---- Asset basics ----
-    entity.setAssetName(itemJson.getString("name"));
-    entity.setAssetSortDescription(itemJson.getString("shortDescription"));
-    entity.setAssetType(AssetTypeUtil.extractAssetType(itemJson));
-    entity.setAssetAccessPolicy(itemJson.getString("accessPolicy"));
+    entity.setAssetName(source.getString("name"));
+    entity.setAssetSortDescription(source.getString("shortDescription"));
+    entity.setAssetType(AssetTypeUtil.extractAssetType(source));
+    entity.setAssetAccessPolicy(source.getString("accessPolicy"));
 
     // ---- Asset organisation ----
-    entity.setAssetOrgId(safeParse(itemJson.getString("organizationId"), "organizationId"));
-    entity.setAssetOrgName(itemJson.getString("organization"));
-    entity.setAssetOrgType(itemJson.getString("organizationType"));
+    entity.setAssetOrgId(safeParse(source.getString("organizationId"), "organizationId"));
+    entity.setAssetOrgName(source.getString("organization"));
+    entity.setAssetOrgType(source.getString("organizationType"));
 
     // ---- Provider ----
-    entity.setAssetProviderId(safeParse(itemJson.getString("ownerUserId"), "ownerUserId"));
-    entity.setAssetProviderName(itemJson.getString("ownerUserName"));
+    entity.setAssetProviderId(safeParse(source.getString("ownerUserId"), "ownerUserId"));
+    entity.setAssetProviderName(source.getString("ownerUserName"));
 
     return entity;
   }

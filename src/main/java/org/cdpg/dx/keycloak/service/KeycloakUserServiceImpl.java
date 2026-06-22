@@ -112,7 +112,6 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
 
   @Override
   public Future<List<DxUser>> getUsers(int page, int size, String name) {
-    LOGGER.info("page and size,{},{}", page, size);
     return BlockingExecutionUtil.runBlocking(
         () -> {
           try {
@@ -135,6 +134,7 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
                     })
                 .collect(Collectors.toList());
           } catch (Exception e) {
+            LOGGER.error("Keycloak failed to get users {} ", e.getMessage(), e);
             throw new KeycloakServiceException("Failed to retrieve users from Keycloak", e);
           }
         });

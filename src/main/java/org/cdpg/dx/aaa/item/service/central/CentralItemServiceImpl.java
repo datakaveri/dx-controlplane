@@ -95,6 +95,13 @@ public class CentralItemServiceImpl implements ItemService {
   }
 
   @Override
+  public Future<JsonObject> getItemSource(String itemId) {
+    return centralElasticsearchService
+        .getDocumentById(docIndex, itemId)
+        .map(ElasticsearchResponse::getSource);
+  }
+
+  @Override
   public Future<Void> createItem(Item item) {
     Promise<Void> promise = Promise.promise();
     String id = item.getId();

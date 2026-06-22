@@ -1,6 +1,7 @@
 package org.cdpg.dx.aaa.item.service;
 
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.aaa.asset.models.AssetRequest;
 import org.cdpg.dx.aaa.asset.models.AssetRequestResponse;
 import org.cdpg.dx.database.elastic.model.BulkSyncResult;
@@ -26,6 +27,8 @@ public interface ItemService {
     Future<Void> ownerShipTransfer(String oldOwnerId, String newOwnerId, String organizationId);
 
     Future<ResponseModel> getItem(GetItemRequest request);
+
+    Future<JsonObject> getItemSource(String itemId);
 
     Future<ResponseModel> getItemWithAccessChecks(GetItemRequest request);
 
