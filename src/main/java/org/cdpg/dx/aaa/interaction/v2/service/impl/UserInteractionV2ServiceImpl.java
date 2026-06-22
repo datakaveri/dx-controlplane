@@ -18,7 +18,6 @@ import org.cdpg.dx.aaa.interaction.v2.model.*;
 import org.cdpg.dx.aaa.interaction.v2.service.UserInteractionV2Service;
 
 import org.cdpg.dx.aaa.item.service.ItemService;
-import org.cdpg.dx.aaa.item.util.GetItemRequest;
 
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.response.PaginatedApiResponse;
@@ -35,7 +34,11 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
   private final ProviderFeedbackDao providerFeedbackDao;
   private final ItemService itemService;
 
-  public UserInteractionV2ServiceImpl(UserInteractionV2Dao dao, UserFeedbackDao userFeedbackDao, ProviderFeedbackDao providerFeedbackDao,ItemService itemService) {
+  public UserInteractionV2ServiceImpl(
+      UserInteractionV2Dao dao,
+      UserFeedbackDao userFeedbackDao,
+      ProviderFeedbackDao providerFeedbackDao,
+      ItemService itemService) {
 
     this.dao = dao;
     this.userFeedbackDao = userFeedbackDao;
@@ -147,37 +150,35 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
   // =====================================================
   private Future<ItemSummary> fetchItemSummary(UUID assetId) {
 
-    GetItemRequest request = new GetItemRequest(assetId.toString(), null);
-
     return itemService
-        .getItem(request)
+        .getItemSource(assetId.toString())
         .map(
-            response -> {
-              if (response == null || response.getTotalHits() == 0) {
+            source -> {
+              if (source == null) {
                 return null;
               }
 
-              JsonObject item = response.getResponse().getJsonArray("results").getJsonObject(0);
-
               String type =
-                  item.getJsonArray("type") != null && !item.getJsonArray("type").isEmpty()
-                      ? item.getJsonArray("type").getString(0)
+                  source.getJsonArray("type") != null && !source.getJsonArray("type").isEmpty()
+                      ? source.getJsonArray("type").getString(0)
                       : null;
 
               return new ItemSummary(
-                  item.getString("id"),
-                  item.getString("name"),
-                  item.getString("shortDescription"),
+                  assetId.toString(),
+                  source.getString("name"),
+                  source.getString("shortDescription"),
                   type,
-                  item.getString("accessPolicy"),
-                  item.getString("ownerUserId"),
-                  item.getString("organizationId"),
-                  item.getString("organization"),
-                  item.getString("uploadedBy"),
-                  item.getJsonArray("resourceServer"),
-                  item.getString("fileFormat"),
-                  item.getString("itemCreatedAt"),
-                  item.getJsonObject("metrics", new JsonObject()));
+                  source.getString("accessPolicy"),
+                  source.getString("ownerUserId"),
+                  source.getString("organizationId"),
+                  source.getString("organization"),
+                  source.getString("uploadedBy"),
+                  source.getJsonArray("resourceServer"),
+                  source.getString("fileFormat"),
+                  source.getString("industry"),
+                  source.getJsonArray("tags"),
+                  source.getString("itemCreatedAt"),
+                  source.getJsonObject("metrics", new JsonObject()));
             })
         .recover(
             err -> {
@@ -196,48 +197,38 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
   }
 
   @Override
-  public Future<UserFeedback> postUserFeedback(UserFeedback request)
-  {
+  public Future<UserFeedback> postUserFeedback(UserFeedback request) {
     LOGGER.info("Inside service imple method - post user feedbaack");
     return userFeedbackDao.updateFeedback(request);
   }
 
-
   @Override
-  public Future<ProviderFeedback> postProviderFeedback(ProviderFeedback request)
-  {
+  public Future<ProviderFeedback> postProviderFeedback(ProviderFeedback request) {
     LOGGER.info("Inside service imple method - post provider feedbaack");
     return providerFeedbackDao.postProviderFeedback(request);
   }
 
   @Override
-  public Future<Boolean> deleteUserFeedback(UUID reqId, UUID userId)
-  {
+  public Future<Boolean> deleteUserFeedback(UUID reqId, UUID userId) {
     LOGGER.info("Inside service imple method - delete user feedbaack");
-    return userFeedbackDao.deleteFeedback(reqId,userId);
+    return userFeedbackDao.deleteFeedback(reqId, userId);
   }
 
-
   @Override
-  public  Future<UserFeedbackPaginatedResponse> getUserFeedback(PaginatedRequest request)
-  {
+  public Future<UserFeedbackPaginatedResponse> getUserFeedback(PaginatedRequest request) {
     LOGGER.debug("UserInteractionsPaginatedResponse() method started");
     return userFeedbackDao.fetchUserFeedbacks(request);
   }
 
   @Override
-  public  Future<ProviderFeedbackPaginatedResponse> getProviderFeedback(PaginatedRequest request)
-  {
+  public Future<ProviderFeedbackPaginatedResponse> getProviderFeedback(PaginatedRequest request) {
     LOGGER.debug("UserInteractionsPaginatedResponse() method started");
     return providerFeedbackDao.fetchProviderFeedbacks(request);
   }
 
   @Override
-  public Future<Boolean> deleteProviderFeedback(UUID reqId, UUID userId)
-  {
+  public Future<Boolean> deleteProviderFeedback(UUID reqId, UUID userId) {
     LOGGER.info("Inside service imple method - delete user feedbaack");
-    return providerFeedbackDao.deleteProviderFeedback(reqId,userId);
+    return providerFeedbackDao.deleteProviderFeedback(reqId, userId);
   }
-
-
 }

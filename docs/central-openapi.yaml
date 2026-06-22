@@ -12089,6 +12089,12 @@ components:
                 type: string
         fileFormat:
           type: string
+        industry:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
         itemCreatedAt:
           type: string
           format: date-time

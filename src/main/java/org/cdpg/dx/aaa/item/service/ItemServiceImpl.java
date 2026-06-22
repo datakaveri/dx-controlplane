@@ -125,6 +125,13 @@ public class ItemServiceImpl implements ItemService {
   }
 
   @Override
+  public Future<JsonObject> getItemSource(String itemId) {
+    return elasticsearchService
+        .getDocumentById(docIndex, itemId)
+        .map(ElasticsearchResponse::getSource);
+  }
+
+  @Override
   public Future<ResponseModel> getItem(GetItemRequest request) {
     QueryDecoder queryDecoder = new QueryDecoder();
     QueryModel queryModel = queryDecoder.getItemIdQueryModel(request.getItemId());
