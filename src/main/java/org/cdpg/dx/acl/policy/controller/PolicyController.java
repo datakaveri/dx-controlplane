@@ -182,7 +182,13 @@ public class PolicyController implements ApiController {
     User user = ctx.user();
 
     Map<String, String> allowedFilters =
-        Map.of("status", DB_STATUS, "organizationId", DB_ASSET_ORGANIZATION_ID);
+        Map.of(
+            "status",
+            DB_STATUS,
+            "organizationId",
+            DB_ASSET_ORGANIZATION_ID,
+            "ownerId",
+            DB_OWNER_ID);
     Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
     Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
 
@@ -274,7 +280,13 @@ public class PolicyController implements ApiController {
     User user = ctx.user();
 
     Map<String, String> allowedFilters =
-        Map.of("status", DB_STATUS, "organizationId", DB_ASSET_ORGANIZATION_ID);
+        Map.of(
+            "status",
+            DB_STATUS,
+            "organizationId",
+            DB_ASSET_ORGANIZATION_ID,
+            "ownerId",
+            DB_OWNER_ID);
     Map<String, Object> additionalFilters = Map.of("owner_id", user.subject());
     Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
     Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
@@ -445,8 +457,12 @@ public class PolicyController implements ApiController {
 
     Map<String, String> allowedFilters =
         Map.of(
-            "status", DB_STATUS,
-            "organizationId", DB_ASSET_ORGANIZATION_ID);
+            "status",
+            DB_STATUS,
+            "organizationId",
+            DB_ASSET_ORGANIZATION_ID,
+            "ownerId",
+            DB_OWNER_ID);
 
     Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
 
