@@ -487,6 +487,20 @@
         required: false
         schema:
           type: string
+      - name: ownerId
+        in: query
+        description: |
+          Filter policies by the owner who created the policy.
+
+          This parameter can be used to distinguish
+          between policies created by different owners within the organization.
+
+          If not specified, policies created by all owners within the organization
+          are returned.
+        required: false
+        schema:
+          type: string
+          example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
       - $ref: ../components/parameters.yaml#/PageParam
       - $ref: ../components/parameters.yaml#/SizeParam
       - $ref: ../components/parameters.yaml#/SortingParam
@@ -598,6 +612,20 @@
         required: false
         schema:
           type: string
+      - name: ownerId
+        in: query
+        description: |
+          Filter policies by the owner who created the policy.
+
+          This parameter can be used to distinguish
+          between policies created by different owners within the organization.
+
+          If not specified, policies created by all owners within the organization
+          are returned.
+        required: false
+        schema:
+          type: string
+          example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
       - $ref: ../components/parameters.yaml#/PageParam
       - $ref: ../components/parameters.yaml#/SizeParam
       - $ref: ../components/parameters.yaml#/SortingParam
@@ -644,6 +672,20 @@
         required: false
         schema:
           type: string
+      - name: ownerId
+        in: query
+        description: |
+          Filter policies by the owner who created the policy.
+          
+          This parameter can be used to distinguish
+          between policies created by different owners within the organization.
+          
+          If not specified, policies created by all owners within the organization
+          are returned.
+        required: false
+        schema:
+          type: string
+          example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
       - $ref: ../components/parameters.yaml#/PageParam
       - $ref: ../components/parameters.yaml#/SizeParam
       - $ref: ../components/parameters.yaml#/SortingParam
