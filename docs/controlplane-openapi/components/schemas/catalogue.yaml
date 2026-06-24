@@ -138,6 +138,7 @@ SearchCriteria:
         oneOf:
         - type: string
         - type: number
+        - type: boolean
       description: 'Values for the selected `searchType`. Required value format:
 
         - `term`: One or more strings
