@@ -61,6 +61,7 @@ class SkipReason:
     DATA_UPLOAD_STATUS_FALSE = "DATA_UPLOAD_STATUS_FALSE"
     PUBLISH_STATUS_NOT_ACTIVE = "PUBLISH_STATUS_NOT_ACTIVE"
     MISSING_ACCESS_POLICY = "MISSING_ACCESS_POLICY"
+    MISSING_PROVIDER_ID = "MISSING_PROVIDER_ID"
 
 
 SKIP_COUNTS = defaultdict(int)
@@ -124,12 +125,17 @@ def map_asset(doc):
         record_skip(doc, SkipReason.MISSING_ACCESS_POLICY, None)
         return None
 
+    provider_id = doc.get("ownerUserId")
+    if not provider_id:
+        record_skip(doc, SkipReason.MISSING_PROVIDER_ID, None)
+        return None
+
     return (
         doc.get("id"),
         doc.get("name"),
         asset_type,
         access_policy,
-        doc.get("ownerUserId"),
+        provider_id,
         doc.get("organizationId"),
         doc.get("organization"),
         doc.get("organizationType"),
@@ -378,16 +384,14 @@ def main():
         response = continue_scroll(scroll_id)
         scroll_id = response["_scroll_id"]
 
-    #conn.close()
+    # -----------------------------
+    # PHASE 2: Leaderboard rebuild
+    # -----------------------------
+    LOGGER.info("=== Leaderboard Rebuild STARTED ===")
+    run_sql_file(conn, LEADERBOARD_SQL_FILE)
+    LOGGER.info("=== Leaderboard Rebuild COMPLETE ===")
 
-     # -----------------------------
-        # PHASE 2: Leaderboard rebuild
-        # -----------------------------
-        LOGGER.info("=== Leaderboard Rebuild STARTED ===")
-        run_sql_file(conn, LEADERBOARD_SQL_FILE)
-        LOGGER.info("=== Leaderboard Rebuild COMPLETE ===")
-
-        conn.close()
+    conn.close()
 
 
     # 🔹 Write skipped assets JSON
