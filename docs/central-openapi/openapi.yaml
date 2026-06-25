@@ -194,6 +194,8 @@ paths:
     $ref: ../controlplane-openapi/paths/roles.yaml#/~1iudx~1v2~1auth~1admin~1user
   /iudx/v2/auth/user/basic:
     $ref: ../controlplane-openapi/paths/roles.yaml#/~1iudx~1v2~1auth~1user~1basic
+  /iudx/v2/auth/user/basic/search:
+    $ref: ../controlplane-openapi/paths/roles.yaml#/~1iudx~1v2~1auth~1user~1basic~1search
   /iudx/v2/auth/user/update:
     $ref: ../controlplane-openapi/paths/roles.yaml#/~1iudx~1v2~1auth~1user~1update
   /iudx/v2/auth/admin/{id}/update:

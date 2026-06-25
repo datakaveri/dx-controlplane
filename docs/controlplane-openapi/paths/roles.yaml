@@ -1281,7 +1281,7 @@
       Returns a paginated list of users with basic profile details fetched from Keycloak.
       Requires an authenticated user token.
 
-      **Note:** `email` and `preferredUsername` are masked in the response (e.g. `john@xxxxxxx`) to protect user privacy.
+      **Note:** `email` and `preferredUsername` are masked in the response (e.g. `jo***@example.com`) to protect user privacy.
 
       **Log Type:** `USER_ACTION`
     x-codeSamples:
@@ -1320,14 +1320,14 @@
                         type: string
                       preferredUsername:
                         type: string
-                        description: Masked — username portion before `@` is preserved, domain replaced with `xxxxxxx`
+                        description: Masked — first 2 chars preserved, rest replaced with `***`, domain kept (e.g. `jo***@example.com`)
                       givenName:
                         type: string
                       familyName:
                         type: string
                       email:
                         type: string
-                        description: Masked — domain portion replaced with `xxxxxxx`
+                        description: Masked — first 2 chars of local part preserved, rest replaced with `***`, domain kept (e.g. `jo***@example.com`)
                 paginationInfo:
                   $ref: ../components/schemas/pagination.yaml#/PaginationInfo
             examples:
@@ -1338,10 +1338,10 @@
                   result:
                   - sub: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
                     name: Test User
-                    preferredUsername: testuser@xxxxxxx
+                    preferredUsername: te***@example.com
                     givenName: Test
                     familyName: User
-                    email: testuser@xxxxxxx
+                    email: te***@example.com
                   paginationInfo:
                     page: 1
                     size: 10
@@ -1355,6 +1355,80 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+    security:
+    - authorization: []
+/iudx/v2/auth/user/basic/search:
+  get:
+    summary: Get user by exact username
+    tags:
+    - Role APIs
+    operationId: get-auth-v2-user-basic-username
+    description: |
+      Returns basic profile details for a single user matched by exact username from Keycloak.
+      Requires an authenticated user token. Full unmasked profile is returned.
+
+      **Log Type:** `USER_ACTION`
+    x-codeSamples:
+      - lang: cURL
+        label: Search by username
+        source: |
+          curl --location 'https://${HOSTNAME}/iudx/v2/auth/user/basic/search?username=john@example.com' \
+          --header 'Authorization: Bearer <your-token>'
+    parameters:
+    - name: username
+      in: query
+      required: true
+      schema:
+        type: string
+      description: Exact Keycloak username (supports email-format usernames).
+    responses:
+      '200':
+        description: Successfully retrieved user information
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                result:
+                  type: object
+                  properties:
+                    sub:
+                      type: string
+                      format: uuid
+                    name:
+                      type: string
+                    preferredUsername:
+                      type: string
+                    email:
+                      type: string
+            examples:
+              Success:
+                value:
+                  type: urn:dx:ControlPlane:success
+                  title: Success
+                  result:
+                    sub: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                    name: Test User
+                    preferredUsername: testuser@example.com
+                    email: testuser@example.com
+      '401':
+        description: Unauthorized - Token missing or invalid
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '404':
+        description: User not found
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/NotFound
     security:
     - authorization: []
 /iudx/v2/auth/user/update:

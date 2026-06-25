@@ -43,6 +43,11 @@ public class AdminController implements ApiController {
         .handler(adminHandler::getAllUsersInfoKeycloak);
 
     routerBuilder
+        .operation("get-auth-v2-user-basic-username")
+        .handler(selfAccess)
+        .handler(adminHandler::getUserByUsername);
+
+    routerBuilder
         .operation("put-auth-v2-user")
         .handler(selfAccess)
         .handler(adminHandler::updateDxUserInfo);
