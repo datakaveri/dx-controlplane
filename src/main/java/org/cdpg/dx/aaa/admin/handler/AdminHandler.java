@@ -124,7 +124,11 @@ public class AdminHandler {
 
   private String maskEmail(String email) {
     if (email == null || !email.contains("@")) return email;
-    return email.substring(0, email.indexOf('@')) + "@xxxxxxx";
+    int atIndex = email.indexOf('@');
+    String local = email.substring(0, atIndex);
+    String domain = email.substring(atIndex);
+    String visible = local.substring(0, Math.min(2, local.length()));
+    return visible + "***" + domain;
   }
 
   public void getAllUsersInfoKeycloak(RoutingContext ctx) {
@@ -187,6 +191,29 @@ public class AdminHandler {
           (PaginationInfo) response.get("paginationInfo"),
           urnGenerator
         );
+      })
+      .onFailure(ctx::fail);
+  }
+
+  public void getUserByUsername(RoutingContext ctx) {
+    String username = ctx.queryParam("username").stream().findFirst().orElse(null);
+
+    if (username == null || username.isBlank()) {
+      ctx.fail(new org.cdpg.dx.common.exception.DxBadRequestException("Query param 'username' is required"));
+      return;
+    }
+
+    keycloakUserService.getUserByUsername(username)
+      .onSuccess(user -> {
+        JsonObject response = new JsonObject()
+          .put("sub", user.sub() != null ? user.sub().toString() : null)
+          .put("name", user.name())
+          .put("preferredUsername", user.preferredUsername())
+          .put("email", user.email());
+        AuditLog auditLog = AuditingHelper.createAuditLog(
+          ctx.user(), RoutingContextHelper.getRequestPath(ctx), "GET", "Get User By Username");
+        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+        ResponseBuilder.sendSuccess(ctx, response, urnGenerator);
       })
       .onFailure(ctx::fail);
   }

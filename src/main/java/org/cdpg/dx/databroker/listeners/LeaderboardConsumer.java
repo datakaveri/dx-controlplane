@@ -12,6 +12,8 @@ import org.cdpg.dx.aaa.leaderboard.enrichment.LeaderboardEnrichmentService;
 import org.cdpg.dx.aaa.leaderboard.model.LeaderboardEvent;
 import org.cdpg.dx.aaa.leaderboard.writer.LeaderboardWriterService;
 
+import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.LOG_TYPE;
+
 public class LeaderboardConsumer implements RabitMqConsumer {
 
   private static final Logger LOGGER = LogManager.getLogger(LeaderboardConsumer.class);
@@ -74,6 +76,12 @@ public class LeaderboardConsumer implements RabitMqConsumer {
     } catch (Exception e) {
       LOGGER.error("Invalid JSON message, dropping: {}", message.body(), e);
       ack(deliveryTag); // poison → ACK & drop
+      return;
+    }
+
+    String logType = body.getString(LOG_TYPE);
+    if (!"asset".equalsIgnoreCase(logType)) {
+      ack(deliveryTag);
       return;
     }
 

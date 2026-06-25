@@ -155,15 +155,28 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
                         true // filter by enabled/disabled
                         );
             return reps.stream()
-                .map(
-                    user -> {
-                      UserRepresentation user_with_attr =
-                          usersResource().get(user.getId()).toRepresentation();
-                      return UserInfoMapper.fromUserRepresentation(user_with_attr);
-                    })
+                .map(UserInfoMapper::fromUserRepresentation)
                 .collect(Collectors.toList());
           } catch (Exception e) {
             throw new KeycloakServiceException("Failed to retrieve users from Keycloak", e);
+          }
+        });
+  }
+
+  @Override
+  public Future<UserInfo> getUserByUsername(String username) {
+    return BlockingExecutionUtil.runBlocking(
+        () -> {
+          try {
+            List<UserRepresentation> reps = usersResource().searchByUsername(username, true);
+            if (reps.isEmpty()) {
+              throw new org.cdpg.dx.common.exception.DxNotFoundException("User not found: " + username);
+            }
+            return UserInfoMapper.fromUserRepresentation(reps.get(0));
+          } catch (org.cdpg.dx.common.exception.DxNotFoundException e) {
+            throw e;
+          } catch (Exception e) {
+            throw new KeycloakServiceException("Failed to retrieve user by username: " + username, e);
           }
         });
   }
