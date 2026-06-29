@@ -11,7 +11,6 @@ import java.util.UUID;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
 import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
 import org.cdpg.dx.acl.accessRequest.dao.model.Status;
@@ -54,9 +53,19 @@ public class AccessRequestDaoImpl extends AbstractBaseDAO<AccessRequestDto>
             .setColumn(DB_ITEM_ID)
             .setValues(List.of(itemId.toString()))
             .setOperator(Condition.Operator.EQUALS);
+    Condition conditionWithExpiry =
+        new Condition()
+            .setColumn(DB_EXPIRY_AT)
+            .setOperator(Condition.Operator.GREATER)
+            .setValues(List.of(LocalDateTime.now().toString()));
 
     condition
-        .setConditions(List.of(conditionWithStatus, conditionWithConsumer, conditionWithItemId))
+        .setConditions(
+            List.of(
+                conditionWithStatus,
+                conditionWithConsumer,
+                conditionWithItemId,
+                conditionWithExpiry))
         .setLogicalOperator(Condition.LogicalOperator.AND)
         .setGroup(true);
     SelectQuery selectQuery =
