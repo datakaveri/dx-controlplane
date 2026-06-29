@@ -351,8 +351,6 @@ public class AccessRuleDaoImpl implements AccessRuleDao {
 
     List<Condition> conditions = new ArrayList<>();
 
-    conditions.add(new Condition("R.status", Condition.Operator.EQUALS, List.of(ACTIVE)));
-
     /*
      * ORG CONDITION
      *
