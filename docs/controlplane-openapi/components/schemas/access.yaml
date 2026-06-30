@@ -56,6 +56,11 @@ AssetSummary:
       type: array
       items:
         type: string
+    dataReadiness:
+      type: number
+      format: float
+      description: Data readiness score of the asset
+      example: 90.00
     itemCreatedAt:
       type: string
       format: date-time

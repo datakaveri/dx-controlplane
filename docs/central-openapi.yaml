@@ -10382,30 +10382,43 @@ paths:
                 $ref: '#/components/schemas/Unauthorized'
       security:
         - authorization: []
-  /iudx/v2/auth/user/basic/search:
+  /iudx/v2/auth/user/basic/by-identifier:
     get:
-      summary: Get user by exact username
+      summary: Get user by exact userId or email
       tags:
         - Role APIs
       operationId: get-auth-v2-user-basic-username
       description: |
-        Returns basic profile details for a single user matched by exact username from Keycloak.
+        Returns basic profile details for a single user matched by exact `userId` or `email` from Keycloak.
+        Exactly one of `userId` or `email` must be provided. Both are exact-match lookups.
         Requires an authenticated user token. Full unmasked profile is returned.
 
         **Log Type:** `USER_ACTION`
       x-codeSamples:
         - lang: cURL
-          label: Search by username
+          label: Search by userId
           source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/auth/user/basic/search?username=john@example.com' \
+            curl --location 'https://${HOSTNAME}/iudx/v2/auth/user/basic/by-identifier?userId=john_doe' \
+            --header 'Authorization: Bearer <your-token>'
+        - lang: cURL
+          label: Search by email
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/auth/user/basic/by-identifier?email=john@example.com' \
             --header 'Authorization: Bearer <your-token>'
       parameters:
-        - name: username
+        - name: userId
           in: query
-          required: true
+          required: false
           schema:
             type: string
-          description: Exact Keycloak username (supports email-format usernames).
+          description: Exact Keycloak username (unique login identifier). Mutually exclusive with `email`.
+        - name: email
+          in: query
+          required: false
+          schema:
+            type: string
+            format: email
+          description: Exact email address. Mutually exclusive with `userId`.
       responses:
         '200':
           description: Successfully retrieved user information
@@ -10430,18 +10443,24 @@ paths:
                         type: string
                       preferredUsername:
                         type: string
+                      givenName:
+                        type: string
+                      familyName:
+                        type: string
                       email:
                         type: string
               examples:
                 Success:
                   value:
-                    type: urn:dx:ControlPlane:success
+                    type: dx:controlPlane:success
                     title: Success
                     result:
-                      sub: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                      name: Test User
-                      preferredUsername: testuser@example.com
-                      email: testuser@example.com
+                      sub: 115836eb-1313-46ae-85ca-2ea0b856a078
+                      name: Anirudh s
+                      preferredUsername: anirudhs441@gmail.com
+                      givenName: Anirudh
+                      familyName: s
+                      email: anirudhs441@gmail.com
         '401':
           description: Unauthorized - Token missing or invalid
           content:
@@ -12169,6 +12188,11 @@ components:
           type: array
           items:
             type: string
+        dataReadiness:
+          type: number
+          format: float
+          description: Data readiness score of the asset
+          example: 90
         itemCreatedAt:
           type: string
           format: date-time

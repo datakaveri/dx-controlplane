@@ -45,7 +45,7 @@ public class AdminController implements ApiController {
     routerBuilder
         .operation("get-auth-v2-user-basic-username")
         .handler(selfAccess)
-        .handler(adminHandler::getUserByUsername);
+        .handler(adminHandler::getUserByUserIdOrEmail);
 
     routerBuilder
         .operation("put-auth-v2-user")

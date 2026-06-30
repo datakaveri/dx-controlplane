@@ -18,7 +18,8 @@ public interface KeycloakUserService {
     Future<Integer> getTotalCount(String searchTerm);
     Future<List<DxUser>> getUsers(int page, int size, String name);
     Future<List<UserInfo>> getUsersInfo(int page, int size, String name);
-    Future<UserInfo> getUserByUsername(String username);
+    Future<UserInfo> getUserByUserId(String userId);
+    Future<UserInfo> getUserByEmail(String email);
     Future<DxUser> getUserById(UUID userId);
     Future<Boolean> updateUserAttributes(UUID userId, Map<String, String> attributes);
     Future<Boolean> updateUserAttributes(UUID userId, Map<String, String> attributes, String firstName, String lastName);

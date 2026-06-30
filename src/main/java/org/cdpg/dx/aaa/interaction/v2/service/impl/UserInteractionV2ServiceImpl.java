@@ -177,6 +177,7 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
                   source.getString("fileFormat"),
                   source.getString("industry"),
                   source.getJsonArray("tags"),
+                  source.getFloat("dataReadiness"),
                   source.getString("itemCreatedAt"),
                   source.getJsonObject("metrics", new JsonObject()));
             })
