@@ -164,19 +164,37 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
   }
 
   @Override
-  public Future<UserInfo> getUserByUsername(String username) {
+  public Future<UserInfo> getUserByUserId(String userId) {
     return BlockingExecutionUtil.runBlocking(
         () -> {
           try {
-            List<UserRepresentation> reps = usersResource().searchByUsername(username, true);
+            List<UserRepresentation> reps = usersResource().searchByUsername(userId, true);
             if (reps.isEmpty()) {
-              throw new org.cdpg.dx.common.exception.DxNotFoundException("User not found: " + username);
+              throw new org.cdpg.dx.common.exception.DxNotFoundException("User not found: " + userId);
             }
             return UserInfoMapper.fromUserRepresentation(reps.get(0));
           } catch (org.cdpg.dx.common.exception.DxNotFoundException e) {
             throw e;
           } catch (Exception e) {
-            throw new KeycloakServiceException("Failed to retrieve user by username: " + username, e);
+            throw new KeycloakServiceException("Failed to retrieve user by userId: " + userId, e);
+          }
+        });
+  }
+
+  @Override
+  public Future<UserInfo> getUserByEmail(String email) {
+    return BlockingExecutionUtil.runBlocking(
+        () -> {
+          try {
+            List<UserRepresentation> reps = usersResource().searchByEmail(email, true);
+            if (reps.isEmpty()) {
+              throw new org.cdpg.dx.common.exception.DxNotFoundException("User not found: " + email);
+            }
+            return UserInfoMapper.fromUserRepresentation(reps.get(0));
+          } catch (org.cdpg.dx.common.exception.DxNotFoundException e) {
+            throw e;
+          } catch (Exception e) {
+            throw new KeycloakServiceException("Failed to retrieve user by email: " + email, e);
           }
         });
   }
