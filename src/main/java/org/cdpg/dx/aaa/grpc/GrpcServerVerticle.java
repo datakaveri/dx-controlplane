@@ -85,6 +85,9 @@ public class GrpcServerVerticle extends AbstractVerticle {
         new AppIdVerificationGrpcService(
             vertx, appCredentialsService, itemService, delegationService, keycloakUserService);
 
+    CatItemGrpcService catItemGrpcService =
+        new CatItemGrpcService(vertx, itemService, keycloakUserService);
+
     // JWKS URL — prefer explicit override, fall back to derived URL.
     // VM Keycloak uses legacy /auth/ prefix; local Keycloak 26 start-dev does not.
     // Always set keycloakJwksUrl explicitly in config to avoid ambiguity.
@@ -115,9 +118,10 @@ public class GrpcServerVerticle extends AbstractVerticle {
       grpcServer =
           ServerBuilder.forPort(grpcPort)
               .addService(ServerInterceptors.intercept(grpcService, authInterceptor))
+              .addService(ServerInterceptors.intercept(catItemGrpcService, authInterceptor))
               .build()
               .start();
-      LOGGER.info("AppId gRPC server started on port {}", grpcPort);
+      LOGGER.info("AppId + CatItem gRPC server started on port {}", grpcPort);
       startPromise.complete();
     } catch (IOException e) {
       LOGGER.error("Failed to start AppId gRPC server", e);
