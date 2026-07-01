@@ -17,6 +17,6 @@ public record ItemSummary(
     String fileFormat,
     String industry,
     JsonArray tags,
-    float dataReadiness,
+    Float dataReadiness,
     String itemCreatedAt,
     JsonObject metrics) {}
