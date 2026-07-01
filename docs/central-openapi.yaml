@@ -12653,6 +12653,8 @@ components:
         autoComplete:
           type: boolean
           description: Enables autocomplete suggestions.
+        textSearchOptions:
+          $ref: '#/components/schemas/TextSearchOptions'
         filter:
           type: array
           items:
@@ -12698,6 +12700,8 @@ components:
         autoComplete:
           type: boolean
           description: Enables autocomplete suggestions.
+        textSearchOptions:
+          $ref: '#/components/schemas/TextSearchOptions'
       required:
         - q
     ComplexSearchRequest:
@@ -12713,6 +12717,8 @@ components:
         autoComplete:
           type: boolean
           description: Enables autocomplete suggestions.
+        textSearchOptions:
+          $ref: '#/components/schemas/TextSearchOptions'
         searchCriteria:
           type: array
           items:
@@ -19893,6 +19899,29 @@ components:
           type: string
         instance:
           type: string
+    TextSearchField:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Field name to be included in text search.
+          example: name
+        boost:
+          type: number
+          description: Optional boost factor to prioritize this field.
+          example: 3
+    TextSearchOptions:
+      type: object
+      additionalProperties: false
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/TextSearchField'
+          description: List of fields with optional boost values.
     OrgCreateRequestItem:
       type: object
       properties:
