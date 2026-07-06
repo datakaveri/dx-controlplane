@@ -5,7 +5,8 @@ import org.cdpg.dx.aaa.leaderboard.model.LeaderboardEvent;
 
 public interface LeaderboardDaoV2 {
 
-  Future<Void> upsertAssetOnCreate(LeaderboardEvent event);
+  /** Upserts the asset row; resolves to {@code true} only when the asset was newly inserted. */
+  Future<Boolean> upsertAssetOnCreate(LeaderboardEvent event);
 
   Future<Void> incrementAssetView(LeaderboardEvent event);
 
@@ -13,7 +14,8 @@ public interface LeaderboardDaoV2 {
 
   Future<Void> incrementAssetLike(LeaderboardEvent event);
 
-  Future<Void> upsertProviderOnCreate(LeaderboardEvent event);
+  /** Upserts the provider row; bumps published counters only when {@code newAsset} is true. */
+  Future<Void> upsertProviderOnCreate(LeaderboardEvent event, boolean newAsset);
 
   Future<Void> incrementProviderView(LeaderboardEvent event);
 
@@ -21,7 +23,8 @@ public interface LeaderboardDaoV2 {
 
   Future<Void> incrementProviderLike(LeaderboardEvent event);
 
-  Future<Void> upsertOrganizationOnCreate(LeaderboardEvent event);
+  /** Upserts the organization row; bumps published counters only when {@code newAsset} is true. */
+  Future<Void> upsertOrganizationOnCreate(LeaderboardEvent event, boolean newAsset);
 
   Future<Void> incrementOrganizationView(LeaderboardEvent event);
 
