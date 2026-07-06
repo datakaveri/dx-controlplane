@@ -6,7 +6,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import org.cdpg.dx.aaa.item.service.ItemService;
-import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.leaderboard.model.LeaderboardEvent;
 import org.cdpg.dx.auditing.v2.util.AssetTypeUtil;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
@@ -33,11 +32,23 @@ public class LeaderboardEnrichmentService {
       return Future.succeededFuture(event);
     }
 
-    GetItemRequest request = new GetItemRequest(event.assetId().toString(), null);
-
+    // Real-time GET by document id: audit events are published the moment the API responds,
+    // often before the write is searchable (index refresh ~1s). A search-based lookup here
+    // races with that refresh and can return the pre-update item, wrongly disqualifying the
+    // event. GET-by-id always sees the latest acknowledged write, whichever endpoint made it.
     return itemService
-        .getItem(request)
-        .map(resp -> applyItem(event, resp.getResponse()))
+        .getItemSource(event.assetId().toString())
+        .map(
+            source -> {
+              if (source == null || source.isEmpty()) {
+                LOGGER.warn(
+                    "Item not found during leaderboard enrichment [assetId={}], skipping"
+                        + " eligibility",
+                    event.assetId());
+                return event;
+              }
+              return applyItem(event, source);
+            })
         .recover(
             err -> {
               LOGGER.warn(
@@ -55,9 +66,7 @@ public class LeaderboardEnrichmentService {
                     e.publishStatus()));
   }
 
-  private LeaderboardEvent applyItem(LeaderboardEvent event, JsonObject response) {
-
-    JsonObject item = response.getJsonArray("results").getJsonObject(0);
+  private LeaderboardEvent applyItem(LeaderboardEvent event, JsonObject item) {
 
     // Always take the real state from the catalogue item — eligibility (dataUploadStatus &&
     // publishStatus ACTIVE) may only be reached later via PATCH, so CREATE alone must not
