@@ -23,19 +23,26 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
   // ------------------------------------------------
   // ASSET
   // ------------------------------------------------
-  public Future<Void> upsertAssetOnCreate(LeaderboardEvent e) {
+
+  /**
+   * Upserts the asset row and reports whether it was newly inserted, so callers can bump
+   * provider/organization published counters exactly once per asset (UPDATE events must not
+   * re-count). Organization fields are nullable — platform providers publish without an org.
+   */
+  public Future<Boolean> upsertAssetOnCreate(LeaderboardEvent e) {
 
     String sql =
         """
             INSERT INTO asset_leaderboard (
-              asset_id, asset_name, asset_type,access_policy, provider_id, provider_name,
-              organization_id,organization_name,organization_type,data_upload_status,publish_status
+              asset_id, asset_name, asset_type, access_policy, provider_id, provider_name,
+              organization_id, organization_name, organization_type, data_upload_status, publish_status
             )
-           VALUES($1, $2, $3, $4, $5,
-            (SELECT ou.user_name
-              FROM aaa.organization_users ou
-              WHERE ou.user_id = $5),
-              $6, $7, $8,$9,$10
+            VALUES ($1, $2, $3, $4, $5,
+              COALESCE($6, (SELECT ou.user_name
+                            FROM aaa.organization_users ou
+                            WHERE ou.user_id = $5
+                            LIMIT 1)),
+              $7, $8, $9, $10, $11
             )
             ON CONFLICT (asset_id)
             DO UPDATE SET
@@ -43,12 +50,13 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
               asset_type        = EXCLUDED.asset_type,
               access_policy     = EXCLUDED.access_policy,
               provider_id       = EXCLUDED.provider_id,
-              provider_name     = EXCLUDED.provider_name,
-              organization_id   = EXCLUDED.organization_id,
-              organization_name = EXCLUDED.organization_name,
-              organization_type = EXCLUDED.organization_type,
+              provider_name     = COALESCE(EXCLUDED.provider_name, asset_leaderboard.provider_name),
+              organization_id   = COALESCE(EXCLUDED.organization_id, asset_leaderboard.organization_id),
+              organization_name = COALESCE(EXCLUDED.organization_name, asset_leaderboard.organization_name),
+              organization_type = COALESCE(EXCLUDED.organization_type, asset_leaderboard.organization_type),
               data_upload_status = EXCLUDED.data_upload_status,
               publish_status = EXCLUDED.publish_status
+            RETURNING (xmax = 0) AS inserted
           """;
     LOGGER.debug("Upserting asset leaderboard : {}", e.toString());
     JsonArray params =
@@ -58,13 +66,20 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
             .add(e.assetType())
             .add(e.accessPolicy())
             .add(e.providerId().toString()) // $5 used twice
-            .add(e.organizationId().toString())
+            .add(e.providerName())
+            .add(toStringOrNull(e.organizationId()))
             .add(e.organizationName())
             .add(e.organizationType())
             .add(e.dataUploadStatus())
             .add(e.publishStatus());
     LOGGER.debug("Executing SQL: {}, with params: {}", sql, params.encode());
-    return postgresService.executeQuery(sql, params).mapEmpty();
+    return postgresService
+        .executeQuery(sql, params)
+        .map(
+            result ->
+                !result.getRows().isEmpty()
+                    && Boolean.TRUE.equals(
+                        result.getRows().getJsonObject(0).getBoolean("inserted")));
   }
 
   @Override
@@ -87,7 +102,7 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
   // PROVIDER
   // ------------------------------------------------
   @Override
-  public Future<Void> upsertProviderOnCreate(LeaderboardEvent e) {
+  public Future<Void> upsertProviderOnCreate(LeaderboardEvent e, boolean newAsset) {
 
     String sql =
         """
@@ -108,41 +123,46 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
             )
             VALUES (
               $1,
-              (SELECT ou.user_name
-               FROM aaa.organization_users ou
-               WHERE ou.user_id = $1),
-              $2, $3, $4,
-              $5, $6, $7,
-              1,
+              COALESCE($2, (SELECT ou.user_name
+                            FROM aaa.organization_users ou
+                            WHERE ou.user_id = $1
+                            LIMIT 1)),
+              $3, $4, $5,
+              $6, $7, $8,
+              $9,
               0, 0, 0,
               now()
             )
             ON CONFLICT (provider_id)
             DO UPDATE SET
-              provider_name        = EXCLUDED.provider_name,
-              organization_id      = EXCLUDED.organization_id,
-              organization_name    = EXCLUDED.organization_name,
-              organization_type    = EXCLUDED.organization_type,
+              provider_name        = COALESCE(EXCLUDED.provider_name, provider_leaderboard.provider_name),
+              organization_id      = COALESCE(EXCLUDED.organization_id, provider_leaderboard.organization_id),
+              organization_name    = COALESCE(EXCLUDED.organization_name, provider_leaderboard.organization_name),
+              organization_type    = COALESCE(EXCLUDED.organization_type, provider_leaderboard.organization_type),
               published_databank   = provider_leaderboard.published_databank + EXCLUDED.published_databank,
               published_ai_models  = provider_leaderboard.published_ai_models + EXCLUDED.published_ai_models,
               published_usecases   = provider_leaderboard.published_usecases + EXCLUDED.published_usecases,
-              total_published      = provider_leaderboard.total_published + 1,
+              total_published      = provider_leaderboard.total_published + EXCLUDED.total_published,
               updated_at           = now();
             """;
 
-    int db = e.assetType().equals("DATABANK") ? 1 : 0;
-    int ai = e.assetType().equals("AI_MODEL") ? 1 : 0;
-    int uc = e.assetType().equals("USECASE") ? 1 : 0;
+    // UPDATE events on an existing asset must still refresh names but not re-count publishes
+    int db = newAsset && e.assetType().equals("DATABANK") ? 1 : 0;
+    int ai = newAsset && e.assetType().equals("AI_MODEL") ? 1 : 0;
+    int uc = newAsset && e.assetType().equals("USECASE") ? 1 : 0;
+    int total = newAsset ? 1 : 0;
 
     JsonArray params =
         new JsonArray()
             .add(e.providerId().toString()) // UUID is OK directly
-            .add(e.organizationId().toString())
+            .add(e.providerName())
+            .add(toStringOrNull(e.organizationId()))
             .add(e.organizationName())
             .add(e.organizationType())
             .add(db)
             .add(ai)
-            .add(uc);
+            .add(uc)
+            .add(total);
 
     LOGGER.debug("Upserting provider leaderboard : {}", e);
     LOGGER.debug("Executing SQL with params: {}", params.encode());
@@ -171,7 +191,14 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
   // ------------------------------------------------
 
   @Override
-  public Future<Void> upsertOrganizationOnCreate(LeaderboardEvent e) {
+  public Future<Void> upsertOrganizationOnCreate(LeaderboardEvent e, boolean newAsset) {
+
+    // Platform providers publish directly on the exchange without an organisation
+    if (e.organizationId() == null) {
+      LOGGER.debug(
+          "No organization on event [assetId={}], skipping organization leaderboard", e.assetId());
+      return Future.succeededFuture();
+    }
 
     String sql =
         """
@@ -191,24 +218,26 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
             VALUES (
               $1, $2, $3,
               $4, $5, $6,
-              1,
+              $7,
               0, 0, 0,
               now()
             )
             ON CONFLICT (organization_id)
             DO UPDATE SET
-              organization_name    = EXCLUDED.organization_name,
-              organization_type    = EXCLUDED.organization_type,
+              organization_name    = COALESCE(EXCLUDED.organization_name, organization_leaderboard.organization_name),
+              organization_type    = COALESCE(EXCLUDED.organization_type, organization_leaderboard.organization_type),
               published_databank   = organization_leaderboard.published_databank + EXCLUDED.published_databank,
               published_ai_models  = organization_leaderboard.published_ai_models + EXCLUDED.published_ai_models,
               published_usecases   = organization_leaderboard.published_usecases + EXCLUDED.published_usecases,
-              total_published      = organization_leaderboard.total_published + 1,
+              total_published      = organization_leaderboard.total_published + EXCLUDED.total_published,
               updated_at           = now();
             """;
 
-    int db = e.assetType().equals("DATABANK") ? 1 : 0;
-    int ai = e.assetType().equals("AI_MODEL") ? 1 : 0;
-    int uc = e.assetType().equals("USECASE") ? 1 : 0;
+    // UPDATE events on an existing asset must still refresh names but not re-count publishes
+    int db = newAsset && e.assetType().equals("DATABANK") ? 1 : 0;
+    int ai = newAsset && e.assetType().equals("AI_MODEL") ? 1 : 0;
+    int uc = newAsset && e.assetType().equals("USECASE") ? 1 : 0;
+    int total = newAsset ? 1 : 0;
 
     JsonArray params =
         new JsonArray()
@@ -217,7 +246,8 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
             .add(e.organizationType())
             .add(db)
             .add(ai)
-            .add(uc);
+            .add(uc)
+            .add(total);
 
     LOGGER.debug("Upserting organization leaderboard : {}", e);
     LOGGER.debug("Executing SQL with params: {}", params.encode());
@@ -272,11 +302,19 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
         .mapEmpty();
   }
 
+  private static String toStringOrNull(UUID id) {
+    return id != null ? id.toString() : null;
+  }
+
   // ------------------------------------------------
   // COMMON COUNTER (UPDATE ONLY)
   // ------------------------------------------------
 
   private Future<Void> incrementCounter(String table, String column, String idColumn, UUID id) {
+    if (id == null) {
+      LOGGER.debug("No {} on event, skipping {} increment on {}", idColumn, column, table);
+      return Future.succeededFuture();
+    }
     LOGGER.info("Incrementing {} in {} for id={}", column, table, id);
 
     String sql =
@@ -295,6 +333,10 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
   }
 
   private Future<Void> decrementCounter(String table, String column, String idColumn, UUID id) {
+    if (id == null) {
+      LOGGER.debug("No {} on event, skipping {} decrement on {}", idColumn, column, table);
+      return Future.succeededFuture();
+    }
     LOGGER.info("Decrementing {} in {} for id={}", column, table, id);
 
     String sql =
@@ -373,12 +415,19 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
 
               JsonArray counterParams = new JsonArray().add(db).add(ai).add(uc);
 
-              return postgresService
-                  .executeQuery(providerUpdateSql, counterParams.copy().add(providerId))
+              Future<?> providerAdjust =
+                  providerId == null
+                      ? Future.succeededFuture()
+                      : postgresService.executeQuery(
+                          providerUpdateSql, counterParams.copy().add(providerId));
+
+              return providerAdjust
                   .compose(
                       v ->
-                          postgresService.executeQuery(
-                              orgUpdateSql, counterParams.copy().add(organizationId)))
+                          organizationId == null
+                              ? Future.succeededFuture()
+                              : postgresService.executeQuery(
+                                  orgUpdateSql, counterParams.copy().add(organizationId)))
                   .compose(
                       v ->
                           postgresService.executeQuery(

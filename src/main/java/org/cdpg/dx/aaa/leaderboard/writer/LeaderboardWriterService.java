@@ -33,8 +33,10 @@ public class LeaderboardWriterService {
     return switch (e.action().toUpperCase()) {
       case "CREATE", "UPDATE" ->
           dao.upsertAssetOnCreate(e)
-              .compose(v -> dao.upsertProviderOnCreate(e))
-              .compose(v -> dao.upsertOrganizationOnCreate(e));
+              .compose(
+                  newAsset ->
+                      dao.upsertProviderOnCreate(e, newAsset)
+                          .compose(v -> dao.upsertOrganizationOnCreate(e, newAsset)));
 
       case "VIEW" ->
           dao.incrementAssetView(e)
@@ -62,9 +64,11 @@ public class LeaderboardWriterService {
   }
 
   private boolean isEligible(LeaderboardEvent e) {
-    if (e.action() != null && e.action().equalsIgnoreCase("DELETE")) {
-      // For deletes, we want to process regardless of publish or data upload status to ensure
-      // leaderboards are accurate
+    String action = e.action() == null ? "" : e.action().toUpperCase();
+    // Only entry into the leaderboard (CREATE/UPDATE) needs the status check. Engagement
+    // events (VIEW/DOWNLOAD/LIKE/...) imply the asset is already visible on the platform,
+    // and DELETE must always run to keep leaderboards accurate.
+    if (!action.equals("CREATE") && !action.equals("UPDATE")) {
       return true;
     }
     if (e.assetType() != null && e.assetType().equalsIgnoreCase("USECASE")) {

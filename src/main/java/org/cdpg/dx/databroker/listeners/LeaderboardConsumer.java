@@ -73,6 +73,7 @@ public class LeaderboardConsumer implements RabitMqConsumer {
 
     try {
       body = message.body().toJsonObject();
+      LOGGER.debug("Received Message: {}", body);
     } catch (Exception e) {
       LOGGER.error("Invalid JSON message, dropping: {}", message.body(), e);
       ack(deliveryTag); // poison → ACK & drop

@@ -10,7 +10,8 @@ public record LeaderboardEvent(
     String action, // CREATE, UPDATE, VIEW, DOWNLOAD, LIKE, DELETE
     String assetType,
     UUID providerId,
-    UUID organizationId,
+    String providerName, // resolved from Keycloak during enrichment; null in raw events
+    UUID organizationId, // nullable — platform providers have no organisation
     String assetName,
     String accessPolicy,
     String organizationName,
@@ -37,13 +38,17 @@ public record LeaderboardEvent(
         json.getString(ACTION),
         json.getString(ASSET_TYPE),
         providerId,
+        null,
         organizationId,
         json.getString(ASSET_NAME),
         json.getString(ASSET_ACCESS_POLICY),
         json.getString(ASSET_ORG_NAME),
         json.getString(ASSET_ORG_TYPE),
-        context.getBoolean("dataUploadStatus", true),
-        context.getString("publishStatus", "ACTIVE"),
+        // Fail closed: a CREATE/UPDATE may only enter the leaderboard once enrichment proves
+        // dataUploadStatus=true && publishStatus=ACTIVE from the catalogue item. If the item
+        // lookup fails, these raw defaults keep the event ineligible instead of blindly passing.
+        context.getBoolean("dataUploadStatus", false),
+        context.getString("publishStatus", "PENDING"),
         json.getString(CREATED_AT));
   }
 }

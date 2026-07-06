@@ -75,7 +75,7 @@ public class DataBrokerVerticle extends BaseDataBrokerVerticle {
     LeaderboardConsumer leaderboardConsumer =
         new LeaderboardConsumer(
             internalClient,
-            new LeaderboardEnrichmentService(itemService),
+            new LeaderboardEnrichmentService(itemService, keycloakUserService),
             new LeaderboardWriterService(leaderboardDaoV2),
             config().getString("leaderboardQueue", "leaderboard"));
     leaderboardConsumer.start();
