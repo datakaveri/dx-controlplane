@@ -64,6 +64,8 @@ paths:
     $ref: paths/policy.yaml#/~1iudx~1acl~1apd~1v2~1policy~1provider
   /iudx/acl/apd/v2/verify:
     $ref: paths/verify.yaml#/~1iudx~1acl~1apd~1v2~1verify
+  /iudx/acl/apd/v2/policy/has_active_policies:
+    $ref: paths/has-active-policies.yaml#/~1iudx~1acl~1apd~1v2~1policy~1has_active_policies
 components:
   securitySchemes:
     $ref: components/security-schemes.yaml
