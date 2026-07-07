@@ -24,7 +24,6 @@ public class LeaderboardWriterService {
         e.organizationId(),
         e.publishStatus(),
         e.dataUploadStatus());
-    LOGGER.info("is eligible: {}", isEligible(e));
     if (!isEligible(e)) {
       LOGGER.info("Event is not eligible for processing, skipping leaderboard updates");
       return Future.succeededFuture();
@@ -71,11 +70,19 @@ public class LeaderboardWriterService {
     if (!action.equals("CREATE") && !action.equals("UPDATE")) {
       return true;
     }
+    if (!"ACTIVE".equalsIgnoreCase(e.publishStatus())) {
+      LOGGER.info(
+          "Event not eligible: publishStatus is '{}' (expected ACTIVE)", e.publishStatus());
+      return false;
+    }
     if (e.assetType() != null && e.assetType().equalsIgnoreCase("USECASE")) {
       // For use cases, we only check publish status as data upload is not relevant
-      return "ACTIVE".equalsIgnoreCase(e.publishStatus());
+      return true;
     }
-
-    return e.dataUploadStatus() && "ACTIVE".equalsIgnoreCase(e.publishStatus());
+    if (!e.dataUploadStatus()) {
+      LOGGER.info("Event not eligible: dataUploadStatus is false (data not uploaded yet)");
+      return false;
+    }
+    return true;
   }
 }
