@@ -130,7 +130,8 @@ public class UserInteractionV2Controller implements ApiController {
 
                 if (auditAction != null) {
                   UserActivityAuditLogBuilder auditLog =
-                      InteractionAuditLogHelper.buildItemAudit(ctx, delta.entityId(), auditAction);
+                      InteractionAuditLogHelper.buildItemAudit(
+                          ctx, delta.entityId(), auditAction, delta);
                   CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
                 }
 

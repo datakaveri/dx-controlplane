@@ -60,7 +60,7 @@ public class LeaderboardEnrichmentService {
         .compose(this::resolveProviderName)
         .onSuccess(
             e ->
-                LOGGER.info(
+                LOGGER.debug(
                     "Leaderboard enrichment success [assetId={}, publishStatus={}]",
                     e.assetId(),
                     e.publishStatus()));
@@ -87,7 +87,8 @@ public class LeaderboardEnrichmentService {
         item.getString("organizationType"),
         dataUploadStatus,
         publishStatus,
-        event.createdAt());
+        event.createdAt(),
+        event.wasLiked());
   }
 
   /**
@@ -137,7 +138,8 @@ public class LeaderboardEnrichmentService {
         event.organizationType(),
         event.dataUploadStatus(),
         event.publishStatus(),
-        event.createdAt());
+        event.createdAt(),
+        event.wasLiked());
   }
 
   private UUID safeUuid(String v) {
