@@ -1,0 +1,88 @@
+/iudx/acl/apd/v2/policy/has_active_policies:
+  post:
+    tags:
+      - Policies
+    operationId: verify-active-policies-for-an-asset
+    summary: Verify Active Policies for an Asset
+    description: |
+      Checks whether an asset currently has any ACTIVE policies.
+
+      The API returns a boolean indicating whether at least one ACTIVE,
+      non-expired policy exists for the supplied asset.
+
+      This API is primarily intended to allow clients to determine whether
+      an asset can safely undergo operations such as deletion or ownership
+      transfer without violating existing access policies.
+
+    security:
+      - authorization: [ ]
+    parameters:
+      - name: Authorization
+        in: header
+        description: DX Auth issued identity token
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          pattern: Bearer [a-zA-Z0-9_*\-*\.\/]+$|^[a-zA-Z0-9_*\-*\.\/]+$
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - assetId
+            properties:
+              assetId:
+                type: string
+                format: uuid
+                description: UUID of the asset.
+                example: 7f1f6f2d-6b6e-45c0-98a8-cdc8d3db0aa1
+    responses:
+      '200':
+        description: Successfully verified whether the asset has active policies.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:aclApd:success
+                title:
+                  type: string
+                  example: Success
+                results:
+                  type: object
+                  properties:
+                    hasActivePolicies:
+                      type: boolean
+                      description: Indicates whether the asset has one or more ACTIVE, non-expired policies.
+                      example: true
+      '400':
+        description: Invalid request body or malformed assetId.
+        content:
+          application/json:
+            example:
+              type: urn:dx:acl:badRequest
+              title: Bad Request
+              detail: Bad Request
+
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/Unauthorized
+
+    x-codeSamples:
+      - lang: cURL
+        label: Verify Active Policies
+        source: |
+          curl --location 'https://${HOSTNAME}/iudx/acl/apd/v2/policy/has_active_policies' \
+          --header 'Authorization: Bearer <tokenValue>' \
+          --header 'Content-Type: application/json' \
+          --data '{
+            "assetId": "7f1f6f2d-6b6e-45c0-98a8-cdc8d3db0aa1"
+          }'
