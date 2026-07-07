@@ -28,6 +28,8 @@ import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.util.Map;
 import java.util.Set;
@@ -51,7 +53,6 @@ import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.auth.model.Scopes;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.email.SendEmail;
-import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxValidationException;
 import org.cdpg.dx.common.model.DxUser;
@@ -78,6 +79,7 @@ public class AccessRequestController implements ApiController {
   private final URNGenerator urnGenerator;
   private final String emailExchange;
   private final String emailRoutingKey;
+
   public AccessRequestController(
       AccessRequestService accessRequestService,
       AuditingHandler auditingHandler,
@@ -104,11 +106,13 @@ public class AccessRequestController implements ApiController {
     }
 
     try {
-      LocalDateTime parsedTime = LocalDateTime.parse(timeString);
+      OffsetDateTime parsedTime = OffsetDateTime.parse(timeString);
       LOGGER.info(
-          "Parsed time: {}, isFuture: {}", parsedTime, parsedTime.isAfter(LocalDateTime.now()));
-      if (parsedTime.isAfter(LocalDateTime.now())) {
-        return parsedTime;
+          "Parsed time: {}, isFuture: {}", parsedTime, parsedTime.isAfter(OffsetDateTime.now()));
+      if (parsedTime.isAfter(OffsetDateTime.now())) {
+        return parsedTime.toInstant()
+            .atZone(ZoneOffset.UTC)
+            .toLocalDateTime();
       } else {
         throw new DxValidationException("expiryAt must be a future time");
       }
@@ -122,12 +126,14 @@ public class AccessRequestController implements ApiController {
     Handler<RoutingContext> selfAccess = AuthorizationHandler.forScopes(Scopes.DATA_ACCESS);
     Handler<RoutingContext> orgAdminAccess =
         AuthorizationHandler.forScopes(Scopes.ORG_ASSET_MANAGEMENT);
-    Handler<RoutingContext> cosAdminAccess = AuthorizationHandler.forScopes(Scopes.ASSET_MANAGEMENT);
+    Handler<RoutingContext> cosAdminAccess =
+        AuthorizationHandler.forScopes(Scopes.ASSET_MANAGEMENT);
     Handler<RoutingContext> providerAdminAccess =
         AuthorizationHandler.forScopesWithContext(
             ScopeRule.self(Scopes.OWN_ASSET_MANAGEMENT),
             ScopeRule.org(Scopes.ORG_ASSET_MANAGEMENT));
-    UserAccessHandler userAccessHandler = new UserAccessHandler(postgresService, keycloakUserService);
+    UserAccessHandler userAccessHandler =
+        new UserAccessHandler(postgresService, keycloakUserService);
 
     builder
         .operation(CREATE_ACCESS_REQUEST_API)
@@ -437,12 +443,13 @@ public class AccessRequestController implements ApiController {
             })
         .onSuccess(
             provider -> {
-LOGGER.debug("provider : {}", provider);
+              LOGGER.debug("provider : {}", provider);
               UUID providerOrganizationId =
                   provider.organisationId() != null && !provider.organisationId().isBlank()
                       ? UUID.fromString(provider.organisationId())
                       : null;
-              LOGGER.debug("Updating provider organization id from Keycloak: {}", providerOrganizationId);
+              LOGGER.debug(
+                  "Updating provider organization id from Keycloak: {}", providerOrganizationId);
               boolean isUserOrgAdmin = provider.roles().contains(DxRole.ORG_ADMIN.value());
               if (status == Status.GRANTED) {
                 LocalDateTime expiryAt = parseAndValidateFutureTime(body.getString("expiryAt"));
@@ -465,7 +472,10 @@ LOGGER.debug("provider : {}", provider);
                           ResponseBuilder.sendSuccess(
                               ctx, "Request updated successfully", urnGenerator);
 
-                          String expiryAtStr = (accessRequestDto.getExpiryAt()!=null)?accessRequestDto.getExpiryAt().toString():"";
+                          String expiryAtStr =
+                              (accessRequestDto.getExpiryAt() != null)
+                                  ? accessRequestDto.getExpiryAt().toString()
+                                  : "";
 
                           JsonObject jsonObject =
                               new SendEmail(
@@ -511,8 +521,10 @@ LOGGER.debug("provider : {}", provider);
                           ResponseBuilder.sendSuccess(
                               ctx, "Request updated successfully", urnGenerator);
 
-                          String expiryAtStr = (accessRequestDto.getExpiryAt()!=null)?accessRequestDto.getExpiryAt().toString():"";
-
+                          String expiryAtStr =
+                              (accessRequestDto.getExpiryAt() != null)
+                                  ? accessRequestDto.getExpiryAt().toString()
+                                  : "";
 
                           JsonObject jsonObject =
                               new SendEmail(
@@ -523,7 +535,7 @@ LOGGER.debug("provider : {}", provider);
                                       accessRequestDto.getAssetType(),
                                       accessRequestDto.getItemId(),
                                       accessRequestDto.getShortDescription(),
-                                       expiryAtStr,
+                                      expiryAtStr,
                                       false,
                                       status.getStatus(),
                                       accessRequestDto.getAssetName(),
@@ -559,7 +571,8 @@ LOGGER.debug("provider : {}", provider);
       return;
     }
 
-    String authenticatedSub = dxUser.delegateeId() != null ? dxUser.delegateeId() : dxUser.sub().toString();
+    String authenticatedSub =
+        dxUser.delegateeId() != null ? dxUser.delegateeId() : dxUser.sub().toString();
     UUID consumerId = UUID.fromString(authenticatedSub);
 
     accessRequestService
@@ -573,8 +586,10 @@ LOGGER.debug("provider : {}", provider);
               // RoutingContextHelper.setAuditingLog(ctx, auditLog);
               ResponseBuilder.sendSuccess(ctx, "Request inserted successfully!", urnGenerator);
 
-              String expiryAtStr = (accessRequestDto.getExpiryAt()!=null)?accessRequestDto.getExpiryAt().toString():"";
-
+              String expiryAtStr =
+                  (accessRequestDto.getExpiryAt() != null)
+                      ? accessRequestDto.getExpiryAt().toString()
+                      : "";
 
               JsonObject jsonObject =
                   new SendEmail(
@@ -589,27 +604,26 @@ LOGGER.debug("provider : {}", provider);
                           true,
                           null,
                           accessRequestDto.getAssetName(),
-                      PROVIDER_CREATE)
+                          PROVIDER_CREATE)
                       .toJson();
               Future<Void> providerFuture =
                   dataBrokerService.publishMessageInternal(
                       jsonObject, emailExchange, emailRoutingKey);
 
-
               JsonObject consumerObject =
                   new SendEmail(
-                      accessRequestDto.getConsumerId(),
-                      "PATH",
-                      "templates/AssetRequestConsumerAckEmailTemplate.html",
-                      accessRequestDto.getProviderId(),
-                      accessRequestDto.getAssetType(),
-                      accessRequestDto.getItemId(),
-                      accessRequestDto.getShortDescription(),
-                      expiryAtStr,
-                      true,
-                      null,
-                      accessRequestDto.getAssetName(),
-                      CONSUMER_ACK)
+                          accessRequestDto.getConsumerId(),
+                          "PATH",
+                          "templates/AssetRequestConsumerAckEmailTemplate.html",
+                          accessRequestDto.getProviderId(),
+                          accessRequestDto.getAssetType(),
+                          accessRequestDto.getItemId(),
+                          accessRequestDto.getShortDescription(),
+                          expiryAtStr,
+                          true,
+                          null,
+                          accessRequestDto.getAssetName(),
+                          CONSUMER_ACK)
                       .toJson();
               Future<Void> consumerFuture =
                   dataBrokerService.publishMessageInternal(
