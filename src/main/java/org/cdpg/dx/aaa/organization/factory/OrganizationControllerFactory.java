@@ -44,6 +44,7 @@ public class OrganizationControllerFactory {
       WebClient webClient,
       Boolean kycRequired,
       String docIndex,
+      String deletedDocsIdex,
       String apdURL) {
 
     OrganizationDAOFactory organizationDAOFactory = new OrganizationDAOFactory(pgService);
@@ -52,7 +53,8 @@ public class OrganizationControllerFactory {
 
     ItemService itemService =
         new ItemServiceImpl(
-            esService, keycloakUserService, pgService, policyDao, webClient, docIndex, apdURL);
+            esService, keycloakUserService, pgService, policyDao, webClient, docIndex,
+            deletedDocsIdex, apdURL);
 
     OrganizationService organizationService =
         new OrganizationServiceImpl(organizationDAOFactory, keycloakUserService, itemService);

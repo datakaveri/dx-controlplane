@@ -814,25 +814,37 @@ public class ItemController implements ApiController {
               JsonObject itemJson = getRes.getElasticsearchResponses().getFirst();
               Item itemSnapshot = ItemFactory.parse(itemJson);
 
-              executeWithCentralCatalogue(
-                  isCentralCatEnabled,
+              itemService
+                  .backupDeletedItem(itemSnapshot)
+                  .onFailure(
+                      err -> {
+                        LOGGER.error("Failed to backup item before deletion", err);
+                        ctx.fail(err);
+                      })
+                  .onSuccess(
+                      v ->
+                          executeWithCentralCatalogue(
+                              isCentralCatEnabled,
 
-                  // Central delete
-                  () -> centralItemService.deleteItem(id, itemSnapshot.getName()),
+                              // Central delete
+                              () -> centralItemService.deleteItem(id, itemSnapshot.getName()),
 
-                  // Local delete
-                  () -> itemService.deleteItem(id, itemSnapshot.getName()),
+                              // Local delete
+                              () -> itemService.deleteItem(id, itemSnapshot.getName()),
 
-                  // Central rollback → re-create item
-                  () -> centralItemService.createItem(itemSnapshot),
-                  ctx,
-                  res -> {
-                    UserActivityAuditLogBuilder auditLogBuilder =
-                        ItemAuditLogHelper.buildItemAudit(ctx, itemJson, ItemAuditOperation.DELETE);
-                    CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
-                    ResponseBuilder.sendSuccess(
-                        ctx, "Success: Item deleted successfully", this.urnGenerator);
-                  });
+                              // Central rollback
+                              () -> centralItemService.createItem(itemSnapshot),
+                              ctx,
+                              res -> {
+                                UserActivityAuditLogBuilder auditLogBuilder =
+                                    ItemAuditLogHelper.buildItemAudit(
+                                        ctx, itemJson, ItemAuditOperation.DELETE);
+
+                                CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+
+                                ResponseBuilder.sendSuccess(
+                                    ctx, "Success: Item deleted successfully", this.urnGenerator);
+                              }));
             });
   }
 

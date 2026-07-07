@@ -1,5 +1,6 @@
 package org.cdpg.dx.databroker;
 
+import static org.cdpg.dx.aaa.common.Constants.DELETED_DOCS_INDEX;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.*;
 
 import io.vertx.rabbitmq.RabbitMQClient;
@@ -44,8 +45,9 @@ public class DataBrokerVerticle extends BaseDataBrokerVerticle {
 
     // Item service for enrichment
     String docIndex = config().getString("docIndex");
+    String deletedDocsIndex = config().getString(DELETED_DOCS_INDEX);
     ItemService itemService =
-        new ItemServiceImpl(esService, null, null, null, null, docIndex, null);
+        new ItemServiceImpl(esService, null, null, null, null, docIndex, deletedDocsIndex, null);
 
     // Audit consumer
     AssetEnrichmentService assetEnrichmentService = new AssetEnrichmentService(itemService);

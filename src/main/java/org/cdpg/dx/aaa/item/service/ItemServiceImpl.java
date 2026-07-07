@@ -30,6 +30,8 @@ import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -66,6 +68,7 @@ import org.cdpg.dx.keycloak.service.KeycloakUserService;
 public class ItemServiceImpl implements ItemService {
   private static final Logger LOGGER = LogManager.getLogger(ItemServiceImpl.class);
   private final String docIndex;
+  public final String deletedDocsIndex;
   private final PolicyVerifyService policyVerifyService;
   private final AccessRuleDao accessRuleDao;
   private final KeycloakUserService keycloakUserService;
@@ -79,10 +82,11 @@ public class ItemServiceImpl implements ItemService {
       PostgresService postgresService,
       PolicyDao policyDao,
       WebClient webClient,
-      String docIndex,
+      String docIndex, String deletedDocsIndex,
       String apdURL) {
     this.accessRuleDao = new AccessRuleDaoImpl(postgresService);
     this.elasticsearchService = elasticsearchService;
+    this.deletedDocsIndex = deletedDocsIndex;
     PolicyService policyService = new PolicyServiceImpl(this, keycloakUserService, policyDao,
         accessRuleDao, apdURL);
     this.policyVerifyService = new PolicyVerifyServiceImpl(policyService, webClient, apdURL);
@@ -1026,5 +1030,27 @@ public class ItemServiceImpl implements ItemService {
                   "Error while checking item name existence '{}': {}", name, err.getMessage());
               return Future.failedFuture("Failed to check item name existence");
             });
+  }
+
+  /** Generates timestamp with timezone +05:30. */
+  public static String getUtcDatetimeAsString() {
+    DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+    df.setTimeZone(TimeZone.getTimeZone("IST"));
+    return df.format(new Date());
+  }
+
+  @Override
+  public Future<Void> backupDeletedItem(Item item) {
+
+    JsonObject backupDoc = JsonObject.mapFrom(item);
+
+    backupDoc.put("deletedAt", getUtcDatetimeAsString()).put("originalIndex", docIndex);
+
+    QueryModel queryModel = new QueryModel();
+    queryModel.createQueryModelFromDocument(backupDoc);
+
+    return elasticsearchService
+        .createDocuments(deletedDocsIndex, List.of(queryModel))
+        .mapEmpty();
   }
 }

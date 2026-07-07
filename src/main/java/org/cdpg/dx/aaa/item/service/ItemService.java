@@ -2,18 +2,17 @@ package org.cdpg.dx.aaa.item.service;
 
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
+import java.util.List;
+import java.util.UUID;
 import org.cdpg.dx.aaa.asset.models.AssetRequest;
 import org.cdpg.dx.aaa.asset.models.AssetRequestResponse;
-import org.cdpg.dx.database.elastic.model.BulkSyncResult;
 import org.cdpg.dx.aaa.common.ResponseModel;
 import org.cdpg.dx.aaa.interaction.model.InteractionAggregate;
 import org.cdpg.dx.aaa.item.model.Item;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.item.util.PatchItemRequest;
+import org.cdpg.dx.database.elastic.model.BulkSyncResult;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
-
-import java.util.List;
-import java.util.UUID;
 
 public interface ItemService {
     public Future<Void> createItem(Item item);
@@ -49,4 +48,6 @@ public interface ItemService {
     Future<BulkSyncResult> bulkSyncMetrics(List<InteractionAggregate> aggregates);
 
     Future<Boolean> isItemNameExists(String name);
+
+    Future<Void> backupDeletedItem(Item itemSnapshot);
 }

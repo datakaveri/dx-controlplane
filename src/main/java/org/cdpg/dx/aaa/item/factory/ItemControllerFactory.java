@@ -31,6 +31,7 @@ public class ItemControllerFactory {
       ItemOwnershipValidator itemOwnershipValidator,
       String centralDocIndex,
       String docIndex,
+      String deletedDocsIndex,
       String vocContext,
       String apdURL,
       String uploadedBy,
@@ -55,6 +56,7 @@ public class ItemControllerFactory {
             policyDao,
             webClient,
             docIndex,
+            deletedDocsIndex,
             apdURL);
     ItemService centralItemService =
         new CentralItemServiceImpl(
@@ -64,6 +66,7 @@ public class ItemControllerFactory {
             policyDao,
             webClient,
             centralDocIndex,
+            deletedDocsIndex,
             apdURL);
 
     ItemRegistryService orchestrationService =
