@@ -33,4 +33,6 @@ public interface PolicyDao extends BaseDAO<PolicyDto> {
                                                                   Set<String> policyIds,
                                                                   String consumerId);
   Future<List<PolicyDto>> getMatchingPolicies(UUID itemId, String consumerId);
+
+  Future<Boolean> hasActivePolicies(UUID assetId);
 }

@@ -31,4 +31,6 @@ public interface PolicyService {
 
   Future<PaginatedResult<PolicyDto>> enrichPolicyRequestsWithUserInfo(
       PaginatedResult<PolicyDto> pagedResult);
+
+  Future<Boolean> hasActivePolicies(UUID assetId);
 }

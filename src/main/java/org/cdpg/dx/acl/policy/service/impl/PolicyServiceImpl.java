@@ -960,6 +960,11 @@ public class PolicyServiceImpl implements PolicyService {
     }
   }
 
+  @Override
+  public Future<Boolean> hasActivePolicies(UUID assetId) {
+    return policyDao.hasActivePolicies(assetId);
+  }
+
   private String generateErrorResponse(HttpStatusCode httpStatusCode, String errorMessage) {
     return new JsonObject()
         .put(TYPE, httpStatusCode.getValue())
