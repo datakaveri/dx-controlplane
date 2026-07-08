@@ -58,7 +58,6 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
               publish_status = EXCLUDED.publish_status
             RETURNING (xmax = 0) AS inserted
           """;
-    LOGGER.debug("Upserting asset leaderboard : {}", e.toString());
     JsonArray params =
         new JsonArray()
             .add(e.assetId().toString())
@@ -72,7 +71,7 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
             .add(e.organizationType())
             .add(e.dataUploadStatus())
             .add(e.publishStatus());
-    LOGGER.debug("Executing SQL: {}, with params: {}", sql, params.encode());
+    LOGGER.debug("Upserting asset leaderboard row with params: {}", params.encode());
     return postgresService
         .executeQuery(sql, params)
         .map(
@@ -84,7 +83,6 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
 
   @Override
   public Future<Void> incrementAssetView(LeaderboardEvent e) {
-    LOGGER.debug("Incrementing asset view for asset_id={}", e.assetId());
     return incrementCounter("asset_leaderboard", "views", "asset_id", e.assetId());
   }
 
@@ -164,15 +162,13 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
             .add(uc)
             .add(total);
 
-    LOGGER.debug("Upserting provider leaderboard : {}", e);
-    LOGGER.debug("Executing SQL with params: {}", params.encode());
+    LOGGER.debug("Upserting provider leaderboard row with params: {}", params.encode());
 
     return postgresService.executeQuery(sql, params).mapEmpty();
   }
 
   @Override
   public Future<Void> incrementProviderView(LeaderboardEvent e) {
-    LOGGER.debug("Incrementing provider view for provider_id={}", e.providerId());
     return incrementCounter("provider_leaderboard", "views", "provider_id", e.providerId());
   }
 
@@ -249,15 +245,13 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
             .add(uc)
             .add(total);
 
-    LOGGER.debug("Upserting organization leaderboard : {}", e);
-    LOGGER.debug("Executing SQL with params: {}", params.encode());
+    LOGGER.debug("Upserting organization leaderboard row with params: {}", params.encode());
 
     return postgresService.executeQuery(sql, params).mapEmpty();
   }
 
   @Override
   public Future<Void> incrementOrganizationView(LeaderboardEvent e) {
-    LOGGER.debug("Incrementing organization view for organization_id={}", e.organizationId());
     return incrementCounter(
         "organization_leaderboard", "views", "organization_id", e.organizationId());
   }
@@ -315,8 +309,6 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
       LOGGER.debug("No {} on event, skipping {} increment on {}", idColumn, column, table);
       return Future.succeededFuture();
     }
-    LOGGER.info("Incrementing {} in {} for id={}", column, table, id);
-
     String sql =
         String.format(
             """
@@ -337,7 +329,7 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
       LOGGER.debug("No {} on event, skipping {} decrement on {}", idColumn, column, table);
       return Future.succeededFuture();
     }
-    LOGGER.info("Decrementing {} in {} for id={}", column, table, id);
+    LOGGER.debug("Decrementing {} in {} for id={}", column, table, id);
 
     String sql =
         String.format(
@@ -356,84 +348,74 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
   @Override
   public Future<Void> deleteAssetAndAdjustLeaderboards(LeaderboardEvent e) {
 
-    // 1️⃣ Fetch asset metadata (NO engagement metrics needed)
-    String fetchSql =
+    // Single atomic statement: the DELETE returns exactly the counters this asset accumulated,
+    // and the provider/org rows give back that engagement plus the inventory slot. One statement
+    // means no partial state on crash and idempotent redelivery (second run deletes nothing, so
+    // nothing is subtracted). Data-modifying CTEs run to completion even when unreferenced.
+    // NULL provider/organization ids simply match no row, mirroring the old null checks.
+    String sql =
         """
-            SELECT
-              asset_type,
-              provider_id,
-              organization_id
-            FROM aaa.asset_leaderboard
-            WHERE asset_id = $1
+            WITH removed AS (
+                DELETE FROM aaa.asset_leaderboard
+                WHERE asset_id = $1
+                RETURNING asset_type, provider_id, organization_id, views, downloads, likes
+            ),
+            provider_adjust AS (
+                UPDATE aaa.provider_leaderboard p
+                SET
+                  views               = GREATEST(p.views     - r.views, 0),
+                  downloads           = GREATEST(p.downloads - r.downloads, 0),
+                  likes               = GREATEST(p.likes     - r.likes, 0),
+                  published_databank  = GREATEST(p.published_databank  - COALESCE((r.asset_type = 'DATABANK')::int, 0), 0),
+                  published_ai_models = GREATEST(p.published_ai_models - COALESCE((r.asset_type = 'AI_MODEL')::int, 0), 0),
+                  published_usecases  = GREATEST(p.published_usecases  - COALESCE((r.asset_type = 'USECASE')::int, 0), 0),
+                  total_published     = GREATEST(p.total_published - 1, 0),
+                  updated_at          = now()
+                FROM removed r
+                WHERE p.provider_id = r.provider_id
+            )
+            organization_adjust AS (
+                UPDATE aaa.organization_leaderboard o
+                SET
+                  views               = GREATEST(o.views     - r.views, 0),
+                  downloads           = GREATEST(o.downloads - r.downloads, 0),
+                  likes               = GREATEST(o.likes     - r.likes, 0),
+                  published_databank  = GREATEST(o.published_databank  - COALESCE((r.asset_type = 'DATABANK')::int, 0), 0),
+                  published_ai_models = GREATEST(o.published_ai_models - COALESCE((r.asset_type = 'AI_MODEL')::int, 0), 0),
+                  published_usecases  = GREATEST(o.published_usecases  - COALESCE((r.asset_type = 'USECASE')::int, 0), 0),
+                  total_published     = GREATEST(o.total_published - 1, 0),
+                  updated_at          = now()
+                FROM removed r
+                WHERE o.organization_id = r.organization_id
+            )
+            SELECT asset_type, provider_id, organization_id, views, downloads, likes
+            FROM removed
             """;
 
     return postgresService
-        .executeQuery(fetchSql, new JsonArray().add(e.assetId().toString()))
-        .compose(
-            rs -> {
-
-              // Asset already deleted → idempotent
-              if (rs.getRows().isEmpty()) {
-                return Future.succeededFuture();
+        .executeQuery(sql, new JsonArray().add(e.assetId().toString()))
+        .onSuccess(
+            result -> {
+              if (result.getRows().isEmpty()) {
+                LOGGER.info(
+                    "Leaderboard delete no-op: asset {} already absent (duplicate or never"
+                        + " eligible)",
+                    e.assetId());
+                return;
               }
-
-              JsonObject row = rs.getRows().getJsonObject(0);
-
-              String assetType = row.getString("asset_type");
-              String providerId = row.getString("provider_id");
-              String organizationId = row.getString("organization_id");
-
-              int db = assetType.equals("DATABANK") ? 1 : 0;
-              int ai = assetType.equals("AI_MODEL") ? 1 : 0;
-              int uc = assetType.equals("USECASE") ? 1 : 0;
-
-              // 2️⃣ Provider inventory decrement
-              String providerUpdateSql =
-                  """
-                      UPDATE aaa.provider_leaderboard
-                      SET
-                        published_databank  = GREATEST(published_databank  - $1, 0),
-                        published_ai_models = GREATEST(published_ai_models - $2, 0),
-                        published_usecases  = GREATEST(published_usecases  - $3, 0),
-                        total_published     = GREATEST(total_published - 1, 0),
-                        updated_at          = now()
-                      WHERE provider_id = $4
-                      """;
-
-              // 3️⃣ Organization inventory decrement
-              String orgUpdateSql =
-                  """
-                      UPDATE aaa.organization_leaderboard
-                      SET
-                        published_databank  = GREATEST(published_databank  - $1, 0),
-                        published_ai_models = GREATEST(published_ai_models - $2, 0),
-                        published_usecases  = GREATEST(published_usecases  - $3, 0),
-                        total_published     = GREATEST(total_published - 1, 0),
-                        updated_at          = now()
-                      WHERE organization_id = $4
-                      """;
-
-              JsonArray counterParams = new JsonArray().add(db).add(ai).add(uc);
-
-              Future<?> providerAdjust =
-                  providerId == null
-                      ? Future.succeededFuture()
-                      : postgresService.executeQuery(
-                          providerUpdateSql, counterParams.copy().add(providerId));
-
-              return providerAdjust
-                  .compose(
-                      v ->
-                          organizationId == null
-                              ? Future.succeededFuture()
-                              : postgresService.executeQuery(
-                                  orgUpdateSql, counterParams.copy().add(organizationId)))
-                  .compose(
-                      v ->
-                          postgresService.executeQuery(
-                              "DELETE FROM aaa.asset_leaderboard WHERE asset_id = $1",
-                              new JsonArray().add(e.assetId().toString())))
-                  .mapEmpty();
-            });
+              JsonObject removed = result.getRows().getJsonObject(0);
+              LOGGER.info(
+                  "Leaderboard updated for asset deletion [assetId={}, assetType={},"
+                      + " providerId={}, organizationId={}]: reclaimed views={}, downloads={},"
+                      + " likes={}, published slot released",
+                  e.assetId(),
+                  removed.getString("asset_type"),
+                  removed.getString("provider_id"),
+                  removed.getString("organization_id"),
+                  removed.getLong("views"),
+                  removed.getLong("downloads"),
+                  removed.getLong("likes"));
+            })
+        .mapEmpty();
   }
 }

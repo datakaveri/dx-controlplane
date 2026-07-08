@@ -7,7 +7,7 @@ import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.*;
 
 public record LeaderboardEvent(
     UUID assetId,
-    String action, // CREATE, UPDATE, VIEW, DOWNLOAD, LIKE, DELETE
+    String action, // CREATE, UPDATE, VIEW, DOWNLOAD, LIKE, DISLIKE, NEUTRAL, DELETE
     String assetType,
     UUID providerId,
     String providerName, // resolved from Keycloak during enrichment; null in raw events
@@ -18,7 +18,8 @@ public record LeaderboardEvent(
     String organizationType,
     boolean dataUploadStatus,
     String publishStatus,
-    String createdAt) {
+    String createdAt,
+    boolean wasLiked) { // vote events only: the user's previous vote was LIKE
 
   public static LeaderboardEvent fromJson(JsonObject json) {
 
@@ -49,6 +50,9 @@ public record LeaderboardEvent(
         // lookup fails, these raw defaults keep the event ineligible instead of blindly passing.
         context.getBoolean("dataUploadStatus", false),
         context.getString("publishStatus", "PENDING"),
-        json.getString(CREATED_AT));
+        json.getString(CREATED_AT),
+        // Vote events carry the InteractionDelta as context. Fail closed here too: without
+        // proof the previous vote was LIKE, a Dislike/Neutral must not decrement likes.
+        context.getBoolean("oldLiked", false));
   }
 }
