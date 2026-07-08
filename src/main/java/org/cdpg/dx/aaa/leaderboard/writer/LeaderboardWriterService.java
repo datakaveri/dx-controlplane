@@ -9,9 +9,9 @@ import org.cdpg.dx.aaa.leaderboard.model.LeaderboardEvent;
 public class LeaderboardWriterService {
 
   private static final Logger LOGGER = LogManager.getLogger(LeaderboardWriterService.class);
-  private final LeaderboardDaoV2 dao;
+  private final LeaderboardWriteDao dao;
 
-  public LeaderboardWriterService(LeaderboardDaoV2 dao) {
+  public LeaderboardWriterService(LeaderboardWriteDao dao) {
     this.dao = dao;
   }
 

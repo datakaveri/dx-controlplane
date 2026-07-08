@@ -11,8 +11,8 @@ import org.cdpg.dx.aaa.activity.service.UserActivityAuditLogService;
 import org.cdpg.dx.aaa.activity.service.impl.UserActivityAuditLogServiceImpl;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
-import org.cdpg.dx.aaa.leaderboard.dao.LeaderboardDaoV2;
-import org.cdpg.dx.aaa.leaderboard.dao.impl.LeaderboardDaoImplV2;
+import org.cdpg.dx.aaa.leaderboard.dao.LeaderboardWriteDao;
+import org.cdpg.dx.aaa.leaderboard.dao.impl.LeaderboardWriteDaoImpl;
 import org.cdpg.dx.aaa.leaderboard.enrichment.LeaderboardEnrichmentService;
 import org.cdpg.dx.aaa.leaderboard.writer.LeaderboardWriterService;
 import org.cdpg.dx.auditing.v2.enrichment.AssetEnrichmentService;
@@ -28,9 +28,7 @@ import org.cdpg.dx.email.service.EmailService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
 
-/**
- * Controlplane DataBrokerVerticle — sets up audit, email, and leaderboard consumers.
- */
+/** Controlplane DataBrokerVerticle — sets up audit, email, and leaderboard consumers. */
 public class DataBrokerVerticle extends BaseDataBrokerVerticle {
 
   private static final Logger LOGGER = LogManager.getLogger(DataBrokerVerticle.class);
@@ -71,12 +69,12 @@ public class DataBrokerVerticle extends BaseDataBrokerVerticle {
     auditConsumer.start();
 
     // Leaderboard consumer
-    LeaderboardDaoV2 leaderboardDaoV2 = new LeaderboardDaoImplV2(pgService);
+    LeaderboardWriteDao leaderboardWriteDao = new LeaderboardWriteDaoImpl(pgService);
     LeaderboardConsumer leaderboardConsumer =
         new LeaderboardConsumer(
             internalClient,
             new LeaderboardEnrichmentService(itemService, keycloakUserService),
-            new LeaderboardWriterService(leaderboardDaoV2),
+            new LeaderboardWriterService(leaderboardWriteDao),
             config().getString("leaderboardQueue", "leaderboard"));
     leaderboardConsumer.start();
 

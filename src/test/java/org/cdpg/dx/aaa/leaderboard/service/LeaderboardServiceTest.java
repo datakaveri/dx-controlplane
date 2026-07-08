@@ -11,7 +11,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import java.util.List;
 import java.util.Map;
-import org.cdpg.dx.aaa.leaderboard.dao.LeaderboardDao;
+import org.cdpg.dx.aaa.leaderboard.dao.LeaderboardQueryDao;
 import org.cdpg.dx.aaa.leaderboard.model.AssetLeaderboardEntry;
 import org.cdpg.dx.aaa.leaderboard.model.LeaderboardResponse;
 import org.cdpg.dx.aaa.leaderboard.model.OrganizationLeaderboardEntry;
@@ -31,7 +31,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @DisplayName("LeaderboardService Tests")
 class LeaderboardServiceTest {
 
-  @Mock private LeaderboardDao leaderboardDao;
+  @Mock private LeaderboardQueryDao leaderboardDao;
 
   private LeaderboardServiceImpl leaderboardService;
 

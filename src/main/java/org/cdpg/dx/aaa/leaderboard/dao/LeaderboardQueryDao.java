@@ -7,7 +7,7 @@ import org.cdpg.dx.aaa.leaderboard.model.ProviderLeaderboardEntry;
 import org.cdpg.dx.aaa.leaderboard.model.AssetLeaderboardEntry;
 import io.vertx.core.Future;
 
-public interface LeaderboardDao {
+public interface LeaderboardQueryDao {
     Future<LeaderboardResponse<OrganizationLeaderboardEntry>> fetchOrgLeaderboard(PaginatedRequest request);
 
     Future<LeaderboardResponse<ProviderLeaderboardEntry>> fetchProviderLeaderboard(PaginatedRequest request);

@@ -3,13 +3,13 @@ package org.cdpg.dx.aaa.leaderboard.service.impl;
 import org.cdpg.dx.aaa.leaderboard.model.*;
 import org.cdpg.dx.aaa.leaderboard.service.LeaderboardService;
 import org.cdpg.dx.common.request.PaginatedRequest;
-import org.cdpg.dx.aaa.leaderboard.dao.LeaderboardDao;
+import org.cdpg.dx.aaa.leaderboard.dao.LeaderboardQueryDao;
 import io.vertx.core.Future;
 
 public class LeaderboardServiceImpl implements LeaderboardService {
-  private final LeaderboardDao dao;
+  private final LeaderboardQueryDao dao;
 
-  public LeaderboardServiceImpl(LeaderboardDao dao) {
+  public LeaderboardServiceImpl(LeaderboardQueryDao dao) {
     this.dao = dao;
   }
 

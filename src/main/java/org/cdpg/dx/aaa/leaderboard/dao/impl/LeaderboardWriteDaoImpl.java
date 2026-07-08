@@ -5,18 +5,18 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.leaderboard.dao.LeaderboardDaoV2;
+import org.cdpg.dx.aaa.leaderboard.dao.LeaderboardWriteDao;
 import org.cdpg.dx.aaa.leaderboard.model.LeaderboardEvent;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 
 import java.util.UUID;
 
-public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
+public class LeaderboardWriteDaoImpl implements LeaderboardWriteDao {
 
-  private static final Logger LOGGER = LogManager.getLogger(LeaderboardDaoImplV2.class);
+  private static final Logger LOGGER = LogManager.getLogger(LeaderboardWriteDaoImpl.class);
   private final PostgresService postgresService;
 
-  public LeaderboardDaoImplV2(PostgresService postgresService) {
+  public LeaderboardWriteDaoImpl(PostgresService postgresService) {
     this.postgresService = postgresService;
   }
 
@@ -39,7 +39,7 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
             )
             VALUES ($1, $2, $3, $4, $5,
               COALESCE($6, (SELECT ou.user_name
-                            FROM aaa.organization_users ou
+                            FROM organization_users ou
                             WHERE ou.user_id = $5
                             LIMIT 1)),
               $7, $8, $9, $10, $11
@@ -104,7 +104,7 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
 
     String sql =
         """
-            INSERT INTO aaa.provider_leaderboard (
+            INSERT INTO provider_leaderboard (
               provider_id,
               provider_name,
               organization_id,
@@ -122,7 +122,7 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
             VALUES (
               $1,
               COALESCE($2, (SELECT ou.user_name
-                            FROM aaa.organization_users ou
+                            FROM organization_users ou
                             WHERE ou.user_id = $1
                             LIMIT 1)),
               $3, $4, $5,
@@ -198,7 +198,7 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
 
     String sql =
         """
-            INSERT INTO aaa.organization_leaderboard (
+            INSERT INTO organization_leaderboard (
               organization_id,
               organization_name,
               organization_type,
@@ -284,18 +284,6 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
         "organization_leaderboard", "likes", "organization_id", e.organizationId());
   }
 
-  // ------------------------------------------------
-  // DELETE
-  // ------------------------------------------------
-
-  @Override
-  public Future<Void> deleteAsset(LeaderboardEvent e) {
-    String sql = "DELETE FROM asset_leaderboard WHERE asset_id = $1";
-    return postgresService
-        .executeQuery(sql, new JsonArray().add(e.assetId().toString()))
-        .mapEmpty();
-  }
-
   private static String toStringOrNull(UUID id) {
     return id != null ? id.toString() : null;
   }
@@ -356,12 +344,12 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
     String sql =
         """
             WITH removed AS (
-                DELETE FROM aaa.asset_leaderboard
+                DELETE FROM asset_leaderboard
                 WHERE asset_id = $1
                 RETURNING asset_type, provider_id, organization_id, views, downloads, likes
             ),
             provider_adjust AS (
-                UPDATE aaa.provider_leaderboard p
+                UPDATE provider_leaderboard p
                 SET
                   views               = GREATEST(p.views     - r.views, 0),
                   downloads           = GREATEST(p.downloads - r.downloads, 0),
@@ -373,9 +361,9 @@ public class LeaderboardDaoImplV2 implements LeaderboardDaoV2 {
                   updated_at          = now()
                 FROM removed r
                 WHERE p.provider_id = r.provider_id
-            )
+            ),
             organization_adjust AS (
-                UPDATE aaa.organization_leaderboard o
+                UPDATE organization_leaderboard o
                 SET
                   views               = GREATEST(o.views     - r.views, 0),
                   downloads           = GREATEST(o.downloads - r.downloads, 0),
