@@ -3,7 +3,7 @@ package org.cdpg.dx.aaa.leaderboard.dao;
 import io.vertx.core.Future;
 import org.cdpg.dx.aaa.leaderboard.model.LeaderboardEvent;
 
-public interface LeaderboardDaoV2 {
+public interface LeaderboardWriteDao {
 
   /** Upserts the asset row; resolves to {@code true} only when the asset was newly inserted. */
   Future<Boolean> upsertAssetOnCreate(LeaderboardEvent event);
@@ -31,8 +31,6 @@ public interface LeaderboardDaoV2 {
   Future<Void> incrementOrganizationDownload(LeaderboardEvent event);
 
   Future<Void> incrementOrganizationLike(LeaderboardEvent event);
-
-  Future<Void> deleteAsset(LeaderboardEvent event);
 
   Future<Void> decrementAssetLike(LeaderboardEvent event);
 
