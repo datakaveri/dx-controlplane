@@ -15,6 +15,7 @@ import org.cdpg.dx.auth.authorization.registry.SystemRoleScopeMap;
 import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.exception.BaseDxException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
+import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.KeycloakServiceException;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.model.UserInfo;
@@ -170,10 +171,10 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
           try {
             List<UserRepresentation> reps = usersResource().searchByUsername(userId, true);
             if (reps.isEmpty()) {
-              throw new org.cdpg.dx.common.exception.DxNotFoundException("User not found: " + userId);
+              throw new DxNotFoundException("User not found: " + userId);
             }
             return UserInfoMapper.fromUserRepresentation(reps.get(0));
-          } catch (org.cdpg.dx.common.exception.DxNotFoundException e) {
+          } catch (DxNotFoundException e) {
             throw e;
           } catch (Exception e) {
             throw new KeycloakServiceException("Failed to retrieve user by userId: " + userId, e);
@@ -188,10 +189,10 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
           try {
             List<UserRepresentation> reps = usersResource().searchByEmail(email, true);
             if (reps.isEmpty()) {
-              throw new org.cdpg.dx.common.exception.DxNotFoundException("User not found: " + email);
+              throw new DxNotFoundException("User not found: " + email);
             }
             return UserInfoMapper.fromUserRepresentation(reps.get(0));
-          } catch (org.cdpg.dx.common.exception.DxNotFoundException e) {
+          } catch (DxNotFoundException e) {
             throw e;
           } catch (Exception e) {
             throw new KeycloakServiceException("Failed to retrieve user by email: " + email, e);
