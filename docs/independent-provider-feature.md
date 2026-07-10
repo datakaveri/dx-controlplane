@@ -318,7 +318,7 @@ UPDATE_PLATFORM_PROVIDER_REQUEST("Update platform provider role request"),
 **Response 200 — org-based (unchanged):**
 ```json
 {
-  "type": "urn:dx:ControlPlane:success",
+  "type": "urn:dx:controlPlane:success",
   "title": "Success",
   "detail": "Created Request"
 }
@@ -327,7 +327,7 @@ UPDATE_PLATFORM_PROVIDER_REQUEST("Update platform provider role request"),
 **Response 200 — platform (new):**
 ```json
 {
-  "type": "urn:dx:ControlPlane:success",
+  "type": "urn:dx:controlPlane:success",
   "title": "Success",
   "detail": "Created Request"
 }
@@ -375,7 +375,7 @@ Org Admin approves/rejects an org-based provider request. The core update logic 
 **Response 200:**
 ```json
 {
-  "type": "urn:dx:ControlPlane:success",
+  "type": "urn:dx:controlPlane:success",
   "title": "Success",
   "result": [
     {
@@ -437,7 +437,7 @@ Org Admin approves/rejects an org-based provider request. The core update logic 
 **Response 200:**
 ```json
 {
-  "type": "urn:dx:ControlPlane:success",
+  "type": "urn:dx:controlPlane:success",
   "title": "Success",
   "detail": "Provider role updated"
 }
@@ -1217,7 +1217,7 @@ Do **not** add to `organisations.yaml` — that file is for org-scoped endpoints
             examples:
               Example 1:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                     - id: f881430g-ggfe-5057-bf79-dc25b0281e03
@@ -1309,7 +1309,7 @@ Do **not** add to `organisations.yaml` — that file is for org-scoped endpoints
             examples:
               success:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   detail: Provider role updated
       '400':
@@ -1328,7 +1328,7 @@ Do **not** add to `organisations.yaml` — that file is for org-scoped endpoints
             examples:
               notFound:
                 value:
-                  type: urn:dx:ControlPlane:badRequest
+                  type: urn:dx:controlPlane:badRequest
                   title: Bad Request
                   detail: No request found with given ID
       '401':

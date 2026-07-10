@@ -105,7 +105,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/invalidIdErrorResponse
             example:
-              type: dx:controlPlane:badRequest
+              type: urn:dx:controlPlane:badRequest
               title: Bad Request
               detail: Missing or malformed request
 
@@ -116,10 +116,9 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: dx:controlPlane:notAuthorized
+              type: urn:dx:controlPlane:notAuthorized
               title: Not Authorized
-              detail: Invalid token format
-
+              detail: Missing or invalid Bearer token
       '403':
         description: User is not owner of the asset
         content:
@@ -127,10 +126,9 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: dx:controlPlane:forbidden
+              type: urn:dx:controlPlane:forbidden
               title: Forbidden
-              detail: Only asset owner can share visibility
-
+              detail: User does not have the required role.
       '404':
         description: Asset not found
         content:
@@ -138,7 +136,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: dx:controlPlane:notFound
+              type: urn:dx:controlPlane:notFound
               title: Not Found
               detail: Item not found
 
@@ -237,9 +235,25 @@
       '401':
         description: Missing or invalid authentication token
 
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: User is not owner of the asset
 
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '404':
         description: Asset not found
 
@@ -335,7 +349,7 @@
                         type: string
                         format: date-time
             example:
-              type: dx:controlPlane:success
+              type: urn:dx:controlPlane:success
               title: Success
               result:
                 - id: 14447a8f-f43e-4145-820a-81c13e978fdb
@@ -350,8 +364,24 @@
         description: Invalid request parameters
       '401':
         description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: User is not owner of the asset
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '404':
         description: Asset not found
 
@@ -447,7 +477,7 @@
                         format: date-time
 
             example:
-              type: dx:controlPlane:success
+              type: urn:dx:controlPlane:success
               title: Success
               result:
                 - id: "9d4f2e6a-7b63-4f7b-8d4a-f36e9b21aa11"
@@ -467,10 +497,9 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: dx:controlPlane:notAuthorized
+              type: urn:dx:controlPlane:notAuthorized
               title: Not Authorized
-              detail: Missing or invalid token
-
+              detail: Missing or invalid Bearer token
       '403':
         description: User does not have sufficient permissions
         content:
@@ -478,10 +507,9 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: dx:controlPlane:forbidden
+              type: urn:dx:controlPlane:forbidden
               title: Forbidden
-              detail: Insufficient permissions
-
+              detail: User does not have the required role.
       '500':
         description: Internal server error
         content:
@@ -489,7 +517,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: dx:controlPlane:internalServerError
+              type: urn:dx:controlPlane:internalServerError
               title: Internal Server Error
               detail: Failed to fetch shared assets
 

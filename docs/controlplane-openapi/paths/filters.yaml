@@ -88,7 +88,7 @@
               DataBankFilters:
                 summary: Filter values for adex:DataBank
                 value:
-                  type: dx:controlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   results:
                   - concepts:
@@ -124,7 +124,7 @@
               AiModelFilters:
                 summary: Filter values for adex:AiModel
                 value:
-                  type: dx:controlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   results:
                   - department:
@@ -149,7 +149,7 @@
               AppsFilters:
                 summary: Filter values for adex:Apps
                 value:
-                  type: dx:controlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   results:
                   - department:
@@ -178,13 +178,13 @@
               unsupportedSearchType:
                 summary: Invalid or unsupported searchType
                 value:
-                  type: dx:controlPlane:badRequest
+                  type: urn:dx:controlPlane:badRequest
                   title: Bad Request
                   detail: 'Unsupported searchType: fjjo'
               missingFields:
                 summary: Missing searchType or malformed searchCriteria
                 value:
-                  type: dx:controlPlane:badRequest
+                  type: urn:dx:controlPlane:badRequest
                   title: Bad Request
                   detail: Missing or malformed request
     x-codeSamples:

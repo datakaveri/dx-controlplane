@@ -19,7 +19,6 @@ import org.cdpg.dx.common.URNGenerator;
 
 public class ApdApiServerVerticle extends AbstractApiServerVerticle {
 
-
   @Override
   protected String getOpenApiSpecPath(JsonObject config) {
     return "docs/acl-openapi.yaml";
@@ -32,7 +31,7 @@ public class ApdApiServerVerticle extends AbstractApiServerVerticle {
 
   @Override
   protected String getDefaultUrnPrefix() {
-    return "urn:dx:apdServerPanel:";
+    return "urn:dx:aclApd:";
   }
 
   @Override

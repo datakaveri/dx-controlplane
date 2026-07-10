@@ -47,7 +47,7 @@ InteractionResponse:
   required:
   - type
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     detail: Interaction updated successfully
 UserFeedbackRequest:
@@ -204,7 +204,7 @@ ItemVoteResponse:
   - title
   - results
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     results:
     - entityId: e74112d5-b58b-401e-a799-712b473279ed
@@ -240,7 +240,7 @@ BookmarkResponse:
     type:
       type: string
       description: URN identifying the response category
-      example: urn:dx:ControlPlane:success
+      example: urn:dx:controlPlane:success
     title:
       type: string
       description: Short response title
@@ -319,7 +319,7 @@ UserInteractionResponse:
     type:
       type: string
       description: URN identifying the response category
-      example: urn:dx:ControlPlane:success
+      example: urn:dx:controlPlane:success
     title:
       type: string
       description: Short response title
@@ -403,7 +403,7 @@ GetBookmarksSuccessResponse:
   properties:
     type:
       type: string
-      example: urn:dx:ControlPlane:success
+      example: urn:dx:controlPlane:success
     title:
       type: string
       example: Success

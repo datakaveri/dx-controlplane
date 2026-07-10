@@ -20,7 +20,7 @@ dashboardUsageSummarySuccessResponse:
   required:
   - type
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     results:
     - description: Total usage since the beginning
@@ -51,7 +51,7 @@ GenericBadRequestResponse:
     type:
       type: string
       description: URN identifying the error category
-      example: urn:dx:ControlPlane:badRequest
+      example: urn:dx:controlPlane:badRequest
     title:
       type: string
       description: Short error title
@@ -198,7 +198,7 @@ standardInvalidTokenErrorResponse:
     detail:
       type: string
   example:
-    type: urn:dx:controlplane:invalidAuthorizationToken
+    type: urn:dx:controlPlane:invalidAuthorizationToken
     title: Not Authorized
     detail: Not Authorized
 registeradapter:
@@ -222,7 +222,7 @@ registeradapter:
       items:
         type: object
   example:
-    type: urn:dx:controlplane:success,
+    type: urn:dx:controlPlane:success,
     title: success,
     results:
     - username: fd47486b-XXXX-4248-ac1e-082e4d37a66c
@@ -263,7 +263,7 @@ retrieveadapter:
       items:
         type: object
   example:
-    type: urn:dx:controlplane:success,
+    type: urn:dx:controlPlane:success,
     title: success,
     results:
     - database:
@@ -283,7 +283,7 @@ deleteadapter:
     results:
       type: string
   example:
-    type: urn:dx:controlplane:success
+    type: urn:dx:controlPlane:success
     title: Success
     detail: Adapter deleted
 generalResourceNotFoundErrorResponse:
@@ -339,7 +339,7 @@ adapterIngestionEntities:
       items:
         type: object
   example:
-    type: urn:dx:controlplane:success,
+    type: urn:dx:controlPlane:success,
     title: success,
     detail: Item Published
 standardInvalidTokenErrorResponseAllQueueAndExcahnge:
@@ -352,7 +352,7 @@ standardInvalidTokenErrorResponseAllQueueAndExcahnge:
     detail:
       type: string
   example:
-    type: urn:dx:controlplane:invalidAuthorizationToken
+    type: urn:dx:controlPlane:invalidAuthorizationToken
     title: Not Authorized
     detail: Not Authorized
 standardResourceNotFoundErrorResponse:
@@ -365,7 +365,7 @@ standardResourceNotFoundErrorResponse:
     detail:
       type: string
   example:
-    type: urn:dx:controlplane:resourceNotFound
+    type: urn:dx:controlPlane:resourceNotFound
     title: Not Found
     detail: Not Found
 asyncBadRequestErrorResponse:
@@ -378,7 +378,7 @@ asyncBadRequestErrorResponse:
     detail:
       type: string
   example:
-    type: urn:dx:controlplane:badRequest
+    type: urn:dx:controlPlane:badRequest
     title: Bad Request
     detail: Bad Request
 getNotificationNotFoundResponse:
@@ -1421,7 +1421,7 @@ successResponseWithObjects:
   required:
   - type
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     totalHits: 10
     results:
@@ -1493,7 +1493,7 @@ successResponseForGeoLocations:
   required:
   - type
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     totalHits: 3
     results:
@@ -1534,7 +1534,7 @@ listInstances:
   required:
   - type
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     totalHits: 3
     results:
@@ -1956,7 +1956,7 @@ successResponseForCreateAIModelEntity:
       - license
       - fileSize
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Created
     detail: 'Success: Item created'
     result:
@@ -2158,7 +2158,7 @@ successResponseForCreatePotentialAppsEntity:
       - accessPolicy
       - sections
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Created
     detail: 'Success: Item created'
     result:
@@ -2302,7 +2302,7 @@ successResponseForUpdateAIModelEntity:
       - license
       - fileSize
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     result:
       '@context': https://voc.iudx.io/
@@ -2468,7 +2468,7 @@ successResponseForUpdateDataBankEntity:
   - title
   - result
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     result:
       '@context': https://voc.iudx.io/
@@ -2669,7 +2669,7 @@ successResponseForUpdateAdexAppsEntity:
           type: string
           description: Last updated timestamp (human-readable)
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     result:
       '@context': https://voc.iudx.io/
@@ -2902,7 +2902,7 @@ successResponseForGetAIModelEntity:
   - result
   - paginationInfo
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     detail: 'Success: Item fetched successfully'
     result:
@@ -3119,7 +3119,7 @@ successResponseForGetDataBankEntity:
   - result
   - paginationInfo
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     detail: 'Success: Item fetched successfully'
     result:
@@ -3354,7 +3354,7 @@ successResponseForGetAdexAppsEntity:
     paginationInfo:
       $ref: pagination.yaml#/PaginationInfo
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     detail: 'Success: Item fetched successfully'
     result:
@@ -3576,7 +3576,7 @@ successResponseForGetAIModelEntityWithAccess:
   - result
   - paginationInfo
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     detail: 'Success: Item fetched successfully'
     result:
@@ -3833,7 +3833,7 @@ successResponseForGetDataBankEntityWithAccess:
   - result
   - paginationInfo
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     detail: 'Success: Item fetched successfully'
     result:
@@ -4100,7 +4100,7 @@ successResponseForGetAdexAppsEntityWithAccess:
     paginationInfo:
       $ref: pagination.yaml#/PaginationInfo
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     detail: 'Success: Item fetched successfully'
     result:
@@ -4258,7 +4258,7 @@ successResponseForAutocompleteFuzzyTextSearch:
   - paginationInfo
   - result
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     paginationInfo:
       page: 1
@@ -4408,7 +4408,7 @@ successResponseForComplexSearch:
   - paginationInfo
   - result
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     paginationInfo:
       page: 1
@@ -4499,7 +4499,7 @@ successResponseForFlattenedTermSearch:
   - paginationInfo
   - result
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     paginationInfo:
       page: 1
@@ -4593,7 +4593,7 @@ successResponseForSearchByItemType:
   - paginationInfo
   - result
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     paginationInfo:
       page: 1
@@ -4670,7 +4670,7 @@ successResponseForRangeSearch:
   - paginationInfo
   - result
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     paginationInfo:
       page: 1
@@ -4773,7 +4773,7 @@ successResponseForTemporalSearch:
   - paginationInfo
   - result
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     pagination:
       page: 1
@@ -4861,7 +4861,7 @@ successResponseForMyAssetsTextSearch:
   - paginationInfo
   - result
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     paginationInfo:
       page: 1
@@ -4926,7 +4926,7 @@ successResponseForMyAssetsComplexSearch:
   - paginationInfo
   - result
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     paginationInfo:
       page: 1
@@ -4974,7 +4974,7 @@ successResponseForMyAssetsFlattenedTermSearch:
         - id
         - ownerUserId
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     paginationInfo:
       page: 1
@@ -5025,7 +5025,7 @@ successResponseForMyAssetsRangeSearch:
         - id
         - ownerUserId
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     paginationInfo:
       page: 1
@@ -5071,7 +5071,7 @@ successResponseForMyAssetsTemporalSearch:
         - id
         - ownerUserId
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     paginationInfo:
       page: 1
@@ -5110,7 +5110,7 @@ successResponseForMyAssetsItemTypeSearch:
         - id
         - ownerUserId
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     paginationInfo:
       page: 1
@@ -5797,7 +5797,7 @@ forbiddenAccess:
   required:
   - type
   example:
-    type: urn:dx:controlPanel:forbidden
+    type: urn:dx:controlPlane:forbidden
     title: Forbidden
     detail: User does not have the required role.
 invalidResponseForWrongLimitValues:
@@ -5841,7 +5841,7 @@ UnauthorizedResponse:
   properties:
     type:
       type: string
-      example: urn:dx:ControlPlane:notAuthorized
+      example: urn:dx:controlPlane:notAuthorized
     title:
       type: string
       example: Not Authorized
@@ -5853,7 +5853,7 @@ ForbiddenResponse:
   properties:
     type:
       type: string
-      example: urn:dx:ControlPlane:forbidden
+      example: urn:dx:controlPlane:forbidden
     title:
       type: string
       example: Forbidden
@@ -5865,7 +5865,7 @@ BadRequestResponse:
   properties:
     type:
       type: string
-      example: urn:dx:ControlPlane:badRequest
+      example: urn:dx:controlPlane:badRequest
     title:
       type: string
       example: Bad Request
@@ -5877,7 +5877,7 @@ InternalServerErrorResponse:
   properties:
     type:
       type: string
-      example: urn:dx:ControlPlane:internalServerError
+      example: urn:dx:controlPlane:internalServerError
     title:
       type: string
       example: Internal Server Error
@@ -5889,7 +5889,7 @@ Success:
   properties:
     type:
       type: string
-      example: urn:dx:ControlPlane:success
+      example: urn:dx:controlPlane:success
     title:
       type: string
       example: Success
@@ -5904,7 +5904,7 @@ BadRequest:
   properties:
     type:
       type: string
-      example: urn:dx:ControlPlane:bad_request
+      example: urn:dx:controlPlane:bad_request
     title:
       type: string
       example: Bad Request
@@ -5920,7 +5920,7 @@ Forbidden:
   properties:
     type:
       type: string
-      example: urn:dx:ControlPlane:forbidden
+      example: urn:dx:controlPlane:forbidden
     title:
       type: string
       example: Forbidden
@@ -5936,7 +5936,7 @@ NotFound:
   properties:
     type:
       type: string
-      example: urn:dx:ControlPlane:not_found
+      example: urn:dx:controlPlane:not_found
     title:
       type: string
       example: Not Found

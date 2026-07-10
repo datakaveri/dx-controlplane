@@ -134,7 +134,7 @@
             examples:
               Example:
                 value:
-                  type: urn:dx:AclApdApd:badRequest
+                  type: urn:dx:aclApd:badRequest
                   title: Bad Request
                   detail: Request could not be created, as the item type is invalid
         headers:
@@ -152,6 +152,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/Unauthorized
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
         headers:
           Content-Type:
             schema:
@@ -166,6 +170,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/createNotificationForbidden
+            example:
+              type: urn:dx:aclApd:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
         headers:
           Content-Type:
             schema:
@@ -197,13 +205,13 @@
             examples:
               PendingRequestConflict:
                 value:
-                  type: dx:aclApd:conflict
+                  type: urn:dx:aclApd:conflict
                   title: Conflict
                   detail: 'Pending access requests exist for: api.'
 
               ActivePolicyConflict:
                 value:
-                  type: dx:aclApd:conflict
+                  type: urn:dx:aclApd:conflict
                   title: Conflict
                   detail: 'Active access already granted for: api.'
         headers:
@@ -365,7 +373,7 @@
             examples:
               Update:
                 value:
-                  type: urn:dx:AclApdApd:success
+                  type: urn:dx:aclApd:success
                   title: Success
                   detail: Request updated successfully
         headers:
@@ -383,12 +391,12 @@
             examples:
               MalformedRequest:
                 value:
-                  type: urn:dx:AclApd:badRequest
+                  type: urn:dx:aclApd:badRequest
                   title: Bad Request
                   detail: Missing or malformed request
               InvalidAccessType:
                 value:
-                  type: urn:dx:AclApd:badRequest
+                  type: urn:dx:aclApd:badRequest
                   title: Bad Request
                   detail: Requested access type 'sub' is not allowed for this resource
         headers:
@@ -413,6 +421,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/Unauthorized
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
         headers:
           Content-Type:
             schema:
@@ -427,6 +439,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/updateNotificationForbiddenResponse
+            example:
+              type: urn:dx:aclApd:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
         headers:
           Content-Type:
             schema:
@@ -478,7 +494,7 @@
             examples:
               Update:
                 value:
-                  type: urn:dx:AclApdApd:success
+                  type: urn:dx:aclApd:success
                   title: Success
                   detail: Request updated successfully
         headers:
@@ -493,6 +509,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/updateNotificationBadRequest
+            example:
+              type: urn:dx:aclApd:badRequest
+              title: Bad Request
+              detail: Missing or malformed request
         headers:
           Content-Type:
             schema:
@@ -515,6 +535,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/Unauthorized
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
         headers:
           Content-Type:
             schema:
@@ -529,6 +553,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/updateNotificationForbiddenResponse
+            example:
+              type: urn:dx:aclApd:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
         headers:
           Content-Type:
             schema:
@@ -606,7 +634,7 @@
             examples:
               ListResults:
                 value:
-                  type: urn:dx:AclApd:success
+                  type: urn:dx:aclApd:success
                   title: Success
                   results:
                   - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
@@ -655,6 +683,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/updateNotificationBadRequest
+            example:
+              type: urn:dx:aclApd:badRequest
+              title: Bad Request
+              detail: Missing or malformed request
         headers:
           Content-Type:
             schema:
@@ -666,6 +698,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/Unauthorized
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
         headers:
           Content-Type:
             schema:
@@ -757,6 +793,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/reportGenerationBadRequest
+            example:
+              type: urn:dx:aclApd:badRequest
+              title: Bad Request
+              detail: Missing or malformed request
         headers:
           Content-Type:
             schema:
@@ -768,6 +808,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/Unauthorized
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
         headers:
           Content-Type:
             schema:
@@ -780,6 +824,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/reportGenerationForbiddenResponse
+            example:
+              type: urn:dx:aclApd:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
         headers:
           Content-Type:
             schema:
@@ -874,6 +922,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/reportGenerationBadRequest
+            example:
+              type: urn:dx:aclApd:badRequest
+              title: Bad Request
+              detail: Missing or malformed request
         headers:
           Content-Type:
             schema:
@@ -885,6 +937,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/Unauthorized
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
         headers:
           Content-Type:
             schema:
@@ -897,6 +953,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/reportGenerationForbiddenResponse
+            example:
+              type: urn:dx:aclApd:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
         headers:
           Content-Type:
             schema:
@@ -996,7 +1056,7 @@
             examples:
               ListResults:
                 value:
-                  type: urn:dx:AclApd:success
+                  type: urn:dx:aclApd:success
                   title: Success
                   results:
                   - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
@@ -1045,6 +1105,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/updateNotificationBadRequest
+            example:
+              type: urn:dx:aclApd:badRequest
+              title: Bad Request
+              detail: Missing or malformed request
         headers:
           Content-Type:
             schema:
@@ -1056,6 +1120,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/Unauthorized
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
         headers:
           Content-Type:
             schema:
@@ -1138,7 +1206,7 @@
             examples:
               ListResults:
                 value:
-                  type: urn:dx:AclApd:success
+                  type: urn:dx:aclApd:success
                   title: Success
                   results:
                   - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
@@ -1182,6 +1250,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/updateNotificationBadRequest
+            example:
+              type: urn:dx:aclApd:badRequest
+              title: Bad Request
+              detail: Missing or malformed request
         headers:
           Content-Type:
             schema:
@@ -1193,6 +1265,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/Unauthorized
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
     security:
     - authorization: []
     x-codeSamples:
@@ -1296,7 +1372,7 @@
             examples:
               Example:
                 value:
-                  type: urn:dx:AclApd:badRequest
+                  type: urn:dx:aclApd:badRequest
                   title: Bad Request
                   detail: Missing or malformed request
         headers:
@@ -1314,6 +1390,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/Unauthorized
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
         headers:
           Content-Type:
             schema:
@@ -1331,40 +1411,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/checkAccessRequestNotFoundResponse
-            examples:
-              accessRequestNotFoundResponse:
-                value:
-                  type: dx:aclApd:no-access
-                  title: Forbidden
-                  detail: User does not have access to the given item
-
-              accessRequestPendingResponse:
-                value:
-                  type: dx:aclApd:access-pending
-                  title: Forbidden
-                  detail: Access request is still pending for the given item
-                  result:
-                    hasPendingRequests: true
-                    pendingRequests:
-                      - requestId: c1d1531d-a293-4e9f-8f5e-72538f999a29
-                        requestStatus: PENDING
-                        requestType: DOWNLOAD
-                        constraints:
-                          access:
-                            - accessType: file
-                        user:
-                          consumerId: c43dfe14-5f4f-4b77-90e1-f9945574d226
-                          consumerFirstName: User
-                          consumerLastName: Test
-                          consumerEmail: sample@gmal.com
-                        asset:
-                          itemId: 96c1c3d4-3856-491a-9340-405e35db80c2
-                          assetName: Subdistrict Weather Information for multiple access requests testing
-                          assetType: adex:DataBank
-                          shortDescription: Daily aggregated temperature and rainfall data at subdistrict level.
-                          organizationId: a87e6ca1-cbbe-49d5-a474-2caaaadb191e
-                        createdAt: "2026-06-04T12:13:22.12143"
-                        updatedAt: "2026-06-04T12:13:22.12143"
+            example:
+              type: urn:dx:aclApd:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
         headers:
           Content-Type:
             schema:
@@ -1455,7 +1505,7 @@
             examples:
               ListResults:
                 value:
-                  type: urn:dx:AclApd:success
+                  type: urn:dx:aclApd:success
                   title: Success
                   results:
                   - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
@@ -1504,6 +1554,10 @@
           application/json:
             schema:
               $ref: '../components/schemas.yaml#/updateNotificationBadRequest'
+            example:
+              type: urn:dx:aclApd:badRequest
+              title: Bad Request
+              detail: Missing or malformed request
         headers:
           Content-Type:
             schema:
@@ -1515,6 +1569,10 @@
           application/json:
             schema:
               $ref: '../components/schemas.yaml#/Unauthorized'
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
         headers:
           Content-Type:
             schema:

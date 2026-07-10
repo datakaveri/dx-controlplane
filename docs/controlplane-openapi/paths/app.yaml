@@ -37,12 +37,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '500':
         description: Internal Server Error
         content:
@@ -93,12 +101,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '500':
         description: Internal Server Error
         content:
@@ -153,7 +169,7 @@
                   type: string
                   example: Deleted app id status successfully
             example:
-              type: dx:controlPlane:success
+              type: urn:dx:controlPlane:success
               title: Success
               detail: Deleted app id status successfully
       '204':
@@ -170,12 +186,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '500':
         description: Internal Server Error
         content:
@@ -240,7 +264,7 @@
                   type: string
                   example: App credentials status updated to active successfully
             example:
-              type: dx:controlPlane:success
+              type: urn:dx:controlPlane:success
               title: Success
               detail: App credentials status updated to active successfully
       '204':
@@ -257,12 +281,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '500':
         description: Internal Server Error
         content:
@@ -395,7 +427,7 @@
             examples:
               Example 1:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                     roles:
@@ -438,12 +470,20 @@
           application/json:
             schema:
               $ref: '../components/schemas/common.yaml#/UnauthorizedResponse'
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden
         content:
           application/json:
             schema:
               $ref: '../components/schemas/common.yaml#/ForbiddenResponse'
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '500':
         description: Internal Server Error
         content:

@@ -119,7 +119,7 @@
               properties:
                 type:
                   type: string
-                  example: urn:dx:controlPanel:success
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
                   example: Success
@@ -149,6 +149,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '500':
         description: Internal Server Error
         content:
@@ -197,7 +201,7 @@
               properties:
                 type:
                   type: string
-                  example: urn:dx:controlPanel:success
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
                   example: Success

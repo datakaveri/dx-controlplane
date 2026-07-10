@@ -35,9 +35,9 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: urn:dx:controlPlane:InvalidAuthToken
-              title: Unauthorized
-              detail: Missing or invalid authorization token
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden – KYC not completed or user not found
         content:
@@ -45,9 +45,9 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: urn:dx:controlPlane:Forbidden
+              type: urn:dx:controlPlane:forbidden
               title: Forbidden
-              detail: KYC verification not completed
+              detail: User does not have the required role.
       '409':
         description: A pending or granted provider role request already exists
         content:
@@ -129,9 +129,9 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: urn:dx:controlPlane:InvalidAuthToken
-              title: Unauthorized
-              detail: Missing or invalid authorization token
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden – user is not authenticated
         content:
@@ -139,9 +139,9 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: urn:dx:controlPlane:Forbidden
+              type: urn:dx:controlPlane:forbidden
               title: Forbidden
-              detail: User is not authorized to access this resource
+              detail: User does not have the required role.
       '404':
         description: No platform provider request found for this user
         content:
@@ -204,9 +204,9 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: urn:dx:controlPlane:InvalidAuthToken
-              title: Unauthorized
-              detail: Missing or invalid authorization token
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '404':
         description: No pending platform provider request found for this user
         content:
@@ -340,9 +340,9 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: urn:dx:controlPlane:InvalidAuthToken
-              title: Unauthorized
-              detail: Missing or invalid authorization token
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden – user does not have COS Admin role
         content:
@@ -350,9 +350,9 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: urn:dx:controlPlane:Forbidden
+              type: urn:dx:controlPlane:forbidden
               title: Forbidden
-              detail: User does not have the required COS Admin role
+              detail: User does not have the required role.
     x-codeSamples:
     - lang: cURL
       label: List All Platform Provider Requests
@@ -435,9 +435,9 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: urn:dx:controlPlane:InvalidAuthToken
-              title: Unauthorized
-              detail: Missing or invalid authorization token
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden – user does not have COS Admin role
         content:
@@ -445,9 +445,9 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: urn:dx:controlPlane:Forbidden
+              type: urn:dx:controlPlane:forbidden
               title: Forbidden
-              detail: User does not have the required COS Admin role
+              detail: User does not have the required role.
       '404':
         description: No request found with the given ID
         content:

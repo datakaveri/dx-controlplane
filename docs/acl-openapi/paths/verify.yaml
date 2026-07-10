@@ -53,7 +53,7 @@
         content:
           application/json:
             example:
-              type: urn:dx:apdServerPanel:success
+              type: urn:dx:aclApd:success
               title: Success
               result:
                 type: urn:apd:Allow
@@ -75,17 +75,17 @@
         content:
           application/json:
             example:
-              type: urn:dx:acl:badRequest
+              type: urn:dx:aclApd:badRequest
               title: Bad Request
-              detail: Bad Request
+              detail: Missing or malformed request
       '403':
         description: Forbidden
         content:
           application/json:
             example:
-              type: urn:apd:Deny
-              title: Policy does not exist
-              detail: Invalid request format/Incorrect request
+              type: urn:dx:aclApd:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
     security:
     - authorization: []
     x-codeSamples:

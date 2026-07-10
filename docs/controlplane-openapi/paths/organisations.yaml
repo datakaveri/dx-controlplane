@@ -48,7 +48,7 @@
                 paginationInfo:
                   $ref: ../components/schemas/pagination.yaml#/PaginationInfo
             example:
-              type: urn:dx:ControlPlane:success
+              type: urn:dx:controlPlane:success
               title: Success
               result:
               - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
@@ -81,12 +81,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
   post:
     tags:
     - Organisation APIs
@@ -206,7 +214,7 @@
                 result:
                   $ref: ../components/schemas/organisation.yaml#/OrgCreateRequestItem
             example:
-              type: urn:dx:ControlPlane:success
+              type: urn:dx:controlPlane:success
               title: Success
               result:
                 id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
@@ -238,6 +246,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '409':
         description: Conflict - Duplicate request, name, or manager email already in use
         content:
@@ -313,12 +325,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '404':
         description: Not Found - Request with given ID does not exist
         content:
@@ -363,7 +383,7 @@
                   items:
                     $ref: ../components/schemas/organisation.yaml#/OrgCreateRequestItem
             example:
-              type: urn:dx:ControlPlane:success
+              type: urn:dx:controlPlane:success
               title: Success
               result:
               - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
@@ -377,6 +397,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
 /iudx/v2/auth/user/organisations/requests/{id}:
   parameters:
   - name: id
@@ -433,12 +457,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller is not the original requester
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
 /iudx/v2/auth/user/organisations/join_requests:
   get:
     tags:
@@ -477,7 +509,7 @@
                   items:
                     $ref: ../components/schemas/organisation.yaml#/OrgJoinRequestItem
             example:
-              type: urn:dx:ControlPlane:success
+              type: urn:dx:controlPlane:success
               title: Success
               result:
               - id: 7a1b2c3d-4e5f-6789-abcd-ef0123456789
@@ -495,6 +527,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
 /iudx/v2/auth/user/organisations/join_requests/{id}:
   parameters:
   - name: id
@@ -551,12 +587,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller is not the original requester
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
 /iudx/v2/auth/organisations/{id}/join_requests:
   parameters:
   - name: id
@@ -622,7 +666,7 @@
                 paginationInfo:
                   $ref: ../components/schemas/pagination.yaml#/PaginationInfo
             example:
-              type: urn:dx:ControlPlane:success
+              type: urn:dx:controlPlane:success
               title: Success
               result:
               - id: 7a1b2c3d-4e5f-6789-abcd-ef0123456789
@@ -649,12 +693,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller's org ID does not match path parameter
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
   post:
     tags:
     - Organisation APIs
@@ -728,6 +780,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '409':
         description: Conflict - User already has an active join request or email already in use
         content:
@@ -814,12 +870,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller's org ID does not match path parameter
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '404':
         description: Not Found - Request with given ID does not exist
         content:
@@ -907,12 +971,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Only pending join request can be withdrawn
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '404':
         description: Not Found - Request with given ID does not exist
         content:
@@ -993,7 +1065,7 @@
                 paginationInfo:
                   $ref: ../components/schemas/pagination.yaml#/PaginationInfo
             example:
-              type: urn:dx:ControlPlane:success
+              type: urn:dx:controlPlane:success
               title: Success
               result:
               - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
@@ -1017,6 +1089,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
 /iudx/v2/auth/organisations/{id}:
   parameters:
   - name: id
@@ -1068,12 +1144,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Org Admin tried to delete a different organisation
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '404':
         description: Not Found - Organisation with given ID does not exist
         content:
@@ -1189,12 +1273,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '404':
         description: Not Found - Organisation with given ID does not exist
         content:
@@ -1268,7 +1360,7 @@
                       type: string
                       format: date-time
             example:
-              type: urn:dx:ControlPlane:success
+              type: urn:dx:controlPlane:success
               title: Success
               result:
                 id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
@@ -1288,6 +1380,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '404':
         description: Not Found - Organisation with given ID does not exist
         content:
@@ -1385,7 +1481,7 @@
                 paginationInfo:
                   $ref: ../components/schemas/pagination.yaml#/PaginationInfo
             example:
-              type: urn:dx:ControlPlane:success
+              type: urn:dx:controlPlane:success
               title: Success
               result:
               - id: 9f1a2b3c-4d5e-6789-abcd-ef0123456789
@@ -1413,12 +1509,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller's org ID does not match path parameter
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
 /iudx/v2/auth/organization/user/provider_requests:
   get:
     tags:
@@ -1492,12 +1596,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - User is not part of any organisation
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
 /iudx/v2/auth/organization/user/provider-requests/{id}:
   parameters:
   - name: id
@@ -1554,12 +1666,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - User is not part of any organisation
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '404':
         description: Not Found - No provider role request found for this user
         content:
@@ -1609,12 +1729,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - User is not part of any organisation
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
   get:
     tags:
     - Organisation APIs
@@ -1699,7 +1827,7 @@
                 paginationInfo:
                   $ref: ../components/schemas/pagination.yaml#/PaginationInfo
             example:
-              type: urn:dx:ControlPlane:success
+              type: urn:dx:controlPlane:success
               title: Success
               result:
               - id: 5b6c7d8e-9f0a-1b2c-3d4e-5f6a7b8c9d0e
@@ -1732,6 +1860,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
 /iudx/v2/auth/organization/user/provider_role/requests/{id}:
   parameters:
   - name: id
@@ -1803,12 +1935,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have org admin role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '404':
         description: Not Found - Request with given ID does not exist
         content:
@@ -1883,12 +2023,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - User not in org or caller lacks permission
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '404':
         description: Not Found - User not found or no pending provider role request
         content:
@@ -1931,12 +2079,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
 /iudx/v2/auth/organisations/report:
   get:
     tags:
@@ -1968,12 +2124,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
 /iudx/v2/auth/organisations/{id}/join_requests/report:
   parameters:
   - name: id
@@ -2013,12 +2177,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
 /iudx/v2/auth/organization/user/provider_role/requests/report:
   get:
     tags:
@@ -2050,6 +2222,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
         content:
@@ -2057,3 +2233,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
 
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.

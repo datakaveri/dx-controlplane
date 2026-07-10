@@ -129,19 +129,19 @@
               MissingOrMalformedRequest:
                 summary: Missing or malformed request
                 value:
-                  type: dx:controlPlane:badRequest
+                  type: urn:dx:controlPlane:badRequest
                   title: Bad Request
                   detail: Missing or malformed request
               InvalidPaginationRange:
                 summary: Pagination limit exceeded
                 value:
-                  type: dx:controlPlane:badRequest
+                  type: urn:dx:controlPlane:badRequest
                   title: Bad Request
                   detail: Invalid pagination. The value of (page * size) must be between 1 and 10,000
               InvalidSortFormat:
                 summary: Invalid sort format
                 value:
-                  type: dx:controlPlane:badRequest
+                  type: urn:dx:controlPlane:badRequest
                   title: Bad Request
                   detail: 'Invalid sort format: itemCreatedAt-desc. Expected field:order'
     x-codeSamples:
@@ -298,7 +298,7 @@
               CountAllTypes:
                 summary: Count results for all types
                 value:
-                  type: dx:controlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                   - adex:DataBank: 74
@@ -314,7 +314,7 @@
               BadRequest:
                 summary: Bad Request
                 value:
-                  type: dx:controlPlane:badRequest
+                  type: urn:dx:controlPlane:badRequest
                   title: Bad Request
                   detail: Missing or malformed request
 /iudx/v2/cat/search/myassets:
@@ -373,7 +373,7 @@
                 paginationInfo:
                   $ref: ../components/schemas/pagination.yaml#/PaginationInfo
             example:
-              type: dx:controlPlane:success
+              type: urn:dx:controlPlane:success
               title: Success
               result:
               - id: 674caec0-b39d-418b-8e23-167306751396
@@ -427,9 +427,9 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: dx:controlPlane:notAuthorized
+              type: urn:dx:controlPlane:notAuthorized
               title: Not Authorized
-              detail: Missing Bearer token
+              detail: Missing or invalid Bearer token
       '400':
         description: Invalid request parameters
         content:
@@ -437,7 +437,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: dx:controlPlane:badRequest
+              type: urn:dx:controlPlane:badRequest
               title: Bad Request
               detail: 'Invalid sort format: itemCreatedAt-desc. Expected field:order'
   post:
@@ -488,19 +488,19 @@
               MissingOrMalformedRequest:
                 summary: Missing or malformed request
                 value:
-                  type: dx:controlPlane:badRequest
+                  type: urn:dx:controlPlane:badRequest
                   title: Bad Request
                   detail: Missing or malformed request
               InvalidPaginationRange:
                 summary: Pagination limit exceeded
                 value:
-                  type: dx:controlPlane:badRequest
+                  type: urn:dx:controlPlane:badRequest
                   title: Bad Request
                   detail: Invalid pagination. The value of (page * size) must be between 1 and 10,000
               InvalidSortFormat:
                 summary: Invalid sort format
                 value:
-                  type: dx:controlPlane:badRequest
+                  type: urn:dx:controlPlane:badRequest
                   title: Bad Request
                   detail: 'Invalid sort format: itemCreatedAt-desc. Expected field:order'
       '401':
@@ -510,9 +510,9 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: dx:controlPlane:notAuthorized
+              type: urn:dx:controlPlane:notAuthorized
               title: Not Authorized
-              detail: Missing Bearer token
+              detail: Missing or invalid Bearer token
     x-codeSamples:
     - lang: cURL
       label: search by item type

@@ -38,6 +38,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse401
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '409':
         description: Conflict - Subscription already exists
         content:
@@ -85,6 +89,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse401
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       500:
         description: Internal Server Error
         content:
@@ -129,6 +137,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse401
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       500:
         description: Internal Server Error
         content:
@@ -189,6 +201,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse401
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       500:
         description: Internal Server Error
         content:
@@ -241,6 +257,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse401
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       500:
         description: Internal Server Error
         content:

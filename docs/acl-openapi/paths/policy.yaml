@@ -256,6 +256,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/Unauthorized
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
         headers:
           Content-Type:
             schema:
@@ -272,6 +276,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/createPolicyForbidden
+            example:
+              type: urn:dx:aclApd:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
         headers:
           Content-Type:
             schema:
@@ -404,6 +412,10 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/deletePolicyNotFoundErrorResponse
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
         headers:
           Content-Type:
             schema:
@@ -429,6 +441,10 @@
                 detail:
                   type: string
                   example: Failure, as policy doesn't belong to the user or organisation
+            example:
+              type: urn:dx:aclApd:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
         headers:
           Content-Type:
             schema:
@@ -516,6 +532,14 @@
               $ref: ../components/schemas.yaml#/PolicyListResponse
       '401':
         description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/ErrorResponse
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
 /iudx/acl/apd/v2/policy/organisation:
   get:
     tags:
@@ -580,8 +604,24 @@
               $ref: ../components/schemas.yaml#/PolicyListResponse
       '401':
         description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/ErrorResponse
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/ErrorResponse
+            example:
+              type: urn:dx:aclApd:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
 /iudx/acl/apd/v2/policy/platform:
   get:
     tags:
@@ -641,8 +681,24 @@
               $ref: ../components/schemas.yaml#/PolicyListResponse
       '401':
         description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/ErrorResponse
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/ErrorResponse
+            example:
+              type: urn:dx:aclApd:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
 /iudx/acl/apd/v2/policy/provider:
   get:
     tags:
@@ -701,5 +757,21 @@
               $ref: ../components/schemas.yaml#/PolicyListResponse
       '401':
         description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/ErrorResponse
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/ErrorResponse
+            example:
+              type: urn:dx:aclApd:forbidden
+              title: Forbidden
+              detail: User does not have the required role.

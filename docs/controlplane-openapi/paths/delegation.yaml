@@ -113,8 +113,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have permission to create delegations
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '404':
         description: Delegate user not found - The specified delegate_id does not correspond to an existing user
 /iudx/v2/auth/delegation/delegate:
@@ -179,6 +191,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
     x-codeSamples:
     - lang: cURL
       label: get all delegation grants cURL
@@ -249,6 +265,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
     x-codeSamples:
     - lang: cURL
       label: get all delegation grants cURL
@@ -327,6 +347,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '404':
         description: Delegation grant not found
         content:
@@ -420,9 +444,9 @@
                 detail:
                   type: string
             example:
-              type: urn:dx:auth:Unauthorized
-              title: Unauthorized
-              detail: Authentication token required
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - User is not the delegator of this delegation
         content:
@@ -437,9 +461,9 @@
                 detail:
                   type: string
             example:
-              type: urn:dx:auth:Forbidden
+              type: urn:dx:controlPlane:forbidden
               title: Forbidden
-              detail: This user cannot delete the delegation as it is not the delegator
+              detail: User does not have the required role.
       '404':
         description: Delegation grant not found
         content:

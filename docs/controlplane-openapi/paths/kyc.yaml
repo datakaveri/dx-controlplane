@@ -21,6 +21,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '500':
         description: Internal Server Error
         content:
@@ -69,6 +73,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '404':
         description: Not Found - KYC verification not found
       '500':
@@ -104,12 +112,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Insufficient permissions to revoke KYC
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '500':
         description: Internal Server Error
         content:

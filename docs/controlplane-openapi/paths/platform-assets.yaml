@@ -48,7 +48,7 @@
               PlatformAssetsExample:
                 summary: Sample response for platform assets
                 value:
-                  type: dx:controlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                   - description: Support Vector Machine (SVM) is a powerful supervised learning algorithm that creates a hyperplane
@@ -100,32 +100,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
-            examples:
-              ForbiddenExample:
-                summary: Forbidden response
-                value:
-                  type: dx:controlPlane:forbidden
-                  title: Forbidden
-                  detail: User does not have the required role.
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '401':
         description: Missing or invalid authentication token
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
-            examples:
-              MissingToken:
-                summary: Missing Bearer token
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Missing Bearer token
-              InvalidToken:
-                summary: Invalid token format
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Invalid token format
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
     x-codeSamples:
     - lang: cURL
       label: get organisation assets
@@ -198,7 +186,7 @@
               PlatformAssetsExample:
                 summary: Sample response for platform assets
                 value:
-                  type: dx:controlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                   - description: Support Vector Machine (SVM) is a powerful supervised learning algorithm that creates a hyperplane
@@ -250,32 +238,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
-            examples:
-              ForbiddenExample:
-                summary: Forbidden response
-                value:
-                  type: dx:controlPlane:forbidden
-                  title: Forbidden
-                  detail: User does not have the required role.
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '401':
         description: Missing or invalid authentication token
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
-            examples:
-              MissingToken:
-                summary: Missing Bearer token
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Missing Bearer token
-              InvalidToken:
-                summary: Invalid token format
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Invalid token format
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '400':
         description: Bad Request – Malformed request, missing required fields, or unsupported searchType.
         content:
@@ -295,7 +271,7 @@
               missingFields:
                 summary: Missing searchType or malformed searchCriteria
                 value:
-                  type: dx:controlPlane:badRequest
+                  type: urn:dx:controlPlane:badRequest
                   title: Bad Request
                   detail: Missing or malformed request
     x-codeSamples:

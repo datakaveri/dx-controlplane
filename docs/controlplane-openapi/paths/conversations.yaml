@@ -38,7 +38,7 @@
               properties:
                 type:
                   type: string
-                  example: urn:dx:ControlPlane:success
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
                   example: Success
@@ -60,6 +60,10 @@
           application/json:
             schema:
               $ref: '../components/schemas/common.yaml#/UnauthorizedResponse'
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '500':
         description: Internal Server Error
         content:
@@ -144,7 +148,7 @@
               properties:
                 type:
                   type: string
-                  example: urn:dx:ControlPlane:success
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
                   example: Success
@@ -207,6 +211,10 @@
           application/json:
             schema:
               $ref: '../components/schemas/common.yaml#/UnauthorizedResponse'
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '500':
         description: Internal Server Error
         content:
@@ -256,7 +264,7 @@
               properties:
                 type:
                   type: string
-                  example: urn:dx:ControlPlane:success
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
                   example: Success
@@ -319,6 +327,10 @@
           application/json:
             schema:
               $ref: '../components/schemas/common.yaml#/UnauthorizedResponse'
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '404':
         description: Not Found - Message with given ID does not exist
       '500':
@@ -393,7 +405,7 @@
               properties:
                 type:
                   type: string
-                  example: urn:dx:ControlPlane:success
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
                   example: Success
@@ -454,8 +466,20 @@
           application/json:
             schema:
               $ref: '../components/schemas/common.yaml#/UnauthorizedResponse'
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller is not the message owner
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '404':
         description: Not Found - Message with given ID does not exist
       '500':
@@ -502,7 +526,7 @@
               properties:
                 type:
                   type: string
-                  example: urn:dx:ControlPlane:success
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
                   example: Success
@@ -515,8 +539,20 @@
           application/json:
             schema:
               $ref: '../components/schemas/common.yaml#/UnauthorizedResponse'
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller is not the message owner
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '404':
         description: Not Found - Message with given ID does not exist
       '500':
@@ -599,7 +635,7 @@
               properties:
                 type:
                   type: string
-                  example: urn:dx:ControlPlane:success
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
                   example: Success
@@ -661,6 +697,10 @@
           application/json:
             schema:
               $ref: '../components/schemas/common.yaml#/UnauthorizedResponse'
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '404':
         description: Not Found - Parent message with given ID does not exist
       '500':

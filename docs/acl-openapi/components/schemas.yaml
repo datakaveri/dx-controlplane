@@ -62,7 +62,7 @@ getNotificationNotFoundResponse:
   - title
   - detail
   example:
-    type: urn:dx:AclApd:resourceNotFound
+    type: urn:dx:aclApd:resourceNotFound
     title: Not Found
     detail: 'Access request not found, for the server : dummy.server.io'
 createNotificationForbiddenResponse:
@@ -84,7 +84,7 @@ createNotificationForbiddenResponse:
   - title
   - detail
   example:
-    type: urn:dx:AclApd:no-access
+    type: urn:dx:aclApd:no-access
     title: Forbidden
     detail: User does not have access to the given item
 updateNotificationForbiddenResponse:
@@ -106,7 +106,7 @@ updateNotificationForbiddenResponse:
   - title
   - detail
   example:
-    type: urn:dx:AclApd:forbidden
+    type: urn:dx:aclApd:forbidden
     title: Forbidden
     detail: The access request does not belong to the given provider
 reportGenerationForbiddenResponse:
@@ -128,7 +128,7 @@ reportGenerationForbiddenResponse:
   - title
   - detail
   example:
-    type: urn:dx:AclApd:forbidden
+    type: urn:dx:aclApd:forbidden
     title: Forbidden
     detail: User doesn't have required role
 updateNotificationNotFound:
@@ -150,7 +150,7 @@ updateNotificationNotFound:
   - title
   - detail
   example:
-    type: urn:dx:AclApd:resourceNotFound
+    type: urn:dx:aclApd:resourceNotFound
     title: Not Found
     detail: Access request not found
 updateNotificationBadRequest:
@@ -190,7 +190,7 @@ reportGenerationBadRequest:
   - title
   - detail
   example:
-    type: urn:dx:AclApd:badRequest
+    type: urn:dx:aclApd:badRequest
     title: Bad Request
     detail: 'Error in CSV generation: No data available for CSV generation'
 updateNotificationConflict:
@@ -212,7 +212,7 @@ updateNotificationConflict:
   - title
   - detail
   example:
-    type: urn:dx:AclApd:conflict
+    type: urn:dx:aclApd:conflict
     title: Conflict
     detail: Request could not be approved as, policy is already created
 UpdateAccessRequest:
@@ -234,7 +234,7 @@ UpdateAccessRequest:
   - title
   - detail
   example:
-    type: urn:dx:AclApd:success
+    type: urn:dx:aclApd:success
     title: Success
     detail: Request updated successfully
 getNotificationForbiddenResponse:
@@ -256,7 +256,7 @@ getNotificationForbiddenResponse:
   - title
   - detail
   example:
-    type: urn:dx:AclApd:forbidden
+    type: urn:dx:aclApd:forbidden
     title: Access Denied
     detail: 'Access Denied: You do not have ownership rights for this resource.'
 createNotificationSuccessResponse:
@@ -278,7 +278,7 @@ createNotificationSuccessResponse:
   - title
   - detail
   example:
-    type: urn:dx:AclApd:success
+    type: urn:dx:aclApd:success
     title: Success
     detail: Request inserted successfully!
 checkAccessRequestSuccessResponse:
@@ -309,7 +309,7 @@ checkAccessRequestSuccessResponse:
     - title
     - detail
   example:
-    type: dx:aclApd:success
+    type: urn:dx:aclApd:success
     title: Success
     detail: User has access to the given asset!
     result:
@@ -379,7 +379,7 @@ checkAccessRequestPendingResponse:
     result:
       type: object
   example:
-    type: dx:aclApd:access-pending
+    type: urn:dx:aclApd:access-pending
     title: Forbidden
     detail: Access request is still pending for the given item
     result:
@@ -423,7 +423,7 @@ createNotificationResourceNotFoundResponse:
   - title
   - detail
   example:
-    type: urn:dx:AclApd:notFound
+    type: urn:dx:aclApd:notFound
     title: Not Found
     detail: Catalogue item not found
 checkAccessRequestNotFoundResponse:
@@ -452,7 +452,7 @@ checkAccessRequestNotFoundResponse:
   - title
   - detail
   example:
-    type: dx:aclApd:no-access
+    type: urn:dx:aclApd:no-access
     title: Forbidden
     detail: User does not have access to the given item
 createNotificationForbidden:
@@ -474,7 +474,7 @@ createNotificationForbidden:
   - title
   - detail
   example:
-    type: urn:dx:AclApd:forbidden
+    type: urn:dx:aclApd:forbidden
     title: Forbidden
     detail: User cannot create access request for the resource, as the user is a provider
       of the resource
@@ -586,7 +586,7 @@ getPolicySuccessResponseWithResourceType:
             type: string
             minLength: 1
   example:
-    type: urn:dx:AclApd:success
+    type: urn:dx:aclApd:success
     title: Success
     results:
     - policyId: aaaaaaaa-1234-1234-1234-1234aaaa1234
@@ -710,7 +710,7 @@ getPolicySuccessResponseWithResourceGroup:
             type: string
             minLength: 1
   example:
-    type: urn:dx:AclApd:success
+    type: urn:dx:aclApd:success
     title: Success
     results:
     - policyId: aaaaaaaa-6473-3546-5436-8758aaaa5897
@@ -803,7 +803,7 @@ deleteNotificationForbiddenResponse:
   - title
   - detail
   example:
-    type: urn:dx:AclApd:forbidden
+    type: urn:dx:aclApd:forbidden
     title: Forbidden
     detail: 'Access Denied: You do not have ownership rights for this resource.'
 deleteNotificationNotFound:
@@ -825,7 +825,7 @@ deleteNotificationNotFound:
   - title
   - detail
   example:
-    type: urn:dx:AclApd:notFound
+    type: urn:dx:aclApd:notFound
     title: Not Found
     detail: Request could not be withdrawn, as it is not found
 deleteNotificationBadRequest:
@@ -847,7 +847,7 @@ deleteNotificationBadRequest:
   - title
   - detail
   example:
-    type: urn:dx:AclApd:badRequest
+    type: urn:dx:aclApd:badRequest
     title: Bad Request
     detail: Request could not be withdrawn, as it is not in pending status
 deleteNotification:
@@ -869,7 +869,7 @@ deleteNotification:
   - title
   - detail
   example:
-    type: urn:dx:AclApd:success
+    type: urn:dx:aclApd:success
     title: Success
     detail: Request deleted successfully
 deletePolicy:
@@ -891,7 +891,7 @@ deletePolicy:
   - title
   - detail
   example:
-    type: urn:dx:apdServerPanel:success
+    type: urn:dx:aclApd:success
     title: Success
     detail: Policy deleted successfully
 deletePolicyInvalidUserResponse:
@@ -913,7 +913,7 @@ deletePolicyInvalidUserResponse:
   - title
   - detail
   example:
-    type: urn:dx:apdServerPanel:success
+    type: urn:dx:aclApd:success
     title: Forbidden
     detail: 'Access Denied: You do not have ownership rights for this policy.'
 getPolicyInvalidUserResponse:
@@ -935,7 +935,7 @@ getPolicyInvalidUserResponse:
   - title
   - detail
   example:
-    type: urn:dx:apdServerPanel:success
+    type: urn:dx:aclApd:success
     title: Access Denied
     detail: Policy could not be fetched, user doesn't own the policy
 updateNotificationInvalidUserResponse:
@@ -954,7 +954,7 @@ updateNotificationInvalidUserResponse:
   - title
   - detail
   example:
-    type: urn:dx:AclApd:forbidden
+    type: urn:dx:aclApd:forbidden
     title: Access Denied
     detail: Notification could not be updated, notification doesn't belong to the
       user
@@ -977,7 +977,7 @@ policyNotFound:
   - title
   - detail
   example:
-    type: urn:dx:AclApd:notFound
+    type: urn:dx:aclApd:notFound
     title: Not Found
     detail: Policy Not Found
 Unauthorized:
@@ -998,7 +998,7 @@ Unauthorized:
   - title
   - detail
   example:
-    type: urn:dx:AclApd:invalidAuthorizationToken
+    type: urn:dx:aclApd:invalidAuthorizationToken
     title: Not Authorized
     detail: Not Authorized
 createPolicyBadRequest:
@@ -1020,7 +1020,7 @@ createPolicyBadRequest:
   - title
   - detail
   example:
-    type: urn:dx:apdServerPanel:badRequest
+    type: urn:dx:aclApd:badRequest
     title: Bad Request
     detail: 'Item not found for ID: b34eb955-c691-4fd3-b200-f18bc78810a2'
 createPolicyForbidden:
@@ -1041,7 +1041,7 @@ createPolicyForbidden:
   - title
   - detail
   example:
-    type: urn:dx:apdServerPanel:forbidden
+    type: urn:dx:aclApd:forbidden
     title: Forbidden
     detail: 'Access Denied: You do not have ownership rights for this resource.'
 generalBadRequest:
@@ -1061,7 +1061,7 @@ generalBadRequest:
   - title
   - detail
   example:
-    type: urn:dx:AclApd:badRequest
+    type: urn:dx:aclApd:badRequest
     title: Bad Request
     detail: Bad Request
 AccessRequest:
@@ -1177,7 +1177,7 @@ AccessRequest:
   - paginationInfo
   x-examples:
     Example:
-      type: urn:dx:AclApd:success
+      type: urn:dx:aclApd:success
       title: User permission requests
       results:
       - requestId: e4619679-f5d9-4eff-9f79-bbded6130bb1
@@ -4157,7 +4157,7 @@ createPolicySuccessResponse:
     - title
     - detail
   example:
-    type: urn:dx:apdServerPanel:success
+    type: urn:dx:aclApd:success
     title: Success
     detail: Policy created successfully
 conflictResponse:
@@ -4175,7 +4175,7 @@ conflictResponse:
     - title
     - detail
   example:
-    type: urn:dx:AclApd:conflict
+    type: urn:dx:aclApd:conflict
     title: Conflict
     detail: 'Active policy already exists for accessType(s): api, file'
 deletePolicyErrorResponse:
@@ -4197,7 +4197,7 @@ deletePolicyErrorResponse:
     - title
     - detail
   example:
-    type: urn:dx:apdServerPanel:success
+    type: urn:dx:aclApd:success
     title: Bad Request
     detail: Policy could not be deleted, as policy is not ACTIVE
 deletePolicyNotFoundErrorResponse:
@@ -4219,7 +4219,7 @@ deletePolicyNotFoundErrorResponse:
     - title
     - detail
   example:
-    type: urn:dx:apdServerPanel:success
+    type: urn:dx:aclApd:success
     title: Not Found
     detail: Policy could not be deleted, as it doesn't exist
 Policy:

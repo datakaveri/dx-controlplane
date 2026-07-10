@@ -44,7 +44,7 @@
                   items:
                     $ref: ../components/schemas/resource-server.yaml#/ResourceServer
             example:
-              type: dx:controlPlane:success
+              type: urn:dx:controlPlane:success
               title: Success
               result:
               - id: 2ef0f344-dc41-4369-a50b-1515a0db5db2
@@ -66,17 +66,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
-            examples:
-              missingToken:
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Missing Bearer token
-              invalidToken:
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Invalid token format
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Insufficient permissions
         content:
@@ -84,7 +77,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: dx:controlPlane:forbidden
+              type: urn:dx:controlPlane:forbidden
               title: Forbidden
               detail: User does not have the required role.
       '500':
@@ -147,7 +140,7 @@
             schema:
               $ref: ../components/schemas/resource-server.yaml#/ResourceServerResponse
             example:
-              type: dx:controlPlane:success
+              type: urn:dx:controlPlane:success
               title: Success
               result:
                 id: cabd5e4d-a426-4472-8d5d-80f8ac55cead
@@ -174,12 +167,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
-            examples:
-              missingToken:
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Missing Bearer token
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - User does not have the required role
         content:
@@ -187,7 +178,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: dx:controlPlane:forbidden
+              type: urn:dx:controlPlane:forbidden
               title: Forbidden
               detail: User does not have the required role.
       '500':
@@ -240,7 +231,7 @@
             schema:
               $ref: ../components/schemas/resource-server.yaml#/ResourceServer
             example:
-              type: dx:controlPlane:success
+              type: urn:dx:controlPlane:success
               title: Success
               result:
                 id: 7e9f1f76-baa1-4230-817f-f61ef3c0c411
@@ -261,12 +252,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
-            examples:
-              missingToken:
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Missing Bearer token
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - User does not have the required role
         content:
@@ -274,7 +263,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: dx:controlPlane:forbidden
+              type: urn:dx:controlPlane:forbidden
               title: Forbidden
               detail: User does not have the required role.
       '404':
@@ -284,7 +273,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: dx:controlPlane:notFound
+              type: urn:dx:controlPlane:notFound
               title: Not Found
               detail: Resource server not found
     x-codeSamples:
@@ -344,17 +333,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
-            examples:
-              missingToken:
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Missing Bearer token
-              invalidToken:
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Invalid token format
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Insufficient permissions
         content:
@@ -362,7 +344,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: dx:controlPlane:forbidden
+              type: urn:dx:controlPlane:forbidden
               title: Forbidden
               detail: User does not have the required role.
       '404':
@@ -372,7 +354,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: dx:controlPlane:notFound
+              type: urn:dx:controlPlane:notFound
               title: Not Found
               detail: No matching requestId found in resource table
     x-codeSamples:

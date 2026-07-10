@@ -8,7 +8,7 @@ LeaderBoardResponseAsset:
     type:
       type: string
       description: URN identifying the response category
-      example: urn:dx:ControlPlane:success
+      example: urn:dx:controlPlane:success
     title:
       type: string
       description: Short response title
@@ -68,7 +68,7 @@ LeaderBoardResponseAsset:
             hasPrevious:
               type: boolean
   example:
-    type: urn:dx:ControlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     result:
     - rank: 1
@@ -156,7 +156,7 @@ LeaderBoardProvider:
         hasPrevious:
           type: boolean
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     result:
     - rank: 1
@@ -242,7 +242,7 @@ LeaderBoardOrg:
         hasPrevious:
           type: boolean
   example:
-    type: dx:controlPlane:success
+    type: urn:dx:controlPlane:success
     title: Success
     result:
     - rank: 1
