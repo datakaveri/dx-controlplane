@@ -8,7 +8,7 @@ GetRequestTypeMappingsResponse:
   properties:
     type:
       type: string
-      example: urn:dx:ControlPlane:success
+      example: urn:dx:controlPlane:success
     title:
       type: string
       example: Success

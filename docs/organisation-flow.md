@@ -339,7 +339,7 @@ All successful responses return:
 
 ```json
 {
-  "type": "urn:dx:ControlPlane:success",
+  "type": "urn:dx:controlPlane:success",
   "title": "Success",
   "result": { ... }          // object or array
 }
@@ -349,7 +349,7 @@ Error responses:
 
 ```json
 {
-  "type": "urn:dx:ControlPlane:<errorCode>",
+  "type": "urn:dx:controlPlane:<errorCode>",
   "title": "<Human title>",
   "detail": "<message>"
 }
@@ -416,7 +416,7 @@ Error responses:
 
 ```json
 {
-  "type": "urn:dx:ControlPlane:success",
+  "type": "urn:dx:controlPlane:success",
   "title": "Success",
   "result": {
     "id": "4202493c-7c64-49b0-8f61-2000ca3d147c",
@@ -449,7 +449,7 @@ Error responses:
 | Status | Type | Condition |
 |---|---|---|
 | 401 | `urn:dx:as:InvalidAuthenticationToken` | Token invalid/expired |
-| 409 | `urn:dx:ControlPlane:conflict` | Duplicate org name or pending request exists |
+| 409 | `urn:dx:controlPlane:conflict` | Duplicate org name or pending request exists |
 
 ---
 
@@ -476,7 +476,7 @@ Error responses:
 
 ```json
 {
-  "type": "urn:dx:ControlPlane:success",
+  "type": "urn:dx:controlPlane:success",
   "title": "Success",
   "result": [
     {
@@ -559,7 +559,7 @@ Error responses:
 
 ```json
 {
-  "type": "urn:dx:ControlPlane:success",
+  "type": "urn:dx:controlPlane:success",
   "title": "Success",
   "detail": "Updated Successfully"
 }
@@ -590,7 +590,7 @@ Error responses:
 
 ```json
 {
-  "type": "urn:dx:ControlPlane:success",
+  "type": "urn:dx:controlPlane:success",
   "title": "Success",
   "result": [
     {
@@ -624,7 +624,7 @@ Error responses:
 
 ```json
 {
-  "type": "urn:dx:ControlPlane:success",
+  "type": "urn:dx:controlPlane:success",
   "title": "Success",
   "result": {
     "id": "e87246e2-5da5-40b0-973c-690d2f48f879",
@@ -672,7 +672,7 @@ Error responses:
 
 ```json
 {
-  "type": "urn:dx:ControlPlane:success",
+  "type": "urn:dx:controlPlane:success",
   "title": "Success",
   "result": {
     "id": "e87246e2-5da5-40b0-973c-690d2f48f879",
@@ -730,7 +730,7 @@ Error responses:
 
 ```json
 {
-  "type": "urn:dx:ControlPlane:success",
+  "type": "urn:dx:controlPlane:success",
   "title": "Success",
   "detail": "Created Join request"
 }
@@ -759,7 +759,7 @@ Error responses:
 
 ```json
 {
-  "type": "urn:dx:ControlPlane:success",
+  "type": "urn:dx:controlPlane:success",
   "title": "Success",
   "result": [
     {
@@ -807,7 +807,7 @@ Error responses:
 
 ```json
 {
-  "type": "urn:dx:ControlPlane:success",
+  "type": "urn:dx:controlPlane:success",
   "title": "Success",
   "detail": "Approved Organisation Join Request"
 }
@@ -868,7 +868,7 @@ Error responses:
 
 ```json
 {
-  "type": "urn:dx:ControlPlane:success",
+  "type": "urn:dx:controlPlane:success",
   "title": "Success",
   "detail": "Withdrawn organisation join request"
 }
@@ -898,7 +898,7 @@ Error responses:
 
 ```json
 {
-  "type": "urn:dx:ControlPlane:success",
+  "type": "urn:dx:controlPlane:success",
   "title": "Success",
   "result": [
     {
@@ -995,7 +995,7 @@ Error responses:
 
 ```json
 {
-  "type": "urn:dx:controlPanel:success",
+  "type": "urn:dx:controlPlane:success",
   "title": "Success",
   "detail": "Created request"
 }
@@ -1015,7 +1015,7 @@ Error responses:
 
 ```json
 {
-  "type": "urn:dx:controlPanel:success",
+  "type": "urn:dx:controlPlane:success",
   "title": "Success",
   "result": [
     {
@@ -1062,7 +1062,7 @@ Error responses:
 
 ```json
 {
-  "type": "urn:dx:controlPanel:success",
+  "type": "urn:dx:controlPlane:success",
   "title": "Success",
   "detail": "Provider role updated"
 }
@@ -1082,7 +1082,7 @@ Error responses:
 
 ```json
 {
-  "type": "urn:dx:controlPanel:success",
+  "type": "urn:dx:controlPlane:success",
   "title": "Success",
   "result": [
     {
@@ -1355,12 +1355,12 @@ The log is committed via `CpRoutingContextHelper.setAuditingLogV2(ctx, log)` and
 
 | HTTP Status | URN | Meaning |
 |---|---|---|
-| 400 | `urn:dx:ControlPlane:badRequest` | Invalid request (e.g., deleting non-pending request, request not found) |
+| 400 | `urn:dx:controlPlane:badRequest` | Invalid request (e.g., deleting non-pending request, request not found) |
 | 401 | `urn:dx:as:InvalidAuthenticationToken` | Token invalid, expired, or inactive |
-| 401 | `urn:dx:ControlPlane:notAuthorized` | User lacks permission for the operation |
-| 403 | `urn:dx:ControlPlane:forbidden` | Access explicitly forbidden (e.g., not org admin, not cos_admin) |
-| 404 | `urn:dx:ControlPlane:notFound` | Resource not found |
-| 409 | `urn:dx:ControlPlane:conflict` | Duplicate (org name, email, active request already exists) |
+| 401 | `urn:dx:controlPlane:notAuthorized` | User lacks permission for the operation |
+| 403 | `urn:dx:controlPlane:forbidden` | Access explicitly forbidden (e.g., not org admin, not cos_admin) |
+| 404 | `urn:dx:controlPlane:notFound` | Resource not found |
+| 409 | `urn:dx:controlPlane:conflict` | Duplicate (org name, email, active request already exists) |
 
 ---
 

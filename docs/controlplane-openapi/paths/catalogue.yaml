@@ -50,7 +50,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/invalidIdErrorResponse
             example:
-              type: dx:controlPlane:badRequest
+              type: urn:dx:controlPlane:badRequest
               title: Bad Request
               detail: Missing or malformed request
       '401':
@@ -59,31 +59,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
-            examples:
-              MissingToken:
-                summary: Missing Bearer token
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Missing Bearer token
-              InvalidToken:
-                summary: Invalid token format
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Invalid token format
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Document doesn't exist to update it
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/updateItemNotFound
-            examples:
-              updateItemNotFound:
-                value:
-                  type: dx:controlPlane:forbidden
-                  title: Forbidden
-                  detail: 'User does not have sufficient role for item type: AI_MODEL'
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
     x-codeSamples:
     - lang: cURL
       label: create item cURL
@@ -143,7 +132,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/invalidIdErrorResponse
             example:
-              type: dx:controlPlane:badRequest
+              type: urn:dx:controlPlane:badRequest
               title: Bad Request
               detail: Missing or malformed request
       '401':
@@ -152,31 +141,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
-            examples:
-              MissingToken:
-                summary: Missing Bearer token
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Missing Bearer token
-              InvalidToken:
-                summary: Invalid token format
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Invalid token format
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Document doesn't exist to update it
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/updateItemNotFound
-            examples:
-              updateItemNotFound:
-                value:
-                  type: dx:controlPlane:forbidden
-                  title: Forbidden
-                  detail: 'User does not have sufficient role for item type: DATA_BANK'
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '404':
         description: Document doesn't exist to update it
         content:
@@ -186,7 +164,7 @@
             examples:
               updateItemNotFound:
                 value:
-                  type: dx:controlPlane:badRequest
+                  type: urn:dx:controlPlane:badRequest
                   title: Bad Request
                   detail: Item not found for update
     x-codeSamples:
@@ -253,7 +231,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/invalidIdErrorResponse
             example:
-              type: dx:controlPlane:badRequest
+              type: urn:dx:controlPlane:badRequest
               title: Bad Request
               detail: Missing or malformed request
       '404':
@@ -263,7 +241,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/invalidIdErrorResponse
             example:
-              type: dx:controlPlane:notFound
+              type: urn:dx:controlPlane:notFound
               title: Not Found
               detail: doc doesn't exist
       '401':
@@ -272,13 +250,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
-            examples:
-              InvalidToken:
-                summary: Invalid token format
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Invalid token format
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
     x-codeSamples:
     - lang: cURL
       label: item by id
@@ -315,7 +290,7 @@
             examples:
               Delete Success:
                 value:
-                  type: dx:controlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   results:
                   - id: 6e58c916-f6c1-448d-acea-756f3272bc57
@@ -327,7 +302,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/invalidIdErrorResponse
             example:
-              type: dx:controlPlane:badRequest
+              type: urn:dx:controlPlane:badRequest
               title: Bad Request
               detail: Missing or malformed request
       '401':
@@ -336,19 +311,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
-            examples:
-              MissingToken:
-                summary: Missing Bearer token
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Missing Bearer token
-              InvalidToken:
-                summary: Invalid token format
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Invalid token format
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '404':
         description: Didn't find the item
         content:
@@ -358,7 +324,7 @@
             examples:
               Item not found to Delete:
                 value:
-                  type: dx:controlPlane:notFound
+                  type: urn:dx:controlPlane:notFound
                   title: Not Found
                   detail: Item not found for deletion
       '409':
@@ -370,7 +336,7 @@
             examples:
               Item has associated entities to Delete:
                 value:
-                  type: dx:controlPlane:conflict
+                  type: urn:dx:controlPlane:conflict
                   title: Conflict
                   detail: Item has associated entities and cannot be deleted
     x-codeSamples:
@@ -424,7 +390,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/successResponseWithObjects
             example:
-              type: dx:controlPlane:success
+              type: urn:dx:controlPlane:success
               title: Success
               detail: 'Success: Item patched successfully'
               results:
@@ -436,7 +402,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/invalidIdErrorResponse
             example:
-              type: dx:controlPlane:badRequest
+              type: urn:dx:controlPlane:badRequest
               title: Bad Request
               detail: Missing or malformed request
       '401':
@@ -446,9 +412,9 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: dx:controlPlane:notAuthorized
+              type: urn:dx:controlPlane:notAuthorized
               title: Not Authorized
-              detail: Missing Bearer token
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden – attempting to update a restricted field or publishStatus without admin role
         content:
@@ -456,9 +422,9 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: dx:controlPlane:forbidden
+              type: urn:dx:controlPlane:forbidden
               title: Forbidden
-              detail: Providers cannot patch publishStatus
+              detail: User does not have the required role.
       '404':
         description: Item not found
         content:
@@ -466,7 +432,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: dx:controlPlane:notFound
+              type: urn:dx:controlPlane:notFound
               title: Not Found
               detail: Item not found
     x-codeSamples:
@@ -613,7 +579,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/invalidIdErrorResponse
             example:
-              type: dx:controlPlane:badRequest
+              type: urn:dx:controlPlane:badRequest
               title: Bad Request
               detail: Missing or malformed request
       '401':
@@ -622,43 +588,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
-            examples:
-              MissingToken:
-                summary: Missing Bearer token
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Missing Bearer token
-              InvalidToken:
-                summary: Invalid token format
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Invalid token format
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden – user does not have access based on `accessPolicy`.
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/errorResponseWithObjects
-            examples:
-              Forbidden:
-                value:
-                  type: dx:controlPlane:forbidden
-                  title: Forbidden
-                  detail: No ACTIVE policy exists for this user/item
-              NoDelegation:
-                summary: Delegation does not exist or is invalid
-                value:
-                  type: dx:controlPlane:forbidden
-                  title: Forbidden
-                  detail: Delegation doesn't exist for delegator and delegate
-              ScopeDenied:
-                summary: Delegation scope does not allow access
-                value:
-                  type: dx:controlPlane:forbidden
-                  title: Forbidden
-                  detail: Delegator not authorized for this item
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '404':
         description: Didn't find the item.
         content:
@@ -666,7 +609,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/invalidIdErrorResponse
             example:
-              type: dx:controlPlane:notFound
+              type: urn:dx:controlPlane:notFound
               title: Not Found
               detail: doc doesn't exist
     x-codeSamples:
@@ -738,7 +681,7 @@
             schema:
               $ref: '../components/schemas/common.yaml#/invalidIdErrorResponse'
             example:
-              type: dx:controlPlane:badRequest
+              type: urn:dx:controlPlane:badRequest
               title: Bad Request
               detail: Missing or invalid query parameters
       '401':
@@ -747,13 +690,10 @@
           application/json:
             schema:
               $ref: '../components/schemas/common.yaml#/ErrorResponse'
-            examples:
-              InvalidToken:
-                summary: Invalid token format
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Invalid token format
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '409':
         description: Conflict | Asset Name Already Exists
         content:
@@ -764,7 +704,7 @@
               InvalidToken:
                 summary: Conflict - Asset Name Already Exists
                 value:
-                  type: urn:dx:ControlPlane:conflict
+                  type: urn:dx:controlPlane:conflict
                   title: Conflict
                   detail: Asset name Already Exists
     x-codeSamples:

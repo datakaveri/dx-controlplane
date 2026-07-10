@@ -32,7 +32,7 @@ public class ApiServerVerticle extends AbstractApiServerVerticle {
 
   @Override
   protected String getDefaultUrnPrefix() {
-    return "urn:dx:controlPanel:";
+    return "urn:dx:controlPlane:";
   }
 
   @Override

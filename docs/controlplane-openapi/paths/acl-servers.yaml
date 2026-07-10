@@ -41,7 +41,7 @@
                   items:
                     $ref: '../components/schemas/acl-server.yaml#/AclServer'
             example:
-              type: dx:controlPlane:success
+              type: urn:dx:controlPlane:success
               title: Success
               result:
               - id: 2ef0f344-dc41-4369-a50b-1515a0db5db2
@@ -58,17 +58,10 @@
           application/json:
             schema:
               $ref: '../components/schemas/common.yaml#/ErrorResponse'
-            examples:
-              missingToken:
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Missing Bearer token
-              invalidToken:
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Invalid token format
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Insufficient permissions
         content:
@@ -76,7 +69,7 @@
             schema:
               $ref: '../components/schemas/common.yaml#/ErrorResponse'
             example:
-              type: dx:controlPlane:forbidden
+              type: urn:dx:controlPlane:forbidden
               title: Forbidden
               detail: User does not have the required role.
       '500':
@@ -144,7 +137,7 @@
             schema:
               $ref: '../components/schemas/acl-server.yaml#/AclServerResponse'
             example:
-              type: dx:controlPlane:success
+              type: urn:dx:controlPlane:success
               title: Success
               result:
                 id: cabd5e4d-a426-4472-8d5d-80f8ac55cead
@@ -161,6 +154,10 @@
           application/json:
             schema:
               $ref: '../components/schemas/common.yaml#/ErrorResponse'
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - User does not have the required role
         content:
@@ -168,7 +165,7 @@
             schema:
               $ref: '../components/schemas/common.yaml#/ErrorResponse'
             example:
-              type: dx:controlPlane:forbidden
+              type: urn:dx:controlPlane:forbidden
               title: Forbidden
               detail: User does not have the required role.
       '409':
@@ -178,7 +175,7 @@
             schema:
               $ref: '../components/schemas/common.yaml#/ErrorResponse'
             example:
-              type: dx:controlPlane:conflict
+              type: urn:dx:controlPlane:conflict
               title: Conflict
               detail: ACL server with the same URL already exists.
     x-codeSamples:
@@ -227,7 +224,7 @@
             schema:
               $ref: '../components/schemas/acl-server.yaml#/AclServerResponse'
             example:
-              type: dx:controlPlane:success
+              type: urn:dx:controlPlane:success
               title: Success
               result:
                 id: 7e9f1f76-baa1-4230-817f-f61ef3c0c411
@@ -244,12 +241,20 @@
           application/json:
             schema:
               $ref: '../components/schemas/common.yaml#/ErrorResponse'
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - User does not have the required role
         content:
           application/json:
             schema:
               $ref: '../components/schemas/common.yaml#/ErrorResponse'
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '404':
         description: Not Found - ACL server not found
         content:
@@ -257,7 +262,7 @@
             schema:
               $ref: '../components/schemas/common.yaml#/ErrorResponse'
             example:
-              type: dx:controlPlane:notFound
+              type: urn:dx:controlPlane:notFound
               title: Not Found
               detail: ACL server not found.
     x-codeSamples:
@@ -301,12 +306,20 @@
           application/json:
             schema:
               $ref: '../components/schemas/common.yaml#/ErrorResponse'
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Insufficient permissions
         content:
           application/json:
             schema:
               $ref: '../components/schemas/common.yaml#/ErrorResponse'
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '404':
         description: Not Found - ACL server not found
         content:
@@ -314,7 +327,7 @@
             schema:
               $ref: '../components/schemas/common.yaml#/ErrorResponse'
             example:
-              type: dx:controlPlane:notFound
+              type: urn:dx:controlPlane:notFound
               title: Not Found
               detail: ACL server not found.
     x-codeSamples:

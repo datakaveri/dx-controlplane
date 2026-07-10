@@ -57,7 +57,7 @@
             examples:
               success:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                     id: 9f1a2b3c-4d5e-6789-abcd-ef0123456789
@@ -71,6 +71,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '404':
         description: User credit record not found
 /iudx/v2/auth/admin/user/credit/balance/{id}:
@@ -140,7 +144,7 @@
             examples:
               success:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                     id: 9f1a2b3c-4d5e-6789-abcd-ef0123456789
@@ -154,8 +158,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '404':
         description: User credit record not found
 /iudx/v2/auth/user/credit/request:
@@ -228,7 +244,7 @@
             examples:
               success:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                   - id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
@@ -245,6 +261,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
 /iudx/v2/auth/user/credit/request/{id}:
   delete:
     tags:
@@ -298,8 +318,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller did not submit this request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '404':
         description: Not Found - Credit request with given ID does not exist
     security:
@@ -382,7 +414,7 @@
             examples:
               success:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                   - id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
@@ -412,12 +444,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/createNotificationForbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
   post:
     summary: Create a credit request (User)
     tags:
@@ -487,7 +527,7 @@
             examples:
               success:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                     id: f1061c0c-21fd-46ad-9cb3-83e479b8635d
@@ -510,6 +550,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
     operationId: post-auth-v2-credit-request
     x-codeSamples:
     - lang: cURL
@@ -668,7 +712,7 @@
             examples:
               success:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                     id: 8e6d2003-88ae-47ee-9779-c21d9c3a4091
@@ -692,12 +736,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/createNotificationForbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
 /iudx/v2/auth/admin/user/credit/deduct:
   put:
     summary: Deduct credits from a user's balance (COS Admin)
@@ -805,7 +857,7 @@
             examples:
               success:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                     id: bbc203ba-b7e2-43aa-9533-da2dee243bc7
@@ -829,12 +881,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role or insufficient permissions
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/createNotificationForbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
 /iudx/v2/auth/admin/user/credit/add:
   put:
     operationId: put-auth-v2-user-credit-add
@@ -942,7 +1002,7 @@
             examples:
               success:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                     id: bbc203ba-b7e2-43aa-9533-da2dee243bc7
@@ -966,12 +1026,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/createNotificationForbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
 /iudx/v2/auth/user/compute/requests/{id}:
   delete:
     tags:
@@ -1025,8 +1093,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller did not submit this compute request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '404':
         description: Not Found - Compute request with given ID does not exist
     security:
@@ -1065,9 +1145,17 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/createNotificationForbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.

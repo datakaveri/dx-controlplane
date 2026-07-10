@@ -184,7 +184,7 @@ paths:
               examples:
                 Example:
                   value:
-                    type: urn:dx:AclApdApd:badRequest
+                    type: urn:dx:aclApd:badRequest
                     title: Bad Request
                     detail: Request could not be created, as the item type is invalid
           headers:
@@ -201,6 +201,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
+              example:
+                type: urn:dx:aclApd:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
           headers:
             Content-Type:
               schema:
@@ -214,6 +218,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/createNotificationForbidden'
+              example:
+                type: urn:dx:aclApd:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
           headers:
             Content-Type:
               schema:
@@ -245,12 +253,12 @@ paths:
               examples:
                 PendingRequestConflict:
                   value:
-                    type: dx:aclApd:conflict
+                    type: urn:dx:aclApd:conflict
                     title: Conflict
                     detail: 'Pending access requests exist for: api.'
                 ActivePolicyConflict:
                   value:
-                    type: dx:aclApd:conflict
+                    type: urn:dx:aclApd:conflict
                     title: Conflict
                     detail: 'Active access already granted for: api.'
           headers:
@@ -413,7 +421,7 @@ paths:
               examples:
                 Update:
                   value:
-                    type: urn:dx:AclApdApd:success
+                    type: urn:dx:aclApd:success
                     title: Success
                     detail: Request updated successfully
           headers:
@@ -430,12 +438,12 @@ paths:
               examples:
                 MalformedRequest:
                   value:
-                    type: urn:dx:AclApd:badRequest
+                    type: urn:dx:aclApd:badRequest
                     title: Bad Request
                     detail: Missing or malformed request
                 InvalidAccessType:
                   value:
-                    type: urn:dx:AclApd:badRequest
+                    type: urn:dx:aclApd:badRequest
                     title: Bad Request
                     detail: Requested access type 'sub' is not allowed for this resource
           headers:
@@ -449,6 +457,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
+              example:
+                type: urn:dx:aclApd:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
           headers:
             Content-Type:
               schema:
@@ -462,6 +474,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/updateNotificationForbiddenResponse'
+              example:
+                type: urn:dx:aclApd:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
           headers:
             Content-Type:
               schema:
@@ -524,7 +540,7 @@ paths:
               examples:
                 Update:
                   value:
-                    type: urn:dx:AclApdApd:success
+                    type: urn:dx:aclApd:success
                     title: Success
                     detail: Request updated successfully
           headers:
@@ -538,6 +554,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/updateNotificationBadRequest'
+              example:
+                type: urn:dx:aclApd:badRequest
+                title: Bad Request
+                detail: Missing or malformed request
           headers:
             Content-Type:
               schema:
@@ -549,6 +569,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
+              example:
+                type: urn:dx:aclApd:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
           headers:
             Content-Type:
               schema:
@@ -562,6 +586,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/updateNotificationForbiddenResponse'
+              example:
+                type: urn:dx:aclApd:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
           headers:
             Content-Type:
               schema:
@@ -645,7 +673,7 @@ paths:
               examples:
                 ListResults:
                   value:
-                    type: urn:dx:AclApd:success
+                    type: urn:dx:aclApd:success
                     title: Success
                     results:
                       - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
@@ -691,6 +719,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/updateNotificationBadRequest'
+              example:
+                type: urn:dx:aclApd:badRequest
+                title: Bad Request
+                detail: Missing or malformed request
           headers:
             Content-Type:
               schema:
@@ -702,6 +734,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
+              example:
+                type: urn:dx:aclApd:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
           headers:
             Content-Type:
               schema:
@@ -783,6 +819,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/reportGenerationBadRequest'
+              example:
+                type: urn:dx:aclApd:badRequest
+                title: Bad Request
+                detail: Missing or malformed request
           headers:
             Content-Type:
               schema:
@@ -794,6 +834,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
+              example:
+                type: urn:dx:aclApd:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
           headers:
             Content-Type:
               schema:
@@ -805,6 +849,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/reportGenerationForbiddenResponse'
+              example:
+                type: urn:dx:aclApd:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
           headers:
             Content-Type:
               schema:
@@ -886,6 +934,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/reportGenerationBadRequest'
+              example:
+                type: urn:dx:aclApd:badRequest
+                title: Bad Request
+                detail: Missing or malformed request
           headers:
             Content-Type:
               schema:
@@ -897,6 +949,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
+              example:
+                type: urn:dx:aclApd:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
           headers:
             Content-Type:
               schema:
@@ -908,6 +964,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/reportGenerationForbiddenResponse'
+              example:
+                type: urn:dx:aclApd:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
           headers:
             Content-Type:
               schema:
@@ -990,7 +1050,7 @@ paths:
               examples:
                 ListResults:
                   value:
-                    type: urn:dx:AclApd:success
+                    type: urn:dx:aclApd:success
                     title: Success
                     results:
                       - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
@@ -1036,6 +1096,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/updateNotificationBadRequest'
+              example:
+                type: urn:dx:aclApd:badRequest
+                title: Bad Request
+                detail: Missing or malformed request
           headers:
             Content-Type:
               schema:
@@ -1047,6 +1111,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
+              example:
+                type: urn:dx:aclApd:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
           headers:
             Content-Type:
               schema:
@@ -1120,7 +1188,7 @@ paths:
               examples:
                 ListResults:
                   value:
-                    type: urn:dx:AclApd:success
+                    type: urn:dx:aclApd:success
                     title: Success
                     results:
                       - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
@@ -1161,6 +1229,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/updateNotificationBadRequest'
+              example:
+                type: urn:dx:aclApd:badRequest
+                title: Bad Request
+                detail: Missing or malformed request
           headers:
             Content-Type:
               schema:
@@ -1172,6 +1244,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
+              example:
+                type: urn:dx:aclApd:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
       security:
         - authorization: []
       x-codeSamples:
@@ -1267,7 +1343,7 @@ paths:
               examples:
                 Example:
                   value:
-                    type: urn:dx:AclApd:badRequest
+                    type: urn:dx:aclApd:badRequest
                     title: Bad Request
                     detail: Missing or malformed request
           headers:
@@ -1284,6 +1360,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
+              example:
+                type: urn:dx:aclApd:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
           headers:
             Content-Type:
               schema:
@@ -1301,39 +1381,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/checkAccessRequestNotFoundResponse'
-              examples:
-                accessRequestNotFoundResponse:
-                  value:
-                    type: dx:aclApd:no-access
-                    title: Forbidden
-                    detail: User does not have access to the given item
-                accessRequestPendingResponse:
-                  value:
-                    type: dx:aclApd:access-pending
-                    title: Forbidden
-                    detail: Access request is still pending for the given item
-                    result:
-                      hasPendingRequests: true
-                      pendingRequests:
-                        - requestId: c1d1531d-a293-4e9f-8f5e-72538f999a29
-                          requestStatus: PENDING
-                          requestType: DOWNLOAD
-                          constraints:
-                            access:
-                              - accessType: file
-                          user:
-                            consumerId: c43dfe14-5f4f-4b77-90e1-f9945574d226
-                            consumerFirstName: User
-                            consumerLastName: Test
-                            consumerEmail: sample@gmal.com
-                          asset:
-                            itemId: 96c1c3d4-3856-491a-9340-405e35db80c2
-                            assetName: Subdistrict Weather Information for multiple access requests testing
-                            assetType: adex:DataBank
-                            shortDescription: Daily aggregated temperature and rainfall data at subdistrict level.
-                            organizationId: a87e6ca1-cbbe-49d5-a474-2caaaadb191e
-                          createdAt: '2026-06-04T12:13:22.12143'
-                          updatedAt: '2026-06-04T12:13:22.12143'
+              example:
+                type: urn:dx:aclApd:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
           headers:
             Content-Type:
               schema:
@@ -1413,7 +1464,7 @@ paths:
               examples:
                 ListResults:
                   value:
-                    type: urn:dx:AclApd:success
+                    type: urn:dx:aclApd:success
                     title: Success
                     results:
                       - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
@@ -1459,6 +1510,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/updateNotificationBadRequest'
+              example:
+                type: urn:dx:aclApd:badRequest
+                title: Bad Request
+                detail: Missing or malformed request
           headers:
             Content-Type:
               schema:
@@ -1470,6 +1525,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
+              example:
+                type: urn:dx:aclApd:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
           headers:
             Content-Type:
               schema:
@@ -1761,6 +1820,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
+              example:
+                type: urn:dx:aclApd:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
           headers:
             Content-Type:
               schema:
@@ -1777,6 +1840,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/createPolicyForbidden'
+              example:
+                type: urn:dx:aclApd:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
           headers:
             Content-Type:
               schema:
@@ -1954,6 +2021,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/deletePolicyNotFoundErrorResponse'
+              example:
+                type: urn:dx:aclApd:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
           headers:
             Content-Type:
               schema:
@@ -1979,6 +2050,10 @@ paths:
                   detail:
                     type: string
                     example: Failure, as policy doesn't belong to the user or organisation
+              example:
+                type: urn:dx:aclApd:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
           headers:
             Content-Type:
               schema:
@@ -2061,6 +2136,14 @@ paths:
                 $ref: '#/components/schemas/PolicyListResponse'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:aclApd:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
   /iudx/acl/apd/v2/policy/organisation:
     get:
       tags:
@@ -2123,8 +2206,24 @@ paths:
                 $ref: '#/components/schemas/PolicyListResponse'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:aclApd:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:aclApd:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
   /iudx/acl/apd/v2/policy/platform:
     get:
       tags:
@@ -2180,8 +2279,24 @@ paths:
                 $ref: '#/components/schemas/PolicyListResponse'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:aclApd:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:aclApd:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
   /iudx/acl/apd/v2/policy/provider:
     get:
       tags:
@@ -2237,8 +2352,24 @@ paths:
                 $ref: '#/components/schemas/PolicyListResponse'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:aclApd:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:aclApd:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
   /iudx/acl/apd/v2/verify:
     post:
       tags:
@@ -2288,7 +2419,7 @@ paths:
           content:
             application/json:
               example:
-                type: urn:dx:apdServerPanel:success
+                type: urn:dx:aclApd:success
                 title: Success
                 result:
                   type: urn:apd:Allow
@@ -2310,17 +2441,17 @@ paths:
           content:
             application/json:
               example:
-                type: urn:dx:acl:badRequest
+                type: urn:dx:aclApd:badRequest
                 title: Bad Request
-                detail: Bad Request
+                detail: Missing or malformed request
         '403':
           description: Forbidden
           content:
             application/json:
               example:
-                type: urn:apd:Deny
-                title: Policy does not exist
-                detail: Invalid request format/Incorrect request
+                type: urn:dx:aclApd:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
       security:
         - authorization: []
       x-codeSamples:
@@ -2497,7 +2628,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:resourceNotFound
+        type: urn:dx:aclApd:resourceNotFound
         title: Not Found
         detail: 'Access request not found, for the server : dummy.server.io'
     createNotificationForbiddenResponse:
@@ -2519,7 +2650,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:no-access
+        type: urn:dx:aclApd:no-access
         title: Forbidden
         detail: User does not have access to the given item
     updateNotificationForbiddenResponse:
@@ -2541,7 +2672,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:forbidden
+        type: urn:dx:aclApd:forbidden
         title: Forbidden
         detail: The access request does not belong to the given provider
     reportGenerationForbiddenResponse:
@@ -2563,7 +2694,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:forbidden
+        type: urn:dx:aclApd:forbidden
         title: Forbidden
         detail: User doesn't have required role
     updateNotificationNotFound:
@@ -2585,7 +2716,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:resourceNotFound
+        type: urn:dx:aclApd:resourceNotFound
         title: Not Found
         detail: Access request not found
     updateNotificationBadRequest:
@@ -2625,7 +2756,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:badRequest
+        type: urn:dx:aclApd:badRequest
         title: Bad Request
         detail: 'Error in CSV generation: No data available for CSV generation'
     updateNotificationConflict:
@@ -2647,7 +2778,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:conflict
+        type: urn:dx:aclApd:conflict
         title: Conflict
         detail: Request could not be approved as, policy is already created
     UpdateAccessRequest:
@@ -2669,7 +2800,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:success
+        type: urn:dx:aclApd:success
         title: Success
         detail: Request updated successfully
     getNotificationForbiddenResponse:
@@ -2691,7 +2822,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:forbidden
+        type: urn:dx:aclApd:forbidden
         title: Access Denied
         detail: 'Access Denied: You do not have ownership rights for this resource.'
     createNotificationSuccessResponse:
@@ -2713,7 +2844,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:success
+        type: urn:dx:aclApd:success
         title: Success
         detail: Request inserted successfully!
     checkAccessRequestSuccessResponse:
@@ -2744,7 +2875,7 @@ components:
         - title
         - detail
       example:
-        type: dx:aclApd:success
+        type: urn:dx:aclApd:success
         title: Success
         detail: User has access to the given asset!
         result:
@@ -2820,7 +2951,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:notFound
+        type: urn:dx:aclApd:notFound
         title: Not Found
         detail: Catalogue item not found
     checkAccessRequestNotFoundResponse:
@@ -2849,7 +2980,7 @@ components:
         - title
         - detail
       example:
-        type: dx:aclApd:no-access
+        type: urn:dx:aclApd:no-access
         title: Forbidden
         detail: User does not have access to the given item
     createNotificationForbidden:
@@ -2871,7 +3002,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:forbidden
+        type: urn:dx:aclApd:forbidden
         title: Forbidden
         detail: User cannot create access request for the resource, as the user is a provider of the resource
     createNotificationConflictResponse:
@@ -2982,7 +3113,7 @@ components:
                 type: string
                 minLength: 1
       example:
-        type: urn:dx:AclApd:success
+        type: urn:dx:aclApd:success
         title: Success
         results:
           - policyId: aaaaaaaa-1234-1234-1234-1234aaaa1234
@@ -3106,7 +3237,7 @@ components:
                 type: string
                 minLength: 1
       example:
-        type: urn:dx:AclApd:success
+        type: urn:dx:aclApd:success
         title: Success
         results:
           - policyId: aaaaaaaa-6473-3546-5436-8758aaaa5897
@@ -3199,7 +3330,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:forbidden
+        type: urn:dx:aclApd:forbidden
         title: Forbidden
         detail: 'Access Denied: You do not have ownership rights for this resource.'
     deleteNotificationNotFound:
@@ -3221,7 +3352,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:notFound
+        type: urn:dx:aclApd:notFound
         title: Not Found
         detail: Request could not be withdrawn, as it is not found
     deleteNotificationBadRequest:
@@ -3243,7 +3374,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:badRequest
+        type: urn:dx:aclApd:badRequest
         title: Bad Request
         detail: Request could not be withdrawn, as it is not in pending status
     deleteNotification:
@@ -3265,7 +3396,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:success
+        type: urn:dx:aclApd:success
         title: Success
         detail: Request deleted successfully
     deletePolicy:
@@ -3287,7 +3418,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:apdServerPanel:success
+        type: urn:dx:aclApd:success
         title: Success
         detail: Policy deleted successfully
     deletePolicyInvalidUserResponse:
@@ -3309,7 +3440,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:apdServerPanel:success
+        type: urn:dx:aclApd:success
         title: Forbidden
         detail: 'Access Denied: You do not have ownership rights for this policy.'
     getPolicyInvalidUserResponse:
@@ -3331,7 +3462,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:apdServerPanel:success
+        type: urn:dx:aclApd:success
         title: Access Denied
         detail: Policy could not be fetched, user doesn't own the policy
     updateNotificationInvalidUserResponse:
@@ -3350,7 +3481,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:forbidden
+        type: urn:dx:aclApd:forbidden
         title: Access Denied
         detail: Notification could not be updated, notification doesn't belong to the user
     policyNotFound:
@@ -3372,7 +3503,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:notFound
+        type: urn:dx:aclApd:notFound
         title: Not Found
         detail: Policy Not Found
     deletePolicyErrorResponse:
@@ -3394,7 +3525,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:apdServerPanel:success
+        type: urn:dx:aclApd:success
         title: Bad Request
         detail: Policy could not be deleted, as policy is not ACTIVE
     deletePolicyNotFoundErrorResponse:
@@ -3416,7 +3547,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:apdServerPanel:success
+        type: urn:dx:aclApd:success
         title: Not Found
         detail: Policy could not be deleted, as it doesn't exist
     Unauthorized:
@@ -3437,7 +3568,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:invalidAuthorizationToken
+        type: urn:dx:aclApd:invalidAuthorizationToken
         title: Not Authorized
         detail: Not Authorized
     createPolicyBadRequest:
@@ -3459,7 +3590,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:apdServerPanel:badRequest
+        type: urn:dx:aclApd:badRequest
         title: Bad Request
         detail: 'Item not found for ID: b34eb955-c691-4fd3-b200-f18bc78810a2'
     createPolicyForbidden:
@@ -3480,7 +3611,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:apdServerPanel:forbidden
+        type: urn:dx:aclApd:forbidden
         title: Forbidden
         detail: 'Access Denied: You do not have ownership rights for this resource.'
     createPolicySuccessResponse:
@@ -3499,7 +3630,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:apdServerPanel:success
+        type: urn:dx:aclApd:success
         title: Success
         detail: Policy created successfully
     conflictResponse:
@@ -3517,7 +3648,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:conflict
+        type: urn:dx:aclApd:conflict
         title: Conflict
         detail: 'Active policy already exists for accessType(s): api, file'
     generalBadRequest:
@@ -3537,7 +3668,7 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:AclApd:badRequest
+        type: urn:dx:aclApd:badRequest
         title: Bad Request
         detail: Bad Request
     AccessRequest:
@@ -3653,7 +3784,7 @@ components:
         - paginationInfo
       x-examples:
         Example:
-          type: urn:dx:AclApd:success
+          type: urn:dx:aclApd:success
           title: User permission requests
           results:
             - requestId: e4619679-f5d9-4eff-9f79-bbded6130bb1

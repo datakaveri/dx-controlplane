@@ -60,7 +60,7 @@
             examples:
               Success:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result: User deleted successfully from DB and Keycloak
       '401':
@@ -69,12 +69,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller is not an org admin or org ID mismatch
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
     security:
     - authorization: []
   put:
@@ -132,7 +140,7 @@
             examples:
               Success:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result: Updated Organisation User Role
       '400':
@@ -147,12 +155,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller is not an org admin or org ID mismatch
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
     security:
     - authorization: []
   get:
@@ -191,7 +207,7 @@
             examples:
               Success:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                     roles:
@@ -226,12 +242,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller is not an org admin or org ID mismatch
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
     security:
     - authorization: []
 /iudx/v2/auth/user/custom/role:
@@ -286,6 +310,14 @@
         description: Invalid request (missing mandatory role or malformed scope)
       '403':
         description: Forbidden (e.g., constraints not met or role already exists)
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
   get:
     summary: Get Custom Roles and Scopes
     tags:
@@ -318,7 +350,7 @@
             examples:
               Example 1:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                   - id: a12b34cd-5678-90ef-1234-567890abcdef
@@ -343,6 +375,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
   delete:
     summary: Delete Custom Role Scope or Request
     description: 'Deletes a custom role scope or an entire custom role request. Either requestId OR (userId and scope) must
@@ -397,12 +433,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden – Not the requester or admin
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '404':
         description: Not Found – Request or scope does not exist
         content:
@@ -438,12 +482,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden (e.g., constraints not met or role already exists)
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
 /iudx/v2/auth/user:
   get:
     summary: (User) Get User Information
@@ -624,7 +676,7 @@
               Nothing pending (active member):
                 summary: User is an active org member with no pending requests
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                     roles:
@@ -656,7 +708,7 @@
               Pending roles (provider and compute):
                 summary: User has pending provider and compute role requests
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                     roles:
@@ -689,7 +741,7 @@
               Pending org join request:
                 summary: User has submitted an organisation join request awaiting approval
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                     roles:
@@ -732,7 +784,7 @@
               Pending org create request:
                 summary: User has submitted an organisation creation request awaiting approval
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                     roles:
@@ -785,12 +837,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Insufficient scope
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
     security:
     - authorization: []
   put:
@@ -869,7 +929,7 @@
             examples:
               Success:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result: User info updated successfully
       '400':
@@ -884,12 +944,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Insufficient scope
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
     security:
     - authorization: []
 /iudx/v2/auth/user/password:
@@ -955,7 +1023,7 @@
             examples:
               Success:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result: User password updated successfully
       '400':
@@ -970,12 +1038,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Insufficient scope
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
       '500':
         description: Internal Server Error
     security:
@@ -1078,7 +1154,7 @@
             examples:
               Success:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                     roles:
@@ -1113,12 +1189,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/createNotificationForbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
     security:
     - authorization: []
 /iudx/v2/auth/admin/user:
@@ -1221,7 +1305,7 @@
             examples:
               Success:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                   - roles:
@@ -1263,12 +1347,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/createNotificationForbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
     security:
     - authorization: []
 /iudx/v2/auth/user/basic:
@@ -1333,7 +1425,7 @@
             examples:
               Success:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                   - sub: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
@@ -1355,6 +1447,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
     security:
     - authorization: []
 /iudx/v2/auth/user/basic/by-identifier:
@@ -1427,7 +1523,7 @@
             examples:
               Success:
                 value:
-                  type: dx:controlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                     sub: 115836eb-1313-46ae-85ca-2ea0b856a078
@@ -1442,6 +1538,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '404':
         description: User not found
         content:
@@ -1507,12 +1607,12 @@
             examples:
               Deactivated:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result: User deactivated successfully
               Activated:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result: User activated successfully
       '400':
@@ -1527,12 +1627,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Insufficient scope
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
     security:
     - authorization: []
 /iudx/v2/auth/admin/{id}/update:
@@ -1600,12 +1708,12 @@
             examples:
               Activated:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result: User activated successfully
               Deactivated:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result: User deactivated successfully
       '400':
@@ -1620,12 +1728,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have admin role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/createNotificationForbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
     security:
     - authorization: []
 /iudx/v2/auth/user/delete:
@@ -1668,7 +1784,7 @@
             examples:
               Success:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result: User deleted successfully from Keycloak and DB
       '400':
@@ -1683,12 +1799,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Insufficient scope
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
     security:
     - authorization: []
 /iudx/v2/auth/user/description/info:
@@ -1816,7 +1940,7 @@
             examples:
               Success:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result: User info added successfully
       '401':
@@ -1825,12 +1949,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Insufficient scope
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
     security:
     - authorization: []
   patch:
@@ -1934,7 +2066,7 @@
             examples:
               Success:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result: User info updated successfully
       '401':
@@ -1943,12 +2075,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Insufficient scope
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
     security:
     - authorization: []
   get:
@@ -2012,7 +2152,7 @@
             examples:
               Success:
                 value:
-                  type: urn:dx:ControlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   result:
                     userId: 436cb796-5826-458b-a914-a54721f70997
@@ -2050,11 +2190,19 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Insufficient scope
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
     security:
     - authorization: []

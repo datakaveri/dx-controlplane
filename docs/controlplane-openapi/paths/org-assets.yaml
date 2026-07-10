@@ -78,7 +78,7 @@
                 paginationInfo:
                   $ref: ../components/schemas/pagination.yaml#/PaginationInfo
             example:
-              type: dx:controlPlane:success
+              type: urn:dx:controlPlane:success
               title: Success
               result:
               - id: 674caec0-b39d-418b-8e23-167306751396
@@ -132,7 +132,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: dx:controlPlane:badRequest
+              type: urn:dx:controlPlane:badRequest
               title: Bad Request
               detail: 'Invalid sort format: itemCreatedAt-desc. Expected field:order'
       '401':
@@ -142,15 +142,19 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: dx:controlPlane:notAuthorized
+              type: urn:dx:controlPlane:notAuthorized
               title: Not Authorized
-              detail: Missing Bearer token
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - User does not have the org_admin role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
     x-codeSamples:
     - lang: cURL
       label: get organisation assets
@@ -259,7 +263,7 @@
               ExampleResponse:
                 summary: Organisation assets response
                 value:
-                  type: dx:controlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   results:
                   - id: e86cca04-83ae-4467-bf4f-2e5bd30bb3fd
@@ -300,13 +304,13 @@
               InvalidSortFormat:
                 summary: Invalid sort format
                 value:
-                  type: dx:controlPlane:badRequest
+                  type: urn:dx:controlPlane:badRequest
                   title: Bad Request
                   detail: 'Invalid sort format: itemCreatedAt-desc. Expected field:order'
               MissingOrMalformedRequest:
                 summary: Missing or malformed request body
                 value:
-                  type: dx:controlPlane:badRequest
+                  type: urn:dx:controlPlane:badRequest
                   title: Bad Request
                   detail: Missing or malformed request
       '401':
@@ -316,15 +320,19 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: dx:controlPlane:notAuthorized
+              type: urn:dx:controlPlane:notAuthorized
               title: Not Authorized
-              detail: Missing Bearer token
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - User does not have the org_admin role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
     x-codeSamples:
     - lang: cURL
       label: get organisation assets with filters
@@ -387,7 +395,7 @@
             examples:
               Patch Success:
                 value:
-                  type: dx:controlPlane:success
+                  type: urn:dx:controlPlane:success
                   title: Success
                   detail: 'Success: Item patched successfully'
                   result:
@@ -402,13 +410,13 @@
               MissingOrMalformedRequest:
                 summary: Missing or malformed request body
                 value:
-                  type: dx:controlPlane:badRequest
+                  type: urn:dx:controlPlane:badRequest
                   title: Bad Request
                   detail: Missing or malformed request
               ItemNotFoundUnderOrganisation:
                 summary: Item does not belong to the organisation
                 value:
-                  type: dx:controlPlane:badRequest
+                  type: urn:dx:controlPlane:badRequest
                   title: Bad Request
                   detail: No item found for update under your organization
       '401':
@@ -417,13 +425,10 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
-            examples:
-              MissingBearerToken:
-                summary: Authorization header not provided
-                value:
-                  type: dx:controlPlane:notAuthorized
-                  title: Not Authorized
-                  detail: Missing Bearer token
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden – insufficient privileges
         content:
@@ -431,9 +436,9 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: dx:controlPlane:forbidden
+              type: urn:dx:controlPlane:forbidden
               title: Forbidden
-              detail: Providers can only patch dataUploadStatus field
+              detail: User does not have the required role.
     x-codeSamples:
     - lang: cURL
       label: patch item
