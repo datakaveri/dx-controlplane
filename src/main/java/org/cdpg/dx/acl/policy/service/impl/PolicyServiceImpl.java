@@ -780,8 +780,7 @@ public class PolicyServiceImpl implements PolicyService {
         .recover(
             err -> {
               LOGGER.error("Error during initiateVerifyPolicy: {}", err.getMessage());
-              return Future.failedFuture(
-                  generateErrorResponse(INTERNAL_SERVER_ERROR, err.getMessage()));
+              return Future.failedFuture(err.getMessage());
             });
   }
 

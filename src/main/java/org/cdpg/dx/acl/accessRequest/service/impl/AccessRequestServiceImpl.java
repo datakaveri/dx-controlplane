@@ -116,7 +116,8 @@ public class AccessRequestServiceImpl implements AccessRequestService {
                   .getItem(request)
                   .compose(
                       responseModel -> {
-                        if (responseModel.getElasticsearchResponses().isEmpty()) {
+                        if (responseModel.getElasticsearchResponses().isEmpty()
+                            || responseModel.getElasticsearchResponses().getFirst() == null) {
                           return Future.failedFuture(
                               new DxForbiddenException("Item not found for ID: " + itemId));
                         }
