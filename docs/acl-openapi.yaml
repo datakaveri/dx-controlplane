@@ -2512,7 +2512,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:aclApd:success
+                    example: urn:dx:aclApd:success
                   title:
                     type: string
                     example: Success
@@ -2528,9 +2528,9 @@ paths:
           content:
             application/json:
               example:
-                type: urn:dx:acl:badRequest
+                type: urn:dx:aclApd:badRequest
                 title: Bad Request
-                detail: Bad Request
+                detail: Missing or malformed request
         '401':
           description: Unauthorized
           content:
