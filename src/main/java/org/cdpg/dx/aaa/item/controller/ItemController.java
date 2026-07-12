@@ -54,6 +54,10 @@ import org.cdpg.dx.aaa.item.service.ItemRegistryService;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ScriptGenerationService;
 import org.cdpg.dx.aaa.item.util.*;
+import org.cdpg.dx.acl.policy.dao.PolicyDao;
+import org.cdpg.dx.acl.policy.service.PolicyService;
+import org.cdpg.dx.acl.policy.service.impl.PolicyServiceImpl;
+import org.cdpg.dx.acl.rule.dao.AccessRuleDao;
 import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
@@ -92,6 +96,7 @@ public class ItemController implements ApiController {
   private final VerifyItemTypeAndRole verifyItemTypeAndRole = new VerifyItemTypeAndRole();
   private final KeycloakUserService keycloakUserService;
   private final EmailComposer emailComposer;
+  private final PolicyService policyService;
 
   public ItemController(
       AuditingHandler auditingHandler,
@@ -105,7 +110,10 @@ public class ItemController implements ApiController {
       ItemRegistryService itemRegistryService,
       DelegationService delegationService,
       KeycloakUserService keycloakUserService,
-      EmailComposer emailComposer) {
+      EmailComposer emailComposer,
+      PolicyDao policyDao,
+      AccessRuleDao accessRuleDao,
+      String apdURL) {
     this.auditingHandler = auditingHandler;
     this.itemService = itemService;
     this.centralItemService = centralItemService;
@@ -123,6 +131,8 @@ public class ItemController implements ApiController {
     this.delegationService = delegationService;
     this.keycloakUserService = keycloakUserService;
     this.emailComposer = emailComposer;
+    this.policyService =
+        new PolicyServiceImpl(itemService, keycloakUserService, policyDao, accessRuleDao, apdURL);
   }
 
   @Override
@@ -814,25 +824,26 @@ public class ItemController implements ApiController {
               JsonObject itemJson = getRes.getElasticsearchResponses().getFirst();
               Item itemSnapshot = ItemFactory.parse(itemJson);
 
-              itemService
-                  .backupDeletedItem(itemSnapshot)
-                  .onFailure(
-                      err -> {
-                        LOGGER.error("Failed to backup item before deletion", err);
-                        ctx.fail(err);
+              UUID assetId = UUID.fromString(id);
+
+              policyService
+                  .hasActivePolicies(assetId)
+                  .compose(
+                      hasActivePolicies -> {
+                        if (hasActivePolicies) {
+                          return Future.failedFuture(
+                              new DxConflictException(
+                                  "Item cannot be deleted as it has active policies"));
+                        }
+
+                        return itemService.backupDeletedItem(itemSnapshot);
                       })
                   .onSuccess(
                       v ->
                           executeWithCentralCatalogue(
                               isCentralCatEnabled,
-
-                              // Central delete
                               () -> centralItemService.deleteItem(id, itemSnapshot.getName()),
-
-                              // Local delete
                               () -> itemService.deleteItem(id, itemSnapshot.getName()),
-
-                              // Central rollback
                               () -> centralItemService.createItem(itemSnapshot),
                               ctx,
                               res -> {
@@ -844,7 +855,8 @@ public class ItemController implements ApiController {
 
                                 ResponseBuilder.sendSuccess(
                                     ctx, "Success: Item deleted successfully", this.urnGenerator);
-                              }));
+                              }))
+                  .onFailure(ctx::fail);
             });
   }
 
