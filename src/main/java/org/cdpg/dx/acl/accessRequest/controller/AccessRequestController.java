@@ -28,8 +28,6 @@ import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.util.Map;
 import java.util.Set;
@@ -79,7 +77,6 @@ public class AccessRequestController implements ApiController {
   private final URNGenerator urnGenerator;
   private final String emailExchange;
   private final String emailRoutingKey;
-
   public AccessRequestController(
       AccessRequestService accessRequestService,
       AuditingHandler auditingHandler,
@@ -106,13 +103,11 @@ public class AccessRequestController implements ApiController {
     }
 
     try {
-      OffsetDateTime parsedTime = OffsetDateTime.parse(timeString);
+      LocalDateTime parsedTime = LocalDateTime.parse(timeString);
       LOGGER.info(
-          "Parsed time: {}, isFuture: {}", parsedTime, parsedTime.isAfter(OffsetDateTime.now()));
-      if (parsedTime.isAfter(OffsetDateTime.now())) {
-        return parsedTime.toInstant()
-            .atZone(ZoneOffset.UTC)
-            .toLocalDateTime();
+          "Parsed time: {}, isFuture: {}", parsedTime, parsedTime.isAfter(LocalDateTime.now()));
+      if (parsedTime.isAfter(LocalDateTime.now())) {
+        return parsedTime;
       } else {
         throw new DxValidationException("expiryAt must be a future time");
       }
