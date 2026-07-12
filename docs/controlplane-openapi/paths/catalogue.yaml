@@ -263,8 +263,14 @@
   delete:
     tags:
     - CAT Entity
-    description: 'Delete an item
-
+    description: |
+      Delete an item.
+      
+      Before deletion, the Control Plane performs the following validations and operations:
+      
+      - Verifies that the item does not have any active policies. If active policies exist, the deletion request is rejected with a **409 Conflict** response.
+      - Creates a backup of the item in the deleted items index before permanently deleting it, enabling downstream services such as the Audit Server to retrieve deleted item details when required.
+      
       **Log Type:** `ASSET`
 
       '
@@ -334,11 +340,11 @@
             schema:
               $ref: ../components/schemas/common.yaml#/unAuthorizedAccess
             examples:
-              Item has associated entities to Delete:
+              Item has active policies:
                 value:
                   type: urn:dx:controlPlane:conflict
                   title: Conflict
-                  detail: Item has associated entities and cannot be deleted
+                  detail: Item cannot be deleted as it has active policies
     x-codeSamples:
     - lang: cURL
       label: delete item
