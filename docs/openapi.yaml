@@ -1135,35 +1135,43 @@ paths:
         (e.g., `adex:AiModel`, `adex:DataBank`, `adex:Apps`) and its metadata.
 
         ### Backend-managed fields
-        The following fields are **automatically set by the backend** and must not be modified by the client:
+        The following fields are automatically set by the backend and must not be modified by the client:
         - `itemCreatedAt`
         - `itemStatus`
         - `publishStatus`
         - `dataUploadStatus`
         - `lastUpdated`
-        The `id` field **may be provided by the client**. If supplied, it must be a valid UUID and must not conflict with an existing item.
+
+        The `id` field may be provided by the client. If supplied, it must be a valid UUID and must not conflict with an existing item.
 
         ### Token-derived fields
-        The backend populates these fields using the authenticated user’s token:
-        - `ownerUserId` (from token sub)
+        The backend populates these fields using the authenticated user's token:
+        - `ownerUserId` (from token `sub`)
         - `department` (organization name)
         - `uploadedBy` (organization name)
-        - `organizationId` (if present in token and not already provided)
+        - `organizationId` (if present in the token and not already provided)
 
         ### Default and conditional behavior
+
+        - **itemStatus**
+          - Set to `VERIFIED` if the authenticated user has the `org_admin` role.
+          - Otherwise, set to `UNVERIFIED`.
+
         - **publishStatus**
-          - Set to `ACTIVE` by default if the provider has `org_admin` or `cos_admin` role.
+          - Set to `ACTIVE` if the authenticated user has the `cos_admin` role.
           - Otherwise, set to `PENDING`.
+
         - **dataUploadStatus**
           - Defaults to `false`.
           - Automatically set to `true` if the item metadata contains a non-empty `mediaURL`.
 
-        > `publishStatus` and `dataUploadStatus` **cannot be updated** via POST or PUT `/item`.
-        > They must be updated using the `/organisation/asset` PATCH API.
+        > `itemStatus`, `publishStatus`, and `dataUploadStatus` cannot be updated via POST or PUT `/item`.
+        > Use the `/organisation/asset` or `/item` PATCH API to update these fields.
 
         ### Visibility rules
-        An item becomes visible across the platform **only when both**
-        `publishStatus = ACTIVE` **and** `dataUploadStatus = true`.
+        An item becomes visible across the platform only when:
+        - `publishStatus = ACTIVE`
+        - `dataUploadStatus = true`
 
         **Log Type:** `ASSET`
       operationId: create item
@@ -1230,43 +1238,28 @@ paths:
       tags:
         - CAT Entity
       description: |
-        Update an existing catalogue item. The request body must contain a fully valid item
-        payload including the `id`.
+        Replace an existing catalogue item.
+
+        The request body must contain a complete, valid catalogue item payload, including the `id`.
 
         ### Update constraints
-        - Relationship and identity fields **cannot be modified**.
-        - `itemStatus` is managed by the backend and cannot be updated by clients.
-        - `publishStatus` and `dataUploadStatus` cannot be updated via this API.
 
-        To change `publishStatus` or `dataUploadStatus`, use the `/organisation/asset` PATCH API.
+        - `PUT` replaces the entire item. Any fields omitted from the request may be removed unless they are managed by the backend.
+        - The following fields are managed by the backend and cannot be updated through this API:
+          - `itemStatus`
+          - `publishStatus`
+          - `dataUploadStatus`
+          - `lastUpdated`
+        - The following fields are immutable and cannot be modified:
+          - `id`
+          - `ownerUserId`
+          - `organizationId`
+          - `itemCreatedAt`
+          - `metrics`
+          - The first element of the `type` array
+        - `lastUpdated` is automatically set to the current UTC time.
 
-        #### Non-updateable fields
-        If updates to any of the following fields are required, the item must be deleted and
-        re-created.
-
-        1. adex:DataBank
-           - id
-           - type (1st element in array non-modifiable)
-           - itemStatus
-           - itemCreatedAt
-           - publishStatus
-           - dataUploadStatus
-
-        2. adex:AiModel
-           - id
-           - type (1st element in array non-modifiable)
-           - itemStatus
-           - itemCreatedAt
-           - publishStatus
-           - dataUploadStatus
-
-        3. adex:Apps
-           - id
-           - type (1st element in array non-modifiable)
-           - itemStatus
-           - itemCreatedAt
-           - publishStatus
-           - dataUploadStatus
+        To update metadata fields without replacing the entire item, use the `PATCH /item` API.
 
         **Log Type:** `ASSET`
       operationId: update item
@@ -1517,10 +1510,10 @@ paths:
       description: |
         Update metadata fields of an owned catalogue item.
 
-        - Asset owners (`provider`) can update any field except `publishStatus` and restricted fields.
-        - Admins (`org_admin`, `cos_admin`) can also update `publishStatus`.
-        - The following fields cannot be updated via this API: `ownerUserId`, `organizationId`, 
-        `itemCreatedAt`, `metrics`.
+        - Asset owners (`provider`) can update any field except `publishStatus` and other restricted fields.
+        - Only `cos_admin` can update `publishStatus`.
+        - `itemStatus` cannot be updated to `VERIFIED` by a `provider`. It can only be updated to `VERIFIED` by an `org_admin`.
+        - The following fields cannot be updated via this API: `ownerUserId`, `organizationId`, `itemCreatedAt`, and `metrics`.
         - `lastUpdated` is automatically set to the current UTC time.
       operationId: patch item metadata
       security:
@@ -6605,10 +6598,15 @@ paths:
         - Organisation Assets Management
       description: |
         Update the publication or data upload status of an organisation asset.
+
         **Role-based behavior:**
-          - `org_admin` or `cos_admin` can update both `publishStatus` and `dataUploadStatus`
-          - `provider` can update only `dataUploadStatus`
-          - Attempting to update unauthorized fields will result in `403 Forbidden`
+        - `org_admin` and `cos_admin` can update both `publishStatus` and `dataUploadStatus`.
+        - `provider` can update only `dataUploadStatus`.
+        - `itemStatus` can also be updated through this API:
+          - `UNVERIFIED` → `VERIFIED` can only be performed by an `org_admin`.
+          - `UNVERIFIED` → `SFTP` or `API` can be performed by either the asset `provider` or an `org_admin`.
+        - At least one of `publishStatus`, `dataUploadStatus`, or `itemStatus` must be provided.
+        - Attempting to update fields or status transitions that the caller is not authorized to modify will result in `403 Forbidden`.
       operationId: patch item
       security:
         - authorization: []

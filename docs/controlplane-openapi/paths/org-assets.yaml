@@ -343,9 +343,17 @@
   patch:
     tags:
     - Organisation Assets Management
-    description: "Update the publication or data upload status of an organisation asset.\n**Role-based behavior:**\n  - `org_admin`\
-      \ or `cos_admin` can update both `publishStatus` and `dataUploadStatus`\n  - `provider` can update only `dataUploadStatus`\n\
-      \  - Attempting to update unauthorized fields will result in `403 Forbidden`\n"
+    description: |
+      Update the publication or data upload status of an organisation asset.
+
+      **Role-based behavior:**
+      - `org_admin` and `cos_admin` can update both `publishStatus` and `dataUploadStatus`.
+      - `provider` can update only `dataUploadStatus`.
+      - `itemStatus` can also be updated through this API:
+        - `UNVERIFIED` → `VERIFIED` can only be performed by an `org_admin`.
+        - `UNVERIFIED` → `SFTP` or `API` can be performed by either the asset `provider` or an `org_admin`.
+      - At least one of `publishStatus`, `dataUploadStatus`, or `itemStatus` must be provided.
+      - Attempting to update fields or status transitions that the caller is not authorized to modify will result in `403 Forbidden`.
     operationId: patch item
     security:
     - authorization: []
