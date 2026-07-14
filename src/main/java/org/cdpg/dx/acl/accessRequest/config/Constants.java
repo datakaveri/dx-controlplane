@@ -104,6 +104,8 @@ public class Constants {
   public static final String GET_POLICIES_FOR_COS_ADMIN_API = "get-policies-cos_admin-api";
   public static final String DELETE_POLICY_API = "deactivate-auth-v1-policies";
   public static final String VERIFY_API = "get-auth-v1-verify";
+  public static final String VERIFY_ACTIVE_POLICIES_FOR_AN_ASSET =
+      "verify-active-policies-for-an-asset";
 
 
   public static final String FIRST_NAME = "firstName";

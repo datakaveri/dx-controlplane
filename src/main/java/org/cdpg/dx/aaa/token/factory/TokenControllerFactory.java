@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.token.factory;
 
+import static org.cdpg.dx.aaa.common.Constants.DELETED_DOCS_INDEX;
 import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
 import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
 
@@ -64,6 +65,7 @@ public class TokenControllerFactory {
             policyDao,
             webClient,
             config.getString(DOC_INDEX),
+            config.getString(DELETED_DOCS_INDEX),
             config.getString(APD_URL));
 
     DelegationAccessEvaluator delegationAccessEvaluator =

@@ -21,6 +21,7 @@ import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
 
+import static org.cdpg.dx.aaa.common.Constants.DELETED_DOCS_INDEX;
 import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
 import static org.cdpg.dx.aaa.common.Constants.DOC_USER_INDEX;
 import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
@@ -61,6 +62,7 @@ public record SharedServices(
    */
   public static SharedServices create(InfrastructureServices infra, JsonObject config) {
     final String docIndex = config.getString(DOC_INDEX);
+    final String deleteDocsIndex = config.getString(DELETED_DOCS_INDEX);
     final String docUserIndex = config.getString(DOC_USER_INDEX);
     final String apdURL = config.getString(APD_URL);
 
@@ -81,7 +83,7 @@ public record SharedServices(
     ItemService itemService =
         new ItemServiceImpl(
             infra.esService(), keycloakUserService, infra.pgService(), policyDao,
-            infra.webClient(), docIndex, apdURL);
+            infra.webClient(), docIndex, deleteDocsIndex, apdURL);
 
     CreditService creditService =
         CreditControllerFactory.createService(infra.pgService(), keycloakUserService, config);

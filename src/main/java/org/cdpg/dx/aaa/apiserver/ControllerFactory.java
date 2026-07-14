@@ -1,6 +1,7 @@
 package org.cdpg.dx.aaa.apiserver;
 
 import static org.cdpg.dx.aaa.common.Constants.CENTRAL_CAT_DOC_INDEX;
+import static org.cdpg.dx.aaa.common.Constants.DELETED_DOCS_INDEX;
 import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
 import static org.cdpg.dx.aaa.common.Constants.IS_CENTRAL_CATALOGUE_ENABLED;
 import static org.cdpg.dx.aaa.common.Constants.UPLOADED_BY;
@@ -90,6 +91,7 @@ public class ControllerFactory {
     SharedServices shared = SharedServices.create(infra, config);
 
     final String docIndex = config.getString(DOC_INDEX);
+    final String deletedDocsIndex = config.getString(DELETED_DOCS_INDEX);
     final String centralCatDocIndex = config.getString(CENTRAL_CAT_DOC_INDEX);
     final String vocContext = config.getString(VOC_CONTEXT);
     final String apdURL = config.getString(APD_URL);
@@ -139,6 +141,7 @@ public class ControllerFactory {
             infra.webClient(),
             isKycRequired,
             docIndex,
+            deletedDocsIndex,
             apdURL);
     controllers.add(organizationController);
 
@@ -250,6 +253,7 @@ public class ControllerFactory {
             itemOwnershipValidator,
             centralCatDocIndex,
             docIndex,
+            deletedDocsIndex,
             vocContext,
             apdURL,
             uploadedBy,

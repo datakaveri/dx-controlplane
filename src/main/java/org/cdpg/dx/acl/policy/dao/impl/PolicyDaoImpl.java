@@ -468,6 +468,32 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
             });
   }
 
+  @Override
+  public Future<Boolean> hasActivePolicies(UUID assetId) {
+
+    Condition condition =
+        new Condition(
+            List.of(
+                new Condition(DB_ITEM_ID, Condition.Operator.EQUALS, List.of(assetId.toString())),
+                new Condition(DB_STATUS, Condition.Operator.EQUALS, List.of(ACTIVE)),
+                new Condition(
+                    DB_EXPIRY_AT,
+                    Condition.Operator.GREATER,
+                    List.of(LocalDateTime.now().toString()))),
+            Condition.LogicalOperator.AND);
+
+    SelectQuery query =
+        new SelectQuery()
+            .setTable(POLICY_TABLE)
+            .setColumns(List.of(DB_ID))
+            .setCondition(condition)
+            .setLimit(1);
+
+    return postgresService
+        .select(query, false)
+        .map(result -> result.getRows() != null && !result.getRows().isEmpty());
+  }
+
   private String generateErrorResponse(HttpStatusCode httpStatusCode, String errorMessage) {
     return new JsonObject()
         .put(TYPE, httpStatusCode.getValue())

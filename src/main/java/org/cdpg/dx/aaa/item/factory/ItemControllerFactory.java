@@ -14,6 +14,8 @@ import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.aaa.item.service.central.CentralItemServiceImpl;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
+import org.cdpg.dx.acl.rule.dao.AccessRuleDao;
+import org.cdpg.dx.acl.rule.dao.impl.AccessRuleDaoImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
@@ -31,6 +33,7 @@ public class ItemControllerFactory {
       ItemOwnershipValidator itemOwnershipValidator,
       String centralDocIndex,
       String docIndex,
+      String deletedDocsIndex,
       String vocContext,
       String apdURL,
       String uploadedBy,
@@ -47,6 +50,7 @@ public class ItemControllerFactory {
       DelegationService delegationService,
       EmailComposer emailComposer) {
     PolicyDao policyDao = new PolicyDaoImpl(pgService);
+    AccessRuleDao accessRuleDao = new AccessRuleDaoImpl(pgService);
     ItemService itemService =
         new ItemServiceImpl(
             elasticsearchService,
@@ -55,6 +59,7 @@ public class ItemControllerFactory {
             policyDao,
             webClient,
             docIndex,
+            deletedDocsIndex,
             apdURL);
     ItemService centralItemService =
         new CentralItemServiceImpl(
@@ -64,6 +69,7 @@ public class ItemControllerFactory {
             policyDao,
             webClient,
             centralDocIndex,
+            deletedDocsIndex,
             apdURL);
 
     ItemRegistryService orchestrationService =
@@ -89,6 +95,9 @@ public class ItemControllerFactory {
         orchestrationService,
         delegationService,
         keycloakUserService,
-        emailComposer);
+        emailComposer,
+        policyDao,
+        accessRuleDao,
+        apdURL);
   }
 }

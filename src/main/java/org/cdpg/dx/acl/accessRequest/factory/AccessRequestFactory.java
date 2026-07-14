@@ -1,5 +1,6 @@
 package org.cdpg.dx.acl.accessRequest.factory;
 
+import static org.cdpg.dx.aaa.common.Constants.DELETED_DOCS_INDEX;
 import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.REQUEST_TABLE;
@@ -59,6 +60,7 @@ public class AccessRequestFactory {
             policyDao,
             webClient,
             config.getString(DOC_INDEX),
+            config.getString(DELETED_DOCS_INDEX),
             config.getString(APD_URL));
 
     AccessRequestService accessRequestService =

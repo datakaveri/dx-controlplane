@@ -695,6 +695,10 @@ public class AccessRequestServiceImpl implements AccessRequestService {
               List<PolicyDto> policiesAccessInfo = composite.resultAt(3);
               PolicyDto rule = composite.resultAt(4);
 
+              if (item == null || item.isEmpty()) {
+                return Future.failedFuture(
+                    new DxForbiddenException("Item not found for ID: " + itemId));
+              }
               String ownerUserId = item.getString(OWNER_ID);
               boolean hasOwnerAccess =
                   ownerUserId != null && ownerUserId.equalsIgnoreCase(user.sub().toString());

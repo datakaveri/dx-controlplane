@@ -13,6 +13,7 @@ import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_POLICIES_PROVID
 import static org.cdpg.dx.acl.accessRequest.config.Constants.HEADER_X_CONTENT_TYPE_OPTIONS;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.ID;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.TITLE;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.VERIFY_ACTIVE_POLICIES_FOR_AN_ASSET;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.VERIFY_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.X_CONTENT_TYPE_OPTIONS_NOSNIFF;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ASSET_ORGANIZATION_ID;
@@ -175,6 +176,12 @@ public class PolicyController implements ApiController {
         .handler(verifyAccess)
         .handler(userAccessHandler)
         .handler(this::verifyRequestHandler);
+
+    builder
+        .operation(VERIFY_ACTIVE_POLICIES_FOR_AN_ASSET)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(userAccessHandler)
+        .handler(this::verifyActivePoliciesForAssetHandler);
   }
 
   private void getPlatformPoliciesHandler(RoutingContext ctx) {
@@ -446,6 +453,26 @@ public class PolicyController implements ApiController {
               });
     } catch (Exception e) {
       LOGGER.error("Error in verifyPolicy: {}", e.getMessage());
+      ctx.fail(e);
+    }
+  }
+
+  private void verifyActivePoliciesForAssetHandler(RoutingContext ctx) {
+    try {
+      JsonObject request = ctx.body().asJsonObject();
+      UUID assetId = UUID.fromString(request.getString("assetId"));
+
+      policyService
+          .hasActivePolicies(assetId)
+          .onSuccess(
+              hasPolicies -> {
+                ResponseBuilder.sendSuccess(
+                    ctx, new JsonObject().put("hasActivePolicies", hasPolicies), urnGenerator);
+              })
+          .onFailure(ctx::fail);
+
+    } catch (Exception e) {
+      LOGGER.error("Failed to verify active policies for asset", e);
       ctx.fail(e);
     }
   }

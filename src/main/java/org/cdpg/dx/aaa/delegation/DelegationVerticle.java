@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.delegation;
 
+import static org.cdpg.dx.aaa.common.Constants.DELETED_DOCS_INDEX;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.*;
 
 import io.vertx.core.AbstractVerticle;
@@ -51,6 +52,7 @@ public class DelegationVerticle extends AbstractVerticle {
 
       String apdUrl = config().getString("apdURL");
       String docIndex = config().getString("docIndex");
+      String deletedDocsIndex = config().getString(DELETED_DOCS_INDEX);
       KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config());
 
       // ------------------- Dependent services -------------------
@@ -63,6 +65,7 @@ public class DelegationVerticle extends AbstractVerticle {
               policyDao,
               webClient,
               docIndex,
+              deletedDocsIndex,
               apdUrl); // direct instance
       OrganizationService organizationService =
           new OrganizationServiceImpl(

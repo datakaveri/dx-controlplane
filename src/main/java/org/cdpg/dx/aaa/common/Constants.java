@@ -20,6 +20,7 @@ public class Constants {
     public static final String DATABASE_PORT = "databasePort";
     public static final String DATABASE_UNAME = "databaseUser";
     public static final String DOC_INDEX = "docIndex";
+    public static final String DELETED_DOCS_INDEX = "deletedDocsIndex";
     public static final String CENTRAL_CAT_DOC_INDEX = "centralCatDocIndex";
     public static final String IS_CENTRAL_CATALOGUE_ENABLED = "isCentralCatEnabled";
     public static final String DOC_USER_INDEX = "docUserIndex";

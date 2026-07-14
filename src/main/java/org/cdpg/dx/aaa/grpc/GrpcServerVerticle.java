@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.grpc;
 
+import static org.cdpg.dx.aaa.common.Constants.DELETED_DOCS_INDEX;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DATA_BROKER_SERVICE_ADDRESS;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DELEGATION_SERVICE_ADDRESS;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.ELASTIC_SERVICE_ADDRESS;
@@ -46,6 +47,7 @@ public class GrpcServerVerticle extends AbstractVerticle {
   public void start(Promise<Void> startPromise) {
     int grpcPort = config().getInteger("grpcPort", 9090);
     String docIndex = config().getString("docIndex", "iudx-docs");
+    String deletedDocsIndex = config().getString(DELETED_DOCS_INDEX);
     String apdUrl = config().getString("apdURL", "");
 
     PostgresService postgresService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
@@ -63,6 +65,7 @@ public class GrpcServerVerticle extends AbstractVerticle {
             policyDao,
             webClient,
             docIndex,
+            deletedDocsIndex,
             apdUrl);
 
     AppCredentialsDAO appCredentialsDAO = new AppCredentialsDAOImpl(postgresService);
