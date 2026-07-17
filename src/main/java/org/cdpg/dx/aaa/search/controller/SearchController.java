@@ -8,9 +8,9 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.aaa.common.CheckIfTokenPresent;
 import org.cdpg.dx.aaa.search.service.SearchService;
+import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.model.DxRole;
@@ -144,14 +144,15 @@ public class SearchController implements ApiController {
 
   private void handleOrganisationGetItems(RoutingContext ctx) {
     LOGGER.debug("Received GET Asset request on '{}'", GET_ORG_ASSETS);
-    try {
-      QueryDecoderRequestDTO queryDecoder =
-          OrganisationAssetRequestBuilder.fromRoutingContext(ctx).build();
-      processSearchRequest(ctx, queryDecoder);
-    } catch (Exception e) {
-      LOGGER.error("Error processing asset request: {}", e.getMessage());
-      ctx.fail(e);
-    }
+
+    OrganisationAssetRequestBuilder.fromRoutingContext(ctx, keycloakUserService)
+        .build()
+        .onSuccess(queryDecoder -> processSearchRequest(ctx, queryDecoder))
+        .onFailure(
+            err -> {
+              LOGGER.error("Error processing asset request: {}", err.getMessage(), err);
+              ctx.fail(err);
+            });
   }
 
   private void handleOrganisationAssetsVthFilters(RoutingContext ctx) {
