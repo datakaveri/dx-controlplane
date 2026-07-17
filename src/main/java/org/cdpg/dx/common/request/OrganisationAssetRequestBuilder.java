@@ -1,46 +1,58 @@
 package org.cdpg.dx.common.request;
 
+import static org.cdpg.dx.aaa.common.Constants.SUB;
 import static org.cdpg.dx.database.elastic.util.Constants.*;
 import static org.cdpg.dx.database.elastic.util.Constants.KEYWORD_KEY;
 
+import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.ext.web.RoutingContext;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.database.elastic.model.AccessPolicyRequestDTO;
-import org.cdpg.dx.database.postgres.models.OrderBy;
 import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
+import org.cdpg.dx.database.postgres.models.OrderBy;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class OrganisationAssetRequestBuilder {
   private static final Logger LOGGER = LogManager.getLogger(OrganisationAssetRequestBuilder.class);
   private final RoutingContext routingContext;
+  private final KeycloakUserService keycloakUserService;
   private final String defaultOrder = "desc";
   private final String defaultSortBy = "itemCreatedAt";
   private final String requestType = "organisationAssetSearch";
 
-  public OrganisationAssetRequestBuilder(RoutingContext routingContext) {
+  public OrganisationAssetRequestBuilder(
+      RoutingContext routingContext, KeycloakUserService keycloakUserService) {
     this.routingContext = routingContext;
+    this.keycloakUserService = keycloakUserService;
   }
 
-  public static OrganisationAssetRequestBuilder fromRoutingContext(RoutingContext routingContext) {
-    return new OrganisationAssetRequestBuilder(routingContext);
+  public static OrganisationAssetRequestBuilder fromRoutingContext(
+      RoutingContext routingContext, KeycloakUserService keycloakUserService) {
+    return new OrganisationAssetRequestBuilder(routingContext, keycloakUserService);
   }
 
-  public QueryDecoderRequestDTO build() {
+  public Future<QueryDecoderRequestDTO> build() {
     MultiMap params = routingContext.queryParams();
     boolean filterMyAssets = Boolean.parseBoolean(params.get(FILTER_MYASSETS));
-    return new QueryDecoderRequestDTO(
-        getSize(params),
-        getPage(params),
-        extractSortOrders(),
-        getOrgId(routingContext),
-        getPublishStatus(params),
-        requestType,
-        getAccessPolicyRequest(false, getSub(routingContext)),
-        filterMyAssets);
+
+    return getOrgId(routingContext)
+        .map(
+            organisationId ->
+                new QueryDecoderRequestDTO(
+                    getSize(params),
+                    getPage(params),
+                    extractSortOrders(),
+                    organisationId,
+                    getPublishStatus(params),
+                    requestType,
+                    getAccessPolicyRequest(false, getSub(routingContext)),
+                    filterMyAssets));
   }
 
   private String getPublishStatus(MultiMap params) {
@@ -110,14 +122,33 @@ public class OrganisationAssetRequestBuilder {
     }
     return null;
   }
-  private String getOrgId(RoutingContext ctx) {
-    try {
-      if (ctx.user() != null) {
-        return ctx.user().principal().getString("organisation_id");
-      }
-    } catch (Exception e) {
-      throw new DxBadRequestException("User not found in context", e);
+
+  private Future<String> getOrgId(RoutingContext ctx) {
+
+    if (ctx.user() == null) {
+      return Future.failedFuture(new DxBadRequestException("User not found in context"));
     }
-    return null;
+
+    try {
+      String userIdStr = ctx.user().principal().getString(SUB);
+      if (userIdStr == null || userIdStr.isBlank()) {
+        return Future.failedFuture(new DxBadRequestException("User ID missing in token"));
+      }
+
+      UUID userId = UUID.fromString(userIdStr);
+
+      return keycloakUserService
+          .getUserById(userId)
+          .map(user -> user != null ? user.organisationId() : null)
+          .recover(
+              err -> {
+                LOGGER.warn("Failed to fetch organisationId for user {}", userId, err);
+                return Future.succeededFuture(null);
+              });
+
+    } catch (Exception e) {
+      LOGGER.warn("Failed extracting userId from context", e);
+      return Future.succeededFuture(null);
+    }
   }
 }

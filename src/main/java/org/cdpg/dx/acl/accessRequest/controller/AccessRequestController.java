@@ -263,56 +263,72 @@ public class AccessRequestController implements ApiController {
 
   private void getOrganizationAccessRequestHandler(RoutingContext ctx) {
     LOGGER.info("Handling getOrganizationAccessRequestHandler request...");
+
     User user = ctx.user();
+    UUID userId = UUID.fromString(user.subject());
 
-    String organizationId = RoutingContextHelper.fromPrincipal(ctx).organisationId();
-    Map<String, String> allowedFilters =
-        Map.of(
-            "requestStatus",
-            DB_STATUS,
-            "assetType",
-            DB_ASSET_TYPE,
-            "organizationId",
-            DB_ASSET_ORGANIZATION_ID,
-            "itemId",
-            DB_ITEM_ID);
-    Map<String, Object> additionalFilters = Map.of(DB_ASSET_ORGANIZATION_ID, organizationId);
-    Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
-    Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
-
-    PaginatedRequest request =
-        PaginationRequestBuilder.from(ctx)
-            .allowedFiltersDbMap(allowedFilters)
-            .apiToDbMap(API_TO_DB_MAP)
-            .additionalFilters(additionalFilters)
-            .allowedTimeFields(allowedTimeFields)
-            .defaultTimeField(DB_CREATED_AT)
-            .defaultSort(DB_UPDATED_AT, DEFAULT_SORTING_ORDER)
-            .allowedSortFields(allowedSortFields)
-            .build();
-
-    LOGGER.info(
-        "PaginatedRequest getOrganizationAccessRequestHandler for org admin :  {}", request);
-
-    accessRequestService
-        .listAccessRequestForProvider(request)
-        .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
-        .onSuccess(
-            pagedResult -> {
-              LOGGER.info(
-                  "Successfully fetched access requests for org admin user: {}", user.subject());
-              ResponseBuilder.sendSuccess(
-                  ctx,
-                  pagedResult.data().stream()
-                      .map(AccessRequestDto::toJson)
-                      .collect(Collectors.toList()),
-                  pagedResult.paginationInfo(),
-                  urnGenerator);
-            })
+    keycloakUserService
+        .getUserById(userId)
         .onFailure(
             err -> {
-              LOGGER.error("Error fetching access requests: {}", err.getMessage(), err);
-              ctx.fail(err);
+              LOGGER.error("Failed to fetch user from Keycloak", err);
+              ctx.fail(new DxForbiddenException("Invalid user"));
+            })
+        .onSuccess(
+            keycloakUser -> {
+              String organizationId = keycloakUser.organisationId();
+
+              Map<String, String> allowedFilters =
+                  Map.of(
+                      "requestStatus", DB_STATUS,
+                      "assetType", DB_ASSET_TYPE,
+                      "organizationId", DB_ASSET_ORGANIZATION_ID,
+                      "itemId", DB_ITEM_ID);
+
+              Map<String, Object> additionalFilters =
+                  Map.of(DB_ASSET_ORGANIZATION_ID, organizationId);
+
+              Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
+
+              Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
+
+              PaginatedRequest request =
+                  PaginationRequestBuilder.from(ctx)
+                      .allowedFiltersDbMap(allowedFilters)
+                      .apiToDbMap(API_TO_DB_MAP)
+                      .additionalFilters(additionalFilters)
+                      .allowedTimeFields(allowedTimeFields)
+                      .defaultTimeField(DB_CREATED_AT)
+                      .defaultSort(DB_UPDATED_AT, DEFAULT_SORTING_ORDER)
+                      .allowedSortFields(allowedSortFields)
+                      .build();
+
+              LOGGER.info(
+                  "PaginatedRequest getOrganizationAccessRequestHandler for org admin: {}",
+                  request);
+
+              accessRequestService
+                  .listAccessRequestForProvider(request)
+                  .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
+                  .onSuccess(
+                      pagedResult -> {
+                        LOGGER.info(
+                            "Successfully fetched access requests for org admin user: {}",
+                            user.subject());
+
+                        ResponseBuilder.sendSuccess(
+                            ctx,
+                            pagedResult.data().stream()
+                                .map(AccessRequestDto::toJson)
+                                .collect(Collectors.toList()),
+                            pagedResult.paginationInfo(),
+                            urnGenerator);
+                      })
+                  .onFailure(
+                      err -> {
+                        LOGGER.error("Error fetching access requests: {}", err.getMessage(), err);
+                        ctx.fail(err);
+                      });
             });
   }
 
