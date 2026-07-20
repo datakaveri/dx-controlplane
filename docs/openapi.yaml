@@ -1882,13 +1882,6 @@ paths:
             type: string
             minLength: 10
             maxLength: 100
-        - in: header
-          name: delegationId
-          required: false
-          description: UUID of the delegation grant. Required when requesting a delegate access token on behalf of a delegator.
-          schema:
-            type: string
-            format: uuid
       responses:
         '200':
           description: Success
@@ -1952,17 +1945,6 @@ paths:
             curl --location 'https://${HOSTNAME}/iudx/v2/auth/token' \
                 --header 'clientId: dd0f645d-e286-40f5-ba73-1d3a06aaaa1e' \
                 --header 'clientSecret: dd45b0da4c3614249b8cfcb2e8a418b2b0293cfb' \
-                --header 'Content-Type: application/json' \
-                --data '{
-                        "itemId":"74436122-e6f6-45bf-be53-7ee2c257826b"
-                      }'
-        - lang: curl
-          label: Delegate Access token request
-          source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/auth/token' \
-                --header 'clientId: dd0f645d-e286-40f5-ba73-1d3a06aaaa1e' \
-                --header 'clientSecret: dd45b0da4c3614249b8cfcb2e8a418b2b0293cfb' \
-                --header 'delegationId: 66e5c06f-d318-4522-9f23-26b327bd307b' \
                 --header 'Content-Type: application/json' \
                 --data '{
                         "itemId":"74436122-e6f6-45bf-be53-7ee2c257826b"
@@ -10806,11 +10788,7 @@ paths:
                       linkedin_account: null
                       github_account: null
                       account_enabled: true
-                      did: null
                       aud: null
-                      delegation_scope: []
-                      delegateeId: null
-                      appId: null
         '401':
           description: Unauthorized - Token missing or invalid
           content:
@@ -11225,21 +11203,11 @@ paths:
                       account_enabled:
                         type: boolean
                         description: Whether the Keycloak account is active
-                      did:
-                        type: string
-                        description: Decentralised identifier
                       aud:
                         type: string
                         description: Token audience
-                      delegation_scope:
-                        type: array
-                        description: Scopes granted via delegation
                         items:
                           type: string
-                      delegateeId:
-                        type: string
-                      appId:
-                        type: string
               examples:
                 Nothing pending (active member):
                   summary: User is an active org member with no pending requests
@@ -11268,11 +11236,6 @@ paths:
                       linkedin_account: null
                       github_account: null
                       account_enabled: true
-                      did: null
-                      aud: null
-                      delegation_scope: []
-                      delegateeId: null
-                      appId: null
                 Pending roles (provider and compute):
                   summary: User has pending provider and compute role requests
                   value:
@@ -11344,11 +11307,6 @@ paths:
                       linkedin_account: null
                       github_account: null
                       account_enabled: true
-                      did: null
-                      aud: null
-                      delegation_scope: []
-                      delegateeId: null
-                      appId: null
                 Pending org create request:
                   summary: User has submitted an organisation creation request awaiting approval
                   value:
@@ -11394,11 +11352,6 @@ paths:
                       linkedin_account: null
                       github_account: null
                       account_enabled: true
-                      did: null
-                      aud: null
-                      delegation_scope: []
-                      delegateeId: null
-                      appId: null
         '401':
           description: Unauthorized - Token missing or invalid
           content:
@@ -11487,7 +11440,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -11581,7 +11534,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -11707,18 +11660,10 @@ paths:
                         type: string
                       account_enabled:
                         type: boolean
-                      did:
-                        type: string
                       aud:
                         type: string
-                      delegation_scope:
-                        type: array
                         items:
                           type: string
-                      delegateeId:
-                        type: string
-                      appId:
-                        type: string
               examples:
                 Success:
                   value:
@@ -11746,11 +11691,6 @@ paths:
                       linkedin_account: null
                       github_account: null
                       account_enabled: true
-                      did: null
-                      aud: null
-                      delegation_scope: []
-                      delegateeId: null
-                      appId: null
         '401':
           description: Unauthorized - Token missing or invalid
           content:
@@ -11856,18 +11796,6 @@ paths:
                           type: string
                         account_enabled:
                           type: boolean
-                        did:
-                          type: string
-                        aud:
-                          type: string
-                        delegation_scope:
-                          type: array
-                          items:
-                            type: string
-                        delegateeId:
-                          type: string
-                        appId:
-                          type: string
                   paginationInfo:
                     $ref: '#/components/schemas/PaginationInfo'
               examples:
@@ -11897,11 +11825,6 @@ paths:
                         linkedin_account: null
                         github_account: null
                         account_enabled: true
-                        did: null
-                        aud: null
-                        delegation_scope: []
-                        delegateeId: null
-                        appId: null
                     paginationInfo:
                       page: 1
                       size: 10
@@ -12267,7 +12190,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -12343,7 +12266,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -14285,7 +14208,7 @@ components:
     SizeParamReport:
       name: size
       in: query
-      description: Number of items to return per page. Defaults to `1000`. A recommended value for most use cases is between 1000 and 10000. Maximum allowed value is `100000`.
+      description: Number of items to return per page for report endpoints. Acts as a limit on the query. Defaults to `1000`. Maximum allowed value is `100000`.
       required: false
       schema:
         type: integer
