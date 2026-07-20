@@ -14326,21 +14326,21 @@ components:
           - before
           - after
     OrgNameParam:
-      name: name
+      name: orgName
       in: query
-      description: Filter organizations by name. Performs a case-insensitive partial match on the organization name.
+      description: Filter organizations by exact name match (case-sensitive).
       required: false
       schema:
         type: string
     EntityTypeParam:
-      name: entity_type
+      name: entityType
       in: query
       description: Filter by organization entity type (e.g., `Private`, `Public`, `Government`, `Startup`, `Academic`).
       required: false
       schema:
         type: string
     OrgSectorParam:
-      name: org_sector
+      name: orgSector
       in: query
       description: Filter by organization sector (e.g., `Technology`, `Healthcare`, `Education`, `Research & Development`).
       required: false
