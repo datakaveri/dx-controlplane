@@ -54,7 +54,8 @@
     "platformName": "Forest Stack Rajasthan",
     "platformShortName": "<short-form-of-exchange-name>",
     "cosAdminEmailId": "admin@iudx.io",
-    "TGDxUrl": "https://catalogue.v2.dev.iudx.io"
+    "TGDxUrl": "https://catalogue.v2.dev.iudx.io",
+    "envSuffix": "Use DEV/STAGING/UAT. Leave empty for production."
   },
   "emailConfig": {
     "emailSender": "no-reply@iudx.io",

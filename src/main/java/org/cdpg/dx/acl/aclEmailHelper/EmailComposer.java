@@ -18,6 +18,7 @@ import org.cdpg.dx.acl.accessRequest.dao.model.AssetType;
 import org.cdpg.dx.acl.accessRequest.dao.model.Status;
 import org.cdpg.dx.email.service.EmailService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
+
 @Deprecated
 public class EmailComposer {
   private static final Logger LOGGER = LogManager.getLogger(EmailComposer.class);
@@ -72,6 +73,7 @@ public class EmailComposer {
     String emailTemplate = loadTemplate("templates/AssetRequestApprovedEmailTemplate.html");
     String senderName = config.getString("senderName");
     String platformName = config.getString("platformName");
+    String envSuffix = config.getString("envSuffix");
     String tgdexPanelUrl =
       getDashboardUrl(accessRequestDto.getAssetType(), accessRequestDto.getItemId());
 
@@ -105,7 +107,7 @@ public class EmailComposer {
     String htmlBody = getHtmlBody(emailTemplate, emailDetails);
     MailMessage mailMessage =
       createMailMessage(
-        senderEmail, accessRequestDto.getConsumerEmail(), supportEmailIds, htmlBody);
+        senderEmail, accessRequestDto.getConsumerEmail(), supportEmailIds, htmlBody, envSuffix);
     return emailService
       .sendEmail(mailMessage)
       .onComplete(
@@ -134,50 +136,62 @@ public class EmailComposer {
   public Future<Void> sendEmailForCreateAccessRequest(AccessRequestDto accessRequestDto) {
     UUID providerId = UUID.fromString(accessRequestDto.getProviderId());
     String senderEmail = config.getString("emailSender");
+    String envSuffix = config.getString("envSuffix");
     String emailTemplate = loadTemplate("templates/AssetRequestEmailTemplate.html");
     String publisherPanelUrl = config.getString("publisherPanelUrl");
     String senderName = config.getString("senderName");
     List<String> supportEmailIds = config.getJsonArray("emailSupport").getList();
 
     return keycloakUserService
-      .getUserById(providerId)
-      .compose(
-        providerUser -> {
-          String providerFirstName = providerUser.givenName();
-          String providerEmailId = providerUser.email();
-          String providerLastName = providerUser.familyName();
-          Map<String, String> emailDetails =
-            Map.of(
-              "PROVIDER_FIRST_NAME", providerFirstName,
-              "PROVIDER_LAST_NAME", providerLastName,
-              "CONSUMER_FIRST_NAME", accessRequestDto.getConsumerFirstName(),
-              "CONSUMER_LAST_NAME", accessRequestDto.getConsumerLastName(),
-              "CONSUMER_EMAIL_ID", accessRequestDto.getConsumerEmail(),
-              "ASSET_NAME", accessRequestDto.getAssetName(),
-              "ASSET_DESCRIPTION", accessRequestDto.getShortDescription(),
-              "PUBLISHER_PANEL_URL", publisherPanelUrl,
-              "SENDER_NAME", senderName);
-          String htmlBody = getHtmlBody(emailTemplate, emailDetails);
-          MailMessage mailMessage =
-            createMailMessage(senderEmail, providerEmailId, supportEmailIds, htmlBody);
-          return emailService
-            .sendEmail(mailMessage)
-            .onComplete(
-              res -> {
-                if (res.succeeded()) {
-                  LOGGER.info("Email sent successfully to {}", providerEmailId);
-                } else {
-                  LOGGER.error("Failed to send email: {}", res.cause().getMessage());
-                }
-              });
-        })
-      .onFailure(
-        failure -> {
-          LOGGER.error(
-            "Failed to retrieve provider user details for ID {}: {}",
-            providerId,
-            failure.getMessage());
-        });
+        .getUserById(providerId)
+        .compose(
+            providerUser -> {
+              String providerFirstName = providerUser.givenName();
+              String providerEmailId = providerUser.email();
+              String providerLastName = providerUser.familyName();
+              Map<String, String> emailDetails =
+                  Map.of(
+                      "ENV_SUFFIX",
+                      envSuffix == null ? "" : " [" + envSuffix + "]",
+                      "PROVIDER_FIRST_NAME",
+                      providerFirstName,
+                      "PROVIDER_LAST_NAME",
+                      providerLastName,
+                      "CONSUMER_FIRST_NAME",
+                      accessRequestDto.getConsumerFirstName(),
+                      "CONSUMER_LAST_NAME",
+                      accessRequestDto.getConsumerLastName(),
+                      "CONSUMER_EMAIL_ID",
+                      accessRequestDto.getConsumerEmail(),
+                      "ASSET_NAME",
+                      accessRequestDto.getAssetName(),
+                      "ASSET_DESCRIPTION",
+                      accessRequestDto.getShortDescription(),
+                      "PUBLISHER_PANEL_URL",
+                      publisherPanelUrl,
+                      "SENDER_NAME",
+                      senderName);
+              String htmlBody = getHtmlBody(emailTemplate, emailDetails);
+              MailMessage mailMessage =
+                  createMailMessage(senderEmail, providerEmailId, supportEmailIds, htmlBody, envSuffix);
+              return emailService
+                  .sendEmail(mailMessage)
+                  .onComplete(
+                      res -> {
+                        if (res.succeeded()) {
+                          LOGGER.info("Email sent successfully to {}", providerEmailId);
+                        } else {
+                          LOGGER.error("Failed to send email: {}", res.cause().getMessage());
+                        }
+                      });
+            })
+        .onFailure(
+            failure -> {
+              LOGGER.error(
+                  "Failed to retrieve provider user details for ID {}: {}",
+                  providerId,
+                  failure.getMessage());
+            });
   }
 
   /**
@@ -204,12 +218,19 @@ public class EmailComposer {
    * @return A MailMessage object ready to be sent.
    */
   public MailMessage createMailMessage(
-    String senderEmail, String providerEmailId, List<String> supportEmailIds, String body) {
+    String senderEmail, String providerEmailId, List<String> supportEmailIds, String body,
+    String envSuffix) {
     MailMessage message = new MailMessage();
     message.setFrom(senderEmail);
     message.setTo(providerEmailId);
     message.setCc(supportEmailIds);
-    message.setSubject("Asset Access Request Notification");
+
+    String subject = "Asset Access Request Notification";
+    if (envSuffix != null && !envSuffix.isBlank()) {
+      subject += " [" + envSuffix + "]";
+    }
+
+    message.setSubject(subject);
     message.setHtml(body);
     return message;
   }
