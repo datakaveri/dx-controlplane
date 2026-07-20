@@ -7,8 +7,6 @@ import java.util.Set;
 
 public final class ActivityApiParamConstants {
 
-  private ActivityApiParamConstants() {}
-
   // -------------------------------------------------
   // Admin filters (many entries → Map.ofEntries)
   // -------------------------------------------------
@@ -21,8 +19,10 @@ public final class ActivityApiParamConstants {
           Map.entry("accessPolicy", ASSET_ACCESS_POLICY),
           Map.entry("action", ACTION),
           Map.entry("logType", LOG_TYPE),
-          Map.entry("sandboxType", SANDBOX_TYPE));
-
+          Map.entry("sandboxType", SANDBOX_TYPE),
+          Map.entry("userId", USER_ID),
+          Map.entry("time", CREATED_AT),
+          Map.entry("endtime", CREATED_AT));
   // -------------------------------------------------
   // Sort fields
   // -------------------------------------------------
@@ -37,13 +37,11 @@ public final class ActivityApiParamConstants {
           "action",
           "amount",
           "sandboxType");
-
   // -------------------------------------------------
   // Consumer filters (many entries → Map.ofEntries)
   // -------------------------------------------------
   public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_CONSUMER_V2 =
       Map.ofEntries(
-          Map.entry("userId", USER_ID),
           Map.entry("orgId", ORG_ID),
           Map.entry("assetProviderId", ASSET_PROVIDER_ID),
           Map.entry("assetType", ASSET_TYPE),
@@ -53,7 +51,6 @@ public final class ActivityApiParamConstants {
           Map.entry("action", ACTION),
           Map.entry("logType", LOG_TYPE),
           Map.entry("sandboxType", SANDBOX_TYPE));
-
   // -------------------------------------------------
   // API → DB field mapping (filters + sorts)
   // -------------------------------------------------
@@ -79,4 +76,6 @@ public final class ActivityApiParamConstants {
           Map.entry("assetOrgType", ASSET_ORG_TYPE),
           Map.entry("assetProviderId", ASSET_PROVIDER_ID),
           Map.entry("sandboxType", SANDBOX_TYPE));
+
+  private ActivityApiParamConstants() {}
 }
