@@ -14234,7 +14234,7 @@ components:
     SizeParamReport:
       name: size
       in: query
-      description: Number of items to return per page for report endpoints. Acts as a limit on the query. Defaults to `1000`. Maximum allowed value is `100000`.
+      description: Number of items to return per page. Defaults to `1000`. A recommended value for most use cases is between 1000 and 10000. Maximum allowed value is `100000`.
       required: false
       schema:
         type: integer
