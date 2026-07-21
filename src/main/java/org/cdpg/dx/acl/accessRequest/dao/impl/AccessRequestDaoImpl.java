@@ -34,42 +34,75 @@ public class AccessRequestDaoImpl extends AbstractBaseDAO<AccessRequestDto>
     super(postgresService, tableName, idField, fromJson);
   }
 
-  // select * from request where consumer_id = givenId and status IS GRANTED or PENDING AND item_id
-  // = itemId
+  /**
+   * Checks whether an active access request already exists for the given consumer and item.
+   *
+   * <p>A request is considered active if:
+   *
+   * <ul>
+   *   <li>its status is {@code PENDING}, or
+   *   <li>its status is {@code GRANTED} and its expiry time is in the future.
+   * </ul>
+   *
+   * <p>Expired granted requests are ignored.
+   *
+   * @param consumerId the consumer ID
+   * @param itemId the item ID
+   * @return {@code true} if an active access request exists; {@code false} otherwise
+   */
   public Future<Boolean> isAccessRequestPresent(UUID consumerId, UUID itemId) {
-    Condition condition = new Condition();
-    Condition conditionWithStatus =
-        new Condition()
-            .setColumn(DB_STATUS)
-            .setValues(List.of(Status.GRANTED, Status.PENDING))
-            .setOperator(Condition.Operator.IN);
-    Condition conditionWithConsumer =
+    Condition consumerCondition =
         new Condition()
             .setColumn(DB_CONSUMER_ID)
             .setValues(List.of(consumerId.toString()))
             .setOperator(Condition.Operator.EQUALS);
-    Condition conditionWithItemId =
+
+    Condition itemCondition =
         new Condition()
             .setColumn(DB_ITEM_ID)
             .setValues(List.of(itemId.toString()))
             .setOperator(Condition.Operator.EQUALS);
-    Condition conditionWithExpiry =
+
+    Condition pendingCondition =
+        new Condition()
+            .setColumn(DB_STATUS)
+            .setValues(List.of(Status.PENDING))
+            .setOperator(Condition.Operator.EQUALS);
+
+    Condition grantedStatusCondition =
+        new Condition()
+            .setColumn(DB_STATUS)
+            .setValues(List.of(Status.GRANTED))
+            .setOperator(Condition.Operator.EQUALS);
+
+    Condition expiryCondition =
         new Condition()
             .setColumn(DB_EXPIRY_AT)
-            .setOperator(Condition.Operator.GREATER)
-            .setValues(List.of(LocalDateTime.now().toString()));
+            .setValues(List.of(LocalDateTime.now().toString()))
+            .setOperator(Condition.Operator.GREATER);
 
-    condition
-        .setConditions(
-            List.of(
-                conditionWithStatus,
-                conditionWithConsumer,
-                conditionWithItemId,
-                conditionWithExpiry))
-        .setLogicalOperator(Condition.LogicalOperator.AND)
-        .setGroup(true);
+    // (status = GRANTED AND expiry_at > now())
+    Condition grantedAndNotExpired =
+        new Condition()
+            .setConditions(List.of(grantedStatusCondition, expiryCondition))
+            .setLogicalOperator(Condition.LogicalOperator.AND)
+            .setGroup(true);
+
+    // (status = PENDING OR (status = GRANTED AND expiry_at > now()))
+    Condition statusCondition =
+        new Condition()
+            .setConditions(List.of(pendingCondition, grantedAndNotExpired))
+            .setLogicalOperator(Condition.LogicalOperator.OR)
+            .setGroup(true);
+
+    // consumer_id = ? AND item_id = ? AND (...)
+    Condition rootCondition =
+        new Condition()
+            .setConditions(List.of(consumerCondition, itemCondition, statusCondition))
+            .setLogicalOperator(Condition.LogicalOperator.AND)
+            .setGroup(true);
     SelectQuery selectQuery =
-        new SelectQuery().setTable(tableName).setColumns(List.of("*")).setCondition(condition);
+        new SelectQuery().setTable(tableName).setColumns(List.of("*")).setCondition(rootCondition);
     LOGGER.info("Select Query : {}", selectQuery.toSQL());
     return postgresService
         .select(selectQuery, false)
