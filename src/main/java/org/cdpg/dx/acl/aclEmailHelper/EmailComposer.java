@@ -96,6 +96,8 @@ public class EmailComposer {
     }
     Map<String, String> emailDetails =
       Map.of(
+          "ENV_SUFFIX",
+          envSuffix == null ? "" : " [" + envSuffix + "]",
         "REQUEST_STATUS", requestStatus.getStatus().toLowerCase(),
         "CONSUMER_FIRST_NAME", accessRequestDto.getConsumerFirstName(),
         "CONSUMER_LAST_NAME", accessRequestDto.getConsumerLastName(),
@@ -225,10 +227,11 @@ public class EmailComposer {
     message.setTo(providerEmailId);
     message.setCc(supportEmailIds);
 
-    String subject = "Asset Access Request Notification";
-    if (envSuffix != null && !envSuffix.isBlank()) {
-      subject += " [" + envSuffix + "]";
-    }
+    String subject =
+        "Asset Access Request Notification"
+            + ((envSuffix == null || envSuffix.isBlank())
+            ? ""
+            : " [" + envSuffix + "]");
 
     message.setSubject(subject);
     message.setHtml(body);
