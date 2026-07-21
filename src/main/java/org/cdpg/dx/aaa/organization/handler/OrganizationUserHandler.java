@@ -57,18 +57,17 @@ public class OrganizationUserHandler {
 
     DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
     if (!orgId.toString().equals(dxUser.organisationId())) {
-      ctx.fail(new DxForbiddenException(
-        "The org id of the user and the path parameter are not same"));
+      ctx.fail(
+          new DxForbiddenException("The org id of the user and the path parameter are not same"));
       return;
     }
-
     userService
         .getUserInfoByID(userId)
         .onSuccess(
             users -> {
               UserActivityAuditLogBuilder auditLogBuilder =
-                OrganizationAuditHelper.buildOrganisationAudit(
-                  ctx, users.toJson(), OrganisationAuditOperation.GET_USER_INFO);
+                  OrganizationAuditHelper.buildOrganisationAudit(
+                      ctx, users.toJson(), OrganisationAuditOperation.GET_USER_INFO);
               CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
               ResponseBuilder.sendSuccess(ctx, users, urnGenerator);
@@ -81,8 +80,8 @@ public class OrganizationUserHandler {
 
     DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
     if (!orgId.toString().equals(dxUser.organisationId())) {
-      ctx.fail(new DxForbiddenException(
-        "The org id of the user and the path parameter are not same"));
+      ctx.fail(
+          new DxForbiddenException("The org id of the user and the path parameter are not same"));
       return;
     }
 
@@ -108,8 +107,8 @@ public class OrganizationUserHandler {
         .onSuccess(
             entry -> {
               UserActivityAuditLogBuilder auditLogBuilder =
-                OrganizationAuditHelper.buildOrganisationAudit(
-                  ctx, new JsonObject(), OrganisationAuditOperation.GET_USERS);
+                  OrganizationAuditHelper.buildOrganisationAudit(
+                      ctx, new JsonObject(), OrganisationAuditOperation.GET_USERS);
               CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
               ResponseBuilder.sendSuccess(ctx, entry.getKey(), entry.getValue(), urnGenerator);
@@ -129,8 +128,8 @@ public class OrganizationUserHandler {
 
     DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
     if (!orgId.toString().equals(dxUser.organisationId())) {
-      ctx.fail(new DxForbiddenException(
-        "The org id of the user and the path parameter are not same"));
+      ctx.fail(
+          new DxForbiddenException("The org id of the user and the path parameter are not same"));
       return;
     }
 
@@ -140,8 +139,10 @@ public class OrganizationUserHandler {
             updated -> {
               if (updated) {
                 UserActivityAuditLogBuilder auditLogBuilder =
-                  OrganizationAuditHelper.buildOrganisationAudit(
-                    ctx, new JsonObject().put(ID,userId.toString()), OrganisationAuditOperation.UPDATE_USER_INFO);
+                    OrganizationAuditHelper.buildOrganisationAudit(
+                        ctx,
+                        new JsonObject().put(ID, userId.toString()),
+                        OrganisationAuditOperation.UPDATE_USER_INFO);
                 CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
                 ResponseBuilder.sendSuccess(ctx, "Updated Organisation User Role", urnGenerator);
@@ -165,8 +166,8 @@ public class OrganizationUserHandler {
 
     DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
     if (!orgId.toString().equals(dxUser.organisationId())) {
-      ctx.fail(new DxForbiddenException(
-        "The org id of the user and the path parameter are not same"));
+      ctx.fail(
+          new DxForbiddenException("The org id of the user and the path parameter are not same"));
       return;
     }
 
@@ -221,8 +222,10 @@ public class OrganizationUserHandler {
                                   "User {} deleted completely from Organization {}", userId, orgId);
 
                               UserActivityAuditLogBuilder auditLogBuilder =
-                                OrganizationAuditHelper.buildOrganisationAudit(
-                                  ctx, new JsonObject().put(ID,userId.toString()) , OrganisationAuditOperation.DELETE_USER);
+                                  OrganizationAuditHelper.buildOrganisationAudit(
+                                      ctx,
+                                      new JsonObject().put(ID, userId.toString()),
+                                      OrganisationAuditOperation.DELETE_USER);
                               CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
                               ResponseBuilder.sendSuccess(

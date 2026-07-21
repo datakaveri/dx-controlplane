@@ -34,7 +34,6 @@ public record ResourceServer(
     implements BaseEntity<ResourceServer> {
 
   public static ResourceServer fromJson(JsonObject json) {
-    LOGGER.debug("Inside fromJson of ResourceServer {}", json);
     try {
       return new ResourceServer(
           json.getString(Constants.ID) != null

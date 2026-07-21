@@ -168,7 +168,7 @@
     - $ref: ../components/parameters.yaml#/EndTimeParam
     - $ref: ../components/parameters.yaml#/TimeRelParam
     - $ref: ../components/parameters.yaml#/PageParam
-    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SizeParamReport
     - $ref: ../components/parameters.yaml#/SortingParam
     responses:
       '200':
@@ -234,7 +234,7 @@
     - $ref: ../components/parameters.yaml#/EndTimeParam
     - $ref: ../components/parameters.yaml#/TimeRelParam
     - $ref: ../components/parameters.yaml#/PageParam
-    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SizeParamReport
     - $ref: ../components/parameters.yaml#/SortingParam
     responses:
       '200':
