@@ -5847,7 +5847,7 @@ UnauthorizedResponse:
       example: Not Authorized
     detail:
       type: string
-      example: Missing Bearer token
+      example: Missing credentials
 ForbiddenResponse:
   type: object
   properties:

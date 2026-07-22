@@ -6,7 +6,7 @@ import io.vertx.core.json.JsonObject;
 public record ItemSummary(
     String id,
     String name,
-    String sortDescription,
+    String shortDescription,
     String type,
     String accessPolicy,
     String ownerUserId,

@@ -302,37 +302,83 @@
     x-codeSamples:
       - lang: cURL
         label: Create INDIVIDUAL Policy
-        source: "curl --location 'https://${HOSTNAME}/iudx/acl/apd/v2/policy' \\\n--header\
-        \ 'Authorization: Bearer <tokenValue>' \\\n--header 'Content-Type: application/json'\
-        \ \\\n--data-raw '{\n  \"request\": [\n    {\n      \"policyType\": \"INDIVIDUAL\"\
-        ,\n      \"userId\": \"5067611f-0835-4cee-9b3e-fe81adab65f1\",\n      \"itemId\"\
-        : \"5011676f-0835-4cee-9b3e-fe81adab65f1\",\n      \"itemType\": \"DATABANK\"\
-        ,\n      \"expiryTime\": \"2026-08-04T20:00:19Z\",\n      \"constraints\"\
-        : {\n        \"access\": [\n          {\n            \"accessType\": \"api\"\
-        ,\n            \"expiry\": 1785873619,\n            \"limits\": {\n      \
-        \        \"apiHits\": 1000,\n              \"dataUsage\": \"100:gb\"\n   \
-        \         }\n          },\n          {\n            \"accessType\": \"file\"\
-        ,\n            \"expiry\": 1785873619,\n            \"limits\": {\n      \
-        \        \"dataUsage\": \"10:gb\"\n            }\n          }\n        ]\n\
-        \      },\n      \"providerComment\": \"Access granted for analytics usage\"\
-        ,\n      \"feedbackToConsumer\": \"Use only for internal testing\"\n    }\n\
-        \  ]\n}'\n"
+        source: |
+          curl --location 'https://${HOSTNAME}/iudx/acl/apd/v2/policy' \
+          --header 'Authorization: Bearer <tokenValue>' \
+          --header 'Content-Type: application/json' \
+          --data-raw '{
+            "request": [
+              {
+                "policyType": "INDIVIDUAL",
+                "userId": "5067611f-0835-4cee-9b3e-fe81adab65f1",
+                "itemId": "5011676f-0835-4cee-9b3e-fe81adab65f1",
+                "itemType": "DATABANK",
+                "expiryTime": "2026-08-04T20:00:19Z",
+                "constraints": {
+                  "access": [
+                    {
+                      "accessType": "api",
+                      "expiry": 1785873619,
+                      "limits": {
+                        "apiHits": 1000,
+                        "dataUsage": "100:gb"
+                      }
+                    },
+                    {
+                      "accessType": "file",
+                      "expiry": 1785873619,
+                      "limits": {
+                        "dataUsage": "10:gb"
+                      }
+                    }
+                  ]
+                },
+                "providerComment": "Access granted for analytics usage",
+                "feedbackToConsumer": "Use only for internal testing"
+              }
+            ]
+          }'
+
       - lang: cURL
         label: Create GROUP Policy
-        source: "curl --location 'https://${HOSTNAME}/iudx/acl/apd/v2/policy' \\\n--header\
-        \ 'Authorization: Bearer <tokenValue>' \\\n--header 'Content-Type: application/json'\
-        \ \\\n--data-raw '{\n  \"request\": [\n    {\n      \"policyType\": \"GROUP\"\
-        ,\n      \"itemId\": \"7f1f6f2d-6b6e-45c0-98a8-cdc8d3db0aa1\",\n      \"itemType\"\
-        : \"DATABANK\",\n      \"expiryTime\": \"2026-12-31T23:59:59Z\",\n      \"\
-        constraints\": {\n        \"subjects\": {\n          \"allowedOrgIds\": [\n\
-        \            \"2ef0f344-dc41-4369-a50b-1515a0db5db2\"\n          ],\n    \
-        \      \"allowedRoles\": [\n            \"consumer\"\n          ]\n      \
-        \  },\n        \"access\": [\n          {\n            \"accessType\": \"\
-        api\",\n            \"expiry\": 1785873619,\n            \"limits\": {\n \
-        \             \"apiHits\": 5000\n            }\n          },\n          {\n\
-        \            \"accessType\": \"sub\",\n            \"expiry\": 1785873619\n\
-        \          }\n        ]\n      },\n      \"providerComment\": \"Organization-wide\
-        \ access for subscribed consumers\"\n    }\n  ]\n}'\n"
+        source: |
+          curl --location 'https://${HOSTNAME}/iudx/acl/apd/v2/policy' \
+          --header 'Authorization: Bearer <tokenValue>' \
+          --header 'Content-Type: application/json' \
+          --data-raw '{
+            "request": [
+              {
+                "policyType": "GROUP",
+                "itemId": "7f1f6f2d-6b6e-45c0-98a8-cdc8d3db0aa1",
+                "itemType": "DATABANK",
+                "expiryTime": "2026-12-31T23:59:59Z",
+                "constraints": {
+                  "subjects": {
+                    "allowedOrgIds": [
+                      "2ef0f344-dc41-4369-a50b-1515a0db5db2"
+                    ],
+                    "allowedRoles": [
+                      "consumer"
+                    ]
+                  },
+                  "access": [
+                    {
+                      "accessType": "api",
+                      "expiry": 1785873619,
+                      "limits": {
+                        "apiHits": 5000
+                      }
+                    },
+                    {
+                      "accessType": "sub",
+                      "expiry": 1785873619
+                    }
+                  ]
+                },
+                "providerComment": "Organization-wide access for subscribed consumers"
+              }
+            ]
+          }'
   put:
     tags:
       - Policies
@@ -466,14 +512,10 @@
     x-codeSamples:
       - lang: cURL
         label: Delete policy
-        source: 'curl --location --request PUT \
-
-        ''https://${HOSTNAME}/iudx/acl/apd/v2/policy?id=231f6eca-6276-4993-bfeb-53cbbbba6f06''
-        \
-
-        --header ''Authorization: <tokenValue>''
-
-        '
+        source: |
+          curl --location --request PUT \
+            'https://${HOSTNAME}/iudx/acl/apd/v2/policy?id=231f6eca-6276-4993-bfeb-53cbbbba6f06' \
+            --header 'Authorization: Bearer <tokenValue>'
 /iudx/acl/apd/v2/policy/consumer:
   get:
     tags:

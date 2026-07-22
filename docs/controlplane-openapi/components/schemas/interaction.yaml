@@ -49,7 +49,7 @@ InteractionResponse:
   example:
     type: urn:dx:controlPlane:success
     title: Success
-    detail: Interaction updated successfully
+    detail: Interaction recorded successfully
 UserFeedbackRequest:
   type: object
   required:
@@ -73,10 +73,13 @@ UserFeedbackRequest:
 UserFeedbackPaginatedResponse:
   type: object
   properties:
-    status:
+    type:
       type: string
-      example: success
-    data:
+      example: urn:dx:controlPlane:success
+    title:
+      type: string
+      example: Success
+    result:
       type: array
       items:
         type: object
@@ -84,21 +87,13 @@ UserFeedbackPaginatedResponse:
           id:
             type: string
             format: uuid
-          user_id:
+          userId:
             type: string
             format: uuid
-          asset_id:
+          assetId:
             type: string
             format: uuid
-          entity_rating:
-            type: integer
-            minimum: 1
-            maximum: 5
-          action_subtype:
-            type: string
-          action_subdata:
-            type: object
-    pagination:
+    paginationInfo:
       type: object
       properties:
         page:
@@ -107,19 +102,45 @@ UserFeedbackPaginatedResponse:
         size:
           type: integer
           example: 10
-        total:
-          type: integer
-          example: 100
-        totalPages:
+        totalCount:
           type: integer
           example: 10
+        totalPages:
+          type: integer
+          example: 1
+        hasNext:
+          type: boolean
+          example: false
+        hasPrevious:
+          type: boolean
+          example: false
+  example:
+    type: urn:dx:controlPlane:success
+    title: Success
+    result:
+      - id: 3f329ef8-c1e6-417f-93d6-6b568366612b
+        userId: da56e517-f8bc-46fd-95e3-7257acd64da7
+        assetId: 00b80a67-a5aa-43cf-ba60-dcd1c09b1c4f
+      - id: c2f5ef34-0362-40ae-b691-e3a6411a51da
+        userId: 23100470-c8ce-4f9d-8555-94087378b5f6
+        assetId: 02192219-802a-4d7d-a130-8cc892a9d0d2
+    paginationInfo:
+      page: 1
+      size: 10
+      totalCount: 10
+      totalPages: 1
+      hasNext: false
+      hasPrevious: false
 ProviderFeedbackPaginatedResponse:
   type: object
   properties:
-    status:
+    type:
       type: string
-      example: success
-    data:
+      example: urn:dx:controlPlane:success
+    title:
+      type: string
+      example: Success
+    result:
       type: array
       items:
         type: object
@@ -127,17 +148,22 @@ ProviderFeedbackPaginatedResponse:
           id:
             type: string
             format: uuid
-          user_id:
+          userId:
             type: string
             format: uuid
-          asset_id:
+          assetId:
             type: string
             format: uuid
           type:
             type: string
+            example: FEEDBACK
           data:
             type: object
-    pagination:
+            additionalProperties: true
+          createdAt:
+            type: string
+            format: date-time
+    paginationInfo:
       type: object
       properties:
         page:
@@ -146,12 +172,36 @@ ProviderFeedbackPaginatedResponse:
         size:
           type: integer
           example: 10
-        total:
+        totalCount:
           type: integer
-          example: 100
+          example: 4
         totalPages:
           type: integer
-          example: 10
+          example: 1
+        hasNext:
+          type: boolean
+          example: false
+        hasPrevious:
+          type: boolean
+          example: false
+  example:
+    type: urn:dx:controlPlane:success
+    title: Success
+    result:
+      - id: f11be0ea-a9b2-4954-983d-297426c1682d
+        userId: 2f76e6b0-7569-4f30-8bc3-9884ca3d61c2
+        assetId: 8fd42dfc-6a54-46a3-9d5c-ce3f7fb11887
+        type: FEEDBACK
+        data:
+          comment: Thank you for using our dataset.
+        createdAt: "2026-07-01T09:06:28.285092"
+    paginationInfo:
+      page: 1
+      size: 10
+      totalCount: 4
+      totalPages: 1
+      hasNext: false
+      hasPrevious: false
 PostItemVoteRequest:
   type: object
   required:
@@ -362,7 +412,6 @@ BookmarkResult:
   - entityId
   - entityType
   - createdAt
-  - tableName
   properties:
     id:
       type: string
@@ -441,9 +490,6 @@ BookmarkSuccessResult:
     createdAt:
       type: string
       format: date-time
-    tableName:
-      type: string
-      example: bookmarks
   example:
     id: db2428e8-ee93-42c4-97c8-7b747cce6521
     userId: 6effed2b-999c-44da-987a-f56a3aba96c2
