@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.bookmarks.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.vertx.core.json.JsonObject;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,6 +41,7 @@ public record Bookmark(
   }
 
   @Override
+  @JsonIgnore
   public String getTableName() {
     return "bookmarks";
   }

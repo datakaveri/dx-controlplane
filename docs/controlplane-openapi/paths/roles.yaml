@@ -288,20 +288,24 @@
                 - scope1
                 - scope2
     responses:
-      '201':
+      '200':
         description: Custom role created successfully
         content:
           application/json:
             schema:
               $ref: ../components/schemas/role.yaml#/CustomRoleResponse
             example:
-              id: 550e8400-e29b-41d4-a716-446655440000
-              userId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-              scope:
-              - scope1
-              - scope2
-              createdAt: '2026-02-03T10:15:30'
-              updatedAt: '2026-02-03T10:15:30'
+                type: "urn:dx:controlPlane:success"
+                title: "Success"
+                result:
+                  id: "550e8400-e29b-41d4-a716-446655440000"
+                  userId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                  scope:
+                    - "scope1"
+                    - "scope2"
+                  requestedBy: "6f7d6d59-2e1f-49b4-8f0d-fc3c2f4e9c65"
+                  createdAt: "2026-02-03T10:15:30"
+                  updatedAt: "2026-02-03T10:15:30"
       '400':
         description: Invalid request (missing mandatory role or malformed scope)
       '403':
