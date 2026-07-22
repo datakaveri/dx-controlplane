@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.credit.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.aaa.credit.util.Constants;
 import org.cdpg.dx.aaa.organization.models.Status;
@@ -76,6 +77,7 @@ public record CreditRequest(
   }
 
   @Override
+  @JsonIgnore
   public String getTableName() {
     return Constants.CREDIT_REQUEST_TABLE;
   }

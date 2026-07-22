@@ -303,10 +303,16 @@
             schema:
               type: object
               properties:
-                status:
+                type:
                   type: string
-                message:
+                title:
                   type: string
+                detail:
+                  type: string
+            example:
+              type: "urn:dx:controlPlane:success"
+              title: "Success"
+              detail: "Interaction updated successfully"
       '400':
         description: Bad Request
         content:
@@ -485,10 +491,16 @@
             schema:
               type: object
               properties:
-                status:
+                type:
                   type: string
-                message:
+                title:
                   type: string
+                detail:
+                  type: string
+            example:
+              type: "urn:dx:controlPlane:success"
+              title: "Success"
+              detail: "Interaction updated successfully"
       '400':
         description: Bad Request
         content:
