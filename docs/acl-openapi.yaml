@@ -675,7 +675,7 @@ paths:
                   value:
                     type: urn:dx:aclApd:success
                     title: Success
-                    results:
+                    result:
                       - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
                         requestStatus: GRANTED
                         requestType: DOWNLOAD
@@ -1058,7 +1058,7 @@ paths:
                   value:
                     type: urn:dx:aclApd:success
                     title: Success
-                    results:
+                    result:
                       - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
                         requestStatus: GRANTED
                         requestType: DOWNLOAD
@@ -1202,7 +1202,7 @@ paths:
                   value:
                     type: urn:dx:aclApd:success
                     title: Success
-                    results:
+                    result:
                       - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
                         requestStatus: GRANTED
                         requestType: DOWNLOAD
@@ -1484,7 +1484,7 @@ paths:
                   value:
                     type: urn:dx:aclApd:success
                     title: Success
-                    results:
+                    result:
                       - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
                         requestStatus: GRANTED
                         requestType: DOWNLOAD
