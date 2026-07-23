@@ -823,6 +823,49 @@ public class AccessRequestServiceImpl implements AccessRequestService {
   }
 
   @Override
+  public Future<PaginatedResult<AccessRequestDto>> enrichAccessRequestsWithProviderInfo(
+      PaginatedResult<AccessRequestDto> pagedResult) {
+
+    List<Future<?>> futures = new ArrayList<>();
+
+    for (AccessRequestDto dto : pagedResult.data()) {
+
+      // Owner enrichment
+      if (dto.getProviderId() != null) {
+        Future<Void> ownerFuture =
+            keycloakUserService
+                .getUserById(UUID.fromString(dto.getProviderId()))
+                .onSuccess(
+                    user -> {
+                      dto.setOwnerId(user.sub().toString());
+                      dto.setOwnerEmail(user.email());
+                      dto.setOwnerFirstName(user.givenName());
+                      dto.setOwnerLastName(user.familyName());
+                      dto.setOwnerOrganization(user.organisationName());
+                    })
+                .recover(
+                    err -> {
+                      LOGGER.warn(
+                          "Failed to fetch owner {}: {}", dto.getProviderId(), err.getMessage());
+
+                      dto.setOwnerId(dto.getProviderId());
+                      dto.setOwnerEmail(null);
+                      dto.setOwnerFirstName(null);
+                      dto.setOwnerLastName(null);
+                      dto.setOwnerOrganization(null);
+
+                      return Future.succeededFuture();
+                    })
+                .mapEmpty();
+
+        futures.add(ownerFuture);
+      }
+    }
+
+    return Future.all(futures).map(v -> pagedResult);
+  }
+
+  @Override
   public Future<AccessRequestDto> updateAccessRequestForConsumer(UUID consumerId, UUID requestId) {
     return accessRequestDao
         .get(requestId)
