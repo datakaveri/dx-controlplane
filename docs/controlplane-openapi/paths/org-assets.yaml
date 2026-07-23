@@ -347,7 +347,7 @@
       Update the publication or data upload status of an organisation asset.
 
       **Role-based behavior:**
-      - `org_admin` and `cos_admin` can update both `publishStatus` and `dataUploadStatus`.
+      - only `cos_admin` can update `publishStatus`.
       - `provider` can update only `dataUploadStatus`.
       - `itemStatus` can also be updated through this API:
         - `UNVERIFIED` → `VERIFIED` can only be performed by an `org_admin`.

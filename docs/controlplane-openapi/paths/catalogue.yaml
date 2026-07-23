@@ -113,7 +113,7 @@
         '
   put:
     tags:
-    - CAT Entity
+      - CAT Entity
     description: |
       Replace an existing catalogue item.
 
@@ -122,7 +122,7 @@
       ### Update constraints
 
       - `PUT` replaces the entire item. Any fields omitted from the request may be removed unless they are managed by the backend.
-      - The following fields are managed by the backend and cannot be updated through this API:
+      - The following fields are managed by the backend and are automatically maintained. Any values provided for these fields are ignored:
         - `itemStatus`
         - `publishStatus`
         - `dataUploadStatus`
@@ -134,9 +134,10 @@
         - `itemCreatedAt`
         - `metrics`
         - The first element of the `type` array
-      - `lastUpdated` is automatically set to the current UTC time.
+      - `lastUpdated` is automatically updated to the current UTC time.
+      - `itemStatus` can only be updated to `VERIFIED` by an `org_admin`.
 
-      To update metadata fields without replacing the entire item, use the `PATCH /item` API.
+      To update only specific metadata fields without replacing the entire item, use the `PATCH /item` API.
 
       **Log Type:** `ASSET`
     operationId: update item

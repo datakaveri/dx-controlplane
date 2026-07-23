@@ -1074,7 +1074,7 @@ paths:
         ### Update constraints
 
         - `PUT` replaces the entire item. Any fields omitted from the request may be removed unless they are managed by the backend.
-        - The following fields are managed by the backend and cannot be updated through this API:
+        - The following fields are managed by the backend and are automatically maintained. Any values provided for these fields are ignored:
           - `itemStatus`
           - `publishStatus`
           - `dataUploadStatus`
@@ -1086,9 +1086,10 @@ paths:
           - `itemCreatedAt`
           - `metrics`
           - The first element of the `type` array
-        - `lastUpdated` is automatically set to the current UTC time.
+        - `lastUpdated` is automatically updated to the current UTC time.
+        - `itemStatus` can only be updated to `VERIFIED` by an `org_admin`.
 
-        To update metadata fields without replacing the entire item, use the `PATCH /item` API.
+        To update only specific metadata fields without replacing the entire item, use the `PATCH /item` API.
 
         **Log Type:** `ASSET`
       operationId: update item
@@ -6429,7 +6430,7 @@ paths:
         Update the publication or data upload status of an organisation asset.
 
         **Role-based behavior:**
-        - `org_admin` and `cos_admin` can update both `publishStatus` and `dataUploadStatus`.
+        - only `cos_admin` can update `publishStatus`.
         - `provider` can update only `dataUploadStatus`.
         - `itemStatus` can also be updated through this API:
           - `UNVERIFIED` → `VERIFIED` can only be performed by an `org_admin`.
