@@ -691,6 +691,12 @@ paths:
                           consumerLastName: Resident
                           consumerEmail: scroopy@noopers.com
                           consumerOrganization: Scroopy Noopers Corp
+                        owner:
+                          ownerId: 497f6eca-6276-4993-bfeb-53cbbbba6f08
+                          ownerFirstName: Rick
+                          ownerLastName: Sanchez
+                          ownerEmail: rick@cdpg.org
+                          ownerOrganization: CDPG
                         asset:
                           itemId: 316cd4eb-71b3-42c2-beb2-785a77999321
                           assetName: Ice Estimation Model
@@ -1068,6 +1074,12 @@ paths:
                           consumerLastName: Resident
                           consumerEmail: scroopy@noopers.com
                           consumerOrganization: Scroopy Noopers Corp
+                        owner:
+                          ownerId: 497f6eca-6276-4993-bfeb-53cbbbba6f08
+                          ownerFirstName: Rick
+                          ownerLastName: Sanchez
+                          ownerEmail: rick@cdpg.org
+                          ownerOrganization: CDPG
                         asset:
                           itemId: 316cd4eb-71b3-42c2-beb2-785a77999321
                           assetName: Ice Estimation Model
@@ -1206,6 +1218,12 @@ paths:
                           consumerLastName: Resident
                           consumerEmail: scroopy@noopers.com
                           consumerOrganization: Scroopy Noopers Corp
+                        owner:
+                          ownerId: 497f6eca-6276-4993-bfeb-53cbbbba6f08
+                          ownerFirstName: Rick
+                          ownerLastName: Sanchez
+                          ownerEmail: rick@cdpg.org
+                          ownerOrganization: CDPG
                         asset:
                           itemId: 316cd4eb-71b3-42c2-beb2-785a77999321
                           assetName: Ice Estimation Model
@@ -1482,6 +1500,12 @@ paths:
                           consumerLastName: Resident
                           consumerEmail: scroopy@noopers.com
                           consumerOrganization: Scroopy Noopers Corp
+                        owner:
+                          ownerId: 497f6eca-6276-4993-bfeb-53cbbbba6f08
+                          ownerFirstName: Rick
+                          ownerLastName: Sanchez
+                          ownerEmail: rick@cdpg.org
+                          ownerOrganization: CDPG
                         asset:
                           itemId: 316cd4eb-71b3-42c2-beb2-785a77999321
                           assetName: Ice Estimation Model
@@ -3815,6 +3839,26 @@ components:
                 required:
                   - providerId
                   - consumerId
+              owner:
+                type: object
+                properties:
+                  ownerId:
+                    type: string
+                    format: uuid
+                    minLength: 1
+                  ownerFirstName:
+                    type: string
+                    minLength: 1
+                  ownerLastName:
+                    type: string
+                    minLength: 1
+                  ownerEmail:
+                    type: string
+                    format: email
+                    minLength: 1
+                  ownerOrganization:
+                    type: string
+                    minLength: 1
               expiryAt:
                 type: string
                 minLength: 1
@@ -3833,6 +3877,7 @@ components:
               - updatedAt
               - requestStatus
               - user
+              - owner
               - createdAt
         paginationInfo:
           type: object
