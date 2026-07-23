@@ -42,6 +42,7 @@ public class EmailComposer {
   private final String adminPortalUrl;
   private final String senderName;
   private final String platformName;
+  private final String envSuffix;
 
   public EmailComposer(
       EmailService emailService,
@@ -62,6 +63,7 @@ public class EmailComposer {
     this.adminPortalUrl = config.getString("TGDxUrl");
     this.senderName = config.getString("senderName");
     this.platformName = config.getString("platformName");
+    this.envSuffix = config.getString("envSuffix");
   }
 
   // ────────────────────────── REQUEST EMAILS ──────────────────────────
@@ -69,11 +71,14 @@ public class EmailComposer {
   public Future<Void> sendEmailForCreatingOrg(
       OrganizationCreateRequest request, User user) {
     LOGGER.info("Sending email for organization creation request: {}", request);
+    String subject =
+        "Organization Creation Request"
+            + ((envSuffix == null || envSuffix.isBlank()) ? "" : " [" + envSuffix + "]");
 
     return newEmail()
         .template("templates/request-create-organization.html")
         .to(cosAdminEmailId)
-        .subject("Organization Creation Request")
+        .subject(subject)
         .variable("USER_FIRST_NAME", request.userName())
         .variable("USER_EMAIL_ID", user.principal().getString("email"))
         .variable("ORGANIZATION_NAME", request.name())
@@ -87,12 +92,15 @@ public class EmailComposer {
 
   public Future<Void> sendEmailForJoiningOrg(
       OrganizationJoinRequest request, User user) {
+    String subject =
+        "Join Organization Request"
+            + ((envSuffix == null || envSuffix.isBlank()) ? "" : " [" + envSuffix + "]");
     return getOrgAdminEmail(request.organizationId())
         .compose(orgAdminEmail ->
             newEmail()
                 .template("templates/request-join-organization.html")
                 .to(orgAdminEmail)
-                .subject("Join Organization Request")
+                .subject(subject)
                 .variable("ADMIN_FIRST_NAME", "Admin")
                 .variable("ADMIN_LAST_NAME", "")
                 .variable("USER_FIRST_NAME", request.userName())
@@ -104,10 +112,13 @@ public class EmailComposer {
   }
 
   public Future<Void> sendEmailForComputeRole(ComputeRole computeRole, User user) {
+    String subject =
+        "Compute Role Request"
+            + ((envSuffix == null || envSuffix.isBlank()) ? "" : " [" + envSuffix + "]");
     return newEmail()
         .template("templates/request-compute-role.html")
         .to(cosAdminEmailId)
-        .subject("Compute Role Request")
+        .subject(subject)
         .variable("ADMIN_FIRST_NAME", "Admin")
         .variable("ADMIN_LAST_NAME", "")
         .variable("USER_FIRST_NAME", computeRole.userName())
@@ -119,12 +130,15 @@ public class EmailComposer {
   }
 
   public Future<Void> sendEmailForProviderRole(ProviderRoleRequest request, User user) {
+    String subject =
+        "Provider Role Request"
+            + ((envSuffix == null || envSuffix.isBlank()) ? "" : " [" + envSuffix + "]");
     return getOrgAdminEmail(request.orgId())
         .compose(orgAdminEmail ->
             newEmail()
                 .template("templates/request-provider-role.html")
                 .to(orgAdminEmail)
-                .subject("Provider Role Request")
+                .subject(subject)
                 .variable("ADMIN_FIRST_NAME", "Admin")
                 .variable("ADMIN_LAST_NAME", "")
                 .variable("USER_FIRST_NAME", user.principal().getString("name"))
@@ -151,10 +165,13 @@ public class EmailComposer {
   }
 
   public Future<Void> sendEmailForCreditRequest(User user) {
+    String subject =
+        "Credit Request"
+            + ((envSuffix == null || envSuffix.isBlank()) ? "" : " [" + envSuffix + "]");
     return newEmail()
         .template("templates/request-credit.html")
         .to(cosAdminEmailId)
-        .subject("Credit Request")
+        .subject(subject)
         .variable("ADMIN_FIRST_NAME", "Admin")
         .variable("ADMIN_LAST_NAME", "")
         .variable("USER_FIRST_NAME", user.principal().getString("name"))
@@ -180,10 +197,13 @@ public class EmailComposer {
   }
 
   private EmailTemplateBuilder itemCreationEmail(String recipient, User user, String itemName) {
+    String subject =
+        "New Asset Created"
+            + ((envSuffix == null || envSuffix.isBlank()) ? "" : " [" + envSuffix + "]");
     return newEmail()
         .template("templates/request-item-creation.html")
         .to(recipient)
-        .subject("New Asset Created")
+        .subject(subject)
         .variable("ADMIN_FIRST_NAME", "Admin")
         .variable("ADMIN_LAST_NAME", "")
         .variable("USER_FIRST_NAME", user.principal().getString("name"))
@@ -195,10 +215,13 @@ public class EmailComposer {
   }
 
     public Future<Void> sendEmailForAssetRequest(User user) {
+    String subject =
+        "Asset Request"
+            + ((envSuffix == null || envSuffix.isBlank()) ? "" : " [" + envSuffix + "]");
         return newEmail()
                 .template("templates/request-asset.html")
                 .to(cosAdminEmailId)
-                .subject("Asset Request")
+                .subject(subject)
                 .variable("ADMIN_FIRST_NAME", "Admin")
                 .variable("ADMIN_LAST_NAME", "")
                 .variable("USER_FIRST_NAME", user.principal().getString("name"))
@@ -217,7 +240,9 @@ public class EmailComposer {
     return organizationService.getOrganizationJoinRequestById(reqId)
         .compose(joinReq -> userService.getUserInfoByID(joinReq.userId())
             .compose(userInfo -> {
-              String subject = "Organization Join Request Status Update";
+              String subject =
+                  "Organization Join Request Status Update"
+                      + ((envSuffix == null || envSuffix.isBlank()) ? "" : " [" + envSuffix + "]");
               String approvedMsg = status.equals(
                   org.cdpg.dx.aaa.organization.models.Status.GRANTED)
                   ? String.format(
@@ -260,7 +285,13 @@ public class EmailComposer {
                 String emailId = userInfo.email();
                 String userName = userInfo.name();
                 String platformName = config.getString("platformName");
-                String subject = "Compute Role Access Request – " + status.getStatus() + " | " + platformName + " Platform";
+                String subject =
+                    "Compute Role Access Request – "
+                        + status.getStatus()
+                        + " | "
+                        + platformName
+                        + " Platform"
+                        + ((envSuffix == null || envSuffix.isBlank()) ? "" : " [" + envSuffix + "]");
                 String adminPortalUrl = config.getString("TGDxUrl");
                 String senderName = config.getString("senderName");
 
@@ -307,7 +338,9 @@ public class EmailComposer {
           }
           return userService.getUserInfoByID(userId)
               .compose(userInfo -> {
-                String subject = "Credit Request Status Update";
+                String subject =
+                    "Credit Request Status Update"
+                        + ((envSuffix == null || envSuffix.isBlank()) ? "" : " [" + envSuffix + "]");
                 String approvedMsg = status.equals(Status.GRANTED)
                     ? String.format(
                         "You can now access the the %s platform with the credits.%n%n",
@@ -343,7 +376,9 @@ public class EmailComposer {
                           boolean isPlatformProvider =
                               org.cdpg.dx.aaa.organization.config.Constants.PROVIDER_TYPE_PLATFORM
                                   .equalsIgnoreCase(providerReq.providerType());
-                          String subject = "Provider Role Request Status Update";
+                          String subject =
+                              "Provider Role Request Status Update"
+                                  + ((envSuffix == null || envSuffix.isBlank()) ? "" : " [" + envSuffix + "]");
 
                           String requestLine =
                               isPlatformProvider
@@ -385,7 +420,9 @@ public class EmailComposer {
     return organizationService.getOrganizationCreateRequestById(reqId)
         .compose(createReq -> userService.getUserInfoByID(createReq.requestedBy())
             .compose(userInfo -> {
-              String subject = "Organization Creation Status Update";
+              String subject =
+                  "Organization Creation Status Update"
+                      + ((envSuffix == null || envSuffix.isBlank()) ? "" : " [" + envSuffix + "]");
               String approvedMsg = status.equals(
                   org.cdpg.dx.aaa.organization.models.Status.GRANTED)
                   ? String.format(
@@ -417,7 +454,9 @@ public class EmailComposer {
 
     return userService.getUserInfoByID(providerUserId)
         .compose(userInfo -> {
-          String subject = "Asset Request Status Update";
+          String subject =
+              "Asset Request Status Update"
+                  + ((envSuffix == null || envSuffix.isBlank()) ? "" : " [" + envSuffix + "]");
           String approvedMsg = status.equals(org.cdpg.dx.aaa.asset.models.Status.GRANTED)
               ? String.format(
                   "You can now access the requested asset on the %s platform.%n%n",
@@ -448,7 +487,9 @@ public class EmailComposer {
     return userService.getUserInfoByID(ownerUserId)
         .compose(userInfo -> {
           String resolvedStatus = publishStatus == null ? "" : publishStatus.toLowerCase();
-          String subject = "Asset Publish Status Update";
+          String subject =
+              "Asset Publish Status Update"
+                  + ((envSuffix == null || envSuffix.isBlank()) ? "" : " [" + envSuffix + "]");
           String approvedMsg = "approved".equalsIgnoreCase(publishStatus)
               ? String.format(
                   "Your asset is now published and available on the %s platform.%n%n",
@@ -477,11 +518,15 @@ public class EmailComposer {
     String userName = user.principal().getString("name");
     String userEmailId = user.principal().getString("email");
     String resolvedStatus = resolveStatusLabel(statusValue);
+    String subject =
+        "Your account has been "
+            + resolvedStatus
+            + ((envSuffix == null || envSuffix.isBlank()) ? "" : " [" + envSuffix + "]");
 
     return newEmail()
         .template("templates/approved-user-status.html")
         .to(userEmailId)
-        .subject("Your account has been " + resolvedStatus)
+        .subject(subject)
         .variable("USER_FIRST_NAME", userName)
         .variable("STATUS", resolvedStatus)
         .variable("USER_EMAIL_ID", userEmailId)
@@ -496,12 +541,16 @@ public class EmailComposer {
           String userEmailId = userInfo.email();
           String userName = userInfo.name();
           String resolvedStatus = resolveStatusLabel(statusValue);
+          String subject =
+              "Your account has been "
+                  + resolvedStatus
+                  + ((envSuffix == null || envSuffix.isBlank()) ? "" : " [" + envSuffix + "]");
 
           // Send to user
           Future<Void> userEmail = newEmail()
               .template("templates/approved-user-status.html")
               .to(userEmailId)
-              .subject("Your account has been " + resolvedStatus)
+              .subject(subject)
               .variable("USER_FIRST_NAME", userName)
               .variable("STATUS", resolvedStatus)
               .variable("USER_EMAIL_ID", userEmailId)

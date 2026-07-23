@@ -231,11 +231,7 @@
                     linkedin_account: null
                     github_account: null
                     account_enabled: true
-                    did: null
                     aud: null
-                    delegation_scope: []
-                    delegateeId: null
-                    appId: null
       '401':
         description: Unauthorized - Token missing or invalid
         content:
@@ -661,21 +657,11 @@
                     account_enabled:
                       type: boolean
                       description: Whether the Keycloak account is active
-                    did:
-                      type: string
-                      description: Decentralised identifier
                     aud:
                       type: string
                       description: Token audience
-                    delegation_scope:
-                      type: array
-                      description: Scopes granted via delegation
                       items:
                         type: string
-                    delegateeId:
-                      type: string
-                    appId:
-                      type: string
             examples:
               Nothing pending (active member):
                 summary: User is an active org member with no pending requests
@@ -704,11 +690,6 @@
                     linkedin_account: null
                     github_account: null
                     account_enabled: true
-                    did: null
-                    aud: null
-                    delegation_scope: []
-                    delegateeId: null
-                    appId: null
               Pending roles (provider and compute):
                 summary: User has pending provider and compute role requests
                 value:
@@ -780,11 +761,6 @@
                     linkedin_account: null
                     github_account: null
                     account_enabled: true
-                    did: null
-                    aud: null
-                    delegation_scope: []
-                    delegateeId: null
-                    appId: null
               Pending org create request:
                 summary: User has submitted an organisation creation request awaiting approval
                 value:
@@ -830,11 +806,6 @@
                     linkedin_account: null
                     github_account: null
                     account_enabled: true
-                    did: null
-                    aud: null
-                    delegation_scope: []
-                    delegateeId: null
-                    appId: null
       '401':
         description: Unauthorized - Token missing or invalid
         content:
@@ -923,7 +894,7 @@
               properties:
                 type:
                   type: string
-                  example: dx:controlPlane:success
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
                   example: Success
@@ -1017,7 +988,7 @@
               properties:
                 type:
                   type: string
-                  example: dx:controlPlane:success
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
                   example: Success
@@ -1143,18 +1114,10 @@
                       type: string
                     account_enabled:
                       type: boolean
-                    did:
-                      type: string
                     aud:
                       type: string
-                    delegation_scope:
-                      type: array
                       items:
                         type: string
-                    delegateeId:
-                      type: string
-                    appId:
-                      type: string
             examples:
               Success:
                 value:
@@ -1182,11 +1145,6 @@
                     linkedin_account: null
                     github_account: null
                     account_enabled: true
-                    did: null
-                    aud: null
-                    delegation_scope: []
-                    delegateeId: null
-                    appId: null
       '401':
         description: Unauthorized - Token missing or invalid
         content:
@@ -1292,18 +1250,6 @@
                         type: string
                       account_enabled:
                         type: boolean
-                      did:
-                        type: string
-                      aud:
-                        type: string
-                      delegation_scope:
-                        type: array
-                        items:
-                          type: string
-                      delegateeId:
-                        type: string
-                      appId:
-                        type: string
                 paginationInfo:
                   $ref: ../components/schemas/pagination.yaml#/PaginationInfo
             examples:
@@ -1333,11 +1279,6 @@
                     linkedin_account: null
                     github_account: null
                     account_enabled: true
-                    did: null
-                    aud: null
-                    delegation_scope: []
-                    delegateeId: null
-                    appId: null
                   paginationInfo:
                     page: 1
                     size: 10
@@ -1703,7 +1644,7 @@
               properties:
                 type:
                   type: string
-                  example: dx:controlPlane:success
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
                   example: Success
@@ -1779,7 +1720,7 @@
               properties:
                 type:
                   type: string
-                  example: dx:controlPlane:success
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
                   example: Success
