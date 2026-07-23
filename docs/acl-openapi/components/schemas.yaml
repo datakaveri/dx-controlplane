@@ -1123,6 +1123,26 @@ AccessRequest:
             required:
             - providerId
             - consumerId
+          owner:
+            type: object
+            properties:
+              ownerId:
+                type: string
+                format: uuid
+                minLength: 1
+              ownerFirstName:
+                type: string
+                minLength: 1
+              ownerLastName:
+                type: string
+                minLength: 1
+              ownerEmail:
+                type: string
+                format: email
+                minLength: 1
+              ownerOrganization:
+                type: string
+                minLength: 1
           expiryAt:
             type: string
             minLength: 1
@@ -1141,6 +1161,7 @@ AccessRequest:
         - updatedAt
         - requestStatus
         - user
+        - owner
         - createdAt
     paginationInfo:
       type: object

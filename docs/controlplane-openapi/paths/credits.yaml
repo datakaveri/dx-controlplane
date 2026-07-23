@@ -33,38 +33,27 @@
                   type: object
                   description: The user's credit record
                   properties:
-                    id:
-                      type: string
-                      format: uuid
-                      description: Unique identifier of the credit record
-                    userId:
-                      type: string
-                      format: uuid
-                      description: UUID of the user
                     balance:
                       type: number
                       format: double
                       description: Current credit balance
-                    expirationDate:
+                    expiration_date:
                       type: string
                       format: date-time
                       nullable: true
                       description: Expiration date of the current credit grant
-                    updatedAt:
-                      type: string
-                      format: date-time
-                      description: Timestamp when the balance was last updated
+                    isValid:
+                      type: boolean
+                      description: Indicates whether the credit is currently valid
             examples:
               success:
                 value:
                   type: urn:dx:controlPlane:success
                   title: Success
                   result:
-                    id: 9f1a2b3c-4d5e-6789-abcd-ef0123456789
-                    userId: 436cb796-5826-458b-a914-a54721f70997
-                    balance: 10000.0
-                    expirationDate: '2025-12-31T23:59:59'
-                    updatedAt: '2025-06-04T10:45:06.361576'
+                    balance: 995.246019999966
+                    expiration_date: "2026-09-21T00:00:00"
+                    isValid: true
       '401':
         description: Unauthorized - Token invalid/expired or KYC not verified
         content:
@@ -120,38 +109,27 @@
                   type: object
                   description: The user's credit record
                   properties:
-                    id:
-                      type: string
-                      format: uuid
-                      description: Unique identifier of the credit record
-                    userId:
-                      type: string
-                      format: uuid
-                      description: UUID of the user
                     balance:
                       type: number
                       format: double
                       description: Current credit balance
-                    expirationDate:
+                    expiration_date:
                       type: string
                       format: date-time
                       nullable: true
                       description: Expiration date of the current credit grant
-                    updatedAt:
-                      type: string
-                      format: date-time
-                      description: Timestamp when the balance was last updated
+                    isValid:
+                      type: boolean
+                      description: Indicates whether the credit is currently valid
             examples:
               success:
                 value:
                   type: urn:dx:controlPlane:success
                   title: Success
                   result:
-                    id: 9f1a2b3c-4d5e-6789-abcd-ef0123456789
-                    userId: 436cb796-5826-458b-a914-a54721f70997
-                    balance: 10000.0
-                    expirationDate: '2025-12-31T23:59:59'
-                    updatedAt: '2025-06-04T10:45:06.361576'
+                    balance: 995.246019999966
+                    expiration_date: "2026-09-21T00:00:00"
+                    isValid: true
       '401':
         description: Unauthorized - Token invalid/expired or KYC not verified
         content:

@@ -1018,7 +1018,7 @@ paths:
         - $ref: '#/components/parameters/EndTimeParam'
         - $ref: '#/components/parameters/TimeRelParam'
         - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParamReport'
+        - $ref: '#/components/parameters/SizeParam'
         - $ref: '#/components/parameters/SortingParam'
       responses:
         '200':
@@ -1082,7 +1082,7 @@ paths:
         - $ref: '#/components/parameters/EndTimeParam'
         - $ref: '#/components/parameters/TimeRelParam'
         - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParamReport'
+        - $ref: '#/components/parameters/SizeParam'
         - $ref: '#/components/parameters/SortingParam'
       responses:
         '200':
@@ -2036,7 +2036,7 @@ paths:
       security:
         - authorization: []
       responses:
-        '201':
+        '200':
           description: Client credentials created successfully
           content:
             application/json:
@@ -2676,38 +2676,27 @@ paths:
                     type: object
                     description: The user's credit record
                     properties:
-                      id:
-                        type: string
-                        format: uuid
-                        description: Unique identifier of the credit record
-                      userId:
-                        type: string
-                        format: uuid
-                        description: UUID of the user
                       balance:
                         type: number
                         format: double
                         description: Current credit balance
-                      expirationDate:
+                      expiration_date:
                         type: string
                         format: date-time
                         nullable: true
                         description: Expiration date of the current credit grant
-                      updatedAt:
-                        type: string
-                        format: date-time
-                        description: Timestamp when the balance was last updated
+                      isValid:
+                        type: boolean
+                        description: Indicates whether the credit is currently valid
               examples:
                 success:
                   value:
                     type: urn:dx:controlPlane:success
                     title: Success
                     result:
-                      id: 9f1a2b3c-4d5e-6789-abcd-ef0123456789
-                      userId: 436cb796-5826-458b-a914-a54721f70997
-                      balance: 10000
-                      expirationDate: '2025-12-31T23:59:59'
-                      updatedAt: '2025-06-04T10:45:06.361576'
+                      balance: 995.246019999966
+                      expiration_date: '2026-09-21T00:00:00'
+                      isValid: true
         '401':
           description: Unauthorized - Token invalid/expired or KYC not verified
           content:
@@ -2761,38 +2750,27 @@ paths:
                     type: object
                     description: The user's credit record
                     properties:
-                      id:
-                        type: string
-                        format: uuid
-                        description: Unique identifier of the credit record
-                      userId:
-                        type: string
-                        format: uuid
-                        description: UUID of the user
                       balance:
                         type: number
                         format: double
                         description: Current credit balance
-                      expirationDate:
+                      expiration_date:
                         type: string
                         format: date-time
                         nullable: true
                         description: Expiration date of the current credit grant
-                      updatedAt:
-                        type: string
-                        format: date-time
-                        description: Timestamp when the balance was last updated
+                      isValid:
+                        type: boolean
+                        description: Indicates whether the credit is currently valid
               examples:
                 success:
                   value:
                     type: urn:dx:controlPlane:success
                     title: Success
                     result:
-                      id: 9f1a2b3c-4d5e-6789-abcd-ef0123456789
-                      userId: 436cb796-5826-458b-a914-a54721f70997
-                      balance: 10000
-                      expirationDate: '2025-12-31T23:59:59'
-                      updatedAt: '2025-06-04T10:45:06.361576'
+                      balance: 995.246019999966
+                      expiration_date: '2026-09-21T00:00:00'
+                      isValid: true
         '401':
           description: Unauthorized - Token invalid/expired or KYC not verified
           content:
@@ -3804,7 +3782,9 @@ paths:
   /iudx/v2/auth/delegation:
     post:
       summary: Grant delegation to another user (Delegator)
-      description: 'Creates a delegation grant that allows another user (the delegate) to act on behalf of the caller (the delegator). The delegation can be granted at a broad role level or further restricted to specific scopes and entity types, each with an independent expiry. The global `expiry_at` applies to the entire delegation; individual constraint-level `expiry_at` values override this for that specific scope. Requires an authenticated user token. **Log Type:** `USER_ACTION` '
+      description: |-
+        Creates a delegation grant that allows another user (the delegate) to act on behalf of the caller (the delegator). The delegation can be granted at a broad role level or further restricted to specific scopes and entity types, each with an independent expiry. The global `expiry_at` applies to the entire delegation; individual constraint-level `expiry_at` values override this for that specific scope. Requires an authenticated user token.
+        **Log Type:** `USER_ACTION`
       tags:
         - Delegation APIs
       operationId: post-auth-v2-delegation
@@ -3895,7 +3875,7 @@ paths:
                           entity_type: data_bank
                           expiry_at: '2026-01-31T23:59:59'
       responses:
-        '201':
+        '200':
           description: Delegation created successfully
         '400':
           description: Bad Request - Invalid request body, missing required fields, or malformed UUIDs
@@ -5632,10 +5612,16 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
+                  type:
                     type: string
-                  message:
+                  title:
                     type: string
+                  detail:
+                    type: string
+              example:
+                type: urn:dx:controlPlane:success
+                title: Success
+                detail: Interaction updated successfully
         '400':
           description: Bad Request
           content:
@@ -5807,10 +5793,16 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
+                  type:
                     type: string
-                  message:
+                  title:
                     type: string
+                  detail:
+                    type: string
+              example:
+                type: urn:dx:controlPlane:success
+                title: Success
+                detail: Interaction updated successfully
         '400':
           description: Bad Request
           content:
@@ -10866,20 +10858,24 @@ paths:
                     - scope1
                     - scope2
       responses:
-        '201':
+        '200':
           description: Custom role created successfully
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CustomRoleResponse'
               example:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                userId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                scope:
-                  - scope1
-                  - scope2
-                createdAt: '2026-02-03T10:15:30'
-                updatedAt: '2026-02-03T10:15:30'
+                type: urn:dx:controlPlane:success
+                title: Success
+                result:
+                  id: 550e8400-e29b-41d4-a716-446655440000
+                  userId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  scope:
+                    - scope1
+                    - scope2
+                  requestedBy: 6f7d6d59-2e1f-49b4-8f0d-fc3c2f4e9c65
+                  createdAt: '2026-02-03T10:15:30'
+                  updatedAt: '2026-02-03T10:15:30'
         '400':
           description: Invalid request (missing mandatory role or malformed scope)
         '403':
@@ -14285,13 +14281,13 @@ components:
     SizeParamReport:
       name: size
       in: query
-      description: Number of items to return per page. Defaults to `1000`. A recommended value for most use cases is between 1000 and 10000. Maximum allowed value is `100000`.
+      description: Number of items to return per page for report endpoints. Acts as a limit on the query. Defaults to `1000`. Maximum allowed value is `1000`.
       required: false
       schema:
         type: integer
         default: 1000
         minimum: 1
-        maximum: 100000
+        maximum: 1000
     SortingParam:
       name: sort
       in: query
@@ -20953,7 +20949,7 @@ components:
           example: Not Authorized
         detail:
           type: string
-          example: Missing Bearer token
+          example: Missing credentials
     ForbiddenResponse:
       type: object
       properties:
@@ -21157,7 +21153,7 @@ components:
       example:
         type: urn:dx:controlPlane:success
         title: Success
-        detail: Interaction updated successfully
+        detail: Interaction recorded successfully
     UserFeedbackRequest:
       type: object
       required:
@@ -21181,10 +21177,13 @@ components:
     UserFeedbackPaginatedResponse:
       type: object
       properties:
-        status:
+        type:
           type: string
-          example: success
-        data:
+          example: urn:dx:controlPlane:success
+        title:
+          type: string
+          example: Success
+        result:
           type: array
           items:
             type: object
@@ -21192,21 +21191,13 @@ components:
               id:
                 type: string
                 format: uuid
-              user_id:
+              userId:
                 type: string
                 format: uuid
-              asset_id:
+              assetId:
                 type: string
                 format: uuid
-              entity_rating:
-                type: integer
-                minimum: 1
-                maximum: 5
-              action_subtype:
-                type: string
-              action_subdata:
-                type: object
-        pagination:
+        paginationInfo:
           type: object
           properties:
             page:
@@ -21215,19 +21206,45 @@ components:
             size:
               type: integer
               example: 10
-            total:
-              type: integer
-              example: 100
-            totalPages:
+            totalCount:
               type: integer
               example: 10
+            totalPages:
+              type: integer
+              example: 1
+            hasNext:
+              type: boolean
+              example: false
+            hasPrevious:
+              type: boolean
+              example: false
+      example:
+        type: urn:dx:controlPlane:success
+        title: Success
+        result:
+          - id: 3f329ef8-c1e6-417f-93d6-6b568366612b
+            userId: da56e517-f8bc-46fd-95e3-7257acd64da7
+            assetId: 00b80a67-a5aa-43cf-ba60-dcd1c09b1c4f
+          - id: c2f5ef34-0362-40ae-b691-e3a6411a51da
+            userId: 23100470-c8ce-4f9d-8555-94087378b5f6
+            assetId: 02192219-802a-4d7d-a130-8cc892a9d0d2
+        paginationInfo:
+          page: 1
+          size: 10
+          totalCount: 10
+          totalPages: 1
+          hasNext: false
+          hasPrevious: false
     ProviderFeedbackPaginatedResponse:
       type: object
       properties:
-        status:
+        type:
           type: string
-          example: success
-        data:
+          example: urn:dx:controlPlane:success
+        title:
+          type: string
+          example: Success
+        result:
           type: array
           items:
             type: object
@@ -21235,17 +21252,22 @@ components:
               id:
                 type: string
                 format: uuid
-              user_id:
+              userId:
                 type: string
                 format: uuid
-              asset_id:
+              assetId:
                 type: string
                 format: uuid
               type:
                 type: string
+                example: FEEDBACK
               data:
                 type: object
-        pagination:
+                additionalProperties: true
+              createdAt:
+                type: string
+                format: date-time
+        paginationInfo:
           type: object
           properties:
             page:
@@ -21254,12 +21276,36 @@ components:
             size:
               type: integer
               example: 10
-            total:
+            totalCount:
               type: integer
-              example: 100
+              example: 4
             totalPages:
               type: integer
-              example: 10
+              example: 1
+            hasNext:
+              type: boolean
+              example: false
+            hasPrevious:
+              type: boolean
+              example: false
+      example:
+        type: urn:dx:controlPlane:success
+        title: Success
+        result:
+          - id: f11be0ea-a9b2-4954-983d-297426c1682d
+            userId: 2f76e6b0-7569-4f30-8bc3-9884ca3d61c2
+            assetId: 8fd42dfc-6a54-46a3-9d5c-ce3f7fb11887
+            type: FEEDBACK
+            data:
+              comment: Thank you for using our dataset.
+            createdAt: '2026-07-01T09:06:28.285092'
+        paginationInfo:
+          page: 1
+          size: 10
+          totalCount: 4
+          totalPages: 1
+          hasNext: false
+          hasPrevious: false
     PostItemVoteRequest:
       type: object
       required:
@@ -21468,7 +21514,6 @@ components:
         - entityId
         - entityType
         - createdAt
-        - tableName
       properties:
         id:
           type: string
@@ -21547,9 +21592,6 @@ components:
         createdAt:
           type: string
           format: date-time
-        tableName:
-          type: string
-          example: bookmarks
       example:
         id: db2428e8-ee93-42c4-97c8-7b747cce6521
         userId: 6effed2b-999c-44da-987a-f56a3aba96c2

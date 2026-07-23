@@ -40,6 +40,9 @@ public interface AccessRequestService {
   Future<PaginatedResult<AccessRequestDto>> enrichAccessRequestsWithItemDetails(
       PaginatedResult<AccessRequestDto> pagedResult);
 
+  Future<PaginatedResult<AccessRequestDto>> enrichAccessRequestsWithProviderInfo(
+      PaginatedResult<AccessRequestDto> pagedResult);
+
   Future<PaginatedResult<PolicyDto>> enrichPolicyRequestsWithItemDetails(
       PaginatedResult<PolicyDto> pagedResult);
 

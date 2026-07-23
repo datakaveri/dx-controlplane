@@ -1,6 +1,11 @@
 package org.cdpg.dx.acl.accessRequest.dao.model;
 
 import static org.cdpg.dx.aaa.common.Constants.ORGANIZATION_ID;
+import static org.cdpg.dx.aaa.common.Constants.OWNER;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_EMAIL;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_FIRST_NAME;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_LAST_NAME;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_ORGANIZATION;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.*;
 
 import io.vertx.core.json.JsonObject;
@@ -36,6 +41,11 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
   private String itemOrganizationId;
   private String itemOrganizationName;
   private String shortDescription;
+  private String ownerId;
+  private String ownerEmail;
+  private String ownerFirstName;
+  private String ownerLastName;
+  private String ownerOrganization;
 
   public AccessRequestDto() {}
 
@@ -141,6 +151,14 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
                     .put(CONSUMER_LAST_NAME, getConsumerLastName())
                     .put(CONSUMER_EMAIL, getConsumerEmail())
                     .put(CONSUMER_ORGANIZATION, getConsumerOrganization()))
+            .put(
+                OWNER,
+                new JsonObject()
+                    .put(OWNER_ID, getOwnerId())
+                    .put(OWNER_FIRST_NAME, getOwnerFirstName())
+                    .put(OWNER_LAST_NAME, getOwnerLastName())
+                    .put(OWNER_EMAIL, getOwnerEmail())
+                    .put(OWNER_ORGANIZATION, getOwnerOrganization()))
             .put(
                 ASSET,
                 new JsonObject()
@@ -338,6 +356,51 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
 
   public AccessRequestDto setShortDescription(String shortDescription) {
     this.shortDescription = shortDescription;
+    return this;
+  }
+
+  public String getOwnerId() {
+    return ownerId;
+  }
+
+  public AccessRequestDto setOwnerId(String ownerId) {
+    this.ownerId = ownerId;
+    return this;
+  }
+
+  public String getOwnerEmail() {
+    return ownerEmail;
+  }
+
+  public AccessRequestDto setOwnerEmail(String ownerEmail) {
+    this.ownerEmail = ownerEmail;
+    return this;
+  }
+
+  public String getOwnerFirstName() {
+    return ownerFirstName;
+  }
+
+  public AccessRequestDto setOwnerFirstName(String ownerFirstName) {
+    this.ownerFirstName = ownerFirstName;
+    return this;
+  }
+
+  public String getOwnerLastName() {
+    return ownerLastName;
+  }
+
+  public AccessRequestDto setOwnerLastName(String ownerLastName) {
+    this.ownerLastName = ownerLastName;
+    return this;
+  }
+
+  public String getOwnerOrganization() {
+    return ownerOrganization;
+  }
+
+  public AccessRequestDto setOwnerOrganization(String ownerOrganization) {
+    this.ownerOrganization = ownerOrganization;
     return this;
   }
 
