@@ -21,6 +21,7 @@ public class EmailComposer {
   private static final Logger LOGGER = LogManager.getLogger(EmailComposer.class);
   private final JsonObject config;
   private final KeycloakUserService keycloakUserService;
+  private final String envSuffix;
 
   public EmailComposer(JsonObject config, KeycloakUserService keycloakUserService) {
     this.config = config;
@@ -30,6 +31,7 @@ public class EmailComposer {
       throw new IllegalArgumentException(
           "Publisher panel URL is not configured or ends with a slash");
     }
+    this.envSuffix = config.getString("envSuffix");
   }
 
   /**
@@ -74,6 +76,8 @@ public class EmailComposer {
               userDetails -> {
                 Map<String, String> emailDetails =
                     Map.of(
+                        "ENV_SUFFIX",
+                        envSuffix == null ? "" : " [" + envSuffix + "]",
                         "REQUEST_STATUS",
                         emailRequest.status().toLowerCase(),
                         "CONSUMER_FIRST_NAME",
@@ -85,7 +89,7 @@ public class EmailComposer {
                         "ASSET_NAME",
                         emailRequest.assetName(),
                         "ASSET_EXPIRY",
-                        emailRequest.expiryAt(),
+                        emailRequest.expiryAt() == null ? "" : emailRequest.expiryAt(),
                         "ASSET_DESCRIPTION",
                         emailRequest.shortDescription(),
                         "ACTION_MESSAGE",
@@ -208,7 +212,13 @@ public class EmailComposer {
     message.setFrom(senderEmail);
     message.setTo(providerEmailId);
     message.setCc(supportEmailIds);
-    message.setSubject("Asset Access Request Notification");
+    String subject =
+        "Asset Access Request Notification"
+            + ((envSuffix == null || envSuffix.isBlank())
+            ? ""
+            : " [" + envSuffix + "]");
+
+    message.setSubject(subject);
     message.setHtml(body);
     return message;
   }
@@ -303,8 +313,14 @@ public class EmailComposer {
     message.setTo(consumerEmail);
     message.setCc(supportEmailIds);
 
-    message.setSubject(platformShortName + " Platform – Dataset Access Request Received");
+    String subject =
+        platformShortName
+            + " Platform – Dataset Access Request Received"
+            + ((envSuffix == null || envSuffix.isBlank())
+            ? ""
+            : " [" + envSuffix + "]");
 
+    message.setSubject(subject);
     message.setHtml(body);
     return message;
   }

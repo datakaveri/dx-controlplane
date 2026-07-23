@@ -92,13 +92,13 @@ SizeParam:
 SizeParamReport:
   name: size
   in: query
-  description: Number of items to return per page for report endpoints. Acts as a limit on the query. Defaults to `1000`. Maximum allowed value is `1000`.
+  description: Number of items to return per page for report endpoints. Acts as a limit on the query. Defaults to `1000`. Maximum allowed value is `100000`.
   required: false
   schema:
     type: integer
     default: 1000
     minimum: 1
-    maximum: 1000
+    maximum: 100000
 SortingParam:
   name: sort
   in: query
@@ -133,21 +133,21 @@ TimeRelParam:
     - before
     - after
 OrgNameParam:
-  name: name
+  name: orgName
   in: query
-  description: Filter organizations by name. Performs a case-insensitive partial match on the organization name.
+  description: Filter organizations by exact name match (case-sensitive).
   required: false
   schema:
     type: string
 EntityTypeParam:
-  name: entity_type
+  name: entityType
   in: query
   description: Filter by organization entity type (e.g., `Private`, `Public`, `Government`, `Startup`, `Academic`).
   required: false
   schema:
     type: string
 OrgSectorParam:
-  name: org_sector
+  name: orgSector
   in: query
   description: Filter by organization sector (e.g., `Technology`, `Healthcare`, `Education`, `Research & Development`).
   required: false

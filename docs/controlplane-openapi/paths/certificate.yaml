@@ -102,13 +102,6 @@
         type: string
         minLength: 10
         maxLength: 100
-    - in: header
-      name: delegationId
-      required: false
-      description: UUID of the delegation grant. Required when requesting a delegate access token on behalf of a delegator.
-      schema:
-        type: string
-        format: uuid
     responses:
       '200':
         description: Success
@@ -169,12 +162,6 @@
       source: "curl --location 'https://${HOSTNAME}/iudx/v2/auth/token' \\\n    --header 'clientId: dd0f645d-e286-40f5-ba73-1d3a06aaaa1e'\
         \ \\\n    --header 'clientSecret: dd45b0da4c3614249b8cfcb2e8a418b2b0293cfb' \\\n    --header 'Content-Type: application/json'\
         \ \\\n    --data '{\n            \"itemId\":\"74436122-e6f6-45bf-be53-7ee2c257826b\"\n          }'\n"
-    - lang: curl
-      label: Delegate Access token request
-      source: "curl --location 'https://${HOSTNAME}/iudx/v2/auth/token' \\\n    --header 'clientId: dd0f645d-e286-40f5-ba73-1d3a06aaaa1e'\
-        \ \\\n    --header 'clientSecret: dd45b0da4c3614249b8cfcb2e8a418b2b0293cfb' \\\n    --header 'delegationId: 66e5c06f-d318-4522-9f23-26b327bd307b'\
-        \ \\\n    --header 'Content-Type: application/json' \\\n    --data '{\n            \"itemId\":\"74436122-e6f6-45bf-be53-7ee2c257826b\"\
-        \n          }'\n"
 /iudx/auth/v2/app/token:
   post:
     tags:
