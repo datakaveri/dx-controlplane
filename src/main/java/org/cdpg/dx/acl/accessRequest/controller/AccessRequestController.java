@@ -242,6 +242,7 @@ public class AccessRequestController implements ApiController {
     accessRequestService
         .listAccessRequestForProvider(request)
         .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
+        .compose(accessRequestService::enrichAccessRequestsWithProviderInfo)
         .onSuccess(
             pagedResult -> {
               LOGGER.info(
@@ -310,6 +311,7 @@ public class AccessRequestController implements ApiController {
               accessRequestService
                   .listAccessRequestForProvider(request)
                   .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
+                  .compose(accessRequestService::enrichAccessRequestsWithProviderInfo)
                   .onSuccess(
                       pagedResult -> {
                         LOGGER.info(
@@ -364,6 +366,7 @@ public class AccessRequestController implements ApiController {
     accessRequestService
         .listAccessRequestForProvider(request)
         .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
+        .compose(accessRequestService::enrichAccessRequestsWithProviderInfo)
         .onSuccess(
             pagedResult -> {
               LOGGER.info(
@@ -681,6 +684,7 @@ public class AccessRequestController implements ApiController {
     accessRequestService
         .listAccessRequestForConsumer(request)
         .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
+        .compose(accessRequestService::enrichAccessRequestsWithProviderInfo)
         .onSuccess(
             pagedResult -> {
               LOGGER.info("Successfully fetched access requests for user: {}", user.subject());
