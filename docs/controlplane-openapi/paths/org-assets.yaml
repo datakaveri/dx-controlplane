@@ -343,9 +343,17 @@
   patch:
     tags:
     - Organisation Assets Management
-    description: "Update the publication or data upload status of an organisation asset.\n**Role-based behavior:**\n  - `org_admin`\
-      \ or `cos_admin` can update both `publishStatus` and `dataUploadStatus`\n  - `provider` can update only `dataUploadStatus`\n\
-      \  - Attempting to update unauthorized fields will result in `403 Forbidden`\n"
+    description: |
+      Update the publication or data upload status of an organisation asset.
+
+      **Role-based behavior:**
+      - only `cos_admin` can update `publishStatus`.
+      - `provider` can update only `dataUploadStatus`.
+      - `itemStatus` can also be updated through this API:
+        - `UNVERIFIED` → `VERIFIED` can only be performed by an `org_admin`.
+        - `UNVERIFIED` → `SFTP` or `API` can be performed by either the asset `provider` or an `org_admin`.
+      - At least one of `publishStatus`, `dataUploadStatus`, or `itemStatus` must be provided.
+      - Attempting to update fields or status transitions that the caller is not authorized to modify will result in `403 Forbidden`.
     operationId: patch item
     security:
     - authorization: []
@@ -358,9 +366,10 @@
         type: string
         format: uuid
     requestBody:
-      description: 'Request payload to update the asset status. At least one of the following fields must be provided.
+      description: |
+        Request payload to update the asset status.
 
-        '
+        At least one of `publishStatus`, `dataUploadStatus`, or `itemStatus` must be provided.
       required: true
       content:
         application/json:
@@ -370,21 +379,51 @@
               publishStatus:
                 type: string
                 enum:
-                - ACTIVE
-                - PENDING
-                - DECLINED
-                description: Publication status of the asset
+                  - ACTIVE
+                  - PENDING
+                  - DECLINED
+                description: Publication status of the asset.
                 example: ACTIVE
               dataUploadStatus:
                 type: boolean
-                description: 'Indicates whether data has been uploaded for the asset. Must be a boolean value.
-
-                  '
+                description: Indicates whether data has been uploaded for the asset.
                 example: true
+              itemStatus:
+                type: string
+                enum:
+                  - UNVERIFIED
+                  - VERIFIED
+                  - API
+                  - SFTP
+                description: |
+                  Verification status of the asset.
+
+                  Allowed transitions:
+                  - `VERIFIED` can only be set by an `org_admin`.
+                  - `API` and `SFTP` can be set by the asset `provider` or an `org_admin`.
+                example: VERIFIED
             additionalProperties: false
-          example:
-            publishStatus: ACTIVE
-            dataUploadStatus: true
+          examples:
+            Update publish status:
+              value:
+                publishStatus: ACTIVE
+
+            Update data upload status:
+              value:
+                dataUploadStatus: true
+
+            Verify asset:
+              value:
+                itemStatus: VERIFIED
+
+            Mark asset as API:
+              value:
+                itemStatus: API
+
+            Update multiple fields:
+              value:
+                itemStatus: VERIFIED
+                dataUploadStatus: true
     responses:
       '200':
         description: Item status updated successfully
