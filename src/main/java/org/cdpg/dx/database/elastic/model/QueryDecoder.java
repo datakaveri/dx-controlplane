@@ -1,12 +1,12 @@
 package org.cdpg.dx.database.elastic.model;
 
+import static org.cdpg.dx.aaa.common.Constants.ACTIVE;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_AI_MODEL;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_APPS;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
 import static org.cdpg.dx.database.elastic.util.Constants.*;
 
 import java.util.*;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.common.exception.DxBadRequestException;
@@ -94,12 +94,12 @@ public class QueryDecoder {
         && !searchType.matches(ORG_ASSETS_SEARCH_REGEX)) {
       QueryModel excludeDatabankFalse = buildUploadStatusExclusion(ITEM_TYPE_DATA_BANK);
       QueryModel excludeAiModelFalse = buildUploadStatusExclusion(ITEM_TYPE_AI_MODEL);
-      QueryModel excludePendingApps =
-          buildPendingPublishStatusExclusion(List.of(ITEM_TYPE_DATA_BANK, ITEM_TYPE_AI_MODEL,
-              ITEM_TYPE_APPS));
+      QueryModel activePublishStatus =
+          buildActivePublishStatusQuery(
+              List.of(ITEM_TYPE_DATA_BANK, ITEM_TYPE_AI_MODEL, ITEM_TYPE_APPS));
       queryMap.get(FilterType.MUST_NOT).add(excludeDatabankFalse);
       queryMap.get(FilterType.MUST_NOT).add(excludeAiModelFalse);
-      queryMap.get(FilterType.MUST_NOT).add(excludePendingApps);
+      queryMap.get(FilterType.MUST).add(activePublishStatus);
     }
 
     if (searchType.matches(MY_ASSETS_SEARCH_REGEX)) {
@@ -290,12 +290,12 @@ public class QueryDecoder {
 
     QueryModel excludeDatabankFalse = buildUploadStatusExclusion(ITEM_TYPE_DATA_BANK);
     QueryModel excludeAiModelFalse = buildUploadStatusExclusion(ITEM_TYPE_AI_MODEL);
-    QueryModel excludePendingApps =
-        buildPendingPublishStatusExclusion(List.of(ITEM_TYPE_DATA_BANK, ITEM_TYPE_AI_MODEL,
-            ITEM_TYPE_APPS));
+    QueryModel activePublishStatus =
+        buildActivePublishStatusQuery(
+            List.of(ITEM_TYPE_DATA_BANK, ITEM_TYPE_AI_MODEL, ITEM_TYPE_APPS));
     queryMap.get(FilterType.MUST_NOT).add(excludeDatabankFalse);
     queryMap.get(FilterType.MUST_NOT).add(excludeAiModelFalse);
-    queryMap.get(FilterType.MUST_NOT).add(excludePendingApps);
+    queryMap.get(FilterType.MUST).add(activePublishStatus);
 
     QueryModel finalQuery = new QueryModel();
     finalQuery.setQueries(getBoolQuery(queryMap));
@@ -341,7 +341,7 @@ public class QueryDecoder {
                     .setQueryParameters(Map.of(FIELD, DATA_UPLOAD_STATUS, VALUE, false))));
   }
 
-  private QueryModel buildPendingPublishStatusExclusion(List<String> itemTypes) {
+  private QueryModel buildActivePublishStatusQuery(List<String> itemTypes) {
     return new QueryModel(QueryType.BOOL)
         .setMustQueries(
             List.of(
@@ -351,8 +351,8 @@ public class QueryDecoder {
                             FIELD, TYPE_KEYWORD,
                             VALUE, itemTypes)),
                 new QueryModel(QueryType.TERM)
-                    .setQueryParameters(Map.of(FIELD, PUBLISH_STATUS + KEYWORD_KEY, VALUE,
-                        PENDING))));
+                    .setQueryParameters(
+                        Map.of(FIELD, PUBLISH_STATUS + KEYWORD_KEY, VALUE, ACTIVE))));
   }
 
   private QueryModel buildGetParentObjectInfoQuery(QueryDecoderRequestDTO request) {
