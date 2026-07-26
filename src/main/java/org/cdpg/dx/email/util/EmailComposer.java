@@ -82,7 +82,7 @@ public class EmailComposer {
                         "ASSET_NAME",
                         emailRequest.assetName(),
                         "ASSET_EXPIRY",
-                        emailRequest.expiryAt(),
+                        emailRequest.expiryAt() == null ? "" : emailRequest.expiryAt(),
                         "ASSET_DESCRIPTION",
                         emailRequest.shortDescription(),
                         "ACTION_MESSAGE",
