@@ -253,27 +253,23 @@ public class EmailComposer {
                     dashboardUrl,
                     senderName);
                 Map<String, String> emailDetails =
-                    Map.of(
-                        "CONTACT_US_URL",
-                        safe(config.getString("publisherPanelUrl")) + "/contact-us",
-                        "CONSUMER_FIRST_NAME",
-                        safe(userDetails.firstName()),
-                        "CONSUMER_LAST_NAME",
-                        safe(userDetails.lastName()),
-                        "ASSET_NAME",
-                        safe(emailRequest.assetName()),
-                        "ASSET_DESCRIPTION",
-                        safe(emailRequest.shortDescription()),
-                        "PLATFORM_NAME",
-                        safe(platformName),
-                        "PLATFORM_SHORT_NAME",
-                        safe(platformShortName),
-                        "DASHBOARD_URL",
-                        safe(dashboardUrl),
-                        "SENDER_NAME",
-                        safe(senderName),
-                        "ACK_MESSAGE",
-                        "Your access request has been successfully submitted and is currently under review.");
+                    Map.ofEntries(
+                        Map.entry(
+                            "ENV_SUFFIX", envSuffix == null ? "" : " [" + envSuffix + "]"),
+                        Map.entry(
+                            "CONTACT_US_URL",
+                            safe(config.getString("publisherPanelUrl")) + "/contact-us"),
+                        Map.entry("CONSUMER_FIRST_NAME", safe(userDetails.firstName())),
+                        Map.entry("CONSUMER_LAST_NAME", safe(userDetails.lastName())),
+                        Map.entry("ASSET_NAME", safe(emailRequest.assetName())),
+                        Map.entry("ASSET_DESCRIPTION", safe(emailRequest.shortDescription())),
+                        Map.entry("PLATFORM_NAME", safe(platformName)),
+                        Map.entry("PLATFORM_SHORT_NAME", safe(platformShortName)),
+                        Map.entry("DASHBOARD_URL", safe(dashboardUrl)),
+                        Map.entry("SENDER_NAME", safe(senderName)),
+                        Map.entry(
+                            "ACK_MESSAGE",
+                            "Your access request has been successfully submitted and is currently under review."));
 
                 String htmlBody = TemplateCreator.render(emailTemplate, emailDetails);
 
