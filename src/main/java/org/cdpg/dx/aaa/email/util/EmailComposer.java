@@ -429,10 +429,17 @@ public class EmailComposer {
                         String emailId = userInfo.email();
                         String userName = userInfo.name();
                         String platformName = config.getString("platformName");
-                        String subject = "Compute Role Access Request – " + status.getStatus() + " | " + platformName + " Platform";
+                        String subStatus =
+                            status.getStatus().substring(0, 1).toUpperCase()
+                                + status.getStatus().substring(1).toLowerCase();
+                        String subject = "Compute Role Access Request – " + subStatus + " | " + platformName + " Platform";
                         String senderEmail = config.getString("emailSender");
                         String adminPortalUrl = config.getString("TGDxUrl");
                         String senderName = config.getString("senderName");
+
+                        String portalBaseUrl = adminPortalUrl.replaceAll("/+$", "");
+                        String userManualUrl = portalBaseUrl + "/user-manual";
+                        String contactUsUrl = portalBaseUrl + "/contact-us";
 
                         String approvedMessage = "";
                         if (status.equals(Status.GRANTED)) {
@@ -441,14 +448,14 @@ public class EmailComposer {
                               + "<strong>Profile &rarr; Dashboard &rarr; My Projects</strong><br/><br/>"
                               + "Once submitted, your request will be reviewed and the allocated credits will be confirmed through a separate notification email.<br/><br/>"
                               + "For guidance on navigating the platform, please refer to the User Manual:<br/>"
-                              + "<a href=\"https://mahaagx.maharashtra.gov.in/user-manual\">https://mahaagx.maharashtra.gov.in/user-manual</a><br/><br/>"
+                              + "<a href=\"" + userManualUrl + "\">" + userManualUrl + "</a><br/><br/>"
                               + "For any queries related to the platform or its datasets, please reach out to us via:<br/>"
-                              + "<a href=\"https://mahaagx.maharashtra.gov.in/contact-us\">https://mahaagx.maharashtra.gov.in/contact-us</a><br/><br/>"
+                              + "<a href=\"" + contactUsUrl + "\">" + contactUsUrl + "</a><br/><br/>"
                               + "Thank you for your interest in the " + platformName + " platform. We look forward to supporting your work on the platform.";
                         } else if (status.equals(Status.REJECTED)) {
                           approvedMessage =
                             "For any queries related to the platform or its datasets, please reach out to us via:<br/>"
-                              + "<a href=\"https://mahaagx.maharashtra.gov.in/contact-us\">https://mahaagx.maharashtra.gov.in/contact-us</a>";
+                              + "<a href=\"" + contactUsUrl + "\">" + contactUsUrl + "</a>";
                         }
                         Map<String, String> emailDetails =
                             Map.of(
