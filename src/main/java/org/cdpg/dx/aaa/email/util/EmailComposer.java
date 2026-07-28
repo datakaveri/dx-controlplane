@@ -285,9 +285,13 @@ public class EmailComposer {
                 String emailId = userInfo.email();
                 String userName = userInfo.name();
                 String platformName = config.getString("platformName");
-                String subject =
+                  String subStatus =
+                          status.getStatus().substring(0, 1).toUpperCase()
+                                  + status.getStatus().substring(1).toLowerCase();
+
+                  String subject =
                     "Compute Role Access Request – "
-                        + status.getStatus()
+                        + subStatus
                         + " | "
                         + platformName
                         + " Platform"
