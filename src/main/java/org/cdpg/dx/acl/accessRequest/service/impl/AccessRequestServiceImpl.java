@@ -303,7 +303,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
                             itemId.toString(),
                             ItemType.fromCatalogueItemType(request.getAssetType()),
                             request.getRequestId(),
-                            determinePolicyType(requestedConstraints),
+                            "ACCESS_REQUEST_APPROVED",
                             requestedConstraints,
                             expiryAt,
                             request.getProviderId(),
@@ -405,13 +405,6 @@ public class AccessRequestServiceImpl implements AccessRequestService {
             "Requested access type '" + type + "' is not allowed for this resource");
       }
     }
-  }
-
-  private String determinePolicyType(JsonObject constraints) {
-
-    JsonObject subjects = constraints == null ? null : constraints.getJsonObject("subjects");
-
-    return subjects != null && !subjects.isEmpty() ? "GROUP" : "INDIVIDUAL";
   }
 
   private Set<String> extractAccessTypes(JsonObject constraints) {
