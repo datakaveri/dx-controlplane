@@ -6465,6 +6465,7 @@ paths:
                     - ACTIVE
                     - PENDING
                     - DECLINED
+                    - HIDE
                   description: Publication status of the asset.
                   example: ACTIVE
                 dataUploadStatus:
