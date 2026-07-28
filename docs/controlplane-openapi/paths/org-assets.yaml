@@ -396,6 +396,7 @@
                   - VERIFIED
                   - API
                   - SFTP
+                  - DECLINED
                 description: |
                   Verification status of the asset.
 
