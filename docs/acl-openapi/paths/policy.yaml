@@ -522,9 +522,10 @@
       - Policies
     operationId: get-policies-consumer-api
     summary: List Consumer Policies
-    description: 'Lists all policies applicable to the consumer calling the API.
+    description: |
+      Lists all policies applicable to the consumer calling the API.
 
-      '
+      The optional `policyType` query parameter can be used to filter policies by how they were created. Specify `INDIVIDUAL` and/or `GROUP` to retrieve policies created through the policy APIs, or `ACCESS_REQUEST_APPROVED` to retrieve policies created internally when an access request is approved.
     security:
       - authorization: []
     parameters:
@@ -559,6 +560,24 @@
         schema:
           type: string
           example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+      - name: policyType
+        in: query
+        description: |
+          Filter policies by policy type.
+
+          This parameter can be specified multiple times to return policies
+          matching any of the provided policy types.
+
+          If not specified, policies of all types are returned.
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+              - INDIVIDUAL
+              - GROUP
+              - ACCESS_REQUEST_APPROVED
       - $ref: ../components/parameters.yaml#/PageParam
       - $ref: ../components/parameters.yaml#/SizeParam
       - $ref: ../components/parameters.yaml#/SortingParam
@@ -582,6 +601,17 @@
               type: urn:dx:aclApd:notAuthorized
               title: Not Authorized
               detail: Missing or invalid Bearer token
+    x-codeSamples:
+      - lang: cURL
+        label: List directly created policies
+        source: |
+          curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/policy/consumer?policyType=INDIVIDUAL&policyType=GROUP' \
+          --header 'Authorization: <tokenValue>'
+      - lang: cURL
+        label: List policies created through access request approval
+        source: |
+          curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/policy/consumer?policyType=ACCESS_REQUEST_APPROVED' \
+          --header 'Authorization: <tokenValue>'
 /iudx/acl/apd/v2/policy/organisation:
   get:
     tags:
@@ -596,6 +626,11 @@
 
       The optional `ownerId` query parameter can be used to filter policies by
       the policy creator.
+
+      The optional `policyType` query parameter can be used to filter policies by
+      how they were created. Specify `INDIVIDUAL` and/or `GROUP` to retrieve
+      policies created through the policy APIs, or `ACCESS_REQUEST_APPROVED` to
+      retrieve policies created internally when an access request is approved.
     security:
       - authorization: []
     parameters:
@@ -631,6 +666,24 @@
         schema:
           type: string
           example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+      - name: policyType
+        in: query
+        description: |
+          Filter policies by policy type.
+
+          This parameter can be specified multiple times to return policies
+          matching any of the provided policy types.
+
+          If not specified, policies of all types are returned.
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+              - INDIVIDUAL
+              - GROUP
+              - ACCESS_REQUEST_APPROVED
       - $ref: ../components/parameters.yaml#/PageParam
       - $ref: ../components/parameters.yaml#/SizeParam
       - $ref: ../components/parameters.yaml#/SortingParam
@@ -664,16 +717,30 @@
               type: urn:dx:aclApd:forbidden
               title: Forbidden
               detail: User does not have the required role.
+    x-codeSamples:
+      - lang: cURL
+        label: List directly created policies
+        source: |
+          curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/policy/organisation?policyType=INDIVIDUAL&policyType=GROUP' \
+          --header 'Authorization: <tokenValue>'
+      - lang: cURL
+        label: List policies created through access request approval
+        source: |
+          curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/policy/organisation?policyType=ACCESS_REQUEST_APPROVED' \
+          --header 'Authorization: <tokenValue>'
 /iudx/acl/apd/v2/policy/platform:
   get:
     tags:
       - Policies
     operationId: get-policies-cos_admin-api
     summary: List Platform Policies (COS Admin)
-    description: 'Lists all policies across the platform. Accessible only to COS Admin
-      users.
+    description: |
+      Lists all policies across the platform. Accessible only to COS Admin users.
 
-      '
+      The optional `policyType` query parameter can be used to filter policies by
+      how they were created. Specify `INDIVIDUAL` and/or `GROUP` to retrieve
+      policies created through the policy APIs, or `ACCESS_REQUEST_APPROVED` to
+      retrieve policies created internally when an access request is approved.
     security:
       - authorization: []
     parameters:
@@ -708,6 +775,24 @@
         schema:
           type: string
           example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+      - name: policyType
+        in: query
+        description: |
+          Filter policies by policy type.
+
+          This parameter can be specified multiple times to return policies
+          matching any of the provided policy types.
+
+          If not specified, policies of all types are returned.
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+              - INDIVIDUAL
+              - GROUP
+              - ACCESS_REQUEST_APPROVED
       - $ref: ../components/parameters.yaml#/PageParam
       - $ref: ../components/parameters.yaml#/SizeParam
       - $ref: ../components/parameters.yaml#/SortingParam
@@ -741,15 +826,30 @@
               type: urn:dx:aclApd:forbidden
               title: Forbidden
               detail: User does not have the required role.
+    x-codeSamples:
+      - lang: cURL
+        label: List directly created policies
+        source: |
+          curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/policy/platform?policyType=INDIVIDUAL&policyType=GROUP' \
+          --header 'Authorization: <tokenValue>'
+      - lang: cURL
+        label: List policies created through access request approval
+        source: |
+          curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/policy/platform?policyType=ACCESS_REQUEST_APPROVED' \
+          --header 'Authorization: <tokenValue>'
 /iudx/acl/apd/v2/policy/provider:
   get:
     tags:
       - Policies
     operationId: get-policies-provider-api
     summary: List Provider Policies
-    description: 'Lists all policies created by the provider calling the API.
+    description: |
+      Lists all policies created by the provider calling the API.
 
-      '
+      The optional `policyType` query parameter can be used to filter policies by
+      how they were created. Specify `INDIVIDUAL` and/or `GROUP` to retrieve
+      policies created through the policy APIs, or `ACCESS_REQUEST_APPROVED` to
+      retrieve policies created internally when an access request is approved.
     security:
       - authorization: []
     parameters:
@@ -784,6 +884,24 @@
         schema:
           type: string
           example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+      - name: policyType
+        in: query
+        description: |
+          Filter policies by policy type.
+
+          This parameter can be specified multiple times to return policies
+          matching any of the provided policy types.
+
+          If not specified, policies of all types are returned.
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+              - INDIVIDUAL
+              - GROUP
+              - ACCESS_REQUEST_APPROVED
       - $ref: ../components/parameters.yaml#/PageParam
       - $ref: ../components/parameters.yaml#/SizeParam
       - $ref: ../components/parameters.yaml#/SortingParam
@@ -817,3 +935,14 @@
               type: urn:dx:aclApd:forbidden
               title: Forbidden
               detail: User does not have the required role.
+    x-codeSamples:
+      - lang: cURL
+        label: List directly created policies
+        source: |
+          curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/policy/provider?policyType=INDIVIDUAL&policyType=GROUP' \
+          --header 'Authorization: <tokenValue>'
+      - lang: cURL
+        label: List policies created through access request approval
+        source: |
+          curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/policy/provider?policyType=ACCESS_REQUEST_APPROVED' \
+          --header 'Authorization: <tokenValue>'
