@@ -1,10 +1,18 @@
 package org.cdpg.dx.aaa.asset.handler;
 
+import static org.cdpg.dx.aaa.asset.util.Constants.*;
+import static org.cdpg.dx.aaa.asset.util.Constants.STATUS;
+import static org.cdpg.dx.aaa.credit.util.Constants.*;
+import static org.cdpg.dx.aaa.credit.util.Constants.REQUESTED_AT;
+import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
+
 import io.vertx.core.Future;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.asset.models.AssetRequest;
@@ -16,12 +24,8 @@ import org.cdpg.dx.aaa.audit.util.AuditingHelper;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
-import org.cdpg.dx.aaa.kyc.util.KYCAuditLogHelper;
-import org.cdpg.dx.aaa.kyc.util.KYCAuditOperation;
 import org.cdpg.dx.auditing.model.AuditLog;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
-import org.cdpg.dx.auth.authentication.util.AccessValidator;
-import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.request.PaginatedRequest;
@@ -30,17 +34,6 @@ import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.CpRoutingContextHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-import static org.cdpg.dx.aaa.asset.util.Constants.*;
-import static org.cdpg.dx.aaa.asset.util.Constants.STATUS;
-import static org.cdpg.dx.aaa.credit.util.Constants.*;
-import static org.cdpg.dx.aaa.credit.util.Constants.REQUESTED_AT;
-import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
 public class AssetHandler {
 
@@ -143,21 +136,23 @@ public class AssetHandler {
     User dxUser = ctx.user();
     JsonObject userJson = dxUser.principal();
 
-//    AccessValidator.validate(
-//      userJson,
-//      List.of( // primary roles (no scope check)
-//        DxRole.COS_ADMIN.getRole()),
-//      List.of(DxScope.COS_ADMIN_ACCESS.getScope())
-//    );
+    //    AccessValidator.validate(
+    //      userJson,
+    //      List.of( // primary roles (no scope check)
+    //        DxRole.COS_ADMIN.getRole()),
+    //      List.of(DxScope.COS_ADMIN_ACCESS.getScope())
+    //    );
 
-    PaginatedRequest request = PaginationRequestBuilder.from(ctx)
-      .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_ASSET_REQUEST)
-      .apiToDbMap(ALLOWED_FILTER_MAP_FOR_ASSET_REQUEST)
-      .allowedTimeFields(Set.of(REQUESTED_AT, PROCESSED_AT))
-      .defaultTimeField(REQUESTED_AT)
-      .defaultSort(REQUESTED_AT, DEFAULT_SORTING_ORDER)
-      .allowedSortFields(ALLOWED_FILTER_MAP_FOR_ASSET_REQUEST.keySet())
-      .build();
+    PaginatedRequest request =
+        PaginationRequestBuilder.from(ctx)
+            .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_ASSET_REQUEST)
+            .fuzzyFiltersDbMap(Map.of(TYPE, TYPE))
+            .apiToDbMap(ALLOWED_FILTER_MAP_FOR_ASSET_REQUEST)
+            .allowedTimeFields(Set.of(REQUESTED_AT, PROCESSED_AT))
+            .defaultTimeField(REQUESTED_AT)
+            .defaultSort(REQUESTED_AT, DEFAULT_SORTING_ORDER)
+            .allowedSortFields(ALLOWED_FILTER_MAP_FOR_ASSET_REQUEST.keySet())
+            .build();
 
     AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
       RoutingContextHelper.getRequestPath(ctx), "GET", "Get All Asset Requests");
