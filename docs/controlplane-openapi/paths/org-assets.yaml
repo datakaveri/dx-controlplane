@@ -378,11 +378,6 @@
             properties:
               publishStatus:
                 type: string
-                enum:
-                  - ACTIVE
-                  - PENDING
-                  - DECLINED
-                  - HIDE
                 description: Publication status of the asset.
                 example: ACTIVE
               dataUploadStatus:

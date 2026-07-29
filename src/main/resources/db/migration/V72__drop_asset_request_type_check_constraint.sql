@@ -1,0 +1,2 @@
+ALTER TABLE asset_request
+DROP CONSTRAINT asset_request_type_check;

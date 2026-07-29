@@ -524,7 +524,7 @@ paths:
         - Ingestion type(API/SFTP) APIs
       operationId: post-auth-v2-asset-request
       description: |
-        Creates a data ingestion request (SFTP/API) for the authenticated user for a specific asset
+        Creates a data ingestion request for the authenticated user for a specific asset
         in the catalogue. The request is created in `PENDING` status and must be approved by a `cos_admin`.
 
         **Allowed Roles:** `provider`
@@ -532,9 +532,11 @@ paths:
         **Log Type:** `USER_ACTION`
       requestBody:
         description: |
-          - `asset_id`: The catalogue ID of the asset for which the request is to be created
-          - `type`: The type of data ingestion — either `SFTP` or `API`
-          - `additional_info`: Optional extra details about the requester and intent (e.g. purpose, description)
+          - `asset_id`: The catalogue ID of the asset for which the request is to be created.
+          - `type`: The type of data ingestion.
+
+            **Examples:** `SFTP`, `API`, `UNVERIFIED-SFTP`, `UNVERIFIED-API`
+          - `additional_info`: Optional extra details about the requester and intent (e.g. purpose, description).
         required: true
         content:
           application/json:
@@ -548,9 +550,7 @@ paths:
                   pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
                 type:
                   type: string
-                  enum:
-                    - SFTP
-                    - API
+                  example: UNVERIFIED-SFTP
                   minLength: 1
                 additional_info:
                   description: |
@@ -628,7 +628,7 @@ paths:
 
         | Query Parameter | Description                                      |
         |-----------------|--------------------------------------------------|
-        | `type`          | Filter by ingestion type — `SFTP` or `API`. Only this filter returns a filtered response. |
+        | `type` | Filter by ingestion type using a case-insensitive fuzzy (contains) search. For example: `SFTP`, `API`, `UNVERIFIED-SFTP`, or `UNVERIFIED-API`. |
         | `status`        | Filter by request status (e.g. `PENDING`, `GRANTED`, `REJECTED`) |
         | `userId`        | Filter by the ID of the user who made the request |
         | `assetId`       | Filter by the catalogue asset ID |
@@ -649,10 +649,13 @@ paths:
           required: false
           schema:
             type: string
-            enum:
-              - SFTP
-              - API
-          description: Filter asset requests by ingestion type. This is the primary filter that returns a filtered response.
+            example: SFTP
+          description: |
+            Filter asset requests by ingestion type.
+
+            Performs a partial (contains) match rather than an exact match.
+
+            **Examples:** `SFTP`, `API`, `UNVERIFIED-SFTP`, `UNVERIFIED-API`
       responses:
         '200':
           description: Successfully fetched all asset requests
@@ -6632,11 +6635,6 @@ paths:
               properties:
                 publishStatus:
                   type: string
-                  enum:
-                    - ACTIVE
-                    - PENDING
-                    - DECLINED
-                    - HIDE
                   description: Publication status of the asset.
                   example: ACTIVE
                 dataUploadStatus:
