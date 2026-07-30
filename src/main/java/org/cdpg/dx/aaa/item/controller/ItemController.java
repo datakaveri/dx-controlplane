@@ -193,7 +193,6 @@ public class ItemController implements ApiController {
     builder
         .operation(DOWNLOAD_SCRIPT)
         .handler(auditingHandler::handleApiAudit)
-        .handler(providerScriptAccess)
         .handler(this::handleDownloadScript);
 
     LOGGER.debug("Item Controller registered");
