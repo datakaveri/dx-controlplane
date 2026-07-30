@@ -21,8 +21,8 @@ public class ScriptGenerationService {
     private static final Logger LOGGER = LogManager.getLogger(ScriptGenerationService.class);
     
     // Paths to the script templates
-    private static final String VECTOR_SCRIPT_PATH = "scripts/vector_creation.py";
-    private static final String RASTER_SCRIPT_PATH = "scripts/raster_creation.py";
+    private static final String VECTOR_SCRIPT_PATH = "./scripts/vector_creation.py";
+    private static final String RASTER_SCRIPT_PATH = "./scripts/raster_creation.py";
     
     // Output directory for generated scripts
     private static final String OUTPUT_DIR = "generated_scripts";
