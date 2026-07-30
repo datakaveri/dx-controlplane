@@ -6464,6 +6464,11 @@ paths:
               properties:
                 publishStatus:
                   type: string
+                  enum:
+                    - ACTIVE
+                    - PENDING
+                    - DECLINED
+                    - HIDE
                   description: Publication status of the asset.
                   example: ACTIVE
                 dataUploadStatus:
@@ -6472,12 +6477,6 @@ paths:
                   example: true
                 itemStatus:
                   type: string
-                  enum:
-                    - UNVERIFIED
-                    - VERIFIED
-                    - API
-                    - SFTP
-                    - DECLINED
                   description: |
                     Verification status of the asset.
 
