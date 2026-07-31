@@ -353,7 +353,7 @@ paths:
         - Ingestion type(API/SFTP) APIs
       operationId: post-auth-v2-asset-request
       description: |
-        Creates a data ingestion request (SFTP/API) for the authenticated user for a specific asset
+        Creates a data ingestion request for the authenticated user for a specific asset
         in the catalogue. The request is created in `PENDING` status and must be approved by a `cos_admin`.
 
         **Allowed Roles:** `provider`
@@ -361,9 +361,11 @@ paths:
         **Log Type:** `USER_ACTION`
       requestBody:
         description: |
-          - `asset_id`: The catalogue ID of the asset for which the request is to be created
-          - `type`: The type of data ingestion — either `SFTP` or `API`
-          - `additional_info`: Optional extra details about the requester and intent (e.g. purpose, description)
+          - `asset_id`: The catalogue ID of the asset for which the request is to be created.
+          - `type`: The type of data ingestion.
+
+            **Examples:** `SFTP`, `API`, `UNVERIFIED-SFTP`, `UNVERIFIED-API`
+          - `additional_info`: Optional extra details about the requester and intent (e.g. purpose, description).
         required: true
         content:
           application/json:
@@ -377,9 +379,7 @@ paths:
                   pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
                 type:
                   type: string
-                  enum:
-                    - SFTP
-                    - API
+                  example: UNVERIFIED-SFTP
                   minLength: 1
                 additional_info:
                   description: |
@@ -457,7 +457,7 @@ paths:
 
         | Query Parameter | Description                                      |
         |-----------------|--------------------------------------------------|
-        | `type`          | Filter by ingestion type — `SFTP` or `API`. Only this filter returns a filtered response. |
+        | `type` | Filter by ingestion type using a case-insensitive fuzzy (contains) search. For example: `SFTP`, `API`, `UNVERIFIED-SFTP`, or `UNVERIFIED-API`. |
         | `status`        | Filter by request status (e.g. `PENDING`, `GRANTED`, `REJECTED`) |
         | `userId`        | Filter by the ID of the user who made the request |
         | `assetId`       | Filter by the catalogue asset ID |
@@ -478,10 +478,13 @@ paths:
           required: false
           schema:
             type: string
-            enum:
-              - SFTP
-              - API
-          description: Filter asset requests by ingestion type. This is the primary filter that returns a filtered response.
+            example: SFTP
+          description: |
+            Filter asset requests by ingestion type.
+
+            Performs a partial (contains) match rather than an exact match.
+
+            **Examples:** `SFTP`, `API`, `UNVERIFIED-SFTP`, `UNVERIFIED-API`
       responses:
         '200':
           description: Successfully fetched all asset requests
@@ -964,35 +967,43 @@ paths:
         (e.g., `adex:AiModel`, `adex:DataBank`, `adex:Apps`) and its metadata.
 
         ### Backend-managed fields
-        The following fields are **automatically set by the backend** and must not be modified by the client:
+        The following fields are automatically set by the backend and must not be modified by the client:
         - `itemCreatedAt`
         - `itemStatus`
         - `publishStatus`
         - `dataUploadStatus`
         - `lastUpdated`
-        The `id` field **may be provided by the client**. If supplied, it must be a valid UUID and must not conflict with an existing item.
+
+        The `id` field may be provided by the client. If supplied, it must be a valid UUID and must not conflict with an existing item.
 
         ### Token-derived fields
-        The backend populates these fields using the authenticated user’s token:
-        - `ownerUserId` (from token sub)
+        The backend populates these fields using the authenticated user's token:
+        - `ownerUserId` (from token `sub`)
         - `department` (organization name)
         - `uploadedBy` (organization name)
-        - `organizationId` (if present in token and not already provided)
+        - `organizationId` (if present in the token and not already provided)
 
         ### Default and conditional behavior
+
+        - **itemStatus**
+          - Set to `VERIFIED` if the authenticated user has the `org_admin` role.
+          - Otherwise, set to `UNVERIFIED`.
+
         - **publishStatus**
-          - Set to `ACTIVE` by default if the provider has `org_admin` or `cos_admin` role.
+          - Set to `ACTIVE` if the authenticated user has the `cos_admin` role.
           - Otherwise, set to `PENDING`.
+
         - **dataUploadStatus**
           - Defaults to `false`.
           - Automatically set to `true` if the item metadata contains a non-empty `mediaURL`.
 
-        > `publishStatus` and `dataUploadStatus` **cannot be updated** via POST or PUT `/item`.
-        > They must be updated using the `/organisation/asset` PATCH API.
+        > `itemStatus`, `publishStatus`, and `dataUploadStatus` cannot be updated via POST or PUT `/item`.
+        > Use the `/organisation/asset` or `/item` PATCH API to update these fields.
 
         ### Visibility rules
-        An item becomes visible across the platform **only when both**
-        `publishStatus = ACTIVE` **and** `dataUploadStatus = true`.
+        An item becomes visible across the platform only when:
+        - `publishStatus = ACTIVE`
+        - `dataUploadStatus = true`
 
         **Log Type:** `ASSET`
       operationId: create item
@@ -1059,43 +1070,29 @@ paths:
       tags:
         - CAT Entity
       description: |
-        Update an existing catalogue item. The request body must contain a fully valid item
-        payload including the `id`.
+        Replace an existing catalogue item.
+
+        The request body must contain a complete, valid catalogue item payload, including the `id`.
 
         ### Update constraints
-        - Relationship and identity fields **cannot be modified**.
-        - `itemStatus` is managed by the backend and cannot be updated by clients.
-        - `publishStatus` and `dataUploadStatus` cannot be updated via this API.
 
-        To change `publishStatus` or `dataUploadStatus`, use the `/organisation/asset` PATCH API.
+        - `PUT` replaces the entire item. Any fields omitted from the request may be removed unless they are managed by the backend.
+        - The following fields are managed by the backend and are automatically maintained. Any values provided for these fields are ignored:
+          - `itemStatus`
+          - `publishStatus`
+          - `dataUploadStatus`
+          - `lastUpdated`
+        - The following fields are immutable and cannot be modified:
+          - `id`
+          - `ownerUserId`
+          - `organizationId`
+          - `itemCreatedAt`
+          - `metrics`
+          - The first element of the `type` array
+        - `lastUpdated` is automatically updated to the current UTC time.
+        - `itemStatus` can only be updated to `VERIFIED` by an `org_admin`.
 
-        #### Non-updateable fields
-        If updates to any of the following fields are required, the item must be deleted and
-        re-created.
-
-        1. adex:DataBank
-           - id
-           - type (1st element in array non-modifiable)
-           - itemStatus
-           - itemCreatedAt
-           - publishStatus
-           - dataUploadStatus
-
-        2. adex:AiModel
-           - id
-           - type (1st element in array non-modifiable)
-           - itemStatus
-           - itemCreatedAt
-           - publishStatus
-           - dataUploadStatus
-
-        3. adex:Apps
-           - id
-           - type (1st element in array non-modifiable)
-           - itemStatus
-           - itemCreatedAt
-           - publishStatus
-           - dataUploadStatus
+        To update only specific metadata fields without replacing the entire item, use the `PATCH /item` API.
 
         **Log Type:** `ASSET`
       operationId: update item
@@ -1346,10 +1343,10 @@ paths:
       description: |
         Update metadata fields of an owned catalogue item.
 
-        - Asset owners (`provider`) can update any field except `publishStatus` and restricted fields.
-        - Admins (`org_admin`, `cos_admin`) can also update `publishStatus`.
-        - The following fields cannot be updated via this API: `ownerUserId`, `organizationId`, 
-        `itemCreatedAt`, `metrics`.
+        - Asset owners (`provider`) can update any field except `publishStatus` and other restricted fields.
+        - Only `cos_admin` can update `publishStatus`.
+        - `itemStatus` cannot be updated to `VERIFIED` by a `provider`. It can only be updated to `VERIFIED` by an `org_admin`.
+        - The following fields cannot be updated via this API: `ownerUserId`, `organizationId`, `itemCreatedAt`, and `metrics`.
         - `lastUpdated` is automatically set to the current UTC time.
       operationId: patch item metadata
       security:
@@ -6434,10 +6431,15 @@ paths:
         - Organisation Assets Management
       description: |
         Update the publication or data upload status of an organisation asset.
+
         **Role-based behavior:**
-          - `org_admin` or `cos_admin` can update both `publishStatus` and `dataUploadStatus`
-          - `provider` can update only `dataUploadStatus`
-          - Attempting to update unauthorized fields will result in `403 Forbidden`
+        - only `cos_admin` can update `publishStatus`.
+        - `provider` can update only `dataUploadStatus`.
+        - `itemStatus` can also be updated through this API:
+          - `UNVERIFIED` → `VERIFIED` can only be performed by an `org_admin`.
+          - `UNVERIFIED` → `SFTP` or `API` can be performed by either the asset `provider` or an `org_admin`.
+        - At least one of `publishStatus`, `dataUploadStatus`, or `itemStatus` must be provided.
+        - Attempting to update fields or status transitions that the caller is not authorized to modify will result in `403 Forbidden`.
       operationId: patch item
       security:
         - authorization: []
@@ -6451,7 +6453,9 @@ paths:
             format: uuid
       requestBody:
         description: |
-          Request payload to update the asset status. At least one of the following fields must be provided.
+          Request payload to update the asset status.
+
+          At least one of `publishStatus`, `dataUploadStatus`, or `itemStatus` must be provided.
         required: true
         content:
           application/json:
@@ -6464,17 +6468,40 @@ paths:
                     - ACTIVE
                     - PENDING
                     - DECLINED
-                  description: Publication status of the asset
+                    - HIDE
+                  description: Publication status of the asset.
                   example: ACTIVE
                 dataUploadStatus:
                   type: boolean
-                  description: |
-                    Indicates whether data has been uploaded for the asset. Must be a boolean value.
+                  description: Indicates whether data has been uploaded for the asset.
                   example: true
+                itemStatus:
+                  type: string
+                  description: |
+                    Verification status of the asset.
+
+                    Allowed transitions:
+                    - `VERIFIED` can only be set by an `org_admin`.
+                    - `API` and `SFTP` can be set by the asset `provider` or an `org_admin`.
+                  example: VERIFIED
               additionalProperties: false
-            example:
-              publishStatus: ACTIVE
-              dataUploadStatus: true
+            examples:
+              Update publish status:
+                value:
+                  publishStatus: ACTIVE
+              Update data upload status:
+                value:
+                  dataUploadStatus: true
+              Verify asset:
+                value:
+                  itemStatus: VERIFIED
+              Mark asset as API:
+                value:
+                  itemStatus: API
+              Update multiple fields:
+                value:
+                  itemStatus: VERIFIED
+                  dataUploadStatus: true
       responses:
         '200':
           description: Item status updated successfully

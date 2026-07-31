@@ -12,9 +12,12 @@ import static org.cdpg.dx.aaa.common.Constants.METRICS;
 import static org.cdpg.dx.aaa.common.Constants.NAME;
 import static org.cdpg.dx.aaa.common.Constants.PROVIDER_USER_ID;
 import static org.cdpg.dx.aaa.common.Constants.REQUEST_POST;
+import static org.cdpg.dx.aaa.common.Constants.REQUEST_PUT;
 import static org.cdpg.dx.aaa.common.Constants.TYPE;
+import static org.cdpg.dx.aaa.common.Constants.UNVERIFIED;
 import static org.cdpg.dx.aaa.common.Constants.UUID_PATTERN;
 import static org.cdpg.dx.aaa.common.Constants.VALIDATION_FAILURE_MSG;
+import static org.cdpg.dx.aaa.common.Constants.VERIFIED;
 import static org.cdpg.dx.database.elastic.util.Constants.COS_ADMIN;
 import static org.cdpg.dx.database.elastic.util.Constants.DATA_UPLOAD_STATUS;
 import static org.cdpg.dx.database.elastic.util.Constants.DETAIL_ITEM_NOT_FOUND;
@@ -35,8 +38,10 @@ import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.item.service.ItemService;
+import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
+import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 
 public class ItemExistenceValidator {
@@ -141,7 +146,7 @@ public class ItemExistenceValidator {
     JsonArray roles = request.getJsonArray("roles", new JsonArray());
     request.put(
         PUBLISH_STATUS,
-        (roles.contains(ORG_ADMIN) || roles.contains(COS_ADMIN)) ? ACTIVE : PENDING);
+        (roles.contains(COS_ADMIN)) ? ACTIVE : PENDING);
   }
 
   public void validateAiModel(String userId, JsonObject request, String method,
@@ -394,10 +399,18 @@ public class ItemExistenceValidator {
   }
 
   private void setCommonFields(JsonObject request, String method) {
+    JsonArray roles = request.getJsonArray("roles", new JsonArray());
+    boolean isOrgAdmin = roles.contains(DxRole.ORG_ADMIN.value());
 
     if (REQUEST_POST.equalsIgnoreCase(method)) {
-      request.put(ITEM_STATUS, ACTIVE);
+      request.put(ITEM_STATUS, (roles.contains(ORG_ADMIN)) ? VERIFIED : UNVERIFIED);
       request.put(ITEM_CREATED_AT, getUtcDatetimeAsString());
+    } else if (REQUEST_PUT.equalsIgnoreCase(method)) {
+      String itemStatus = request.getString(ITEM_STATUS);
+
+      if (VERIFIED.equalsIgnoreCase(itemStatus) && !isOrgAdmin) {
+        throw new DxForbiddenException("Only org_admin can update itemStatus to VERIFIED");
+      }
     }
 
     request.put(LAST_UPDATED, getUtcDatetimeAsString());

@@ -20,6 +20,8 @@ import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ASSET_ORGA
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CREATED_AT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_EXPIRY_AT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_OWNER_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_POLICY_TYPE;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_UPDATED_AT;
 import static org.cdpg.dx.acl.policy.util.Constants.API_TO_DB_MAP;
@@ -195,7 +197,11 @@ public class PolicyController implements ApiController {
             "organizationId",
             DB_ASSET_ORGANIZATION_ID,
             "ownerId",
-            DB_OWNER_ID);
+            DB_OWNER_ID,
+            "policyType",
+            DB_POLICY_TYPE,
+            "requestId",
+            DB_REQUEST_ID);
     Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
     Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
 
@@ -242,7 +248,17 @@ public class PolicyController implements ApiController {
       return;
     }
     Map<String, String> allowedFilters =
-        Map.of("status", DB_STATUS, "organizationId", DB_ASSET_ORGANIZATION_ID, "ownerId", DB_OWNER_ID);
+        Map.of(
+            "status",
+            DB_STATUS,
+            "organizationId",
+            DB_ASSET_ORGANIZATION_ID,
+            "ownerId",
+            DB_OWNER_ID,
+            "policyType",
+            DB_POLICY_TYPE,
+            "requestId",
+            DB_REQUEST_ID);
     Map<String, Object> additionalFilters = Map.of(DB_ASSET_ORGANIZATION_ID, organizationId);
     Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
     Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
@@ -293,7 +309,11 @@ public class PolicyController implements ApiController {
             "organizationId",
             DB_ASSET_ORGANIZATION_ID,
             "ownerId",
-            DB_OWNER_ID);
+            DB_OWNER_ID,
+            "policyType",
+            DB_POLICY_TYPE,
+            "requestId",
+            DB_REQUEST_ID);
     Map<String, Object> additionalFilters = Map.of("owner_id", user.subject());
     Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
     Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
@@ -489,7 +509,11 @@ public class PolicyController implements ApiController {
             "organizationId",
             DB_ASSET_ORGANIZATION_ID,
             "ownerId",
-            DB_OWNER_ID);
+            DB_OWNER_ID,
+            "policyType",
+            DB_POLICY_TYPE,
+            "requestId",
+            DB_REQUEST_ID);
 
     Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
 

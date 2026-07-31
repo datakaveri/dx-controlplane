@@ -317,6 +317,8 @@ public class ItemController implements ApiController {
 
     DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
     List<String> allowedRoles = dxUser.roles();
+    boolean isOrgAdmin = allowedRoles.contains(DxRole.ORG_ADMIN.value());
+    boolean isCosAdmin = allowedRoles.contains(DxRole.COS_ADMIN.value());
     boolean isAdmin =
         allowedRoles.contains(DxRole.ORG_ADMIN.value())
             || allowedRoles.contains(DxRole.COS_ADMIN.value());
@@ -341,6 +343,22 @@ public class ItemController implements ApiController {
     LOGGER.debug("Keycloak ID: {},12aa: {}", orgId, id);
     JsonObject body = ctx.body().asJsonObject();
     LOGGER.debug("Patch item request body: {}", body);
+
+    if (body.containsKey(PUBLISH_STATUS) && !isCosAdmin) {
+      ctx.fail(new DxForbiddenException(
+          "Only cos_admin can update publishStatus"));
+      return;
+    }
+
+    if (body.containsKey(ITEM_STATUS)) {
+      String itemStatus = body.getString(ITEM_STATUS);
+
+      if (VERIFIED.equalsIgnoreCase(itemStatus) && !isOrgAdmin) {
+        ctx.fail(new DxForbiddenException(
+            "Only org_admin can update itemStatus to VERIFIED"));
+        return;
+      }
+    }
 
     if (!isAdmin) {
 
@@ -422,9 +440,8 @@ public class ItemController implements ApiController {
 
     DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
     List<String> allowedRoles = dxUser.roles();
-    boolean isAdmin =
-        allowedRoles.contains(DxRole.ORG_ADMIN.value())
-            || allowedRoles.contains(DxRole.COS_ADMIN.value());
+    boolean isOrgAdmin = allowedRoles.contains(DxRole.ORG_ADMIN.value());
+    boolean isCosAdmin = allowedRoles.contains(DxRole.COS_ADMIN.value());
 
     String userId = dxUser.sub().toString();
     AtomicReference<String> orgId = new AtomicReference<>("");
@@ -445,9 +462,20 @@ public class ItemController implements ApiController {
 
     LOGGER.debug("Keycloak ID: {},12aa: {}", orgId, id);
 
-    if (!isAdmin && body.containsKey(PUBLISH_STATUS)) {
-      ctx.fail(new DxForbiddenException("Providers cannot patch publishStatus"));
+    if (body.containsKey(PUBLISH_STATUS) && !isCosAdmin) {
+      ctx.fail(new DxForbiddenException(
+          "Only cos_admin can update publishStatus"));
       return;
+    }
+
+    if (body.containsKey(ITEM_STATUS)) {
+      String itemStatus = body.getString(ITEM_STATUS);
+
+      if (VERIFIED.equalsIgnoreCase(itemStatus) && !isOrgAdmin) {
+        ctx.fail(new DxForbiddenException(
+            "Only org_admin can update itemStatus to VERIFIED"));
+        return;
+      }
     }
 
     // Restricted fields

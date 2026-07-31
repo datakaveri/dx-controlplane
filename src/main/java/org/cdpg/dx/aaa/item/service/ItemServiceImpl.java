@@ -505,12 +505,6 @@ public class ItemServiceImpl implements ItemService {
       queryModel =
           queryDecoder.getItemIdOwnerIdQueryModel(
               patchItemRequest.getItemId(), patchItemRequest.getUserId());
-      // Provider restriction: only allow 'dataUploadStatus'
-      JsonObject patchBody = patchItemRequest.getRequestBody();
-      if (!patchBody.containsKey("dataUploadStatus") || patchBody.size() != 1) {
-        return Future.failedFuture(
-            new DxForbiddenException("Providers can only update dataUploadStatus"));
-      }
     } else {
       return Future.failedFuture(new DxForbiddenException("User role not permitted to patch item"));
     }

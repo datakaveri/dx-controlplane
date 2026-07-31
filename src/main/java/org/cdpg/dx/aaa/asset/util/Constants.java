@@ -17,7 +17,6 @@ public class Constants {
 
 
   public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_ASSET_REQUEST = Map.of(
-    "type", TYPE,
     "status", STATUS,
     "userId" , USER_ID,
     "assetId", ASSET_ID,

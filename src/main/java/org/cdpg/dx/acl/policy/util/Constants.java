@@ -28,6 +28,7 @@ public class Constants {
           Map.entry("providerOrganization", DB_ASSET_ORGANIZATION_ID),
           Map.entry("shortDescription", DB_SHORT_DESCRIPTION),
           Map.entry("policyId", DB_POLICY_ID),
-          Map.entry("status", DB_STATUS));
+          Map.entry("status", DB_STATUS),
+          Map.entry("policyType", DB_POLICY_TYPE));
 }
 
