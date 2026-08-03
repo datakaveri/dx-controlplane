@@ -12,7 +12,8 @@ public interface AccessRuleDao {
 
   Future<Boolean> ruleMatches(UUID itemId, String userId, String orgId, List<String> roles);
 
-  Future<PolicyDto> findMatchingRule(UUID itemId, String userId, String orgId, List<String> roles);
+  Future<List<PolicyDto>> findMatchingRule(UUID itemId, String userId, String orgId,
+                                       List<String> roles);
 
   Future<Void> createRule(
       UUID policyId,

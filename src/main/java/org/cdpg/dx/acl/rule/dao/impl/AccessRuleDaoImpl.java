@@ -24,6 +24,7 @@ import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.POLICY_TABLE;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -70,7 +71,12 @@ public class AccessRuleDaoImpl implements AccessRuleDao {
 
     // R.status = 'ACTIVE'
     Condition statusCondition =
-        new Condition("R.status", Condition.Operator.EQUALS, List.of("ACTIVE"));
+        new Condition(
+            List.of(
+                new Condition("R.status", Condition.Operator.EQUALS, List.of(ACTIVE)),
+                new Condition("R.expiry_at", Condition.Operator.GREATER,
+                    List.of(LocalDateTime.now().toString()))),
+            Condition.LogicalOperator.AND);
 
     // U.user_id = ?
     Condition userCondition =
@@ -131,7 +137,7 @@ public class AccessRuleDaoImpl implements AccessRuleDao {
   // ============================================================
 
   @Override
-  public Future<PolicyDto> findMatchingRule(
+  public Future<List<PolicyDto>> findMatchingRule(
       UUID itemId, String userId, String orgId, List<String> roles) {
 
     List<Join> joins =
@@ -146,7 +152,12 @@ public class AccessRuleDaoImpl implements AccessRuleDao {
         new Condition("R.item_id", Condition.Operator.EQUALS, List.of(itemId.toString()));
 
     Condition statusCondition =
-        new Condition("R.status", Condition.Operator.EQUALS, List.of("ACTIVE"));
+        new Condition(
+            List.of(
+                new Condition("R.status", Condition.Operator.EQUALS, List.of(ACTIVE)),
+                new Condition("R.expiry_at", Condition.Operator.GREATER,
+                    List.of(LocalDateTime.now().toString()))),
+            Condition.LogicalOperator.AND);
 
     Condition userCondition =
         new Condition("U.user_id", Condition.Operator.EQUALS, List.of(userId));
@@ -197,21 +208,13 @@ public class AccessRuleDaoImpl implements AccessRuleDao {
                     "P.consumer_id",
                     "P.owner_id"))
             .setJoins(joins)
-            .setCondition(finalCondition)
-            .setLimit(1);
+            .setCondition(finalCondition);
 
     return postgresService
         .select(selectQuery, false)
         .map(
-            result -> {
-              if (result.getRows().isEmpty()) {
-                return null;
-              }
-
-              JsonObject row = (JsonObject) result.getRows().getList().getFirst();
-
-              return new PolicyDto(row);
-            })
+            result ->
+                result.getRows().stream().map(row -> new PolicyDto((JsonObject) row)).toList())
         .onFailure(err -> LOGGER.error("findMatchingRule failed", err));
   }
 

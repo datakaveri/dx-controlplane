@@ -116,7 +116,7 @@ public class CreatePolicyRequest {
   }
 
   public void setExpiryTime(String expiryTime) {
-    LocalDateTime currentTime = LocalDateTime.now(ZoneOffset.UTC);
+    LocalDateTime currentTime = LocalDateTime.now();
 
     if (expiryTime != null) {
       try {

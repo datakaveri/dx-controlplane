@@ -668,7 +668,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
     Future<List<PolicyDto>> policiesFuture =
         policyDao.getMatchingPolicies(itemUuid, consumerId.toString()).otherwise(List.of());
 
-    Future<PolicyDto> ruleFuture =
+    Future<List<PolicyDto>> ruleFuture =
         userFuture
             .compose(
                 fullUser ->
@@ -687,7 +687,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
               JsonObject item = composite.resultAt(1);
               AccessRequestSummary accessSummary = composite.resultAt(2);
               List<PolicyDto> policiesAccessInfo = composite.resultAt(3);
-              PolicyDto rule = composite.resultAt(4);
+              List<PolicyDto> matchingRules = composite.resultAt(4);
 
               if (item == null || item.isEmpty()) {
                 return Future.failedFuture(
@@ -717,8 +717,8 @@ public class AccessRequestServiceImpl implements AccessRequestService {
               List<PolicyDto> policies = new ArrayList<>(policiesAccessInfo);
 
               // Add rule-based access
-              if (rule != null && !rule.toJson().isEmpty()) {
-                policies.add(rule);
+              if (matchingRules != null && !matchingRules.isEmpty()) {
+                policies.addAll(matchingRules);
               }
 
               boolean hasAccess =
@@ -726,7 +726,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
                       || hasAdminAccess
                       || accessSummary.isHasGrantedAccess()
                       || !policiesAccessInfo.isEmpty()
-                      || rule != null;
+                      || (matchingRules != null && !matchingRules.isEmpty());
               boolean hasPendingRequests = accessSummary.isHasPendingRequests();
               boolean hasRejectedRequests = accessSummary.isHasRejectedRequests();
 

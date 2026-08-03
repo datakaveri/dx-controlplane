@@ -430,10 +430,17 @@ public class ItemServiceImpl implements ItemService {
                                         requester.organisationId(),
                                         requester.roles())
                                     .compose(
-                                        policyObj -> {
+                                        policyObjs -> {
                                           JsonObject item = response.getSource();
-                                          // append policyId, constraints and expiryAt
-                                          item.put(POLICIES, new JsonArray().add(policyObj.toJson()));
+
+                                          JsonArray policies = new JsonArray();
+
+                                          if (policyObjs != null) {
+                                            policyObjs.forEach(
+                                                policy -> policies.add(policy.toJson()));
+                                          }
+
+                                          item.put(POLICIES, policies);
                                           response.setSource(item);
 
                                           return succeededResponse(response, totalHits);
