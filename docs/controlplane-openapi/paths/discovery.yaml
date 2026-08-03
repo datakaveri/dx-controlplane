@@ -4,9 +4,15 @@
     - Discovery – Public
     description: "Unified catalogue search query for discovering entities that meet complex criteria. The\n`/search` endpoint\
       \ supports a rich combination of property-based (`term`, `flattenedTerm`),\nrange-based, and temporal-based searches\
-      \ using a common `searchCriteria` array format.\n\n### \U0001F4CC Visibility of Entities in Discovery\nThe `/search`\
-      \ API returns only entities that are fully published and available for\ndiscovery. An entity is included in results\
-      \ when:\n\n- `publishStatus` is `ACTIVE`\n- `dataUploadStatus` is `true`\n\n #### \U0001F510 Private Items (`accessPolicy\
+      \ using a common `searchCriteria` array format.\n\n### \U0001F4CC Visibility of Entities in
+       Discovery\nThe `/search` API returns only entities that are fully published and available 
+       for discovery. An entity is included in results when:<br>
+        - `publishStatus` is `ACTIVE`<br>
+        - `dataUploadStatus` is `true`<br>
+        - `itemStatus` is one of:<br>
+        - `VERIFIED`<br>
+        - `VERIFIED-SFTP`<br>
+        - `VERIFIED-API`\n\n #### \U0001F510 Private Items (`accessPolicy\
       \ = \"PRIVATE\"`)\nItems with `accessPolicy = \"PRIVATE\"` are **only visible to their owner** (based on the\nauthenticated\
       \ user’s token). For all other users—authenticated or not—private items are\nexcluded from search results.\n\nThese\
       \ visibility rules apply uniformly across all catalogue entity types such as\n`adex:DataBank`, `adex:AiModel`, and `adex:Apps`.\n\
@@ -192,9 +198,13 @@
     summary: Count matching catalogue entities by type
     description: 'Performs a count aggregation of catalogue entities based on the provided search filters.
 
-      This API returns counts grouped by `type.keyword`. Only items matching the search
-
-      criteria are counted. Typical use cases include dashboard count cards for Data Banks,
+      This API returns counts grouped by `type.keyword`. 
+      Only entities that are discoverable are included in the count. An entity is considered 
+      discoverable when:<br>
+      - `publishStatus` is `ACTIVE`<br>
+      - `dataUploadStatus` is `true`<br>
+      - `itemStatus` is a verified state (`VERIFIED`, `VERIFIED-SFTP`, or `VERIFIED-API`)<br>
+      Typical use cases include dashboard count cards for Data Banks,
 
       AI Models, and Applications.
 

@@ -103,6 +103,8 @@ public class Constants {
     public static final String REQUESTED = "REQUESTED";
     public static final String VERIFIED = "VERIFIED";
     public static final String UNVERIFIED = "UNVERIFIED";
+    public static final String VERIFIED_SFTP = "VERIFIED-SFTP";
+    public static final String VERIFIED_API = "VERIFIED-API";
     public static final String IN_ACTIVE = "INACTIVE";
     public static final String ITEM_CREATED_AT = "itemCreatedAt";
     public static final String LAST_UPDATED = "lastUpdated";

@@ -6,6 +6,8 @@ import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_AI_MODEL;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_APPS;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
 import static org.cdpg.dx.aaa.common.Constants.VERIFIED;
+import static org.cdpg.dx.aaa.common.Constants.VERIFIED_API;
+import static org.cdpg.dx.aaa.common.Constants.VERIFIED_SFTP;
 import static org.cdpg.dx.database.elastic.util.Constants.*;
 
 import java.util.*;
@@ -344,24 +346,27 @@ public class QueryDecoder {
   }
 
   private QueryModel buildActivePublishStatusQuery(List<String> itemTypes) {
+
+    QueryModel verifiedStatuses = new QueryModel(QueryType.BOOL);
+    verifiedStatuses.setShouldQueries(
+        List.of(
+            new QueryModel(QueryType.TERM)
+                .setQueryParameters(Map.of(FIELD, ITEM_STATUS + KEYWORD_KEY, VALUE, VERIFIED)),
+            new QueryModel(QueryType.TERM)
+                .setQueryParameters(Map.of(FIELD, ITEM_STATUS + KEYWORD_KEY, VALUE, VERIFIED_SFTP)),
+            new QueryModel(QueryType.TERM)
+                .setQueryParameters(
+                    Map.of(FIELD, ITEM_STATUS + KEYWORD_KEY, VALUE, VERIFIED_API))));
+    verifiedStatuses.setMinimumShouldMatch(String.valueOf(1));
+
     return new QueryModel(QueryType.BOOL)
         .setMustQueries(
             List.of(
                 new QueryModel(QueryType.TERMS)
-                    .setQueryParameters(
-                        Map.of(
-                            FIELD, TYPE_KEYWORD,
-                            VALUE, itemTypes)),
+                    .setQueryParameters(Map.of(FIELD, TYPE_KEYWORD, VALUE, itemTypes)),
                 new QueryModel(QueryType.TERM)
-                    .setQueryParameters(
-                        Map.of(
-                            FIELD, PUBLISH_STATUS + KEYWORD_KEY,
-                            VALUE, ACTIVE)),
-                new QueryModel(QueryType.TERM)
-                    .setQueryParameters(
-                        Map.of(
-                            FIELD, ITEM_STATUS + KEYWORD_KEY,
-                            VALUE, VERIFIED))));
+                    .setQueryParameters(Map.of(FIELD, PUBLISH_STATUS + KEYWORD_KEY, VALUE, ACTIVE)),
+                verifiedStatuses));
   }
 
   private QueryModel buildGetParentObjectInfoQuery(QueryDecoderRequestDTO request) {
