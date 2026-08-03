@@ -4257,11 +4257,7 @@ paths:
         range-based, and temporal-based searches using a common `searchCriteria` array format.
 
         ### 📌 Visibility of Entities in Discovery
-        The `/search` API returns only entities that are fully published and available for
-        discovery. An entity is included in results when:
-
-        - `publishStatus` is `ACTIVE`
-        - `dataUploadStatus` is `true`
+        The `/search` API returns only entities that are fully published and available for discovery. An entity is included in results when:<br> - `publishStatus` is `ACTIVE`<br> - `dataUploadStatus` is `true`<br> - `itemStatus` is one of:<br> - `VERIFIED`<br> - `VERIFIED-SFTP`<br> - `VERIFIED-API`
 
          #### 🔐 Private Items (`accessPolicy = "PRIVATE"`)
         Items with `accessPolicy = "PRIVATE"` are **only visible to their owner** (based on the
@@ -4628,8 +4624,7 @@ paths:
       summary: Count matching catalogue entities by type
       description: |
         Performs a count aggregation of catalogue entities based on the provided search filters.
-        This API returns counts grouped by `type.keyword`. Only items matching the search
-        criteria are counted. Typical use cases include dashboard count cards for Data Banks,
+        This API returns counts grouped by `type.keyword`. Only entities that are discoverable are included in the count. An entity is considered discoverable when:<br> - `publishStatus` is `ACTIVE`<br> - `dataUploadStatus` is `true`<br> - `itemStatus` is a verified state (`VERIFIED`, `VERIFIED-SFTP`, or `VERIFIED-API`)<br> Typical use cases include dashboard count cards for Data Banks,
         AI Models, and Applications.
 
         Aggregation is always done on `type.keyword`. The response contains a `result` array
