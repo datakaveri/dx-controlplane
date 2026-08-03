@@ -1,9 +1,11 @@
 package org.cdpg.dx.database.elastic.model;
 
 import static org.cdpg.dx.aaa.common.Constants.ACTIVE;
+import static org.cdpg.dx.aaa.common.Constants.ITEM_STATUS;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_AI_MODEL;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_APPS;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
+import static org.cdpg.dx.aaa.common.Constants.VERIFIED;
 import static org.cdpg.dx.database.elastic.util.Constants.*;
 
 import java.util.*;
@@ -352,7 +354,14 @@ public class QueryDecoder {
                             VALUE, itemTypes)),
                 new QueryModel(QueryType.TERM)
                     .setQueryParameters(
-                        Map.of(FIELD, PUBLISH_STATUS + KEYWORD_KEY, VALUE, ACTIVE))));
+                        Map.of(
+                            FIELD, PUBLISH_STATUS + KEYWORD_KEY,
+                            VALUE, ACTIVE)),
+                new QueryModel(QueryType.TERM)
+                    .setQueryParameters(
+                        Map.of(
+                            FIELD, ITEM_STATUS + KEYWORD_KEY,
+                            VALUE, VERIFIED))));
   }
 
   private QueryModel buildGetParentObjectInfoQuery(QueryDecoderRequestDTO request) {

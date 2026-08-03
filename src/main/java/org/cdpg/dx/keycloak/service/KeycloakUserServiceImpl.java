@@ -65,7 +65,7 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
             LOGGER.info("Password updated successfully for user '{}'", userId);
             return true;
           } catch (Exception e) {
-            LOGGER.error("Failed to update password for user '{}': {}", userId, e.getMessage(), e);
+            LOGGER.warn("Failed to update password for user '{}': {}", userId, e.getMessage(), e);
             throw new KeycloakServiceException("Failed to update password for user: " + userId, e);
           }
         });
@@ -78,7 +78,7 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
           try {
             return usersResource().count();
           } catch (Exception e) {
-            LOGGER.error(
+            LOGGER.warn(
                 "Failed to retrieve total user count from Keycloak: {}", e.getMessage(), e);
             throw new KeycloakServiceException("Failed to retrieve total user count", e);
           }
@@ -135,7 +135,7 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
                     })
                 .collect(Collectors.toList());
           } catch (Exception e) {
-            LOGGER.error("Keycloak failed to get users {} ", e.getMessage(), e);
+            LOGGER.warn("Keycloak failed to get users {} ", e.getMessage(), e);
             throw new KeycloakServiceException("Failed to retrieve users from Keycloak", e);
           }
         });
@@ -210,7 +210,7 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
                 usersResource().get(userId.toString()).roles().realmLevel().listEffective();
             return DxUserMapper.fromUserRepresentation(user, roles);
           } catch (Exception e) {
-            LOGGER.error("Failed to retrieve user with ID: {}", userId);
+            LOGGER.warn("Error retrieving user with ID {}: {}", userId, e.getMessage(), e);
             throw new KeycloakServiceException("Failed to retrieve user with ID: " + userId, e);
           }
         });
