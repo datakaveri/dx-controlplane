@@ -741,7 +741,7 @@ public class PolicyServiceImpl implements PolicyService {
                   return policies;
                 });
 
-    Future<PolicyDto> ruleFuture =
+    Future<List<PolicyDto>> ruleFuture =
         keycloakUserService
             .getUserById(UUID.fromString(userId))
             .compose(
@@ -757,16 +757,20 @@ public class PolicyServiceImpl implements PolicyService {
         .compose(
             composite -> {
               List<VerifyPolicyDto> policies = composite.resultAt(0);
-              PolicyDto rule = composite.resultAt(1);
+              List<PolicyDto> rules = composite.resultAt(1);
 
-              if (rule != null && !rule.toJson().isEmpty()) {
-                policies.add(
-                    new VerifyPolicyDto(
-                        rule.getPolicyId(),
-                        ResponseUrn.VERIFY_SUCCESS_URN.getUrn(),
-                        rule.getConstraints(),
-                        rule.getExpiryAt().toString(),
-                        rule.getCreatedAt().toString()));
+              if (rules != null && !rules.isEmpty()) {
+                policies.addAll(
+                    rules.stream()
+                        .map(
+                            rule ->
+                                new VerifyPolicyDto(
+                                    rule.getPolicyId(),
+                                    ResponseUrn.VERIFY_SUCCESS_URN.getUrn(),
+                                    rule.getConstraints(),
+                                    rule.getExpiryAt().toString(),
+                                    rule.getCreatedAt().toString()))
+                        .toList());
               }
 
               if (policies.isEmpty()) {
