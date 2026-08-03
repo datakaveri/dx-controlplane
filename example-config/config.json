@@ -153,7 +153,9 @@
       "required": [
         "databrokerOptions",
         "auditOptions",
-        "emailNotification"
+        "emailNotification",
+        "commonOptions",
+        "keycloakOptions"
       ]
     },
     {

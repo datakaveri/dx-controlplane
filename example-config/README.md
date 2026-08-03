@@ -28,8 +28,8 @@ reason the marker exists. Those live in the `org.cdpg.dx:dx-common` dependency.
 | **Config path in chart** | `Charts/api-layer/v2/controlplane/example-secrets/secrets/config.json`          |
 | **Config schema version** | `1.0` (top-level `version`)                                                     |
 | **Maintainer / point of contact** | Ananjay Kumar, Kranthi Guribilli                                                |
-| **Produced from** | [`CONFIG-DOC-TEMPLATE.md`](./CONFIG-DOC-TEMPLATE.md) |
-| **Last updated** | 2026-07-27                                                                      |
+| **Produced from** | [`CONFIG-DOC-TEMPLATE.md`](./CONFIG-DOC-TEMPLATE.md)                            |
+| **Last updated** | 2026-08-03                                                                      |
 
 Dependency note: `org.cdpg.dx:dx-common:1.0.0-SNAPSHOT` supplies `BaseDeployer`,
 `PostgresVerticle`, `ElasticsearchVerticle`, `BaseDataBrokerVerticle`, `AbstractApiServerVerticle`,
@@ -73,7 +73,7 @@ its own `required`. Adding a config key without adding its block to the consumin
 |---|---|
 | `PostgresVerticle` | `postgresOptions`, `commonOptions` |
 | `EmailVerticle` | `commonOptions`, `databrokerOptions`, `keycloakOptions`, `emailOptions`, `emailConfig` |
-| `DataBrokerVerticle` | `databrokerOptions`, `auditOptions`, `emailNotification` |
+| `DataBrokerVerticle` | `databrokerOptions`, `auditOptions`, `emailNotification`, `commonOptions`, `keycloakOptions` |
 | `ElasticsearchVerticle` | *(none — settings inlined in the module entry)* |
 | `ApiServerVerticle` | `postgresOptions`, `commonOptions`, `keycloakOptions`, `KYCOptions`, `emailOptions`, `emailConfig`, `jwtKeystoreOptions`, `databrokerOptions`, `auditOptions` |
 | `ApdApiServerVerticle` | same as above **plus** `emailNotification` |
