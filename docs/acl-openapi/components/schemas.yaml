@@ -4195,10 +4195,6 @@ conflictResponse:
     - type
     - title
     - detail
-  example:
-    type: urn:dx:aclApd:conflict
-    title: Conflict
-    detail: 'Active policy already exists for accessType(s): api, file'
 deletePolicyErrorResponse:
   title: deletePolicyErrorResponse
   type: object

@@ -83,4 +83,5 @@ public class DbConstants {
   public static final String ALLOWED_ORG_IDS = "allowedOrgIds";
   public static final String ALLOWED_USER_IDS = "allowedUserIds";
   public static final String ALLOWED_ROLES = "allowedRoles";
+  public static final String SUBJECTS = "subjects";
 }
