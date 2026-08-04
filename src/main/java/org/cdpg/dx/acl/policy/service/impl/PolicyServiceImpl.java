@@ -1,5 +1,6 @@
 package org.cdpg.dx.acl.policy.service.impl;
 
+import static org.apache.commons.collections.CollectionUtils.intersection;
 import static org.cdpg.dx.aaa.common.Constants.ACTIVE;
 import static org.cdpg.dx.aaa.common.Constants.DETAIL;
 import static org.cdpg.dx.aaa.common.Constants.ID;
@@ -18,6 +19,9 @@ import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_EMAIL_ID;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_FIRST_NAME;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.OWNER_LAST_NAME;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.USER_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ALLOWED_ORG_IDS;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ALLOWED_ROLES;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ALLOWED_USER_IDS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSTRAINTS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_FIRST_NAME;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_ID;
@@ -37,6 +41,7 @@ import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.LAST_NAME;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ORGANIZATION;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.OWNER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.POLICY_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.SUBJECTS;
 import static org.cdpg.dx.auth.model.DxRole.CONSUMER;
 import static org.cdpg.dx.auth.model.DxRole.PROVIDER;
 import static org.cdpg.dx.catalogueService.config.Constants.ASSET_NAME_KEY;
@@ -221,8 +226,115 @@ public class PolicyServiceImpl implements PolicyService {
                               + String.join(", ", conflictingAccessTypes)));
                 }
               }
+              // validate subjects against access_rule tables
+              List<Future> futures = new ArrayList<>();
 
-              return policyDao.insertPolicies(requests, userId);
+              for (CreatePolicyRequest request : requests) {
+
+                JsonObject constraints = request.getConstraints();
+
+                if (constraints == null || !constraints.containsKey(SUBJECTS)) {
+                  continue;
+                }
+
+                JsonObject subjects = constraints.getJsonObject(SUBJECTS, new JsonObject());
+
+                futures.add(
+                    accessRuleDao
+                        .findMatchingRule(
+                            request.getItemId(),
+                            getSubjectList(subjects, ALLOWED_USER_IDS),
+                            getSubjectList(subjects, ALLOWED_ORG_IDS),
+                            getSubjectList(subjects, ALLOWED_ROLES))
+                        .compose(
+                            existingPoliciesForSubjects -> {
+                              if (existingPoliciesForSubjects.isEmpty()) {
+                                return Future.succeededFuture();
+                              }
+
+                              Set<String> requestedTypes = extractAccessTypes(constraints);
+                              Set<String> conflictingAccessTypes = new HashSet<>();
+                              Set<String> conflictingUsers = new HashSet<>();
+                              Set<String> conflictingOrgs = new HashSet<>();
+                              Set<String> conflictingRoles = new HashSet<>();
+
+                              List<String> requestedUsers =
+                                  getSubjectList(subjects, ALLOWED_USER_IDS);
+                              List<String> requestedOrgs =
+                                  getSubjectList(subjects, ALLOWED_ORG_IDS);
+                              List<String> requestedRoles = getSubjectList(subjects, ALLOWED_ROLES);
+
+                              for (PolicyDto policy : existingPoliciesForSubjects) {
+
+                                Set<String> existingTypes =
+                                    extractAccessTypes(policy.getConstraints());
+                                existingTypes.retainAll(requestedTypes);
+
+                                if (existingTypes.isEmpty()) {
+                                  continue;
+                                }
+
+                                conflictingAccessTypes.addAll(existingTypes);
+
+                                JsonObject existingSubjects =
+                                    policy
+                                        .getConstraints()
+                                        .getJsonObject(SUBJECTS, new JsonObject());
+
+                                conflictingUsers.addAll(
+                                    intersection(
+                                        requestedUsers,
+                                        getSubjectList(existingSubjects, ALLOWED_USER_IDS)));
+
+                                conflictingOrgs.addAll(
+                                    intersection(
+                                        requestedOrgs,
+                                        getSubjectList(existingSubjects, ALLOWED_ORG_IDS)));
+
+                                conflictingRoles.addAll(
+                                    intersection(
+                                        requestedRoles,
+                                        getSubjectList(existingSubjects, ALLOWED_ROLES)));
+                              }
+
+                              if (!conflictingAccessTypes.isEmpty()) {
+
+                                StringBuilder message =
+                                    new StringBuilder(
+                                        "An active policy already exists for the following subject(s)");
+
+                                if (!conflictingUsers.isEmpty()) {
+                                  message
+                                      .append(" | users: ")
+                                      .append(String.join(", ", conflictingUsers));
+                                }
+
+                                if (!conflictingOrgs.isEmpty()) {
+                                  message
+                                      .append(" | orgs: ")
+                                      .append(String.join(", ", conflictingOrgs));
+                                }
+
+                                if (!conflictingRoles.isEmpty()) {
+                                  message
+                                      .append(" | roles: ")
+                                      .append(String.join(", ", conflictingRoles));
+                                }
+
+                                message
+                                    .append(" with accessType(s): ")
+                                    .append(String.join(", ", conflictingAccessTypes));
+
+                                return Future.failedFuture(
+                                    generateErrorResponse(CONFLICT, message.toString()));
+                              }
+
+                              return Future.succeededFuture();
+                            }));
+              }
+
+              return CompositeFuture.all(futures)
+                  .compose(v -> policyDao.insertPolicies(requests, userId));
             })
         .onSuccess(
             rowList -> {
@@ -345,6 +457,10 @@ public class PolicyServiceImpl implements PolicyService {
     }
 
     return Future.succeededFuture();
+  }
+
+  private List<String> getSubjectList(JsonObject subjects, String key) {
+    return subjects.getJsonArray(key, new JsonArray()).stream().map(Object::toString).toList();
   }
 
   public Future<List<ResourceObj>> checkForItemsInDb(
