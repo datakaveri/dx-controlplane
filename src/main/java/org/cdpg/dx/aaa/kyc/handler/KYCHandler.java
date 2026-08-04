@@ -49,7 +49,7 @@ public class KYCHandler {
             ctx.fail(new DxBadRequestException("Required parameter missing"));
             return;
         }
-        kycService.getKYCData(userId, code, codeVerifier)
+        kycService.getKYCData(userId, code, codeVerifier, user.principal().getString("name"))
                 .onSuccess(res -> {
                   AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
                     RoutingContextHelper.getRequestPath(ctx), "POST", "Verify KYC Data");
