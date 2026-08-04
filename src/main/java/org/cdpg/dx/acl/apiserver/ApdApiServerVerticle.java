@@ -16,6 +16,7 @@ import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.auth.factory.LocalAuthFactory;
 import org.cdpg.dx.auth.authentication.handler.AuthenticationHandler;
 import org.cdpg.dx.common.URNGenerator;
+import org.cdpg.dx.common.metrics.KeystoreExpiryMetrics;
 
 public class ApdApiServerVerticle extends AbstractApiServerVerticle {
 
@@ -54,6 +55,7 @@ public class ApdApiServerVerticle extends AbstractApiServerVerticle {
   protected Supplier<Future<JsonObject>> getJwksInternalProvider() {
     String keyStorePath = config().getString("keystorePath");
     String keyStorePassword = config().getString("keystorePassword");
+    KeystoreExpiryMetrics.bindToDefaultRegistry(vertx, keyStorePath, keyStorePassword);
     PublicService publicService = new PublicServiceImpl(keyStorePath, keyStorePassword, vertx);
     return () -> Future.succeededFuture(publicService.generateJwks());
   }
