@@ -218,6 +218,113 @@ public class AccessRuleDaoImpl implements AccessRuleDao {
         .onFailure(err -> LOGGER.error("findMatchingRule failed", err));
   }
 
+  @Override
+  public Future<List<PolicyDto>> findMatchingRule(
+      UUID itemId, List<String> users, List<String> orgs, List<String> roles) {
+
+    List<Join> joins =
+        List.of(
+            new Join(Join.JoinType.INNER, POLICY_TABLE, "P", "R.policy_id", "_id"),
+            new Join(Join.JoinType.LEFT, ACSESS_RULE_ALLOWED_USER_TABLE, "U", "R._id", DB_RULE_ID),
+            new Join(Join.JoinType.LEFT, ACCESS_RULE_ALLOWED_ORG_TABLE, "O", "R._id", DB_RULE_ID),
+            new Join(
+                Join.JoinType.LEFT, ACCESS_RULE_ALLOWED_ROLE_TABLE, "RL", "R._id", DB_RULE_ID));
+
+    Condition itemCondition =
+        new Condition("R.item_id", Condition.Operator.EQUALS, List.of(itemId.toString()));
+
+    Condition statusCondition =
+        new Condition(
+            List.of(
+                new Condition("R.status", Condition.Operator.EQUALS, List.of(ACTIVE)),
+                new Condition(
+                    "R.expiry_at",
+                    Condition.Operator.GREATER,
+                    List.of(LocalDateTime.now().toString()))),
+            Condition.LogicalOperator.AND);
+
+    // ---------------- Users / Orgs ----------------
+
+    List<Condition> subjectConditions = new ArrayList<>();
+
+    if (users != null && !users.isEmpty()) {
+      subjectConditions.add(
+          new Condition("U.user_id", Condition.Operator.IN, new ArrayList<>(users)));
+    }
+
+    if (orgs != null && !orgs.isEmpty()) {
+      subjectConditions.add(
+          new Condition("O.org_id", Condition.Operator.IN, new ArrayList<>(orgs)));
+    }
+
+    Condition subjectGroup = null;
+    if (!subjectConditions.isEmpty()) {
+      subjectGroup = new Condition(subjectConditions, Condition.LogicalOperator.OR);
+    }
+
+    // ---------------- Roles ----------------
+
+    Condition roleGroup;
+
+    if (roles != null && !roles.isEmpty()) {
+
+      Condition roleInCondition =
+          new Condition("RL.role", Condition.Operator.IN, new ArrayList<>(roles));
+
+      Condition roleIsNullCondition = new Condition("RL.role", Condition.Operator.IS_NULL, null);
+
+      roleGroup =
+          new Condition(
+              List.of(roleInCondition, roleIsNullCondition), Condition.LogicalOperator.OR);
+
+    } else {
+
+      roleGroup = new Condition("RL.role", Condition.Operator.IS_NULL, null);
+    }
+
+    // ---------------- Final Condition ----------------
+
+    List<Condition> conditions = new ArrayList<>();
+    conditions.add(itemCondition);
+    conditions.add(statusCondition);
+
+    if (subjectGroup != null) {
+      conditions.add(subjectGroup);
+    }
+
+    conditions.add(roleGroup);
+
+    Condition finalCondition = new Condition(conditions, Condition.LogicalOperator.AND);
+
+    SelectQuery selectQuery =
+        new SelectQuery()
+            .setTable(ACCESS_RULE_TABLE)
+            .setTableAlias("R")
+            .setColumns(
+                List.of(
+                    "P._id",
+                    "P.request_id",
+                    "P.policy_type",
+                    "P.item_id",
+                    "P.status",
+                    "P.expiry_at",
+                    "P.constraints",
+                    "P.additional_info",
+                    "P.created_at",
+                    "P.updated_at",
+                    "P.consumer_id",
+                    "P.owner_id"))
+            .setJoins(joins)
+            .setCondition(finalCondition);
+
+    return postgresService
+        .select(selectQuery, false)
+        .map(
+            result ->
+                result.getRows().stream().map(row -> new PolicyDto((JsonObject) row)).toList())
+        .onFailure(err -> LOGGER.error("findMatchingRule failed", err));
+  }
+
   // ============================================================
   // CREATE RULE
   // ============================================================

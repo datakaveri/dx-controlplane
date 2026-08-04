@@ -297,6 +297,33 @@
           application/json:
             schema:
               $ref: ../components/schemas.yaml#/conflictResponse
+            examples:
+              duplicateAccessType:
+                summary: Active policy already exists for the requested accessType
+                value:
+                  type: urn:dx:aclApd:conflict
+                  title: Conflict
+                  detail: "Active policy already exists for accessType(s): api, file."
+
+              duplicateSubjectPolicy:
+                summary: Active policy already exists for the requested organisations and roles
+                value:
+                  type: urn:dx:aclApd:conflict
+                  title: Conflict
+                  detail: >-
+                    An active policy already exists for the following subject(s):
+                    orgs: a14b4e80-d6d7-4722-a0d5-e515f381502f |
+                    roles: provider with accessType(s): file.
+
+              duplicateUserPolicy:
+                summary: Active policy already exists for the requested users
+                value:
+                  type: urn:dx:aclApd:conflict
+                  title: Conflict
+                  detail: >-
+                    An active policy already exists for the following subject(s):
+                    users: 7fd5aef2-1234-4d1c-8a89-12c0f1b23abc
+                    with accessType(s): api, file.
     security:
       - authorization: []
     x-codeSamples:
