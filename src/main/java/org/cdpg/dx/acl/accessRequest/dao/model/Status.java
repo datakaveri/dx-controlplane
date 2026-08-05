@@ -4,7 +4,8 @@ public enum Status {
   GRANTED("GRANTED"),
   PENDING("PENDING"),
   REJECTED("REJECTED"),
-  WITHDRAWN("WITHDRAWN");
+  WITHDRAWN("WITHDRAWN"),
+  REVOKED("REVOKED");
 
   private final String status;
 
