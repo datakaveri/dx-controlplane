@@ -640,6 +640,7 @@ paths:
               - GRANTED
               - REJECTED
               - WITHDRAWN
+              - REVOKED
         - name: assetType
           in: query
           description: Type of the asset for which the access request is made. Displays all the access requests if assetType is not specified
@@ -788,6 +789,7 @@ paths:
               - GRANTED
               - REJECTED
               - WITHDRAWN
+              - REVOKED
         - name: assetType
           in: query
           description: Type of the asset for which the access request is made. Displays all the access requests if assetType is not specified
@@ -903,6 +905,7 @@ paths:
               - GRANTED
               - REJECTED
               - WITHDRAWN
+              - REVOKED
         - name: assetType
           in: query
           description: Type of the asset for which the access request is made. Displays all the access requests if assetType is not specified
@@ -1023,6 +1026,7 @@ paths:
               - GRANTED
               - REJECTED
               - WITHDRAWN
+              - REVOKED
         - name: assetType
           in: query
           description: Type of the asset for which the access request is made. Displays all the access requests if assetType is not specified
@@ -1169,6 +1173,7 @@ paths:
               - GRANTED
               - REJECTED
               - WITHDRAWN
+              - REVOKED
         - name: assetType
           in: query
           description: Type of the asset for which the access request is made. Displays all the access requests if assetType is not specified
@@ -1449,6 +1454,7 @@ paths:
               - GRANTED
               - REJECTED
               - WITHDRAWN
+              - REVOKED
         - name: assetType
           in: query
           description: Type of the asset for which the access request is made. Displays all the access requests if assetType is not specified

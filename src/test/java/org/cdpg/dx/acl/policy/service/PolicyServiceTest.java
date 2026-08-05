@@ -19,6 +19,7 @@ import java.util.UUID;
 import org.cdpg.dx.aaa.common.ResponseModel;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
+import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.model.PolicyDto;
 import org.cdpg.dx.acl.policy.dao.model.VerifyPolicyDto;
@@ -44,6 +45,7 @@ class PolicyServiceTest {
 
   @Mock private PolicyDao policyDao;
   @Mock private AccessRuleDao accessRuleDao;
+  @Mock private AccessRequestDao accessRequestDao;
   @Mock private ItemService itemService;
   @Mock private KeycloakUserService keycloakUserService;
 
@@ -61,7 +63,7 @@ class PolicyServiceTest {
   @BeforeEach
   void setUp() {
     policyService = new PolicyServiceImpl(itemService, keycloakUserService, policyDao,
-        accessRuleDao, APD_URL);
+        accessRuleDao, accessRequestDao, APD_URL);
   }
 
   private DxUser createProviderUser(UUID sub, UUID orgId) {
