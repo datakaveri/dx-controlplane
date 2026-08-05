@@ -20,9 +20,7 @@ public final class ActivityApiParamConstants {
           Map.entry("action", ACTION),
           Map.entry("logType", LOG_TYPE),
           Map.entry("sandboxType", SANDBOX_TYPE),
-          Map.entry("userId", USER_ID),
-          Map.entry("time", CREATED_AT),
-          Map.entry("endtime", CREATED_AT));
+          Map.entry("userId", USER_ID));
   // -------------------------------------------------
   // Sort fields
   // -------------------------------------------------
