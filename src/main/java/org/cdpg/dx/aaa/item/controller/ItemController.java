@@ -54,6 +54,7 @@ import org.cdpg.dx.aaa.item.service.ItemRegistryService;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ScriptGenerationService;
 import org.cdpg.dx.aaa.item.util.*;
+import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.service.PolicyService;
 import org.cdpg.dx.acl.policy.service.impl.PolicyServiceImpl;
@@ -113,6 +114,7 @@ public class ItemController implements ApiController {
       EmailComposer emailComposer,
       PolicyDao policyDao,
       AccessRuleDao accessRuleDao,
+      AccessRequestDao accessRequestDao,
       String apdURL) {
     this.auditingHandler = auditingHandler;
     this.itemService = itemService;
@@ -132,7 +134,8 @@ public class ItemController implements ApiController {
     this.keycloakUserService = keycloakUserService;
     this.emailComposer = emailComposer;
     this.policyService =
-        new PolicyServiceImpl(itemService, keycloakUserService, policyDao, accessRuleDao, apdURL);
+        new PolicyServiceImpl(itemService, keycloakUserService, policyDao, accessRuleDao,
+            accessRequestDao, apdURL);
   }
 
   @Override
