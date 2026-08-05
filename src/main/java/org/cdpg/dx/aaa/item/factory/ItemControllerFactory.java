@@ -1,5 +1,8 @@
 package org.cdpg.dx.aaa.item.factory;
 
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.REQUEST_TABLE;
+
 import io.vertx.ext.web.client.WebClient;
 import org.cdpg.dx.aaa.connector.service.ConnectorService;
 import org.cdpg.dx.aaa.delegation.ItemOwnershipValidator;
@@ -12,6 +15,9 @@ import org.cdpg.dx.aaa.item.service.ItemRegistryServiceImpl;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.aaa.item.service.central.CentralItemServiceImpl;
+import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
+import org.cdpg.dx.acl.accessRequest.dao.impl.AccessRequestDaoImpl;
+import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
 import org.cdpg.dx.acl.rule.dao.AccessRuleDao;
@@ -51,6 +57,8 @@ public class ItemControllerFactory {
       EmailComposer emailComposer) {
     PolicyDao policyDao = new PolicyDaoImpl(pgService);
     AccessRuleDao accessRuleDao = new AccessRuleDaoImpl(pgService);
+    AccessRequestDao accessRequestDao =
+        new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
     ItemService itemService =
         new ItemServiceImpl(
             elasticsearchService,
@@ -98,6 +106,7 @@ public class ItemControllerFactory {
         emailComposer,
         policyDao,
         accessRuleDao,
+        accessRequestDao,
         apdURL);
   }
 }

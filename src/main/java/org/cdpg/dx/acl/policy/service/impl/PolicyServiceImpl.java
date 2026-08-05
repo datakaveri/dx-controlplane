@@ -4,6 +4,7 @@ import static org.apache.commons.collections.CollectionUtils.intersection;
 import static org.cdpg.dx.aaa.common.Constants.ACTIVE;
 import static org.cdpg.dx.aaa.common.Constants.DETAIL;
 import static org.cdpg.dx.aaa.common.Constants.ID;
+import static org.cdpg.dx.aaa.common.Constants.IN_ACTIVE;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_AI_MODEL;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_APPS;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
@@ -33,6 +34,7 @@ import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_EXPIRY_AT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ITEM_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_OWNER_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.EMAIL;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.FIRST_NAME;
@@ -70,8 +72,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
+import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
 import org.cdpg.dx.acl.accessRequest.dao.config.DbConstants;
 import org.cdpg.dx.acl.accessRequest.dao.model.AssetType;
+import org.cdpg.dx.acl.accessRequest.dao.model.Status;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.model.PolicyDto;
 import org.cdpg.dx.acl.policy.dao.model.VerifyPolicyDto;
@@ -100,6 +104,7 @@ public class PolicyServiceImpl implements PolicyService {
   private final KeycloakUserService keycloakUserService;
   private final PolicyDao policyDao;
   private final AccessRuleDao accessRuleDao;
+  private final AccessRequestDao accessRequestDao;
   private final String apdUrl;
 
   public PolicyServiceImpl(
@@ -107,12 +112,14 @@ public class PolicyServiceImpl implements PolicyService {
       KeycloakUserService keycloakUserService,
       PolicyDao policyDao,
       AccessRuleDao accessRuleDao,
+      AccessRequestDao accessRequestDao,
       String apdUrl) {
     this.itemService = itemService;
     this.keycloakUserService = keycloakUserService;
     this.accessRuleDao = accessRuleDao;
     this.apdUrl = apdUrl;
     this.policyDao = policyDao;
+    this.accessRequestDao = accessRequestDao;
   }
 
   @Override
@@ -794,36 +801,70 @@ public class PolicyServiceImpl implements PolicyService {
               }
 
               // Passed all checks → proceed to delete
-              Promise<Void> promise = Promise.promise();
-              policyDao
+              return policyDao
                   .deActivatePolicy(UUID.fromString(policyId))
-                  .onFailure(
-                      err -> {
-                        LOGGER.debug("query failed: {}", err.getLocalizedMessage());
-                        promise.fail(
-                            getFailureResponse(
-                                new JsonObject(), FAILURE_MESSAGE + ", update query failed"));
-                      })
-                  .onSuccess(
+                  .compose(
                       delResult -> {
                         if (delResult.getRows().isEmpty()) {
-                          promise.fail(
+                          return Future.failedFuture(
                               getFailureResponse(
-                                  new JsonObject(), FAILURE_MESSAGE + " , as policy is expired"));
-                        } else {
-                          LOGGER.info("query succeeded");
-                          JsonObject responseJson = delResult.getRows().getJsonObject(0);
-                          LOGGER.debug("Delete policy succeeded: {}", responseJson);
-                          promise.complete();
+                                  new JsonObject(), FAILURE_MESSAGE + ", as policy is expired"));
                         }
-                      });
-              return deactivatePolicyLifecycle(UUID.fromString(policyId));
+
+                        LOGGER.info("Policy deleted successfully");
+                        LOGGER.debug(
+                            "Delete policy succeeded: {}", delResult.getRows().getJsonObject(0));
+
+                        return deactivatePolicyLifecycle(
+                            UUID.fromString(policyId),
+                            row.getString(DB_REQUEST_ID) == null
+                                ? null
+                                : UUID.fromString(row.getString(DB_REQUEST_ID)));
+                      })
+                  .recover(
+                      err ->
+                          Future.failedFuture(
+                              getFailureResponse(
+                                  new JsonObject(), FAILURE_MESSAGE + ", update query failed")));
             });
   }
 
-  private Future<Void> deactivatePolicyLifecycle(UUID policyId) {
+  private Future<Void> deactivatePolicyLifecycle(UUID policyId, UUID requestId) {
 
-    return accessRuleDao.updateStatusByPolicyId(policyId, "INACTIVE").mapEmpty();
+    return accessRuleDao
+        .updateStatusByPolicyId(policyId, IN_ACTIVE)
+        .compose(
+            v -> {
+              if (requestId == null) {
+                LOGGER.debug(
+                    "Policy {} is not associated with an access request. Skipping request status update.",
+                    policyId);
+                return Future.succeededFuture();
+              }
+
+              Map<String, Object> conditions = Map.of(DB_REQUEST_ID, requestId.toString());
+              Map<String, Object> updates = Map.of(DB_STATUS, Status.REVOKED.getStatus());
+
+              LOGGER.info(
+                  "Updating access request {} status to REVOKED after policy {} deletion.",
+                  requestId,
+                  policyId);
+
+              return accessRequestDao
+                  .update(conditions, updates)
+                  .onSuccess(
+                      ignored ->
+                          LOGGER.info(
+                              "Successfully updated access request {} status to REVOKED.",
+                              requestId))
+                  .onFailure(
+                      err ->
+                          LOGGER.error(
+                              "Failed to update access request {} status to REVOKED.",
+                              requestId,
+                              err))
+                  .mapEmpty();
+            });
   }
 
   /** Verify if an ACTIVE policy exists for a given user/item pair. */
