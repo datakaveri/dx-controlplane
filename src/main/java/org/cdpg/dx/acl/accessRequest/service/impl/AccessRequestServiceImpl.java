@@ -236,7 +236,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
 
               if (itemResponse == null) {
                 return Future.failedFuture(
-                    new DxForbiddenException("Item not found for ID: " + itemId));
+                    new DxNotFoundException("Item not found for ID: " + itemId));
               }
 
               JsonArray resourceServers =
