@@ -280,7 +280,7 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
         new SelectQuery()
             .setTable(POLICY_TABLE)
             .setTableAlias("p")
-            .setColumns(List.of("p.owner_id", "p.status", "p.item_organization_id"))
+            .setColumns(List.of("p.owner_id", "p.status", "p.item_organization_id", "p.request_id"))
             .setCondition(condition);
 
     return postgresService.select(query, false);

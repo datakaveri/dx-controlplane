@@ -2,6 +2,8 @@ package org.cdpg.dx.acl.policy.factory;
 
 import static org.cdpg.dx.aaa.common.Constants.DELETED_DOCS_INDEX;
 import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.REQUEST_TABLE;
 import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
 
 import io.vertx.core.json.JsonObject;
@@ -9,6 +11,9 @@ import io.vertx.ext.web.client.WebClient;
 import java.util.logging.Logger;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
+import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
+import org.cdpg.dx.acl.accessRequest.dao.impl.AccessRequestDaoImpl;
+import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
 import org.cdpg.dx.acl.policy.controller.PolicyController;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
@@ -35,6 +40,8 @@ public class PolicyFactory {
       JsonObject config) {
     PolicyDao policyDao = new PolicyDaoImpl(pgService);
     AccessRuleDao accessRuleDao = new AccessRuleDaoImpl(pgService);
+    AccessRequestDao accessRequestDao =
+        new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
     ItemService itemService =
         new ItemServiceImpl(
             elasticsearchService,
@@ -48,7 +55,8 @@ public class PolicyFactory {
 
     PolicyService policyService =
         new PolicyServiceImpl(
-            itemService, keycloakUserService, policyDao, accessRuleDao, config.getString(APD_URL));
+            itemService, keycloakUserService, policyDao, accessRuleDao,
+            accessRequestDao, config.getString(APD_URL));
 
     return new PolicyController(
         policyService, pgService, auditingHandler, keycloakUserService, urnGenerator, config);

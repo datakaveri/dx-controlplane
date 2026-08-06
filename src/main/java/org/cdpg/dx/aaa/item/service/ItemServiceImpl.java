@@ -43,6 +43,9 @@ import org.cdpg.dx.aaa.item.model.Item;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.item.util.ItemFactory;
 import org.cdpg.dx.aaa.item.util.PatchItemRequest;
+import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
+import org.cdpg.dx.acl.accessRequest.dao.impl.AccessRequestDaoImpl;
+import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
 import org.cdpg.dx.acl.accessRequest.dao.model.AssetType;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.model.VerifyPolicyDto;
@@ -85,10 +88,12 @@ public class ItemServiceImpl implements ItemService {
       String docIndex, String deletedDocsIndex,
       String apdURL) {
     this.accessRuleDao = new AccessRuleDaoImpl(postgresService);
+    AccessRequestDao accessRequestDao =
+        new AccessRequestDaoImpl(postgresService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
     this.elasticsearchService = elasticsearchService;
     this.deletedDocsIndex = deletedDocsIndex;
     PolicyService policyService = new PolicyServiceImpl(this, keycloakUserService, policyDao,
-        accessRuleDao, apdURL);
+        accessRuleDao, accessRequestDao, apdURL);
     this.policyVerifyService = new PolicyVerifyServiceImpl(policyService, webClient, apdURL);
     this.keycloakUserService = keycloakUserService;
     this.client = webClient;

@@ -234,6 +234,11 @@ public class AccessRequestServiceImpl implements AccessRequestService {
               JsonObject itemResponse = (JsonObject) ctx.get("itemResponse");
               UUID itemId = (UUID) ctx.get("itemId");
 
+              if (itemResponse == null) {
+                return Future.failedFuture(
+                    new DxNotFoundException("Item not found for ID: " + itemId));
+              }
+
               JsonArray resourceServers =
                   itemResponse.getJsonArray("resourceServer", new JsonArray());
 
