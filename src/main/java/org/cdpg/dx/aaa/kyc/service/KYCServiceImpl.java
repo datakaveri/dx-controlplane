@@ -47,7 +47,7 @@ public class KYCServiceImpl implements KYCService {
   }
 
   @Override
-  public Future<JsonObject> getKYCData(UUID userId, String authCode, String codeVerifier) {
+  public Future<JsonObject> getKYCData(UUID userId, String authCode, String codeVerifier, String userName) {
     MultiMap tokenRequestForm = MultiMap.caseInsensitiveMultiMap()
       .add("grant_type", GRANT_TYPE)
       .add("client_id", config.getString(CONFIG_CLIENT_ID))
@@ -58,10 +58,12 @@ public class KYCServiceImpl implements KYCService {
 
     return webClient.postAbs(config.getString(CONFIG_TOKEN_URL))
       .sendForm(tokenRequestForm)
-      .compose(tokenResponse -> handleTokenResponse(tokenResponse.bodyAsJsonObject(), userId.toString(), codeVerifier));
+      .compose(tokenResponse -> handleTokenResponse(tokenResponse.bodyAsJsonObject(), userId, userName));
   }
 
-  private Future<JsonObject> handleTokenResponse(JsonObject tokenResponse, String userId, String codeVerifier) {
+  // Marks the user verified/unverified based solely on the `eaadhaar` flag from the
+  // DigiLocker token response — no Aadhaar XML fetch, no duplicate-Aadhaar check.
+  private Future<JsonObject> handleTokenResponse(JsonObject tokenResponse, UUID userId, String userName) {
     String accessToken = tokenResponse.getString("access_token");
     String aadhaarAvailable = tokenResponse.getString("eaadhaar");
 
@@ -70,11 +72,21 @@ public class KYCServiceImpl implements KYCService {
       return Future.failedFuture(new DxValidationException("Missing access token from DigiLocker"));
     }
 
-    if (!"Y".equalsIgnoreCase(aadhaarAvailable)) {
-      return Future.failedFuture(new DxValidationException("Aadhaar details not available for this user in DigiLocker"));
-    }
+    boolean verified = "Y".equalsIgnoreCase(aadhaarAvailable);
 
-    return fetchAadhaarDetails(accessToken, userId, codeVerifier);
+    Future<Boolean> keycloakUpdate = verified
+      ? keycloakUserService.setKycVerifiedTrueWithData(userId, userName, null)
+      : keycloakUserService.setKycVerifiedFalse(userId);
+
+    return keycloakUpdate.compose(success -> {
+      if (!success) {
+        String msg = "Failed to update KYC status in Keycloak for userId: " + userId;
+        LOGGER.error(msg);
+        return Future.failedFuture(new DxValidationException(msg));
+      }
+      LOGGER.info("KYC status set to {} for userId: {}", verified, userId);
+      return Future.succeededFuture(new JsonObject().put("kycVerified", verified));
+    });
   }
 
   private Future<JsonObject> fetchAadhaarDetails(String accessToken, String userId, String codeVerifier) {
