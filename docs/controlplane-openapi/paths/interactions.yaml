@@ -263,14 +263,16 @@
 /iudx/v2/user/feedback:
   post:
     tags:
-    - User Interactions
+      - User Interactions
     summary: Post user feedback on entity
-    description: 'Submit user feedback for a specific data asset, including an optional star rating (1-5) and/or a structured action subtype with associated data. The user must have already interacted with the asset (e.g., via download or API access). Requires an authenticated user token.
-
-      '
+    description: >
+      Submit user feedback for a specific data asset, including an optional star
+      rating (1-5) and/or a structured action subtype with associated data. The
+      user must have already interacted with the asset (e.g., via download or API
+      access). Requires an authenticated user token.
     operationId: post-user-feedback
     security:
-    - authorization: []
+      - authorization: [ ]
     requestBody:
       required: true
       content:
@@ -278,23 +280,38 @@
           schema:
             type: object
             required:
-            - asset_id
+              - assetId
+              - assetType
             properties:
-              asset_id:
+              assetId:
                 type: string
                 format: uuid
                 description: UUID of the asset to provide feedback on
-              entity_rating:
+              assetType:
+                type: string
+                description: Type of the asset to provide feedback on
+                enum:
+                  - DATABANK
+                  - AI_MODEL
+                  - USECASE
+              entityRating:
                 type: integer
                 minimum: 1
                 maximum: 5
                 description: Star rating from 1 (lowest) to 5 (highest)
-              action_subtype:
+              actionSubtype:
                 type: string
                 description: Structured feedback category (e.g., data quality, documentation)
-              action_subdata:
+              actionSubdata:
                 type: object
                 description: Additional structured data associated with the feedback
+          example:
+            assetId: "9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8"
+            assetType: "DATABANK"
+            entityRating: 4
+            actionSubtype: "data_quality"
+            actionSubdata:
+              comment: "The data is accurate and well documented."
     responses:
       '200':
         description: Feedback successfully recorded
@@ -346,21 +363,21 @@
     security:
     - authorization: []
     parameters:
-    - name: user_id
+    - name: userId
       in: query
       description: Filter by user UUID
       required: false
       schema:
         type: string
         format: uuid
-    - name: asset_id
+    - name: assetId
       in: query
       description: Filter by asset UUID
       required: false
       schema:
         type: string
         format: uuid
-    - name: action_subtype
+    - name: actionSubtype
       in: query
       description: Filter by action subtype (repeatable)
       required: false
@@ -394,14 +411,15 @@
     x-codeSamples:
     - lang: cURL
       label: Get user feedback
-      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/user/feedback?asset_id=811e9876-9381-4a25-8ad1-e8b289616ab8&action_subtype=bookmark&page=1&size=10''
+      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/user/feedback?assetId=811e9876-9381-4a25-8ad1-e8b289616ab8&actionSubtype=bookmark&page=1&size=10''
 
         '
   delete:
     tags:
     - User Interactions
     summary: Delete user feedback
-    description: 'Clears the feedback fields (entity_rating, action_subtype, action_subdata) for a specific feedback entry.
+    description: 'Clears the feedback fields (entityRating, actionSubtype, actionSubdata) for a
+     specific feedback entry.
       The record itself is retained. User should be the one who has already interacted with the asset before.
 
       '
@@ -419,6 +437,21 @@
     responses:
       '200':
         description: Feedback fields cleared successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                detail:
+                  type: string
+            example:
+              type: "urn:dx:controlPlane:success"
+              title: "Success"
+              detail: "Interaction deleted successfully"
       '400':
         description: Bad Request
         content:
@@ -466,23 +499,30 @@
           schema:
             type: object
             required:
-            - asset_id
+              - assetId
+              - type
             properties:
-              asset_id:
+              assetId:
                 type: string
                 format: uuid
                 description: UUID of the asset
               type:
                 type: string
                 enum:
-                - FAQ
-                - FEEDBACK
-                - INFO
-                - DATA_DESCRIPTION
-                description: Type of feedback
+                  - FAQ
+                  - FEEDBACK
+                  - INFO
+                  - DATA_DESCRIPTION
+                description: Type of provider feedback
               data:
                 type: object
-                description: Structured feedback data (content varies by feedback type)
+                description: Structured feedback data. Content varies by feedback type.
+          example:
+            assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
+            type: FAQ
+            data:
+              question: How frequently is this dataset updated?
+              answer: The dataset is updated daily.
     responses:
       '200':
         description: Feedback successfully recorded
@@ -534,14 +574,14 @@
     security:
     - authorization: []
     parameters:
-    - name: user_id
+    - name: userId
       in: query
       description: Filter by user UUID
       required: false
       schema:
         type: string
         format: uuid
-    - name: asset_id
+    - name: assetId
       in: query
       description: Filter by asset UUID
       required: false
@@ -592,7 +632,7 @@
     x-codeSamples:
     - lang: cURL
       label: Get provider feedback
-      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/provider/feedback?asset_id=811e9876-9381-4a25-8ad1-e8b289616ab8&type=bookmark&page=1&size=10''
+      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/provider/feedback?assetId=811e9876-9381-4a25-8ad1-e8b289616ab8&type=bookmark&page=1&size=10''
 
         '
   delete:
@@ -617,6 +657,21 @@
     responses:
       '200':
         description: Feedback fields cleared successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                title:
+                  type: string
+                detail:
+                  type: string
+            example:
+              type: "urn:dx:controlPlane:success"
+              title: "Success"
+              detail: "Interaction deleted successfully"
       '400':
         description: Bad Request
         content:

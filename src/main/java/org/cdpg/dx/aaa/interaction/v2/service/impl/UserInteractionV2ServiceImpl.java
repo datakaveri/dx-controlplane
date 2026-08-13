@@ -200,7 +200,7 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
   @Override
   public Future<UserFeedback> postUserFeedback(UserFeedback request) {
     LOGGER.info("Inside service imple method - post user feedbaack");
-    return userFeedbackDao.updateFeedback(request);
+    return userFeedbackDao.postFeedback(request);
   }
 
   @Override

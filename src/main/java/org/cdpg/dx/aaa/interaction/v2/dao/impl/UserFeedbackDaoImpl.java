@@ -3,13 +3,15 @@ package org.cdpg.dx.aaa.interaction.v2.dao.impl;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.interaction.dao.impl.UserInteractionDaoImpl;
 import org.cdpg.dx.aaa.interaction.v2.dao.UserFeedbackDao;
-import org.cdpg.dx.aaa.interaction.v2.enums.ProviderFeedbackType;
-import org.cdpg.dx.aaa.interaction.v2.model.ProviderFeedback;
-import org.cdpg.dx.aaa.interaction.v2.model.ProviderFeedbackPaginatedResponse;
 import org.cdpg.dx.aaa.interaction.v2.model.UserFeedback;
 import org.cdpg.dx.aaa.interaction.v2.model.UserFeedbackPaginatedResponse;
 import org.cdpg.dx.common.request.PaginatedRequest;
@@ -17,13 +19,6 @@ import org.cdpg.dx.common.util.PaginationInfo;
 import org.cdpg.dx.database.postgres.base.dao.AbstractBaseDAO;
 import org.cdpg.dx.database.postgres.models.*;
 import org.cdpg.dx.database.postgres.service.PostgresService;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback>
   implements UserFeedbackDao {
@@ -34,36 +29,116 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback>
     super(postgresService, "user_interactions", "id", UserFeedback::fromJson);
   }
 
+  @Override
+  public Future<UserFeedback> postFeedback(UserFeedback userFeedback) {
+    JsonObject json = userFeedback.toJson();
+
+    String userId = json.getString("userId");
+    String assetId = json.getString("assetId");
+
+    boolean hasSubtype =
+        json.containsKey("actionSubtype") && json.getString("actionSubtype") != null;
+
+    boolean hasSubdata =
+        json.containsKey("actionSubdata") && json.getJsonObject("actionSubdata") != null;
+
+    if (hasSubtype && !hasSubdata) {
+      return Future.failedFuture(
+          new IllegalArgumentException(
+              "actionSubdata is required when actionSubtype is provided"));
+    }
+
+    if (!hasSubtype && hasSubdata) {
+      return Future.failedFuture(
+          new IllegalArgumentException(
+              "actionSubtype is required when actionSubdata is provided"));
+    }
+
+    Integer rating = json.getInteger("entityRating");
+
+    if (rating != null && (rating < 1 || rating > 5)) {
+      return Future.failedFuture(
+          new IllegalArgumentException("entityRating must be between 1 and 5"));
+    }
+
+    var map = userFeedback.toNonEmptyFieldsMap();
+
+    Condition condition =
+        new Condition(
+            List.of(
+                new Condition("user_id", Condition.Operator.EQUALS, List.of(userId)),
+                new Condition("asset_id", Condition.Operator.EQUALS, List.of(assetId))),
+            Condition.LogicalOperator.AND);
+
+    SelectQuery selectQuery =
+        new SelectQuery()
+            .setTable("user_interactions")
+            .setColumns(List.of("*"))
+            .setCondition(condition);
+
+    return postgresService
+        .select(selectQuery, true)
+        .compose(
+            result -> {
+              if (!result.isRowsAffected()) {
+                // No existing feedback → INSERT
+                InsertQuery insertQuery =
+                    new InsertQuery(
+                        "user_interactions", List.copyOf(map.keySet()), List.copyOf(map.values()));
+
+                return postgresService
+                    .insert(insertQuery)
+                    .map(res -> UserFeedback.fromJson(res.toJson()));
+
+              } else {
+                // Existing feedback → UPDATE
+                UpdateQuery updateQuery =
+                    new UpdateQuery(
+                        "user_interactions",
+                        List.copyOf(map.keySet()),
+                        List.copyOf(map.values()),
+                        condition,
+                        null,
+                        null);
+
+                return postgresService
+                    .update(updateQuery)
+                    .map(res -> UserFeedback.fromJson(res.toJson()));
+              }
+            });
+  }
 
   @Override
   public Future<UserFeedback> updateFeedback(UserFeedback userFeedback) {
     JsonObject json = userFeedback.toJson();
 
-    String userId = json.getString("user_id");
-    String assetId = json.getString("asset_id");
+    String userId = json.getString("userId");
+    String assetId = json.getString("assetId");
 
-    String subtype = json.getString("action_subtype");
-    JsonObject subdata = json.getJsonObject("action_subdata");
+    String subtype = json.getString("actionSubtype");
+    JsonObject subdata = json.getJsonObject("actionSubdata");
 
-    boolean hasSubtype = json.containsKey("action_subtype") && json.getString("action_subtype") != null;
-    boolean hasSubdata = json.containsKey("action_subdata") && json.getJsonObject("action_subdata") != null;
+    boolean hasSubtype =
+        json.containsKey("actionSubtype") && json.getString("actionSubtype") != null;
+    boolean hasSubdata =
+        json.containsKey("actionSubdata") && json.getJsonObject("actionSubdata") != null;
 
     if (hasSubtype && !hasSubdata) {
       return Future.failedFuture(
-        new IllegalArgumentException("action_subdata is required when action_subtype is provided"));
+        new IllegalArgumentException("actionSubdata is required when actionSubtype is provided"));
     }
 
     if (!hasSubtype && hasSubdata) {
       return Future.failedFuture(
-        new IllegalArgumentException("action_subtype is required when action_subdata is provided"));
+        new IllegalArgumentException("actionSubtype is required when actionSubdata is provided"));
     }
 
-    Integer rating = json.getInteger("entity_rating");
+    Integer rating = json.getInteger("entityRating");
 
     if (rating != null && (rating < 1 || rating > 5)) {
       return Future.failedFuture(
         new IllegalArgumentException(
-          "entity_rating must be between 1 and 10"
+          "entityRating must be between 1 and 5"
         )
       );
     }
@@ -71,19 +146,19 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback>
     List<String> columns = new ArrayList<>();
     List<Object> values = new ArrayList<>();
 
-    if (json.containsKey("action_subtype")) {
-      columns.add("action_subtype");
-      values.add(json.getString("action_subtype"));
+    if (json.containsKey("actionSubtype")) {
+      columns.add("actionSubtype");
+      values.add(json.getString("actionSubtype"));
     }
 
-    if (json.containsKey("action_subdata")) {
-      columns.add("action_subdata");
-      values.add(json.getJsonObject("action_subdata"));
+    if (json.containsKey("actionSubdata")) {
+      columns.add("actionSubdata");
+      values.add(json.getJsonObject("actionSubdata"));
     }
 
-    if (json.containsKey("entity_rating")) {
-      columns.add("entity_rating");
-      values.add(json.getInteger("entity_rating"));
+    if (json.containsKey("entityRating")) {
+      columns.add("entityRating");
+      values.add(json.getInteger("entityRating"));
     }
 
     if (columns.isEmpty()) {
@@ -93,8 +168,8 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback>
     Condition condition =
       new Condition(
         List.of(
-          new Condition("user_id", Condition.Operator.EQUALS, List.of(userId)),
-          new Condition("asset_id", Condition.Operator.EQUALS, List.of(assetId))
+          new Condition("userId", Condition.Operator.EQUALS, List.of(userId)),
+          new Condition("assetId", Condition.Operator.EQUALS, List.of(assetId))
         ),
         Condition.LogicalOperator.AND
       );
@@ -148,9 +223,9 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback>
       };
 
     // Apply filters
-    applyFilter.accept("user_id", filters.get("user_id"));
-    applyFilter.accept("asset_id", filters.get("asset_id"));
-    applyFilter.accept("action_subtype", filters.get("action_subtype"));
+    applyFilter.accept("user_id", filters.get("userId"));
+    applyFilter.accept("asset_id", filters.get("assetId"));
+    applyFilter.accept("action_subtype", filters.get("actionSubtype"));
 
     int limitIndex = index.getAndIncrement();
     int offsetIndex = index.getAndIncrement();
@@ -201,6 +276,7 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback>
                   UUID.fromString(r.getString("id")),
                   UUID.fromString(r.getString("user_id")),
                   UUID.fromString(r.getString("asset_id")),
+                  r.getString("asset_type"),
                   r.getInteger("entity_rating"),
                   r.getString("action_subtype"),
                   r.getJsonObject("action_subdata"));

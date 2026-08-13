@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.interaction.v2.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.vertx.core.json.JsonObject;
 
 import java.time.LocalDateTime;
@@ -32,6 +33,23 @@ public record ProviderFeedback(
     );
   }
 
+  public static ProviderFeedback fromRequestJson(JsonObject json) {
+    return new ProviderFeedback(
+        json.getString("id") != null ? UUID.fromString(json.getString("id")) : null,
+        json.getString("userId") != null ? UUID.fromString(json.getString("userId")) : null,
+        json.getString("assetId") != null ? UUID.fromString(json.getString("assetId")) : null,
+        json.getString("type") != null
+            ? ProviderFeedbackType.valueOf(json.getString("type"))
+            : null,
+        json.getJsonObject("data"),
+        json.getString("createdAt") != null
+            ? LocalDateTime.parse(json.getString("createdAt"))
+            : null,
+        json.getString("updatedAt") != null
+            ? LocalDateTime.parse(json.getString("updatedAt"))
+            : null);
+  }
+
   @Override
   public Map<String, Object> toNonEmptyFieldsMap() {
     Map<String, Object> map = new HashMap<>();
@@ -49,16 +67,17 @@ public record ProviderFeedback(
   @Override
   public JsonObject toJson() {
     JsonObject json = new JsonObject()
-      .put("user_id", userId.toString())
-      .put("asset_id", assetId.toString())
+      .put("userId", userId.toString())
+      .put("assetId", assetId.toString())
       .put("type", type.name())
       .put("data", data);
-    if (createdAt != null) json.put("created_at", createdAt.toString());
-    if (updatedAt != null) json.put("updated_at", updatedAt.toString());
+    if (createdAt != null) json.put("createdAt", createdAt.toString());
+    if (updatedAt != null) json.put("updatedAt", updatedAt.toString());
     return json;
   }
 
   @Override
+  @JsonIgnore
   public String getTableName() {
     return "provider_feedback";
   }

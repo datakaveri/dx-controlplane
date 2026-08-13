@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.interaction.v2.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.database.postgres.base.entity.BaseEntity;
 
@@ -11,6 +12,7 @@ public record UserFeedback(
   UUID id,
   UUID userId,
   UUID assetId,
+  String assetType,
   Integer entityRating,
   String actionSubType,
   JsonObject actionSubData)
@@ -30,6 +32,10 @@ public record UserFeedback(
       json.getString("asset_id") != null
         ? UUID.fromString(json.getString("asset_id"))
         : null,
+
+        json.getString("asset_type") != null
+            ? json.getString("asset_type")
+            : null,
 
       json.getInteger("entity_rating") != null
         ? json.getInteger("entity_rating")
@@ -57,6 +63,9 @@ public record UserFeedback(
     if (assetId != null)
       map.put("asset_id", assetId.toString());
 
+    if (assetType != null)
+      map.put("asset_type", assetType);
+
     if (entityRating != null)
       map.put("entity_rating", entityRating);
 
@@ -69,6 +78,38 @@ public record UserFeedback(
     return map;
   }
 
+  public static UserFeedback fromRequestJson(JsonObject json) {
+
+    return new UserFeedback(
+        json.getString("id") != null
+            ? UUID.fromString(json.getString("id"))
+            : null,
+
+        json.getString("userId") != null
+            ? UUID.fromString(json.getString("userId"))
+            : null,
+
+        json.getString("assetId") != null
+            ? UUID.fromString(json.getString("assetId"))
+            : null,
+
+        json.getString("assetType") != null
+            ?json.getString("assetType")
+            : null,
+
+        json.getInteger("entityRating") != null
+            ? json.getInteger("entityRating")
+            : null,
+
+        json.getString("actionSubtype") != null
+            ? json.getString("actionSubtype")
+            : null,
+
+        json.getJsonObject("actionSubdata") != null
+            ? json.getJsonObject("actionSubdata")
+            : null);
+  }
+
   @Override
   public JsonObject toJson() {
 
@@ -78,24 +119,28 @@ public record UserFeedback(
       json.put("id", id.toString());
 
     if (userId != null)
-      json.put("user_id", userId.toString());
+      json.put("userId", userId.toString());
 
     if (assetId != null)
-      json.put("asset_id", assetId.toString());
+      json.put("assetId", assetId.toString());
+
+    if (assetType != null)
+      json.put("assetType", assetType);
 
     if (entityRating != null)
-      json.put("entity_rating", entityRating);
+      json.put("entityRating", entityRating);
 
     if (actionSubType != null)
-      json.put("action_subtype", actionSubType);
+      json.put("actionSubtype", actionSubType);
 
     if (actionSubData != null)
-      json.put("action_subdata", actionSubData);
+      json.put("actionSubdata", actionSubData);
 
     return json;
   }
 
   @Override
+  @JsonIgnore
   public String getTableName() {
     return "";
   }

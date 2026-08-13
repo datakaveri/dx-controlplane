@@ -18,5 +18,5 @@ public interface UserFeedbackDao {
   Future<UserFeedbackPaginatedResponse> fetchUserFeedbacks(PaginatedRequest request);
 
 
-
+  Future<UserFeedback> postFeedback(UserFeedback request);
 }

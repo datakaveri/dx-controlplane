@@ -152,7 +152,7 @@ public class UserInteractionV2Controller implements ApiController {
           PaginationRequestBuilder.from(ctx)
               .allowedFiltersDbMap(FILTER_MAP)
               .apiToDbMap(FILTER_MAP)
-              .additionalFilters(Map.of("user_id", ctx.user().subject()))
+              .additionalFilters(Map.of("userId", ctx.user().subject()))
               .allowedTimeFields(Set.of(CREATED_AT))
               .build();
       LOGGER.debug("paginated request has been build ");
@@ -233,9 +233,9 @@ public class UserInteractionV2Controller implements ApiController {
     try {
       JsonObject req = ctx.body().asJsonObject();
       UUID userId = UUID.fromString(ctx.user().subject());
-      req.put("user_id", userId.toString());
+      req.put("userId", userId.toString());
 
-      UserFeedback userFeedback = UserFeedback.fromJson(req);
+      UserFeedback userFeedback = UserFeedback.fromRequestJson(req);
 
       service
           .postUserFeedback(userFeedback)
@@ -263,7 +263,7 @@ public class UserInteractionV2Controller implements ApiController {
           PaginationRequestBuilder.from(ctx)
               .allowedFiltersDbMap(FEEDBACK_FILTER_MAP)
               .apiToDbMap(FEEDBACK_FILTER_MAP)
-              //          .additionalFilters(Map.of("user_id", ctx.user().subject()))
+              //.additionalFilters(Map.of("userId", ctx.user().subject()))
               .allowedTimeFields(Set.of(CREATED_AT))
               .build();
       LOGGER.debug("paginated request has been build ");
@@ -290,21 +290,14 @@ public class UserInteractionV2Controller implements ApiController {
   private void handleDeleteUserFeedbackRequest(RoutingContext ctx) {
     LOGGER.info("DELETE /user/feedback?id= called");
     try {
-      String idParam = ctx.queryParam("id").toString();
+      String idParam = ctx.queryParam("id").getFirst();
 
       if (idParam == null) {
         ctx.fail(new IllegalArgumentException("Missing required query parameter: id"));
         return;
       }
 
-      UUID reqId;
-      try {
-        reqId = UUID.fromString(idParam);
-      } catch (IllegalArgumentException e) {
-        ctx.fail(new IllegalArgumentException("Invalid UUID format for parameter: id"));
-        return;
-      }
-
+      UUID reqId = UUID.fromString(idParam);
       UUID userId = UUID.fromString(ctx.user().subject());
 
       service
@@ -312,7 +305,7 @@ public class UserInteractionV2Controller implements ApiController {
           .onSuccess(
               v ->
                   ResponseBuilder.sendSuccess(
-                      ctx, "Interaction updated successfully", urnGenerator))
+                      ctx, "Interaction deleted successfully", urnGenerator))
           .onFailure(
               err -> {
                 LOGGER.error("Delete /user/feedback failed", err);
@@ -330,9 +323,9 @@ public class UserInteractionV2Controller implements ApiController {
     try {
       JsonObject req = ctx.body().asJsonObject();
       UUID userId = UUID.fromString(ctx.user().subject());
-      req.put("user_id", userId.toString());
+      req.put("userId", userId.toString());
 
-      ProviderFeedback providerFeedback = ProviderFeedback.fromJson(req);
+      ProviderFeedback providerFeedback = ProviderFeedback.fromRequestJson(req);
 
       service
           .postProviderFeedback(providerFeedback)
@@ -361,7 +354,7 @@ public class UserInteractionV2Controller implements ApiController {
           PaginationRequestBuilder.from(ctx)
               .allowedFiltersDbMap(PROVIDER_FEEDBACK_FILTER_MAP)
               .apiToDbMap(PROVIDER_FEEDBACK_FILTER_MAP)
-              //          .additionalFilters(Map.of("user_id", ctx.user().subject()))
+              //.additionalFilters(Map.of("userId", ctx.user().subject()))
               .allowedTimeFields(Set.of(CREATED_AT))
               .build();
       LOGGER.debug("paginated request has been build ");
