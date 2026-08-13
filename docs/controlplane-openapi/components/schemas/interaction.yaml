@@ -53,21 +53,21 @@ InteractionResponse:
 UserFeedbackRequest:
   type: object
   required:
-  - asset_id
+  - assetId
   properties:
-    asset_id:
+    assetId:
       type: string
       format: uuid
       description: UUID of the asset being rated or acted upon
-    entity_rating:
+    entityRating:
       type: integer
       minimum: 1
       maximum: 5
       description: Star rating from 1 to 5
-    action_subtype:
+    actionSubtype:
       type: string
       description: Type of interaction action such as bookmark, like, dislike
-    action_subdata:
+    actionSubdata:
       type: object
       description: Additional structured data associated with the action
 UserFeedbackPaginatedResponse:
@@ -87,12 +87,26 @@ UserFeedbackPaginatedResponse:
           id:
             type: string
             format: uuid
+            description: UUID of the feedback
           userId:
             type: string
             format: uuid
+            description: UUID of the user who submitted the feedback
           assetId:
             type: string
             format: uuid
+            description: UUID of the asset
+          entityRating:
+            type: integer
+            minimum: 1
+            maximum: 5
+            description: Star rating from 1 (lowest) to 5 (highest)
+          actionSubtype:
+            type: string
+            description: Structured feedback category
+          actionSubdata:
+            type: object
+            description: Additional structured data associated with the feedback
     paginationInfo:
       type: object
       properties:
@@ -104,7 +118,7 @@ UserFeedbackPaginatedResponse:
           example: 10
         totalCount:
           type: integer
-          example: 10
+          example: 2
         totalPages:
           type: integer
           example: 1
@@ -114,6 +128,7 @@ UserFeedbackPaginatedResponse:
         hasPrevious:
           type: boolean
           example: false
+
   example:
     type: urn:dx:controlPlane:success
     title: Success
@@ -121,13 +136,24 @@ UserFeedbackPaginatedResponse:
       - id: 3f329ef8-c1e6-417f-93d6-6b568366612b
         userId: da56e517-f8bc-46fd-95e3-7257acd64da7
         assetId: 00b80a67-a5aa-43cf-ba60-dcd1c09b1c4f
+        entityRating: 5
+        actionSubtype: data_quality
+        actionSubdata:
+          issue: Missing values
+          description: Some records contain missing values
+
       - id: c2f5ef34-0362-40ae-b691-e3a6411a51da
         userId: 23100470-c8ce-4f9d-8555-94087378b5f6
         assetId: 02192219-802a-4d7d-a130-8cc892a9d0d2
+        entityRating: 4
+        actionSubtype: documentation
+        actionSubdata:
+          issue: Incomplete documentation
+
     paginationInfo:
       page: 1
       size: 10
-      totalCount: 10
+      totalCount: 2
       totalPages: 1
       hasNext: false
       hasPrevious: false
@@ -174,7 +200,7 @@ ProviderFeedbackPaginatedResponse:
           example: 10
         totalCount:
           type: integer
-          example: 4
+          example: 1
         totalPages:
           type: integer
           example: 1
@@ -198,7 +224,7 @@ ProviderFeedbackPaginatedResponse:
     paginationInfo:
       page: 1
       size: 10
-      totalCount: 4
+      totalCount: 1
       totalPages: 1
       hasNext: false
       hasPrevious: false

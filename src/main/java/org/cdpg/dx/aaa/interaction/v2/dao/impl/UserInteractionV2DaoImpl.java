@@ -147,21 +147,7 @@ public class UserInteractionV2DaoImpl extends AbstractBaseDAO<InteractionRow>
                       r.getBoolean("new_disliked", false),
                       r.getBoolean("old_bookmarked", false),
                       r.getBoolean("new_bookmarked", false));
-              // Cleanup delete (awaited, safe)
-              String deleteSql =
-                  """
-          DELETE FROM user_interactions
-          WHERE user_id = $1
-            AND asset_id = $2
-            AND is_liked = FALSE
-            AND is_disliked = FALSE
-            AND is_bookmarked = FALSE
-        """;
-
-              JsonArray deleteParams =
-                  new JsonArray().add(userId.toString()).add(assetId.toString());
-
-              return postgresService.executeQuery(deleteSql, deleteParams).map(v -> delta);
+              return Future.succeededFuture(delta);
             });
   }
 

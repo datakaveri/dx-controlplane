@@ -40,8 +40,8 @@ public class ProviderFeedbackDaoImpl extends AbstractBaseDAO<ProviderFeedback>
   {
 
     JsonObject feedbackJson =  providerFeedback.toJson();
-    String userId = feedbackJson.getString("user_id");
-    String assetId = feedbackJson.getString("asset_id");
+    String userId = feedbackJson.getString("userId");
+    String assetId = feedbackJson.getString("assetId");
     String feedbackType = feedbackJson.getString("type");
 
     var map = providerFeedback.toNonEmptyFieldsMap();
