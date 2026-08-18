@@ -40,6 +40,180 @@ info:
 servers:
   - url: https://${HOSTNAME}
     description: dynamic server url
+tags:
+  - name: ACL Servers
+    description: |
+      Manage APD (Access Policy Decision) ACL server registrations. ACL servers enforce
+      authorization policies that decide which consumers can access which data resources.
+      Only `cos_admin` can register or delete ACL servers.
+  - name: Activity Logs
+    description: |
+      Retrieve audit logs of user API activity. Consumers can view their own activity history;
+      COS Admins can view activity across all users. Supports time-based filtering and pagination.
+  - name: Activity Report
+    description: |
+      Download CSV reports of platform activity logs for offline analysis and auditing.
+      Requires `cos_admin` role.
+  - name: App
+    description: |
+      App IDs provide a way to grant restricted, scoped access to platform APIs without exposing
+      the user's primary credentials. A user creates an App ID with a specific set of roles and
+      scopes, then shares the `appId` and `appSecret` with another user or service. The recipient
+      can then use these credentials to access platform APIs — but only within the roles and scopes
+      defined at the time the App ID was created.
+  - name: CAT Entity
+    description: |
+      CRUD operations for catalogue items — the metadata documents that describe datasets,
+      resource groups, resource servers, and other data entities on the platform.
+      Providers manage their own items; COS Admins can manage any item.
+      Items follow the [JSON-LD](https://json-ld.org/) format with DX-defined annotations.
+  - name: Certificate API
+    description: |
+      Public key certificate APIs. Exposes the JWKS endpoint (`/auth/v2/jwks`) for verifying
+      JWT token signatures using the platform's public key (ES256 algorithm).
+  - name: Client APIs
+    description: |
+      Manage client secrets for programmatic, credential-based authentication.
+      Client credentials allow external services or scripts to authenticate without
+      requiring a user-level JWT token.
+  - name: Compute APIs
+    description: |
+      Manage compute role requests. Users without the `compute` role can request it here.
+      COS Admins review and approve or reject requests. Once approved, the `compute` role
+      is assigned to the user in Keycloak, granting access to sandbox and compute infrastructure.
+
+      **Status values:** `pending` → `granted` or `rejected`
+
+      A previously rejected request can be re-submitted and is re-activated to `pending`
+      rather than creating a duplicate record.
+  - name: Conversations
+    description: |
+      Threaded message exchanges attached to entity-driven requests such as org join,
+      org create, and credit requests. Each conversation is scoped to a `request_id`.
+
+      - Supports root-level messages and nested replies.
+      - Senders identify as `requester` or `approver`.
+      - Messages can be marked `is_internal: true` to make them visible only to approvers.
+      - Metadata (arbitrary JSON) can be attached to any message.
+  - name: Credit APIs
+    description: |
+      Manage the platform credit system used to control access to compute infrastructure.
+      Credits are granted by COS Admins and consumed when running compute workloads.
+
+      **Flows:**
+      - Users submit a credit request; COS Admins grant (with `amount` and `expiration_date`) or reject it.
+      - COS Admins can directly add or deduct credits from a user's balance.
+      - Users can query their current balance and request history.
+
+      **Status values:** `pending` → `granted` or `rejected`
+  - name: Delegation APIs
+    description: |
+      Delegation allows an authenticated user (the **delegator**) to grant another user
+      (the **delegate**) the ability to act on their behalf. Delegations are scoped by role
+      and optionally restricted by specific scopes and entity types, each with their own expiry.
+  - name: Discovery – My Assets
+    description: |
+      Search and count APIs for catalogue assets scoped to the currently authenticated user —
+      assets they own, have been granted access to, or that match their roles and permissions.
+  - name: Discovery – Public
+    description: |
+      Unauthenticated full-text and geo-based search and count APIs for discovering
+      publicly available catalogue assets across the platform.
+  - name: KYC APIs
+    description: |
+      Know Your Customer (KYC) verification management. KYC is a prerequisite before users
+      can access credit balance, submit credit requests, or request the compute role.
+      COS Admins can initiate or revoke a user's KYC verification.
+  - name: Leaderboard
+    description: |
+      Read-only leaderboard APIs that rank providers, organisations, and assets based on
+      platform interaction metrics such as views, likes, and usage frequency.
+  - name: List Available Filters
+    description: |
+      Returns the set of attribute-based filter keys that can be used in catalogue
+      search queries (e.g. resource type, tags, domains).
+  - name: Organisation APIs
+    description: |
+      Full lifecycle management of organisations on the platform.
+
+      **Flows covered:**
+      - Organisation creation requests (submit, admin approval, withdrawal)
+      - Organisation join requests (submit, admin approval, rejection, withdrawal)
+      - Member management (list users, update roles, remove users)
+      - Provider role requests within an organisation
+      - Reports for org create, join, and provider role request activity
+
+      **Roles involved:** Consumer, Org Admin, COS Admin
+  - name: Organisation Assets Management
+    description: |
+      Browse and filter assets registered under a specific organisation.
+      Supports visibility control, pagination, and attribute-based filtering.
+  - name: Platform Assets Management
+    description: |
+      Browse and filter all assets registered on the platform, regardless of organisation.
+      Intended for platform-wide discovery by admins and authorised users.
+  - name: Platform Provider Requests
+    description: |
+      Provider role requests for users who are **not part of any organisation**. This is the
+      platform track — an alternative to the organisation-based provider request flow.
+
+      - **Consumer** — submits, views, or withdraws their own request.
+      - **COS Admin** — reviews, approves, or rejects all requests.
+
+      On approval, the `PROVIDER` role is automatically assigned in Keycloak.
+      A user can only have one active (pending or granted) provider role request at a time,
+      across both platform and organisation tracks.
+  - name: Resource Servers
+    description: |
+      Manage resource server registrations. A resource server represents a deployed data
+      endpoint that participates in the DX access control ecosystem for policy enforcement
+      and token validation. Only `cos_admin` can register or delete resource servers.
+  - name: Role APIs
+    description: |
+      User profile management and custom role APIs.
+
+      **Covers:**
+      - Get and update user info (self and admin views)
+      - Password management
+      - Admin-level user lookups and status updates
+      - Custom role system: assign scoped custom roles to other users, list them, and delete them.
+        Custom roles are stored in the platform DB and also reflected in Keycloak attributes.
+  - name: Share Assets
+    description: |
+      Control asset visibility across organisations and users. Providers can grant or revoke
+      access to their catalogue assets for specific organisations or individual users,
+      making assets discoverable to a targeted audience beyond the default visibility rules.
+  - name: Shared Assets
+    description: |
+      View catalogue assets that have been explicitly shared with the currently authenticated
+      user by other providers or organisations.
+  - name: Subscriptions
+    description: |
+      Manage NGSI-LD streaming subscriptions. Consumers subscribe to real-time data streams
+      from resource entities. Each subscription is identified by a queue name and is bound
+      to specific entity IDs and resource groups. Subscriptions can be created, listed,
+      retrieved by ID, updated, and deleted.
+      #- name: Summary
+      #description: |
+      #Dashboard summary APIs that aggregate platform-wide usage statistics — including
+  - name: token
+    description: |
+      JWT access token issuance APIs. Supports three token modes:
+
+      - **Identity token** — provide `clientId` and `clientSecret` to get a basic identity token.
+      - **Access token** — additionally provide an `itemId` to get a token scoped to a specific resource.
+      - **Delegation token** — additionally provide a `delegationId` header to act on behalf of a delegator.
+
+      Tokens are signed using ES256. Validate them against the JWKS endpoint (`/auth/v2/jwks`).
+  - name: User Interactions
+    description: |
+      APIs for recording and querying user interactions with catalogue assets (views, likes, dislikes).
+      Also includes user and provider feedback submission and retrieval, and a metrics sync
+      endpoint that pushes interaction counts into aggregated stores used for leaderboard ranking.
+  - name: Ingestion type(API/SFTP) APIs
+    description: |
+      Manage data ingestion adaptor registrations for API-based and SFTP-based ingestion pipelines.
+      Providers register adaptors to connect their data sources to the DX platform ingestion layer.
 paths:
   /iudx/v2/auth/app:
     post:
@@ -8875,6 +9049,488 @@ paths:
                 type: urn:dx:controlPlane:forbidden
                 title: Forbidden
                 detail: User does not have the required role.
+  /iudx/v2/auth/user/platform/provider-requests:
+    post:
+      tags:
+        - Platform Provider Requests
+      summary: Submit a platform provider role request
+      description: |
+        Submits a new platform provider role request on behalf of the authenticated consumer.
+        The user must not already have a pending or granted provider role request (org or platform).
+        KYC verification is required before a request can be submitted.
+        On success, a notification email is sent to the COS Admin for review.
+      operationId: post-auth-v2-platform-provider-requests
+      security:
+        - authorization: []
+      responses:
+        '200':
+          description: Platform provider role request created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  detail:
+                    type: string
+                    example: Provider role request submitted successfully
+        '401':
+          description: Missing or invalid authorization token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '403':
+          description: Forbidden – KYC not completed or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
+        '409':
+          description: A pending or granted provider role request already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:AlreadyExists
+                title: Conflict
+                detail: A pending or granted provider role request already exists for this user
+      x-codeSamples:
+        - lang: cURL
+          label: Submit Platform Provider Request
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/auth/user/platform/provider-requests' \
+            --header 'Authorization: Bearer <your-token>'
+    get:
+      tags:
+        - Platform Provider Requests
+      summary: Get own platform provider role request
+      description: |
+        Returns the authenticated consumer's own platform provider role request.
+        The response is enriched with the user's current Keycloak roles and account status.
+        Returns 404 if no request exists for the user.
+      operationId: get-auth-v2-user-platform-provider-requests
+      security:
+        - authorization: []
+      responses:
+        '200':
+          description: The consumer's platform provider role request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        example: 39358c41-84dd-42c4-b8c5-9a95afcf8fce
+                      user_id:
+                        type: string
+                        format: uuid
+                        example: 03cc4ca3-d1fb-4f8a-bd77-6b0441916bbd
+                      provider_type:
+                        type: string
+                        example: platform
+                      status:
+                        type: string
+                        example: pending
+                      created_at:
+                        type: string
+                        format: date-time
+                        example: '2026-05-29T12:08:28.595467'
+                      updated_at:
+                        type: string
+                        format: date-time
+                      roles:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - consumer
+                          - offline_access
+                          - default-roles-tgdex-pilot
+                      account_enabled:
+                        type: boolean
+                        example: true
+        '401':
+          description: Missing or invalid authorization token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '403':
+          description: Forbidden – user is not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
+        '404':
+          description: No platform provider request found for this user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:NotFound
+                title: Not Found
+                detail: No pending platform provider request found for this user
+      x-codeSamples:
+        - lang: cURL
+          label: Get Own Platform Provider Request
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/auth/user/platform/provider-requests' \
+            --header 'Authorization: Bearer <your-token>'
+    delete:
+      tags:
+        - Platform Provider Requests
+      summary: Withdraw own platform provider role request
+      description: |
+        Withdraws the authenticated consumer's own platform provider role request.
+        Only requests in `pending` status can be withdrawn — requests that have already been
+        approved (`granted`) or rejected cannot be deleted.
+      operationId: delete-auth-v2-user-platform-provider-requests
+      security:
+        - authorization: []
+      responses:
+        '200':
+          description: Platform provider role request deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  detail:
+                    type: string
+                    example: Platform provider role request deleted successfully
+        '400':
+          description: Request is not in pending status and cannot be withdrawn
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:BadRequest
+                title: Bad Request
+                detail: Only pending platform provider role requests can be deleted
+        '401':
+          description: Missing or invalid authorization token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '404':
+          description: No pending platform provider request found for this user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:NotFound
+                title: Not Found
+                detail: No pending platform provider request found for this user
+      x-codeSamples:
+        - lang: cURL
+          label: Withdraw Platform Provider Request
+          source: |
+            curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/auth/user/platform/provider-requests' \
+            --header 'Authorization: Bearer <your-token>'
+  /iudx/v2/auth/admin/platform/provider-requests:
+    get:
+      tags:
+        - Platform Provider Requests
+      summary: List all platform provider role requests
+      description: |
+        Returns a paginated list of all platform provider role requests submitted by consumers
+        across the platform. Each entry is enriched with the requester's current Keycloak roles
+        and account status. Supports filtering by `status` and `userId`, and sorting by `createdAt`
+        or `updatedAt`. Only accessible by COS Admins.
+      operationId: get-auth-v2-platform-provider-requests
+      security:
+        - authorization: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - pending
+              - granted
+              - rejected
+        - name: userId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Sort by field and order, e.g. createdAt:desc
+      responses:
+        '200':
+          description: Paginated list of platform provider role requests
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                          example: 39358c41-84dd-42c4-b8c5-9a95afcf8fce
+                        user_id:
+                          type: string
+                          format: uuid
+                          example: 03cc4ca3-d1fb-4f8a-bd77-6b0441916bbd
+                        provider_type:
+                          type: string
+                          example: platform
+                        status:
+                          type: string
+                          example: pending
+                        created_at:
+                          type: string
+                          format: date-time
+                          example: '2026-05-29T12:08:28.595467'
+                        updated_at:
+                          type: string
+                          format: date-time
+                        roles:
+                          type: array
+                          items:
+                            type: string
+                          example:
+                            - consumer
+                            - offline_access
+                            - default-roles-tgdex-pilot
+                        account_enabled:
+                          type: boolean
+                          example: true
+                  paginationInfo:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                      size:
+                        type: integer
+                      totalCount:
+                        type: integer
+                      totalPages:
+                        type: integer
+                      hasNext:
+                        type: boolean
+                      hasPrevious:
+                        type: boolean
+        '401':
+          description: Missing or invalid authorization token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '403':
+          description: Forbidden – user does not have COS Admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
+      x-codeSamples:
+        - lang: cURL
+          label: List All Platform Provider Requests
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/auth/admin/platform/provider-requests?page=1&size=10&status=pending' \
+            --header 'Authorization: Bearer <your-token>'
+  /iudx/v2/auth/admin/platform/provider-requests/{id}:
+    patch:
+      tags:
+        - Platform Provider Requests
+      summary: Approve or reject a platform provider role request
+      description: |
+        Approves or rejects a specific platform provider role request identified by `id`.
+        Only COS Admins can perform this action.
+        - Setting status to `granted` assigns the `PROVIDER` role to the user in Keycloak and
+          sends an approval notification email to the user.
+        - Setting status to `rejected` sends a rejection notification email to the user.
+        Only requests in `pending` status can be updated.
+      operationId: patch-auth-v2-platform-provider-requests
+      security:
+        - authorization: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - granted
+                    - rejected
+            examples:
+              Approve:
+                value:
+                  status: granted
+              Reject:
+                value:
+                  status: rejected
+      responses:
+        '200':
+          description: Platform provider role request updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  detail:
+                    type: string
+                    example: Provider role request approved successfully
+        '400':
+          description: Bad request – invalid status value
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:BadRequest
+                title: Bad Request
+                detail: Invalid status value. Allowed values are granted or rejected
+        '401':
+          description: Missing or invalid authorization token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '403':
+          description: Forbidden – user does not have COS Admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
+        '404':
+          description: No request found with the given ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:NotFound
+                title: Not Found
+                detail: No provider role request found with the given ID
+      x-codeSamples:
+        - lang: cURL
+          label: Approve Platform Provider Request
+          source: |
+            curl --location --request PATCH 'https://${HOSTNAME}/iudx/v2/auth/admin/platform/provider-requests/<id>' \
+            --header 'Authorization: Bearer <your-token>' \
+            --header 'Content-Type: application/json' \
+            --data '{"status": "granted"}'
+        - lang: cURL
+          label: Reject Platform Provider Request
+          source: |
+            curl --location --request PATCH 'https://${HOSTNAME}/iudx/v2/auth/admin/platform/provider-requests/<id>' \
+            --header 'Authorization: Bearer <your-token>' \
+            --header 'Content-Type: application/json' \
+            --data '{"status": "rejected"}'
   /iudx/v2/cat/getAllAssets:
     get:
       tags:
@@ -9142,6 +9798,490 @@ paths:
                 ],
                 "filter": ["id"]
               }
+  /iudx/v2/cat/assets/share:
+    post:
+      tags:
+        - Share Assets
+      description: |
+        Share owned catalogue assets with specific users or organizations.
+
+        This API controls discovery visibility of assets for other users in catalogue APIs
+        such as `/search`, `/list`, and `/count`.
+
+        Sharing an asset allows the target users or organization members to discover the asset
+        through catalogue discovery APIs. This does not automatically grant operational access
+        to the asset. ACL authorization checks continue to remain independent.
+
+        Supported share types:
+        - USER → Share asset with specific users
+        - ORGANIZATION → Share asset with all users belonging to an organization
+
+        Notes:
+        - Only asset owners can perform sharing operations.
+        - The API supports sharing assets with any accessType.
+        - Existing PUBLIC asset visibility behaviour remains unchanged.
+        - Duplicate active share entries are ignored safely.
+      operationId: share asset visibility
+      security:
+        - authorization: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - itemId
+                - shareType
+                - ids
+              properties:
+                itemId:
+                  type: string
+                  format: uuid
+                  description: Asset item identifier
+                  example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                shareType:
+                  type: string
+                  enum:
+                    - USER
+                    - ORGANIZATION
+                  description: Type of visibility sharing
+                ids:
+                  type: array
+                  description: |
+                    List of target userIds or organizationIds depending on shareType
+                  items:
+                    type: string
+                    format: uuid
+                  example:
+                    - 2aa85f64-5717-4562-b3fc-2c963f66afa1
+                    - 2aa85f64-5717-4562-b3fc-2c963f66afa2
+            examples:
+              userShare:
+                summary: Share asset with users
+                value:
+                  itemId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  shareType: USER
+                  ids:
+                    - 2aa85f64-5717-4562-b3fc-2c963f66afa1
+                    - 2aa85f64-5717-4562-b3fc-2c963f66afa2
+              organizationShare:
+                summary: Share asset with organizations
+                value:
+                  itemId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  shareType: ORGANIZATION
+                  ids:
+                    - 8bb85f64-5717-4562-b3fc-2c963f66afa8
+      responses:
+        '200':
+          description: Asset shared successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  detail:
+                    type: string
+                    example: Assets shared successfully
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/invalidIdErrorResponse'
+              example:
+                type: urn:dx:controlPlane:badRequest
+                title: Bad Request
+                detail: Missing or malformed request
+        '401':
+          description: Missing or invalid authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '403':
+          description: User is not owner of the asset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
+        '404':
+          description: Asset not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:notFound
+                title: Not Found
+                detail: Item not found
+      x-codeSamples:
+        - lang: cURL
+          label: share asset with users
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/cat/assets/share' \
+            --header 'Authorization: Bearer <token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "itemId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              "shareType": "USER",
+              "ids": [
+                "2aa85f64-5717-4562-b3fc-2c963f66afa1",
+                "2aa85f64-5717-4562-b3fc-2c963f66afa2"
+              ]
+            }'
+    delete:
+      tags:
+        - Share Assets
+      description: |
+        Revoke previously shared asset visibility from users or organizations.
+
+        Once revoked:
+        - users/organization members will no longer discover the asset
+        - catalogue `/search`, `/list`, and `/count` APIs will stop returning the asset if it is
+        of PRIVATE accessType
+        - ACL authorization remains unaffected
+
+        Supported revoke types:
+        - USER
+        - ORGANIZATION
+      operationId: revoke asset visibility
+      security:
+        - authorization: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - itemId
+                - shareType
+                - ids
+              properties:
+                itemId:
+                  type: string
+                  format: uuid
+                shareType:
+                  type: string
+                  enum:
+                    - USER
+                    - ORGANIZATION
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+            examples:
+              revokeUserShare:
+                summary: Revoke user share
+                value:
+                  itemId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  shareType: USER
+                  ids:
+                    - 2aa85f64-5717-4562-b3fc-2c963f66afa1
+      responses:
+        '200':
+          description: Asset visibility revoked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  detail:
+                    type: string
+                    example: Shared access revoked successfully
+        '400':
+          description: Invalid request payload
+        '401':
+          description: Missing or invalid authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '403':
+          description: User is not owner of the asset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
+        '404':
+          description: Asset not found
+      x-codeSamples:
+        - lang: cURL
+          label: revoke asset share
+          source: |
+            curl --location --request DELETE 'https://${HOSTNAME}/cat/assets/share' \
+            --header 'Authorization: Bearer <token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "itemId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              "shareType": "USER",
+              "ids": [
+                "2aa85f64-5717-4562-b3fc-2c963f66afa1"
+              ]
+            }'
+    get:
+      tags:
+        - Share Assets
+      description: |
+        Fetch all active visibility shares configured for an asset.
+
+        The response includes:
+        - shared users
+        - shared organizations
+        - visibility type
+        - sharing metadata
+
+        Only asset owners can view sharing details.
+      operationId: get asset visibility details
+      security:
+        - authorization: []
+      parameters:
+        - name: itemId
+          in: query
+          required: true
+          description: Asset item identifier
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Asset visibility details fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        itemId:
+                          type: string
+                          format: uuid
+                        visibilityType:
+                          type: string
+                          example: USER
+                        userId:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        orgId:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        sharedBy:
+                          type: string
+                          format: uuid
+                        status:
+                          type: string
+                          example: ACTIVE
+                        createdAt:
+                          type: string
+                          format: date-time
+                        updatedAt:
+                          type: string
+                          format: date-time
+              example:
+                type: urn:dx:controlPlane:success
+                title: Success
+                result:
+                  - id: 14447a8f-f43e-4145-820a-81c13e978fdb
+                    itemId: 96c1c3d4-3856-491a-9340-405e35db80c1
+                    visibilityType: USER
+                    userId: c43dfe14-5f4f-4b77-90e1-f9945574d226
+                    sharedBy: 2f945b8d-0cc8-4c5d-9a3e-53fa88e6e9b2
+                    status: ACTIVE
+                    createdAt: '2026-05-25T10:13:44.345666Z'
+                    updatedAt: '2026-05-25T10:13:44.345666Z'
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Missing or invalid authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '403':
+          description: User is not owner of the asset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
+        '404':
+          description: Asset not found
+      x-codeSamples:
+        - lang: cURL
+          label: get asset visibility details
+          source: |
+            curl --location --request GET \
+            'https://${HOSTNAME}/iudx/v2/cat/assets/share?itemId=3fa85f64-5717-4562-b3fc
+            -2c963f66afa6' \
+            --header 'Authorization: Bearer <token>'
+  /iudx/v2/cat/assets/shared-with-me:
+    get:
+      tags:
+        - Shared Assets
+      description: |
+        Fetch all catalogue assets that are shared with the currently authenticated user.
+
+        Assets may be shared:
+        - directly to the user
+        - to the user's organization
+
+        This API only controls discoverability visibility and does not guarantee operational access.
+        Actual asset access must still be validated through ACL policies and rules.
+
+        Only ACTIVE shared visibility records are returned.
+      operationId: get assets shared with me
+      security:
+        - authorization: []
+      responses:
+        '200':
+          description: Successfully fetched shared assets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        itemId:
+                          type: string
+                          format: uuid
+                        visibilityType:
+                          type: string
+                          enum:
+                            - USER
+                            - ORGANIZATION
+                        userId:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        orgId:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        sharedBy:
+                          type: string
+                          format: uuid
+                        status:
+                          type: string
+                          example: ACTIVE
+                        createdAt:
+                          type: string
+                          format: date-time
+                        updatedAt:
+                          type: string
+                          format: date-time
+              example:
+                type: urn:dx:controlPlane:success
+                title: Success
+                result:
+                  - id: 9d4f2e6a-7b63-4f7b-8d4a-f36e9b21aa11
+                    itemId: 7ab91e8f-89d2-4db7-a7fd-9912cb6fa123
+                    visibilityType: USER
+                    userId: 1bc52d8e-25a2-4cb6-bb45-fec93ea7c100
+                    orgId: null
+                    sharedBy: 8ef12a90-3b0d-46f2-9c2d-6f88dd11b200
+                    status: ACTIVE
+                    createdAt: '2026-05-22T10:00:00Z'
+                    updatedAt: '2026-05-22T10:00:00Z'
+        '401':
+          description: Missing or invalid authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '403':
+          description: User does not have sufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:internalServerError
+                title: Internal Server Error
+                detail: Failed to fetch shared assets
+      x-codeSamples:
+        - lang: cURL
+          label: get shared assets
+          source: |
+            curl --location --request GET 'https://${HOSTNAME}/iudx/v2/cat/assets/shared-with-me' \
+            --header 'Authorization: Bearer <token>'
   /iudx/v2/resource_servers:
     get:
       summary: List Resource Servers
@@ -11901,31 +13041,1140 @@ paths:
         #### Delete Subscription
         To delete the subscription list, the provider must present the `subscriptionId` and `token`.
       deprecated: false
-  /iudx/v2/dashboard/usage-summary:
+  /iudx/v2/acl_servers:
     get:
-      summary: Get usage summary for dashboard
-      description: Returns aggregated usage metrics (count and size) for different time windows used by the main dashboard. Provides data for total usage, last year, last 6 months, last month, last week, and yesterday. No authentication required.
-      operationId: get-dashboard-usage-summary
+      summary: List ACL Servers
+      operationId: list acl servers
       tags:
-        - Summary
+        - ACL Servers
+      security:
+        - authorization: []
+      description: |
+        Retrieves the list of available ACL APD servers that can be associated
+        with datasets, assets, or resources during onboarding.
+
+        ACL servers are responsible for managing access control policies for
+        consumers and delegates. Providers can choose an ACL server while
+        onboarding metadata so that access requests for the asset can later
+        be governed through the selected ACL APD server.
+
+        **Access Control**
+        - Accessible only to users with `cos_admin` or `org_admin` roles.
+
+        **Role-based behavior**
+        - `cos_admin`: Returns all ACL servers available in the system.
+        - `org_admin`: Returns only the ACL servers created by the requesting organization administrator.
+
+        **Usage**
+        - Typically used by provider onboarding workflows to fetch the list
+          of available ACL servers before publishing dataset metadata.
+        - The returned `id` should be referenced while onboarding assets/resources.
       responses:
         '200':
-          description: List of admin activity logs
+          description: ACL servers retrieved successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/dashboardUsageSummarySuccessResponse'
+                type: object
+                required:
+                  - type
+                  - title
+                  - result
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AclServer'
+              example:
+                type: urn:dx:controlPlane:success
+                title: Success
+                result:
+                  - id: 2ef0f344-dc41-4369-a50b-1515a0db5db2
+                    name: DX ACL APD Server
+                    url: acl-apd.iudx.io
+                    owner_id: 1dc28cc6-d614-461a-9b8f-d6110feb3e2f
+                    visibility: PUBLIC
+                    status: ACTIVE
+                    created_at: '2025-09-29T08:38:27.149785'
+                    updated_at: '2025-09-29T08:38:27.149785'
+        '401':
+          description: Unauthorized - Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: List ACL Servers
+          source: |
+            curl --location \
+            'https://${HOSTNAME}/iudx/v2/acl_servers' \
+            --header 'Authorization: Bearer <YOUR_ACCESS_TOKEN>'
+    post:
+      summary: Create an ACL Server
+      operationId: create acl server
+      tags:
+        - ACL Servers
+      security:
+        - authorization: []
+      description: |
+        Creates a new ACL APD server configuration.
+
+        ACL servers are used for managing access policies for assets/resources.
+        Providers can associate one of the configured ACL servers while
+        onboarding metadata into the catalogue.
+
+        **Access Control**
+        - Accessible only to users with `cos_admin` or `org_admin` roles.
+
+        **Notes**
+        - The created ACL server will initially be in `PENDING` status.
+        - Ownership is automatically assigned to the requesting user’s organization.
+        - The configured URL should point to a valid DX ACL APD deployment.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AclServerCreateRequest'
+            example:
+              name: DX ACL APD Server
+              url: acl-apd.iudx.io
+              visibility: PUBLIC
+      responses:
+        '201':
+          description: ACL Server created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AclServerResponse'
+              example:
+                type: urn:dx:controlPlane:success
+                title: Success
+                result:
+                  id: cabd5e4d-a426-4472-8d5d-80f8ac55cead
+                  name: DX ACL APD Server
+                  url: acl-apd.iudx.io
+                  owner_id: 64cb5154-6f8c-40ff-891f-baee2aac8b85
+                  visibility: PUBLIC
+                  status: PENDING
+                  created_at: '2025-12-16T07:00:14.225681'
+                  updated_at: '2025-12-16T07:00:14.225681'
+        '401':
+          description: Unauthorized - Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '403':
+          description: Forbidden - User does not have the required role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
+        '409':
+          description: Conflict - ACL server already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:conflict
+                title: Conflict
+                detail: ACL server with the same URL already exists.
+      x-codeSamples:
+        - lang: cURL
+          label: Create ACL Server
+          source: |
+            curl --location --request POST 'https://${HOSTNAME}/iudx/v2/acl_servers' \
+            --header 'Authorization: Bearer <YOUR_ACCESS_TOKEN>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "name": "DX ACL APD Server",
+              "url": "acl-apd.iudx.io",
+              "visibility": "PUBLIC"
+            }'
+  /iudx/v2/acl_servers/{id}:
+    get:
+      summary: Get ACL Server by ID
+      operationId: get acl server
+      security:
+        - authorization: []
+      tags:
+        - ACL Servers
+      description: |
+        Retrieves the details of a specific ACL APD server using its unique identifier.
+
+        **Access Control**
+        - Accessible only to users with `cos_admin` or `org_admin` roles.
+
+        **Role-based behavior**
+        - `cos_admin`: Can fetch details of any ACL server.
+        - `org_admin`: Can fetch details only for ACL servers owned by their organization.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ACL server retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AclServerResponse'
+              example:
+                type: urn:dx:controlPlane:success
+                title: Success
+                result:
+                  id: 7e9f1f76-baa1-4230-817f-f61ef3c0c411
+                  name: DX ACL APD Server
+                  url: acl-apd.iudx.io
+                  owner_id: 64cb5154-6f8c-40ff-891f-baee2aac8b85
+                  visibility: PUBLIC
+                  status: ACTIVE
+                  created_at: '2025-12-16T07:14:25.034849'
+                  updated_at: '2025-12-16T07:14:25.034849'
+        '401':
+          description: Unauthorized - Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '403':
+          description: Forbidden - User does not have the required role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
+        '404':
+          description: Not Found - ACL server not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:notFound
+                title: Not Found
+                detail: ACL server not found.
+      x-codeSamples:
+        - lang: cURL
+          label: Get ACL Server by ID
+          source: |
+            curl --location --request GET \
+            'https://${HOSTNAME}/iudx/v2/acl_servers/7e9f1f76-baa1-4230-817f-f61ef3c0c411' \
+            --header 'Authorization: Bearer <YOUR_ACCESS_TOKEN>'
+    delete:
+      summary: Delete ACL Server
+      operationId: delete acl server
+      security:
+        - authorization: []
+      tags:
+        - ACL Servers
+      description: |
+        Deletes an existing ACL APD server configuration.
+
+        **Access Control**
+        - Accessible only to users with `cos_admin` or `org_admin` roles.
+
+        **Role-based behavior**
+        - `cos_admin`: Can delete any ACL server.
+        - `org_admin`: Can delete only ACL servers owned by their organization.
+
+        **Important**
+        - ACL servers currently associated with active datasets/resources
+          should not be deleted until the dependent resources are updated.
+        - Once deleted, the ACL server configuration cannot be recovered.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: No Content - ACL server deleted successfully
+        '401':
+          description: Unauthorized - Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
+        '404':
+          description: Not Found - ACL server not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:notFound
+                title: Not Found
+                detail: ACL server not found.
+      x-codeSamples:
+        - lang: cURL
+          label: Delete ACL Server
+          source: |
+            curl --location --request DELETE \
+            'https://${HOSTNAME}/iudx/v2/acl_servers/7e9f1f76-baa1-4230-817f-f61ef3c0c411' \
+            --header 'Authorization: Bearer <YOUR_ACCESS_TOKEN>'
+  /iudx/v2/cat/item/available-name:
+    get:
+      tags:
+        - CAT Entity
+      description: |
+        Check if a given asset name is available for creating a new catalogue item.
+        This API is intended for UI clients to perform a pre-validation before submitting a create request.
+        The validation checks whether any existing item already uses the same name.
+        By default, the check considers items in both ACTIVE and PENDING states to prevent duplicate entries during approval workflows.
+      operationId: validate item name availability
+      security:
+        - optionalAuth: []
+      parameters:
+        - name: name
+          in: query
+          description: Name of the asset to validate
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Name availability result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  detail:
+                    type: string
+                    example: Asset name is available
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/invalidIdErrorResponse'
+              example:
+                type: urn:dx:controlPlane:badRequest
+                title: Bad Request
+                detail: Missing or invalid query parameters
+        '401':
+          description: Missing or invalid authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '409':
+          description: Conflict | Asset Name Already Exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                InvalidToken:
+                  summary: Conflict - Asset Name Already Exists
+                  value:
+                    type: urn:dx:controlPlane:conflict
+                    title: Conflict
+                    detail: Asset name Already Exists
+      x-codeSamples:
+        - lang: cURL
+          label: validate item name
+          source: |
+            curl --location --request GET 'https://${HOSTNAME}/iudx/v2/cat/item/available-name?name=
+            sandbox item'
+  /iudx/v2/requests/{request_id}/conversations:
+    get:
+      tags:
+        - Conversations
+      operationId: get-threaded-message
+      summary: Get all messages for a request
+      x-codeSamples:
+        - lang: cURL
+          label: Get conversation thread
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/requests/{request_id}/conversations?page=1&size=10' \
+            --header 'Authorization: Bearer <your-token>'
+      description: |
+        Returns a paginated conversation thread for the given request. Conversations are tied to entity-driven requests such as joining an organisation, creating an organisation, or submitting a credit request. Returns root messages with nested replies. Any authenticated user can call this.
+      security:
+        - authorization: []
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          description: UUID of the request (org join, org create, credit request, etc.)
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Conversation messages fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ThreadedMessage'
+                  paginationInfo:
+                    $ref: '#/components/schemas/PaginationInfo'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
         '500':
           description: Internal Server Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
+    post:
+      tags:
+        - Conversations
+      operationId: post-request-conversation
+      summary: Create a message in a request conversation
       x-codeSamples:
         - lang: cURL
-          label: Fetch Dashboard Usage Summary
+          label: Post a message
           source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/dashboard/usage-summary'
+            curl --location --request POST 'https://${HOSTNAME}/iudx/v2/requests/{request_id}/conversations' \
+            --header 'Authorization: Bearer <your-token>' \
+            --header 'Content-Type: application/json' \
+            --data '{"sender_role": "requester", "message_type": "question", "request_type": "join_orgs", "content": "Do I need to attach additional documents?", "is_internal": false}'
+      description: |
+        Post a new message within a request conversation. The `sender_role` must be either `requester` or `approver`. Set `is_internal` to `true` for notes visible only to approvers, or `false` for messages visible to all participants. Leave `parent_msg_id` null to post a root-level message; provide it to post as a reply.
+      security:
+        - authorization: []
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          description: UUID of the request this message belongs to
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sender_role
+                - message_type
+                - request_type
+                - content
+              properties:
+                parent_msg_id:
+                  type: string
+                  format: uuid
+                  nullable: true
+                  description: Null for root-level messages; provide a valid message UUID to post as a reply.
+                sender_role:
+                  type: string
+                  enum:
+                    - requester
+                    - approver
+                  description: Role of the sender.
+                message_type:
+                  type: string
+                  enum:
+                    - text
+                    - question
+                    - answer
+                    - info_request
+                    - note
+                    - system
+                  description: Type of the message.
+                request_type:
+                  type: string
+                  enum:
+                    - join_orgs
+                    - create_orgs
+                    - credit_request
+                  description: The type of request this conversation belongs to.
+                content:
+                  type: string
+                  description: The message body.
+                is_internal:
+                  type: boolean
+                  description: Set to true for notes visible only to approvers; false for messages visible to all participants.
+                metadata:
+                  type: object
+                  nullable: true
+                  description: Optional arbitrary JSON metadata to attach to the message.
+      responses:
+        '200':
+          description: Message created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      request_type:
+                        type: string
+                        example: join_orgs
+                      request_type_id:
+                        type: string
+                        format: uuid
+                      parent_msg_id:
+                        type: string
+                        format: uuid
+                        nullable: true
+                        description: Null if this is a root-level message.
+                      sender_id:
+                        type: string
+                        format: uuid
+                      sender_role:
+                        type: string
+                        enum:
+                          - requester
+                          - approver
+                        example: requester
+                      message_type:
+                        type: string
+                        example: text
+                      content:
+                        type: string
+                      is_internal:
+                        type: boolean
+                      metadata:
+                        type: object
+                        nullable: true
+                      created_at:
+                        type: string
+                        format: date-time
+                      reply_count:
+                        type: integer
+                        example: 0
+                      hasReplies:
+                        type: boolean
+                        example: false
+                      replies:
+                        type: array
+                        items: {}
+                        example: []
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+  /iudx/v2/requests/{request_id}/conversations/{msg_id}:
+    get:
+      tags:
+        - Conversations
+      operationId: get-request-conversation-by-id
+      summary: Get a single conversation message
+      x-codeSamples:
+        - lang: cURL
+          label: Get message by ID
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/requests/{request_id}/conversations/{msg_id}' \
+            --header 'Authorization: Bearer <your-token>'
+      description: |
+        Fetch a specific message by its ID. Any authenticated user can call this.
+      security:
+        - authorization: []
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          description: UUID of the request this message belongs to
+          schema:
+            type: string
+            format: uuid
+        - name: msg_id
+          in: path
+          required: true
+          description: UUID of the message to fetch
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Conversation message fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        example: c0ca7a6c-597f-4e03-b861-bb912b3cb1ec
+                      request_type:
+                        type: string
+                        example: join_orgs
+                      request_type_id:
+                        type: string
+                        format: uuid
+                        example: 7a1b2c3d-4e5f-6789-abcd-ef0123456789
+                      parent_msg_id:
+                        type: string
+                        format: uuid
+                        nullable: true
+                        example: null
+                      sender_id:
+                        type: string
+                        format: uuid
+                        example: 1dc28cc6-d614-461a-9b8f-d6110feb3e2f
+                      sender_role:
+                        type: string
+                        enum:
+                          - requester
+                          - approver
+                        example: requester
+                      message_type:
+                        type: string
+                        example: question
+                      content:
+                        type: string
+                        example: Do I need to add my phone number also?
+                      is_internal:
+                        type: boolean
+                        example: false
+                      metadata:
+                        type: object
+                        nullable: true
+                      reply_count:
+                        type: integer
+                        example: 2
+                      hasReplies:
+                        type: boolean
+                        example: true
+                      replies:
+                        type: array
+                        items: {}
+                        example: []
+                      created_at:
+                        type: string
+                        format: date-time
+                        example: '2026-05-05T08:52:22.936019Z'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '404':
+          description: Not Found - Message with given ID does not exist
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+    put:
+      tags:
+        - Conversations
+      operationId: put-request-conversation
+      summary: Update a conversation message
+      x-codeSamples:
+        - lang: cURL
+          label: Update message content
+          source: |
+            curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/requests/{request_id}/conversations/{msg_id}' \
+            --header 'Authorization: Bearer <your-token>' \
+            --header 'Content-Type: application/json' \
+            --data '{"content": "Updated message content"}'
+        - lang: cURL
+          label: Mark message as internal
+          source: |
+            curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/requests/{request_id}/conversations/{msg_id}' \
+            --header 'Authorization: Bearer <your-token>' \
+            --header 'Content-Type: application/json' \
+            --data '{"is_internal": true}'
+      description: |
+        Update an existing message. Only the original sender can edit their own message. `content`, `metadata`, or `is_internal` can be changed. At least one field must be provided.
+      security:
+        - authorization: []
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: msg_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                content:
+                  type: string
+                  nullable: true
+                metadata:
+                  type: object
+                  nullable: true
+                is_internal:
+                  type: boolean
+                  nullable: true
+      responses:
+        '200':
+          description: Message updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      request_type:
+                        type: string
+                        example: join_orgs
+                      request_type_id:
+                        type: string
+                        format: uuid
+                      parent_msg_id:
+                        type: string
+                        format: uuid
+                        nullable: true
+                      sender_id:
+                        type: string
+                        format: uuid
+                      sender_role:
+                        type: string
+                        enum:
+                          - requester
+                          - approver
+                      message_type:
+                        type: string
+                        example: question
+                      content:
+                        type: string
+                      is_internal:
+                        type: boolean
+                      metadata:
+                        type: object
+                        nullable: true
+                      created_at:
+                        type: string
+                        format: date-time
+                      reply_count:
+                        type: integer
+                        example: 0
+                      hasReplies:
+                        type: boolean
+                        example: false
+                      replies:
+                        type: array
+                        items: {}
+                        example: []
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '403':
+          description: Forbidden - Caller is not the message owner
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
+        '404':
+          description: Not Found - Message with given ID does not exist
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+    delete:
+      tags:
+        - Conversations
+      operationId: delete-request-conversation
+      summary: Delete a conversation message
+      x-codeSamples:
+        - lang: cURL
+          label: Delete message
+          source: |
+            curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/requests/{request_id}/conversations/{msg_id}' \
+            --header 'Authorization: Bearer <your-token>'
+      description: |
+        Delete a message. Only the original sender can delete their own message.
+      security:
+        - authorization: []
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: msg_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Conversation message deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: string
+                    example: Conversation message deleted
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '403':
+          description: Forbidden - Caller is not the message owner
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
+        '404':
+          description: Not Found - Message with given ID does not exist
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+  /iudx/v2/requests/{request_id}/conversations/{msg_id}/reply:
+    post:
+      tags:
+        - Conversations
+      operationId: post-request-conversation-reply
+      summary: Reply to a conversation message
+      x-codeSamples:
+        - lang: cURL
+          label: Reply to message
+          source: |
+            curl --location --request POST 'https://${HOSTNAME}/iudx/v2/requests/{request_id}/conversations/{msg_id}/reply' \
+            --header 'Authorization: Bearer <your-token>' \
+            --header 'Content-Type: application/json' \
+            --data '{"sender_role": "approver", "message_type": "answer", "content": "Yes, please attach your ID proof.", "is_internal": false}'
+      description: |
+        Post a reply to an existing message. The `msg_id` in the path is automatically used as the `parent_msg_id` for this reply. Set `is_internal` to `true` to create a reply visible only to approvers.
+      security:
+        - authorization: []
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          description: UUID of the request this conversation belongs to
+          schema:
+            type: string
+            format: uuid
+        - name: msg_id
+          in: path
+          required: true
+          description: UUID of the message being replied to. Automatically set as parent_msg_id of this reply.
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sender_role
+                - message_type
+                - content
+              properties:
+                sender_role:
+                  type: string
+                  enum:
+                    - requester
+                    - approver
+                  description: Role of the sender.
+                message_type:
+                  type: string
+                  enum:
+                    - text
+                    - question
+                    - answer
+                    - info_request
+                    - note
+                    - system
+                  description: Type of the reply message.
+                content:
+                  type: string
+                  description: The reply message body.
+                is_internal:
+                  type: boolean
+                  description: Set to true to mark this reply as internal (visible only to approvers).
+                metadata:
+                  type: object
+                  nullable: true
+                  description: Optional arbitrary JSON metadata to attach to the reply.
+      responses:
+        '200':
+          description: Reply created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      request_type:
+                        type: string
+                        example: join_orgs
+                      request_type_id:
+                        type: string
+                        format: uuid
+                      parent_msg_id:
+                        type: string
+                        format: uuid
+                        description: UUID of the message this is a reply to.
+                      sender_id:
+                        type: string
+                        format: uuid
+                      sender_role:
+                        type: string
+                        enum:
+                          - requester
+                          - approver
+                        example: requester
+                      message_type:
+                        type: string
+                        example: text
+                      content:
+                        type: string
+                      is_internal:
+                        type: boolean
+                      metadata:
+                        type: object
+                        nullable: true
+                      created_at:
+                        type: string
+                        format: date-time
+                      reply_count:
+                        type: integer
+                        example: 0
+                      hasReplies:
+                        type: boolean
+                        example: false
+                      replies:
+                        type: array
+                        items: {}
+                        example: []
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '404':
+          description: Not Found - Parent message with given ID does not exist
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
   /iudx/v2/central/cat/list:
     post:
       tags:
@@ -20559,6 +22808,185 @@ components:
           type: string
         instance:
           type: string
+    AclServer:
+      type: object
+      required:
+        - id
+        - name
+        - url
+        - owner_id
+        - visibility
+        - status
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: DX ACL APD Server
+        url:
+          type: string
+          example: acl-apd.iudx.io
+        owner_id:
+          type: string
+          format: uuid
+        visibility:
+          type: string
+          enum:
+            - PUBLIC
+            - PRIVATE
+          example: PUBLIC
+        status:
+          type: string
+          enum:
+            - PENDING
+            - ACTIVE
+            - INACTIVE
+          example: ACTIVE
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    AclServerCreateRequest:
+      type: object
+      required:
+        - name
+        - url
+        - visibility
+      properties:
+        name:
+          type: string
+          example: DX ACL APD Server
+        url:
+          type: string
+          example: acl-apd.iudx.io
+        visibility:
+          type: string
+          enum:
+            - PUBLIC
+            - PRIVATE
+          example: PUBLIC
+    AclServerResponse:
+      type: object
+      required:
+        - type
+        - title
+        - result
+      properties:
+        type:
+          type: string
+          example: dx:controlPlane:success
+        title:
+          type: string
+          example: Success
+        result:
+          $ref: '#/components/schemas/AclServer'
+    ConversationMessage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: c0ca7a6c-597f-4e03-b861-bb912b3cb1ec
+        request_type:
+          type: string
+          description: Type of request this conversation belongs to (e.g. join_orgs, create_orgs, credit_request)
+          example: join_orgs
+        request_type_id:
+          type: string
+          format: uuid
+          description: UUID of the specific request instance this conversation thread is attached to
+          example: 7a1b2c3d-4e5f-6789-abcd-ef0123456789
+        parent_msg_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: UUID of the parent message for replies; null for root-level messages
+          example: null
+        sender_id:
+          type: string
+          format: uuid
+          example: 1dc28cc6-d614-461a-9b8f-d6110feb3e2f
+        sender_role:
+          type: string
+          enum:
+            - requester
+            - approver
+          example: requester
+        message_type:
+          type: string
+          enum:
+            - text
+            - question
+            - answer
+            - info_request
+            - note
+            - system
+          example: question
+        content:
+          type: string
+          example: Do I need to add my phone number?
+        is_internal:
+          type: boolean
+          description: If true, the message is visible only to approvers; if false, visible to all participants
+          example: false
+        metadata:
+          type: object
+          nullable: true
+          description: Optional arbitrary JSON metadata attached to the message
+        reply_count:
+          type: integer
+          description: Number of direct child replies to this message
+          example: 4
+        hasReplies:
+          type: boolean
+          description: True if reply_count > 0
+          example: true
+        created_at:
+          type: string
+          format: date-time
+          example: '2026-05-07T08:00:00Z'
+    ThreadedReplies:
+      type: object
+      properties:
+        result:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConversationMessage'
+        paginationInfo:
+          type: object
+          properties:
+            page:
+              type: integer
+              example: 1
+            size:
+              type: integer
+              example: 3
+            totalCount:
+              type: integer
+              description: Total direct replies for this message
+              example: 4
+            totalPages:
+              type: integer
+              example: 2
+            hasNext:
+              type: boolean
+              description: true if there are more replies beyond the current page
+              example: true
+            hasPrevious:
+              type: boolean
+              example: false
+    ThreadedMessage:
+      allOf:
+        - $ref: '#/components/schemas/ConversationMessage'
+        - type: object
+          properties:
+            replies:
+              $ref: '#/components/schemas/ThreadedReplies'
     TextSearchField:
       type: object
       additionalProperties: false
