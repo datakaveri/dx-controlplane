@@ -5,19 +5,9 @@ import io.vertx.codegen.annotations.ProxyGen;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
-import org.cdpg.dx.aaa.delegation.models.DelegationScopeConstraint;
-import org.cdpg.dx.aaa.delegation.models.DelegationUpdateRequest;
-
-
-import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
 
 @VertxGen
 @ProxyGen
@@ -61,4 +51,10 @@ public interface DelegationService {
   Future<JsonObject> checkItemAccess(String delegatorId, String delegateId);
 
   Future<JsonObject> getDelegatorRoles(String userId, String delegatorId);
+
+  Future<JsonObject> appendDelegationConstraints(
+      String delegationId, String userId, JsonArray roles, String orgId);
+
+  Future<JsonObject> removeDelegationConstraints(String delegationId, String userId,
+                                                 JsonArray roles);
 }

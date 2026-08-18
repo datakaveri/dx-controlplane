@@ -281,7 +281,7 @@ paths:
             --header 'Authorization: Bearer <token>' \
             --header 'Content-Type: application/json' \
             --data '{
-              "expiry_at": "2026-12-31T23:59:59Z"
+              "expiryAt": "2026-12-31T23:59:59Z"
             }'
     get:
       tags:
@@ -3765,7 +3765,7 @@ paths:
     post:
       summary: Grant delegation to another user (Delegator)
       description: |-
-        Creates a delegation grant that allows another user (the delegate) to act on behalf of the caller (the delegator). The delegation can be granted at a broad role level or further restricted to specific scopes and entity types, each with an independent expiry. The global `expiry_at` applies to the entire delegation; individual constraint-level `expiry_at` values override this for that specific scope. Requires an authenticated user token.
+        Creates a delegation grant that allows another user (the delegate) to act on behalf of the caller (the delegator). The delegation can be granted at a broad role level or further restricted to specific scopes and entity types, each with an independent expiry. The global `expiryAt` applies to the entire delegation; individual constraint-level `expiryAt` values override this for that specific scope. Requires an authenticated user token.
         **Log Type:** `USER_ACTION`
       tags:
         - Delegation APIs
@@ -3779,16 +3779,16 @@ paths:
             schema:
               type: object
               required:
-                - delegate_id
+                - delegateId
                 - justification
-                - expiry_at
+                - expiryAt
               properties:
-                delegate_id:
+                delegateId:
                   type: string
                   format: uuid
                 justification:
                   type: string
-                expiry_at:
+                expiryAt:
                   type: string
                   pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
                 roles:
@@ -3809,56 +3809,170 @@ paths:
                           properties:
                             scope:
                               $ref: '#/components/schemas/DelegationScope'
-                            entity_id:
+                            entityId:
                               type: array
                               nullable: true
                               items:
                                 type: string
                                 format: uuid
-                            entity_type:
+                            entityType:
                               allOf:
                                 - $ref: '#/components/schemas/DelegationEntityType'
                               nullable: true
-                            expiry_at:
+                            expiryAt:
                               type: string
                               pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
             examples:
               minimal:
                 summary: Minimal - Delegate all roles
                 value:
-                  delegate_id: ba6a3947-0080-4cbf-bdde-0578bc817d42
-                  justification: Granting user cos admin role access while the owner is on leave
-                  expiry_at: '2026-01-31T23:59:59'
+                  delegateId: ba6a3947-0080-4cbf-bdde-0578bc817d42
+                  justification: Granting temporary access to another user while the delegator is unavailable
+                  expiryAt: '2026-01-31T23:59:59'
               role_with_simple_scope:
                 summary: Role with simple scope constraint
                 value:
-                  delegate_id: ba6a3947-0080-4cbf-bdde-0578bc817d42
-                  justification: Granting user cos admin role access while the owner is on leave
-                  expiry_at: '2026-01-31T23:59:59'
+                  delegateId: ba6a3947-0080-4cbf-bdde-0578bc817d42
+                  justification: Granting org admin access with restricted asset publishing permissions
+                  expiryAt: '2026-01-31T23:59:59'
                   roles:
                     - role: org_admin
                       constraints:
-                        - scope: org_admin_access
-                          expiry_at: '2026-01-31T23:59:59'
+                        - scope: org-asset-publish
+                          expiryAt: '2026-01-31T23:59:59'
               role_with_entity_constraints:
                 summary: Role with entity-specific constraints
                 value:
-                  delegate_id: ba6a3947-0080-4cbf-bdde-0578bc817d42
-                  justification: Granting user cos admin role access while the owner is on leave
-                  expiry_at: '2026-01-31T23:59:59'
+                  delegateId: ba6a3947-0080-4cbf-bdde-0578bc817d42
+                  justification: Granting org admin access with restricted user management and data access permissions
+                  expiryAt: '2026-01-31T23:59:59'
                   roles:
                     - role: org_admin
                       constraints:
-                        - scope: user_management
-                          expiry_at: '2026-01-31T23:59:59'
-                        - scope: data_access
-                          entity_id:
-                            - xyz-uuid-123
-                          entity_type: data_bank
-                          expiry_at: '2026-01-31T23:59:59'
+                        - scope: org-asset-management
+                          entityId:
+                            - dd96f3d9-9654-434d-882b-c35a9fa6fc35
+                          entityType: adex:DataBank
+                          expiryAt: '2026-01-31T23:59:59'
       responses:
         '200':
           description: Delegation created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: object
+                    properties:
+                      delegationId:
+                        type: string
+                        format: uuid
+                        example: 1601251c-7af4-42b2-9a14-8b8ba502a90b
+                      delegatorId:
+                        type: string
+                        format: uuid
+                        example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+                      delegateId:
+                        type: string
+                        format: uuid
+                        example: ba6a3947-0080-4cbf-bdde-0578bc817d42
+                      justification:
+                        type: string
+                        example: Granting org admin access with restricted user management and data access permissions
+                      expiryAt:
+                        type: string
+                        example: '2026-08-14T23:59:59'
+                      status:
+                        type: string
+                        example: active
+                      createdAt:
+                        type: string
+                        example: '2026-08-14T08:13:53.313806'
+                      scopeConstraints:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            role:
+                              type: string
+                              example: org_admin
+                            scope:
+                              type: string
+                              example: org-asset-management
+                            entityId:
+                              type: string
+                              example: dd96f3d9-9654-434d-882b-c35a9fa6fc35
+                            entityType:
+                              type: string
+                              example: adex:DataBank
+                            expiryAt:
+                              type: string
+                              example: '2026-08-14T23:59:59'
+              examples:
+                entity_specific_constraint:
+                  summary: Delegation with entity-specific constraint
+                  value:
+                    type: urn:dx:controlPlane:success
+                    title: Success
+                    result:
+                      delegationId: 1601251c-7af4-42b2-9a14-8b8ba502a90b
+                      delegatorId: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+                      delegateId: ba6a3947-0080-4cbf-bdde-0578bc817d42
+                      justification: Granting org admin access with restricted user management and data access permissions
+                      expiryAt: '2026-08-14T23:59:59'
+                      status: active
+                      createdAt: '2026-08-14T08:13:53.313806'
+                      scopeConstraints:
+                        - role: org_admin
+                          scope: org-asset-management
+                          entityId: dd96f3d9-9654-434d-882b-c35a9fa6fc35
+                          entityType: adex:DataBank
+                          expiryAt: '2026-08-14T23:59:59'
+                scope_without_entity_constraint:
+                  summary: Delegation with scope-level constraint
+                  value:
+                    type: urn:dx:controlPlane:success
+                    title: Success
+                    result:
+                      delegationId: 7a8cd356-083c-40b8-801e-71ba4f07bb03
+                      delegatorId: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+                      delegateId: ba6a3947-0080-4cbf-bdde-0578bc817d43
+                      justification: Granting org admin access with restricted asset management permissions
+                      expiryAt: '2026-08-14T23:59:59'
+                      status: active
+                      createdAt: '2026-08-14T08:15:48.522954'
+                      scopeConstraints:
+                        - role: org_admin
+                          scope: org-asset-management
+                          entityId: '*'
+                          entityType: '*'
+                          expiryAt: '2026-08-10T23:59:59'
+                full_role_delegation:
+                  summary: Full delegation with all scopes for the highest role
+                  value:
+                    type: urn:dx:controlPlane:success
+                    title: Success
+                    result:
+                      delegationId: c6292bce-1b95-4a2e-80d0-a09463326dad
+                      delegatorId: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+                      delegateId: 52641981-cddd-46ca-ba53-4c76bd3732cb
+                      justification: Granting temporary access to another user while the delegator is unavailable
+                      expiryAt: '2026-08-14T23:59:59'
+                      status: active
+                      createdAt: '2026-08-14T08:17:05.832832'
+                      scopeConstraints:
+                        - role: org_admin
+                          scope: '*'
+                          entityId: '*'
+                          entityType: '*'
+                          expiryAt: '2026-08-14T23:59:59'
         '400':
           description: Bad Request - Invalid request body, missing required fields, or malformed UUIDs
           content:
@@ -3886,7 +4000,7 @@ paths:
                 title: Forbidden
                 detail: User does not have the required role.
         '404':
-          description: Delegate user not found - The specified delegate_id does not correspond to an existing user
+          description: Delegate user not found - The specified delegateId does not correspond to an existing user
   /iudx/v2/auth/delegation/delegate:
     get:
       summary: Get all delegations where the current user is the delegate
@@ -3904,45 +4018,98 @@ paths:
               schema:
                 type: object
                 properties:
-                  delegation_id:
+                  type:
                     type: string
-                    format: uuid
-                    description: Unique ID for the delegation grant
-                    example: c84d49b1-1f22-4e2a-b8a9-87c1d65b7d13
-                  delegator_id:
+                    example: urn:dx:controlPlane:success
+                  title:
                     type: string
-                    format: uuid
-                    description: ID of the user who created the delegation
-                    example: 22b96e3b-88c4-4e14-a4e2-41cc0b34c3c2
-                  delegate_id:
-                    type: string
-                    format: uuid
-                    description: ID of the user who received the delegation
-                    example: a5cdd22e-7c0a-4a8d-bb3a-1d1f87b7b221
-                  justification:
-                    type: string
-                    description: Reason for granting delegation
-                    example: Temporary org admin backup
-                  expiry_at:
-                    type: string
-                    pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
-                    description: Global expiry timestamp for this delegation
-                    example: '2025-12-31T23:59:59'
-                  status:
-                    type: string
-                    description: Current status of the delegation
-                    example: approved
-                  created_at:
-                    type: string
-                    format: date-time
-                    description: Timestamp when the delegation was created
-                    example: '2025-01-15T10:20:30Z'
-                  revoked_at:
-                    type: string
-                    format: date-time
-                    nullable: true
-                    description: Timestamp when revoked
-                    example: '2025-07-01T09:00:00Z'
+                    example: Success
+                  result:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        delegationId:
+                          type: string
+                          format: uuid
+                          description: Unique ID for the delegation grant
+                          example: a33b5619-e842-4fcd-807a-3e8053ae43a1
+                        delegatorId:
+                          type: string
+                          format: uuid
+                          description: ID of the user who created the delegation
+                          example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+                        delegateId:
+                          type: string
+                          format: uuid
+                          description: ID of the user who received the delegation
+                          example: 847d1741-9f1e-4583-89f8-96f254ca6e36
+                        justification:
+                          type: string
+                          description: Reason for granting delegation
+                          example: Granting user cos admin role access while the owner is on leave
+                        expiryAt:
+                          type: string
+                          pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
+                          description: Global expiry timestamp for this delegation
+                          example: '2026-08-13T23:59:59'
+                        status:
+                          type: string
+                          description: Current status of the delegation
+                          example: active
+                        createdAt:
+                          type: string
+                          format: date-time
+                          description: Timestamp when the delegation was created
+                          example: '2026-08-13T06:43:59.132738'
+                        revokedAt:
+                          type: string
+                          format: date-time
+                          nullable: true
+                          description: Timestamp when the delegation was revoked
+                        constraints:
+                          type: array
+                          description: Scope and entity constraints associated with the delegation
+                          items:
+                            type: object
+                            properties:
+                              role:
+                                type: string
+                                example: org_admin
+                              scope:
+                                type: string
+                                example: '*'
+                              entityId:
+                                type: string
+                                example: '*'
+                              entityType:
+                                type: string
+                                example: '*'
+                              expiryAt:
+                                type: string
+                                pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
+                                example: '2026-08-13T23:59:59'
+                        delegator:
+                          type: object
+                          description: Information about the user who created the delegation
+                          properties:
+                            delegatorId:
+                              type: string
+                              format: uuid
+                              example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+                            delegatorFirstName:
+                              type: string
+                              example: nivosat
+                            delegatorLastName:
+                              type: string
+                              example: nivosat
+                            delegatorEmail:
+                              type: string
+                              format: email
+                              example: nivosat@gmail.com
+                            delegatorOrganization:
+                              type: string
+                              example: TestOrg1
         '401':
           description: Unauthorized - Token invalid or expired
           content:
@@ -3957,7 +4124,7 @@ paths:
         - lang: cURL
           label: get all delegation grants cURL
           source: |
-            curl --location 'https://localhost:8080/iudx/v2/auth/delegation/delegate' \
+            curl --location 'https://${HOSTNAME}/iudx/v2/auth/delegation/delegate' \
             --header 'Authorization: Bearer <keycloak_token>'
   /iudx/v2/auth/delegation/delegator:
     get:
@@ -3976,45 +4143,99 @@ paths:
               schema:
                 type: object
                 properties:
-                  delegation_id:
+                  type:
                     type: string
-                    format: uuid
-                    description: Unique ID for the delegation grant
-                    example: c84d49b1-1f22-4e2a-b8a9-87c1d65b7d13
-                  delegator_id:
+                    example: urn:dx:controlPlane:success
+                  title:
                     type: string
-                    format: uuid
-                    description: ID of the user who created the delegation
-                    example: 22b96e3b-88c4-4e14-a4e2-41cc0b34c3c2
-                  delegate_id:
-                    type: string
-                    format: uuid
-                    description: ID of the user who received the delegation
-                    example: a5cdd22e-7c0a-4a8d-bb3a-1d1f87b7b221
-                  justification:
-                    type: string
-                    description: Reason for granting delegation
-                    example: Temporary org admin backup
-                  expiry_at:
-                    type: string
-                    pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
-                    description: Global expiry timestamp for this delegation
-                    example: '2025-12-31T23:59:59'
-                  status:
-                    type: string
-                    description: Current status of the delegation
-                    example: approved
-                  created_at:
-                    type: string
-                    format: date-time
-                    description: Timestamp when the delegation was created
-                    example: '2025-01-15T10:20:30Z'
-                  revoked_at:
-                    type: string
-                    format: date-time
-                    nullable: true
-                    description: Timestamp when revoked
-                    example: '2025-07-01T09:00:00Z'
+                    example: Success
+                  result:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        delegationId:
+                          type: string
+                          format: uuid
+                          description: Unique ID for the delegation grant
+                          example: ef6dcc25-ac17-4a6f-a43b-2248ebe977d5
+                        delegatorId:
+                          type: string
+                          format: uuid
+                          description: ID of the user who created the delegation
+                          example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+                        delegateId:
+                          type: string
+                          format: uuid
+                          description: ID of the user who received the delegation
+                          example: da56e517-f8bc-46fd-95e3-7257acd64da7
+                        justification:
+                          type: string
+                          description: Reason for granting delegation
+                          example: Granting user cos admin role access while the owner is on leave
+                        expiryAt:
+                          type: string
+                          pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
+                          description: Global expiry timestamp for this delegation
+                          example: '2026-08-10T11:59:59'
+                        status:
+                          type: string
+                          description: Current status of the delegation
+                          example: active
+                        createdAt:
+                          type: string
+                          format: date-time
+                          description: Timestamp when the delegation was created
+                          example: '2026-08-10T06:30:46.426809'
+                        revokedAt:
+                          type: string
+                          format: date-time
+                          nullable: true
+                          description: Timestamp when the delegation was revoked
+                          example: null
+                        constraints:
+                          type: array
+                          description: Scope and entity constraints associated with the delegation
+                          items:
+                            type: object
+                            properties:
+                              role:
+                                type: string
+                                example: org_admin
+                              scope:
+                                type: string
+                                example: org-asset-publish
+                              entityId:
+                                type: string
+                                example: '*'
+                              entityType:
+                                type: string
+                                example: '*'
+                              expiryAt:
+                                type: string
+                                pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
+                                example: '2026-08-10T12:02:59'
+                        delegate:
+                          type: object
+                          description: Information about the user who received the delegation
+                          properties:
+                            delegateId:
+                              type: string
+                              format: uuid
+                              example: da56e517-f8bc-46fd-95e3-7257acd64da7
+                            delegateFirstName:
+                              type: string
+                              example: Provider
+                            delegateLastName:
+                              type: string
+                              example: Organisation
+                            delegateEmail:
+                              type: string
+                              format: email
+                              example: user@example.com
+                            delegateOrganization:
+                              type: string
+                              example: CDPG-At-IISc
         '401':
           description: Unauthorized - Token invalid or expired
           content:
@@ -4029,7 +4250,7 @@ paths:
         - lang: cURL
           label: get all delegation grants cURL
           source: |
-            curl --location 'https://localhost:8443/iudx/v2/auth/delegation/delegator' \
+            curl --location 'https://${HOSTNAME}/iudx/v2/auth/delegation/delegator' \
             --header 'Authorization: Bearer <keycloak_token>'
   /iudx/v2/auth/delegation/{id}:
     parameters:
@@ -4038,7 +4259,7 @@ paths:
         name: id
         in: path
         required: true
-        description: UUID of the delegation_id
+        description: UUID of the delegationId
     get:
       summary: Get a delegation grant by ID
       description: Returns the details of a specific delegation grant identified by its UUID. Requires an authenticated user token. Only the delegator or delegate of this grant can view it.
@@ -4057,44 +4278,115 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
-                    example: Delegation grant retrieved
+                    example: Success
                   result:
                     type: object
                     properties:
-                      delegation_id:
+                      delegationId:
                         type: string
                         format: uuid
-                        example: c84d49b1-1f22-4e2a-b8a9-87c1d65b7d13
-                      delegator_id:
+                        description: Unique ID for the delegation grant
+                        example: 0b3aff2e-a310-4814-92fc-0ca30f34f6d5
+                      delegatorId:
                         type: string
                         format: uuid
-                        example: 22b96e3b-88c4-4e14-a4e2-41cc0b34c3c2
-                      delegate_id:
+                        description: ID of the user who created the delegation
+                        example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+                      delegateId:
                         type: string
                         format: uuid
-                        example: a5cdd22e-7c0a-4a8d-bb3a-1d1f87b7b221
+                        description: ID of the user who received the delegation
+                        example: 52641981-cddd-46ca-ba53-4c76bd3732cb
                       justification:
                         type: string
-                        example: Temporary org admin backup
-                      expiry_at:
+                        description: Reason for granting delegation
+                        example: Granting user cos admin role access while the owner is on leave
+                      expiryAt:
                         type: string
                         pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
-                        example: '2025-12-31T23:59:59'
+                        description: Global expiry timestamp for this delegation
+                        example: '2026-08-13T23:59:59'
                       status:
                         type: string
-                        example: approved
-                      created_at:
+                        description: Current status of the delegation
+                        example: active
+                      createdAt:
                         type: string
                         format: date-time
-                        example: '2025-01-15T10:20:30Z'
-                      revoked_at:
+                        description: Timestamp when the delegation was created
+                        example: '2026-08-13T12:48:45.49437'
+                      revokedAt:
                         type: string
                         format: date-time
                         nullable: true
-                        example: '2025-07-01T09:00:00Z'
+                        description: Timestamp when the delegation was revoked
+                      scopeConstraints:
+                        type: array
+                        description: Scope and entity constraints associated with the delegation
+                        items:
+                          type: object
+                          properties:
+                            role:
+                              type: string
+                              example: org_admin
+                            scope:
+                              type: string
+                              example: '*'
+                            entityId:
+                              type: string
+                              example: '*'
+                            entityType:
+                              type: string
+                              example: '*'
+                            expiryAt:
+                              type: string
+                              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
+                              example: '2026-08-13T23:59:59'
+                      delegator:
+                        type: object
+                        description: Information about the user who created the delegation
+                        properties:
+                          delegatorId:
+                            type: string
+                            format: uuid
+                            example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+                          delegatorFirstName:
+                            type: string
+                            example: nivosat
+                          delegatorLastName:
+                            type: string
+                            example: nivosat
+                          delegatorEmail:
+                            type: string
+                            format: email
+                            example: org_admin@example.com
+                          delegatorOrganization:
+                            type: string
+                            example: TestOrg1
+                      delegate:
+                        type: object
+                        description: Information about the user who received the delegation
+                        properties:
+                          delegateId:
+                            type: string
+                            format: uuid
+                            example: 52641981-cddd-46ca-ba53-4c76bd3732cb
+                          delegateFirstName:
+                            type: string
+                            example: towiw
+                          delegateLastName:
+                            type: string
+                            example: towiw
+                          delegateEmail:
+                            type: string
+                            format: email
+                            example: user@example.com
+                          delegateOrganization:
+                            type: string
+                            example: TestOrg1
         '401':
           description: Unauthorized - Token invalid or expired
           content:
@@ -4120,7 +4412,7 @@ paths:
                     example: Delegation grant not found
                   detail:
                     type: string
-                    example: No record found for delegation_id provided
+                    example: No record found for delegationId provided
       x-codeSamples:
         - lang: cURL
           label: get delegation grant by ID cURL
@@ -4154,17 +4446,26 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: urn:dx:auth:Success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
-                  detail:
-                    type: string
-                    example: Delegation deleted successfully
+                  result:
+                    type: object
+                    properties:
+                      delegationId:
+                        type: string
+                        format: uuid
+                        example: a33b5619-e842-4fcd-807a-3e8053ae43a1
+                      status:
+                        type: string
+                        example: deleted
               example:
-                type: urn:dx:auth:Success
+                type: urn:dx:controlPlane:success
                 title: Success
-                detail: Delegation deleted successfully
+                result:
+                  delegationId: a33b5619-e842-4fcd-807a-3e8053ae43a1
+                  status: deleted
         '400':
           description: Invalid delegation ID format
           content:
@@ -4250,6 +4551,238 @@ paths:
                 type: urn:dx:auth:InternalServerError
                 title: Internal Server Error
                 detail: An error occurred while deleting the delegation
+  /iudx/v2/auth/delegation/{id}/constraints:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: UUID of the delegation grant
+        schema:
+          type: string
+          format: uuid
+    patch:
+      summary: Append constraints to an existing delegation
+      description: |
+        Appends one or more role constraints to an existing delegation grant. Only the delegator can append constraints. The specified roles must already be part of the delegation. The supplied constraints are added without modifying the existing constraints.
+      operationId: patch-auth-v2-delegation-id-constraints
+      tags:
+        - Delegation APIs
+      security:
+        - authorization: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - roles
+              properties:
+                roles:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required:
+                      - role
+                      - constraints
+                    properties:
+                      role:
+                        $ref: '#/components/schemas/DelegationRole'
+                      constraints:
+                        type: array
+                        minItems: 1
+                        items:
+                          type: object
+                          required:
+                            - scope
+                          properties:
+                            scope:
+                              $ref: '#/components/schemas/DelegationScope'
+                            entityId:
+                              type: array
+                              nullable: true
+                              items:
+                                type: string
+                                format: uuid
+                            entityType:
+                              allOf:
+                                - $ref: '#/components/schemas/DelegationEntityType'
+                              nullable: true
+                            expiryAt:
+                              type: string
+                              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
+            examples:
+              append_constraints:
+                summary: Append constraints to an existing role
+                value:
+                  roles:
+                    - role: org_admin
+                      constraints:
+                        - scope: org-asset-management
+                          entityId:
+                            - dd96f3d9-9654-434d-882b-c35a9fa6fc35
+                          entityType: adex:DataBank
+                          expiryAt: '2026-08-31T23:59:59'
+                        - scope: org-asset-publish
+                          entityId:
+                            - 4a1b3c4d-5e6f-7890-ab12-cd3456789012
+                          entityType: adex:AiModel
+                          expiryAt: '2026-08-31T23:59:59'
+      responses:
+        '200':
+          description: Constraints appended successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: object
+                    properties:
+                      delegationId:
+                        type: string
+                        format: uuid
+                      status:
+                        type: string
+                        example: constraints_appended
+        '400':
+          description: Invalid request or constraint
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalBadRequest'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - User is not the delegator or is not allowed to delegate the requested scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:forbidden
+                title: Forbidden
+                detail: Only the delegator can append delegation constraints
+    delete:
+      summary: Remove constraints from an existing delegation
+      description: |
+        Removes one or more constraints from an existing delegation grant. Only the delegator can remove constraints. The supplied role and constraint definitions are matched against the constraints associated with the delegation.
+      operationId: delete-auth-v2-delegation-id-constraints
+      tags:
+        - Delegation APIs
+      security:
+        - authorization: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - roles
+              properties:
+                roles:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required:
+                      - role
+                      - constraints
+                    properties:
+                      role:
+                        $ref: '#/components/schemas/DelegationRole'
+                      constraints:
+                        type: array
+                        minItems: 1
+                        items:
+                          type: object
+                          required:
+                            - scope
+                          properties:
+                            scope:
+                              $ref: '#/components/schemas/DelegationScope'
+                            entityId:
+                              type: array
+                              nullable: true
+                              items:
+                                type: string
+                                format: uuid
+                            entityType:
+                              allOf:
+                                - $ref: '#/components/schemas/DelegationEntityType'
+                              nullable: true
+            examples:
+              remove_constraints:
+                summary: Remove specific constraints
+                value:
+                  roles:
+                    - role: org_admin
+                      constraints:
+                        - scope: org-asset-management
+                          entityId:
+                            - dd96f3d9-9654-434d-882b-c35a9fa6fc35
+                          entityType: adex:DataBank
+                        - scope: org-asset-publish
+                          entityId:
+                            - 4a1b3c4d-5e6f-7890-ab12-cd3456789012
+                          entityType: adex:AiModel
+      responses:
+        '200':
+          description: Constraints removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: object
+                    properties:
+                      delegationId:
+                        type: string
+                        format: uuid
+                      status:
+                        type: string
+                        example: constraints_removed
+        '400':
+          description: Invalid request or constraint definition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalBadRequest'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - User is not the delegator
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:forbidden
+                title: Forbidden
+                detail: Only the delegator can remove delegation constraints
   /iudx/v2/cat/search:
     post:
       tags:
@@ -15226,9 +15759,9 @@ components:
     PostAppIdRequest:
       type: object
       required:
-        - expiry_at
+        - expiryAt
       properties:
-        expiry_at:
+        expiryAt:
           type: string
           pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
         roles:
@@ -15249,13 +15782,13 @@ components:
                   properties:
                     scope:
                       $ref: '#/components/schemas/DelegationScope'
-                    entity_id:
+                    entityId:
                       type: array
                       nullable: true
                       items:
                         type: string
                         format: uuid
-                    entity_type:
+                    entityType:
                       $ref: '#/components/schemas/DelegationEntityType'
                       nullable: true
     AppIdResponse:

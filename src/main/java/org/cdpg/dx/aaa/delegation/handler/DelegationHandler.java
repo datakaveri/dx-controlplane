@@ -1,9 +1,13 @@
 package org.cdpg.dx.aaa.delegation.handler;
 
+import static org.cdpg.dx.aaa.delegation.util.Constants.*;
+
+import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
+import java.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.audit.util.AuditingHelper;
@@ -19,13 +23,8 @@ import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.response.ResponseBuilder;
-import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
-
-import java.util.*;
-
-import static org.cdpg.dx.aaa.delegation.util.Constants.*;
 
 public class DelegationHandler {
 
@@ -66,7 +65,7 @@ public class DelegationHandler {
 
               delegationService
                   .getDelegationScopeConstraints(delegationId)
-                  .map(constraints -> new UpdatedGrantResponse(grant, constraints))
+                  .compose(constraints -> addKeycloakUserInfo(grant, constraints))
                   .onSuccess(
                       updatedGrant -> {
                         AuditLog auditLog =
@@ -75,12 +74,47 @@ public class DelegationHandler {
                                 RoutingContextHelper.getRequestPath(ctx),
                                 "GET",
                                 "Get Delegation Grant By ID");
+
                         RoutingContextHelper.setAuditingLog(ctx, auditLog);
-                        ResponseBuilder.sendSuccess(ctx, updatedGrant, urnGenerator);
+                        ResponseBuilder.sendSuccess(ctx, updatedGrant.toJson(), urnGenerator);
                       })
                   .onFailure(ctx::fail);
             })
         .onFailure(ctx::fail);
+  }
+
+  private Future<UpdatedGrantResponse> addKeycloakUserInfo(
+      JsonObject grant, List<JsonObject> constraints) {
+
+    UUID delegatorId = UUID.fromString(grant.getString("delegatorId"));
+    UUID delegateId = UUID.fromString(grant.getString("delegateId"));
+
+    return keycloakUserService
+        .getUserById(delegatorId)
+        .compose(
+            delegatorUser ->
+                keycloakUserService
+                    .getUserById(delegateId)
+                    .map(
+                        delegateUser -> {
+                          JsonObject delegator =
+                              new JsonObject()
+                                  .put("delegatorId", delegatorUser.sub().toString())
+                                  .put("delegatorFirstName", delegatorUser.givenName())
+                                  .put("delegatorLastName", delegatorUser.familyName())
+                                  .put("delegatorEmail", delegatorUser.email())
+                                  .put("delegatorOrganization", delegatorUser.organisationName());
+
+                          JsonObject delegate =
+                              new JsonObject()
+                                  .put("delegateId", delegateUser.sub().toString())
+                                  .put("delegateFirstName", delegateUser.givenName())
+                                  .put("delegateLastName", delegateUser.familyName())
+                                  .put("delegateEmail", delegateUser.email())
+                                  .put("delegateOrganization", delegateUser.organisationName());
+
+                          return new UpdatedGrantResponse(grant, delegator, delegate, constraints);
+                        }));
   }
 
   public void getAllDelegationsOfDelegate(RoutingContext ctx) {
@@ -159,7 +193,7 @@ public class DelegationHandler {
 
               JsonObject response =
                   new JsonObject()
-                      .put("delegation_id", delegationId.toString())
+                      .put("delegationId", delegationId.toString())
                       .put("status", "deleted");
 
               ResponseBuilder.sendSuccess(ctx, response, urnGenerator);
@@ -179,7 +213,7 @@ public class DelegationHandler {
     body.put(DELEGATOR_ID, delegatorId.toString());
 
     List<String> delegatorRoles = delegationHandlerValidator.extractRoles(user);
-    body.put("delegator_id", delegatorId);
+    body.put("delegatorId", delegatorId);
 
     try {
       delegationHandlerValidator.validateCreateDelegationGrantBody(
@@ -251,6 +285,76 @@ public class DelegationHandler {
               }
 
               ResponseBuilder.sendSuccess(ctx, res, urnGenerator);
+            })
+        .onFailure(ctx::fail);
+  }
+
+  public void appendDelegationConstraints(RoutingContext ctx) {
+
+    String userId = ctx.user().subject();
+
+    String delegationId = ctx.pathParam("id");
+
+    DxUser user = RoutingContextHelper.fromPrincipal(ctx);
+
+    String orgId = user.organisationId();
+
+    JsonObject body = ctx.body().asJsonObject();
+
+    JsonArray roles = body.getJsonArray("roles");
+
+    if (roles == null || roles.isEmpty()) {
+      ctx.fail(new DxBadRequestException("roles must not be empty"));
+      return;
+    }
+
+    delegationService
+        .appendDelegationConstraints(delegationId, userId, roles, orgId)
+        .onSuccess(
+            result -> {
+              AuditLog auditLog =
+                  AuditingHelper.createAuditLog(
+                      ctx.user(),
+                      RoutingContextHelper.getRequestPath(ctx),
+                      "POST",
+                      "Append Delegation Constraints");
+
+              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+
+              ResponseBuilder.sendSuccess(ctx, result, urnGenerator);
+            })
+        .onFailure(ctx::fail);
+  }
+
+  public void removeDelegationConstraints(RoutingContext ctx) {
+
+    String userId = ctx.user().subject();
+
+    String delegationId = ctx.pathParam("id");
+
+    JsonObject body = ctx.body().asJsonObject();
+
+    JsonArray roles = body.getJsonArray("roles");
+
+    if (roles == null || roles.isEmpty()) {
+      ctx.fail(new DxBadRequestException("roles must not be empty"));
+      return;
+    }
+
+    delegationService
+        .removeDelegationConstraints(delegationId, userId, roles)
+        .onSuccess(
+            result -> {
+              AuditLog auditLog =
+                  AuditingHelper.createAuditLog(
+                      ctx.user(),
+                      RoutingContextHelper.getRequestPath(ctx),
+                      "POST",
+                      "Remove Delegation Constraints");
+
+              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+
+              ResponseBuilder.sendSuccess(ctx, result, urnGenerator);
             })
         .onFailure(ctx::fail);
   }

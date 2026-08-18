@@ -26,9 +26,9 @@ AppTokenRequest:
 PostAppIdRequest:
   type: object
   required:
-  - expiry_at
+  - expiryAt
   properties:
-    expiry_at:
+    expiryAt:
       type: string
       pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$
     roles:
@@ -49,13 +49,13 @@ PostAppIdRequest:
               properties:
                 scope:
                   $ref: delegation.yaml#/DelegationScope
-                entity_id:
+                entityId:
                   type: array
                   nullable: true
                   items:
                     type: string
                     format: uuid
-                entity_type:
+                entityType:
                   $ref: delegation.yaml#/DelegationEntityType
                   nullable: true
 AppIdResponse:
