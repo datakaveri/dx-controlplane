@@ -98,6 +98,7 @@ public class TokenClaimsBuilder {
     putIfNotBlank(claims, "twitter_account", dxUser.twitter_account());
     putIfNotBlank(claims, "linkedin_account", dxUser.linkedin_account());
     putIfNotBlank(claims, "github_account", dxUser.github_account());
+    putIfNotBlank(claims, "picture", dxUser.picture());
 
     // Pending roles (if any)
     if (dxUser.pendingRoles() != null && !dxUser.pendingRoles().isEmpty()) {

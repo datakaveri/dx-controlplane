@@ -182,6 +182,7 @@ public class RoutingContextHelper {
         "",
         "",
         "",
+        "",
         null,
         principal.getString("did", null),
         principal.getString("aud", null),

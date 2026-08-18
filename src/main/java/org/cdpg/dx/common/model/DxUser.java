@@ -26,6 +26,7 @@ public record DxUser(
         String twitter_account,
         String linkedin_account,
         String github_account,
+        String picture,
         Boolean account_enabled,// newly added field
         String did,
         String aud,
@@ -54,6 +55,7 @@ public record DxUser(
                 .put("twitter_account", twitter_account)
                 .put("linkedin_account", linkedin_account)
                 .put("github_account", github_account)
+                .put("picture", picture)
                 .put("account_enabled", account_enabled)
                 .put("did", did)
                 .put("aud", aud)
@@ -80,6 +82,7 @@ public record DxUser(
                 user.twitter_account(),
                 user.linkedin_account(),
                 user.github_account(),
+                user.picture(),
                 user.account_enabled(),// retain createdAt
                 user.did(),
                 user.aud(),
