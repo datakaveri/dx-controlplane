@@ -62,7 +62,7 @@
       label: Create AppId
       source: "curl --location 'https://${HOSTNAME}/iudx/v2/auth/app' \\\n--header 'Authorization:\
         \ Bearer <token>' \\\n--header 'Content-Type: application/json' \\\n--data\
-        \ '{\n  \"expiry_at\": \"2026-12-31T23:59:59Z\"\n}'\n"
+        \ '{\n  \"expiryAt\": \"2026-12-31T23:59:59Z\"\n}'\n"
   get:
     tags:
     - App

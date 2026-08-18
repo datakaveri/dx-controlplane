@@ -2,38 +2,32 @@ package org.cdpg.dx.aaa.delegation;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.User;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.delegation.handler.DelegationHandler;
-import org.cdpg.dx.auth.authorization.registry.SystemRoleScopeMap;
-import org.cdpg.dx.auth.model.DxRole;
-import org.cdpg.dx.common.exception.DxBadRequestException;
-import org.cdpg.dx.common.exception.DxForbiddenException;
-import org.cdpg.dx.common.model.DxUser;
-
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.auth.authorization.registry.SystemRoleScopeMap;
+import org.cdpg.dx.auth.model.DxRole;
+import org.cdpg.dx.common.exception.DxBadRequestException;
+import org.cdpg.dx.common.model.DxUser;
 
 public class DelegationHandlerValidator {
 
   private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
   private static final Logger LOGGER = LogManager.getLogger(DelegationHandlerValidator.class);
 
+  public void validateCreateDelegationGrantBody(
+      UUID userId, List<String> delegatorRoles, JsonObject body) {
 
-  public void validateCreateDelegationGrantBody(UUID userId, List<String> delegatorRoles, JsonObject body) {
+    // *****************************************************************************************************************
 
-    //*****************************************************************************************************************
-
-    String expirationDate = body.getString("expiry_at");
+    String expirationDate = body.getString("expiryAt");
     if (expirationDate == null || expirationDate.isBlank()) {
-      throw new DxBadRequestException("Expiration date is required");
+      throw new DxBadRequestException("expiryAt");
     }
 
     LocalDateTime expiry;
@@ -67,14 +61,14 @@ public class DelegationHandlerValidator {
         throw new DxBadRequestException("Role is required in roles array");
       }
 
-//      if(delegatorRoles.contains("cos_admin"))
-//      {
-//        LOGGER.info("This user can have roles provider, org_admin and compute - no need to check the role provided in roles constraint ");
-         //return;
-//      }
-//      else
-        if(!delegatorRoles.contains(role))
-      {
+      //      if(delegatorRoles.contains("cos_admin"))
+      //      {
+      //        LOGGER.info("This user can have roles provider, org_admin and compute - no need to
+      // check the role provided in roles constraint ");
+      // return;
+      //      }
+      //      else
+      if (!delegatorRoles.contains(role)) {
         throw new DxBadRequestException("The delegator/user doesnot have the role "+ role);
       }
 
@@ -87,8 +81,8 @@ public class DelegationHandlerValidator {
       for (int j = 0; j < constraints.size(); j++) {
         JsonObject constraint = constraints.getJsonObject(j);
         String scope = constraint.getString("scope");
-        String entityId = constraint.getString("entity_id");
-        String entityType = constraint.getString("entity_type");
+        String entityId = constraint.getString("entityId");
+        String entityType = constraint.getString("entityType");
 
         if (scope == null || scope.isBlank()) {
           throw new DxBadRequestException("Scope is required in constraints");
@@ -107,24 +101,18 @@ public class DelegationHandlerValidator {
 
         if (entityIdPresent != entityTypePresent) {
           throw new DxBadRequestException(
-            "Both entity_id and entity_type must be provided together for scope: "
-              + scope
-          );
+              "Both entityId and entityType must be provided together for scope: " + scope);
         }
 
         // entity_id & entity_type both absent → implicit wildcard
         if (!entityIdPresent) {
           LOGGER.info(
-            "Scope {} granted for role {} on all entities (implicit wildcard)",
-            scope, role
-          );
+              "Scope {} granted for role {} on all entities (implicit wildcard)", scope, role);
         } else {
           LOGGER.info(
-            "Scope {} granted for role {} on entity {} ({})",
-            scope, role, entityId, entityType
-          );
+              "Scope {} granted for role {} on entity {} ({})", scope, role, entityId, entityType);
         }
-       }
+      }
     }
 
   }

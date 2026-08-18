@@ -11,6 +11,7 @@ import io.vertx.core.json.JsonObject;
 import java.time.LocalDateTime;
 import java.util.*;
 import org.cdpg.dx.aaa.delegation.DelegationValidator;
+import org.cdpg.dx.aaa.delegation.UpdatedGrantResponse;
 import org.cdpg.dx.aaa.delegation.dao.*;
 import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
 import org.cdpg.dx.aaa.delegation.models.DelegationScopeConstraint;
@@ -100,11 +101,11 @@ public class DelegationServiceImpl implements DelegationService {
                   }
                 }
                 if (row.getString("entity_id") != null)
-                  constraint.put("entity_id", row.getString("entity_id"));
+                  constraint.put("entityId", row.getString("entity_id"));
                 if (row.getString("entity_type") != null)
-                  constraint.put("entity_type", row.getString("entity_type"));
+                  constraint.put("entityType", row.getString("entity_type"));
                 if (row.getString("constraint_expiry_at") != null)
-                  constraint.put("expiry_at", row.getString("constraint_expiry_at"));
+                  constraint.put("expiryAt", row.getString("constraint_expiry_at"));
                 constraints.add(constraint);
               }
 
@@ -145,10 +146,10 @@ public class DelegationServiceImpl implements DelegationService {
       String orgId) {
     LOGGER.info("Creating delegation grant: {}", delegationGrantBody);
 
-    UUID delegatorId = UUID.fromString(delegationGrantBody.getString(DELEGATOR_ID));
-    UUID delegateId = UUID.fromString(delegationGrantBody.getString(DELEGATE_ID));
+    UUID delegatorId = UUID.fromString(delegationGrantBody.getString("delegatorId"));
+    UUID delegateId = UUID.fromString(delegationGrantBody.getString("delegateId"));
 
-    DelegationGrant delegationGrant = DelegationGrant.fromJson(delegationGrantBody);
+    DelegationGrant delegationGrant = DelegationGrant.fromRequestJson(delegationGrantBody);
 
     boolean isWildcardDelegation = (roleConstraints == null || roleConstraints.isEmpty());
 
@@ -179,7 +180,13 @@ public class DelegationServiceImpl implements DelegationService {
                           .map(v -> created));
     }
 
-    return flow.map(DelegationGrant::toJson)
+    return flow.compose(
+            created ->
+                getDelegationScopeConstraints(created.delegationId().toString())
+                    .map(
+                        constraints ->
+                            new UpdatedGrantResponse(created.toJson(), null, null, constraints)))
+        .map(UpdatedGrantResponse::toJson)
         .recover(err -> Future.failedFuture(BaseDxException.from(err)));
   }
 
@@ -243,12 +250,12 @@ public class DelegationServiceImpl implements DelegationService {
 
   @Override
   public Future<List<JsonObject>> getAllDelegationsByDelegator(String userIdStr) {
-    return getDelegationsWithConstraints(Map.of(DELEGATOR_ID, userIdStr));
+    return getDelegationsWithConstraints(Map.of(DELEGATOR_ID, userIdStr), true);
   }
 
   @Override
   public Future<List<JsonObject>> getAllDelegationsOfDelegate(String userIdStr) {
-    return getDelegationsWithConstraints(Map.of(DELEGATE_ID, userIdStr));
+    return getDelegationsWithConstraints(Map.of(DELEGATE_ID, userIdStr), false);
   }
 
   /**
@@ -256,10 +263,12 @@ public class DelegationServiceImpl implements DelegationService {
    * constraints, and returns a list of enriched JSON objects. Returns an empty list instead of
    * failing when no delegations are found.
    */
-  private Future<List<JsonObject>> getDelegationsWithConstraints(Map<String, Object> filterMap) {
+  private Future<List<JsonObject>> getDelegationsWithConstraints(
+      Map<String, Object> filterMap, boolean includeDelegateInfo) {
     return delegationGrantDAO
         .getAllWithFilters(filterMap)
         .compose(this::enrichDelegationsWithConstraints)
+        .compose(delegations -> enrichWithUserInfo(delegations, includeDelegateInfo))
         .recover(
             err -> {
               BaseDxException dxEx = BaseDxException.from(err);
@@ -267,6 +276,104 @@ public class DelegationServiceImpl implements DelegationService {
                 return Future.succeededFuture(List.of());
               }
               return Future.failedFuture(dxEx);
+            });
+  }
+
+  /**
+   * Enriches each delegation grant with user information retrieved from Keycloak.
+   *
+   * <p>When {@code includeDelegateInfo} is {@code true}, the delegate's user information is fetched
+   * using the {@code delegateId} and added to the delegation grant. Otherwise, the delegator's user
+   * information is fetched using the {@code delegatorId} and added to the delegation grant.
+   *
+   * @param delegations list of delegation grants to enrich
+   * @param includeDelegateInfo whether to include delegate information; when {@code false},
+   *     delegator information is included
+   * @return a {@link Future} containing the enriched delegation grants
+   */
+  private Future<List<JsonObject>> enrichWithUserInfo(
+      List<JsonObject> delegations, boolean includeDelegateInfo) {
+
+    List<Future<JsonObject>> futures =
+        delegations.stream()
+            .map(
+                delegation -> {
+                  String userId =
+                      includeDelegateInfo
+                          ? delegation.getString("delegateId")
+                          : delegation.getString("delegatorId");
+
+                  return keycloakUserService
+                      .getUserById(UUID.fromString(userId))
+                      .map(
+                          user -> {
+                            JsonObject userInfo = new JsonObject();
+
+                            if (includeDelegateInfo) {
+                              userInfo
+                                  .put("delegateId", user.sub().toString())
+                                  .put("delegateFirstName", user.givenName())
+                                  .put("delegateLastName", user.familyName())
+                                  .put("delegateEmail", user.email())
+                                  .put("delegateOrganization", user.organisationName());
+                            } else {
+                              userInfo
+                                  .put("delegatorId", user.sub().toString())
+                                  .put("delegatorFirstName", user.givenName())
+                                  .put("delegatorLastName", user.familyName())
+                                  .put("delegatorEmail", user.email())
+                                  .put("delegatorOrganization", user.organisationName());
+                            }
+
+                            delegation.put(
+                                includeDelegateInfo ? "delegate" : "delegator", userInfo);
+
+                            return delegation;
+                          })
+                      .recover(
+                          err -> {
+                            LOGGER.warn(
+                                "Failed to fetch {} user {} from Keycloak: {}",
+                                includeDelegateInfo ? "delegate" : "delegator",
+                                userId,
+                                err.getMessage());
+
+                            JsonObject userInfo = new JsonObject();
+
+                            if (includeDelegateInfo) {
+                              userInfo
+                                  .put("delegateId", userId)
+                                  .putNull("delegateFirstName")
+                                  .putNull("delegateLastName")
+                                  .putNull("delegateEmail")
+                                  .putNull("delegateOrganization");
+                            } else {
+                              userInfo
+                                  .put("delegatorId", userId)
+                                  .putNull("delegatorFirstName")
+                                  .putNull("delegatorLastName")
+                                  .putNull("delegatorEmail")
+                                  .putNull("delegatorOrganization");
+                            }
+
+                            delegation.put(
+                                includeDelegateInfo ? "delegate" : "delegator", userInfo);
+
+                            return Future.succeededFuture(delegation);
+                          });
+                })
+            .toList();
+
+    return Future.all(futures)
+        .map(
+            composite -> {
+              List<JsonObject> result = new ArrayList<>();
+
+              for (int i = 0; i < futures.size(); i++) {
+                result.add(composite.resultAt(i));
+              }
+
+              return result;
             });
   }
 
@@ -298,7 +405,7 @@ public class DelegationServiceImpl implements DelegationService {
                                             c -> {
                                               JsonObject json = c.toJson();
                                               json.remove("id");
-                                              json.remove("delegation_id");
+                                              json.remove("delegationId");
                                               return json;
                                             })
                                         .toList());
@@ -395,7 +502,7 @@ public class DelegationServiceImpl implements DelegationService {
         String scope = constraint.getString("scope");
         LOGGER.info("constraints in delseviceImpl: {}", constraints.encode());
 
-        JsonArray entityIds = constraint.getJsonArray("entity_id");
+        JsonArray entityIds = constraint.getJsonArray("entityId");
 
         // skipping cos-admin-access and compute-management because no entity check is needed for
         // them
@@ -413,6 +520,46 @@ public class DelegationServiceImpl implements DelegationService {
     return Future.all(insertFutures).mapEmpty();
   }
 
+  private Future<Void> appendScopeConstraints(
+      UUID delegationId, JsonArray roles, LocalDateTime delegationExpiry) {
+
+    List<Future<Void>> futures = new ArrayList<>();
+
+    for (Object roleObj : roles) {
+
+      JsonObject roleJson = (JsonObject) roleObj;
+      String role = roleJson.getString("role");
+
+      JsonArray constraints = roleJson.getJsonArray("constraints");
+
+      if (constraints == null || constraints.isEmpty()) {
+        return Future.failedFuture(
+            new DxBadRequestException(
+                "constraints are required when appending delegation constraints for role " + role));
+      }
+
+      for (Object constraintObj : constraints) {
+
+        JsonObject constraint = (JsonObject) constraintObj;
+
+        JsonArray entityIds = constraint.getJsonArray("entityId");
+
+        if (entityIds != null && !entityIds.isEmpty()) {
+
+          for (Object entityId : entityIds) {
+            futures.add(createScopeConstraint(delegationId, role, constraint, entityId));
+          }
+
+        } else {
+
+          futures.add(createScopeConstraint(delegationId, role, constraint, null));
+        }
+      }
+    }
+
+    return Future.all(futures).mapEmpty();
+  }
+
   private Future<Void> createScopeConstraint(
       UUID delegationId, String role, JsonObject constraint, Object entityId) {
 
@@ -423,12 +570,12 @@ public class DelegationServiceImpl implements DelegationService {
             .put(
                 "scope",
                 constraint.getString("scope") != null ? constraint.getString("scope") : "*")
-            .put("expiry_at", constraint.getString("expiry_at"))
+            .put("expiry_at", constraint.getString("expiryAt"))
             .put("entity_id", entityId != null ? entityId : "*")
             .put(
                 "entity_type",
-                constraint.getString("entity_type") != null
-                    ? constraint.getString("entity_type")
+                constraint.getString("entityType") != null
+                    ? constraint.getString("entityType")
                     : "*");
 
     DelegationScopeConstraint delegationScopeConstraint = DelegationScopeConstraint.fromJson(dbRow);
@@ -558,5 +705,172 @@ public class DelegationServiceImpl implements DelegationService {
 
   private JsonObject fullAccessResponse() {
     return new JsonObject().put("title", "Success").put("result", List.of("*"));
+  }
+
+  private Future<UpdatedGrantResponse> addKeycloakUserInfo(
+      JsonObject grant, List<JsonObject> constraints) {
+
+    UUID delegatorId = UUID.fromString(grant.getString("delegatorId"));
+    UUID delegateId = UUID.fromString(grant.getString("delegateId"));
+
+    return keycloakUserService
+        .getUserById(delegatorId)
+        .compose(
+            delegatorUser ->
+                keycloakUserService
+                    .getUserById(delegateId)
+                    .map(
+                        delegateUser -> {
+                          JsonObject delegator =
+                              new JsonObject()
+                                  .put("delegatorId", delegatorUser.sub().toString())
+                                  .put("delegatorFirstName", delegatorUser.givenName())
+                                  .put("delegatorLastName", delegatorUser.familyName())
+                                  .put("delegatorEmail", delegatorUser.email())
+                                  .put("delegatorOrganization", delegatorUser.organisationName());
+
+                          JsonObject delegate =
+                              new JsonObject()
+                                  .put("delegateId", delegateUser.sub().toString())
+                                  .put("delegateFirstName", delegateUser.givenName())
+                                  .put("delegateLastName", delegateUser.familyName())
+                                  .put("delegateEmail", delegateUser.email())
+                                  .put("delegateOrganization", delegateUser.organisationName());
+
+                          return new UpdatedGrantResponse(grant, delegator, delegate, constraints);
+                        }));
+  }
+
+  @Override
+  public Future<JsonObject> appendDelegationConstraints(
+      String delegationId, String userId, JsonArray roles, String orgId) {
+
+    if (roles == null || roles.isEmpty()) {
+      return Future.failedFuture(new DxBadRequestException("roles must not be empty"));
+    }
+
+    return delegationGrantDAO
+        .get(UUID.fromString(delegationId))
+        .compose(
+            grant -> {
+
+              // Only delegator can modify the delegation.
+              if (!grant.delegatorId().toString().equals(userId)) {
+                return Future.failedFuture(
+                    new DxForbiddenException(
+                        "Only the delegator can append delegation constraints"));
+              }
+
+              // Do not allow modifications to expired/deleted grants.
+              if (grant.expiryAt() != null && grant.expiryAt().isBefore(LocalDateTime.now())) {
+                return Future.failedFuture(
+                    new DxBadRequestException("Cannot modify an expired delegation"));
+              }
+
+              JsonObject validationBody =
+                  new JsonObject()
+                      .put("delegatorId", userId)
+                      .put("delegateId", grant.delegateId().toString())
+                      .put("roles", roles)
+                      .put("expiryAt", grant.expiryAt());
+
+              return delegationValidator
+                  .validateEntityOwnership(validationBody, UUID.fromString(orgId), roles)
+                  .compose(
+                      ignored ->
+                          appendScopeConstraints(
+                              UUID.fromString(delegationId), roles, grant.expiryAt()))
+                  .compose(ignored -> getDelegationScopeConstraints(delegationId))
+                  .map(
+                      constraints ->
+                          new JsonObject()
+                              .put("delegationId", delegationId)
+                              .put("status", "updated")
+                              .put("constraints", new JsonArray(constraints)));
+            })
+        .recover(err -> Future.failedFuture(BaseDxException.from(err)));
+  }
+
+  @Override
+  public Future<JsonObject> removeDelegationConstraints(
+      String delegationId, String userId, JsonArray roles) {
+
+    if (roles == null || roles.isEmpty()) {
+      return Future.failedFuture(new DxBadRequestException("roles must not be empty"));
+    }
+
+    return delegationGrantDAO
+        .get(UUID.fromString(delegationId))
+        .compose(
+            grant -> {
+              if (!grant.delegatorId().toString().equals(userId)) {
+                return Future.failedFuture(
+                    new DxForbiddenException(
+                        "Only the delegator can remove delegation constraints"));
+              }
+
+              if (grant.expiryAt() != null && grant.expiryAt().isBefore(LocalDateTime.now())) {
+                return Future.failedFuture(
+                    new DxBadRequestException("Cannot modify an expired delegation"));
+              }
+
+              return removeScopeConstraints(UUID.fromString(delegationId), roles)
+                  .compose(ignored -> getDelegationScopeConstraints(delegationId))
+                  .map(
+                      constraints ->
+                          new JsonObject()
+                              .put("delegationId", delegationId)
+                              .put("status", "updated")
+                              .put("constraints", new JsonArray(constraints)));
+            })
+        .recover(err -> Future.failedFuture(BaseDxException.from(err)));
+  }
+
+  private Future<Void> removeScopeConstraints(UUID delegationId, JsonArray roles) {
+
+    List<Future<Integer>> deleteFutures = new ArrayList<>();
+
+    for (Object roleObj : roles) {
+
+      JsonObject roleJson = (JsonObject) roleObj;
+
+      String role = roleJson.getString("role");
+
+      JsonArray constraints = roleJson.getJsonArray("constraints");
+
+      if (constraints == null || constraints.isEmpty()) {
+        return Future.failedFuture(
+            new DxBadRequestException(
+                "constraints are required when removing delegation constraints"));
+      }
+
+      for (Object constraintObj : constraints) {
+
+        JsonObject constraint = (JsonObject) constraintObj;
+
+        String scope = constraint.getString("scope");
+
+        String entityType = constraint.getString("entityType", "*");
+
+        JsonArray entityIds = constraint.getJsonArray("entityId");
+
+        if (entityIds != null && !entityIds.isEmpty()) {
+
+          for (Object entityId : entityIds) {
+
+            deleteFutures.add(
+                scopeConstraintDAO.deleteByConstraint(
+                    delegationId, role, scope, entityId.toString(), entityType));
+          }
+
+        } else {
+
+          deleteFutures.add(
+              scopeConstraintDAO.deleteByConstraint(delegationId, role, scope, "*", entityType));
+        }
+      }
+    }
+
+    return Future.all(deleteFutures).mapEmpty();
   }
 }

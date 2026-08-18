@@ -1,7 +1,13 @@
 package org.cdpg.dx.aaa.delegation;
+
+import static io.vertx.core.Future.succeededFuture;
+
 import io.vertx.core.*;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import java.util.*;
+import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
+import org.cdpg.dx.aaa.delegation.util.Status;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
@@ -9,13 +15,6 @@ import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.*;
-
-import static org.cdpg.dx.aaa.delegation.util.Constants.DELEGATOR_ID;
-
-
-import static io.vertx.core.Future.succeededFuture;
 
 public class DelegationValidator {
 
@@ -40,12 +39,10 @@ public class DelegationValidator {
 
     LOGGER.info("Inside validateEntityOwnership");
 
-    UUID delegatorId =
-      UUID.fromString(delegationGrant.getString(DELEGATOR_ID));
+    UUID delegatorId = UUID.fromString(delegationGrant.getString("delegatorId"));
 
     return validateConstraints(delegatorId, rolesArray,orgId);
   }
-
 
   public Future<Void> validateConstraints(
     UUID actorId,
@@ -76,8 +73,8 @@ public class DelegationValidator {
         String scope = constraint.getString("scope");
         String normalizedScope = scope.toLowerCase();
 
-        JsonArray entityIds = constraint.getJsonArray("entity_id");
-        String entityType = constraint.getString("entity_type");
+        JsonArray entityIds = constraint.getJsonArray("entityId");
+        String entityType = constraint.getString("entityType");
 
         // wildcard entity
         if ((entityIds == null || entityIds.isEmpty()) && entityType == null) {
@@ -122,9 +119,6 @@ public class DelegationValidator {
       : CompositeFuture.all(validations).mapEmpty();
   }
 
-
-
-
   private Future<Void> validateItemIdEqualsDelegatorOrgId(UUID delegatorId, List<String> itemIds,UUID orgId) {
     LOGGER.info("Validate Item Id org equals delegator org!");
     if (itemIds == null || itemIds.isEmpty()) {
@@ -138,45 +132,48 @@ public class DelegationValidator {
     for (String itemId : itemIds) {
       GetItemRequest itemRequest = new GetItemRequest(itemId, delegatorIdStr);
 
-      Future<Void> validationFuture = itemService.getItem(itemRequest)
-        .compose(v -> {
-          LOGGER.info("response is {}",v.getResponse());
-          JsonObject response = v.getResponse(); // directly use it, no mapTo needed
-          if (response == null) {
-            return Future.failedFuture(
-              new DxBadRequestException("Response is empty for item: " + itemId));
-          }
+      Future<Void> validationFuture =
+          itemService
+              .getItem(itemRequest)
+              .compose(
+                  v -> {
+                    LOGGER.info("response is {}", v.getResponse());
+                    JsonObject response = v.getResponse(); // directly use it, no mapTo needed
+                    if (response == null) {
+                      return Future.failedFuture(
+                          new DxBadRequestException("Response is empty for item: " + itemId));
+                    }
 
-//          LOGGER.info("response is {}",response);
+                    //          LOGGER.info("response is {}",response);
 
-          JsonArray results = response.getJsonArray("results");
-          if (results == null || results.isEmpty()) {
-            return Future.failedFuture(
-              new DxBadRequestException("No result found for item: " + itemId));
-          }
+                    JsonArray results = response.getJsonArray("results");
+                    if (results == null || results.isEmpty()) {
+                      return Future.failedFuture(
+                          new DxBadRequestException("No result found for item: " + itemId));
+                    }
 
-          JsonObject itemResult = results.getJsonObject(0);
-          if (itemResult == null) {
-            return Future.failedFuture(
-              new DxBadRequestException("Item not found for id: " + itemId));
-          }
+                    JsonObject itemResult = results.getJsonObject(0);
+                    if (itemResult == null) {
+                      return Future.failedFuture(
+                          new DxBadRequestException("Item not found for id: " + itemId));
+                    }
 
-          String itemOrgId = results.getJsonObject(0).getString("organizationId");
-          if (itemOrgId == null) {
-            return Future.failedFuture(
+                    String itemOrgId = results.getJsonObject(0).getString("organizationId");
+                    if (itemOrgId == null) {
+                      return Future.failedFuture(
+                          new DxBadRequestException("Organization ID missing for item: " + itemId));
+                    }
 
-              new DxBadRequestException("Organization ID missing for item: " + itemId));
-          }
+                    if (!orgIdStr.equals(itemOrgId)) {
+                      return Future.failedFuture(
+                          new DxForbiddenException(
+                              "Item "
+                                  + itemId
+                                  + " does not belong to the delegator's organization"));
+                    }
 
-          if(!orgIdStr.equals(itemOrgId))
-          {
-            return Future.failedFuture(
-              new DxBadRequestException("Organization ID missing for item: " + itemId));
-        }
-
-          return Future.succeededFuture();
-
-        });
+                    return Future.succeededFuture();
+                  });
 
       validations.add(validationFuture);
     }
@@ -248,5 +245,39 @@ public class DelegationValidator {
     return "consumer";
   }
 
+  /**
+   * Validates that the caller is the delegator of the delegation and that the delegation is active.
+   */
+  public Future<Void> validateDelegator(DelegationGrant delegation, UUID userId) {
 
+    if (!delegation.delegatorId().equals(userId)) {
+      return Future.failedFuture(
+          new DxForbiddenException("Only the delegator can modify the delegation"));
+    }
+
+    if (!Status.ACTIVE.getStatus().equalsIgnoreCase(delegation.status())) {
+      return Future.failedFuture(
+          new DxForbiddenException("Only an active delegation can be modified"));
+    }
+
+    return Future.succeededFuture();
+  }
+
+  /**
+   * Validates that the caller is the delegate of the delegation and that the delegation is active.
+   */
+  public Future<Void> validateDelegate(DelegationGrant delegation, UUID delegateId) {
+
+    if (!delegation.delegateId().equals(delegateId)) {
+      return Future.failedFuture(
+          new DxForbiddenException("Only the delegate can reject the delegation"));
+    }
+
+    if (!Status.ACTIVE.getStatus().equalsIgnoreCase(delegation.status())) {
+      return Future.failedFuture(
+          new DxForbiddenException("Only an active delegation can be rejected"));
+    }
+
+    return Future.succeededFuture();
+  }
 }

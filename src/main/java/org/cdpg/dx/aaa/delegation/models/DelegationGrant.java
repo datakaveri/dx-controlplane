@@ -44,17 +44,52 @@ public record DelegationGrant(
     }
   }
 
+  public static DelegationGrant fromRequestJson(JsonObject json) {
+    try {
+      return new DelegationGrant(
+          json.getString("delegationId") != null
+              ? UUID.fromString(json.getString("delegationId"))
+              : null,
+
+          requireNonNull(
+              UUID.fromString(json.getString("delegatorId")),
+              "delegatorId"),
+
+          requireNonNull(
+              UUID.fromString(json.getString("delegateId")),
+              "delegateId"),
+
+          requireNonNull(
+              json.getString("justification"),
+              "justification"),
+
+          parseDateTime(json.getString("expiryAt")),
+
+          json.getString("status") != null
+              ? json.getString("status")
+              : Status.ACTIVE.getStatus(),
+
+          parseDateTime(json.getString("createdAt")),
+
+          parseDateTime(json.getString("revokedAt"))
+      );
+    } catch (Exception e) {
+      throw new DxValidationException(
+          "Invalid or missing field: " + e.getMessage());
+    }
+  }
+
   @Override
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
-    if (delegationId != null) json.put("delegation_id", delegationId.toString());
-    json.put("delegator_id", delegatorId.toString());
-    json.put("delegate_id", delegateId.toString());
+    if (delegationId != null) json.put("delegationId", delegationId.toString());
+    json.put("delegatorId", delegatorId.toString());
+    json.put("delegateId", delegateId.toString());
     json.put("justification", justification);
-    if (expiryAt != null) json.put("expiry_at", expiryAt.format(FORMATTER));
+    if (expiryAt != null) json.put("expiryAt", expiryAt.format(FORMATTER));
     if (status != null) json.put("status", status);
-    if (createdAt != null) json.put("created_at", createdAt.format(FORMATTER));
-    if (revokedAt != null) json.put("revoked_at", revokedAt.format(FORMATTER));
+    if (createdAt != null) json.put("createdAt", createdAt.format(FORMATTER));
+    if (revokedAt != null) json.put("revokedAt", revokedAt.format(FORMATTER));
     return json;
   }
 

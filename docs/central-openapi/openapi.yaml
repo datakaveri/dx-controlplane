@@ -275,6 +275,8 @@ paths:
     $ref: ../controlplane-openapi/paths/delegation.yaml#/~1iudx~1v2~1auth~1delegation~1delegator
   /iudx/v2/auth/delegation/{id}:
     $ref: ../controlplane-openapi/paths/delegation.yaml#/~1iudx~1v2~1auth~1delegation~1{id}
+  /iudx/v2/auth/delegation/{id}/constraints:
+    $ref: ../controlplane-openapi/paths/delegation.yaml#/~1iudx~1v2~1auth~1delegation~1{id}~1constraints
   /iudx/v2/cat/search:
     $ref: ../controlplane-openapi/paths/discovery.yaml#/~1iudx~1v2~1cat~1search
   /iudx/v2/cat/count:

@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.appCredentials.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.vertx.core.json.JsonObject;
 import java.util.HashMap;
 import java.util.Map;
@@ -82,6 +83,7 @@ public record AppCredentials(
   }
 
   @Override
+  @JsonIgnore
   public String getTableName() {
     return "app_credentials";
   }

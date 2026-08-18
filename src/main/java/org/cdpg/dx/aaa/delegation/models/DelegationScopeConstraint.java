@@ -1,23 +1,19 @@
 package org.cdpg.dx.aaa.delegation.models;
 
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
-import org.cdpg.dx.aaa.delegation.util.DelegationEntityType;
-import org.cdpg.dx.aaa.delegation.util.DelegationRole;
-import org.cdpg.dx.common.exception.DxValidationException;
-import org.cdpg.dx.database.postgres.base.entity.BaseEntity;
-
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
 import static org.cdpg.dx.common.util.DateTimeHelper.parseDateTime;
 import static org.cdpg.dx.common.util.ValidationUtils.requireNonNull;
+
+import io.vertx.core.json.JsonObject;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import org.cdpg.dx.aaa.delegation.util.DelegationRole;
+import org.cdpg.dx.common.exception.DxValidationException;
+import org.cdpg.dx.database.postgres.base.entity.BaseEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public record DelegationScopeConstraint(
   UUID id,
@@ -95,12 +91,12 @@ public record DelegationScopeConstraint(
     JsonObject json = new JsonObject();
 
     if (id != null) json.put("id", id.toString());
-    if (delegationId != null) json.put("delegation_id", delegationId.toString());
+    if (delegationId != null) json.put("delegationId", delegationId.toString());
     if (role != null) json.put("role", role.getRole());
     if (scope != null) json.put("scope", scope);
-    if (entityId != null) json.put("entity_id", entityId);
-    if (entityType != null) json.put("entity_type", entityType);
-    if (expiryAt != null) json.put("expiry_at", expiryAt.format(FORMATTER));
+    if (entityId != null) json.put("entityId", entityId);
+    if (entityType != null) json.put("entityType", entityType);
+    if (expiryAt != null) json.put("expiryAt", expiryAt.format(FORMATTER));
 
     return json;
   }

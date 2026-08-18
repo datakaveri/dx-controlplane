@@ -275,6 +275,8 @@ paths:
     $ref: paths/delegation.yaml#/~1iudx~1v2~1auth~1delegation~1delegator
   /iudx/v2/auth/delegation/{id}:
     $ref: paths/delegation.yaml#/~1iudx~1v2~1auth~1delegation~1{id}
+  /iudx/v2/auth/delegation/{id}/constraints:
+    $ref: paths/delegation.yaml#/~1iudx~1v2~1auth~1delegation~1{id}~1constraints
   /iudx/v2/cat/search:
     $ref: paths/discovery.yaml#/~1iudx~1v2~1cat~1search
   /iudx/v2/cat/count:
