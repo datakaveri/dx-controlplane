@@ -33,8 +33,183 @@ info:
   license:
     name: Apache 2.0
 servers:
-- url: https://${HOSTNAME}
-  description: dynamic server url
+  - url: https://${HOSTNAME}
+    description: dynamic server url
+tags:
+  - name: ACL Servers
+    description: |
+      Manage APD (Access Policy Decision) ACL server registrations. ACL servers enforce
+      authorization policies that decide which consumers can access which data resources.
+      Only `cos_admin` can register or delete ACL servers.
+  - name: Activity Logs
+    description: |
+      Retrieve audit logs of user API activity. Consumers can view their own activity history;
+      COS Admins can view activity across all users. Supports time-based filtering and pagination.
+  - name: Activity Report
+    description: |
+      Download CSV reports of platform activity logs for offline analysis and auditing.
+      Requires `cos_admin` role.
+  - name: App
+    description: |
+      App IDs provide a way to grant restricted, scoped access to platform APIs without exposing
+      the user's primary credentials. A user creates an App ID with a specific set of roles and
+      scopes, then shares the `appId` and `appSecret` with another user or service. The recipient
+      can then use these credentials to access platform APIs — but only within the roles and scopes
+      defined at the time the App ID was created.
+  - name: CAT Entity
+    description: |
+      CRUD operations for catalogue items — the metadata documents that describe datasets,
+      resource groups, resource servers, and other data entities on the platform.
+      Providers manage their own items; COS Admins can manage any item.
+      Items follow the [JSON-LD](https://json-ld.org/) format with DX-defined annotations.
+  - name: Certificate API
+    description: |
+      Public key certificate APIs. Exposes the JWKS endpoint (`/auth/v2/jwks`) for verifying
+      JWT token signatures using the platform's public key (ES256 algorithm).
+  - name: Client APIs
+    description: |
+      Manage client secrets for programmatic, credential-based authentication.
+      Client credentials allow external services or scripts to authenticate without
+      requiring a user-level JWT token.
+  - name: Compute APIs
+    description: |
+      Manage compute role requests. Users without the `compute` role can request it here.
+      COS Admins review and approve or reject requests. Once approved, the `compute` role
+      is assigned to the user in Keycloak, granting access to sandbox and compute infrastructure.
+      
+      **Status values:** `pending` → `granted` or `rejected`
+      
+      A previously rejected request can be re-submitted and is re-activated to `pending`
+      rather than creating a duplicate record.
+  - name: Conversations
+    description: |
+      Threaded message exchanges attached to entity-driven requests such as org join,
+      org create, and credit requests. Each conversation is scoped to a `request_id`.
+      
+      - Supports root-level messages and nested replies.
+      - Senders identify as `requester` or `approver`.
+      - Messages can be marked `is_internal: true` to make them visible only to approvers.
+      - Metadata (arbitrary JSON) can be attached to any message.
+  - name: Credit APIs
+    description: |
+      Manage the platform credit system used to control access to compute infrastructure.
+      Credits are granted by COS Admins and consumed when running compute workloads.
+      
+      **Flows:**
+      - Users submit a credit request; COS Admins grant (with `amount` and `expiration_date`) or reject it.
+      - COS Admins can directly add or deduct credits from a user's balance.
+      - Users can query their current balance and request history.
+      
+      **Status values:** `pending` → `granted` or `rejected`
+  - name: Delegation APIs
+    description: |
+      Delegation allows an authenticated user (the **delegator**) to grant another user
+      (the **delegate**) the ability to act on their behalf. Delegations are scoped by role
+      and optionally restricted by specific scopes and entity types, each with their own expiry.
+  - name: Discovery – My Assets
+    description: |
+      Search and count APIs for catalogue assets scoped to the currently authenticated user —
+      assets they own, have been granted access to, or that match their roles and permissions.
+  - name: Discovery – Public
+    description: |
+      Unauthenticated full-text and geo-based search and count APIs for discovering
+      publicly available catalogue assets across the platform.
+  - name: KYC APIs
+    description: |
+      Know Your Customer (KYC) verification management. KYC is a prerequisite before users
+      can access credit balance, submit credit requests, or request the compute role.
+      COS Admins can initiate or revoke a user's KYC verification.
+  - name: Leaderboard
+    description: |
+      Read-only leaderboard APIs that rank providers, organisations, and assets based on
+      platform interaction metrics such as views, likes, and usage frequency.
+  - name: List Available Filters
+    description: |
+      Returns the set of attribute-based filter keys that can be used in catalogue
+      search queries (e.g. resource type, tags, domains).
+  - name: Organisation APIs
+    description: |
+      Full lifecycle management of organisations on the platform.
+      
+      **Flows covered:**
+      - Organisation creation requests (submit, admin approval, withdrawal)
+      - Organisation join requests (submit, admin approval, rejection, withdrawal)
+      - Member management (list users, update roles, remove users)
+      - Provider role requests within an organisation
+      - Reports for org create, join, and provider role request activity
+      
+      **Roles involved:** Consumer, Org Admin, COS Admin
+  - name: Organisation Assets Management
+    description: |
+      Browse and filter assets registered under a specific organisation.
+      Supports visibility control, pagination, and attribute-based filtering.
+  - name: Platform Assets Management
+    description: |
+      Browse and filter all assets registered on the platform, regardless of organisation.
+      Intended for platform-wide discovery by admins and authorised users.
+  - name: Platform Provider Requests
+    description: |
+      Provider role requests for users who are **not part of any organisation**. This is the
+      platform track — an alternative to the organisation-based provider request flow.
+      
+      - **Consumer** — submits, views, or withdraws their own request.
+      - **COS Admin** — reviews, approves, or rejects all requests.
+      
+      On approval, the `PROVIDER` role is automatically assigned in Keycloak.
+      A user can only have one active (pending or granted) provider role request at a time,
+      across both platform and organisation tracks.
+  - name: Resource Servers
+    description: |
+      Manage resource server registrations. A resource server represents a deployed data
+      endpoint that participates in the DX access control ecosystem for policy enforcement
+      and token validation. Only `cos_admin` can register or delete resource servers.
+  - name: Role APIs
+    description: |
+      User profile management and custom role APIs.
+      
+      **Covers:**
+      - Get and update user info (self and admin views)
+      - Password management
+      - Admin-level user lookups and status updates
+      - Custom role system: assign scoped custom roles to other users, list them, and delete them.
+        Custom roles are stored in the platform DB and also reflected in Keycloak attributes.
+  - name: Share Assets
+    description: |
+      Control asset visibility across organisations and users. Providers can grant or revoke
+      access to their catalogue assets for specific organisations or individual users,
+      making assets discoverable to a targeted audience beyond the default visibility rules.
+  - name: Shared Assets
+    description: |
+      View catalogue assets that have been explicitly shared with the currently authenticated
+      user by other providers or organisations.
+  - name: Subscriptions
+    description: |
+      Manage NGSI-LD streaming subscriptions. Consumers subscribe to real-time data streams
+      from resource entities. Each subscription is identified by a queue name and is bound
+      to specific entity IDs and resource groups. Subscriptions can be created, listed,
+      retrieved by ID, updated, and deleted.
+      #- name: Summary
+      #description: |
+      #Dashboard summary APIs that aggregate platform-wide usage statistics — including
+    #active users, published assets, and API call volumes — for admin dashboards.
+  - name: token
+    description: |
+      JWT access token issuance APIs. Supports three token modes:
+      
+      - **Identity token** — provide `clientId` and `clientSecret` to get a basic identity token.
+      - **Access token** — additionally provide an `itemId` to get a token scoped to a specific resource.
+      - **Delegation token** — additionally provide a `delegationId` header to act on behalf of a delegator.
+      
+      Tokens are signed using ES256. Validate them against the JWKS endpoint (`/auth/v2/jwks`).
+  - name: User Interactions
+    description: |
+      APIs for recording and querying user interactions with catalogue assets (views, likes, dislikes).
+      Also includes user and provider feedback submission and retrieval, and a metrics sync
+      endpoint that pushes interaction counts into aggregated stores used for leaderboard ranking.
+  - name: Ingestion type(API/SFTP) APIs
+    description: |
+      Manage data ingestion adaptor registrations for API-based and SFTP-based ingestion pipelines.
+      Providers register adaptors to connect their data sources to the DX platform ingestion layer.
 paths:
   /iudx/v2/auth/app:
     $ref: ../controlplane-openapi/paths/app.yaml#/~1iudx~1v2~1auth~1app
@@ -172,8 +347,18 @@ paths:
     $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1organisations~1{id}~1join_requests~1report
   /iudx/v2/auth/organization/user/provider_role/requests/report:
     $ref: ../controlplane-openapi/paths/organisations.yaml#/~1iudx~1v2~1auth~1organization~1user~1provider_role~1requests~1report
+  /iudx/v2/auth/user/platform/provider-requests:
+    $ref: ../controlplane-openapi/paths/platform-provider-requests.yaml#/~1iudx~1v2~1auth~1user~1platform~1provider-requests
+  /iudx/v2/auth/admin/platform/provider-requests:
+    $ref: ../controlplane-openapi/paths/platform-provider-requests.yaml#/~1iudx~1v2~1auth~1admin~1platform~1provider-requests
+  /iudx/v2/auth/admin/platform/provider-requests/{id}:
+    $ref: ../controlplane-openapi/paths/platform-provider-requests.yaml#/~1iudx~1v2~1auth~1admin~1platform~1provider-requests~1{id}
   /iudx/v2/cat/getAllAssets:
     $ref: ../controlplane-openapi/paths/platform-assets.yaml#/~1iudx~1v2~1cat~1getAllAssets
+  /iudx/v2/cat/assets/share:
+    $ref: ../controlplane-openapi/paths/share-assets.yaml#/~1iudx~1v2~1cat~1assets~1share
+  /iudx/v2/cat/assets/shared-with-me:
+    $ref: ../controlplane-openapi/paths/share-assets.yaml#/~1iudx~1v2~1cat~1assets~1shared-with-me
   /iudx/v2/resource_servers:
     $ref: ../controlplane-openapi/paths/resource-servers.yaml#/~1iudx~1v2~1resource_servers
   /iudx/v2/resource_servers/{id}:
@@ -208,8 +393,22 @@ paths:
     $ref: ../controlplane-openapi/paths/subscriptions.yaml#/~1iudx~1v2~1subscriptions
   /iudx/v2/subscriptions/{subscriptionId}:
     $ref: ../controlplane-openapi/paths/subscriptions.yaml#/~1iudx~1v2~1subscriptions~1{subscriptionId}
-  /iudx/v2/dashboard/usage-summary:
-    $ref: ../controlplane-openapi/paths/summary.yaml#/~1iudx~1v2~1dashboard~1usage-summary
+    #/iudx/v2/dashboard/usage-summary:
+    #$ref: paths/summary.yaml#/~1iudx~1v2~1dashboard~1usage-summary
+  /iudx/v2/acl_servers:
+    $ref: ../controlplane-openapi/paths/acl-servers.yaml#/~1iudx~1v2~1acl_servers
+  /iudx/v2/acl_servers/{id}:
+    $ref: ../controlplane-openapi/paths/acl-servers.yaml#/~1iudx~1v2~1acl_servers~1{id}
+    #/iudx/v2/auth/app/user:
+    #$ref: paths/app.yaml#/~1iudx~1v2~1auth~1app~1user
+  /iudx/v2/cat/item/available-name:
+    $ref: ../controlplane-openapi/paths/catalogue.yaml#/~1iudx~1v2~1cat~1item~1available-name
+  /iudx/v2/requests/{request_id}/conversations:
+    $ref: ../controlplane-openapi/paths/conversations.yaml#/~1iudx~1v2~1requests~1{request_id}~1conversations
+  /iudx/v2/requests/{request_id}/conversations/{msg_id}:
+    $ref: ../controlplane-openapi/paths/conversations.yaml#/~1iudx~1v2~1requests~1{request_id}~1conversations~1{msg_id}
+  /iudx/v2/requests/{request_id}/conversations/{msg_id}/reply:
+    $ref: ../controlplane-openapi/paths/conversations.yaml#/~1iudx~1v2~1requests~1{request_id}~1conversations~1{msg_id}~1reply
   /iudx/v2/central/cat/list:
     $ref: paths/central-catalogue.yaml#/~1iudx~1v2~1central~1cat~1list
   /iudx/v2/central/cat/search:
@@ -607,3 +806,15 @@ components:
       $ref: ../controlplane-openapi/components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse409
     NgsiLdSubscriptionErrorResponse500:
       $ref: ../controlplane-openapi/components/schemas/subscription.yaml#/NgsiLdSubscriptionErrorResponse500
+    AclServer:
+      $ref: ../controlplane-openapi/components/schemas/acl-server.yaml#/AclServer
+    AclServerCreateRequest:
+      $ref: ../controlplane-openapi/components/schemas/acl-server.yaml#/AclServerCreateRequest
+    AclServerResponse:
+      $ref: ../controlplane-openapi/components/schemas/acl-server.yaml#/AclServerResponse
+    ConversationMessage:
+      $ref: ../controlplane-openapi/components/schemas/conversation.yaml#/ConversationMessage
+    ThreadedReplies:
+      $ref: ../controlplane-openapi/components/schemas/conversation.yaml#/ThreadedReplies
+    ThreadedMessage:
+      $ref: ../controlplane-openapi/components/schemas/conversation.yaml#/ThreadedMessage
