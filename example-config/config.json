@@ -1,4 +1,4 @@
-{ 
+{
   "version": "1.0",
   "zookeepers": [
     "zookeeper-client.zookeeper.svc.cluster.local"
