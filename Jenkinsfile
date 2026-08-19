@@ -95,24 +95,22 @@ pipeline {
           }
         }
 
-        stage('Detect config change') {
-          when {
-            changeset "example-config/config.json"
-          }
+        stage('Detect config/migration change') {
           steps {
             script {
-              env.CONFIG_CHANGED = 'true'
-            }
-          }
-        }
+              def baseCommit = env.GIT_PREVIOUS_SUCCESSFUL_COMMIT
+              if (!baseCommit) {
+                baseCommit = sh(script: 'git rev-list --max-parents=0 HEAD | tail -1', returnStdout: true).trim()
+              }
+              def changedFiles = sh(
+                script: "git diff --name-only ${baseCommit} HEAD",
+                returnStdout: true
+              ).trim().split('\n') as List
 
-        stage('Detect migration change') {
-          when {
-            changeset "src/main/resources/db/migration/**"
-          }
-          steps {
-            script {
-              env.MIGRATION_CHANGED = 'true'
+              env.CONFIG_CHANGED = changedFiles.contains('example-config/config.json') ? 'true' : 'false'
+              env.MIGRATION_CHANGED = changedFiles.any { it.startsWith('src/main/resources/db/migration/') } ? 'true' : 'false'
+
+              echo "Diffing against ${baseCommit} (last successful build's commit): config changed=${env.CONFIG_CHANGED}, migration changed=${env.MIGRATION_CHANGED}"
             }
           }
         }
