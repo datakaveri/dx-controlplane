@@ -16,6 +16,7 @@ import org.cdpg.dx.aaa.delegation.dao.*;
 import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
 import org.cdpg.dx.aaa.delegation.models.DelegationScopeConstraint;
 import org.cdpg.dx.aaa.delegation.models.DelegationUpdateRequest;
+import org.cdpg.dx.aaa.delegation.util.Status;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.auth.authorization.registry.SystemRoleScopeMap;
@@ -872,5 +873,40 @@ public class DelegationServiceImpl implements DelegationService {
     }
 
     return Future.all(deleteFutures).mapEmpty();
+  }
+
+  @Override
+  public Future<Boolean> rejectDelegation(String delegationId, String delegateId) {
+
+    return delegationGrantDAO
+        .get(UUID.fromString(delegationId))
+        .compose(
+            delegationGrant -> {
+              if (!delegationGrant.delegateId().toString().equals(delegateId)) {
+                return Future.failedFuture(
+                    new DxForbiddenException("Only the delegate can reject this delegation"));
+              }
+
+              if (!Status.ACTIVE.getStatus().equalsIgnoreCase(delegationGrant.status())) {
+                return Future.failedFuture(
+                    new DxBadRequestException("Only an active delegation can be rejected"));
+              }
+
+              return delegationGrantDAO
+                  .rejectDelegation(delegationId, delegateId)
+                  .compose(
+                      results -> {
+                        if (results == null || results.isEmpty()) {
+                          return Future.failedFuture(
+                              new DxBadRequestException("Delegation is no longer active or has already been rejected"));
+                        }
+
+                        LOGGER.info(
+                            "Delegation {} rejected by delegate {}", delegationId, delegateId);
+
+                        return Future.succeededFuture(true);
+                      });
+            })
+        .recover(err -> Future.failedFuture(BaseDxException.from(err)));
   }
 }

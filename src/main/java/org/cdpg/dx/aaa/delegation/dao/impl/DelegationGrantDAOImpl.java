@@ -1,5 +1,7 @@
 package org.cdpg.dx.aaa.delegation.dao.impl;
 
+import static org.cdpg.dx.aaa.delegation.util.Constants.*;
+
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import org.apache.logging.log4j.LogManager;
@@ -8,10 +10,8 @@ import org.cdpg.dx.aaa.delegation.dao.DelegationGrantDAO;
 import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
 import org.cdpg.dx.common.exception.BaseDxException;
 import org.cdpg.dx.database.postgres.base.dao.AbstractBaseDAO;
+import org.cdpg.dx.database.postgres.models.QueryResult;
 import org.cdpg.dx.database.postgres.service.PostgresService;
-
-import static org.cdpg.dx.aaa.delegation.util.Constants.*;
-
 
 public class DelegationGrantDAOImpl extends AbstractBaseDAO<DelegationGrant> implements DelegationGrantDAO {
 
@@ -52,5 +52,32 @@ public class DelegationGrantDAOImpl extends AbstractBaseDAO<DelegationGrant> imp
     return postgresService.executeQuery(sql, params)
         .map(result -> result.getRows())
         .recover(err -> Future.failedFuture(BaseDxException.from(err)));
+  }
+
+  @Override
+  public Future<JsonArray> rejectDelegation(String delegationId, String delegateId) {
+
+    String sql =
+        """
+        UPDATE delegation_grants
+        SET status = 'rejected'
+        WHERE delegation_id = $1::uuid
+          AND delegate_id = $2::uuid
+          AND status = 'active'
+        RETURNING *
+        """;
+
+    JsonArray params = new JsonArray().add(delegationId).add(delegateId);
+
+    return postgresService
+        .executeQuery(sql, params)
+        .map(QueryResult::getRows)
+        .recover(
+            err -> {
+              LOGGER.error(
+                  "Failed to reject delegation {} by delegate {}", delegationId, delegateId, err);
+
+              return Future.failedFuture(BaseDxException.from(err));
+            });
   }
 }

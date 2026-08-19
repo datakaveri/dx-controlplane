@@ -4780,6 +4780,69 @@ paths:
                 type: urn:dx:controlPlane:forbidden
                 title: Forbidden
                 detail: Only the delegator can remove delegation constraints
+  /iudx/v2/auth/delegation/{id}/reject:
+    post:
+      operationId: post-auth-v2-delegation-id-reject
+      tags:
+        - Delegation APIs
+      security:
+        - authorization: []
+      summary: Reject a delegation grant
+      description: |
+        Allows the delegate to reject an active delegation grant. Only the delegate associated with the delegation can perform this operation.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Delegation grant ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Delegation grant rejected successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: object
+                    properties:
+                      delegationId:
+                        type: string
+                        format: uuid
+                      status:
+                        type: string
+                        example: rejected
+        '400':
+          description: Invalid delegation ID or delegation cannot be rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalBadRequest'
+        '403':
+          description: Forbidden - User is not the delegate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:controlPlane:forbidden
+                title: Forbidden
+                detail: Only the delegate can reject the delegation
+        '404':
+          description: Delegation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /iudx/v2/cat/search:
     post:
       tags:

@@ -205,40 +205,60 @@ public class DelegationHandler {
     LOGGER.info("Handler: createDelegationGrant");
 
     DxUser user = RoutingContextHelper.fromPrincipal(ctx);
-    LOGGER.info("user:{}",user.toJson());
+    LOGGER.info("user: {}", user.toJson());
+
     UUID delegatorId = user.sub();
-    JsonObject body = ctx.body().asJsonObject();
-    String orgId = user.organisationId();
 
-    body.put(DELEGATOR_ID, delegatorId.toString());
-
-    List<String> delegatorRoles = delegationHandlerValidator.extractRoles(user);
-    body.put("delegatorId", delegatorId);
-
-    try {
-      delegationHandlerValidator.validateCreateDelegationGrantBody(
-          delegatorId, delegatorRoles, body);
-    } catch (DxBadRequestException | DxForbiddenException e) {
-      ctx.fail(e);
-      return;
-    }
-
-    JsonArray rolesConstraints = body.getJsonArray("roles");
-
-    delegationService
-        .createDelegationGrant(body, delegatorRoles, rolesConstraints,orgId)
+    keycloakUserService
+        .getUserById(delegatorId)
         .onSuccess(
-            createdGrant -> {
-              AuditLog auditLog =
-                  AuditingHelper.createAuditLog(
-                      ctx.user(),
-                      RoutingContextHelper.getRequestPath(ctx),
-                      "POST",
-                      "Delegation Grant Created");
-              RoutingContextHelper.setAuditingLog(ctx, auditLog);
-              ResponseBuilder.sendSuccess(ctx, createdGrant, urnGenerator);
+            keycloakUser -> {
+              String organizationId = keycloakUser.organisationId();
+
+              if (organizationId == null || organizationId.isBlank()) {
+                LOGGER.info("User organization information is not available");
+              }
+
+              JsonObject body = ctx.body().asJsonObject();
+
+              body.put(DELEGATOR_ID, delegatorId.toString());
+              body.put("delegatorId", delegatorId.toString());
+
+              List<String> delegatorRoles = delegationHandlerValidator.extractRoles(user);
+
+              try {
+                delegationHandlerValidator.validateCreateDelegationGrantBody(
+                    delegatorId, delegatorRoles, body);
+              } catch (DxBadRequestException | DxForbiddenException e) {
+                ctx.fail(e);
+                return;
+              }
+
+              JsonArray rolesConstraints = body.getJsonArray("roles");
+
+              delegationService
+                  .createDelegationGrant(body, delegatorRoles, rolesConstraints, organizationId)
+                  .onSuccess(
+                      createdGrant -> {
+                        AuditLog auditLog =
+                            AuditingHelper.createAuditLog(
+                                ctx.user(),
+                                RoutingContextHelper.getRequestPath(ctx),
+                                "POST",
+                                "Delegation Grant Created");
+
+                        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+
+                        ResponseBuilder.sendSuccess(ctx, createdGrant, urnGenerator);
+                      })
+                  .onFailure(ctx::fail);
             })
-        .onFailure(ctx::fail);
+        .onFailure(
+            err -> {
+              LOGGER.error("Failed to fetch user {} from Keycloak", delegatorId, err);
+
+              ctx.fail(new DxForbiddenException("Invalid user"));
+            });
   }
 
   public void createUpdateDelegationRequest(RoutingContext ctx) {
@@ -292,15 +312,9 @@ public class DelegationHandler {
   public void appendDelegationConstraints(RoutingContext ctx) {
 
     String userId = ctx.user().subject();
-
     String delegationId = ctx.pathParam("id");
 
-    DxUser user = RoutingContextHelper.fromPrincipal(ctx);
-
-    String orgId = user.organisationId();
-
     JsonObject body = ctx.body().asJsonObject();
-
     JsonArray roles = body.getJsonArray("roles");
 
     if (roles == null || roles.isEmpty()) {
@@ -308,22 +322,38 @@ public class DelegationHandler {
       return;
     }
 
-    delegationService
-        .appendDelegationConstraints(delegationId, userId, roles, orgId)
-        .onSuccess(
-            result -> {
-              AuditLog auditLog =
-                  AuditingHelper.createAuditLog(
-                      ctx.user(),
-                      RoutingContextHelper.getRequestPath(ctx),
-                      "POST",
-                      "Append Delegation Constraints");
-
-              RoutingContextHelper.setAuditingLog(ctx, auditLog);
-
-              ResponseBuilder.sendSuccess(ctx, result, urnGenerator);
+    keycloakUserService
+        .getUserById(UUID.fromString(userId))
+        .onFailure(
+            err -> {
+              LOGGER.error("Failed to fetch user {} from Keycloak", userId, err);
+              ctx.fail(new DxForbiddenException("Invalid user"));
             })
-        .onFailure(ctx::fail);
+        .onSuccess(
+            keycloakUser -> {
+              String organizationId = keycloakUser.organisationId();
+
+              if (organizationId == null || organizationId.isBlank()) {
+                LOGGER.info("User organization is not available");
+              }
+
+              delegationService
+                  .appendDelegationConstraints(delegationId, userId, roles, organizationId)
+                  .onSuccess(
+                      result -> {
+                        AuditLog auditLog =
+                            AuditingHelper.createAuditLog(
+                                ctx.user(),
+                                RoutingContextHelper.getRequestPath(ctx),
+                                "POST",
+                                "Append Delegation Constraints");
+
+                        RoutingContextHelper.setAuditingLog(ctx, auditLog);
+
+                        ResponseBuilder.sendSuccess(ctx, result, urnGenerator);
+                      })
+                  .onFailure(ctx::fail);
+            });
   }
 
   public void removeDelegationConstraints(RoutingContext ctx) {
@@ -355,6 +385,41 @@ public class DelegationHandler {
               RoutingContextHelper.setAuditingLog(ctx, auditLog);
 
               ResponseBuilder.sendSuccess(ctx, result, urnGenerator);
+            })
+        .onFailure(ctx::fail);
+  }
+
+  public void rejectDelegationGrant(RoutingContext ctx) {
+
+    User user = ctx.user();
+    String delegateId = user.subject();
+
+    String delegationId;
+
+    try {
+      delegationId = ctx.pathParam("id");
+    } catch (IllegalArgumentException e) {
+      ctx.fail(new DxBadRequestException("Invalid delegation ID"));
+      return;
+    }
+
+    delegationService
+        .rejectDelegation(delegationId, delegateId)
+        .onSuccess(
+            rejected -> {
+              AuditLog auditLog =
+                  AuditingHelper.createAuditLog(
+                      ctx.user(),
+                      RoutingContextHelper.getRequestPath(ctx),
+                      "POST",
+                      "Reject Delegation Grant");
+
+              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+
+              JsonObject response =
+                  new JsonObject().put("delegationId", delegationId).put("status", "rejected");
+
+              ResponseBuilder.sendSuccess(ctx, response, urnGenerator);
             })
         .onFailure(ctx::fail);
   }
