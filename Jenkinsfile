@@ -95,6 +95,28 @@ pipeline {
           }
         }
 
+        stage('Detect config change') {
+          when {
+            changeset "example-config/config.json"
+          }
+          steps {
+            script {
+              env.CONFIG_CHANGED = 'true'
+            }
+          }
+        }
+
+        stage('Detect migration change') {
+          when {
+            changeset "src/main/resources/db/migration/**"
+          }
+          steps {
+            script {
+              env.MIGRATION_CHANGED = 'true'
+            }
+          }
+        }
+
         stage('Continuous Deployment') {
           when {
             expression {
@@ -107,8 +129,16 @@ pipeline {
             stage('Push Images') {
               steps {
                 script {
+                  def tagSuffix = ''
+                  if (env.CONFIG_CHANGED == 'true') {
+                    tagSuffix += '-C'
+                  }
+                  if (env.MIGRATION_CHANGED == 'true') {
+                    tagSuffix += '-M'
+                  }
+                  env.IMAGE_TAG = "1.0.0-${env.GIT_HASH}${tagSuffix}"
                   docker.withRegistry(registryUri, registryCredential) {
-                    devImage.push("1.0.0-${env.GIT_HASH}")
+                    devImage.push(env.IMAGE_TAG)
                   }
                 }
               }
@@ -117,7 +147,7 @@ pipeline {
                 stage('EKS Helm deployment') {
                   steps {
                     script {
-                      sh "ssh ubuntu@dev-eks 'cd v2-deployments/iudx/iudx-installer/K8s-deployment/Charts/controlplane && helm upgrade iudx-control-plane . -n control-plane --atomic --timeout 5m --reuse-values --set image.repository=${devRegistry} --set image.tag=1.0.0-${env.GIT_HASH}'"
+                      sh "ssh ubuntu@dev-eks 'cd v2-deployments/iudx/iudx-installer/K8s-deployment/Charts/controlplane && helm upgrade iudx-control-plane . -n control-plane --atomic --timeout 5m --reuse-values --set image.repository=${devRegistry} --set image.tag=${env.IMAGE_TAG}'"
                     }
                   }
                   post{
