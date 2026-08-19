@@ -248,7 +248,7 @@
     "databaseUserName": "iudx_user",
     "poolSize": 25
   },
-  "version": 2,
+  "version": 3,
   "zookeepers": [
     "localhost:2181"
   ]
