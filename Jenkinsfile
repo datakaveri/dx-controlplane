@@ -102,10 +102,18 @@ pipeline {
               if (!baseCommit) {
                 baseCommit = sh(script: 'git rev-list --max-parents=0 HEAD | tail -1', returnStdout: true).trim()
               }
-              def changedFiles = sh(
+
+              echo "DEBUG GIT_COMMIT=${env.GIT_COMMIT} GIT_PREVIOUS_SUCCESSFUL_COMMIT=${env.GIT_PREVIOUS_SUCCESSFUL_COMMIT} baseCommit=${baseCommit}"
+              sh "git log -1 --oneline ${baseCommit} || true"
+              sh "git log -1 --oneline HEAD || true"
+
+              def rawDiff = sh(
                 script: "git diff --name-only ${baseCommit} HEAD",
                 returnStdout: true
-              ).trim().split('\n') as List
+              )
+              echo "DEBUG raw diff output: [${rawDiff}]"
+
+              def changedFiles = rawDiff.trim().split('\n') as List
 
               env.CONFIG_CHANGED = changedFiles.contains('example-config/config.json') ? 'true' : 'false'
               env.MIGRATION_CHANGED = changedFiles.any { it.startsWith('src/main/resources/db/migration/') } ? 'true' : 'false'
