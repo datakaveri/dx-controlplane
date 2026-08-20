@@ -3590,6 +3590,11 @@ paths:
                   type: string
                   x-stoplight:
                     id: 66hcqj28wo7vu
+                picture:
+                  type: string
+                  description: >-
+                    Asset key of the user's profile picture, as returned by the
+                    files-connect assets upload. Send an empty string to clear it.
   /iudx/v2/auth/user/password:
     put:
       summary: (User) Change Password

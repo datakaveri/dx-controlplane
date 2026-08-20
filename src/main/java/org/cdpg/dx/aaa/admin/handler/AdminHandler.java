@@ -142,6 +142,9 @@ public class AdminHandler {
     if (requestBody.getString("github_account") != null) {
       attributes.put("github_account", requestBody.getString("github_account"));
     }
+    if (requestBody.getString("picture") != null) {
+      attributes.put("picture", requestBody.getString("picture"));
+    }
 
     keycloakUserService.updateUserAttributes(UUID.fromString(user.subject()), attributes, firstName, lastName)
       .onSuccess(response -> {

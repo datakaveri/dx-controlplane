@@ -43,6 +43,7 @@ public class DxUserMapper {
                 getAttr(attrs, "twitter_account") != null ? getAttr(attrs, "twitter_account") : "",
                 getAttr(attrs, "linkedin_account") != null ? getAttr(attrs, "linkedin_account") : "",
                 getAttr(attrs, "github_account") != null ? getAttr(attrs, "github_account") : "",
+                getAttr(attrs, "picture") != null ? getAttr(attrs, "picture") : "",
                 user.isEnabled(),
                 getAttr(attrs, KeycloakConstants.DID),
                 getAttr(attrs, KeycloakConstants.AUD),
