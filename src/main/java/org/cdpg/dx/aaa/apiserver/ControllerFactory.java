@@ -61,7 +61,6 @@ import org.cdpg.dx.aaa.shareAssets.factory.VisibilityControllerFactory;
 import org.cdpg.dx.aaa.shareAssets.service.VisibilityService;
 import org.cdpg.dx.aaa.shareAssets.service.impl.VisibilityServiceImpl;
 import org.cdpg.dx.aaa.subscription.factory.SubscriptionControllerFactory;
-import org.cdpg.dx.aaa.summary.factroy.SummaryControllerFactory;
 import org.cdpg.dx.aaa.token.controller.TokenController;
 import org.cdpg.dx.aaa.token.factory.AppTokenControllerFactory;
 import org.cdpg.dx.aaa.token.factory.TokenControllerFactory;
@@ -366,7 +365,14 @@ public class ControllerFactory {
             infra.pgService(), shared.itemService(), shared.auditingHandler(), urnGenerator));
 
     // Request conversations
-    controllers.add(ConversationControllerFactory.create(infra.pgService(), urnGenerator));
+    controllers.add(
+        ConversationControllerFactory.create(
+            infra.pgService(),
+            shared.organizationService(),
+            shared.delegationService(),
+            shared.userService(),
+            shared.emailComposer(),
+            urnGenerator));
 
     return controllers;
   }

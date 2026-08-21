@@ -786,6 +786,8 @@ public class DelegationServiceImpl implements DelegationService {
                       constraints ->
                           new JsonObject()
                               .put("delegationId", delegationId)
+                              .put("delegatorId", userId)
+                              .put("delegateId", grant.delegateId().toString())
                               .put("status", "updated")
                               .put("constraints", new JsonArray(constraints)));
             })
@@ -821,6 +823,8 @@ public class DelegationServiceImpl implements DelegationService {
                       constraints ->
                           new JsonObject()
                               .put("delegationId", delegationId)
+                              .put("delegatorId", userId)
+                              .put("delegateId", grant.delegateId().toString())
                               .put("status", "updated")
                               .put("constraints", new JsonArray(constraints)));
             })
@@ -876,7 +880,7 @@ public class DelegationServiceImpl implements DelegationService {
   }
 
   @Override
-  public Future<Boolean> rejectDelegation(String delegationId, String delegateId) {
+  public Future<JsonObject> rejectDelegation(String delegationId, String delegateId) {
 
     return delegationGrantDAO
         .get(UUID.fromString(delegationId))
@@ -892,19 +896,23 @@ public class DelegationServiceImpl implements DelegationService {
                     new DxBadRequestException("Only an active delegation can be rejected"));
               }
 
+              UUID delegatorId = delegationGrant.delegatorId();
+
               return delegationGrantDAO
                   .rejectDelegation(delegationId, delegateId)
                   .compose(
                       results -> {
                         if (results == null || results.isEmpty()) {
                           return Future.failedFuture(
-                              new DxBadRequestException("Delegation is no longer active or has already been rejected"));
+                              new DxBadRequestException(
+                                  "Delegation is no longer active or has already been rejected"));
                         }
 
                         LOGGER.info(
                             "Delegation {} rejected by delegate {}", delegationId, delegateId);
 
-                        return Future.succeededFuture(true);
+                        return Future.succeededFuture(
+                            new JsonObject().put("delegatorId", delegatorId.toString()));
                       });
             })
         .recover(err -> Future.failedFuture(BaseDxException.from(err)));

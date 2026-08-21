@@ -7,7 +7,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -16,7 +15,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.conversation.model.ConversationMessage;
 import org.cdpg.dx.aaa.conversation.model.ConversationUpdateRequest;
+import org.cdpg.dx.aaa.conversation.service.ConversationParticipantService;
 import org.cdpg.dx.aaa.conversation.service.ConversationService;
+import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.model.Scopes;
@@ -37,12 +38,18 @@ public class ConversationController implements ApiController {
           "is_active", "is_active");
 
   private final ConversationService service;
+  private final ConversationParticipantService conversationParticipantService;
+  private final EmailComposer emailComposer;
   private final URNGenerator urnGenerator;
 
   public ConversationController(
       ConversationService service,
+      ConversationParticipantService conversationParticipantService,
+      EmailComposer emailComposer,
       URNGenerator urnGenerator) {
     this.service = service;
+    this.conversationParticipantService = conversationParticipantService;
+    this.emailComposer = emailComposer;
     this.urnGenerator = urnGenerator;
   }
 
@@ -152,12 +159,88 @@ public class ConversationController implements ApiController {
 
       service
           .createMessage(request)
-          .onSuccess(result -> ResponseBuilder.sendSuccess(ctx, result, urnGenerator))
+          .onSuccess(
+              result -> {
+                sendConversationNotification(request);
+                sendConversationAcknowledgement(request);
+
+                ResponseBuilder.sendSuccess(ctx, result, urnGenerator);
+              })
           .onFailure(ctx::fail);
     } catch (Exception e) {
       LOGGER.error("Failed to create a conversation message", e);
       ctx.fail(e);
     }
+  }
+
+  private void sendConversationNotification(ConversationMessage message) {
+
+    if (message.isInternal()) {
+      return;
+    }
+
+    conversationParticipantService
+        .getParticipants(message.requestType(), message.requestTypeId())
+        .onSuccess(
+            participants -> {
+              if ("requester".equalsIgnoreCase(message.senderRole())) {
+
+                emailComposer
+                    .sendConversationMessageEmail(
+                        participants.approver().email(),
+                        participants.approver().givenName(),
+                        message.content(),
+                        "New Message on Your Request")
+                    .onFailure(err -> LOGGER.error("Failed to send conversation email", err));
+
+              } else if ("approver".equalsIgnoreCase(message.senderRole())) {
+
+                emailComposer
+                    .sendConversationMessageEmail(
+                        participants.requester().email(),
+                        participants.requester().givenName(),
+                        message.content(),
+                        "Update on Your Request")
+                    .onFailure(err -> LOGGER.error("Failed to send conversation email", err));
+              }
+            })
+        .onFailure(
+            err ->
+                LOGGER.error(
+                    "Failed to resolve conversation participants for request {}",
+                    message.requestTypeId(),
+                    err));
+  }
+
+  private void sendConversationAcknowledgement(ConversationMessage message) {
+
+    if (message.isInternal()) {
+      return;
+    }
+
+    if (!"requester".equalsIgnoreCase(message.senderRole())) {
+      return;
+    }
+
+    conversationParticipantService
+        .getParticipants(message.requestType(), message.requestTypeId())
+        .onSuccess(
+            participants -> {
+              emailComposer
+                  .sendConversationAcknowledgementEmail(
+                      participants.requester().email(),
+                      participants.requester().givenName(),
+                      message.content())
+                  .onFailure(
+                      err ->
+                          LOGGER.error("Failed to send conversation acknowledgement email", err));
+            })
+        .onFailure(
+            err ->
+                LOGGER.error(
+                    "Failed to resolve conversation participants for acknowledgement, request {}",
+                    message.requestTypeId(),
+                    err));
   }
 
   private void handleReplyToMessage(RoutingContext ctx) {
@@ -174,7 +257,13 @@ public class ConversationController implements ApiController {
 
       service
           .replyToMessage(request)
-          .onSuccess(result -> ResponseBuilder.sendSuccess(ctx, result, urnGenerator))
+          .onSuccess(
+              result -> {
+                sendConversationNotification(request);
+                sendConversationAcknowledgement(request);
+
+                ResponseBuilder.sendSuccess(ctx, result, urnGenerator);
+              })
           .onFailure(ctx::fail);
     } catch (Exception e) {
       LOGGER.error("Failed to reply to a conversation message", e);
@@ -187,17 +276,58 @@ public class ConversationController implements ApiController {
       String requestType = ctx.pathParam("request_id");
       UUID messageId = UUID.fromString(ctx.pathParam("msg_id"));
       UUID userId = UUID.fromString(ctx.user().subject());
+
       ConversationUpdateRequest request =
           ctx.body().asJsonObject().mapTo(ConversationUpdateRequest.class);
 
       service
           .updateMessage(requestType, messageId, userId, request)
-          .onSuccess(result -> ResponseBuilder.sendSuccess(ctx, result, urnGenerator))
+          .onSuccess(
+              result -> {
+                sendConversationUpdateNotification(
+                    requestType, UUID.fromString(ctx.pathParam("request_id")), request.content());
+
+                ResponseBuilder.sendSuccess(ctx, result, urnGenerator);
+              })
           .onFailure(ctx::fail);
+
     } catch (Exception e) {
       LOGGER.error("Failed to update a conversation message", e);
       ctx.fail(e);
     }
+  }
+
+  private void sendConversationUpdateNotification(
+      String requestType, UUID requestTypeId, String messageContent) {
+
+    conversationParticipantService
+        .getParticipants(requestType, requestTypeId)
+        .onSuccess(
+            participants -> {
+              if (participants.requester() == null) {
+                LOGGER.warn("Requester not found for conversation request {}", requestTypeId);
+                return;
+              }
+
+              emailComposer
+                  .sendConversationMessageEmail(
+                      participants.requester().email(),
+                      participants.requester().givenName(),
+                      messageContent,
+                      "Update on Your Request")
+                  .onFailure(
+                      err ->
+                          LOGGER.error(
+                              "Failed to send conversation update email for request {}",
+                              requestTypeId,
+                              err));
+            })
+        .onFailure(
+            err ->
+                LOGGER.error(
+                    "Failed to resolve conversation participants for request {}",
+                    requestTypeId,
+                    err));
   }
 
   private void handleDeleteMessage(RoutingContext ctx) {

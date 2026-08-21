@@ -249,6 +249,17 @@ public class DelegationHandler {
 
                         RoutingContextHelper.setAuditingLog(ctx, auditLog);
 
+                        UUID delegateId = UUID.fromString(createdGrant.getString("delegateId"));
+
+                        emailComposer
+                            .sendEmailForDelegationCreated(delegateId, delegatorId)
+                            .onFailure(
+                                err ->
+                                    LOGGER.error(
+                                        "Failed to send delegation creation email for delegation {}",
+                                        createdGrant.getString("delegationId"),
+                                        err));
+
                         ResponseBuilder.sendSuccess(ctx, createdGrant, urnGenerator);
                       })
                   .onFailure(ctx::fail);
@@ -341,6 +352,11 @@ public class DelegationHandler {
                   .appendDelegationConstraints(delegationId, userId, roles, organizationId)
                   .onSuccess(
                       result -> {
+                        UUID delegateId = UUID.fromString(result.getString("delegateId"));
+                        UUID delegatorId = UUID.fromString(result.getString("delegatorId"));
+                        result.remove("delegateId");
+                        result.remove("delegatorId");
+
                         AuditLog auditLog =
                             AuditingHelper.createAuditLog(
                                 ctx.user(),
@@ -349,6 +365,15 @@ public class DelegationHandler {
                                 "Append Delegation Constraints");
 
                         RoutingContextHelper.setAuditingLog(ctx, auditLog);
+
+                        emailComposer
+                            .sendEmailForDelegationConstraintsAppended(delegateId, delegatorId)
+                            .onFailure(
+                                err ->
+                                    LOGGER.error(
+                                        "Failed to send delegation constraint update email for delegation {}",
+                                        delegationId,
+                                        err));
 
                         ResponseBuilder.sendSuccess(ctx, result, urnGenerator);
                       })
@@ -384,6 +409,19 @@ public class DelegationHandler {
 
               RoutingContextHelper.setAuditingLog(ctx, auditLog);
 
+              UUID delegateId = UUID.fromString(result.getString("delegateId"));
+              UUID delegatorId = UUID.fromString(result.getString("delegatorId"));
+              result.remove("delegateId");
+              result.remove("delegatorId");
+              emailComposer
+                  .sendEmailForDelegationConstraintsRemoved(delegateId, delegatorId)
+                  .onFailure(
+                      err ->
+                          LOGGER.error(
+                              "Failed to send delegation constraint removal email for delegation {}",
+                              delegationId,
+                              err));
+
               ResponseBuilder.sendSuccess(ctx, result, urnGenerator);
             })
         .onFailure(ctx::fail);
@@ -415,6 +453,18 @@ public class DelegationHandler {
                       "Reject Delegation Grant");
 
               RoutingContextHelper.setAuditingLog(ctx, auditLog);
+
+              // Send rejection notification to delegator
+              emailComposer
+                  .sendEmailForDelegationRejected(
+                      UUID.fromString(rejected.getString("delegatorId")),
+                      UUID.fromString(delegateId))
+                  .onFailure(
+                      err ->
+                          LOGGER.error(
+                              "Failed to send delegation rejection email for delegation {}",
+                              delegationId,
+                              err));
 
               JsonObject response =
                   new JsonObject().put("delegationId", delegationId).put("status", "rejected");

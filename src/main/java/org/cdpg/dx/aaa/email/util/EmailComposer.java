@@ -3,9 +3,7 @@ package org.cdpg.dx.aaa.email.util;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
-
 import java.util.UUID;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.credit.models.ComputeRole;
@@ -578,6 +576,199 @@ public class EmailComposer {
               .variable("SENDER_NAME", senderName)
               .send());
         });
+  }
+
+  public Future<Void> sendEmailForDelegationCreated(UUID delegateId, UUID delegatorId) {
+
+    return keycloakUserService
+        .getUserById(delegateId)
+        .compose(
+            delegateUser ->
+                keycloakUserService
+                    .getUserById(delegatorId)
+                    .compose(
+                        delegatorUser -> {
+                          String subject =
+                              "Delegation Access Granted"
+                                  + ((envSuffix == null || envSuffix.isBlank())
+                                      ? ""
+                                      : " [" + envSuffix + "]");
+
+                          String portalBaseUrl = adminPortalUrl.replaceAll("/+$", "");
+                          String contactUsUrl = portalBaseUrl + "/contact-us";
+
+                          return newEmail()
+                              .template("templates/delegation-created.html")
+                              .to(delegateUser.email())
+                              .subject(subject)
+                              .variable("DELEGATE_FIRST_NAME", delegateUser.givenName())
+                              .variable("DELEGATE_LAST_NAME", delegateUser.familyName())
+                              .variable("DELEGATOR_FIRST_NAME", delegatorUser.givenName())
+                              .variable("DELEGATOR_LAST_NAME", delegatorUser.familyName())
+                              .variable("PLATFORM_NAME", platformName)
+                              .variable("PLATFORM_SHORT_NAME", platformName)
+                              .variable("ADMIN_PORTAL_URL", adminPortalUrl)
+                              .variable("CONTACT_US_URL", contactUsUrl)
+                              .variable("SENDER_NAME", senderName)
+                              .send();
+                        }));
+  }
+
+  public Future<Void> sendEmailForDelegationRejected(UUID delegatorId, UUID delegateId) {
+
+    return keycloakUserService
+        .getUserById(delegatorId)
+        .compose(
+            delegatorUser ->
+                keycloakUserService
+                    .getUserById(delegateId)
+                    .compose(
+                        delegateUser -> {
+                          String subject =
+                              "Delegation Rejected"
+                                  + ((envSuffix == null || envSuffix.isBlank())
+                                      ? ""
+                                      : " [" + envSuffix + "]");
+
+                          String portalBaseUrl = adminPortalUrl.replaceAll("/+$", "");
+                          String contactUsUrl = portalBaseUrl + "/contact-us";
+
+                          return newEmail()
+                              .template("templates/delegation-rejected.html")
+                              .to(delegatorUser.email())
+                              .subject(subject)
+                              .variable("DELEGATOR_FIRST_NAME", delegatorUser.givenName())
+                              .variable("DELEGATOR_LAST_NAME", delegatorUser.familyName())
+                              .variable("DELEGATE_FIRST_NAME", delegateUser.givenName())
+                              .variable("DELEGATE_LAST_NAME", delegateUser.familyName())
+                              .variable("PLATFORM_NAME", platformName)
+                              .variable("PLATFORM_SHORT_NAME", platformName)
+                              .variable("ADMIN_PORTAL_URL", adminPortalUrl)
+                              .variable("CONTACT_US_URL", contactUsUrl)
+                              .variable("SENDER_NAME", senderName)
+                              .send();
+                        }));
+  }
+
+  public Future<Void> sendEmailForDelegationConstraintsAppended(UUID delegateId, UUID delegatorId) {
+
+    return keycloakUserService
+        .getUserById(delegateId)
+        .compose(
+            delegateUser ->
+                keycloakUserService
+                    .getUserById(delegatorId)
+                    .compose(
+                        delegatorUser -> {
+                          String subject =
+                              "Delegation Permissions Updated"
+                                  + ((envSuffix == null || envSuffix.isBlank())
+                                      ? ""
+                                      : " [" + envSuffix + "]");
+
+                          String portalBaseUrl = adminPortalUrl.replaceAll("/+$", "");
+                          String contactUsUrl = portalBaseUrl + "/contact-us";
+
+                          return newEmail()
+                              .template("templates/delegation-constraints-appended.html")
+                              .to(delegateUser.email())
+                              .subject(subject)
+                              .variable("DELEGATE_FIRST_NAME", delegateUser.givenName())
+                              .variable("DELEGATE_LAST_NAME", delegateUser.familyName())
+                              .variable("DELEGATOR_FIRST_NAME", delegatorUser.givenName())
+                              .variable("DELEGATOR_LAST_NAME", delegatorUser.familyName())
+                              .variable("PLATFORM_NAME", platformName)
+                              .variable("PLATFORM_SHORT_NAME", platformName)
+                              .variable("ADMIN_PORTAL_URL", adminPortalUrl)
+                              .variable("CONTACT_US_URL", contactUsUrl)
+                              .variable("SENDER_NAME", senderName)
+                              .send();
+                        }));
+  }
+
+  public Future<Void> sendEmailForDelegationConstraintsRemoved(UUID delegateId, UUID delegatorId) {
+
+    return keycloakUserService
+        .getUserById(delegateId)
+        .compose(
+            delegateUser ->
+                keycloakUserService
+                    .getUserById(delegatorId)
+                    .compose(
+                        delegatorUser -> {
+                          String subject =
+                              "Delegation Permissions Updated"
+                                  + ((envSuffix == null || envSuffix.isBlank())
+                                      ? ""
+                                      : " [" + envSuffix + "]");
+
+                          String portalBaseUrl = adminPortalUrl.replaceAll("/+$", "");
+                          String contactUsUrl = portalBaseUrl + "/contact-us";
+
+                          return newEmail()
+                              .template("templates/delegation-constraints-removed.html")
+                              .to(delegateUser.email())
+                              .subject(subject)
+                              .variable("DELEGATE_FIRST_NAME", delegateUser.givenName())
+                              .variable("DELEGATE_LAST_NAME", delegateUser.familyName())
+                              .variable("DELEGATOR_FIRST_NAME", delegatorUser.givenName())
+                              .variable("DELEGATOR_LAST_NAME", delegatorUser.familyName())
+                              .variable("PLATFORM_NAME", platformName)
+                              .variable("PLATFORM_SHORT_NAME", platformName)
+                              .variable("ADMIN_PORTAL_URL", adminPortalUrl)
+                              .variable("CONTACT_US_URL", contactUsUrl)
+                              .variable("SENDER_NAME", senderName)
+                              .send();
+                        }));
+  }
+
+  public Future<Void> sendConversationMessageEmail(
+      String recipientEmail, String recipientFirstName, String messageContent, String subject) {
+
+    String finalSubject =
+        subject + ((envSuffix == null || envSuffix.isBlank()) ? "" : " [" + envSuffix + "]");
+
+    String portalBaseUrl = adminPortalUrl.replaceAll("/+$", "");
+    String contactUsUrl = portalBaseUrl + "/contact-us";
+
+    return newEmail()
+        .template("templates/conversation-message.html")
+        .to(recipientEmail)
+        .subject(finalSubject)
+        .variable("RECIPIENT_FIRST_NAME", recipientFirstName)
+        .variable("MESSAGE_CONTENT", messageContent)
+        .variable("PLATFORM_NAME", platformName)
+        .variable("PLATFORM_SHORT_NAME", platformName)
+        .variable("CONTACT_US_URL", contactUsUrl)
+        .variable("ADMIN_PORTAL_URL", adminPortalUrl)
+        .variable("SENDER_NAME", senderName)
+        .variable("SUBJECT", finalSubject)
+        .send();
+  }
+
+  public Future<Void> sendConversationAcknowledgementEmail(
+      String recipientEmail, String recipientFirstName, String messageContent) {
+
+    String subject =
+        "Request Conversation Update"
+            + ((envSuffix == null || envSuffix.isBlank()) ? "" : " [" + envSuffix + "]");
+
+    String portalBaseUrl = adminPortalUrl.replaceAll("/+$", "");
+    String contactUsUrl = portalBaseUrl + "/contact-us";
+
+    return newEmail()
+        .template("templates/conversation-request-received.html")
+        .to(recipientEmail)
+        .subject(subject)
+        .variable("RECIPIENT_FIRST_NAME", recipientFirstName)
+        .variable("MESSAGE_CONTENT", messageContent)
+        .variable("PLATFORM_NAME", platformName)
+        .variable("PLATFORM_SHORT_NAME", platformName)
+        .variable("CONTACT_US_URL", contactUsUrl)
+        .variable("ADMIN_PORTAL_URL", adminPortalUrl)
+        .variable("SENDER_NAME", senderName)
+        .variable("SUBJECT", subject)
+        .send();
   }
 
   // ────────────────────────── HELPERS ──────────────────────────

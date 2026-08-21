@@ -58,5 +58,5 @@ public interface DelegationService {
   Future<JsonObject> removeDelegationConstraints(String delegationId, String userId,
                                                  JsonArray roles);
 
-  Future<Boolean> rejectDelegation(String delegationId, String delegateId);
+  Future<JsonObject> rejectDelegation(String delegationId, String delegateId);
 }
