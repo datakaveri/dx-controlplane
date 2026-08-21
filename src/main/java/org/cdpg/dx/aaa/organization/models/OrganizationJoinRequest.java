@@ -103,6 +103,16 @@ public record OrganizationJoinRequest(
   }
 
   @Override
+  public UUID organizationId() {
+    return organizationId;
+  }
+
+  @Override
+  public UUID userId() {
+    return userId;
+  }
+
+  @Override
   public String getTableName() {
     return Constants.ORG_JOIN_REQUEST_TABLE;
   }

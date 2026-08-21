@@ -22903,7 +22903,7 @@ components:
           example: c0ca7a6c-597f-4e03-b861-bb912b3cb1ec
         request_type:
           type: string
-          description: Type of request this conversation belongs to (e.g. join_orgs, create_orgs, credit_request)
+          description: Type of request this conversation belongs to (e.g. join_orgs, create_orgs, credit_request, delegation)
           example: join_orgs
         request_type_id:
           type: string
