@@ -32,6 +32,3 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE resource_servers              TO $
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE delegation_grants             TO ${authUser};
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE delegation_scope_constraints  TO ${authUser};
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE delegation_update_requests    TO ${authUser};
-
--- Deliberately omitted: user_activity_log (V21). The table has no readers or
--- writers anywhere in the codebase — see user_activity_audit_log (V46) instead.
