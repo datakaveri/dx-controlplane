@@ -8,6 +8,8 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.util.List;
+import org.cdpg.dx.aaa.delegation.models.DelegationsPaginatedResponse;
+import org.cdpg.dx.common.request.PaginatedRequest;
 
 @VertxGen
 @ProxyGen
@@ -39,6 +41,31 @@ public interface DelegationService {
   Future<List<JsonObject>> getAllDelegationsOfDelegate(String userId);
 
   Future<List<JsonObject>> getAllDelegationsByDelegator(String userId);
+
+  /**
+   * Paginated variant of {@link #getAllDelegationsOfDelegate(String)}.
+   *
+   * <p>Marked {@code @GenIgnore} because {@link PaginatedRequest} and {@link DelegationsPaginatedResponse}
+   * are plain records, not Vert.x codegen types, so they cannot cross the event bus. It is a
+   * {@code default} method so the generated event-bus proxy still implements the interface; the
+   * REST path uses the in-process {@code DelegationServiceImpl}, which overrides it.
+   */
+  @GenIgnore
+  default Future<DelegationsPaginatedResponse> getAllDelegationsOfDelegate(
+      String userId, PaginatedRequest request) {
+    return Future.failedFuture(
+        new UnsupportedOperationException(
+            "Paginated delegation listing is not available over the event bus proxy"));
+  }
+
+  /** Paginated variant of {@link #getAllDelegationsByDelegator(String)}. See the note above. */
+  @GenIgnore
+  default Future<DelegationsPaginatedResponse> getAllDelegationsByDelegator(
+      String userId, PaginatedRequest request) {
+    return Future.failedFuture(
+        new UnsupportedOperationException(
+            "Paginated delegation listing is not available over the event bus proxy"));
+  }
 
   Future<Boolean> deleteDelegation(String delegationId,String userId);
 
