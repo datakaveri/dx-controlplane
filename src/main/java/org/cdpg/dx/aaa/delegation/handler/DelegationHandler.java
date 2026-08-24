@@ -1,6 +1,7 @@
 package org.cdpg.dx.aaa.delegation.handler;
 
 import static org.cdpg.dx.aaa.delegation.util.Constants.*;
+import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
 
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
@@ -22,6 +23,8 @@ import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.common.request.PaginatedRequest;
+import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
@@ -122,8 +125,10 @@ public class DelegationHandler {
     User user = ctx.user();
     UUID userId = UUID.fromString(user.subject());
 
+    PaginatedRequest request = buildDelegationRequest(ctx, DELEGATE_ID, userId);
+
     delegationService
-        .getAllDelegationsOfDelegate(userId.toString())
+        .getAllDelegationsOfDelegate(userId.toString(), request)
         .onSuccess(
             res -> {
               AuditLog auditLog =
@@ -134,12 +139,7 @@ public class DelegationHandler {
                       "Get All Delegations of the delegate");
 
               RoutingContextHelper.setAuditingLog(ctx, auditLog);
-              if (res == null || res.isEmpty()) {
-                ResponseBuilder.sendSuccess(ctx, "No delegation found for this user", urnGenerator);
-                return;
-              }
-
-              ResponseBuilder.sendSuccess(ctx, res, urnGenerator);
+              ResponseBuilder.sendSuccess(ctx, res.data(), res.paginationInfo(), urnGenerator);
             })
         .onFailure(ctx::fail);
   }
@@ -149,8 +149,10 @@ public class DelegationHandler {
     User user = ctx.user();
     UUID userId = UUID.fromString(user.subject());
 
+    PaginatedRequest request = buildDelegationRequest(ctx, DELEGATOR_ID, userId);
+
     delegationService
-        .getAllDelegationsByDelegator(userId.toString())
+        .getAllDelegationsByDelegator(userId.toString(), request)
         .onSuccess(
             res -> {
               AuditLog auditLog =
@@ -161,14 +163,28 @@ public class DelegationHandler {
                       "Get All Delegations made by the user who is the delegator");
 
               RoutingContextHelper.setAuditingLog(ctx, auditLog);
-              if (res == null || res.isEmpty()) {
-                ResponseBuilder.sendSuccess(ctx, "No delegation found for this user", urnGenerator);
-                return;
-              }
-
-              ResponseBuilder.sendSuccess(ctx, res, urnGenerator);
+              ResponseBuilder.sendSuccess(ctx, res.data(), res.paginationInfo(), urnGenerator);
             })
         .onFailure(ctx::fail);
+  }
+
+  /**
+   * Builds the paging/filter/sort request for the two delegation list endpoints. The caller's own
+   * id is pinned as an additional filter on {@code ownerColumn} so a user can only ever page
+   * through their own delegations, regardless of any {@code delegatorId}/{@code delegateId} query
+   * parameter they supply.
+   */
+  private PaginatedRequest buildDelegationRequest(
+      RoutingContext ctx, String ownerColumn, UUID userId) {
+    return PaginationRequestBuilder.from(ctx)
+        .additionalFilters(Map.of(ownerColumn, userId.toString()))
+        .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_DELEGATION_GRANT)
+        .apiToDbMap(API_TO_DB_DELEGATION_GRANT)
+        .allowedTimeFields(Set.of(CREATED_AT))
+        .defaultTimeField(CREATED_AT)
+        .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
+        .allowedSortFields(API_TO_DB_DELEGATION_GRANT.keySet())
+        .build();
   }
 
   public void deleteDelegationGrant(RoutingContext ctx) {

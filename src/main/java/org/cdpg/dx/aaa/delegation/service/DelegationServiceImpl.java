@@ -16,12 +16,15 @@ import org.cdpg.dx.aaa.delegation.dao.*;
 import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
 import org.cdpg.dx.aaa.delegation.models.DelegationScopeConstraint;
 import org.cdpg.dx.aaa.delegation.models.DelegationUpdateRequest;
+import org.cdpg.dx.aaa.delegation.models.DelegationsPaginatedResponse;
 import org.cdpg.dx.aaa.delegation.util.Status;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.auth.authorization.registry.SystemRoleScopeMap;
 import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.exception.*;
+import org.cdpg.dx.common.request.PaginatedRequest;
+import org.cdpg.dx.common.util.PaginationInfo;
 import org.cdpg.dx.common.util.ServiceErrorHelper;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.slf4j.Logger;
@@ -257,6 +260,45 @@ public class DelegationServiceImpl implements DelegationService {
   @Override
   public Future<List<JsonObject>> getAllDelegationsOfDelegate(String userIdStr) {
     return getDelegationsWithConstraints(Map.of(DELEGATE_ID, userIdStr), false);
+  }
+
+  @Override
+  public Future<DelegationsPaginatedResponse> getAllDelegationsByDelegator(
+      String userIdStr, PaginatedRequest request) {
+    return getDelegationsWithConstraints(request, true);
+  }
+
+  @Override
+  public Future<DelegationsPaginatedResponse> getAllDelegationsOfDelegate(
+      String userIdStr, PaginatedRequest request) {
+    return getDelegationsWithConstraints(request, false);
+  }
+
+  /**
+   * Paginated counterpart of {@link #getDelegationsWithConstraints(Map, boolean)}. The
+   * delegator/delegate filter is carried in the request's filter map rather than passed
+   * separately, so it is applied by the same query that performs the paging and counting.
+   * Enrichment runs over the current page only.
+   */
+  private Future<DelegationsPaginatedResponse> getDelegationsWithConstraints(
+      PaginatedRequest request, boolean includeDelegateInfo) {
+    return delegationGrantDAO
+        .getAllWithFilters(request)
+        .compose(
+            page ->
+                enrichDelegationsWithConstraints(page.data())
+                    .compose(delegations -> enrichWithUserInfo(delegations, includeDelegateInfo))
+                    .map(enriched -> new DelegationsPaginatedResponse(enriched, page.paginationInfo())))
+        .recover(
+            err -> {
+              BaseDxException dxEx = BaseDxException.from(err);
+              if (dxEx instanceof DxNotFoundException) {
+                return Future.succeededFuture(
+                    new DelegationsPaginatedResponse(
+                        List.of(), PaginationInfo.from(request.page(), request.size(), 0L)));
+              }
+              return Future.failedFuture(dxEx);
+            });
   }
 
   /**

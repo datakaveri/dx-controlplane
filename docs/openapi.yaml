@@ -4007,6 +4007,10 @@ paths:
         - Delegation APIs
       security:
         - authorization: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
       responses:
         '200':
           description: Delegation grants fetched successfully
@@ -4107,6 +4111,8 @@ paths:
                             delegatorOrganization:
                               type: string
                               example: TestOrg1
+                  paginationInfo:
+                    $ref: '#/components/schemas/PaginationInfo'
         '401':
           description: Unauthorized - Token invalid or expired
           content:
@@ -4132,6 +4138,10 @@ paths:
         - Delegation APIs
       security:
         - authorization: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
       responses:
         '200':
           description: Delegation grants fetched successfully
@@ -4233,6 +4243,8 @@ paths:
                             delegateOrganization:
                               type: string
                               example: CDPG-At-IISc
+                  paginationInfo:
+                    $ref: '#/components/schemas/PaginationInfo'
         '401':
           description: Unauthorized - Token invalid or expired
           content:
