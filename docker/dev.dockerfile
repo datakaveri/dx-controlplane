@@ -9,7 +9,7 @@ ARG CACHE_BUST=1
 
 # Clone dx-common inside Docker
 RUN echo "DX_COMMON_COMMIT=$CACHE_BUST" && \
-git clone -b dev https://github.com/datakaveri/dx-common.git /dx-common
+git clone -b stable/v2.3 https://github.com/datakaveri/dx-common.git /dx-common
 
 # Build dx-common
 RUN cd /dx-common && mvn clean install -DskipTests

@@ -643,7 +643,7 @@ public class ItemController implements ApiController {
                         ctx, item.toJson(), ItemAuditOperation.CREATE);
                 CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
-                ResponseBuilder.sendCreated(
+                ResponseBuilder.sendCreatedPreservingNulls(
                     ctx, "Success: Item created", item.toJson(), this.urnGenerator);
 
                 notifyAdminOnItemCreation(ctx, item.toJson());
@@ -711,7 +711,7 @@ public class ItemController implements ApiController {
                                 ctx, item.toJson(), ItemAuditOperation.UPDATE);
                         CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
 
-                        ResponseBuilder.sendSuccess(ctx, item.toJson(), urnGenerator);
+                        ResponseBuilder.sendSuccessPreservingNulls(ctx, item.toJson(), urnGenerator);
                       });
                 })
             .onFailure(ctx::fail);
@@ -743,7 +743,7 @@ public class ItemController implements ApiController {
               UserActivityAuditLogBuilder auditLogBuilder =
                   ItemAuditLogHelper.buildItemAudit(ctx, item.toJson(), ItemAuditOperation.CREATE);
               CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
-              ResponseBuilder.sendSuccess(ctx, response.toJson(), this.urnGenerator);
+              ResponseBuilder.sendSuccessPreservingNulls(ctx, response.toJson(), this.urnGenerator);
 
               notifyAdminOnItemCreation(ctx, item.toJson());
             })
@@ -947,7 +947,7 @@ public class ItemController implements ApiController {
                   CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
                 }
 
-                ResponseBuilder.sendSuccess(
+                ResponseBuilder.sendSuccessPreservingNulls(
                     ctx,
                     "Success: Item fetched successfully",
                     responseModel.getResponse().getJsonArray(RESULTS),
@@ -1079,7 +1079,7 @@ public class ItemController implements ApiController {
                 routingContext.fail(new DxNotFoundException("doc doesn't exist"));
               } else {
                 LOGGER.debug("Item retrieved successfully for ID '{}'", itemId);
-                ResponseBuilder.sendSuccess(
+                ResponseBuilder.sendSuccessPreservingNulls(
                     routingContext,
                     "Success: Item fetched successfully",
                     responseModel.getResponse().getJsonArray(RESULTS),
