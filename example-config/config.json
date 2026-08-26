@@ -1,35 +1,4 @@
 {
-  "version": "1.0",
-  "zookeepers": [
-    "zookeeper-client.zookeeper.svc.cluster.local"
-  ],
-  "clusterId": "<tenantPrefix>-controlplane-cluster",
-  "commonOptions": {
-    "apdURL": "<domain>/controlplane/acl",
-    "appIdRevokeExchange": "revoked-appid",
-    "baseUrl": "<domain>/controlplane",
-    "controlPlaneDomain": "https://<domain>/controlplane",
-    "controlPlaneUrl": "<domain>/controlplane",
-    "corsAllowedOrigin": [
-      "*"
-    ],
-    "cosDomain": "<domain>/controlplane",
-    "dataPlaneUrl": "<domain>/dataplane",
-    "defaultExpiryDays": 15,
-    "deletedDocsIndex": "<tenantPrefix>__deleted_assets",
-    "docIndex": "<tenantPrefix>__cat",
-    "docUserIndex": "<tenantPrefix>__userdoc",
-    "centralCatDocIndex": "<tenantPrefix>__central_cat",
-    "initialCreditBalance": 1,
-    "isCentralCatEnabled": false,
-    "kycRequired": false,
-    "ogcDataPlaneUrl": "<domain>/geoserver",
-    "publisherPanelUrl": "<domain>",
-    "supportEmail": "support@datakaveri.org",
-    "tokenExpirationMinutes": 60,
-    "uploadedBy": "Centre of Data for Public Good (CDPG), IISc",
-    "vocContext": "https://voc.<domain>/"
-  },
   "KYCOptions": {
     "clientId": "<KYC Client ID>",
     "clientSecret": "<KYC Client Secret>",
@@ -44,31 +13,49 @@
     "isRemoteAudit": false,
     "leaderboardQueue": "leaderboard"
   },
-  "postgresOptions": {
-    "databaseIP": "psql-pooler-rw.postgres.svc.cluster.local",
-    "databaseName": "<tenantPrefix>_controlplane",
-    "databasePassword": "<postgres-controlplane-password :- cat iudx-installer/K8s-deployment/Charts/postgresql/secrets/passwords/postgres-auth-password>",
-    "databasePort": 5432,
-    "databaseSchema": "aaa",
-    "databaseUserName": "<tenantPrefix>_controlplane_user",
-    "poolSize": 25
+  "clusterId": "<tenantPrefix>-controlplane-cluster",
+  "commonOptions": {
+    "apdURL": "<domain>/controlplane/acl",
+    "appIdRevokeExchange": "revoked-appid",
+    "baseUrl": "<domain>/controlplane",
+    "centralCatDocIndex": "<tenantPrefix>__central_cat",
+    "controlPlaneDomain": "https://<domain>/controlplane",
+    "controlPlaneUrl": "<domain>/controlplane",
+    "corsAllowedOrigin": [
+      "*"
+    ],
+    "cosDomain": "<domain>/controlplane",
+    "dataPlaneUrl": "<domain>/dataplane",
+    "defaultExpiryDays": 15,
+    "deletedDocsIndex": "<tenantPrefix>__deleted_assets",
+    "docIndex": "<tenantPrefix>__cat",
+    "docUserIndex": "<tenantPrefix>__userdoc",
+    "initialCreditBalance": 1,
+    "isCentralCatEnabled": false,
+    "kycRequired": false,
+    "ogcDataPlaneUrl": "<domain>/geoserver",
+    "publisherPanelUrl": "<domain>",
+    "supportEmail": "support@datakaveri.org",
+    "tokenExpirationMinutes": 60,
+    "uploadedBy": "Centre of Data for Public Good (CDPG), IISc",
+    "vocContext": "https://voc.<domain>/"
   },
   "databrokerOptions": {
     "automaticRecoveryEnabled": "true",
     "brokerAmqpIp": "<domain>",
     "brokerAmqpPort": 24567,
     "connectionTimeout": 6000,
-    "handshakeTimeout": 6000,
     "dataBrokerIP": "rabbitmq.rabbitmq.svc.cluster.local",
     "dataBrokerManagementPort": 15672,
     "dataBrokerPassword": "<databroker-admin password :- cat iudx-installer/K8s-deployment/Charts/databroker/secrets/credentials/admin-password>",
     "dataBrokerPort": 5672,
     "dataBrokerUserName": "<tenantPrefix>-controlplane-user",
     "externalVhost": "<TENANTPREFIX>-EXTERNAL",
-    "prodVhost": "<TENANTPREFIX>",
+    "handshakeTimeout": 6000,
     "internalVhost": "<TENANTPREFIX>-INTERNAL",
     "networkRecoveryInterval": 500,
     "portSsl": true,
+    "prodVhost": "<TENANTPREFIX>",
     "publishExchange": "rpc-adapter-requests",
     "requestedChannelMax": 5,
     "requestedHeartbeat": 60
@@ -120,21 +107,20 @@
   "modules": [
     {
       "id": "org.cdpg.dx.database.postgres.verticle.PostgresVerticle",
-      "verticleInstances": 1,
       "isWorkerVerticle": false,
       "required": [
         "postgresOptions",
         "commonOptions"
-      ]
+      ],
+      "verticleInstances": 1
     },
     {
-      "id": "org.cdpg.dx.email.verticle.EmailVerticle",
-      "verticleInstances": 1,
-      "isWorkerVerticle": true,
       "emailHostName": "<smtp-host>",
       "emailPassword": "<smtp-password>",
       "emailPort": 587,
       "emailUserName": "<smtp-sender-email>",
+      "id": "org.cdpg.dx.email.verticle.EmailVerticle",
+      "isWorkerVerticle": true,
       "notifyByEmail": true,
       "required": [
         "commonOptions",
@@ -144,11 +130,11 @@
         "emailConfig"
       ],
       "threadPoolName": "emailVerticleThreadPool",
-      "threadPoolSize": 10
+      "threadPoolSize": 10,
+      "verticleInstances": 1
     },
     {
       "id": "org.cdpg.dx.databroker.DataBrokerVerticle",
-      "verticleInstances": 1,
       "isWorkerVerticle": false,
       "required": [
         "databrokerOptions",
@@ -156,22 +142,22 @@
         "emailNotification",
         "commonOptions",
         "keycloakOptions"
-      ]
+      ],
+      "verticleInstances": 1
     },
     {
-      "id": "org.cdpg.dx.database.elastic.ElasticsearchVerticle",
-      "verticleInstances": 1,
-      "isWorkerVerticle": false,
       "databaseIP": "elastic-es-http.elastic.svc.cluster.local",
       "databasePassword": "<elasticsearch-cat password :- cat iudx-installer/K8s-deployment/Charts/elk/secrets/passwords/elasticsearch-cat-password>",
       "databasePort": 9200,
-      "databaseUser": "<tenantPrefix>-controlplane-user"
+      "databaseUser": "<tenantPrefix>-controlplane-user",
+      "id": "org.cdpg.dx.database.elastic.ElasticsearchVerticle",
+      "isWorkerVerticle": false,
+      "verticleInstances": 1
     },
     {
-      "id": "org.cdpg.dx.aaa.apiserver.ApiServerVerticle",
-      "verticleInstances": 1,
-      "isWorkerVerticle": false,
       "httpPort": 8080,
+      "id": "org.cdpg.dx.aaa.apiserver.ApiServerVerticle",
+      "isWorkerVerticle": false,
       "required": [
         "postgresOptions",
         "commonOptions",
@@ -183,13 +169,13 @@
         "databrokerOptions",
         "auditOptions"
       ],
-      "urnPrefix": "urn:dx:controlPlane:"
+      "urnPrefix": "urn:dx:controlPlane:",
+      "verticleInstances": 1
     },
     {
-      "id": "org.cdpg.dx.acl.apiserver.ApdApiServerVerticle",
-      "verticleInstances": 1,
-      "isWorkerVerticle": false,
       "httpPort": 8444,
+      "id": "org.cdpg.dx.acl.apiserver.ApdApiServerVerticle",
+      "isWorkerVerticle": false,
       "required": [
         "postgresOptions",
         "commonOptions",
@@ -202,39 +188,53 @@
         "databrokerOptions",
         "auditOptions"
       ],
-      "urnPrefix": "urn:dx:aclApd:"
+      "urnPrefix": "urn:dx:aclApd:",
+      "verticleInstances": 1
     },
     {
       "id": "org.cdpg.dx.scheduler.verticle.SchedulerVerticle",
-      "verticleInstances": 1,
       "isWorkerVerticle": true,
       "schedulerTimeIntervalInMinutes": 30,
-      "threadPoolSize": 3
+      "threadPoolSize": 3,
+      "verticleInstances": 1
     },
     {
       "id": "org.cdpg.dx.aaa.delegation.DelegationVerticle",
-      "verticleInstances": 1,
       "isWorkerVerticle": false,
       "required": [
         "commonOptions",
         "keycloakOptions"
-      ]
+      ],
+      "verticleInstances": 1
     },
     {
-      "id": "org.cdpg.dx.aaa.grpc.GrpcServerVerticle",
-      "verticleInstances": 1,
-      "isWorkerVerticle": false,
       "grpcAllowedServiceClients": [
         "svc-dx-dataplane",
         "svc-dx-dataplane-ogc"
       ],
       "grpcPort": 9090,
+      "id": "org.cdpg.dx.aaa.grpc.GrpcServerVerticle",
+      "isWorkerVerticle": false,
       "keycloakJwksUrl": "https://<domain>/auth/realms/<tenantPrefix>/protocol/openid-connect/certs",
       "required": [
         "postgresOptions",
         "commonOptions",
         "keycloakOptions"
-      ]
+      ],
+      "verticleInstances": 1
     }
+  ],
+  "postgresOptions": {
+    "databaseIP": "psql-pooler-rw.postgres.svc.cluster.local",
+    "databaseName": "<tenantPrefix>_controlplane",
+    "databasePassword": "<postgres-controlplane-password :- cat iudx-installer/K8s-deployment/Charts/postgresql/secrets/passwords/postgres-auth-password>",
+    "databasePort": 5432,
+    "databaseSchema": "aaa",
+    "databaseUserName": "<tenantPrefix>_controlplane_user",
+    "poolSize": 25
+  },
+  "version": 2,
+  "zookeepers": [
+    "zookeeper-client.zookeeper.svc.cluster.local"
   ]
-} 
+}
