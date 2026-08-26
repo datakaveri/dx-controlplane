@@ -97,6 +97,9 @@ pipeline {
         }
 
         stage('Detect config/migration change') {
+          when {
+            not { changeRequest() }
+          }
           steps {
             script {
               def baseCommit = env.GIT_PREVIOUS_SUCCESSFUL_COMMIT
