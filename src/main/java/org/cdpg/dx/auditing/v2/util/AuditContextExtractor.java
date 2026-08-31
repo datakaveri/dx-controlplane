@@ -4,6 +4,8 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
+import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.common.util.RoutingContextHelper;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -110,6 +112,25 @@ public final class AuditContextExtractor {
     if (roles.contains("consumer")) return "consumer";
 
     return null;
+  }
+
+  /**
+   * When the request went through header-based delegation (the {@code did} header),
+   * {@code ctx.user()}'s sub is swapped to the delegator (primary user) and the original
+   * caller's id is stamped on the resolved {@link DxUser} as {@code delegateeId}. Returns null
+   * for non-delegated requests.
+   */
+  public static UUID getDelegateeId(RoutingContext ctx) {
+    if (ctx == null) return null;
+
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    if (dxUser == null || dxUser.delegateeId() == null) return null;
+
+    try {
+      return UUID.fromString(dxUser.delegateeId());
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
   }
 
   /* -------------------------------------------------

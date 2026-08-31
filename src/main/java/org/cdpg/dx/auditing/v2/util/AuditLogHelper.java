@@ -32,6 +32,12 @@ public final class AuditLogHelper {
     String issuer = AuditContextExtractor.getIssuer(user);
 
     // --------------------
+    // Delegation (userId above is already the delegator/primary user when delegated;
+    // delegateeId captures who actually made the call - null means not a delegated request)
+    // --------------------
+    UUID delegateeId = AuditContextExtractor.getDelegateeId(ctx);
+
+    // --------------------
     // Organisation
     // --------------------
     UUID orgId = AuditContextExtractor.getOrgId(user);
@@ -64,6 +70,9 @@ public final class AuditLogHelper {
         .withUserName(userName)
         .withRole(role)
         .withIssuer(issuer)
+
+        // ---- Delegation ----
+        .withDelegateeId(delegateeId)
 
         // ---- Org context ----
         .withOrgId(orgId)

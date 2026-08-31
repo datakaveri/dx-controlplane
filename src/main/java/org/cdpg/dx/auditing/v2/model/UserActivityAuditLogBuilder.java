@@ -21,8 +21,7 @@ public class UserActivityAuditLogBuilder {
   private String issuer;
 
   // Delegation
-  private UUID delegatorId;
-  private String delegatorRole;
+  private UUID delegateeId;
 
   // API metadata
   private String api;
@@ -90,8 +89,7 @@ public class UserActivityAuditLogBuilder {
     json.put(ROLE, role);
     json.put(ISSUER, issuer);
 
-    json.put(DELEGATOR_ID, safe(delegatorId));
-    json.put(DELEGATOR_ROLE, delegatorRole);
+    json.put(DELEGATEE_ID, safe(delegateeId));
 
     json.put(API, api);
     json.put(HTTP_METHOD, httpMethod);
@@ -178,13 +176,8 @@ public class UserActivityAuditLogBuilder {
       return this;
     }
 
-    public Builder withDelegatorId(UUID id) {
-      log.delegatorId = id;
-      return this;
-    }
-
-    public Builder withDelegatorRole(String role) {
-      log.delegatorRole = role;
+    public Builder withDelegateeId(UUID id) {
+      log.delegateeId = id;
       return this;
     }
 
