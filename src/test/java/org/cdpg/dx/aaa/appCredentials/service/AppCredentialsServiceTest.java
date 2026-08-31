@@ -94,7 +94,8 @@ class AppCredentialsServiceTest {
       JsonObject body =
           new JsonObject()
               .put("user_id", userId.toString())
-              .put("expiry_at", expiry.format(FORMATTER))
+              .put("org_id", UUID.randomUUID().toString())
+              .put("expiryAt", expiry.format(FORMATTER))
               .put("status", "active");
 
       when(appCredentialsDAO.create(any(AppCredentials.class)))
@@ -132,7 +133,7 @@ class AppCredentialsServiceTest {
       PaginationInfo paginationInfo = PaginationInfo.from(1, 10, 1);
       PaginatedResult<AppCredentials> paginatedResult =
           new PaginatedResult<>(paginationInfo, List.of(app));
-      PaginatedRequest paginatedRequest = new PaginatedRequest(1, 10, Map.of(), null, null);
+      PaginatedRequest paginatedRequest = new PaginatedRequest(1, 10, Map.of(), null, null, null);
 
       when(appCredentialsDAO.getAllWithFilters(any(PaginatedRequest.class)))
           .thenReturn(Future.succeededFuture(paginatedResult));

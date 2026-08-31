@@ -173,6 +173,8 @@ class UserServiceTest {
       DxUser dxUser = TestDataFactory.aDxUser(USER_ID, "consumer");
       // dxUser from TestDataFactory has null organisationId
 
+      when(organizationService.hasPendingPlatformProviderRole(USER_ID))
+          .thenReturn(Future.succeededFuture(false));
       when(creditService.hasPendingComputeRequest(USER_ID))
           .thenReturn(Future.succeededFuture(true));
       when(organizationService.getOrganizationJoinRequestsByUser(USER_ID))
@@ -263,6 +265,8 @@ class UserServiceTest {
 
       when(keycloakUserService.getUserById(USER_ID))
           .thenReturn(Future.succeededFuture(kcUser));
+      when(organizationService.hasPendingPlatformProviderRole(USER_ID))
+          .thenReturn(Future.succeededFuture(false));
       when(creditService.hasPendingComputeRequest(USER_ID))
           .thenReturn(Future.succeededFuture(false));
       when(organizationService.getOrganizationJoinRequestsByUser(USER_ID))
@@ -532,7 +536,7 @@ class UserServiceTest {
     @Test
     @DisplayName("should delegate to customRoleDAO and return paginated result")
     void success(VertxTestContext ctx) {
-      PaginatedRequest request = new PaginatedRequest(1, 10, null, null, null);
+      PaginatedRequest request = new PaginatedRequest(1, 10, null, null, null, null);
 
       CustomRole role1 =
           new CustomRole(UUID.randomUUID(), USER_ID, new JsonArray().add("scope:read"),
@@ -563,7 +567,7 @@ class UserServiceTest {
     @Test
     @DisplayName("should return empty list when no custom roles exist")
     void success_empty(VertxTestContext ctx) {
-      PaginatedRequest request = new PaginatedRequest(1, 10, null, null, null);
+      PaginatedRequest request = new PaginatedRequest(1, 10, null, null, null, null);
 
       PaginationInfo pageInfo = PaginationInfo.from(1, 10, 0);
       PaginatedResult<CustomRole> expected =
