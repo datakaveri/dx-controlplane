@@ -83,10 +83,12 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
     boolean isWildcardApp =
       rolesArray == null || rolesArray.isEmpty();
 
+    String expirationDate = appCredentialsJson.getString("expiryAt");
+    appCredentialsJson.put(EXPIRY_AT, expirationDate);
+
     AppCredentials appCredentials =
       AppCredentials.fromJson(appCredentialsJson);
 
-    String expirationDate = appCredentialsJson.getString(EXPIRY_AT);
     LocalDateTime expiry = LocalDateTime.parse(expirationDate, FORMATTER);
 
     Future<AppCredentials> flow;
