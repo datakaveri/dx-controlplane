@@ -182,7 +182,7 @@ The RabbitMQ user needs the **`administrator` tag** because this service adminis
   "dataBrokerIP": "rabbitmq.rabbitmq.svc.cluster.local",
   "dataBrokerPort": 5672,
   "dataBrokerManagementPort": 15672,
-  "dataBrokerUserName": "admin",
+  "dataBrokerUserName": "rabbitmq_user",
   "dataBrokerPassword": "••••••••",
   "prodVhost": "iudx",
   "internalVhost": "iudx-INTERNAL",
@@ -199,23 +199,15 @@ The RabbitMQ user needs the **`administrator` tag** because this service adminis
 | `dataBrokerIP` | `rabbitmq.rabbitmq.svc.cluster.local` | In-cluster RabbitMQ DNS. **Not** the external address. |
 | `dataBrokerPort` | `5672` | AMQP port. Must agree with TLS setting. |
 | `dataBrokerManagementPort` | `15672` | HTTP management API port. |
-| `dataBrokerUserName` | `admin` | 🔑 Needs `administrator` **TAG** — not just permissions. |
-| `dataBrokerPassword` | `••••••••` | 🔑 Source: `Charts/databroker/secrets/credentials/admin-password` |
-| `prodVhost` | `iudx` | Data vhost. **CASE-SENSITIVE.** Per-asset exchanges live here. |
+| `dataBrokerUserName` | `rabbitmq_user` | 🔑 User with appropriate privileges to access different vhosts. |
+| `dataBrokerPassword` | `••••••••` | 🔑 Source: `Charts/oss-layer/databroker/example-secrets/secrets/credential` |
+| `prodVhost` | `iudx` | vhost. **CASE-SENSITIVE.** Per-asset exchanges live here. |
 | `internalVhost` | `iudx-INTERNAL` | Audit/email/leaderboard messaging vhost. |
 | `externalVhost` | `iudx-EXTERNAL` | Unused by this service but client is built at startup — **must exist**. |
 | `brokerAmqpIp` | `iudx.io` | **EXTERNAL** endpoint advertised to data consumers. Not the in-cluster IP. |
 | `brokerAmqpPort` | `24567` | External AMQPS port. |
 | `publishExchange` | `rpc-adapter-requests` | Exchange for RPC adapter requests. |
 
-**Required RabbitMQ permissions:**
-
-```bash
-rabbitmqctl set_permissions -p iudx          admin ".*" ".*" ".*"
-rabbitmqctl set_permissions -p iudx-INTERNAL admin ".*" ".*" ".*"
-rabbitmqctl set_permissions -p iudx-EXTERNAL admin "^$" "^$" "^$"
-rabbitmqctl set_user_tags admin administrator
-```
 
 **Required exchanges & queues (must exist before startup):**
 
@@ -225,7 +217,7 @@ rabbitmqctl set_user_tags admin administrator
 | `Email` (exchange) | `iudx-INTERNAL` | direct, durable | `EmailMessageConsumer` |
 | `rpc-adapter-requests` (exchange) | `iudx` | direct, durable | `ConnectorServiceImpl` |
 | `revoked-appid` (exchange) | `iudx` | direct, durable | Dataplane invalidation |
-| `test-auditing` (queue) | `iudx-INTERNAL` | classic, durable | Bound to `auditing` (`##`) |
+| `auditing` (queue) | `iudx-INTERNAL` | classic, durable | Bound to `auditing` (`##`) |
 | `email-notification` (queue) | `iudx-INTERNAL` | classic, durable | Bound to `Email` (`##`) |
 | `leaderboard` (queue) | `iudx-INTERNAL` | classic, durable | Bound to `auditing` (`##`) |
 | `database` (queue) | `iudx` | classic, durable | NGSI-LD ingestion side |
@@ -269,12 +261,6 @@ Configures the **admin client** (how this service acts on Keycloak) and the **is
 | `jwtIgnoreExpiry` | `true` | 🚨 **SECURITY:** Must be `false` in production! Expired tokens accepted. |
 | `jwtLeeway` | `30` | ⚠️ No consumer found — appears inert. |
 
-> [!WARNING]
-> **SECURITY ALERT** — Your dev config has `jwtIgnoreExpiry: true`. This is acceptable for development but **must be `false` in staging/production**.
-
-> [!CAUTION]
-> The `issuers` map mixes issuer entries with scalar settings (`jwksRefreshIntervalMs`, `jwtIgnoreExpiry`, `jwtLeeway`). Any code iterating `issuers` as "one entry per issuer" would see these as pseudo-issuers.
-
 ---
 
 ## 3.6 Application Settings (`commonOptions`)
@@ -299,7 +285,7 @@ Cross-cutting URLs, catalogue indices, APD identity, and feature flags consumed 
 | `isCentralCatEnabled` | `false` | Feature flag. When `true`, requires 3 additional changes. |
 | `kycRequired` | `false` | Feature flag. When `true`, requires entire `KYCOptions` block. |
 | `ogcDataPlaneUrl` | `iudx.io/geoserver-s3` | OGC dataplane for geo-server assets. |
-| `publisherPanelUrl` | `https://staging.publisher.tgdex.iudx.io` | ⚠️ Must **NOT** end with `/`. Validated at startup — only field with fail-fast. |
+| `publisherPanelUrl` | `https://iudx.io` | Validated at startup — only field with fail-fast. |
 | `supportEmail` | `support@datakaveri.org` | Substituted for `${SUPPORT_EMAIL}` in OpenAPI spec. **Not** the CC list. |
 | `tokenExpirationMinutes` | `60` | Token lifetime. Safe: 15–120. |
 | `uploadedBy` | `Centre of Data for Public Good (CDPG), IISc` | Attribution on catalogue items. |
@@ -327,12 +313,10 @@ Email is configured across three blocks (`emailConfig`, `emailOptions`, `emailNo
 
 | Field | Dev Value | What It Does |
 |---|---|---|
-| `emailSender` | `no-reply.dev@iudx.io` | `From:` address. Must be verified in SMTP provider. ⚠️ Duplicate of `emailOptions.emailSender`. |
+| `emailSender` | `no-reply.dev@iudx.io` | `From:` address. Must be verified in SMTP provider. |
 | `emailSupport` | `[""]` | 🚨 CC list. **No null guard — missing → NPE.** `[""]` is wrong — replace with real addresses. |
 | `senderName` | `Maharashtra Agriculture Data Exchange (MahaAgX)` | Display name in `From:` header and templates. |
 
-> [!CAUTION]
-> Your dev config has `emailSupport: [""]` — an array with one empty string. Replace with real addresses or `[]`.
 
 ### `emailOptions`
 
@@ -403,9 +387,6 @@ All fields conditional on `commonOptions.kycRequired = true`. Dev and prod use *
 ## 3.11 Modules — The `required` Array
 
 This is the single most important mechanism in the config. **A verticle can only read a top-level block listed in its `required` array.** A key can be present and correct in `config.json` and still read as `null` simply because its block was never added here.
-
-> [!IMPORTANT]
-> **Gotcha:** Blocks are merged **FLAT** into one JSON object, so a key written directly on a module can be overwritten by a same-named key from a `required` block. This is why `ElasticsearchVerticle` must **never** list `postgresOptions` — both define `databaseIP` and `databasePort`.
 
 ---
 
