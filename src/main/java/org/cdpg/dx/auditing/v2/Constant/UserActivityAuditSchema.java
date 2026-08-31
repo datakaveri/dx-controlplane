@@ -19,8 +19,7 @@ public final class UserActivityAuditSchema {
   public static final String ISSUER = "issuer";
 
   // Delegation
-  public static final String DELEGATOR_ID = "delegator_id";
-  public static final String DELEGATOR_ROLE = "delegator_role";
+  public static final String DELEGATEE_ID = "delegatee_id";
 
   // API metadata
   public static final String API = "api";

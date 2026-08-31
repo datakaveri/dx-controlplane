@@ -8,8 +8,6 @@ import java.util.UUID;
 import org.cdpg.dx.aaa.organization.models.OrganisationAuditOperation;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auditing.v2.util.AuditLogHelper;
-import org.cdpg.dx.common.model.DxUser;
-import org.cdpg.dx.common.util.RoutingContextHelper;
 
 import static org.cdpg.dx.aaa.common.Constants.ID;
 
@@ -39,11 +37,6 @@ public final class OrganizationAuditHelper {
                     ? safeUuid(body.getString(ID))
                     : null)
             .withAction(operation.value());
-
-    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
-    if (dxUser != null && dxUser.delegateeId() != null) {
-      builder.withDelegatorId(dxUser.sub());
-    }
 
     return builder.build();
   }
