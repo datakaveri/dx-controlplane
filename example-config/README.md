@@ -86,7 +86,7 @@ This section walks through every block in `config.json` using the **`iudx.io`** 
 
 ---
 
-## 3.1 Cluster & Orchestration
+## 2.1 Cluster & Orchestration
 
 These top-level fields configure the Vert.x cluster manager. They must be set **before any verticle can start**.
 
@@ -106,7 +106,7 @@ These top-level fields configure the Vert.x cluster manager. They must be set **
 
 ---
 
-## 3.2 PostgreSQL Connection
+## 2.2 PostgreSQL Connection
 
 All fields consumed by `PostgresVerticle` (`dx-common`). The database and schema must exist before startup. Flyway migrations need DDL rights.
 
@@ -144,7 +144,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO <user>;
 
 ---
 
-## 3.3 Elasticsearch
+## 2.3 Elasticsearch
 
 Connection settings are inlined in the `ElasticsearchVerticle` module entry (**no `required` array**). The indices must be pre-created with the shipped mappings.
 
@@ -173,7 +173,7 @@ Connection settings are inlined in the `ElasticsearchVerticle` module entry (**n
 
 ---
 
-## 3.4 RabbitMQ (`databrokerOptions`)
+## 2.4 RabbitMQ (`databrokerOptions`)
 
 The RabbitMQ user needs the **`administrator` tag** because this service administers other users' permissions. All vhosts must exist before startup.
 
@@ -224,7 +224,7 @@ The RabbitMQ user needs the **`administrator` tag** because this service adminis
 
 ---
 
-## 3.5 Keycloak & Authentication
+## 2.5 Keycloak & Authentication
 
 Configures the **admin client** (how this service acts on Keycloak) and the **issuer map** (which tokens it accepts).
 
@@ -263,7 +263,7 @@ Configures the **admin client** (how this service acts on Keycloak) and the **is
 
 ---
 
-## 3.6 Application Settings (`commonOptions`)
+## 2.6 Application Settings (`commonOptions`)
 
 Cross-cutting URLs, catalogue indices, APD identity, and feature flags consumed by every API-serving verticle.
 
@@ -305,7 +305,7 @@ Cross-cutting URLs, catalogue indices, APD identity, and feature flags consumed 
 
 ---
 
-## 3.7 Email Configuration
+## 2.7 Email Configuration
 
 Email is configured across three blocks (`emailConfig`, `emailOptions`, `emailNotification`) plus SMTP fields inlined in the `EmailVerticle` module. The `emailSender` field is **duplicated** — both must be kept identical.
 
@@ -349,7 +349,7 @@ Email is configured across three blocks (`emailConfig`, `emailOptions`, `emailNo
 
 ---
 
-## 3.8 KYC / DigiLocker
+## 2.8 KYC / DigiLocker
 
 All fields conditional on `commonOptions.kycRequired = true`. Dev and prod use **different** DigiLocker registrations.
 
@@ -363,7 +363,7 @@ All fields conditional on `commonOptions.kycRequired = true`. Dev and prod use *
 
 ---
 
-## 3.9 Audit Options
+## 2.9 Audit Options
 
 | Field | Dev Value | What It Does |
 |---|---|---|
@@ -375,7 +375,7 @@ All fields conditional on `commonOptions.kycRequired = true`. Dev and prod use *
 
 ---
 
-## 3.10 JWT Keystore
+## 2.10 JWT Keystore
 
 | Field | Dev Value | What It Does |
 |---|---|---|
@@ -384,7 +384,7 @@ All fields conditional on `commonOptions.kycRequired = true`. Dev and prod use *
 
 ---
 
-## 3.11 Modules — The `required` Array
+## 2.11 Modules — The `required` Array
 
 This is the single most important mechanism in the config. **A verticle can only read a top-level block listed in its `required` array.** A key can be present and correct in `config.json` and still read as `null` simply because its block was never added here.
 
@@ -392,7 +392,7 @@ This is the single most important mechanism in the config. **A verticle can only
 
 # Section 4 — Quick Reference
 
-## 4.1 All Credentials
+## 3.1 All Credentials
 
 | Credential | System | How to Obtain |
 |---|---|---|
@@ -404,7 +404,7 @@ This is the single most important mechanism in the config. **A verticle can only
 | `KYCOptions.clientSecret` | DigiLocker | DigiLocker partner portal |
 | `jwtKeystoreOptions.keystorePassword` | JKS keystore | Generated with `keytool` (see Step 2) |
 
-## 4.2 Feature Flags
+## 3.2 Feature Flags
 
 | Flag | Dev Value | Effect When True |
 |---|---|---|
@@ -414,7 +414,7 @@ This is the single most important mechanism in the config. **A verticle can only
 | `notifyByEmail` | `true` | `false` **silently** disables ALL mail — no error anywhere |
 | `jwtIgnoreExpiry` | `true` ⚠️ | 🚨 **SECURITY HOLE** — expired tokens accepted. Must be `false` in prod. |
 
-## 4.3 Values to Change Before Production
+## 3.3 Values to Change Before Production
 
 | What | Dev Value | Production Action |
 |---|---|---|
