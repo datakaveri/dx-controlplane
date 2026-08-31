@@ -1,11 +1,12 @@
-# `config.json` Field Reference — dx-controlplane
+# ControlPlane — `config.json` Reference
+
 
 Complete reference for every field in [`config.json`](./config.json): what it configures, what
 breaks if it is wrong, and where to obtain its value. Written for whoever deploys and operates the
 control plane.
 
-**Where to start.** §1 explains how config blocks reach each verticle — the most common source of
-"the key is set, but the code reads `null`". §2 documents every field individually. §3 groups fields
+**Where to start.** 1 explains how config blocks reach each verticle — the most common source of
+"the key is set, but the code reads `null`". 2 documents every field individually. §3 groups fields
 by category (credentials, URLs, tuning knobs, feature flags) so a whole category can be checked at
 once. §4 lists fields that still need a decision.
 
@@ -81,317 +82,365 @@ its own `required`. Adding a config key without adding its block to the consumin
 | `DelegationVerticle` | `commonOptions`, `keycloakOptions` |
 | `GrpcServerVerticle` | `postgresOptions`, `commonOptions`, `keycloakOptions` |
 
+This section walks through every block in `config.json` using the **`iudx.io`** environment as a reference. Each field shows the dev value and what it does.
+
 ---
 
-## 2. Field blocks
+## 3.1 Cluster & Orchestration
 
-This section walks through every block in **config.json** using the **iudx.io** environment as a reference. Each field shows the dev value and what it does.
+These top-level fields configure the Vert.x cluster manager. They must be set **before any verticle can start**.
 
-## Cluster & Orchestration
-
-These top-level fields configure the Vert.x cluster manager. They must be set before any verticle can start.
+```json
 {
-  "version": "1.0",
-  "zookeepers": ["zookeeper-client.zookeeper.svc.cluster.local"],
-  "clusterId": "iudx-v2-control-panel-cluster"
+  "version": "1.0",
+  "zookeepers": ["zookeeper-client.zookeeper.svc.cluster.local"],
+  "clusterId": "iudx-control-panel-cluster"
 }
+```
 
-| **FieldDev ValueWhat It Does**                                                                                              |                                              |                                                                                         |
-| --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------- |
-| [version](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.vvag3xt2lvj)     | 1.0                                          | Schema marker. No code reads it — documentation only.                                   |
-| [zookeepers](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.uz0wmve9iat1) | zookeeper-client.zookeeper.svc.cluster.local | Zookeeper ensemble for clustered Vert.x. Use the client service, not the headless peer. |
-| [clusterId](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.n176nk1j7vd0)  | iudx-v2-control-panel-cluster                | Cluster identity. ⚠ No consumer found in code — may be used by deployment tooling only. |
+| Field | Dev Value | What It Does |
+|---|---|---|
+| `version` | `1.0` | Schema marker. No code reads it — documentation only. |
+| `zookeepers` | `zookeeper-client.zookeeper.svc.cluster.local` | Zookeeper ensemble for clustered Vert.x. |
+| `clusterId` | `iudx-control-panel-cluster` | Cluster identity. |
 
-## PostgreSQL Connection
+---
 
-All fields consumed by PostgresVerticle (dx-common). The database and schema must exist before startup. Flyway migrations need DDL rights.
+## 3.2 PostgreSQL Connection
+
+All fields consumed by `PostgresVerticle` (`dx-common`). The database and schema must exist before startup. Flyway migrations need DDL rights.
+
+```json
 "postgresOptions": {
-  "databaseIP": "psql-rw.postgres.svc.cluster.local",
-  "databaseName": "iudx_v2_auth",
-  "databasePassword": "••••••••",
-  "databasePort": 5432,
-  "databaseSchema": "aaa",
-  "databaseUserName": "postgres",
-  "poolSize": 25
+  "databaseIP": "psql-rw.postgres.svc.cluster.local",
+  "databaseName": "iudx_auth",
+  "databasePassword": "••••••••",
+  "databasePort": 5432,
+  "databaseSchema": "aaa",
+  "databaseUserName": "postgres",
+  "poolSize": 25
 }
+```
 
-| **FieldDev ValueWhat It Does**                                                                                                    |                                     |                                                                                               |
-| --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------- |
-| [databaseIP](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.8bk2xuud7xz)        | psql-rw.postgres.svc.cluster.local | Pooler DNS. Must be the READ-WRITE endpoint.                                                  |
-| databasePort                                                                                                                      | 5432                                | Standard Postgres port.                                                                       |
-| [databaseName](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.yiu709gen8fx)     | iudx_v2_auth                      | Database name. Convention: <prefix>_controlplane.                                           |
-| [databaseSchema](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.5o8x47737bql)   | aaa                                 | Search path schema. Must match Flyway migrations.                                             |
-| [databaseUserName](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.n1o28t2q884r) | postgres                            | DB user. Needs full DML on schema aaa.                                                        |
-| [databasePassword](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.49vgvianx54i) | ••••••••                            |  DB password. Source: Charts/postgresql/secrets/.                                             |
-| [poolSize](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.r7oejaeoba7q)         | 25                                  | ⚠ Connection pool. Size = max_conn ÷ (replicas × instances). Too high → cluster-wide outage. |
+| Field | Dev Value | What It Does |
+|---|---|---|
+| `databaseIP` | `psql-rw.postgres.svc.cluster.local` | Pooler DNS. Must be the **READ-WRITE** endpoint. |
+| `databasePort` | `5432` | Standard Postgres port. |
+| `databaseName` | `iudx_auth` | Database name. Convention: `<prefix>_controlplane`. |
+| `databaseSchema` | `aaa` | Search path schema. Must match Flyway migrations. |
+| `databaseUserName` | `postgres` | DB user. Needs full DML on schema `aaa`. |
+| `databasePassword` | `••••••••` | DB password. Source: `Charts/postgresql/secrets/`. |
+| `poolSize` | `25` | ⚠️ Connection pool. Size = `max_conn ÷ (replicas × instances)`. Too high → cluster-wide outage. |
 
-**Required GRANT statements:**
-GRANT CONNECT ON DATABASE iudx_v2_auth TO <user>;
+**Required `GRANT` statements** (User Privileges are taken care by the flyway migration scripts):
+
+```sql
+GRANT CONNECT ON DATABASE iudx_auth TO <user>;
 GRANT USAGE, CREATE ON SCHEMA aaa TO <user>;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA aaa TO <user>;
 ALTER DEFAULT PRIVILEGES IN SCHEMA aaa
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO <user>;
+```
 
-## Elasticsearch
+---
 
-Connection settings are inlined in the ElasticsearchVerticle module entry (no required array). The indices must be pre-created with the shipped mappings.
+## 3.3 Elasticsearch
+
+Connection settings are inlined in the `ElasticsearchVerticle` module entry (**no `required` array**). The indices must be pre-created with the shipped mappings.
+
+```json
 // Inside modules[] — ElasticsearchVerticle entry
 "databaseIP": "elastic-es-http.elastic.svc.cluster.local",
 "databasePort": 9200,
-"databaseUser": "iudx-v2-cat-user",
+"databaseUser": "iudx-cat-user",
 "databasePassword": "••••••••"
+```
 
-| **FieldDev ValueWhat It Does**                                                                                                    |                                           |                                                                 |
-| --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------- |
-| [databaseIP](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.7qxuc5l3ak1y)       | elastic-es-http.elastic.svc.cluster.local | ES cluster DNS.                                                 |
-| databasePort                                                                                                                      | 9200                                      | Standard ES HTTP port.                                          |
-| [databaseUser](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.r94nek6wjtwx)     | iudx-v2-cat-user                          | Needs read+write+view_index_metadata on catalogue indices.    |
-| [databasePassword](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.g0dnopomwxr1) | ••••••••                                  | Source: Charts/elk/secrets/passwords/elasticsearch-cat-password |
+| Field | Dev Value | What It Does |
+|---|---|---|
+| `databaseIP` | `elastic-es-http.elastic.svc.cluster.local` | ES cluster DNS. |
+| `databasePort` | `9200` | Standard ES HTTP port. |
+| `databaseUser` | `iudx-cat-user` | Needs `read` + `write` + `view_index_metadata` on catalogue indices. |
+| `databasePassword` | `••••••••` | Source: `Charts/elk/secrets/passwords/elasticsearch-cat-password` |
 
 **Required ES indices (create before startup):**
 
-| **IndexMapping FileFields**     |                                                          |                                           |
-| ------------------------------- | -------------------------------------------------------- | ----------------------------------------- |
-| iudx-v2__cat                  | indices-mappings/cat_mappings.json + cat_settings.json | 81 fields + analyzers                     |
-| iudx-v2__cat_deleted_assets | (reuses cat_mappings.json)                              | Soft-deleted catalogue assets             |
-| doc_user_index                | indices-mappings/userdoc_mappings.json                  | 7 fields (userId, about, education, etc.) |
+| Index | Mapping File | Fields |
+|---|---|---|
+| `iudx__cat` | `indices-mappings/cat_mappings.json` + `cat_settings.json` | 81 fields + analyzers |
+| `iudx__cat_deleted_assets` | *(reuses `cat_mappings.json`)* | Soft-deleted catalogue assets |
+| `doc_user_index` | `indices-mappings/userdoc_mappings.json` | 7 fields (`userId`, `about`, `education`, etc.) |
 
-## RabbitMQ (databrokerOptions)
+---
 
-The RabbitMQ user needs the administrator tag because this service administers other users' permissions. All vhosts must exist before startup.
+## 3.4 RabbitMQ (`databrokerOptions`)
 
-```"databrokerOptions": {
-  "dataBrokerIP": "rabbitmq.rabbitmq.svc.cluster.local",
-  "dataBrokerPort": 5672,
-  "dataBrokerManagementPort": 15672,
-  "dataBrokerUserName": "admin",
-  "dataBrokerPassword": "••••••••",
-  "prodVhost": "IUDX-V2",
-  "internalVhost": "IUDX-V2-INTERNAL",
-  "externalVhost": "IUDX-V2-EXTERNAL",
-  "brokerAmqpIp": "iudx.io",
-  "brokerAmqpPort": 24567,
-  "publishExchange": "rpc-adapter-requests",
-  ... // timeout/recovery settings
+The RabbitMQ user needs the **`administrator` tag** because this service administers other users' permissions. All vhosts must exist before startup.
+
+```json
+"databrokerOptions": {
+  "dataBrokerIP": "rabbitmq.rabbitmq.svc.cluster.local",
+  "dataBrokerPort": 5672,
+  "dataBrokerManagementPort": 15672,
+  "dataBrokerUserName": "admin",
+  "dataBrokerPassword": "••••••••",
+  "prodVhost": "iudx",
+  "internalVhost": "iudx-INTERNAL",
+  "externalVhost": "iudx-EXTERNAL",
+  "brokerAmqpIp": "iudx.io",
+  "brokerAmqpPort": 24567,
+  "publishExchange": "rpc-adapter-requests"
+  // ... timeout/recovery settings
 }
+```
 
-| **FieldDev ValueWhat It Does**                                                                                                            |                                     |                                                                        |
-| ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------- |
-| [dataBrokerIP](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.yoqejj4ezclz)             | rabbitmq.rabbitmq.svc.cluster.local | In-cluster RabbitMQ DNS. Not the external address.                     |
-| [dataBrokerPort](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.uq45jmumpfau)           | 5672                                | AMQP port. Must agree with TLS setting.                                |
-| [dataBrokerManagementPort](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.j96bvzm279p8) | 15672                               | HTTP management API port.                                              |
-| [dataBrokerUserName](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.h6a8z3qsnfzu)       | admin                               | 🔑 Needs administrator TAG — not just permissions.                     |
-| [dataBrokerPassword](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.8099s2ulzorv)       | ••••••••                            | 🔑 Source: Charts/databroker/secrets/credentials/admin-password        |
-| [prodVhost](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.2tsyxk5buz65)                | IUDX-V2                             | Data vhost. CASE-SENSITIVE. Per-asset exchanges live here.             |
-| internalVhost                                                                                                                             | IUDX-V2-INTERNAL                    | Audit/email/leaderboard messaging vhost.                               |
-| [externalVhost](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.hdkpa0rturjq)            | IUDX-V2-EXTERNAL                    | Unused by this service but client is built at startup — must exist.    |
-| [brokerAmqpIp](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.ypu7mm254if7)             | iudx.io                      | EXTERNAL endpoint advertised to data consumers. Not the in-cluster IP. |
-| brokerAmqpPort                                                                                                                            | 24567                               | External AMQPS port.                                                   |
-| publishExchange                                                                                                                           | rpc-adapter-requests                | Exchange for RPC adapter requests.                                     |
+| Field | Dev Value | What It Does |
+|---|---|---|
+| `dataBrokerIP` | `rabbitmq.rabbitmq.svc.cluster.local` | In-cluster RabbitMQ DNS. **Not** the external address. |
+| `dataBrokerPort` | `5672` | AMQP port. Must agree with TLS setting. |
+| `dataBrokerManagementPort` | `15672` | HTTP management API port. |
+| `dataBrokerUserName` | `admin` | 🔑 Needs `administrator` **TAG** — not just permissions. |
+| `dataBrokerPassword` | `••••••••` | 🔑 Source: `Charts/databroker/secrets/credentials/admin-password` |
+| `prodVhost` | `iudx` | Data vhost. **CASE-SENSITIVE.** Per-asset exchanges live here. |
+| `internalVhost` | `iudx-INTERNAL` | Audit/email/leaderboard messaging vhost. |
+| `externalVhost` | `iudx-EXTERNAL` | Unused by this service but client is built at startup — **must exist**. |
+| `brokerAmqpIp` | `iudx.io` | **EXTERNAL** endpoint advertised to data consumers. Not the in-cluster IP. |
+| `brokerAmqpPort` | `24567` | External AMQPS port. |
+| `publishExchange` | `rpc-adapter-requests` | Exchange for RPC adapter requests. |
 
 **Required RabbitMQ permissions:**
-rabbitmqctl set_permissions -p IUDX-V2          admin ".\*" ".\*" ".\*"
-rabbitmqctl set_permissions -p IUDX-V2-INTERNAL admin ".\*" ".\*" ".\*"
-rabbitmqctl set_permissions -p IUDX-V2-EXTERNAL admin "^$" "^$" "^$"
+
+```bash
+rabbitmqctl set_permissions -p iudx          admin ".*" ".*" ".*"
+rabbitmqctl set_permissions -p iudx-INTERNAL admin ".*" ".*" ".*"
+rabbitmqctl set_permissions -p iudx-EXTERNAL admin "^$" "^$" "^$"
 rabbitmqctl set_user_tags admin administrator
+```
+
 **Required exchanges & queues (must exist before startup):**
 
-| **ObjectvHostTypeConsumed By**  |                  |                  |                        |
-| ------------------------------- | ---------------- | ---------------- | ---------------------- |
-| auditing (exchange)             | IUDX-V2-INTERNAL | direct, durable  | AuditMessageConsumer   |
-| Email (exchange)                | IUDX-V2-INTERNAL | direct, durable  | EmailMessageConsumer   |
-| rpc-adapter-requests (exchange) | IUDX-V2          | direct, durable  | ConnectorServiceImpl   |
-| revoked-appid (exchange)        | IUDX-V2          | direct, durable  | Dataplane invalidation |
-| test-auditing (queue)           | IUDX-V2-INTERNAL | classic, durable | Bound to auditing (##) |
-| email-notification (queue)      | IUDX-V2-INTERNAL | classic, durable | Bound to Email (##)    |
-| leaderboard (queue)             | IUDX-V2-INTERNAL | classic, durable | Bound to auditing (##) |
-| database (queue)                | IUDX-V2          | classic, durable | NGSI-LD ingestion side |
+| Object | vHost | Type | Consumed By |
+|---|---|---|---|
+| `auditing` (exchange) | `iudx-INTERNAL` | direct, durable | `AuditMessageConsumer` |
+| `Email` (exchange) | `iudx-INTERNAL` | direct, durable | `EmailMessageConsumer` |
+| `rpc-adapter-requests` (exchange) | `iudx` | direct, durable | `ConnectorServiceImpl` |
+| `revoked-appid` (exchange) | `iudx` | direct, durable | Dataplane invalidation |
+| `test-auditing` (queue) | `iudx-INTERNAL` | classic, durable | Bound to `auditing` (`##`) |
+| `email-notification` (queue) | `iudx-INTERNAL` | classic, durable | Bound to `Email` (`##`) |
+| `leaderboard` (queue) | `iudx-INTERNAL` | classic, durable | Bound to `auditing` (`##`) |
+| `database` (queue) | `iudx` | classic, durable | NGSI-LD ingestion side |
 
-## Keycloak & Authentication
+---
 
-Configures the admin client (how this service acts on Keycloak) and the issuer map (which tokens it accepts).
+## 3.5 Keycloak & Authentication
+
+Configures the **admin client** (how this service acts on Keycloak) and the **issuer map** (which tokens it accepts).
+
+```jsonc
 "keycloakOptions": {
-  "keycloakUrl": "https://iudx.io/auth",
-  "keycloakRealm": "iudx-v2",
-  "keycloakAdminClientId": "admin-client",
-  "keycloakAdminClientSecret": "••••••••",
-  "issuers": {
-    "iudx.io/controlplane": {        ← internal issuer
-      "audience": [], "type": "internal"
-    },
-    "https://iudx.io/auth/realms/iudx-v2": {
-      "audience": [], "type": "remote",      ← Keycloak issuer
-      "jwksUrl": "https://iudx.io/auth/realms/iudx-v2/..."
-    },
-    "jwksRefreshIntervalMs": 21600000,        ← mixed in with issuers
-    "jwtIgnoreExpiry": true,                  ← ⚠ NEVER true in prod
-    "jwtLeeway": 30                           ← no consumer found
-  }
+  "keycloakUrl": "https://iudx.io/auth",
+  "keycloakRealm": "iudx",
+  "keycloakAdminClientId": "admin-client",
+  "keycloakAdminClientSecret": "••••••••",
+  "issuers": {
+    "iudx.io/controlplane": {           // ← internal issuer
+      "audience": [], "type": "internal"
+    },
+    "https://iudx.io/auth/realms/iudx": {
+      "audience": [], "type": "remote",        // ← Keycloak issuer
+      "jwksUrl": "https://iudx.io/auth/realms/iudx/..."
+    },
+    "jwksRefreshIntervalMs": 21600000,         // ← mixed in with issuers
+    "jwtIgnoreExpiry": true,                   // ← ⚠️ NEVER true in prod
+    "jwtLeeway": 30                            // ← no consumer found
+  }
 }
+```
 
-| **FieldDev ValueWhat It Does**                                                                                                             |                                             |                                                                           |
-| ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------- | ------------------------------------------------------------------------- |
-| [keycloakUrl](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.qymvg3ulqn8w)               | https://iudx.io/auth                | Full URL with scheme, no trailing /. Admin client and gRPC auth use this. |
-| [keycloakRealm](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.20eqqxb03p70)             | iudx-v2                                     | Case-sensitive realm name.                                                |
-| [keycloakAdminClientId](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.k80j8bxcuw14)     | admin-client                                | 🔑 Confidential client with service accounts enabled.                     |
-| [keycloakAdminClientSecret](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.1tcj9w7wgp03) | ••••••••                                    | 🔑 From Keycloak Clients → Credentials tab.                               |
-| [issuers (internal)](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.j9elbbbcve2g)        | iudx.io/controlplane                 | Must equal commonOptions.cosDomain exactly.                               |
-| [issuers (remote)](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.1x9gojyehwra)          | https://iudx.io/auth/realms/iudx-v2 | Keycloak realm issuer with jwksUrl.                                       |
-| [jwksRefreshIntervalMs](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.s95ion23gt34)     | 21600000 (6h)                               | JWKS cache refresh. Safe: 1h–6h.                                          |
-| [jwtIgnoreExpiry](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.uhrr615ixu1)            | true                                        | 🚨 SECURITY: Must be false in production! Expired tokens accepted.        |
-| [jwtLeeway](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.f1ere4g4uhwy)                 | 30                                          | ⚠ No consumer found — appears inert.                                      |
+| Field | Dev Value | What It Does |
+|---|---|---|
+| `keycloakUrl` | `https://iudx.io/auth` | Full URL with scheme, **no trailing `/`**. Admin client and gRPC auth use this. |
+| `keycloakRealm` | `iudx` | Case-sensitive realm name. |
+| `keycloakAdminClientId` | `admin-client` | 🔑 Confidential client with service accounts enabled. |
+| `keycloakAdminClientSecret` | `••••••••` | 🔑 From Keycloak **Clients → Credentials** tab. |
+| `issuers` (internal) | `iudx.io/controlplane` | Must equal `commonOptions.cosDomain` **exactly**. |
+| `issuers` (remote) | `https://iudx.io/auth/realms/iudx` | Keycloak realm issuer with `jwksUrl`. |
+| `jwksRefreshIntervalMs` | `21600000` (6h) | JWKS cache refresh. Safe: 1h–6h. |
+| `jwtIgnoreExpiry` | `true` | 🚨 **SECURITY:** Must be `false` in production! Expired tokens accepted. |
+| `jwtLeeway` | `30` | ⚠️ No consumer found — appears inert. |
 
- **SECURITY ALERT**   Your dev config has **jwtIgnoreExpiry: true**. This is acceptable for development but must be **false** in staging/production.
-** CAUTION**   The issuers map mixes issuer entries with scalar settings (jwksRefreshIntervalMs, jwtIgnoreExpiry, jwtLeeway). Any code iterating issuers as "one entry per issuer" would see these as pseudo-issuers.
+> [!WARNING]
+> **SECURITY ALERT** — Your dev config has `jwtIgnoreExpiry: true`. This is acceptable for development but **must be `false` in staging/production**.
 
-## Application Settings (commonOptions)
+> [!CAUTION]
+> The `issuers` map mixes issuer entries with scalar settings (`jwksRefreshIntervalMs`, `jwtIgnoreExpiry`, `jwtLeeway`). Any code iterating `issuers` as "one entry per issuer" would see these as pseudo-issuers.
+
+---
+
+## 3.6 Application Settings (`commonOptions`)
 
 Cross-cutting URLs, catalogue indices, APD identity, and feature flags consumed by every API-serving verticle.
 
-| **FieldDev ValueWhat It Does**                                                                                                          |                                             |                                                                                           |
-| --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| [apdURL](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.e28580h8xjdd)                 | iudx.io/controlplane/acl             | APD identity. No scheme! Code prepends https://. Must match item metadata byte-for-byte. |
-| [appIdRevokeExchange](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.5lhkh3u1qj85)    | revoked-appid                               | RabbitMQ exchange for app-ID revocations.                                                 |
-| [baseUrl](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.2ko3bnbvay74)                | iudx.io/controlplane                 | Host for API docs. No scheme. Replaces ${HOSTNAME} (141 times) in the OpenAPI spec.       |
-| [controlPlaneDomain](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.66wfrzv0grzw)     | https://iudx.io/controlplane        | Full URL WITH scheme. Used for user-facing links.                                         |
-| controlPlaneUrl                                                                                                                         | iudx.io/controlplane                 | Host + path, no scheme. User-facing links.                                                |
-| [corsAllowedOrigin](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.8mf7pcpaphxj)      | ["\*"]                                      | 🚨 CORS allow-list. Replace \* with explicit origins for prod!                            |
-| [cosDomain](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.a9rp34a46dfc)              | iudx.io/controlplane                 | JWT issuer string. Must equal keycloakOptions.issuers internal key.                       |
-| dataPlaneUrl                                                                                                                            | https://iudx.io/dataplane           | Dataplane links in API responses. Must match dataplane ingress.                           |
-| [defaultExpiryDays](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.ek30umj2x7br)      | 12                                          | Default policy validity when no explicit expiry given.                                    |
-| deletedDocsIndex                                                                                                                        | iudx-v2__cat_deleted_assets             | ES index for soft-deleted catalogue assets.                                               |
-| [docIndex](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.g3zcm8b311pq)               | iudx-v2__cat                              | Primary catalogue ES index. Must be created with proper mappings.                         |
-| docUserIndex                                                                                                                            | doc_user_index                            | User-document ES index (7 fields).                                                        |
-| [initialCreditBalance](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.zdz8zmqrd0eg)   | 1000                                        | Credits seeded on first user creation.                                                    |
-| [isCentralCatEnabled](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.jn6z38r3xnkn)    | false                                       | Feature flag. When true, requires 3 additional changes.                                   |
-| kycRequired                                                                                                                             | false                                       | Feature flag. When true, requires entire KYCOptions block.                                |
-| ogcDataPlaneUrl                                                                                                                         | iudx.io/geoserver-s3                 | OGC dataplane for geo-server assets.                                                      |
-| [publisherPanelUrl](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.okhlnhyjn031)      | https://staging.publisher.tgdex.iudx.io    | ⚠ Must NOT end with /. Validated at startup — only field with fail-fast.                  |
-| [supportEmail](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.zce3v8jjoxch)           | support@datakaveri.org                     | Substituted for ${SUPPORT_EMAIL} in OpenAPI spec. Not the CC list.                       |
-| [tokenExpirationMinutes](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.fx9rjgpqkvdt) | 60                                          | Token lifetime. Safe: 15–120.                                                             |
-| uploadedBy                                                                                                                              | Centre of Data for Public Good (CDPG), IISc | Attribution on catalogue items.                                                           |
-| vocContext                                                                                                                              | https://voc.forest-stack.iudx.io/          | JSON-LD vocabulary context. Include trailing /.                                           |
+| Field | Dev Value | What It Does |
+|---|---|---|
+| `apdURL` | `iudx.io/controlplane/acl` | APD identity. **No scheme!** Code prepends `https://`. Must match item metadata byte-for-byte. |
+| `appIdRevokeExchange` | `revoked-appid` | RabbitMQ exchange for app-ID revocations. |
+| `baseUrl` | `iudx.io/controlplane` | Host for API docs. No scheme. Replaces `${HOSTNAME}` (141 times) in the OpenAPI spec. |
+| `controlPlaneDomain` | `https://iudx.io/controlplane` | Full URL **WITH** scheme. Used for user-facing links. |
+| `controlPlaneUrl` | `iudx.io/controlplane` | Host + path, no scheme. User-facing links. |
+| `corsAllowedOrigin` | `["*"]` | 🚨 CORS allow-list. **Replace `*` with explicit origins for prod!** |
+| `cosDomain` | `iudx.io/controlplane` | JWT issuer string. Must equal `keycloakOptions.issuers` internal key. |
+| `dataPlaneUrl` | `https://iudx.io/dataplane` | Dataplane links in API responses. Must match dataplane ingress. |
+| `defaultExpiryDays` | `12` | Default policy validity when no explicit expiry given. |
+| `deletedDocsIndex` | `iudx__cat_deleted_assets` | ES index for soft-deleted catalogue assets. |
+| `docIndex` | `iudx__cat` | Primary catalogue ES index. Must be created with proper mappings. |
+| `docUserIndex` | `doc_user_index` | User-document ES index (7 fields). |
+| `initialCreditBalance` | `1000` | Credits seeded on first user creation. |
+| `isCentralCatEnabled` | `false` | Feature flag. When `true`, requires 3 additional changes. |
+| `kycRequired` | `false` | Feature flag. When `true`, requires entire `KYCOptions` block. |
+| `ogcDataPlaneUrl` | `iudx.io/geoserver-s3` | OGC dataplane for geo-server assets. |
+| `publisherPanelUrl` | `https://staging.publisher.tgdex.iudx.io` | ⚠️ Must **NOT** end with `/`. Validated at startup — only field with fail-fast. |
+| `supportEmail` | `support@datakaveri.org` | Substituted for `${SUPPORT_EMAIL}` in OpenAPI spec. **Not** the CC list. |
+| `tokenExpirationMinutes` | `60` | Token lifetime. Safe: 15–120. |
+| `uploadedBy` | `Centre of Data for Public Good (CDPG), IISc` | Attribution on catalogue items. |
+| `vocContext` | `https://voc.forest-stack.iudx.io/` | JSON-LD vocabulary context. **Include trailing `/`.** |
 
-**URL Scheme Rules — follow this table literally:**
+### URL Scheme Rules — follow this table literally
 
-| **FieldScheme?Trailing /?** |                          |                            |
-| --------------------------- | ------------------------ | -------------------------- |
-| apdURL                      | NO — code adds https:// | no                         |
-| baseUrl                     | NO — spec adds https:// | no                         |
-| controlPlaneDomain          | YES                      | no                         |
-| controlPlaneUrl             | no                       | no                         |
-| cosDomain                   | no                       | no                         |
-| publisherPanelUrl           | YES                      | NO — validated at startup! |
-| vocContext                  | YES                      | YES (as shipped)           |
+| Field | Scheme? | Trailing `/`? |
+|---|---|---|
+| `apdURL` | **NO** — code adds `https://` | no |
+| `baseUrl` | **NO** — spec adds `https://` | no |
+| `controlPlaneDomain` | **YES** | no |
+| `controlPlaneUrl` | no | no |
+| `cosDomain` | no | no |
+| `publisherPanelUrl` | **YES** | **NO** — validated at startup! |
+| `vocContext` | **YES** | **YES** (as shipped) |
 
-## Email Configuration
+---
 
-Email is configured across three blocks (emailConfig, emailOptions, emailNotification) plus SMTP fields inlined in the EmailVerticle module. The emailSender field is duplicated — both must be kept identical.
+## 3.7 Email Configuration
 
-### emailConfig
+Email is configured across three blocks (`emailConfig`, `emailOptions`, `emailNotification`) plus SMTP fields inlined in the `EmailVerticle` module. The `emailSender` field is **duplicated** — both must be kept identical.
 
-| **FieldDev ValueWhat It Does**                                                                                                |                                                 |                                                                                            |
-| ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| [emailSender](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.gpdv1c9s17br)  | no-reply.dev@iudx.io                           | From: address. Must be verified in SMTP provider. ⚠ Duplicate of emailOptions.emailSender. |
-| [emailSupport](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.64s57i5lx29x) | [""]                                            | 🚨 CC list. No null guard — missing → NPE. [""] is wrong — replace with real addresses.    |
-| senderName                                                                                                                    | Maharashtra Agriculture Data Exchange (MahaAgX) | Display name in From: header and templates.                                                |
+### `emailConfig`
 
- **CAUTION**   Your dev config has **emailSupport: [""]** — an array with one empty string. Replace with real addresses or [].
+| Field | Dev Value | What It Does |
+|---|---|---|
+| `emailSender` | `no-reply.dev@iudx.io` | `From:` address. Must be verified in SMTP provider. ⚠️ Duplicate of `emailOptions.emailSender`. |
+| `emailSupport` | `[""]` | 🚨 CC list. **No null guard — missing → NPE.** `[""]` is wrong — replace with real addresses. |
+| `senderName` | `Maharashtra Agriculture Data Exchange (MahaAgX)` | Display name in `From:` header and templates. |
 
-### emailOptions
+> [!CAUTION]
+> Your dev config has `emailSupport: [""]` — an array with one empty string. Replace with real addresses or `[]`.
 
-| **FieldDev ValueWhat It Does**                                                                                                   |                                                 |                                                                         |
-| -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------- |
-| emailSender                                                                                                                      | no-reply.dev@iudx.io                           | ⚠ Duplicate of emailConfig.emailSender. Keep identical.                 |
-| platformName                                                                                                                     | Maharashtra Agriculture Data Exchange (MahaAgX) | ${PLATFORM_NAME} in templates.                                         |
-| platformShortName                                                                                                                | IUDX v2                                         | Subject-line prefix on access-request emails.                           |
-| [envSuffix](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.kbm6b7s715rl)       | DEV                                             | Appended as [DEV] to email subjects. Must be empty for production!      |
-| [cosAdminEmailId](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.1cdrk8336lcz) | admin.cos.iudx.v2@datakaveri.org               | Admin notification recipient. If null → admin requests never delivered. |
-| TGDxUrl                                                                                                                          | https://dev.mahaagx.iudx.io                    | Admin portal link in notification emails. Legacy name.                  |
+### `emailOptions`
 
-### emailNotification
+| Field | Dev Value | What It Does |
+|---|---|---|
+| `emailSender` | `no-reply.dev@iudx.io` | ⚠️ Duplicate of `emailConfig.emailSender`. Keep identical. |
+| `platformName` | `Maharashtra Agriculture Data Exchange (MahaAgX)` | `${PLATFORM_NAME}` in templates. |
+| `platformShortName` | `IUDX v2` | Subject-line prefix on access-request emails. |
+| `envSuffix` | `DEV` | Appended as `[DEV]` to email subjects. **Must be empty for production!** |
+| `cosAdminEmailId` | `admin.cos.iudx.v2@datakaveri.org` | Admin notification recipient. If `null` → admin requests never delivered. |
+| `TGDxUrl` | `https://dev.mahaagx.iudx.io` | Admin portal link in notification emails. Legacy name. |
 
-| **FieldDev ValueWhat It Does**                                                                                                 |                    |                                                          |
-| ------------------------------------------------------------------------------------------------------------------------------ | ------------------ | -------------------------------------------------------- |
-| [emailExchange](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.nrwj388ainsv) | Email              | Case-sensitive (capital E). Exchange for email jobs.     |
-| emailQueue                                                                                                                     | email-notification | Queue EmailVerticle consumes from.                       |
-| emailRoutingKey                                                                                                                | ##                 | Literal string (not wildcard). Must match queue binding. |
+### `emailNotification`
 
-### EmailVerticle (SMTP — inlined in modules[])
+| Field | Dev Value | What It Does |
+|---|---|---|
+| `emailExchange` | `Email` | Case-sensitive (capital **E**). Exchange for email jobs. |
+| `emailQueue` | `email-notification` | Queue `EmailVerticle` consumes from. |
+| `emailRoutingKey` | `##` | Literal string (**not** a wildcard). Must match queue binding. |
 
-| **FieldDev ValueWhat It Does**                                                                                                 |                                     |                                                    |
-| ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- | -------------------------------------------------- |
-| emailHostName                                                                                                                  | email-smtp.ap-south-1.amazonaws.com | SMTP relay host.                                   |
-| emailPort                                                                                                                      | 587                                 | SMTP submission port (STARTTLS).                   |
-| [emailUserName](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.4lvg4j4vfs8r) | ••••••••                            | 🔑 SMTP username. For SES: NOT the IAM access key. |
-| [emailPassword](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.j3q1xzrtxxdn) | ••••••••                            | 🔑 SMTP password.                                  |
-| [notifyByEmail](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.tizie5lidkpf) | true                                | Master switch. false silently disables ALL mail.   |
+### `EmailVerticle` (SMTP — inlined in `modules[]`)
 
-## KYC / DigiLocker
+| Field | Dev Value | What It Does |
+|---|---|---|
+| `emailHostName` | `email-smtp.ap-south-1.amazonaws.com` | SMTP relay host. |
+| `emailPort` | `587` | SMTP submission port (STARTTLS). |
+| `emailUserName` | `••••••••` | 🔑 SMTP username. For SES: **NOT** the IAM access key. |
+| `emailPassword` | `••••••••` | 🔑 SMTP password. |
+| `notifyByEmail` | `true` | Master switch. `false` **silently** disables ALL mail. |
 
-All fields conditional on commonOptions.kycRequired = true. Dev and prod use different DigiLocker registrations.
+---
 
-| **FieldDev ValueWhat It Does**                                                                                                |                                                     |                                                     |
-| ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- | --------------------------------------------------- |
-| [clientId](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.rqjzixha7waj)     | RAE7313316                                          | 🔑 DigiLocker OAuth client ID. From partner portal. |
-| [clientSecret](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.xpf2e0dyt16g) | ••••••••                                            | 🔑 DigiLocker client secret.                        |
-| digilockerTokenUrl                                                                                                            | https://digilocker.meripehchaan.gov.in/.../token   | OAuth token endpoint. Differs per env.              |
-| digilockerAadhaarUrl                                                                                                          | https://digilocker.meripehchaan.gov.in/.../eaad... | Aadhaar demographic-fetch endpoint.                 |
-| [redirectUri](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.z9qoi7783oy6)  | https://catalogue.iudx.io/kyc               | Must match DigiLocker registration byte-for-byte.   |
+## 3.8 KYC / DigiLocker
 
-## Audit Options
+All fields conditional on `commonOptions.kycRequired = true`. Dev and prod use **different** DigiLocker registrations.
 
-| **FieldDev ValueWhat It Does**                                                                                                      |               |                                                              |
-| ----------------------------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------------------ |
-| auditingExchange                                                                                                                    | auditing      | Exchange for audit events. Required when isRemoteAudit=true. |
-| auditingQueue                                                                                                                       | test-auditing | Queue DataBrokerVerticle consumes audit from.                |
-| [auditingRoutingKey](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.34ix7dtcduc0) | ##            | Literal string (direct exchange). Mismatch is silent.        |
-| isRemoteAudit                                                                                                                       | false         | Feature flag. When true, requires exchange + broker.         |
-| leaderboardQueue                                                                                                                    | leaderboard   | Queue for leaderboard events. Defaults to "leaderboard".     |
+| Field | Dev Value | What It Does |
+|---|---|---|
+| `clientId` | `RAE7313316` | 🔑 DigiLocker OAuth client ID. From partner portal. |
+| `clientSecret` | `••••••••` | 🔑 DigiLocker client secret. |
+| `digilockerTokenUrl` | `https://digilocker.meripehchaan.gov.in/.../token` | OAuth token endpoint. Differs per env. |
+| `digilockerAadhaarUrl` | `https://digilocker.meripehchaan.gov.in/.../eaad...` | Aadhaar demographic-fetch endpoint. |
+| `redirectUri` | `https://catalogue.iudx.io/kyc` | Must match DigiLocker registration **byte-for-byte**. |
 
-## JWT Keystore
+---
 
-| **FieldDev ValueWhat It Does**                                                                                                    |                      |                                                               |
-| --------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------- |
-| [keystorePath](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.xvv1vrk7tttp)     | secrets/keystore.jks | Path relative to container. Mounted by chart.                 |
-| [keystorePassword](https://docs.google.com/document/d/1HI5mwtCrhTMIMeFMVJi0nmv43oGcyHpmIk3YNCzBZCo/edit#bookmark=id.70rfd16dxzj4) | ••••••••             | 🔑 Keystore password. Rotating invalidates all signed tokens. |
+## 3.9 Audit Options
 
-## Modules — The required Array
+| Field | Dev Value | What It Does |
+|---|---|---|
+| `auditingExchange` | `auditing` | Exchange for audit events. Required when `isRemoteAudit=true`. |
+| `auditingQueue` | `test-auditing` | Queue `DataBrokerVerticle` consumes audit from. |
+| `auditingRoutingKey` | `##` | Literal string (direct exchange). Mismatch is **silent**. |
+| `isRemoteAudit` | `false` | Feature flag. When `true`, requires exchange + broker. |
+| `leaderboardQueue` | `leaderboard` | Queue for leaderboard events. Defaults to `"leaderboard"`. |
 
-**This is the single most important mechanism in the config.** A verticle can only read a top-level block listed in its required array. A key can be present and correct in config.json and still read as null simply because its block was never added here.
-**Gotcha:** Blocks are merged FLAT into one JSON object, so a key written directly on a module can be overwritten by a same-named key from a required block. This is why ElasticsearchVerticle must never list postgresOptions — both define databaseIP and databasePort.
+---
 
-# Section 3 — Quick Reference
+## 3.10 JWT Keystore
 
-## 3.1 All Credentials
+| Field | Dev Value | What It Does |
+|---|---|---|
+| `keystorePath` | `secrets/keystore.jks` | Path relative to container. Mounted by chart. |
+| `keystorePassword` | `••••••••` | 🔑 Keystore password. **Rotating invalidates all signed tokens.** |
 
-| **CredentialSystemHow to Obtain**      |               |                                                                     |
-| -------------------------------------- | ------------- | ------------------------------------------------------------------- |
-| postgresOptions.databasePassword       | PostgreSQL    | cat Charts/postgresql-cnpg/secrets/passwords/postgres-auth-password |
-| databrokerOptions.dataBrokerPassword   | RabbitMQ      | cat Charts/databroker/secrets/credentials/admin-passwor             |
-| ElasticsearchVerticle.databasePassword | Elasticsearch | cat Charts/elk/secrets/passwords/elasticsearch-cat-password         |
-| EmailVerticle.emailPassword            | SMTP (SES)    | SES console → SMTP credentials (NOT IAM keys)                       |
-| keycloakAdminClientSecret              | Keycloak      | Keycloak console → Clients → Credentials tab                        |
-| KYCOptions.clientSecret                | DigiLocker    | DigiLocker partner portal                                           |
-| jwtKeystoreOptions.keystorePassword    | JKS keystore  | Generated with keytool (see Step 2)                                 |
+---
 
-## 3.2 Feature Flags
+## 3.11 Modules — The `required` Array
 
-| **FlagDev ValueEffect When True** |        |                                                                         |
-| --------------------------------- | ------ | ----------------------------------------------------------------------- |
-| isCentralCatEnabled               | false  | Requires centralCatDocIndex + second ES verticle + central-openapi.yaml |
-| kycRequired                       | false  | Requires entire KYCOptions block                                        |
-| isRemoteAudit                     | false  | Requires auditingExchange, auditingRoutingKey, reachable broker         |
-| notifyByEmail                     | true   | false silently disables ALL mail — no error anywhere                    |
-| jwtIgnoreExpiry                   | true ⚠ | SECURITY HOLE — expired tokens accepted. Must be false in prod.         |
+This is the single most important mechanism in the config. **A verticle can only read a top-level block listed in its `required` array.** A key can be present and correct in `config.json` and still read as `null` simply because its block was never added here.
 
-## 3.3 Values to Change Before Production
+> [!IMPORTANT]
+> **Gotcha:** Blocks are merged **FLAT** into one JSON object, so a key written directly on a module can be overwritten by a same-named key from a `required` block. This is why `ElasticsearchVerticle` must **never** list `postgresOptions` — both define `databaseIP` and `databasePort`.
 
-| **WhatDev ValueProduction Action** |                 |                                           |
-| ---------------------------------- | --------------- | ----------------------------------------- |
-| corsAllowedOrigin                  | ["\*"]          | Replace with explicit origins             |
-| emailConfig.emailSupport           | [""]            | Replace with real support email addresses |
-| emailOptions.envSuffix             | DEV             | Set to empty string ""                    |
-| jwtIgnoreExpiry                    | true            | Set to false                              |
-| publisherPanelUrl                  | staging URL     | Set to production URL                     |
-| All passwords                      | Dev credentials | Rotate and use sealed secrets             |
+---
+
+# Section 4 — Quick Reference
+
+## 4.1 All Credentials
+
+| Credential | System | How to Obtain |
+|---|---|---|
+| `postgresOptions.databasePassword` | PostgreSQL | `cat Charts/postgresql-cnpg/secrets/passwords/postgres-auth-password` |
+| `databrokerOptions.dataBrokerPassword` | RabbitMQ | `cat Charts/databroker/secrets/credentials/admin-password` |
+| `ElasticsearchVerticle.databasePassword` | Elasticsearch | `cat Charts/elk/secrets/passwords/elasticsearch-cat-password` |
+| `EmailVerticle.emailPassword` | SMTP (SES) | SES console → SMTP credentials (**NOT** IAM keys) |
+| `keycloakAdminClientSecret` | Keycloak | Keycloak console → Clients → Credentials tab |
+| `KYCOptions.clientSecret` | DigiLocker | DigiLocker partner portal |
+| `jwtKeystoreOptions.keystorePassword` | JKS keystore | Generated with `keytool` (see Step 2) |
+
+## 4.2 Feature Flags
+
+| Flag | Dev Value | Effect When True |
+|---|---|---|
+| `isCentralCatEnabled` | `false` | Requires `centralCatDocIndex` + second ES verticle + `central-openapi.yaml` |
+| `kycRequired` | `false` | Requires entire `KYCOptions` block |
+| `isRemoteAudit` | `false` | Requires `auditingExchange`, `auditingRoutingKey`, reachable broker |
+| `notifyByEmail` | `true` | `false` **silently** disables ALL mail — no error anywhere |
+| `jwtIgnoreExpiry` | `true` ⚠️ | 🚨 **SECURITY HOLE** — expired tokens accepted. Must be `false` in prod. |
+
+## 4.3 Values to Change Before Production
+
+| What | Dev Value | Production Action |
+|---|---|---|
+| `corsAllowedOrigin` | `["*"]` | Replace with explicit origins |
+| `emailConfig.emailSupport` | `[""]` | Replace with real support email addresses |
+| `emailOptions.envSuffix` | `DEV` | Set to empty string `""` |
+| `jwtIgnoreExpiry` | `true` | Set to `false` |
+| `publisherPanelUrl` | staging URL | Set to production URL |
+| All passwords | Dev credentials | Rotate and use sealed secrets |
+
