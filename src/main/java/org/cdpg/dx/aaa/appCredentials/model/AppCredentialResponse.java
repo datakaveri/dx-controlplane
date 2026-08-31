@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.appCredentials.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.database.postgres.base.entity.BaseEntity;
 import org.cdpg.dx.database.postgres.util.EntityUtil;
@@ -76,6 +77,7 @@ public record AppCredentialResponse (
   }
 
     @Override
+    @JsonIgnore
     public String getTableName() {
     return "app_credentials";
   }}
