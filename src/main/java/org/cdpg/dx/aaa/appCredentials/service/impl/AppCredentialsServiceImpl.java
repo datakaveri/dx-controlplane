@@ -105,7 +105,7 @@ public class AppCredentialsServiceImpl implements AppCredentialsService {
 
       flow =
         delegationValidator
-          .validateConstraints(userId, rolesArray,orgId)
+          .validateConstraints(userId, rolesArray, orgId.toString())
           .compose(v -> appCredentialsDAO.create(appCredentials))
           .compose(savedApp ->
             insertAppConstraints(savedApp.appId(), rolesArray,expiry,userId)

@@ -158,6 +158,7 @@ public class DelegationServiceImpl implements DelegationService {
     boolean isWildcardDelegation = (roleConstraints == null || roleConstraints.isEmpty());
 
     LOGGER.info("roles is {}", roleConstraints);
+    LOGGER.info("orgId is {} (wildcardDelegation={})", orgId, isWildcardDelegation);
     String highestRole = getHighestRole(delegatorRoles);
 
     Future<DelegationGrant> flow;
@@ -175,7 +176,7 @@ public class DelegationServiceImpl implements DelegationService {
     } else {
       flow =
           delegationValidator
-              .validateEntityOwnership(delegationGrantBody, UUID.fromString(orgId), roleConstraints)
+              .validateEntityOwnership(delegationGrantBody, orgId, roleConstraints)
               .compose(v -> delegationGrantDAO.create(delegationGrant))
               .compose(
                   created ->
@@ -551,11 +552,11 @@ public class DelegationServiceImpl implements DelegationService {
         // them
         if (entityIds != null && !entityIds.isEmpty()) {
           for (Object entity : entityIds) {
-            insertFutures.add(createScopeConstraint(delegationId, role, constraint, entity));
+            insertFutures.add(createScopeConstraint(delegationId, role, constraint, entity, expiryAt));
           }
         } else {
           // entity_id == null means entity_type is already null (validated)
-          insertFutures.add(createScopeConstraint(delegationId, role, constraint, null));
+          insertFutures.add(createScopeConstraint(delegationId, role, constraint, null, expiryAt));
         }
       }
     }
@@ -590,12 +591,12 @@ public class DelegationServiceImpl implements DelegationService {
         if (entityIds != null && !entityIds.isEmpty()) {
 
           for (Object entityId : entityIds) {
-            futures.add(createScopeConstraint(delegationId, role, constraint, entityId));
+            futures.add(createScopeConstraint(delegationId, role, constraint, entityId, delegationExpiry));
           }
 
         } else {
 
-          futures.add(createScopeConstraint(delegationId, role, constraint, null));
+          futures.add(createScopeConstraint(delegationId, role, constraint, null, delegationExpiry));
         }
       }
     }
@@ -604,7 +605,10 @@ public class DelegationServiceImpl implements DelegationService {
   }
 
   private Future<Void> createScopeConstraint(
-      UUID delegationId, String role, JsonObject constraint, Object entityId) {
+      UUID delegationId, String role, JsonObject constraint, Object entityId,
+      LocalDateTime grantExpiry) {
+
+    String constraintExpiry = constraint.getString("expiryAt");
 
     JsonObject dbRow =
         new JsonObject()
@@ -613,7 +617,11 @@ public class DelegationServiceImpl implements DelegationService {
             .put(
                 "scope",
                 constraint.getString("scope") != null ? constraint.getString("scope") : "*")
-            .put("expiry_at", constraint.getString("expiryAt"))
+            .put(
+                "expiry_at",
+                constraintExpiry != null
+                    ? constraintExpiry
+                    : (grantExpiry != null ? grantExpiry.format(FORMATTER) : null))
             .put("entity_id", entityId != null ? entityId : "*")
             .put(
                 "entity_type",
@@ -818,7 +826,7 @@ public class DelegationServiceImpl implements DelegationService {
                       .put("expiryAt", grant.expiryAt());
 
               return delegationValidator
-                  .validateEntityOwnership(validationBody, UUID.fromString(orgId), roles)
+                  .validateEntityOwnership(validationBody, orgId, roles)
                   .compose(
                       ignored ->
                           appendScopeConstraints(
