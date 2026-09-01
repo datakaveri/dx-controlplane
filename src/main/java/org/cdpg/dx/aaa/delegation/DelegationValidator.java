@@ -33,7 +33,7 @@ public class DelegationValidator {
    */
   public Future<Void> validateEntityOwnership(
     JsonObject delegationGrant,
-    UUID orgId,
+    String orgId,
     JsonArray rolesArray
   ) {
 
@@ -47,7 +47,7 @@ public class DelegationValidator {
   public Future<Void> validateConstraints(
     UUID actorId,
     JsonArray rolesArray,
-    UUID orgId
+    String orgId
   ) {
 
     if (rolesArray == null || rolesArray.isEmpty()) {
@@ -119,15 +119,20 @@ public class DelegationValidator {
       : CompositeFuture.all(validations).mapEmpty();
   }
 
-  private Future<Void> validateItemIdEqualsDelegatorOrgId(UUID delegatorId, List<String> itemIds,UUID orgId) {
+  private Future<Void> validateItemIdEqualsDelegatorOrgId(UUID delegatorId, List<String> itemIds, String orgIdStr) {
     LOGGER.info("Validate Item Id org equals delegator org!");
     if (itemIds == null || itemIds.isEmpty()) {
       return Future.failedFuture(new DxForbiddenException("No asset IDs provided"));
     }
 
+    if (orgIdStr == null || orgIdStr.isBlank()) {
+      return Future.failedFuture(
+          new DxBadRequestException(
+              "Delegator has no organization associated; cannot validate asset ownership for this scope"));
+    }
+
     String delegatorIdStr = delegatorId.toString();
     List<Future> validations = new ArrayList<>();
-    String orgIdStr = orgId.toString();
 
     for (String itemId : itemIds) {
       GetItemRequest itemRequest = new GetItemRequest(itemId, delegatorIdStr);
