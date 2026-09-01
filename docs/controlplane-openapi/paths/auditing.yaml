@@ -18,6 +18,8 @@
     - $ref: ../components/parameters.yaml#/OrganizationIdParam
     - $ref: ../components/parameters.yaml#/LogTypeParam
     - $ref: ../components/parameters.yaml#/SandboxTypeParam
+    - $ref: ../components/parameters.yaml#/DelegateIdParam
+    - $ref: ../components/parameters.yaml#/ActorTypeParam
     - $ref: ../components/parameters.yaml#/TimeParam
     - $ref: ../components/parameters.yaml#/EndTimeParam
     - $ref: ../components/parameters.yaml#/TimeRelParam
@@ -93,6 +95,8 @@
     - $ref: ../components/parameters.yaml#/LogTypeParam
     - $ref: ../components/parameters.yaml#/SandboxTypeParam
     - $ref: ../components/parameters.yaml#/OrganizationIdParam
+    - $ref: ../components/parameters.yaml#/DelegateIdParam
+    - $ref: ../components/parameters.yaml#/ActorTypeParam
     - $ref: ../components/parameters.yaml#/TimeParam
     - $ref: ../components/parameters.yaml#/EndTimeParam
     - $ref: ../components/parameters.yaml#/TimeRelParam
@@ -164,6 +168,8 @@
     - $ref: ../components/parameters.yaml#/LogTypeParam
     - $ref: ../components/parameters.yaml#/SandboxTypeParam
     - $ref: ../components/parameters.yaml#/OrganizationIdParam
+    - $ref: ../components/parameters.yaml#/DelegateIdParam
+    - $ref: ../components/parameters.yaml#/ActorTypeParam
     - $ref: ../components/parameters.yaml#/TimeParam
     - $ref: ../components/parameters.yaml#/EndTimeParam
     - $ref: ../components/parameters.yaml#/TimeRelParam
@@ -230,6 +236,8 @@
     - $ref: ../components/parameters.yaml#/LogTypeParam
     - $ref: ../components/parameters.yaml#/SandboxTypeParam
     - $ref: ../components/parameters.yaml#/OrganizationIdParam
+    - $ref: ../components/parameters.yaml#/DelegateIdParam
+    - $ref: ../components/parameters.yaml#/ActorTypeParam
     - $ref: ../components/parameters.yaml#/TimeParam
     - $ref: ../components/parameters.yaml#/EndTimeParam
     - $ref: ../components/parameters.yaml#/TimeRelParam

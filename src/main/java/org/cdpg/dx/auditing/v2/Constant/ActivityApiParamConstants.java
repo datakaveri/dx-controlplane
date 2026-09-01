@@ -20,7 +20,9 @@ public final class ActivityApiParamConstants {
           Map.entry("action", ACTION),
           Map.entry("logType", LOG_TYPE),
           Map.entry("sandboxType", SANDBOX_TYPE),
-          Map.entry("userId", USER_ID));
+          Map.entry("userId", USER_ID),
+          Map.entry("delegateId", DELEGATE_ID),
+          Map.entry("actorType", ACTOR_TYPE));
   // -------------------------------------------------
   // Sort fields
   // -------------------------------------------------
@@ -48,7 +50,9 @@ public final class ActivityApiParamConstants {
           Map.entry("accessPolicy", ASSET_ACCESS_POLICY),
           Map.entry("action", ACTION),
           Map.entry("logType", LOG_TYPE),
-          Map.entry("sandboxType", SANDBOX_TYPE));
+          Map.entry("sandboxType", SANDBOX_TYPE),
+          Map.entry("delegateId", DELEGATE_ID),
+          Map.entry("actorType", ACTOR_TYPE));
   // -------------------------------------------------
   // API → DB field mapping (filters + sorts)
   // -------------------------------------------------
@@ -73,7 +77,9 @@ public final class ActivityApiParamConstants {
           Map.entry("accessPolicy", ASSET_ACCESS_POLICY),
           Map.entry("assetOrgType", ASSET_ORG_TYPE),
           Map.entry("assetProviderId", ASSET_PROVIDER_ID),
-          Map.entry("sandboxType", SANDBOX_TYPE));
+          Map.entry("sandboxType", SANDBOX_TYPE),
+          Map.entry("delegateId", DELEGATE_ID),
+          Map.entry("actorType", ACTOR_TYPE));
 
   private ActivityApiParamConstants() {}
 }

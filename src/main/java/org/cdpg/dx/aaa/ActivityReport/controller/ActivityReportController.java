@@ -10,6 +10,7 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
@@ -60,7 +61,11 @@ public class ActivityReportController implements ApiController {
 
     AuthorizationContext authCtx = routingContext.get(AuthorizationContext.KEY);
     Map<String, String> allowedFilters = Util.getAllowedFilterMapForAdmin(authCtx);
-    Map<String, Object> additionalFilter = Util.getAdditionalFilters(authCtx);
+    Map<String, Object> additionalFilter = new HashMap<>(Util.getAdditionalFilters(authCtx));
+
+    // A delegated (DID header) request has its subject swapped to the admin being acted as,
+    // so scope the results to just this delegate's own actions rather than the full admin view.
+    additionalFilter.putAll(Util.getDelegationFilters(routingContext));
 
     LOGGER.info("Admin auth level: {}, allowed filters: {}", authCtx.getLevel(), allowedFilters);
 
@@ -112,7 +117,12 @@ public class ActivityReportController implements ApiController {
 
     User user = routingContext.user();
 
-    Map<String, Object> additionalFilters = Map.of(USER_ID, user.subject());
+    Map<String, Object> additionalFilters = new HashMap<>();
+    additionalFilters.put(USER_ID, user.subject());
+
+    // A delegated (DID header) request has its subject swapped to the delegator, so scope
+    // the results to just this delegate's own actions rather than the delegator's full log.
+    additionalFilters.putAll(Util.getDelegationFilters(routingContext));
 
     PaginatedRequest request =
         PaginationRequestBuilder.from(routingContext)

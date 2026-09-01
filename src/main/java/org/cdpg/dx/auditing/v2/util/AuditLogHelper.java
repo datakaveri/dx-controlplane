@@ -4,6 +4,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import java.util.UUID;
+import org.cdpg.dx.auditing.v2.model.ActorType;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 
 public final class AuditLogHelper {
@@ -33,9 +34,11 @@ public final class AuditLogHelper {
 
     // --------------------
     // Delegation (userId above is already the delegator/primary user when delegated;
-    // delegateeId captures who actually made the call - null means not a delegated request)
+    // delegateId captures who actually made the call - null means not a delegated request)
     // --------------------
-    UUID delegateeId = AuditContextExtractor.getDelegateeId(ctx);
+    UUID delegateId = AuditContextExtractor.getDelegateId(ctx);
+    UUID appId = AuditContextExtractor.getAppId(ctx);
+    ActorType actorType = AuditContextExtractor.getActorType(ctx);
 
     // --------------------
     // Organisation
@@ -71,8 +74,10 @@ public final class AuditLogHelper {
         .withRole(role)
         .withIssuer(issuer)
 
-        // ---- Delegation ----
-        .withDelegateeId(delegateeId)
+        // ---- Delegation / actor ----
+        .withDelegateId(delegateId)
+        .withAppId(appId)
+        .withActorType(actorType.name())
 
         // ---- Org context ----
         .withOrgId(orgId)

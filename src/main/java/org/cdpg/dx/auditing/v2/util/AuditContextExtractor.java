@@ -4,6 +4,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
+import org.cdpg.dx.auditing.v2.model.ActorType;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 
@@ -117,10 +118,11 @@ public final class AuditContextExtractor {
   /**
    * When the request went through header-based delegation (the {@code did} header),
    * {@code ctx.user()}'s sub is swapped to the delegator (primary user) and the original
-   * caller's id is stamped on the resolved {@link DxUser} as {@code delegateeId}. Returns null
-   * for non-delegated requests.
+   * caller's id is stamped on the resolved {@link DxUser} as {@code delegateeId} (the {@code
+   * DxUser} accessor name is fixed by the external dx-common dependency, not renamed here).
+   * Returns null for non-delegated requests.
    */
-  public static UUID getDelegateeId(RoutingContext ctx) {
+  public static UUID getDelegateId(RoutingContext ctx) {
     if (ctx == null) return null;
 
     DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
@@ -131,6 +133,34 @@ public final class AuditContextExtractor {
     } catch (IllegalArgumentException e) {
       return null;
     }
+  }
+
+  /**
+   * When the request was authenticated via app credentials, the acting app's id is stamped on
+   * the resolved {@link DxUser}. Returns null for requests not made via an app credential.
+   */
+  public static UUID getAppId(RoutingContext ctx) {
+    if (ctx == null) return null;
+
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    if (dxUser == null || dxUser.appId() == null) return null;
+
+    try {
+      return UUID.fromString(dxUser.appId());
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
+  }
+
+  /**
+   * Classifies who actually performed the action. Delegation and app-credential auth are
+   * mutually exclusive on {@link DxUser}, so delegate id takes precedence, then app id,
+   * defaulting to {@link ActorType#SELF}.
+   */
+  public static ActorType getActorType(RoutingContext ctx) {
+    if (getDelegateId(ctx) != null) return ActorType.DELEGATE;
+    if (getAppId(ctx) != null) return ActorType.APP;
+    return ActorType.SELF;
   }
 
   /* -------------------------------------------------

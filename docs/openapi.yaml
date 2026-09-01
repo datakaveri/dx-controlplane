@@ -880,6 +880,8 @@ paths:
         - $ref: '#/components/parameters/OrganizationIdParam'
         - $ref: '#/components/parameters/LogTypeParam'
         - $ref: '#/components/parameters/SandboxTypeParam'
+        - $ref: '#/components/parameters/DelegateIdParam'
+        - $ref: '#/components/parameters/ActorTypeParam'
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
         - $ref: '#/components/parameters/TimeRelParam'
@@ -949,6 +951,8 @@ paths:
         - $ref: '#/components/parameters/LogTypeParam'
         - $ref: '#/components/parameters/SandboxTypeParam'
         - $ref: '#/components/parameters/OrganizationIdParam'
+        - $ref: '#/components/parameters/DelegateIdParam'
+        - $ref: '#/components/parameters/ActorTypeParam'
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
         - $ref: '#/components/parameters/TimeRelParam'
@@ -1017,6 +1021,8 @@ paths:
         - $ref: '#/components/parameters/LogTypeParam'
         - $ref: '#/components/parameters/SandboxTypeParam'
         - $ref: '#/components/parameters/OrganizationIdParam'
+        - $ref: '#/components/parameters/DelegateIdParam'
+        - $ref: '#/components/parameters/ActorTypeParam'
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
         - $ref: '#/components/parameters/TimeRelParam'
@@ -1081,6 +1087,8 @@ paths:
         - $ref: '#/components/parameters/LogTypeParam'
         - $ref: '#/components/parameters/SandboxTypeParam'
         - $ref: '#/components/parameters/OrganizationIdParam'
+        - $ref: '#/components/parameters/DelegateIdParam'
+        - $ref: '#/components/parameters/ActorTypeParam'
         - $ref: '#/components/parameters/TimeParam'
         - $ref: '#/components/parameters/EndTimeParam'
         - $ref: '#/components/parameters/TimeRelParam'
@@ -14958,6 +14966,26 @@ components:
           - pending
           - granted
           - rejected
+    DelegateIdParam:
+      name: delegateId
+      in: query
+      description: UUID of the delegate who performed the action on behalf of the owner. Must be a valid v4 UUID. On a delegated (DID header) consumer request, this filter is forced to the caller's own id.
+      required: false
+      schema:
+        type: string
+        format: uuid
+        pattern: ^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$
+    ActorTypeParam:
+      name: actorType
+      in: query
+      description: Filter activity logs by who performed the action. `SELF` (the account owner acted directly), `DELEGATE` (a delegate acted on the owner's behalf), or `APP` (an app credential acted on the owner's behalf).
+      required: false
+      schema:
+        type: string
+        enum:
+          - SELF
+          - DELEGATE
+          - APP
     SearchTermParam:
       name: search_term
       in: query
@@ -15395,6 +15423,20 @@ components:
         role:
           type: string
           example: org_admin
+        actorType:
+          type: string
+          description: Who actually performed the action. `SELF` (the account owner acted directly), `DELEGATE` (a delegate acted on the owner's behalf), or `APP` (an app credential acted on the owner's behalf).
+          enum:
+            - SELF
+            - DELEGATE
+            - APP
+          example: DELEGATE
+        delegateId:
+          type: string
+          format: uuid
+          description: UUID of the delegate who performed the action, when `actorType` is `DELEGATE`. Null otherwise.
+          example: 9c2f3a7e-1b5d-4e9a-8c3f-6a2d5e7b9f10
+          nullable: true
         orgId:
           type: string
           format: uuid

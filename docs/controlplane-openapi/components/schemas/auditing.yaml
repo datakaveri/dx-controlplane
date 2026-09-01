@@ -30,6 +30,20 @@ AuditActivityLogItem:
     role:
       type: string
       example: org_admin
+    actorType:
+      type: string
+      description: Who actually performed the action. `SELF` (the account owner acted directly), `DELEGATE` (a delegate acted on the owner's behalf), or `APP` (an app credential acted on the owner's behalf).
+      enum:
+      - SELF
+      - DELEGATE
+      - APP
+      example: DELEGATE
+    delegateId:
+      type: string
+      format: uuid
+      description: UUID of the delegate who performed the action, when `actorType` is `DELEGATE`. Null otherwise.
+      example: 9c2f3a7e-1b5d-4e9a-8c3f-6a2d5e7b9f10
+      nullable: true
     orgId:
       type: string
       format: uuid
