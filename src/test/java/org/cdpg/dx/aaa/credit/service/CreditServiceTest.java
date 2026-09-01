@@ -183,7 +183,7 @@ class CreditServiceTest {
     @DisplayName("should return paginated credit requests successfully")
     void success_withPagination(VertxTestContext ctx) {
       PaginatedRequest paginatedRequest =
-          new PaginatedRequest(1, 10, Map.of(), List.of(), List.of());
+          new PaginatedRequest(1, 10, Map.of(), List.of(), List.of(), Map.of());
 
       CreditRequest cr1 = TestDataFactory.aCreditRequest(USER_ID, "pending");
       CreditRequest cr2 = TestDataFactory.aCreditRequest(UUID.randomUUID(), "granted");

@@ -47,7 +47,7 @@ class LeaderboardServiceTest {
     @Test
     @DisplayName("should return asset leaderboard with pagination")
     void getAssetLeaderboard_success(VertxTestContext ctx) {
-      PaginatedRequest request = new PaginatedRequest(1, 10, Map.of(), null, null);
+      PaginatedRequest request = new PaginatedRequest(1, 10, Map.of(), null, null, null);
 
       AssetLeaderboardEntry entry =
           new AssetLeaderboardEntry(
@@ -99,7 +99,7 @@ class LeaderboardServiceTest {
     @Test
     @DisplayName("should return provider leaderboard with pagination")
     void getProviderLeaderboard_success(VertxTestContext ctx) {
-      PaginatedRequest request = new PaginatedRequest(1, 10, Map.of(), null, null);
+      PaginatedRequest request = new PaginatedRequest(1, 10, Map.of(), null, null, null);
 
       ProviderLeaderboardEntry entry =
           new ProviderLeaderboardEntry(
@@ -148,7 +148,7 @@ class LeaderboardServiceTest {
     @Test
     @DisplayName("should return organization leaderboard with pagination")
     void getOrganizationLeaderboard_success(VertxTestContext ctx) {
-      PaginatedRequest request = new PaginatedRequest(1, 10, Map.of(), null, null);
+      PaginatedRequest request = new PaginatedRequest(1, 10, Map.of(), null, null, null);
 
       OrganizationLeaderboardEntry entry =
           new OrganizationLeaderboardEntry(

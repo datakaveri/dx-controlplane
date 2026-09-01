@@ -33,7 +33,9 @@ import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
+import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
+import org.cdpg.dx.testutil.TestDataFactory;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -144,10 +146,10 @@ class DelegationServiceTest {
 
       JsonObject body =
           new JsonObject()
-              .put("delegator_id", delegatorId.toString())
-              .put("delegate_id", delegateId.toString())
+              .put("delegatorId", delegatorId.toString())
+              .put("delegateId", delegateId.toString())
               .put("justification", "test justification")
-              .put("expiry_at", expiry.format(FORMATTER));
+              .put("expiryAt", expiry.format(FORMATTER));
 
       List<String> roles = List.of("provider");
 
@@ -162,9 +164,9 @@ class DelegationServiceTest {
                               .add(
                                   new JsonObject()
                                       .put("scope", "data-access")
-                                      .put("entity_type", "item")
+                                      .put("entityType", "item")
                                       .put(
-                                          "entity_id",
+                                          "entityId",
                                           new JsonArray().add(UUID.randomUUID().toString())))));
 
       when(itemService.getItemWithAccessChecks(any()))
@@ -200,6 +202,11 @@ class DelegationServiceTest {
       when(scopeConstraintDAO.getAllWithFilters(anyMap()))
           .thenReturn(Future.succeededFuture(List.of()));
 
+      // getAllDelegationsByDelegator enriches each grant with the *delegate's* info
+      DxUser delegate = TestDataFactory.aDxUser(delegateId, "consumer");
+      when(keycloakUserService.getUserById(delegateId))
+          .thenReturn(Future.succeededFuture(delegate));
+
       Future<List<JsonObject>> future =
           delegationService.getAllDelegationsByDelegator(delegatorId.toString());
 
@@ -208,7 +215,7 @@ class DelegationServiceTest {
           ctx,
           result -> {
             assertThat(result).hasSize(1);
-            assertThat(result.get(0).getString("delegator_id")).isEqualTo(delegatorId.toString());
+            assertThat(result.get(0).getString("delegatorId")).isEqualTo(delegatorId.toString());
             assertThat(result.get(0).containsKey("constraints")).isTrue();
           });
     }
@@ -232,6 +239,11 @@ class DelegationServiceTest {
       when(scopeConstraintDAO.getAllWithFilters(anyMap()))
           .thenReturn(Future.succeededFuture(List.of()));
 
+      // getAllDelegationsOfDelegate enriches each grant with the *delegator's* info
+      DxUser delegator = TestDataFactory.aDxUser(delegatorId, "provider");
+      when(keycloakUserService.getUserById(delegatorId))
+          .thenReturn(Future.succeededFuture(delegator));
+
       Future<List<JsonObject>> future =
           delegationService.getAllDelegationsOfDelegate(delegateId.toString());
 
@@ -240,7 +252,7 @@ class DelegationServiceTest {
           ctx,
           result -> {
             assertThat(result).hasSize(1);
-            assertThat(result.get(0).getString("delegate_id")).isEqualTo(delegateId.toString());
+            assertThat(result.get(0).getString("delegateId")).isEqualTo(delegateId.toString());
             assertThat(result.get(0).containsKey("constraints")).isTrue();
           });
     }
@@ -268,7 +280,7 @@ class DelegationServiceTest {
           ctx,
           result -> {
             assertThat(result).isNotNull();
-            assertThat(result.getString("delegation_id")).isEqualTo(delegationId.toString());
+            assertThat(result.getString("delegationId")).isEqualTo(delegationId.toString());
           });
     }
 
@@ -305,10 +317,6 @@ class DelegationServiceTest {
       DelegationGrant grant = buildGrant(delegationId, delegatorId, delegateId);
 
       when(delegationGrantDAO.get(delegationId)).thenReturn(Future.succeededFuture(grant));
-      when(scopeConstraintDAO.getAllWithFilters(anyMap()))
-          .thenReturn(Future.succeededFuture(List.of()));
-      when(keycloakUserService.clearDelegationScopes(any(UUID.class), any()))
-          .thenReturn(Future.succeededFuture(true));
       when(delegationGrantDAO.delete(delegationId)).thenReturn(Future.succeededFuture(true));
 
       Future<Boolean> future =

@@ -295,7 +295,7 @@ class BookmarkServiceTest {
     @Test
     @DisplayName("should return paginated bookmarks for a user")
     void getBookmarks_success(VertxTestContext ctx) {
-      PaginatedRequest request = new PaginatedRequest(1, 10, Map.of(), null, null);
+      PaginatedRequest request = new PaginatedRequest(1, 10, Map.of(), null, null, null);
 
       UUID userId = UUID.randomUUID();
       UUID entityId = UUID.randomUUID();
@@ -329,7 +329,7 @@ class BookmarkServiceTest {
     @Test
     @DisplayName("should return empty list when user has no bookmarks")
     void getBookmarks_emptyResult(VertxTestContext ctx) {
-      PaginatedRequest request = new PaginatedRequest(1, 10, Map.of(), null, null);
+      PaginatedRequest request = new PaginatedRequest(1, 10, Map.of(), null, null, null);
 
       PaginationInfo paginationInfo = PaginationInfo.from(1, 10, 0);
       PaginatedResult<Bookmark> expectedResult =
@@ -354,7 +354,7 @@ class BookmarkServiceTest {
     @Test
     @DisplayName("should return multiple bookmarks with correct pagination")
     void getBookmarks_multipleResults(VertxTestContext ctx) {
-      PaginatedRequest request = new PaginatedRequest(1, 10, Map.of(), null, null);
+      PaginatedRequest request = new PaginatedRequest(1, 10, Map.of(), null, null, null);
 
       UUID userId = UUID.randomUUID();
       Bookmark bookmark1 =
@@ -386,7 +386,8 @@ class BookmarkServiceTest {
     @Test
     @DisplayName("should delegate request directly to DAO without modification")
     void getBookmarks_delegatesToDAO(VertxTestContext ctx) {
-      PaginatedRequest request = new PaginatedRequest(2, 5, Map.of("key", "value"), null, null);
+      PaginatedRequest request =
+          new PaginatedRequest(2, 5, Map.of("key", "value"), null, null, null);
 
       PaginationInfo paginationInfo = PaginationInfo.from(2, 5, 0);
       PaginatedResult<Bookmark> expectedResult =
@@ -408,7 +409,7 @@ class BookmarkServiceTest {
     @Test
     @DisplayName("should fail when DAO getByUser fails")
     void getBookmarks_daoFailure(VertxTestContext ctx) {
-      PaginatedRequest request = new PaginatedRequest(1, 10, Map.of(), null, null);
+      PaginatedRequest request = new PaginatedRequest(1, 10, Map.of(), null, null, null);
 
       RuntimeException daoException = new RuntimeException("Query execution failed");
       when(bookmarkDAO.getByUser(any(PaginatedRequest.class)))

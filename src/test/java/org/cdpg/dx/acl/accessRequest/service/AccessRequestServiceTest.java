@@ -23,6 +23,7 @@ import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
 import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
+import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestSummary;
 import org.cdpg.dx.acl.accessRequest.dao.model.Status;
 import org.cdpg.dx.acl.accessRequest.service.impl.AccessRequestServiceImpl;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
@@ -182,20 +183,24 @@ class AccessRequestServiceTest {
       DxUser consumer = createConsumerUser(consumerId);
       DxUser fullUser = createFullUser(consumerId);
       JsonObject additionalInfo = new JsonObject().put("reason", "research");
-      JsonObject constraints = new JsonObject().put("access", new JsonArray().add("api"));
+      JsonObject constraints =
+          new JsonObject()
+              .put("access", new JsonArray().add(new JsonObject().put("accessType", "api")));
 
       // Mock keycloak user lookup
       when(keycloakUserService.getUserById(consumerId))
           .thenReturn(Future.succeededFuture(fullUser));
 
-      // Mock duplicate check: not present
-      when(accessRequestDao.isAccessRequestPresent(consumerId, itemId))
-          .thenReturn(Future.succeededFuture(false));
-
       // Mock item lookup
       ResponseModel itemResponse = createMockItemResponseModel(itemId, providerId);
       when(itemService.getItem(any(GetItemRequest.class)))
           .thenReturn(Future.succeededFuture(itemResponse));
+
+      // Mock conflict checks: no pending requests, no active policies
+      when(accessRequestDao.getActivePendingRequests(consumerId, itemId))
+          .thenReturn(Future.succeededFuture(List.of()));
+      when(policyDao.getMatchingPolicies(itemId, consumerId.toString()))
+          .thenReturn(Future.succeededFuture(List.of()));
 
       // Mock DAO create
       AccessRequestDto createdDto = createPendingAccessRequest();
@@ -214,7 +219,6 @@ class AccessRequestServiceTest {
                             assertThat(result.getRequestId()).isEqualTo(requestId.toString());
                             assertThat(result.getStatus()).isEqualTo(Status.PENDING);
                             verify(keycloakUserService).getUserById(consumerId);
-                            verify(accessRequestDao).isAccessRequestPresent(consumerId, itemId);
                             verify(accessRequestDao).create(any(AccessRequestDto.class));
                             ctx.completeNow();
                           })));
@@ -229,9 +233,15 @@ class AccessRequestServiceTest {
       when(keycloakUserService.getUserById(consumerId))
           .thenReturn(Future.succeededFuture(fullUser));
 
-      // Mock duplicate check: already present
-      when(accessRequestDao.isAccessRequestPresent(consumerId, itemId))
-          .thenReturn(Future.succeededFuture(true));
+      ResponseModel itemResponse = createMockItemResponseModel(itemId, providerId);
+      when(itemService.getItem(any(GetItemRequest.class)))
+          .thenReturn(Future.succeededFuture(itemResponse));
+
+      // Mock duplicate check: an active pending request already covers the same access types
+      when(accessRequestDao.getActivePendingRequests(consumerId, itemId))
+          .thenReturn(Future.succeededFuture(List.of(createPendingAccessRequest())));
+      when(policyDao.getMatchingPolicies(itemId, consumerId.toString()))
+          .thenReturn(Future.succeededFuture(List.of()));
 
       accessRequestService
           .createAccessRequest(consumer.sub(), itemId, RequestType.DOWNLOAD, null, null)
@@ -241,7 +251,7 @@ class AccessRequestServiceTest {
                       ctx.verify(
                           () -> {
                             assertThat(err).isInstanceOf(DxConflictException.class);
-                            assertThat(err.getMessage()).contains("already exists");
+                            assertThat(err.getMessage()).contains("Pending access requests exist");
                             verify(accessRequestDao, never()).create(any(AccessRequestDto.class));
                             ctx.completeNow();
                           })));
@@ -279,12 +289,9 @@ class AccessRequestServiceTest {
       when(itemService.getItem(any(GetItemRequest.class)))
           .thenReturn(Future.succeededFuture(itemResponse));
 
-      // Mock no existing policy
-      QueryResult emptyPolicyResult = new QueryResult();
-      emptyPolicyResult.setRows(new JsonArray());
-      when(policyDao.checkExistingPoliciesForIds(
-              eq(itemId), eq(providerId), eq(consumerId.toString())))
-          .thenReturn(Future.succeededFuture(emptyPolicyResult));
+      // Mock conflict check: no existing active policy for the consumer/item
+      when(policyDao.getMatchingPolicies(itemId, consumerId.toString()))
+          .thenReturn(Future.succeededFuture(List.of()));
 
       // Mock policy insertion
       QueryResult insertResult = new QueryResult();
@@ -350,7 +357,7 @@ class AccessRequestServiceTest {
       QueryResult emptyResult = new QueryResult();
       emptyResult.setRows(new JsonArray());
       when(policyDao.deActivatePolicyByUserAndItem(
-              eq(itemId), eq(providerId), eq(consumerId.toString())))
+              eq(itemId), eq(requestId), eq(consumerId.toString())))
           .thenReturn(Future.succeededFuture(emptyResult));
 
       // Mock update status
@@ -490,8 +497,25 @@ class AccessRequestServiceTest {
     @Test
     @DisplayName("should return true when user has access via policy")
     void checkAccessRequest_hasAccess(VertxTestContext ctx) {
-      when(accessRequestDao.hasAccess(consumerId.toString(), itemId.toString()))
-          .thenReturn(Future.succeededFuture(true));
+      DxUser fullUser = createFullUser(consumerId);
+
+      when(keycloakUserService.getUserById(consumerId))
+          .thenReturn(Future.succeededFuture(fullUser));
+
+      // Item owned by the consumer themselves -> hasOwnerAccess = true
+      ResponseModel itemResponse = createMockItemResponseModel(itemId, consumerId);
+      when(itemService.getItem(any(GetItemRequest.class)))
+          .thenReturn(Future.succeededFuture(itemResponse));
+
+      when(accessRequestDao.getAccessSummary(consumerId.toString(), itemId.toString()))
+          .thenReturn(
+              Future.succeededFuture(new AccessRequestSummary(false, false, false, List.of())));
+
+      when(policyDao.getMatchingPolicies(itemId, consumerId.toString()))
+          .thenReturn(Future.succeededFuture(List.of()));
+
+      when(accessRuleDao.findMatchingRule(any(UUID.class), anyString(), anyString(), anyList()))
+          .thenReturn(Future.succeededFuture(List.of()));
 
       accessRequestService
           .checkAccessRequest(consumerId, itemId.toString())
@@ -500,9 +524,10 @@ class AccessRequestServiceTest {
                   result ->
                       ctx.verify(
                           () -> {
-                            assertThat(result).isTrue();
+                            assertThat(result).isNotNull();
+                            assertThat(result.isHasOwnerAccess()).isTrue();
                             verify(accessRequestDao)
-                                .hasAccess(consumerId.toString(), itemId.toString());
+                                .getAccessSummary(consumerId.toString(), itemId.toString());
                             ctx.completeNow();
                           })));
     }

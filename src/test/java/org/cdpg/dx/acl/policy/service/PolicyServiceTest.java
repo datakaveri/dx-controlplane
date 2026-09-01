@@ -196,6 +196,10 @@ class PolicyServiceTest {
               anyString()))
           .thenReturn(Future.succeededFuture());
 
+      // Mock subject conflict check (request has "subjects" constraints)
+      when(accessRuleDao.findMatchingRule(eq(itemId), anyList(), anyList(), anyList()))
+          .thenReturn(Future.succeededFuture(List.of()));
+
       policyService
           .createPolicy(List.of(req), provider)
           .onComplete(
@@ -279,7 +283,7 @@ class PolicyServiceTest {
       QueryResult queryResult = new QueryResult();
       queryResult.setRows(new JsonArray().add(policyRow));
 
-      when(policyDao.getPoliciesByConsumer(consumer.sub().toString()))
+      when(policyDao.getPoliciesByConsumer(consumer.email()))
           .thenReturn(Future.succeededFuture(queryResult));
 
       policyService
@@ -291,7 +295,7 @@ class PolicyServiceTest {
                           () -> {
                             assertThat(policies).isNotEmpty();
                             assertThat(policies).hasSize(1);
-                            verify(policyDao).getPoliciesByConsumer(consumer.sub().toString());
+                            verify(policyDao).getPoliciesByConsumer(consumer.email());
                             ctx.completeNow();
                           })));
     }
@@ -439,14 +443,9 @@ class PolicyServiceTest {
       when(policyDao.checkExistingPoliciesForIds(itemId, ownerId, userId.toString()))
           .thenReturn(Future.succeededFuture(existingResult));
 
-      // Mock verifyPolicy
-      JsonObject verifyRow =
-          new JsonObject()
-              .put("_id", policyId.toString())
-              .put("status", "ACTIVE");
-      QueryResult verifyResult = new QueryResult();
-      verifyResult.setRows(new JsonArray().add(verifyRow));
-      when(policyDao.verifyPolicy(policyId)).thenReturn(Future.succeededFuture(verifyResult));
+      when(keycloakUserService.getUserById(userId)).thenReturn(Future.succeededFuture(consumer));
+      when(accessRuleDao.findMatchingRule(any(UUID.class), anyString(), anyString(), anyList()))
+          .thenReturn(Future.succeededFuture(List.of()));
 
       policyService
           .initiateVerifyPolicy(ownerId, userId.toString(), itemId, ItemType.DATABANK, consumer)
@@ -456,9 +455,11 @@ class PolicyServiceTest {
                       ctx.verify(
                           () -> {
                             assertThat(result).isNotNull();
-                            assertThat(result.getPolicyId()).isEqualTo(policyId.toString());
-                            verify(policyDao).checkExistingPoliciesForIds(itemId, ownerId, userId.toString());
-                            verify(policyDao).verifyPolicy(policyId);
+                            assertThat(result).hasSize(1);
+                            assertThat(result.getFirst().getPolicyId())
+                                .isEqualTo(policyId.toString());
+                            verify(policyDao)
+                                .checkExistingPoliciesForIds(itemId, ownerId, userId.toString());
                             ctx.completeNow();
                           })));
     }

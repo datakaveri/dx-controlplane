@@ -108,7 +108,8 @@ class UserActivityAuditLogServiceTest {
     @Test
     @DisplayName("should return paginated activity logs for consumer")
     void success(VertxTestContext ctx) {
-      PaginatedRequest request = new PaginatedRequest(1, 10, Map.of(), List.of(), List.of());
+      PaginatedRequest request =
+          new PaginatedRequest(1, 10, Map.of(), List.of(), List.of(), Map.of());
 
       ActivityAuditLogEntity log1 = anActivityLogEntity();
       ActivityAuditLogEntity log2 = anActivityLogEntity();
@@ -136,7 +137,8 @@ class UserActivityAuditLogServiceTest {
     @Test
     @DisplayName("should fail when DAO getAllWithFilters fails")
     void fail_daoError(VertxTestContext ctx) {
-      PaginatedRequest request = new PaginatedRequest(1, 10, Map.of(), List.of(), List.of());
+      PaginatedRequest request =
+          new PaginatedRequest(1, 10, Map.of(), List.of(), List.of(), Map.of());
 
       when(activityLogDAO.getAllWithFilters(request))
           .thenReturn(Future.failedFuture(new RuntimeException("DB query failed")));
@@ -164,7 +166,8 @@ class UserActivityAuditLogServiceTest {
     @Test
     @DisplayName("should return paginated activity logs for admin")
     void success(VertxTestContext ctx) {
-      PaginatedRequest request = new PaginatedRequest(1, 20, Map.of(), List.of(), List.of());
+      PaginatedRequest request =
+          new PaginatedRequest(1, 20, Map.of(), List.of(), List.of(), Map.of());
 
       ActivityAuditLogEntity log1 = anActivityLogEntity();
       PaginationInfo paginationInfo = PaginationInfo.from(1, 20, 1);
@@ -191,7 +194,8 @@ class UserActivityAuditLogServiceTest {
     @Test
     @DisplayName("should fail when DAO getAllWithFilters fails")
     void fail_daoError(VertxTestContext ctx) {
-      PaginatedRequest request = new PaginatedRequest(1, 20, Map.of(), List.of(), List.of());
+      PaginatedRequest request =
+          new PaginatedRequest(1, 20, Map.of(), List.of(), List.of(), Map.of());
 
       when(activityLogDAO.getAllWithFilters(request))
           .thenReturn(Future.failedFuture(new RuntimeException("Admin query failed")));

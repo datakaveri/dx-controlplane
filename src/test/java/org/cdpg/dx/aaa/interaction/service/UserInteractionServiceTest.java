@@ -453,7 +453,7 @@ class UserInteractionServiceTest {
     @Test
     @DisplayName("should return paginated interactions on success")
     void success_returnsPaginatedResponse(VertxTestContext ctx) {
-      PaginatedRequest request = new PaginatedRequest(1, 10, Map.of(), null, null);
+      PaginatedRequest request = new PaginatedRequest(1, 10, Map.of(), null, null, null);
 
       InteractionRow row =
           new InteractionRow(ENTITY_ID.toString(), EntityType.ASSET, true, true, false);
@@ -490,7 +490,7 @@ class UserInteractionServiceTest {
     @Test
     @DisplayName("should return empty list when no interactions exist")
     void empty_returnsEmptyList(VertxTestContext ctx) {
-      PaginatedRequest request = new PaginatedRequest(1, 10, Map.of(), null, null);
+      PaginatedRequest request = new PaginatedRequest(1, 10, Map.of(), null, null, null);
 
       PaginationInfo paginationInfo = PaginationInfo.from(1, 10, 0);
       UserInteractionsPaginatedResponse emptyResponse =
@@ -516,7 +516,7 @@ class UserInteractionServiceTest {
     @Test
     @DisplayName("should propagate failure when DAO fails")
     void daoFailure_propagatesError(VertxTestContext ctx) {
-      PaginatedRequest request = new PaginatedRequest(1, 10, Map.of(), null, null);
+      PaginatedRequest request = new PaginatedRequest(1, 10, Map.of(), null, null, null);
 
       when(dao.fetchUserInteractions(request))
           .thenReturn(Future.failedFuture(new RuntimeException("Query failed")));
