@@ -43,7 +43,8 @@ public class ActivityAuditLogEntity implements BaseEntity<ActivityAuditLogEntity
   private String role;
   private String issuer;
 
-  private UUID delegateeId;
+  private UUID delegateId;
+  private String actorType;
 
   private String api;
   private String method;
@@ -98,7 +99,8 @@ public class ActivityAuditLogEntity implements BaseEntity<ActivityAuditLogEntity
     e.role = json.getString(ROLE);
     e.issuer = json.getString(ISSUER);
 
-    e.delegateeId = EntityUtil.parseUUID(json.getString(DELEGATEE_ID), DELEGATEE_ID);
+    e.delegateId = EntityUtil.parseUUID(json.getString(DELEGATE_ID), DELEGATE_ID);
+    e.actorType = json.getString(ACTOR_TYPE);
 
     e.api = json.getString(API);
     e.method = json.getString(HTTP_METHOD);
@@ -160,7 +162,8 @@ public class ActivityAuditLogEntity implements BaseEntity<ActivityAuditLogEntity
     EntityUtil.putIfNonEmpty(map, ROLE, role);
     EntityUtil.putIfNonEmpty(map, ISSUER, issuer);
 
-    EntityUtil.putIfNonEmpty(map, DELEGATEE_ID, safe(delegateeId));
+    EntityUtil.putIfNonEmpty(map, DELEGATE_ID, safe(delegateId));
+    EntityUtil.putIfNonEmpty(map, ACTOR_TYPE, actorType);
 
     EntityUtil.putIfNonEmpty(map, API, api);
     EntityUtil.putIfNonEmpty(map, HTTP_METHOD, method);
@@ -212,7 +215,8 @@ public class ActivityAuditLogEntity implements BaseEntity<ActivityAuditLogEntity
     putIfNonNull(json, "role", role);
     putIfNonNull(json, "issuer", issuer);
 
-    putIfNonNull(json, "delegateeId", safe(delegateeId));
+    putIfNonNull(json, "delegateId", safe(delegateId));
+    putIfNonNull(json, "actorType", actorType);
 
     putIfNonNull(json, "api", api);
     putIfNonNull(json, "method", method);
@@ -400,12 +404,20 @@ public class ActivityAuditLogEntity implements BaseEntity<ActivityAuditLogEntity
     this.issuer = issuer;
   }
 
-  public UUID getDelegateeId() {
-    return delegateeId;
+  public UUID getDelegateId() {
+    return delegateId;
   }
 
-  public void setDelegateeId(UUID delegateeId) {
-    this.delegateeId = delegateeId;
+  public void setDelegateId(UUID delegateId) {
+    this.delegateId = delegateId;
+  }
+
+  public String getActorType() {
+    return actorType;
+  }
+
+  public void setActorType(String actorType) {
+    this.actorType = actorType;
   }
 
   public String getApi() {

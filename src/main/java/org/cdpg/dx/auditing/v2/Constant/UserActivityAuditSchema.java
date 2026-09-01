@@ -19,7 +19,10 @@ public final class UserActivityAuditSchema {
   public static final String ISSUER = "issuer";
 
   // Delegation
-  public static final String DELEGATEE_ID = "delegatee_id";
+  public static final String DELEGATE_ID = "delegate_id";
+
+  // Actor classification (who actually performed the action: SELF / DELEGATE / APP)
+  public static final String ACTOR_TYPE = "actor_type";
 
   // API metadata
   public static final String API = "api";

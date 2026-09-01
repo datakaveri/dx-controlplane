@@ -11,6 +11,7 @@ import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER
 import io.vertx.core.json.JsonArray;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
@@ -36,8 +37,7 @@ public class ActivityController implements ApiController {
   private final URNGenerator urnGenerator;
 
   public ActivityController(
-      UserActivityAuditLogService userActivityAuditLogService,
-      URNGenerator urnGenerator) {
+      UserActivityAuditLogService userActivityAuditLogService, URNGenerator urnGenerator) {
     this.userActivityAuditLogService = userActivityAuditLogService;
     this.urnGenerator = urnGenerator;
   }
@@ -70,7 +70,9 @@ public class ActivityController implements ApiController {
       return;
     }
 
-    Map<String, Object> additionalFilters = Map.of(USER_ID, dxUser.sub().toString());
+    Map<String, Object> additionalFilters = new HashMap<>();
+    additionalFilters.put(USER_ID, dxUser.sub().toString());
+    additionalFilters.putAll(Util.getDelegationFilters(context));
 
     PaginatedRequest request =
         PaginationRequestBuilder.from(context)
@@ -89,9 +91,7 @@ public class ActivityController implements ApiController {
         .getUserActivityLogForConsumer(request)
         .onSuccess(
             pagedResult -> {
-              LOGGER.info(
-                  "Successfully fetched activity logs for user: {}",
-                  dxUser.sub());
+              LOGGER.info("Successfully fetched activity logs for user: {}", dxUser.sub());
               if (pagedResult.data().isEmpty()) {
                 LOGGER.info("No activity logs found for user: {}", dxUser.sub());
                 ResponseBuilder.sendNoContent(context, urnGenerator);
@@ -117,7 +117,8 @@ public class ActivityController implements ApiController {
 
     AuthorizationContext authCtx = context.get(AuthorizationContext.KEY);
     Map<String, String> allowedFilters = Util.getAllowedFilterMapForAdmin(authCtx);
-    Map<String, Object> additionalFilter = Util.getAdditionalFilters(authCtx);
+    Map<String, Object> additionalFilter = new HashMap<>(Util.getAdditionalFilters(authCtx));
+    additionalFilter.putAll(Util.getDelegationFilters(context));
 
     LOGGER.info("Admin auth level: {}, allowed filters: {}", authCtx.getLevel(), allowedFilters);
 

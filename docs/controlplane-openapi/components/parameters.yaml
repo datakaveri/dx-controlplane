@@ -7,6 +7,26 @@ UserIdParam:
     type: string
     format: uuid
     pattern: ^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$
+DelegateIdParam:
+  name: delegateId
+  in: query
+  description: UUID of the delegate who performed the action on behalf of the owner. Must be a valid v4 UUID. On a delegated (DID header) consumer request, this filter is forced to the caller's own id.
+  required: false
+  schema:
+    type: string
+    format: uuid
+    pattern: ^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$
+ActorTypeParam:
+  name: actorType
+  in: query
+  description: Filter activity logs by who performed the action. `SELF` (the account owner acted directly), `DELEGATE` (a delegate acted on the owner's behalf), or `APP` (an app credential acted on the owner's behalf).
+  required: false
+  schema:
+    type: string
+    enum:
+    - SELF
+    - DELEGATE
+    - APP
 AssetTypeParam:
   name: assetType
   in: query
