@@ -4436,12 +4436,14 @@ paths:
           source: |
             curl --location 'https://${HOSTNAME}/iudx/v2/auth/delegation/{delegation_id}' \
             --header 'Authorization: Bearer <keycloak_token>'
-    delete:
-      summary: Delete a Delegation Grant
-      description: Revoke a delegation grant. Only the delegator (user who granted the delegation) can delete it.
+    put:
+      summary: Delete a delegation grant
+      description: |
+        Deletes an active delegation grant by updating its status to `DELETED`. The delegation record is retained for audit and historical purposes. Only the delegator (user who granted the delegation) can delete it.
+        **Log Type:** `USER_ACTION`
       tags:
         - Delegation APIs
-      operationId: delete-auth-v2-delegation-id
+      operationId: post-auth-v2-delegation-delete
       security:
         - authorization: []
       parameters:
@@ -4484,90 +4486,47 @@ paths:
                   delegationId: a33b5619-e842-4fcd-807a-3e8053ae43a1
                   status: deleted
         '400':
-          description: Invalid delegation ID format
+          description: Bad Request - Invalid delegation ID or delegation is not active
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  detail:
-                    type: string
-              example:
-                type: urn:dx:auth:BadRequest
-                title: Bad Request
-                detail: Invalid delegation ID format
+                $ref: '#/components/schemas/generalBadRequest'
         '401':
-          description: Unauthorized - Missing or invalid authentication token
+          description: Unauthorized - Token invalid or expired
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  detail:
-                    type: string
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
                 detail: Missing or invalid Bearer token
         '403':
-          description: Forbidden - User is not the delegator of this delegation
+          description: Forbidden - Caller is not the delegator
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  detail:
-                    type: string
+                $ref: '#/components/schemas/ErrorResponse'
               example:
                 type: urn:dx:controlPlane:forbidden
                 title: Forbidden
-                detail: User does not have the required role.
+                detail: Only the delegator can delete this delegation
         '404':
-          description: Delegation grant not found
+          description: Delegation not found
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  detail:
-                    type: string
+                $ref: '#/components/schemas/ErrorResponse'
               example:
-                type: urn:dx:auth:NotFound
+                type: urn:dx:controlPlane:notFound
                 title: Not Found
                 detail: Delegation grant not found
         '500':
-          description: Internal server error
+          description: Internal Server Error
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  detail:
-                    type: string
-              example:
-                type: urn:dx:auth:InternalServerError
-                title: Internal Server Error
-                detail: An error occurred while deleting the delegation
+                $ref: '#/components/schemas/ErrorResponse'
   /iudx/v2/auth/delegation/{id}/constraints:
     parameters:
       - name: id

@@ -69,6 +69,8 @@ public interface DelegationService {
 
   Future<Boolean> deleteDelegation(String delegationId,String userId);
 
+  Future<Boolean> deactivateDelegation(String delegationIdStr, String userIdStr);
+
   Future<List<JsonObject>> getDelegationRequestsByDelegationId(String delegationId);
 
   Future<List<JsonObject>> getDelegationScopeConstraints(String delegationId);

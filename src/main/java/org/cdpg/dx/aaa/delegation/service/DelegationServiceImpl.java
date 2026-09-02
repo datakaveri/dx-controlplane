@@ -497,6 +497,51 @@ public class DelegationServiceImpl implements DelegationService {
   }
 
   @Override
+  public Future<Boolean> deactivateDelegation(String delegationIdStr, String userIdStr) {
+
+    UUID delegationId = UUID.fromString(delegationIdStr);
+    UUID userId = UUID.fromString(userIdStr);
+
+    return delegationGrantDAO
+        .get(delegationId)
+        .compose(
+            delegationGrant -> {
+              if (!delegationGrant.delegatorId().equals(userId)) {
+                return Future.failedFuture(
+                    new DxForbiddenException(
+                        "This user cannot deactivate the delegation as it is not the delegator"));
+              }
+
+              if (!"ACTIVE".equalsIgnoreCase(delegationGrant.status())) {
+                return Future.failedFuture(
+                    new DxBadRequestException("Only ACTIVE delegations can be deactivated"));
+              }
+
+              return delegationGrantDAO
+                  .deactivate(delegationId)
+                  .compose(
+                      result -> {
+                        if (result.getRows().isEmpty()) {
+                          LOGGER.error(
+                              "Failed to deactivate delegation {} for user {}: no rows updated",
+                              delegationId,
+                              userId);
+
+                          return Future.failedFuture(
+                              new DxBadRequestException("Delegation could not be deactivated"));
+                        }
+
+                        LOGGER.info(
+                            "Delegation {} successfully deactivated by user {}",
+                            delegationId,
+                            userId);
+
+                        return Future.succeededFuture(true);
+                      });
+            });
+  }
+
+  @Override
   public Future<List<JsonObject>> getDelegationRequestsByDelegationId(String delegationIdStr) {
 
     Map<String, Object> conditionMap = Map.of("delegation_id", delegationIdStr);
