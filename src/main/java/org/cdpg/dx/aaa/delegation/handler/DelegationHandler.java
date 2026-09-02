@@ -217,6 +217,36 @@ public class DelegationHandler {
         .onFailure(ctx::fail);
   }
 
+  public void deactivateDelegationGrant(RoutingContext ctx) {
+
+    User user = ctx.user();
+    UUID userId = UUID.fromString(user.subject());
+
+    UUID delegationId = UUID.fromString(ctx.pathParam("id"));
+
+    delegationService
+        .deactivateDelegation(delegationId.toString(), userId.toString())
+        .onSuccess(
+            res -> {
+              AuditLog auditLog =
+                  AuditingHelper.createAuditLog(
+                      ctx.user(),
+                      RoutingContextHelper.getRequestPath(ctx),
+                      "DELETE",
+                      "Delete delegation");
+
+              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+
+              JsonObject response =
+                  new JsonObject()
+                      .put("delegationId", delegationId.toString())
+                      .put("status", "deleted");
+
+              ResponseBuilder.sendSuccess(ctx, response, urnGenerator);
+            })
+        .onFailure(ctx::fail);
+  }
+
   public void createDelegationGrant(RoutingContext ctx) {
     LOGGER.info("Handler: createDelegationGrant");
 

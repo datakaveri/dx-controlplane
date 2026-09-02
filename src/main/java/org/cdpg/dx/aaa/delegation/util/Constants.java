@@ -62,7 +62,8 @@ public final class Constants {
     "delegationId", DELEGATION_ID,
     "delegatorId", DELEGATOR_ID,
     "delegateId", DELEGATE_ID,
-    "status", STATUS);
+    "status", STATUS,
+      "createdAt", CREATED_AT);
 
   public static final Map<String,String> API_TO_DB_DELEGATION_GRANT = Map.ofEntries(
     Map.entry("delegationId", DELEGATION_ID),

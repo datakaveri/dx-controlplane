@@ -1,16 +1,22 @@
 package org.cdpg.dx.aaa.delegation.dao.impl;
 
 import static org.cdpg.dx.aaa.delegation.util.Constants.*;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
 
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
+import java.util.List;
+import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.delegation.dao.DelegationGrantDAO;
 import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
 import org.cdpg.dx.common.exception.BaseDxException;
 import org.cdpg.dx.database.postgres.base.dao.AbstractBaseDAO;
+import org.cdpg.dx.database.postgres.models.Condition;
 import org.cdpg.dx.database.postgres.models.QueryResult;
+import org.cdpg.dx.database.postgres.models.UpdateQuery;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 
 public class DelegationGrantDAOImpl extends AbstractBaseDAO<DelegationGrant> implements DelegationGrantDAO {
@@ -79,5 +85,21 @@ public class DelegationGrantDAOImpl extends AbstractBaseDAO<DelegationGrant> imp
 
               return Future.failedFuture(BaseDxException.from(err));
             });
+  }
+
+  public Future<QueryResult> deactivate(UUID delegationId) {
+
+    UpdateQuery query =
+        new UpdateQuery()
+            .setTable("delegation_grants")
+            .setColumns(List.of(DB_STATUS))
+            .setValues(List.of("deleted"))
+            .setCondition(
+                new Condition()
+                    .setColumn("delegation_id")
+                    .setValues(List.of(delegationId.toString()))
+                    .setOperator(Condition.Operator.EQUALS));
+
+    return postgresService.update(query);
   }
 }
