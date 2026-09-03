@@ -273,6 +273,8 @@ paths:
     $ref: ../controlplane-openapi/paths/delegation.yaml#/~1iudx~1v2~1auth~1delegation~1delegate
   /iudx/v2/auth/delegation/delegator:
     $ref: ../controlplane-openapi/paths/delegation.yaml#/~1iudx~1v2~1auth~1delegation~1delegator
+  /iudx/v2/auth/delegation/delegator/report:
+    $ref: ../controlplane-openapi/paths/delegation.yaml#/~1iudx~1v2~1auth~1delegation~1delegator~1report
   /iudx/v2/auth/delegation/{id}:
     $ref: ../controlplane-openapi/paths/delegation.yaml#/~1iudx~1v2~1auth~1delegation~1{id}
   /iudx/v2/auth/delegation/{id}/constraints:

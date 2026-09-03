@@ -4269,6 +4269,60 @@ paths:
           source: |
             curl --location 'https://${HOSTNAME}/iudx/v2/auth/delegation/delegator' \
             --header 'Authorization: Bearer <keycloak_token>'
+  /iudx/v2/auth/delegation/delegator/report:
+    get:
+      tags:
+        - Delegation APIs
+      summary: Get Delegation Report for Delegator
+      description: |-
+        Generates a CSV report containing all delegation grants where the
+        currently authenticated user is the delegator.
+
+        The report supports pagination and sorting. The delegation records
+        are returned irrespective of their status.
+      operationId: get-auth-v2-delegation-delegator-report
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+      responses:
+        '200':
+          description: Delegation report generated successfully
+          content:
+            application/csv:
+              schema:
+                type: string
+                format: binary
+                description: CSV file containing delegation grants
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: text/csv
+        '401':
+          description: Unauthorized - Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+      security:
+        - authorization: []
+      x-codeSamples:
+        - lang: cURL
+          label: Get delegation report
+          source: |
+            curl --location --request GET \
+            'https://${HOSTNAME}/iudx/v2/auth/delegation/delegator/report' \
+            --header 'Authorization: Bearer <keycloak_token>'
   /iudx/v2/auth/delegation/{id}:
     parameters:
       - schema:

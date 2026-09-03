@@ -37,6 +37,8 @@ import org.cdpg.dx.aaa.credit.factory.CreditControllerFactory;
 import org.cdpg.dx.aaa.delegation.ItemOwnershipValidator;
 import org.cdpg.dx.aaa.delegation.OrgOwnershipValidator;
 import org.cdpg.dx.aaa.delegation.factory.DelegationControllerFactory;
+import org.cdpg.dx.aaa.delegationReport.controller.DelegationReportController;
+import org.cdpg.dx.aaa.delegationReport.factory.DelegationReportControllerFactory;
 import org.cdpg.dx.aaa.ingestion.service.IngestionService;
 import org.cdpg.dx.aaa.ingestion.service.IngestionServiceImpl;
 import org.cdpg.dx.aaa.interaction.v2.factory.UserInteractionV2controllerFactory;
@@ -126,6 +128,10 @@ public class ControllerFactory {
     ActivityReportController activityReportController =
         ActivityReportControllerFactory.create(infra.pgService(), vertx);
     controllers.add(activityReportController);
+
+    DelegationReportController delegationReportController =
+        DelegationReportControllerFactory.create(infra.pgService(), vertx);
+    controllers.add(delegationReportController);
 
     // Organization
     ApiController organizationController =
