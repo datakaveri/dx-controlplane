@@ -32,6 +32,9 @@ public class DbConstants {
   public static final String ORGANIZATION = "organization";
   public static final String DB_CREATED_AT = "created_at";
   public static final String DB_UPDATED_AT = "updated_at";
+  public static final String DB_DELEGATOR_ID = "delegator_id";
+  public static final String DB_DELEGATE_ID = "delegate_id";
+  public static final String DB_DELEGATION_ID = "delegation_id";
   public static final String REQUEST_TABLE = "request";
   public static final String ACCESS_RULE_ALLOWED_ROLE_TABLE = "access_rule_allowed_role";
   public static final String ACSESS_RULE_ALLOWED_USER_TABLE = "access_rule_allowed_user";
