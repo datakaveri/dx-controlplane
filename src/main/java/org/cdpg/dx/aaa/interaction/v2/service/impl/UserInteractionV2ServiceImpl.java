@@ -5,7 +5,9 @@ import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
@@ -14,16 +16,20 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.interaction.v2.dao.ProviderFeedbackDao;
 import org.cdpg.dx.aaa.interaction.v2.dao.UserFeedbackDao;
 import org.cdpg.dx.aaa.interaction.v2.dao.UserInteractionV2Dao;
+import org.cdpg.dx.aaa.interaction.v2.enums.ProviderFeedbackType;
 import org.cdpg.dx.aaa.interaction.v2.model.*;
 import org.cdpg.dx.aaa.interaction.v2.service.UserInteractionV2Service;
 
 import org.cdpg.dx.aaa.item.service.ItemService;
 
+import org.cdpg.dx.common.exception.DxNotFoundException;
+import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.response.PaginatedApiResponse;
 
 import org.cdpg.dx.database.elastic.model.BulkSyncResult;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
 
@@ -33,17 +39,20 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
   private final UserFeedbackDao userFeedbackDao;
   private final ProviderFeedbackDao providerFeedbackDao;
   private final ItemService itemService;
+  private final KeycloakUserService keycloakUserService;
 
   public UserInteractionV2ServiceImpl(
       UserInteractionV2Dao dao,
       UserFeedbackDao userFeedbackDao,
       ProviderFeedbackDao providerFeedbackDao,
-      ItemService itemService) {
+      ItemService itemService,
+      KeycloakUserService keycloakUserService) {
 
     this.dao = dao;
     this.userFeedbackDao = userFeedbackDao;
     this.providerFeedbackDao = providerFeedbackDao;
     this.itemService = itemService;
+    this.keycloakUserService = keycloakUserService;
   }
 
   // =====================================================
@@ -210,15 +219,66 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
   }
 
   @Override
-  public Future<Boolean> deleteUserFeedback(UUID reqId, UUID userId) {
+  public Future<Boolean> deleteUserFeedback(UUID userId, UUID assetId) {
     LOGGER.info("Inside service imple method - delete user feedbaack");
-    return userFeedbackDao.deleteFeedback(reqId, userId);
+    return userFeedbackDao
+        .deleteFeedback(userId, assetId)
+        .compose(
+            deleted ->
+                deleted
+                    ? Future.succeededFuture(true)
+                    : Future.failedFuture(new DxNotFoundException("Feedback not found")));
   }
 
   @Override
-  public Future<UserFeedbackPaginatedResponse> getUserFeedback(PaginatedRequest request) {
+  public Future<PaginatedApiResponse<UserFeedbackResponse>> getUserFeedback(
+      PaginatedRequest request) {
     LOGGER.debug("UserInteractionsPaginatedResponse() method started");
-    return userFeedbackDao.fetchUserFeedbacks(request);
+    return userFeedbackDao
+        .fetchUserFeedbacks(request)
+        .compose(
+            page ->
+                enrichFeedbackList(page.data())
+                    .map(enriched -> new PaginatedApiResponse<>(enriched, page.paginationInfo())));
+  }
+
+  // =====================================================
+  // Best-effort userId -> name/organisation enrichment for feedback rows
+  // =====================================================
+  private Future<List<UserFeedbackResponse>> enrichFeedbackList(List<UserFeedback> rows) {
+
+    if (rows.isEmpty()) {
+      return Future.succeededFuture(List.of());
+    }
+
+    Map<UUID, Future<DxUser>> userLookups = new LinkedHashMap<>();
+    for (UserFeedback row : rows) {
+      userLookups.computeIfAbsent(row.userId(), this::fetchUserSafe);
+    }
+
+    return CompositeFuture.all(new ArrayList<>(userLookups.values()))
+        .map(
+            cf ->
+                rows.stream()
+                    .map(
+                        row -> {
+                          DxUser user = userLookups.get(row.userId()).result();
+                          return UserFeedbackResponse.from(
+                              row,
+                              user != null ? user.name() : null,
+                              user != null ? user.organisationName() : null);
+                        })
+                    .toList());
+  }
+
+  private Future<DxUser> fetchUserSafe(UUID userId) {
+    return keycloakUserService
+        .getUserById(userId)
+        .recover(
+            err -> {
+              LOGGER.warn("Failed to resolve user info for userId={}", userId, err);
+              return Future.succeededFuture(null);
+            });
   }
 
   @Override
@@ -228,8 +288,9 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
   }
 
   @Override
-  public Future<Boolean> deleteProviderFeedback(UUID reqId, UUID userId) {
+  public Future<Boolean> deleteProviderFeedback(
+      UUID userId, UUID assetId, ProviderFeedbackType type) {
     LOGGER.info("Inside service imple method - delete user feedbaack");
-    return providerFeedbackDao.deleteProviderFeedback(reqId, userId);
+    return providerFeedbackDao.deleteProviderFeedback(userId, assetId, type);
   }
 }

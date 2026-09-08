@@ -1,6 +1,7 @@
 package org.cdpg.dx.aaa.interaction.v2.dao;
 
 import io.vertx.core.Future;
+import org.cdpg.dx.aaa.interaction.v2.enums.ProviderFeedbackType;
 import org.cdpg.dx.aaa.interaction.v2.model.ProviderFeedback;
 import org.cdpg.dx.aaa.interaction.v2.model.ProviderFeedbackPaginatedResponse;
 import org.cdpg.dx.aaa.interaction.v2.model.UserFeedback;
@@ -11,7 +12,7 @@ import java.util.UUID;
 
 public interface ProviderFeedbackDao {
 
-  Future<Boolean> deleteProviderFeedback(UUID reqId,UUID userId);
+  Future<Boolean> deleteProviderFeedback(UUID userId, UUID assetId, ProviderFeedbackType type);
 
   Future<ProviderFeedback> postProviderFeedback(ProviderFeedback providerFeedback);
 

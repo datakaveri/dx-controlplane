@@ -15,13 +15,13 @@ import org.cdpg.dx.aaa.interaction.v2.dao.UserFeedbackDao;
 import org.cdpg.dx.aaa.interaction.v2.model.UserFeedback;
 import org.cdpg.dx.aaa.interaction.v2.model.UserFeedbackPaginatedResponse;
 import org.cdpg.dx.common.request.PaginatedRequest;
+import org.cdpg.dx.common.request.TemporalRequest;
 import org.cdpg.dx.common.util.PaginationInfo;
 import org.cdpg.dx.database.postgres.base.dao.AbstractBaseDAO;
 import org.cdpg.dx.database.postgres.models.*;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 
-public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback>
-  implements UserFeedbackDao {
+public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implements UserFeedbackDao {
 
   private static final Logger LOGGER = LogManager.getLogger(UserInteractionDaoImpl.class);
 
@@ -33,9 +33,6 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback>
   public Future<UserFeedback> postFeedback(UserFeedback userFeedback) {
     JsonObject json = userFeedback.toJson();
 
-    String userId = json.getString("userId");
-    String assetId = json.getString("assetId");
-
     boolean hasSubtype =
         json.containsKey("actionSubtype") && json.getString("actionSubtype") != null;
 
@@ -44,14 +41,12 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback>
 
     if (hasSubtype && !hasSubdata) {
       return Future.failedFuture(
-          new IllegalArgumentException(
-              "actionSubdata is required when actionSubtype is provided"));
+          new IllegalArgumentException("actionSubdata is required when actionSubtype is provided"));
     }
 
     if (!hasSubtype && hasSubdata) {
       return Future.failedFuture(
-          new IllegalArgumentException(
-              "actionSubtype is required when actionSubdata is provided"));
+          new IllegalArgumentException("actionSubtype is required when actionSubdata is provided"));
     }
 
     Integer rating = json.getInteger("entityRating");
@@ -61,127 +56,57 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback>
           new IllegalArgumentException("entityRating must be between 1 and 5"));
     }
 
-    var map = userFeedback.toNonEmptyFieldsMap();
+    if (rating == null && !hasSubtype) {
+      return Future.failedFuture(
+          new IllegalArgumentException(
+              "At least one of entityRating or actionSubtype/actionSubdata must be provided"));
+    }
 
-    Condition condition =
-        new Condition(
-            List.of(
-                new Condition("user_id", Condition.Operator.EQUALS, List.of(userId)),
-                new Condition("asset_id", Condition.Operator.EQUALS, List.of(assetId))),
-            Condition.LogicalOperator.AND);
+    // feedback_created_at / feedback_updated_at are kept separate from the shared
+    // created_at / updated_at columns on user_interactions, which also track
+    // unrelated like/dislike/bookmark activity on the same row. They are set here
+    // explicitly (not via the generic upsertNew/EXCLUDED path) so that
+    // feedback_created_at is written once and feedback_updated_at only moves when
+    // the feedback content itself changes.
+    String sql =
+        """
+      INSERT INTO user_interactions (
+        user_id, asset_id, asset_type, entity_rating, action_subtype, action_subdata,
+        feedback_created_at, feedback_updated_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, now(), now())
+      ON CONFLICT (user_id, asset_id) DO UPDATE SET
+        asset_type          = COALESCE(EXCLUDED.asset_type, user_interactions.asset_type),
+        entity_rating        = COALESCE(EXCLUDED.entity_rating, user_interactions.entity_rating),
+        action_subtype       = COALESCE(EXCLUDED.action_subtype, user_interactions.action_subtype),
+        action_subdata       = COALESCE(EXCLUDED.action_subdata, user_interactions.action_subdata),
+        feedback_created_at  = COALESCE(user_interactions.feedback_created_at, now()),
+        feedback_updated_at  = now()
+      RETURNING
+        id, user_id, asset_id, asset_type, entity_rating, action_subtype, action_subdata,
+        feedback_created_at, feedback_updated_at
+      """;
 
-    SelectQuery selectQuery =
-        new SelectQuery()
-            .setTable("user_interactions")
-            .setColumns(List.of("*"))
-            .setCondition(condition);
+    JsonArray params =
+        new JsonArray()
+            .add(userFeedback.userId().toString())
+            .add(userFeedback.assetId().toString())
+            .add(userFeedback.assetType())
+            .addNull()
+            .addNull()
+            .addNull();
+
+    if (rating != null) {
+      params.set(3, rating);
+    }
+    if (hasSubtype) {
+      params.set(4, json.getString("actionSubtype"));
+      params.set(5, json.getJsonObject("actionSubdata"));
+    }
 
     return postgresService
-        .select(selectQuery, true)
-        .compose(
-            result -> {
-              if (!result.isRowsAffected()) {
-                // No existing feedback → INSERT
-                InsertQuery insertQuery =
-                    new InsertQuery(
-                        "user_interactions", List.copyOf(map.keySet()), List.copyOf(map.values()));
-
-                return postgresService
-                    .insert(insertQuery)
-                    .map(res -> UserFeedback.fromJson(res.toJson()));
-
-              } else {
-                // Existing feedback → UPDATE
-                UpdateQuery updateQuery =
-                    new UpdateQuery(
-                        "user_interactions",
-                        List.copyOf(map.keySet()),
-                        List.copyOf(map.values()),
-                        condition,
-                        null,
-                        null);
-
-                return postgresService
-                    .update(updateQuery)
-                    .map(res -> UserFeedback.fromJson(res.toJson()));
-              }
-            });
-  }
-
-  @Override
-  public Future<UserFeedback> updateFeedback(UserFeedback userFeedback) {
-    JsonObject json = userFeedback.toJson();
-
-    String userId = json.getString("userId");
-    String assetId = json.getString("assetId");
-
-    String subtype = json.getString("actionSubtype");
-    JsonObject subdata = json.getJsonObject("actionSubdata");
-
-    boolean hasSubtype =
-        json.containsKey("actionSubtype") && json.getString("actionSubtype") != null;
-    boolean hasSubdata =
-        json.containsKey("actionSubdata") && json.getJsonObject("actionSubdata") != null;
-
-    if (hasSubtype && !hasSubdata) {
-      return Future.failedFuture(
-        new IllegalArgumentException("actionSubdata is required when actionSubtype is provided"));
-    }
-
-    if (!hasSubtype && hasSubdata) {
-      return Future.failedFuture(
-        new IllegalArgumentException("actionSubtype is required when actionSubdata is provided"));
-    }
-
-    Integer rating = json.getInteger("entityRating");
-
-    if (rating != null && (rating < 1 || rating > 5)) {
-      return Future.failedFuture(
-        new IllegalArgumentException(
-          "entityRating must be between 1 and 5"
-        )
-      );
-    }
-
-    List<String> columns = new ArrayList<>();
-    List<Object> values = new ArrayList<>();
-
-    if (json.containsKey("actionSubtype")) {
-      columns.add("actionSubtype");
-      values.add(json.getString("actionSubtype"));
-    }
-
-    if (json.containsKey("actionSubdata")) {
-      columns.add("actionSubdata");
-      values.add(json.getJsonObject("actionSubdata"));
-    }
-
-    if (json.containsKey("entityRating")) {
-      columns.add("entityRating");
-      values.add(json.getInteger("entityRating"));
-    }
-
-    if (columns.isEmpty()) {
-      return Future.succeededFuture(userFeedback); // nothing to update
-    }
-
-    Condition condition =
-      new Condition(
-        List.of(
-          new Condition("userId", Condition.Operator.EQUALS, List.of(userId)),
-          new Condition("assetId", Condition.Operator.EQUALS, List.of(assetId))
-        ),
-        Condition.LogicalOperator.AND
-      );
-
-    UpdateQuery query =
-      new UpdateQuery()
-        .setTable("user_interactions")
-        .setColumns(columns)
-        .setValues(values)
-        .setCondition(condition);
-
-    return postgresService.update(query).mapEmpty();
+        .executeQuery(sql, params)
+        .map(rows -> UserFeedback.fromJson(rows.getRows().getJsonObject(0)));
   }
 
   @Override
@@ -194,64 +119,115 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback>
     Map<String, Object> filters = request.filters();
     LOGGER.debug("filters: {}", filters);
 
-
-    StringBuilder where = new StringBuilder(" WHERE 1=1 ");
+    // user_interactions is shared with like/dislike/bookmark tracking; only rows
+    // that actually carry feedback (a rating and/or a structured action) belong
+    // in this response, not every interaction row for the matched user/asset.
+    StringBuilder where =
+        new StringBuilder(" WHERE (entity_rating IS NOT NULL OR action_subtype IS NOT NULL) ");
     JsonArray params = new JsonArray();
     AtomicInteger index = new AtomicInteger(1);
 
     // helper to support both single value and list → IN clause
     java.util.function.BiConsumer<String, Object> applyFilter =
-      (column, rawValue) -> {
-        if (rawValue == null) return;
+        (column, rawValue) -> {
+          if (rawValue == null) return;
 
-        List<?> values =
-          rawValue instanceof List<?> list
-            ? list
-            : List.of(rawValue);
+          List<?> values = rawValue instanceof List<?> list ? list : List.of(rawValue);
 
-        if (values.isEmpty()) return;
+          if (values.isEmpty()) return;
 
-        where.append(" AND ").append(column).append(" IN (");
+          where.append(" AND ").append(column).append(" IN (");
 
-        for (int i = 0; i < values.size(); i++) {
-          if (i > 0) where.append(", ");
-          where.append("$").append(index.getAndIncrement());
-          params.add(values.get(i));
-        }
+          for (int i = 0; i < values.size(); i++) {
+            if (i > 0) where.append(", ");
+            where.append("$").append(index.getAndIncrement());
+            params.add(values.get(i));
+          }
 
-        where.append(")");
-      };
+          where.append(")");
+        };
 
     // Apply filters
-    applyFilter.accept("user_id", filters.get("userId"));
-    applyFilter.accept("asset_id", filters.get("assetId"));
-    applyFilter.accept("action_subtype", filters.get("actionSubtype"));
+    applyFilter.accept("user_id", filters.get("user_id"));
+    applyFilter.accept("asset_id", filters.get("asset_id"));
+    applyFilter.accept("action_subtype", filters.get("action_subtype"));
+    applyFilter.accept("entity_rating", filters.get("entity_rating"));
+
+    // feedback_created_at is a dedicated column (distinct from the shared created_at used by
+    // like/dislike/bookmark activity on the same row); only that field is exposed for temporal
+    // filtering here, so any other timeField configured upstream is intentionally ignored.
+    List<TemporalRequest> temporalRequests = request.temporalRequests();
+    if (temporalRequests != null) {
+      for (TemporalRequest tr : temporalRequests) {
+        if (!"feedback_created_at".equals(tr.timeField())) continue;
+
+        String rel = tr.timeRel() != null ? tr.timeRel().toLowerCase() : "";
+        switch (rel) {
+          case "before" -> {
+            where.append(" AND feedback_created_at < $").append(index.getAndIncrement());
+            params.add(tr.time());
+          }
+          case "after" -> {
+            where.append(" AND feedback_created_at > $").append(index.getAndIncrement());
+            params.add(tr.time());
+          }
+          case "between", "during" -> {
+            where
+                .append(" AND feedback_created_at BETWEEN $")
+                .append(index.getAndIncrement())
+                .append(" AND $")
+                .append(index.getAndIncrement());
+            params.add(tr.time());
+            params.add(tr.endtime());
+          }
+          default -> {}
+        }
+      }
+    }
 
     int limitIndex = index.getAndIncrement();
     int offsetIndex = index.getAndIncrement();
+
+    // Only feedback_created_at is exposed for sorting today; whitelist defensively
+    // rather than splicing an arbitrary column name into the SQL string.
+    OrderBy orderBy =
+        request.orderByList() != null && !request.orderByList().isEmpty()
+            ? request.orderByList().getFirst()
+            : null;
+
+    String orderDirection =
+        orderBy != null
+                && "feedback_created_at".equals(orderBy.getColumn())
+                && orderBy.getDirection() == OrderBy.Direction.ASC
+            ? "ASC"
+            : "DESC";
 
     // -----------------------------
     // Final SQL
     // -----------------------------
     String sql =
-      """
+        """
       SELECT
           id,
           user_id,
           asset_id,
+          asset_type,
           entity_rating,
           action_subtype,
           action_subdata,
+          feedback_created_at,
+          feedback_updated_at,
           COUNT(*) OVER() AS total_count
       FROM user_interactions
       """
-        + where
-        + """
-      ORDER BY asset_id
-      LIMIT $"""
-        + limitIndex
-        + " OFFSET $"
-        + offsetIndex;
+            + where
+            + " ORDER BY feedback_created_at "
+            + orderDirection
+            + " NULLS LAST"
+            + " LIMIT $"
+            + limitIndex
+            + " OFFSET $"
+            + offsetIndex;
 
     params.add(size);
     params.add(offset);
@@ -263,57 +239,39 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback>
     // Execute query
     // -----------------------------
     return postgresService
-      .executeQuery(sql, params)
-      .map(
-        rows -> {
+        .executeQuery(sql, params)
+        .map(
+            rows -> {
+              List<UserFeedback> result =
+                  rows.getRows().stream().map(obj -> UserFeedback.fromJson((JsonObject) obj)).toList();
 
-          List<UserFeedback> result =
-            rows.getRows().stream()
-              .map(obj -> {
-                JsonObject r = (JsonObject) obj;
+              long total = rows.getTotalCount();
 
-                return new UserFeedback(
-                  UUID.fromString(r.getString("id")),
-                  UUID.fromString(r.getString("user_id")),
-                  UUID.fromString(r.getString("asset_id")),
-                  r.getString("asset_type"),
-                  r.getInteger("entity_rating"),
-                  r.getString("action_subtype"),
-                  r.getJsonObject("action_subdata"));
-              })
-              .toList();
-
-          long total = rows.getTotalCount();
-
-          return new UserFeedbackPaginatedResponse(
-            result,
-            PaginationInfo.from(page, size, total));
-        });
+              return new UserFeedbackPaginatedResponse(
+                  result, PaginationInfo.from(page, size, total));
+            });
   }
 
   @Override
-  public Future<Boolean> deleteFeedback(UUID reqId, UUID userId) {
+  public Future<Boolean> deleteFeedback(UUID userId, UUID assetId) {
 
-    String sql = """
+    String sql =
+        """
       UPDATE user_interactions
-      SET action_subtype = NULL,
-          action_subdata = NULL,
-          entity_rating  = NULL
-      WHERE id = $1
-      AND user_id = $2
+      SET action_subtype      = NULL,
+          action_subdata      = NULL,
+          entity_rating       = NULL,
+          feedback_created_at = NULL,
+          feedback_updated_at = NULL
+      WHERE user_id = $1
+      AND asset_id = $2
       """;
 
-    JsonArray params = new JsonArray()
-      .add(reqId.toString())
-      .add(userId.toString());
+    JsonArray params = new JsonArray().add(userId.toString()).add(assetId.toString());
 
     LOGGER.debug("SQL: {}", sql);
     LOGGER.debug("Params: {}", params);
 
-    return postgresService.executeQuery(sql, params).map(v -> true);
+    return postgresService.executeQuery(sql, params).map(QueryResult::isRowsAffected);
   }
-
-
-
-
 }

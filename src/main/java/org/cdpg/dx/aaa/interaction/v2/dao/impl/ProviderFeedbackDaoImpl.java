@@ -186,13 +186,15 @@ public class ProviderFeedbackDaoImpl extends AbstractBaseDAO<ProviderFeedback>
   }
 
   @Override
-  public Future<Boolean> deleteProviderFeedback(UUID reqId, UUID userId) {
+  public Future<Boolean> deleteProviderFeedback(
+      UUID userId, UUID assetId, ProviderFeedbackType type) {
 
     Condition condition =
       new Condition(
         List.of(
           new Condition("user_id", Condition.Operator.EQUALS, List.of(userId.toString())),
-          new Condition("id", Condition.Operator.EQUALS, List.of(reqId.toString()))),
+          new Condition("asset_id", Condition.Operator.EQUALS, List.of(assetId.toString())),
+          new Condition("type", Condition.Operator.EQUALS, List.of(type.name()))),
         Condition.LogicalOperator.AND
       );
 

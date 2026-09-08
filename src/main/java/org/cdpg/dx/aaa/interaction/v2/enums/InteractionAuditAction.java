@@ -5,7 +5,13 @@ public enum InteractionAuditAction {
   DISLIKE("Dislike"),
   NEUTRAL("Neutral"),
   BOOKMARK("Bookmark"),
-  UNBOOKMARK("Unbookmark");
+  UNBOOKMARK("Unbookmark"),
+  RATING("Rating"),
+  VIEW_RATING("View Rating"),
+  REMOVE_RATING("Remove Rating"),
+  PROVIDER_FEEDBACK("Provider Feedback"),
+  VIEW_PROVIDER_FEEDBACK("View Provider Feedback"),
+  REMOVE_PROVIDER_FEEDBACK("Remove Provider Feedback");
 
   private final String value;
 

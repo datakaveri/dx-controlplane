@@ -6026,7 +6026,7 @@ paths:
           label: submit interaction
           source: |
             curl --location 'https://${HOSTNAME}/iudx/v2/user/interactions' \
-            --header 'Authorization: Bearer <jwt token>' \
+            --header 'Authorization: Bearer <your-token>' \
             --header 'Content-Type: application/json' \
             --data '{
             "assetId": "e74112d5-b58b-401e-a799-712b473279ea",
@@ -6118,7 +6118,7 @@ paths:
           source: |
             curl --location 'https://${HOSTNAME}/iudx/v2/user/interactions' \
             --header 'Content-Type: application/json' \
-            --header 'Authorization: Bearer <jwt token>'
+            --header 'Authorization: Bearer <your-token>'
   /iudx/v2/user/interactions/sync:
     get:
       tags:
@@ -6175,14 +6175,18 @@ paths:
           source: |
             curl --location 'https://${HOSTNAME}/iudx/v2/user/interactions/sync' \
             --header 'Content-Type: application/json' \
-            --header 'Authorization: Bearer <jwt token>'
+            --header 'Authorization: Bearer <your-token>'
   /iudx/v2/user/feedback:
     post:
       tags:
         - User Interactions
       summary: Post user feedback on entity
       description: |
-        Submit user feedback for a specific data asset, including an optional star rating (1-5) and/or a structured action subtype with associated data. The user must have already interacted with the asset (e.g., via download or API access). Requires an authenticated user token.
+        Submit user feedback for a specific data asset: a star rating (1-5) and/or a structured action subtype with associated data. The user must have already interacted with the asset (e.g., via download or API access). Requires an authenticated user token.
+
+        At least one of `entityRating` or the `actionSubtype`/`actionSubdata` pair must be provided; a request with neither results in a 400 Bad Request.
+
+        `actionSubtype` and `actionSubdata` are a paired field: if either one is provided, the other is also required. Providing only one of the two results in a 400 Bad Request. `entityRating` may be supplied independently of the `actionSubtype`/`actionSubdata` pair. Calling this endpoint again for the same `assetId` updates the existing feedback entry instead of creating a duplicate.
       operationId: post-user-feedback
       security:
         - authorization: []
@@ -6214,17 +6218,43 @@ paths:
                   description: Star rating from 1 (lowest) to 5 (highest)
                 actionSubtype:
                   type: string
-                  description: Structured feedback category (e.g., data quality, documentation)
+                  description: Structured feedback category (e.g., data quality, documentation). Required if actionSubdata is provided.
                 actionSubdata:
                   type: object
-                  description: Additional structured data associated with the feedback
-            example:
-              assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
-              assetType: DATABANK
-              entityRating: 4
-              actionSubtype: data_quality
-              actionSubdata:
-                comment: The data is accurate and well documented.
+                  description: Additional structured data associated with the feedback. Required if actionSubtype is provided.
+            examples:
+              ratingOnly:
+                summary: Star rating only
+                value:
+                  assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
+                  assetType: DATABANK
+                  entityRating: 5
+              structuredOnly:
+                summary: Structured feedback only (no rating)
+                value:
+                  assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
+                  assetType: AI_MODEL
+                  actionSubtype: documentation
+                  actionSubdata:
+                    comment: Documentation is missing usage examples.
+              full:
+                summary: Star rating and structured feedback
+                value:
+                  assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
+                  assetType: DATABANK
+                  entityRating: 4
+                  actionSubtype: data_quality
+                  actionSubdata:
+                    comment: The data is accurate and well documented.
+              useCase:
+                summary: Feedback on a use case asset
+                value:
+                  assetId: 811e9876-9381-4a25-8ad1-e8b289616ab8
+                  assetType: USECASE
+                  entityRating: 3
+                  actionSubtype: relevance
+                  actionSubdata:
+                    comment: Useful but could cover more edge cases.
       responses:
         '200':
           description: Feedback successfully recorded
@@ -6249,6 +6279,37 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GenericBadRequestResponse'
+              examples:
+                missingRequiredField:
+                  summary: Missing required field
+                  value:
+                    type: urn:dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: Missing or malformed request
+                missingFeedbackContent:
+                  summary: Neither entityRating nor actionSubtype/actionSubdata provided
+                  value:
+                    type: urn:dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: At least one of entityRating or actionSubtype/actionSubdata must be provided
+                orphanSubtype:
+                  summary: actionSubtype provided without actionSubdata
+                  value:
+                    type: urn:dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: actionSubdata is required when actionSubtype is provided
+                orphanSubdata:
+                  summary: actionSubdata provided without actionSubtype
+                  value:
+                    type: urn:dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: actionSubtype is required when actionSubdata is provided
+                invalidRating:
+                  summary: entityRating out of range
+                  value:
+                    type: urn:dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: entityRating must be between 1 and 5
         '401':
           description: Unauthorized
           content:
@@ -6265,6 +6326,47 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Post user feedback (rating + structured)
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback' \
+            --header 'Authorization: Bearer <your-token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+            "assetId": "9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8",
+            "assetType": "DATABANK",
+            "entityRating": 4,
+            "actionSubtype": "data_quality",
+            "actionSubdata": {
+            "comment": "The data is accurate and well documented."
+            }
+            }'
+        - lang: cURL
+          label: Post user feedback (rating only)
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback' \
+            --header 'Authorization: Bearer <your-token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+            "assetId": "9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8",
+            "assetType": "DATABANK",
+            "entityRating": 5
+            }'
+        - lang: cURL
+          label: Post user feedback (structured only)
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback' \
+            --header 'Authorization: Bearer <your-token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+            "assetId": "9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8",
+            "assetType": "AI_MODEL",
+            "actionSubtype": "documentation",
+            "actionSubdata": {
+            "comment": "Documentation is missing usage examples."
+            }
+            }'
     get:
       tags:
         - User Interactions
@@ -6299,8 +6401,52 @@ paths:
             type: array
             items:
               type: string
+        - name: rating
+          in: query
+          description: Filter by star rating (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: integer
+              minimum: 1
+              maximum: 5
+        - name: time
+          in: query
+          description: Start of the rating-creation time window. Requires `timerel`; requires `endtime` for `between`/`during`.
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: endtime
+          in: query
+          description: End of the rating-creation time window. Only used with `timerel=between` or `timerel=during`.
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: timerel
+          in: query
+          description: Temporal relation to apply against `ratingCreatedAt` when `time` is provided.
+          required: false
+          schema:
+            type: string
+            enum:
+              - before
+              - after
+              - between
+              - during
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
+        - name: sort
+          in: query
+          description: 'Sort results by rating creation time. Format: `ratingCreatedAt:asc` or `ratingCreatedAt:desc`. Defaults to `ratingCreatedAt:desc`.'
+          required: false
+          schema:
+            type: string
+          example: ratingCreatedAt:desc
       responses:
         '200':
           description: Successfully retrieved user feedback
@@ -6322,22 +6468,38 @@ paths:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
       x-codeSamples:
         - lang: cURL
-          label: Get user feedback
+          label: Get user feedback (by asset)
           source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback?assetId=811e9876-9381-4a25-8ad1-e8b289616ab8&actionSubtype=bookmark&page=1&size=10'
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback?assetId=811e9876-9381-4a25-8ad1-e8b289616ab8&page=1&size=10' \
+            --header 'Authorization: Bearer <your-token>'
+        - lang: cURL
+          label: Get user feedback (by user)
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback?userId=fd62ba22-d338-4dad-b09c-2bccfa20b04a&page=1&size=10' \
+            --header 'Authorization: Bearer <your-token>'
+        - lang: cURL
+          label: Get user feedback (by action subtype, repeatable)
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback?actionSubtype=data_quality&actionSubtype=documentation&page=1&size=10' \
+            --header 'Authorization: Bearer <your-token>'
+        - lang: cURL
+          label: Get user feedback (unfiltered, paginated)
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback?page=1&size=10' \
+            --header 'Authorization: Bearer <your-token>'
     delete:
       tags:
         - User Interactions
       summary: Delete user feedback
       description: |
-        Clears the feedback fields (entityRating, actionSubtype, actionSubdata) for a specific feedback entry. The record itself is retained. User should be the one who has already interacted with the asset before.
+        Clears the feedback fields (entityRating, actionSubtype, actionSubdata) for the authenticated user's feedback entry on the given asset. The record itself is retained. User should be the one who has already interacted with the asset before.
       operationId: delete-user-feedback
       security:
         - authorization: []
       parameters:
-        - name: id
+        - name: assetId
           in: query
-          description: UUID of the asset entry to delete
+          description: UUID of the asset whose feedback (from the authenticated user) should be cleared
           required: true
           schema:
             type: string
@@ -6376,6 +6538,23 @@ paths:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
                 detail: Missing or invalid Bearer token
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              example:
+                type: urn:dx:controlPlane:notFound
+                title: Not Found
+                detail: Feedback not found
         '500':
           description: Internal Server Error
           content:
@@ -6386,7 +6565,7 @@ paths:
         - lang: cURL
           label: Delete user feedback
           source: |
-            curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/user/feedback?id=811e9876-9381-4a25-8ad1-e8b289616ab8' --header 'Authorization: Bearer ${TOKEN}'
+            curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/user/feedback?assetId=811e9876-9381-4a25-8ad1-e8b289616ab8' --header 'Authorization: Bearer <your-token>'
   /iudx/v2/provider/feedback:
     post:
       tags:
@@ -6418,16 +6597,54 @@ paths:
                     - FEEDBACK
                     - INFO
                     - DATA_DESCRIPTION
+                    - SUGGESTION
                   description: Type of provider feedback
                 data:
                   type: object
                   description: Structured feedback data. Content varies by feedback type.
-            example:
-              assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
-              type: FAQ
-              data:
-                question: How frequently is this dataset updated?
-                answer: The dataset is updated daily.
+            examples:
+              faq:
+                summary: FAQ entry
+                value:
+                  assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
+                  type: FAQ
+                  data:
+                    question: How frequently is this dataset updated?
+                    answer: The dataset is updated daily.
+              feedback:
+                summary: General feedback
+                value:
+                  assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
+                  type: FEEDBACK
+                  data:
+                    comment: The API response times have improved significantly.
+              info:
+                summary: Informational note
+                value:
+                  assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
+                  type: INFO
+                  data:
+                    message: This dataset will be deprecated on 2026-12-31; migrate to v2.
+              dataDescription:
+                summary: Data description
+                value:
+                  assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
+                  type: DATA_DESCRIPTION
+                  data:
+                    field: temperature
+                    description: Ambient temperature in Celsius, sampled every 5 minutes.
+              suggestion:
+                summary: Suggestion
+                value:
+                  assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
+                  type: SUGGESTION
+                  data:
+                    suggestion: Add a CSV export option for query results.
+              minimal:
+                summary: Minimal (no structured data)
+                value:
+                  assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
+                  type: FEEDBACK
       responses:
         '200':
           description: Feedback successfully recorded
@@ -6452,6 +6669,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GenericBadRequestResponse'
+              example:
+                type: urn:dx:controlPlane:badRequest
+                title: Bad Request
+                detail: Missing or malformed request
         '401':
           description: Unauthorized
           content:
@@ -6462,12 +6683,61 @@ paths:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
                 detail: Missing or invalid Bearer token
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+              example:
+                type: urn:dx:controlPlane:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
         '500':
           description: Internal Server Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Post provider feedback (FAQ)
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/provider/feedback' \
+            --header 'Authorization: Bearer <your-token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+            "assetId": "9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8",
+            "type": "FAQ",
+            "data": {
+            "question": "How frequently is this dataset updated?",
+            "answer": "The dataset is updated daily."
+            }
+            }'
+        - lang: cURL
+          label: Post provider feedback (data description)
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/provider/feedback' \
+            --header 'Authorization: Bearer <your-token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+            "assetId": "9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8",
+            "type": "DATA_DESCRIPTION",
+            "data": {
+            "field": "temperature",
+            "description": "Ambient temperature in Celsius, sampled every 5 minutes."
+            }
+            }'
+        - lang: cURL
+          label: Post provider feedback (minimal, no data)
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/provider/feedback' \
+            --header 'Authorization: Bearer <your-token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+            "assetId": "9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8",
+            "type": "FEEDBACK"
+            }'
     get:
       tags:
         - User Interactions
@@ -6535,26 +6805,49 @@ paths:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
       x-codeSamples:
         - lang: cURL
-          label: Get provider feedback
+          label: Get provider feedback (by asset)
           source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/provider/feedback?assetId=811e9876-9381-4a25-8ad1-e8b289616ab8&type=bookmark&page=1&size=10'
+            curl --location 'https://${HOSTNAME}/iudx/v2/provider/feedback?assetId=811e9876-9381-4a25-8ad1-e8b289616ab8&page=1&size=10' \
+            --header 'Authorization: Bearer <your-token>'
+        - lang: cURL
+          label: Get provider feedback (by type, repeatable)
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/provider/feedback?type=FAQ&type=DATA_DESCRIPTION&page=1&size=10' \
+            --header 'Authorization: Bearer <your-token>'
+        - lang: cURL
+          label: Get provider feedback (by user)
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/provider/feedback?userId=fd62ba22-d338-4dad-b09c-2bccfa20b04a&page=1&size=10' \
+            --header 'Authorization: Bearer <your-token>'
     delete:
       tags:
         - User Interactions
       summary: Delete provider feedback
       description: |
-        Clears the feedback fields (data, type) for a specific feedback entry. User should be the one who has already interacted with the asset before.
+        Clears a specific provider feedback entry (identified by asset and feedback type) submitted by the authenticated user. User should be the one who has already interacted with the asset before.
       operationId: delete-provider-feedback
       security:
         - authorization: []
       parameters:
-        - name: id
+        - name: assetId
           in: query
-          description: UUID of the asset entry to delete
+          description: UUID of the asset whose feedback should be cleared
           required: true
           schema:
             type: string
             format: uuid
+        - name: type
+          in: query
+          description: Feedback type of the entry to clear
+          required: true
+          schema:
+            type: string
+            enum:
+              - FAQ
+              - FEEDBACK
+              - INFO
+              - DATA_DESCRIPTION
+              - SUGGESTION
       responses:
         '200':
           description: Feedback fields cleared successfully
@@ -6599,7 +6892,7 @@ paths:
         - lang: cURL
           label: Delete provider feedback
           source: |
-            curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/provider/feedback?id=811e9876-9381-4a25-8ad1-e8b289616ab8' --header 'Authorization: Bearer ${TOKEN}'
+            curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/provider/feedback?assetId=811e9876-9381-4a25-8ad1-e8b289616ab8&type=FAQ' --header 'Authorization: Bearer <your-token>'
   /iudx/v2/auth/kyc/verify:
     post:
       summary: Verify KYC
@@ -22433,31 +22726,7 @@ components:
         result:
           type: array
           items:
-            type: object
-            properties:
-              id:
-                type: string
-                format: uuid
-                description: UUID of the feedback
-              userId:
-                type: string
-                format: uuid
-                description: UUID of the user who submitted the feedback
-              assetId:
-                type: string
-                format: uuid
-                description: UUID of the asset
-              entityRating:
-                type: integer
-                minimum: 1
-                maximum: 5
-                description: Star rating from 1 (lowest) to 5 (highest)
-              actionSubtype:
-                type: string
-                description: Structured feedback category
-              actionSubdata:
-                type: object
-                description: Additional structured data associated with the feedback
+            $ref: '#/components/schemas/UserFeedbackResult'
         paginationInfo:
           type: object
           properties:
@@ -22485,14 +22754,17 @@ components:
         result:
           - id: 3f329ef8-c1e6-417f-93d6-6b568366612b
             userId: da56e517-f8bc-46fd-95e3-7257acd64da7
+            userName: Asha Rao
+            organisation: Acme Analytics
             assetId: 00b80a67-a5aa-43cf-ba60-dcd1c09b1c4f
             entityRating: 5
             actionSubtype: data_quality
             actionSubdata:
-              issue: Missing values
-              description: Some records contain missing values
+              comment: The data is accurate and well documented.
           - id: c2f5ef34-0362-40ae-b691-e3a6411a51da
             userId: 23100470-c8ce-4f9d-8555-94087378b5f6
+            userName: Rahul Mehta
+            organisation: null
             assetId: 02192219-802a-4d7d-a130-8cc892a9d0d2
             entityRating: 4
             actionSubtype: documentation
@@ -23673,6 +23945,55 @@ components:
           items:
             $ref: '#/components/schemas/TextSearchField'
           description: List of fields with optional boost values.
+    UserFeedbackResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID of the feedback
+        userId:
+          type: string
+          format: uuid
+          description: UUID of the user who submitted the feedback
+        userName:
+          type: string
+          nullable: true
+          description: Display name of the user who submitted the feedback, resolved best-effort from the identity provider
+        organisation:
+          type: string
+          nullable: true
+          description: Organisation name of the user who submitted the feedback, when available
+        assetId:
+          type: string
+          format: uuid
+          description: UUID of the asset
+        assetType:
+          type: string
+          description: Type of the asset
+          enum:
+            - DATABANK
+            - AI_MODEL
+            - USECASE
+        entityRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: Star rating from 1 (lowest) to 5 (highest)
+        actionSubtype:
+          type: string
+          description: Structured feedback category
+        actionSubdata:
+          type: object
+          description: Additional structured data associated with the feedback (e.g. a free-text comment)
+        ratingCreatedAt:
+          type: string
+          format: date-time
+          description: When this user first gave feedback/rating on this asset. Distinct from the asset's own interaction record, which is also touched by unrelated like/dislike/bookmark activity.
+        ratingUpdatedAt:
+          type: string
+          format: date-time
+          description: When this user's feedback/rating on this asset was last changed
     OrgCreateRequestItem:
       type: object
       properties:

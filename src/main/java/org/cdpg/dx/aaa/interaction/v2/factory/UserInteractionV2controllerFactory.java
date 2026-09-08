@@ -13,6 +13,7 @@ import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.postgres.service.PostgresService;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class UserInteractionV2controllerFactory {
 
@@ -20,12 +21,15 @@ public class UserInteractionV2controllerFactory {
       PostgresService postgresService,
       ItemService itemService,
       AuditingHandler auditingHandler,
-      URNGenerator urnGenerator) {
+      URNGenerator urnGenerator,
+      KeycloakUserService keycloakUserService) {
 
     UserInteractionV2Dao dao = new UserInteractionV2DaoImpl(postgresService);
     UserFeedbackDao userFeedbackDao = new UserFeedbackDaoImpl(postgresService);
     ProviderFeedbackDao providerFeedbackDao = new ProviderFeedbackDaoImpl(postgresService);
-    UserInteractionV2Service service = new UserInteractionV2ServiceImpl(dao, userFeedbackDao,providerFeedbackDao,itemService);
+    UserInteractionV2Service service =
+        new UserInteractionV2ServiceImpl(
+            dao, userFeedbackDao, providerFeedbackDao, itemService, keycloakUserService);
     return new UserInteractionV2Controller(
         auditingHandler,
         service,
