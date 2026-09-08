@@ -34,6 +34,21 @@ public final class InteractionAuditLogHelper {
         .build();
   }
 
+  /**
+   * Builds a feedback audit log (user rating or provider feedback). Unlike interaction audits,
+   * feedback has no like/dislike delta to record, so the context is left empty.
+   */
+  public static UserActivityAuditLogBuilder buildFeedbackAudit(
+      RoutingContext ctx, String assetId, InteractionAuditAction action) {
+
+    return AuditLogHelper.createBaseAudit(ctx)
+        .withLogType("USER_ACTION")
+        .withOriginServer("AAA")
+        .withAction(action.value())
+        .withAssetId(safeUuid(assetId))
+        .build();
+  }
+
   // ------------------------
   // Helpers
   // ------------------------

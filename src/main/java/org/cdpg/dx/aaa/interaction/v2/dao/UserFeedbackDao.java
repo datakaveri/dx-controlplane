@@ -11,9 +11,7 @@ import java.util.UUID;
 
 public interface UserFeedbackDao {
 
-  Future<UserFeedback> updateFeedback(UserFeedback userFeedback);
-
-  Future<Boolean> deleteFeedback(UUID reqId,UUID userId);
+  Future<Boolean> deleteFeedback(UUID userId, UUID assetId);
 
   Future<UserFeedbackPaginatedResponse> fetchUserFeedbacks(PaginatedRequest request);
 

@@ -1,9 +1,11 @@
 package org.cdpg.dx.aaa.interaction.v2.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.database.postgres.base.entity.BaseEntity;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -14,8 +16,10 @@ public record UserFeedback(
   UUID assetId,
   String assetType,
   Integer entityRating,
-  String actionSubType,
-  JsonObject actionSubData)
+  @JsonProperty("actionSubtype") String actionSubType,
+  @JsonProperty("actionSubdata") JsonObject actionSubData,
+  LocalDateTime ratingCreatedAt,
+  LocalDateTime ratingUpdatedAt)
   implements BaseEntity<UserFeedback> {
 
   public static UserFeedback fromJson(JsonObject json) {
@@ -48,7 +52,15 @@ public record UserFeedback(
         // nullable
       json.getJsonObject("action_subdata") != null
         ? json.getJsonObject("action_subdata")
-        : null // nullable
+        : null, // nullable
+
+      json.getString("feedback_created_at") != null
+        ? LocalDateTime.parse(json.getString("feedback_created_at"))
+        : null,
+
+      json.getString("feedback_updated_at") != null
+        ? LocalDateTime.parse(json.getString("feedback_updated_at"))
+        : null
     );
   }
 
@@ -107,7 +119,10 @@ public record UserFeedback(
 
         json.getJsonObject("actionSubdata") != null
             ? json.getJsonObject("actionSubdata")
-            : null);
+            : null,
+
+        null,
+        null);
   }
 
   @Override
@@ -135,6 +150,12 @@ public record UserFeedback(
 
     if (actionSubData != null)
       json.put("actionSubdata", actionSubData);
+
+    if (ratingCreatedAt != null)
+      json.put("ratingCreatedAt", ratingCreatedAt.toString());
+
+    if (ratingUpdatedAt != null)
+      json.put("ratingUpdatedAt", ratingUpdatedAt.toString());
 
     return json;
   }

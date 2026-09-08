@@ -14,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.aaa.interaction.v2.enums.InteractionAction;
 import org.cdpg.dx.aaa.interaction.v2.enums.InteractionAuditAction;
+import org.cdpg.dx.aaa.interaction.v2.enums.ProviderFeedbackType;
 import org.cdpg.dx.aaa.interaction.v2.model.InteractionDelta;
 import org.cdpg.dx.aaa.interaction.v2.model.ProviderFeedback;
 import org.cdpg.dx.aaa.interaction.v2.model.UserFeedback;
@@ -36,7 +37,13 @@ public class UserInteractionV2Controller implements ApiController {
   private static final Map<String, String> FILTER_MAP =
       Map.of("assetId", "asset_id", "assetType", "asset_type", "actionType", "action_type");
   private static final Map<String, String> FEEDBACK_FILTER_MAP =
-      Map.of("assetId", "asset_id", "actionSubType", "asset_subtype", "userId", "user_id");
+      Map.of(
+          "assetId", "asset_id",
+          "actionSubtype", "action_subtype",
+          "userId", "user_id",
+          "rating", "entity_rating",
+          "ratingCreatedAt", "feedback_created_at");
+  private static final Set<String> FEEDBACK_SORT_FIELDS = Set.of("ratingCreatedAt");
   private static final Map<String, String> PROVIDER_FEEDBACK_FILTER_MAP =
       Map.of("assetId", "asset_id", "type", "type", "userId", "user_id");
 
@@ -80,31 +87,37 @@ public class UserInteractionV2Controller implements ApiController {
 
     builder
         .operation(OP_POST_USER_FEEDBACK)
+        .handler(auditingHandler::handleApiAudit)
         .handler(userScopedAccess)
         .handler(this::handlePostUpdateUserFeedbackRequest);
 
     builder
         .operation(OP_GET_USER_FEEDBACK)
+        .handler(auditingHandler::handleApiAudit)
         .handler(userScopedAccess)
         .handler(this::handleGetUserFeedbackRequest);
 
     builder
         .operation(OP_DELETE_USER_FEEDBACK)
+        .handler(auditingHandler::handleApiAudit)
         .handler(userScopedAccess)
         .handler(this::handleDeleteUserFeedbackRequest);
 
     builder
         .operation(OP_POST_PROVIDER_FEEDBACK)
+        .handler(auditingHandler::handleApiAudit)
         .handler(providerFeedbackAccess)
         .handler(this::handlePostUpdateProviderFeedbackRequest);
 
     builder
         .operation(OP_GET_PROVIDER_FEEDBACK)
+        .handler(auditingHandler::handleApiAudit)
         .handler(providerFeedbackAccess)
         .handler(this::handleGetProviderFeedbackRequest);
 
     builder
         .operation(OP_DELETE_PROVIDER_FEEDBACK)
+        .handler(auditingHandler::handleApiAudit)
         .handler(providerFeedbackAccess)
         .handler(this::handleDeleteProviderFeedbackRequest);
   }
@@ -152,7 +165,7 @@ public class UserInteractionV2Controller implements ApiController {
           PaginationRequestBuilder.from(ctx)
               .allowedFiltersDbMap(FILTER_MAP)
               .apiToDbMap(FILTER_MAP)
-              .additionalFilters(Map.of("userId", ctx.user().subject()))
+              .additionalFilters(Map.of("user_id", ctx.user().subject()))
               .allowedTimeFields(Set.of(CREATED_AT))
               .build();
       LOGGER.debug("paginated request has been build ");
@@ -240,9 +253,17 @@ public class UserInteractionV2Controller implements ApiController {
       service
           .postUserFeedback(userFeedback)
           .onSuccess(
-              v ->
-                  ResponseBuilder.sendSuccess(
-                      ctx, "Interaction updated successfully", urnGenerator))
+              v -> {
+                UserActivityAuditLogBuilder auditLog =
+                    InteractionAuditLogHelper.buildFeedbackAudit(
+                        ctx,
+                        userFeedback.assetId() != null ? userFeedback.assetId().toString() : null,
+                        InteractionAuditAction.RATING);
+                CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+
+                ResponseBuilder.sendSuccess(
+                    ctx, "Interaction updated successfully", urnGenerator);
+              })
           .onFailure(
               err -> {
                 LOGGER.error("POST /user/feedback failed", err);
@@ -263,8 +284,10 @@ public class UserInteractionV2Controller implements ApiController {
           PaginationRequestBuilder.from(ctx)
               .allowedFiltersDbMap(FEEDBACK_FILTER_MAP)
               .apiToDbMap(FEEDBACK_FILTER_MAP)
-              //.additionalFilters(Map.of("userId", ctx.user().subject()))
-              .allowedTimeFields(Set.of(CREATED_AT))
+              //.additionalFilters(Map.of("user_id", ctx.user().subject()))
+              .allowedSortFields(FEEDBACK_SORT_FIELDS)
+              .defaultSort("feedback_created_at", "desc")
+              .defaultTimeField("feedback_created_at")
               .build();
       LOGGER.debug("paginated request has been build ");
       service
@@ -272,8 +295,14 @@ public class UserInteractionV2Controller implements ApiController {
           .onSuccess(
               result -> {
                 LOGGER.info("Fetched user feedbacks successfully");
+
+                UserActivityAuditLogBuilder auditLog =
+                    InteractionAuditLogHelper.buildFeedbackAudit(
+                        ctx, null, InteractionAuditAction.VIEW_RATING);
+                CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+
                 ResponseBuilder.sendSuccess(
-                    ctx, result.data(), result.paginationInfo(), urnGenerator);
+                    ctx, result.result(), result.paginationInfo(), urnGenerator);
               })
           .onFailure(
               err -> {
@@ -288,24 +317,30 @@ public class UserInteractionV2Controller implements ApiController {
   }
 
   private void handleDeleteUserFeedbackRequest(RoutingContext ctx) {
-    LOGGER.info("DELETE /user/feedback?id= called");
+    LOGGER.info("DELETE /user/feedback?assetId= called");
     try {
-      String idParam = ctx.queryParam("id").getFirst();
+      String assetIdParam = ctx.queryParam("assetId").getFirst();
 
-      if (idParam == null) {
-        ctx.fail(new IllegalArgumentException("Missing required query parameter: id"));
+      if (assetIdParam == null) {
+        ctx.fail(new IllegalArgumentException("Missing required query parameter: assetId"));
         return;
       }
 
-      UUID reqId = UUID.fromString(idParam);
+      UUID assetId = UUID.fromString(assetIdParam);
       UUID userId = UUID.fromString(ctx.user().subject());
 
       service
-          .deleteUserFeedback(reqId, userId)
+          .deleteUserFeedback(userId, assetId)
           .onSuccess(
-              v ->
-                  ResponseBuilder.sendSuccess(
-                      ctx, "Interaction deleted successfully", urnGenerator))
+              v -> {
+                UserActivityAuditLogBuilder auditLog =
+                    InteractionAuditLogHelper.buildFeedbackAudit(
+                        ctx, assetId.toString(), InteractionAuditAction.REMOVE_RATING);
+                CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+
+                ResponseBuilder.sendSuccess(
+                    ctx, "Interaction deleted successfully", urnGenerator);
+              })
           .onFailure(
               err -> {
                 LOGGER.error("Delete /user/feedback failed", err);
@@ -313,7 +348,7 @@ public class UserInteractionV2Controller implements ApiController {
               });
 
     } catch (Exception e) {
-      LOGGER.error("Invalid POST /user/feedback request", e);
+      LOGGER.error("Invalid DELETE /user/feedback request", e);
       ctx.fail(e);
     }
   }
@@ -330,9 +365,19 @@ public class UserInteractionV2Controller implements ApiController {
       service
           .postProviderFeedback(providerFeedback)
           .onSuccess(
-              v ->
-                  ResponseBuilder.sendSuccess(
-                      ctx, "Interaction updated successfully", urnGenerator))
+              v -> {
+                UserActivityAuditLogBuilder auditLog =
+                    InteractionAuditLogHelper.buildFeedbackAudit(
+                        ctx,
+                        providerFeedback.assetId() != null
+                            ? providerFeedback.assetId().toString()
+                            : null,
+                        InteractionAuditAction.PROVIDER_FEEDBACK);
+                CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+
+                ResponseBuilder.sendSuccess(
+                    ctx, "Interaction updated successfully", urnGenerator);
+              })
           .onFailure(
               err -> {
                 LOGGER.error("POST /provider/feedback failed", err);
@@ -354,7 +399,7 @@ public class UserInteractionV2Controller implements ApiController {
           PaginationRequestBuilder.from(ctx)
               .allowedFiltersDbMap(PROVIDER_FEEDBACK_FILTER_MAP)
               .apiToDbMap(PROVIDER_FEEDBACK_FILTER_MAP)
-              //.additionalFilters(Map.of("userId", ctx.user().subject()))
+              // .additionalFilters(Map.of("userId", ctx.user().subject()))
               .allowedTimeFields(Set.of(CREATED_AT))
               .build();
       LOGGER.debug("paginated request has been build ");
@@ -363,6 +408,12 @@ public class UserInteractionV2Controller implements ApiController {
           .onSuccess(
               result -> {
                 LOGGER.info("Fetched provider feedbacks successfully");
+
+                UserActivityAuditLogBuilder auditLog =
+                    InteractionAuditLogHelper.buildFeedbackAudit(
+                        ctx, null, InteractionAuditAction.VIEW_PROVIDER_FEEDBACK);
+                CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+
                 ResponseBuilder.sendSuccess(
                     ctx, result.data(), result.paginationInfo(), urnGenerator);
               })
@@ -379,39 +430,53 @@ public class UserInteractionV2Controller implements ApiController {
   }
 
   private void handleDeleteProviderFeedbackRequest(RoutingContext ctx) {
-    LOGGER.info("DELETE /user/feedback called");
+    LOGGER.info("DELETE /provider/feedback?assetId=&type= called");
     try {
-      String idParam = ctx.queryParam("id").getFirst();
+      String assetIdParam = ctx.queryParam("assetId").getFirst();
+      String typeParam = ctx.queryParam("type").getFirst();
 
-      if (idParam == null) {
-        ctx.fail(new IllegalArgumentException("Missing required query parameter: id"));
+      if (assetIdParam == null) {
+        ctx.fail(new IllegalArgumentException("Missing required query parameter: assetId"));
         return;
       }
 
-      UUID reqId;
+      if (typeParam == null) {
+        ctx.fail(new IllegalArgumentException("Missing required query parameter: type"));
+        return;
+      }
+
+      UUID assetId;
+      ProviderFeedbackType type;
       try {
-        reqId = UUID.fromString(idParam);
+        assetId = UUID.fromString(assetIdParam);
+        type = ProviderFeedbackType.fromString(typeParam);
       } catch (IllegalArgumentException e) {
-        ctx.fail(new IllegalArgumentException("Invalid UUID format for parameter: id"));
+        ctx.fail(new IllegalArgumentException("Invalid value for parameter: assetId or type"));
         return;
       }
 
       UUID userId = UUID.fromString(ctx.user().subject());
 
       service
-          .deleteProviderFeedback(reqId, userId)
+          .deleteProviderFeedback(userId, assetId, type)
           .onSuccess(
-              v ->
-                  ResponseBuilder.sendSuccess(
-                      ctx, "Interaction deleted successfully", urnGenerator))
+              v -> {
+                UserActivityAuditLogBuilder auditLog =
+                    InteractionAuditLogHelper.buildFeedbackAudit(
+                        ctx, assetId.toString(), InteractionAuditAction.REMOVE_PROVIDER_FEEDBACK);
+                CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+
+                ResponseBuilder.sendSuccess(
+                    ctx, "Interaction deleted successfully", urnGenerator);
+              })
           .onFailure(
               err -> {
-                LOGGER.error("Delete /user/feedback failed", err);
+                LOGGER.error("Delete /provider/feedback failed", err);
                 ctx.fail(err);
               });
 
     } catch (Exception e) {
-      LOGGER.error("Invalid Delete /user/feedback request", e);
+      LOGGER.error("Invalid DELETE /provider/feedback request", e);
       ctx.fail(e);
     }
   }

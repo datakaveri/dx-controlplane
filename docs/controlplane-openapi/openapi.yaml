@@ -742,6 +742,8 @@ components:
       $ref: components/schemas/interaction.yaml#/InteractionResponse
     UserFeedbackRequest:
       $ref: components/schemas/interaction.yaml#/UserFeedbackRequest
+    UserFeedbackResult:
+      $ref: components/schemas/interaction.yaml#/UserFeedbackResult
     UserFeedbackPaginatedResponse:
       $ref: components/schemas/interaction.yaml#/UserFeedbackPaginatedResponse
     ProviderFeedbackPaginatedResponse:

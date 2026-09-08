@@ -368,7 +368,11 @@ public class ControllerFactory {
     // User interactions v2
     controllers.add(
         UserInteractionV2controllerFactory.create(
-            infra.pgService(), shared.itemService(), shared.auditingHandler(), urnGenerator));
+            infra.pgService(),
+            shared.itemService(),
+            shared.auditingHandler(),
+            urnGenerator,
+            shared.keycloakUserService()));
 
     // Request conversations
     controllers.add(
