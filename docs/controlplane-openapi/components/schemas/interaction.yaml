@@ -122,8 +122,58 @@ UserFeedbackResult:
       type: string
       format: date-time
       description: When this user's feedback/rating on this asset was last changed
+RatingSummary:
+  type: object
+  description: >-
+    Aggregate rating summary across the full set of feedback rows matching the
+    request's filters (not scoped to the current page).
+  required:
+  - averageRating
+  - totalRatings
+  - ratingDistribution
+  properties:
+    averageRating:
+      type: number
+      format: double
+      description: Average star rating across all matching feedback rows, rounded to 2 decimal places. 0 when there are no ratings.
+      example: 4.5
+    totalRatings:
+      type: integer
+      format: int64
+      description: Total number of feedback rows with a non-null rating in the matching set.
+      example: 2
+    ratingDistribution:
+      type: object
+      description: Count of ratings per star value, keyed "1" through "5".
+      properties:
+        '1':
+          type: integer
+          format: int64
+          example: 0
+        '2':
+          type: integer
+          format: int64
+          example: 0
+        '3':
+          type: integer
+          format: int64
+          example: 0
+        '4':
+          type: integer
+          format: int64
+          example: 1
+        '5':
+          type: integer
+          format: int64
+          example: 1
 UserFeedbackPaginatedResponse:
   type: object
+  required:
+  - type
+  - title
+  - summary
+  - result
+  - paginationInfo
   properties:
     type:
       type: string
@@ -131,41 +181,33 @@ UserFeedbackPaginatedResponse:
     title:
       type: string
       example: Success
+    summary:
+      $ref: '#/RatingSummary'
     result:
       type: array
       items:
         $ref: '#/UserFeedbackResult'
     paginationInfo:
-      type: object
-      properties:
-        page:
-          type: integer
-          example: 1
-        size:
-          type: integer
-          example: 10
-        totalCount:
-          type: integer
-          example: 2
-        totalPages:
-          type: integer
-          example: 1
-        hasNext:
-          type: boolean
-          example: false
-        hasPrevious:
-          type: boolean
-          example: false
-
+      $ref: pagination.yaml#/PaginationInfoResponse
   example:
     type: urn:dx:controlPlane:success
     title: Success
+    summary:
+      averageRating: 4.5
+      totalRatings: 2
+      ratingDistribution:
+        '1': 0
+        '2': 0
+        '3': 0
+        '4': 1
+        '5': 1
     result:
       - id: 3f329ef8-c1e6-417f-93d6-6b568366612b
         userId: da56e517-f8bc-46fd-95e3-7257acd64da7
         userName: Asha Rao
         organisation: Acme Analytics
         assetId: 00b80a67-a5aa-43cf-ba60-dcd1c09b1c4f
+        assetType: DATABANK
         entityRating: 5
         actionSubtype: data_quality
         actionSubdata:
@@ -176,6 +218,7 @@ UserFeedbackPaginatedResponse:
         userName: Rahul Mehta
         organisation: null
         assetId: 02192219-802a-4d7d-a130-8cc892a9d0d2
+        assetType: AI_MODEL
         entityRating: 4
         actionSubtype: documentation
         actionSubdata:

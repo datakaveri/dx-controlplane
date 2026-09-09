@@ -20,7 +20,7 @@ public interface UserInteractionV2Service {
 
   Future<UserFeedback> postUserFeedback(UserFeedback request);
 
-  Future<PaginatedApiResponse<UserFeedbackResponse>> getUserFeedback(PaginatedRequest request);
+  Future<UserFeedbackPage> getUserFeedback(PaginatedRequest request);
 
   Future<Boolean> deleteUserFeedback(UUID userId, UUID assetId);
 

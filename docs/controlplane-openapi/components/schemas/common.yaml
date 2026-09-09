@@ -510,7 +510,7 @@ updateNotificationBadRequest:
   - title
   - detail
   example:
-    type: urn:dx:acl:badRequest
+    type: urn:dx:controlPlane:badRequest
     title: Bad Request
     detail: Missing or malformed request
 reportGenerationBadRequest:
@@ -1318,7 +1318,7 @@ generalBadRequest:
   - title
   - detail
   example:
-    type: urn:dx:acl:badRequest
+    type: urn:dx:controlPlane:badRequest
     title: Bad Request
     detail: Bad Request
 name:

@@ -664,7 +664,7 @@ public class DelegationServiceImpl implements DelegationService {
                 constraint.getString("scope") != null ? constraint.getString("scope") : "*")
             .put(
                 "expiry_at",
-                constraintExpiry != null
+                constraintExpiry != null && !constraintExpiry.isBlank()
                     ? constraintExpiry
                     : (grantExpiry != null ? grantExpiry.format(FORMATTER) : null))
             .put("entity_id", entityId != null ? entityId : "*")

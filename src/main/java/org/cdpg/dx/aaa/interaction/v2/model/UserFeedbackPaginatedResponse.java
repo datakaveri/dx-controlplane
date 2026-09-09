@@ -5,4 +5,4 @@ import org.cdpg.dx.common.util.PaginationInfo;
 import java.util.List;
 
 public record UserFeedbackPaginatedResponse(
-  List<UserFeedback> data, PaginationInfo paginationInfo) {}
+  List<UserFeedback> data, RatingSummary summary, PaginationInfo paginationInfo) {}

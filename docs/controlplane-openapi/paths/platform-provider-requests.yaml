@@ -149,7 +149,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: urn:dx:controlPlane:NotFound
+              type: urn:dx:controlPlane:notFound
               title: Not Found
               detail: No pending platform provider request found for this user
     x-codeSamples:
@@ -214,7 +214,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: urn:dx:controlPlane:NotFound
+              type: urn:dx:controlPlane:notFound
               title: Not Found
               detail: No pending platform provider request found for this user
     x-codeSamples:
@@ -455,7 +455,7 @@
             schema:
               $ref: ../components/schemas/common.yaml#/ErrorResponse
             example:
-              type: urn:dx:controlPlane:NotFound
+              type: urn:dx:controlPlane:notFound
               title: Not Found
               detail: No provider role request found with the given ID
     x-codeSamples:

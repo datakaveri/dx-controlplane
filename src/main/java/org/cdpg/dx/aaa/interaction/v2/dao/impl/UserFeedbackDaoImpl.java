@@ -1,9 +1,11 @@
 package org.cdpg.dx.aaa.interaction.v2.dao.impl;
 
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -12,6 +14,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.interaction.dao.impl.UserInteractionDaoImpl;
 import org.cdpg.dx.aaa.interaction.v2.dao.UserFeedbackDao;
+import org.cdpg.dx.aaa.interaction.v2.model.RatingSummary;
 import org.cdpg.dx.aaa.interaction.v2.model.UserFeedback;
 import org.cdpg.dx.aaa.interaction.v2.model.UserFeedbackPaginatedResponse;
 import org.cdpg.dx.common.request.PaginatedRequest;
@@ -109,21 +112,15 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implement
         .map(rows -> UserFeedback.fromJson(rows.getRows().getJsonObject(0)));
   }
 
-  @Override
-  public Future<UserFeedbackPaginatedResponse> fetchUserFeedbacks(PaginatedRequest request) {
+  // Shared WHERE-clause builder for the paginated feedback list and the (page-invariant)
+  // rating summary below — same filters, different base predicate and independent
+  // placeholder numbering since each is run as its own prepared statement.
+  private record FilterClause(String sql, JsonArray params, int nextIndex) {}
 
-    int page = request.page();
-    int size = request.size();
-    int offset = (page - 1) * size;
+  private FilterClause buildFilterClause(
+      String basePredicate, Map<String, Object> filters, List<TemporalRequest> temporalRequests) {
 
-    Map<String, Object> filters = request.filters();
-    LOGGER.debug("filters: {}", filters);
-
-    // user_interactions is shared with like/dislike/bookmark tracking; only rows
-    // that actually carry feedback (a rating and/or a structured action) belong
-    // in this response, not every interaction row for the matched user/asset.
-    StringBuilder where =
-        new StringBuilder(" WHERE (entity_rating IS NOT NULL OR action_subtype IS NOT NULL) ");
+    StringBuilder where = new StringBuilder(" WHERE ").append(basePredicate);
     JsonArray params = new JsonArray();
     AtomicInteger index = new AtomicInteger(1);
 
@@ -156,7 +153,6 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implement
     // feedback_created_at is a dedicated column (distinct from the shared created_at used by
     // like/dislike/bookmark activity on the same row); only that field is exposed for temporal
     // filtering here, so any other timeField configured upstream is intentionally ignored.
-    List<TemporalRequest> temporalRequests = request.temporalRequests();
     if (temporalRequests != null) {
       for (TemporalRequest tr : temporalRequests) {
         if (!"feedback_created_at".equals(tr.timeField())) continue;
@@ -185,8 +181,36 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implement
       }
     }
 
-    int limitIndex = index.getAndIncrement();
-    int offsetIndex = index.getAndIncrement();
+    return new FilterClause(where.toString(), params, index.get());
+  }
+
+  private RatingSummary toRatingSummary(JsonObject row) {
+    long total = row.getLong("total_ratings", 0L);
+    if (total == 0) {
+      return RatingSummary.empty();
+    }
+
+    double average = Math.round(row.getDouble("average_rating", 0.0) * 100.0) / 100.0;
+
+    Map<String, Long> distribution = new LinkedHashMap<>();
+    for (int star = 1; star <= 5; star++) {
+      distribution.put(String.valueOf(star), row.getLong("rating_" + star, 0L));
+    }
+
+    return new RatingSummary(average, total, distribution);
+  }
+
+  @Override
+  public Future<UserFeedbackPaginatedResponse> fetchUserFeedbacks(PaginatedRequest request) {
+
+    int page = request.page();
+    int size = request.size();
+    int offset = (page - 1) * size;
+
+    Map<String, Object> filters = request.filters();
+    LOGGER.debug("filters: {}", filters);
+
+    List<TemporalRequest> temporalRequests = request.temporalRequests();
 
     // Only feedback_created_at is exposed for sorting today; whitelist defensively
     // rather than splicing an arbitrary column name into the SQL string.
@@ -203,8 +227,18 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implement
             : "DESC";
 
     // -----------------------------
-    // Final SQL
+    // Paginated feedback rows
     // -----------------------------
+    // user_interactions is shared with like/dislike/bookmark tracking; only rows
+    // that actually carry feedback (a rating and/or a structured action) belong
+    // in this response, not every interaction row for the matched user/asset.
+    FilterClause pageFilter =
+        buildFilterClause(
+            "(entity_rating IS NOT NULL OR action_subtype IS NOT NULL)", filters, temporalRequests);
+
+    int limitIndex = pageFilter.nextIndex();
+    int offsetIndex = limitIndex + 1;
+
     String sql =
         """
       SELECT
@@ -220,7 +254,7 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implement
           COUNT(*) OVER() AS total_count
       FROM user_interactions
       """
-            + where
+            + pageFilter.sql()
             + " ORDER BY feedback_created_at "
             + orderDirection
             + " NULLS LAST"
@@ -229,28 +263,64 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implement
             + " OFFSET $"
             + offsetIndex;
 
+    JsonArray params = pageFilter.params().copy();
     params.add(size);
     params.add(offset);
 
     LOGGER.debug("SQL: {}", sql);
     LOGGER.debug("Params: {}", params);
 
+    Future<PagedRows> pageFuture =
+        postgresService
+            .executeQuery(sql, params)
+            .map(
+                rows ->
+                    new PagedRows(
+                        rows.getRows().stream()
+                            .map(obj -> UserFeedback.fromJson((JsonObject) obj))
+                            .toList(),
+                        rows.getTotalCount()));
+
     // -----------------------------
-    // Execute query
+    // Full-set rating summary (never page-scoped, so no LIMIT/OFFSET here)
     // -----------------------------
-    return postgresService
-        .executeQuery(sql, params)
+    FilterClause summaryFilter = buildFilterClause("entity_rating IS NOT NULL", filters, temporalRequests);
+
+    String summarySql =
+        """
+      SELECT
+          COUNT(*) AS total_ratings,
+          COALESCE(AVG(entity_rating), 0)::double precision AS average_rating,
+          COUNT(*) FILTER (WHERE entity_rating = 1) AS rating_1,
+          COUNT(*) FILTER (WHERE entity_rating = 2) AS rating_2,
+          COUNT(*) FILTER (WHERE entity_rating = 3) AS rating_3,
+          COUNT(*) FILTER (WHERE entity_rating = 4) AS rating_4,
+          COUNT(*) FILTER (WHERE entity_rating = 5) AS rating_5
+      FROM user_interactions
+      """
+            + summaryFilter.sql();
+
+    LOGGER.debug("Summary SQL: {}", summarySql);
+    LOGGER.debug("Summary Params: {}", summaryFilter.params());
+
+    Future<RatingSummary> summaryFuture =
+        postgresService
+            .executeQuery(summarySql, summaryFilter.params())
+            .map(rows -> toRatingSummary(rows.getRows().getJsonObject(0)));
+
+    List<Future> futures = List.of(pageFuture, summaryFuture);
+    return CompositeFuture.all(futures)
         .map(
-            rows -> {
-              List<UserFeedback> result =
-                  rows.getRows().stream().map(obj -> UserFeedback.fromJson((JsonObject) obj)).toList();
-
-              long total = rows.getTotalCount();
-
+            cf -> {
+              PagedRows paged = pageFuture.result();
               return new UserFeedbackPaginatedResponse(
-                  result, PaginationInfo.from(page, size, total));
+                  paged.data(),
+                  summaryFuture.result(),
+                  PaginationInfo.from(page, size, paged.total()));
             });
   }
+
+  private record PagedRows(List<UserFeedback> data, long total) {}
 
   @Override
   public Future<Boolean> deleteFeedback(UUID userId, UUID assetId) {
