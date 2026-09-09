@@ -275,7 +275,7 @@
             example:
               type: urn:dx:controlPlane:notFound
               title: Not Found
-              detail: Resource server not found
+              detail: No matching requestId found in resource table
     x-codeSamples:
     - lang: cURL
       label: Get Resource Server by ID
