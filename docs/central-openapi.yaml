@@ -4692,11 +4692,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/generalBadRequest'
         '401':
-          description: Unauthorized
+          description: Unauthorized - Token invalid or expired
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - User is not the delegator or is not allowed to delegate the requested scope
           content:
@@ -4801,11 +4805,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/generalBadRequest'
         '401':
-          description: Unauthorized
+          description: Unauthorized - Token invalid or expired
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - User is not the delegator
           content:
@@ -11469,7 +11477,7 @@ paths:
               example:
                 type: urn:dx:controlPlane:notFound
                 title: Not Found
-                detail: Resource server not found
+                detail: No matching requestId found in resource table
       x-codeSamples:
         - lang: cURL
           label: Get Resource Server by ID

@@ -120,28 +120,6 @@ AssetRequest:
   - user
   - updatedAt
   - requestedAt
-UpdateAccessRequest:
-  title: Delete notification forbidden
-  type: object
-  additionalProperties: false
-  properties:
-    type:
-      type: string
-      minLength: 1
-    title:
-      type: string
-      minLength: 1
-    detail:
-      type: string
-      minLength: 1
-  required:
-  - type
-  - title
-  - detail
-  example:
-    type: urn:dx:acl:success
-    title: Success
-    detail: Request updated successfully
 AccessRequest:
   type: object
   properties:
