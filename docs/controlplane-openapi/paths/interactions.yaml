@@ -294,6 +294,7 @@
             required:
               - assetId
               - assetType
+              - entityRating
             properties:
               assetId:
                 type: string
