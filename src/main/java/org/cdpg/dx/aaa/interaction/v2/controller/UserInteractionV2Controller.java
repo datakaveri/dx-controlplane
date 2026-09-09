@@ -18,6 +18,7 @@ import org.cdpg.dx.aaa.interaction.v2.enums.ProviderFeedbackType;
 import org.cdpg.dx.aaa.interaction.v2.model.InteractionDelta;
 import org.cdpg.dx.aaa.interaction.v2.model.ProviderFeedback;
 import org.cdpg.dx.aaa.interaction.v2.model.UserFeedback;
+import org.cdpg.dx.aaa.interaction.v2.model.UserFeedbackResult;
 import org.cdpg.dx.aaa.interaction.v2.model.UserInteractionV2Request;
 import org.cdpg.dx.aaa.interaction.v2.service.UserInteractionV2Service;
 import org.cdpg.dx.aaa.interaction.v2.util.InteractionAuditLogHelper;
@@ -302,7 +303,10 @@ public class UserInteractionV2Controller implements ApiController {
                 CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
 
                 ResponseBuilder.sendSuccess(
-                    ctx, result.result(), result.paginationInfo(), urnGenerator);
+                    ctx,
+                    new UserFeedbackResult(result.summary(), result.data()),
+                    result.paginationInfo(),
+                    urnGenerator);
               })
           .onFailure(
               err -> {

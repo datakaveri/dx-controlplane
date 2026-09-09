@@ -231,15 +231,16 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
   }
 
   @Override
-  public Future<PaginatedApiResponse<UserFeedbackResponse>> getUserFeedback(
-      PaginatedRequest request) {
+  public Future<UserFeedbackPage> getUserFeedback(PaginatedRequest request) {
     LOGGER.debug("UserInteractionsPaginatedResponse() method started");
     return userFeedbackDao
         .fetchUserFeedbacks(request)
         .compose(
             page ->
                 enrichFeedbackList(page.data())
-                    .map(enriched -> new PaginatedApiResponse<>(enriched, page.paginationInfo())));
+                    .map(
+                        enriched ->
+                            new UserFeedbackPage(page.summary(), enriched, page.paginationInfo())));
   }
 
   // =====================================================

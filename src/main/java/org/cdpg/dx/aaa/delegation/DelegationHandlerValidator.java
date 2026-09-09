@@ -54,9 +54,6 @@ public class DelegationHandlerValidator {
     for (int i = 0; i < rolesArray.size(); i++) {
       JsonObject roleObj = rolesArray.getJsonObject(i);
       String role = roleObj.getString("role");
-      LOGGER.info("63 line role: {}",role);
-      LOGGER.info("64 line delegator roles: {}",delegatorRoles);
-
       if (role == null || role.isBlank()) {
         throw new DxBadRequestException("Role is required in roles array");
       }
@@ -102,6 +99,32 @@ public class DelegationHandlerValidator {
         if (entityIdPresent != entityTypePresent) {
           throw new DxBadRequestException(
               "Both entityId and entityType must be provided together for scope: " + scope);
+        }
+
+        // ---------- Constraint expiry validation ----------
+        // Optional: a constraint with no expiryAt inherits the grant's own expiryAt
+        // (see DelegationServiceImpl#createScopeConstraint), so only validate when present.
+        String constraintExpiryStr = constraint.getString("expiryAt");
+        if (constraintExpiryStr != null && !constraintExpiryStr.isBlank()) {
+          LocalDateTime constraintExpiry;
+          try {
+            constraintExpiry = LocalDateTime.parse(constraintExpiryStr, FORMATTER);
+          } catch (DateTimeParseException e) {
+            throw new DxBadRequestException(
+                "Invalid expiryAt format for constraint scope " + scope + ". Expected format: "
+                    + FORMATTER);
+          }
+
+          if (constraintExpiry.isBefore(LocalDateTime.now())) {
+            throw new DxBadRequestException(
+                "Constraint expiryAt for scope " + scope + " must be in the future");
+          }
+
+          if (constraintExpiry.isAfter(expiry)) {
+            throw new DxBadRequestException(
+                "Constraint expiryAt for scope " + scope
+                    + " must not be after the delegation's expiryAt");
+          }
         }
 
         // entity_id & entity_type both absent → implicit wildcard
