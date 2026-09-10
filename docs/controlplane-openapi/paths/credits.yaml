@@ -60,10 +60,6 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-            example:
-              type: urn:dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing or invalid Bearer token
       '404':
         description: User credit record not found
 /iudx/v2/auth/admin/user/credit/balance/{id}:
@@ -136,10 +132,6 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-            example:
-              type: urn:dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
         content:
@@ -239,10 +231,6 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-            example:
-              type: urn:dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing or invalid Bearer token
 /iudx/v2/auth/user/credit/request/{id}:
   delete:
     tags:
@@ -296,10 +284,6 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-            example:
-              type: urn:dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller did not submit this request
         content:
@@ -422,20 +406,12 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-            example:
-              type: urn:dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/createNotificationForbidden
-            example:
-              type: urn:dx:controlPlane:forbidden
-              title: Forbidden
-              detail: User does not have the required role.
   post:
     summary: Create a credit request (User)
     tags:
@@ -528,10 +504,6 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-            example:
-              type: urn:dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing or invalid Bearer token
     operationId: post-auth-v2-credit-request
     x-codeSamples:
     - lang: cURL
@@ -714,20 +686,12 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-            example:
-              type: urn:dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/createNotificationForbidden
-            example:
-              type: urn:dx:controlPlane:forbidden
-              title: Forbidden
-              detail: User does not have the required role.
 /iudx/v2/auth/admin/user/credit/deduct:
   put:
     summary: Deduct credits from a user's balance (COS Admin)
@@ -859,20 +823,12 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-            example:
-              type: urn:dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role or insufficient permissions
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/createNotificationForbidden
-            example:
-              type: urn:dx:controlPlane:forbidden
-              title: Forbidden
-              detail: User does not have the required role.
 /iudx/v2/auth/admin/user/credit/add:
   put:
     operationId: put-auth-v2-user-credit-add
@@ -1004,20 +960,12 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-            example:
-              type: urn:dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/createNotificationForbidden
-            example:
-              type: urn:dx:controlPlane:forbidden
-              title: Forbidden
-              detail: User does not have the required role.
 /iudx/v2/auth/user/compute/requests/{id}:
   delete:
     tags:
@@ -1071,10 +1019,6 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-            example:
-              type: urn:dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller did not submit this compute request
         content:
@@ -1123,17 +1067,9 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-            example:
-              type: urn:dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/createNotificationForbidden
-            example:
-              type: urn:dx:controlPlane:forbidden
-              title: Forbidden
-              detail: User does not have the required role.

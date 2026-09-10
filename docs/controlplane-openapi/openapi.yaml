@@ -462,8 +462,6 @@ components:
       $ref: components/schemas/access.yaml#/AssetSummary
     AssetRequest:
       $ref: components/schemas/access.yaml#/AssetRequest
-    UpdateAccessRequest:
-      $ref: components/schemas/access.yaml#/UpdateAccessRequest
     AccessRequest:
       $ref: components/schemas/access.yaml#/AccessRequest
     AppTokenRequest:
@@ -542,72 +540,18 @@ components:
       $ref: components/schemas/common.yaml#/standardResourceNotFoundErrorResponse
     asyncBadRequestErrorResponse:
       $ref: components/schemas/common.yaml#/asyncBadRequestErrorResponse
-    getNotificationNotFoundResponse:
-      $ref: components/schemas/common.yaml#/getNotificationNotFoundResponse
-    createNotificationForbiddenResponse:
-      $ref: components/schemas/common.yaml#/createNotificationForbiddenResponse
-    updateNotificationForbiddenResponse:
-      $ref: components/schemas/common.yaml#/updateNotificationForbiddenResponse
-    reportGenerationForbiddenResponse:
-      $ref: components/schemas/common.yaml#/reportGenerationForbiddenResponse
-    updateNotificationNotFound:
-      $ref: components/schemas/common.yaml#/updateNotificationNotFound
     updateNotificationBadRequest:
       $ref: components/schemas/common.yaml#/updateNotificationBadRequest
-    reportGenerationBadRequest:
-      $ref: components/schemas/common.yaml#/reportGenerationBadRequest
-    updateNotificationConflict:
-      $ref: components/schemas/common.yaml#/updateNotificationConflict
-    getNotificationForbiddenResponse:
-      $ref: components/schemas/common.yaml#/getNotificationForbiddenResponse
     createNotificationSuccessResponse:
       $ref: components/schemas/common.yaml#/createNotificationSuccessResponse
-    checkAccessRequestSuccessResponse:
-      $ref: components/schemas/common.yaml#/checkAccessRequestSuccessResponse
     createNotificationResourceNotFoundResponse:
       $ref: components/schemas/common.yaml#/createNotificationResourceNotFoundResponse
-    checkAccessRequestNotFoundResponse:
-      $ref: components/schemas/common.yaml#/checkAccessRequestNotFoundResponse
     createNotificationForbidden:
       $ref: components/schemas/common.yaml#/createNotificationForbidden
     createNotificationConflictResponse:
       $ref: components/schemas/common.yaml#/createNotificationConflictResponse
-    getPolicySuccessResponseWithResourceType:
-      $ref: components/schemas/common.yaml#/getPolicySuccessResponseWithResourceType
-    getPolicySuccessResponseWithResourceGroup:
-      $ref: components/schemas/common.yaml#/getPolicySuccessResponseWithResourceGroup
-    deleteNotificationForbiddenResponse:
-      $ref: components/schemas/common.yaml#/deleteNotificationForbiddenResponse
-    deleteNotificationNotFound:
-      $ref: components/schemas/common.yaml#/deleteNotificationNotFound
-    deleteNotificationBadRequest:
-      $ref: components/schemas/common.yaml#/deleteNotificationBadRequest
-    deleteNotification:
-      $ref: components/schemas/common.yaml#/deleteNotification
-    deletePolicy:
-      $ref: components/schemas/common.yaml#/deletePolicy
-    deletePolicyInvalidUserResponse:
-      $ref: components/schemas/common.yaml#/deletePolicyInvalidUserResponse
-    getPolicyInvalidUserResponse:
-      $ref: components/schemas/common.yaml#/getPolicyInvalidUserResponse
-    updateNotificationInvalidUserResponse:
-      $ref: components/schemas/common.yaml#/updateNotificationInvalidUserResponse
-    policyNotFound:
-      $ref: components/schemas/common.yaml#/policyNotFound
-    deletePolicyErrorResponse:
-      $ref: components/schemas/common.yaml#/deletePolicyErrorResponse
-    deletePolicyNotFoundErrorResponse:
-      $ref: components/schemas/common.yaml#/deletePolicyNotFoundErrorResponse
     Unauthorized:
       $ref: components/schemas/common.yaml#/Unauthorized
-    createPolicyBadRequest:
-      $ref: components/schemas/common.yaml#/createPolicyBadRequest
-    createPolicyForbidden:
-      $ref: components/schemas/common.yaml#/createPolicyForbidden
-    createPolicySuccessResponse:
-      $ref: components/schemas/common.yaml#/createPolicySuccessResponse
-    conflictResponse:
-      $ref: components/schemas/common.yaml#/conflictResponse
     generalBadRequest:
       $ref: components/schemas/common.yaml#/generalBadRequest
     name:

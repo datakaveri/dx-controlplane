@@ -228,10 +228,6 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-            example:
-              type: urn:dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have permission to create delegations
         content:
@@ -375,10 +371,6 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-            example:
-              type: urn:dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing or invalid Bearer token
     x-codeSamples:
     - lang: cURL
       label: get all delegation grants cURL
@@ -518,10 +510,6 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-            example:
-              type: urn:dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing or invalid Bearer token
     x-codeSamples:
     - lang: cURL
       label: get all delegation grants cURL
@@ -731,10 +719,6 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-            example:
-              type: urn:dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing or invalid Bearer token
       '404':
         description: Delegation grant not found
         content:
@@ -825,10 +809,6 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-            example:
-              type: urn:dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing or invalid Bearer token
 
       '403':
         description: Forbidden - Caller is not the delegator
@@ -974,12 +954,11 @@
               $ref: ../components/schemas/common.yaml#/generalBadRequest
 
       '401':
-        description: Unauthorized
+        description: Unauthorized - Token invalid or expired
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-
       '403':
         description: Forbidden - User is not the delegator or is not allowed to delegate the requested scope
         content:
@@ -1092,12 +1071,11 @@
               $ref: ../components/schemas/common.yaml#/generalBadRequest
 
       '401':
-        description: Unauthorized
+        description: Unauthorized - Token invalid or expired
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-
       '403':
         description: Forbidden - User is not the delegator
         content:

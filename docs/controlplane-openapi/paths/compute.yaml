@@ -96,10 +96,6 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-            example:
-              type: urn:dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing or invalid Bearer token
 /iudx/v2/auth/compute/requests:
   get:
     summary: Get all compute role requests (COS Admin)
@@ -216,20 +212,12 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-            example:
-              type: urn:dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/createNotificationForbidden
-            example:
-              type: urn:dx:controlPlane:forbidden
-              title: Forbidden
-              detail: User does not have the required role.
   post:
     summary: Create a compute role request (User)
     tags:
@@ -363,10 +351,6 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-            example:
-              type: urn:dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing or invalid Bearer token
 /iudx/v2/auth/compute/requests/{id}:
   parameters:
   - name: id
@@ -471,20 +455,12 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-            example:
-              type: urn:dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/createNotificationForbidden
-            example:
-              type: urn:dx:controlPlane:forbidden
-              title: Forbidden
-              detail: User does not have the required role.
       '404':
         description: Not Found - Compute role request with given ID does not exist
         content:
@@ -526,17 +502,9 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/Unauthorized
-            example:
-              type: urn:dx:controlPlane:notAuthorized
-              title: Not Authorized
-              detail: Missing or invalid Bearer token
       '403':
         description: Forbidden - Caller does not have `cos_admin` role
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/createNotificationForbidden
-            example:
-              type: urn:dx:controlPlane:forbidden
-              title: Forbidden
-              detail: User does not have the required role.
