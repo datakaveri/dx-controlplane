@@ -449,7 +449,7 @@ UserInteractionSyncResponse:
   properties:
     type:
       type: string
-      example: dx:controlPlane:success
+      example: urn:dx:controlPlane:success
     title:
       type: string
       example: Success

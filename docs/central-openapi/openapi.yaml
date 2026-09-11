@@ -468,8 +468,6 @@ components:
       $ref: ../controlplane-openapi/components/schemas/access.yaml#/AssetSummary
     AssetRequest:
       $ref: ../controlplane-openapi/components/schemas/access.yaml#/AssetRequest
-    UpdateAccessRequest:
-      $ref: ../controlplane-openapi/components/schemas/access.yaml#/UpdateAccessRequest
     AccessRequest:
       $ref: ../controlplane-openapi/components/schemas/access.yaml#/AccessRequest
     AppTokenRequest:
@@ -548,72 +546,18 @@ components:
       $ref: ../controlplane-openapi/components/schemas/common.yaml#/standardResourceNotFoundErrorResponse
     asyncBadRequestErrorResponse:
       $ref: ../controlplane-openapi/components/schemas/common.yaml#/asyncBadRequestErrorResponse
-    getNotificationNotFoundResponse:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/getNotificationNotFoundResponse
-    createNotificationForbiddenResponse:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/createNotificationForbiddenResponse
-    updateNotificationForbiddenResponse:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/updateNotificationForbiddenResponse
-    reportGenerationForbiddenResponse:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/reportGenerationForbiddenResponse
-    updateNotificationNotFound:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/updateNotificationNotFound
     updateNotificationBadRequest:
       $ref: ../controlplane-openapi/components/schemas/common.yaml#/updateNotificationBadRequest
-    reportGenerationBadRequest:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/reportGenerationBadRequest
-    updateNotificationConflict:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/updateNotificationConflict
-    getNotificationForbiddenResponse:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/getNotificationForbiddenResponse
     createNotificationSuccessResponse:
       $ref: ../controlplane-openapi/components/schemas/common.yaml#/createNotificationSuccessResponse
-    checkAccessRequestSuccessResponse:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/checkAccessRequestSuccessResponse
     createNotificationResourceNotFoundResponse:
       $ref: ../controlplane-openapi/components/schemas/common.yaml#/createNotificationResourceNotFoundResponse
-    checkAccessRequestNotFoundResponse:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/checkAccessRequestNotFoundResponse
     createNotificationForbidden:
       $ref: ../controlplane-openapi/components/schemas/common.yaml#/createNotificationForbidden
     createNotificationConflictResponse:
       $ref: ../controlplane-openapi/components/schemas/common.yaml#/createNotificationConflictResponse
-    getPolicySuccessResponseWithResourceType:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/getPolicySuccessResponseWithResourceType
-    getPolicySuccessResponseWithResourceGroup:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/getPolicySuccessResponseWithResourceGroup
-    deleteNotificationForbiddenResponse:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/deleteNotificationForbiddenResponse
-    deleteNotificationNotFound:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/deleteNotificationNotFound
-    deleteNotificationBadRequest:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/deleteNotificationBadRequest
-    deleteNotification:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/deleteNotification
-    deletePolicy:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/deletePolicy
-    deletePolicyInvalidUserResponse:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/deletePolicyInvalidUserResponse
-    getPolicyInvalidUserResponse:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/getPolicyInvalidUserResponse
-    updateNotificationInvalidUserResponse:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/updateNotificationInvalidUserResponse
-    policyNotFound:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/policyNotFound
-    deletePolicyErrorResponse:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/deletePolicyErrorResponse
-    deletePolicyNotFoundErrorResponse:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/deletePolicyNotFoundErrorResponse
     Unauthorized:
       $ref: ../controlplane-openapi/components/schemas/common.yaml#/Unauthorized
-    createPolicyBadRequest:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/createPolicyBadRequest
-    createPolicyForbidden:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/createPolicyForbidden
-    createPolicySuccessResponse:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/createPolicySuccessResponse
-    conflictResponse:
-      $ref: ../controlplane-openapi/components/schemas/common.yaml#/conflictResponse
     generalBadRequest:
       $ref: ../controlplane-openapi/components/schemas/common.yaml#/generalBadRequest
     name:

@@ -73,7 +73,7 @@
               properties:
                 type:
                   type: string
-                  example: dx:controlPlane:success
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
                   example: Success
@@ -168,7 +168,7 @@
               properties:
                 type:
                   type: string
-                  example: dx:controlPlane:badRequest
+                  example: urn:dx:controlPlane:badRequest
                 title:
                   type: string
                   example: Bad Request
@@ -441,7 +441,7 @@
               properties:
                 type:
                   type: string
-                  example: dx:controlPlane:success
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
                   example: Success
