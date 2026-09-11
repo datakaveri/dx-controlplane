@@ -27,8 +27,10 @@
               properties:
                 type:
                   type: string
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 result:
                   type: object
                   description: The user's credit record
@@ -99,8 +101,10 @@
               properties:
                 type:
                   type: string
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 result:
                   type: object
                   description: The user's credit record
@@ -174,9 +178,11 @@
                 type:
                   type: string
                   description: URN indicating the response status
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
                   description: Human-readable response title
+                  example: Success
                 result:
                   type: array
                   description: List of the user's credit request records
@@ -267,8 +273,10 @@
               properties:
                 type:
                   type: string
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 detail:
                   type: string
                   example: Pending Credit Request deleted successfully
@@ -334,9 +342,11 @@
                 type:
                   type: string
                   description: URN indicating the response status
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
                   description: Human-readable response title
+                  example: Success
                 result:
                   type: array
                   description: List of credit request records
@@ -443,9 +453,11 @@
                 type:
                   type: string
                   description: URN indicating the response status
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
                   description: Human-readable response title
+                  example: Success
                 result:
                   type: object
                   description: The newly created credit request
@@ -616,9 +628,11 @@
                 type:
                   type: string
                   description: URN indicating the response status
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
                   description: Human-readable response title
+                  example: Success
                 result:
                   type: object
                   description: The credit transaction details
@@ -753,9 +767,11 @@
                 type:
                   type: string
                   description: URN indicating the response status
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
                   description: Human-readable response title
+                  example: Success
                 result:
                   type: object
                   description: The debit transaction details
@@ -890,9 +906,11 @@
                 type:
                   type: string
                   description: URN indicating the response status
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
                   description: Human-readable response title
+                  example: Success
                 result:
                   type: object
                   description: The credit transaction details
@@ -1002,8 +1020,10 @@
               properties:
                 type:
                   type: string
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
+                  example: Success
                 detail:
                   type: string
                   example: Pending Compute Request deleted successfully

@@ -294,7 +294,7 @@
               properties:
                 type:
                   type: string
-                  example: dx:controlPlane:success
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
                   example: Success
@@ -371,7 +371,7 @@
               properties:
                 type:
                   type: string
-                  example: dx:controlPlane:success
+                  example: urn:dx:controlPlane:success
                 title:
                   type: string
                   example: Success
@@ -435,7 +435,7 @@
         content:
           application/json:
             schema:
-              $ref: ../components/schemas/common.yaml#/ErrorResponse
+              $ref: ../components/schemas/common.yaml#/Unauthorized
             example:
               type: urn:dx:controlPlane:notAuthorized
               title: Not Authorized
@@ -518,7 +518,7 @@
         content:
           application/json:
             schema:
-              $ref: ../components/schemas/common.yaml#/ErrorResponse
+              $ref: ../components/schemas/common.yaml#/Unauthorized
             example:
               type: urn:dx:controlPlane:notAuthorized
               title: Not Authorized

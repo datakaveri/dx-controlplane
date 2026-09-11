@@ -837,7 +837,7 @@
         content:
           application/json:
             schema:
-              $ref: ../components/schemas/common.yaml#/ErrorResponse
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
 /iudx/v2/auth/delegation/{id}/constraints:
   parameters:
     - name: id

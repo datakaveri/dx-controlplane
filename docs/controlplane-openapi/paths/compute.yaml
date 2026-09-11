@@ -28,7 +28,7 @@
               properties:
                 type:
                   type: string
-                  example: dx:controlPlane:success
+                  example: urn:dx:controlPlane:success
                   description: URN indicating the response status
                 title:
                   type: string
@@ -132,7 +132,7 @@
               properties:
                 type:
                   type: string
-                  example: dx:controlPlane:success
+                  example: urn:dx:controlPlane:success
                   description: URN indicating the response status
                 title:
                   type: string
@@ -271,7 +271,7 @@
               properties:
                 type:
                   type: string
-                  example: dx:controlPlane:success
+                  example: urn:dx:controlPlane:success
                   description: URN indicating the response status
                 title:
                   type: string
@@ -423,7 +423,7 @@
               properties:
                 type:
                   type: string
-                  example: dx:controlPlane:success
+                  example: urn:dx:controlPlane:success
                   description: URN indicating the response status
                 title:
                   type: string

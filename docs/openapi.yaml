@@ -373,7 +373,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -465,7 +465,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -1198,7 +1198,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -1287,7 +1287,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -1381,7 +1381,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -1457,7 +1457,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -1554,7 +1554,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -1634,7 +1634,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/InternalServerErrorResponse'
   /iudx/v2/cat/item/access:
     get:
       tags:
@@ -1724,7 +1724,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -2008,7 +2008,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -2099,7 +2099,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                     description: URN indicating the response status
                   title:
                     type: string
@@ -2203,7 +2203,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                     description: URN indicating the response status
                   title:
                     type: string
@@ -2341,7 +2341,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                     description: URN indicating the response status
                   title:
                     type: string
@@ -2490,7 +2490,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                     description: URN indicating the response status
                   title:
                     type: string
@@ -2601,8 +2601,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: object
                     description: The user's credit record
@@ -2671,8 +2673,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: object
                     description: The user's credit record
@@ -2744,9 +2748,11 @@ paths:
                   type:
                     type: string
                     description: URN indicating the response status
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     description: Human-readable response title
+                    example: Success
                   result:
                     type: array
                     description: List of the user's credit request records
@@ -2838,8 +2844,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   detail:
                     type: string
                     example: Pending Credit Request deleted successfully
@@ -2903,9 +2911,11 @@ paths:
                   type:
                     type: string
                     description: URN indicating the response status
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     description: Human-readable response title
+                    example: Success
                   result:
                     type: array
                     description: List of credit request records
@@ -3013,9 +3023,11 @@ paths:
                   type:
                     type: string
                     description: URN indicating the response status
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     description: Human-readable response title
+                    example: Success
                   result:
                     type: object
                     description: The newly created credit request
@@ -3185,9 +3197,11 @@ paths:
                   type:
                     type: string
                     description: URN indicating the response status
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     description: Human-readable response title
+                    example: Success
                   result:
                     type: object
                     description: The credit transaction details
@@ -3324,9 +3338,11 @@ paths:
                   type:
                     type: string
                     description: URN indicating the response status
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     description: Human-readable response title
+                    example: Success
                   result:
                     type: object
                     description: The debit transaction details
@@ -3462,9 +3478,11 @@ paths:
                   type:
                     type: string
                     description: URN indicating the response status
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     description: Human-readable response title
+                    example: Success
                   result:
                     type: object
                     description: The credit transaction details
@@ -3575,8 +3593,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   detail:
                     type: string
                     example: Pending Compute Request deleted successfully
@@ -4440,7 +4460,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/InternalServerErrorResponse'
   /iudx/v2/auth/delegation/{id}/constraints:
     parameters:
       - name: id
@@ -5193,7 +5213,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -5267,7 +5287,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -5341,7 +5361,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -5410,7 +5430,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -5612,7 +5632,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -5707,7 +5727,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:badRequest
+                    example: urn:dx:controlPlane:badRequest
                   title:
                     type: string
                     example: Bad Request
@@ -7164,7 +7184,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -7238,7 +7258,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -7395,7 +7415,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -7542,7 +7562,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -7607,7 +7627,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -7773,7 +7793,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -7876,7 +7896,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -7934,7 +7954,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -7994,7 +8014,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8052,7 +8072,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8116,7 +8136,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8188,7 +8208,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8302,7 +8322,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8396,7 +8416,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8487,7 +8507,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8559,7 +8579,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8658,7 +8678,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8746,7 +8766,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8840,7 +8860,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8947,7 +8967,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -9068,7 +9088,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -9162,7 +9182,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -9227,7 +9247,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -9284,7 +9304,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -9433,7 +9453,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -9519,7 +9539,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -9748,7 +9768,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -9760,7 +9780,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -9812,7 +9832,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -9856,7 +9876,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -9908,7 +9928,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -9930,7 +9950,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -10010,7 +10030,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -10071,7 +10091,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -10145,7 +10165,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -10167,7 +10187,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -10297,7 +10317,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -10424,7 +10444,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:badRequest
+                    example: urn:dx:controlPlane:badRequest
                   title:
                     type: string
                     example: Bad Request
@@ -10442,7 +10462,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -10558,7 +10578,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -10580,7 +10600,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -10680,7 +10700,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -10694,7 +10714,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -10759,7 +10779,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -10816,7 +10836,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -10869,7 +10889,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -10927,7 +10947,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -10947,7 +10967,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/InternalServerErrorResponse'
               example:
                 type: urn:dx:controlPlane:internalServerError
                 title: Internal Server Error
@@ -10989,7 +11009,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -11019,7 +11039,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -11039,7 +11059,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/InternalServerErrorResponse'
       x-codeSamples:
         - lang: cURL
           label: List Resource Servers
@@ -11111,7 +11131,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -11198,7 +11218,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -11268,7 +11288,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -11353,7 +11373,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -11429,7 +11449,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -11491,7 +11511,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -11804,7 +11824,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -12324,7 +12344,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -12450,7 +12470,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -12584,7 +12604,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -12684,7 +12704,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -12778,7 +12798,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -13095,7 +13115,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -13217,7 +13237,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -13273,7 +13293,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -13671,7 +13691,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -13696,7 +13716,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -13716,7 +13736,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/InternalServerErrorResponse'
       x-codeSamples:
         - lang: cURL
           label: List ACL Servers
@@ -13779,7 +13799,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -13864,7 +13884,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -13932,7 +13952,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -13993,7 +14013,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -14015,7 +14035,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -15643,7 +15663,7 @@ components:
       properties:
         type:
           type: string
-          example: dx:controlPlane:success
+          example: urn:dx:controlPlane:success
         title:
           type: string
           example: Success
@@ -16515,7 +16535,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:cat:InvalidRequest
+          example: urn:dx:controlPlane:badRequest
         title:
           type: string
           example: Invalid Request
@@ -16966,7 +16986,7 @@ components:
       properties:
         type:
           type: string
-          example: dx:controlPlane:success
+          example: urn:dx:controlPlane:success
         title:
           type: string
           example: Success
@@ -17505,7 +17525,7 @@ components:
         type:
           type: string
           description: URN indicating success or error type
-          example: dx:controlPlane:success
+          example: urn:dx:controlPlane:success
         title:
           type: string
           description: Human-readable response title
@@ -20817,7 +20837,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:controlPlane:bad_request
+          example: urn:dx:controlPlane:badRequest
         title:
           type: string
           example: Bad Request
@@ -20849,7 +20869,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:controlPlane:not_found
+          example: urn:dx:controlPlane:notFound
         title:
           type: string
           example: Not Found
@@ -21313,7 +21333,7 @@ components:
       properties:
         type:
           type: string
-          example: dx:controlPlane:success
+          example: urn:dx:controlPlane:success
         title:
           type: string
           example: Success
@@ -21562,7 +21582,7 @@ components:
         type:
           type: string
           description: URN identifying the response category
-          example: dx:controlPlane:success
+          example: urn:dx:controlPlane:success
         title:
           type: string
           description: Short response title
@@ -21650,7 +21670,7 @@ components:
         type:
           type: string
           description: URN identifying the response category
-          example: dx:controlPlane:success
+          example: urn:dx:controlPlane:success
         title:
           type: string
           description: Short response title
@@ -22134,7 +22154,7 @@ components:
       properties:
         type:
           type: string
-          example: dx:controlPlane:success
+          example: urn:dx:controlPlane:success
         title:
           type: string
           example: Success

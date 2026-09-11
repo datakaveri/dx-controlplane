@@ -100,7 +100,7 @@ LeaderBoardProvider:
     type:
       type: string
       description: URN identifying the response category
-      example: dx:controlPlane:success
+      example: urn:dx:controlPlane:success
     title:
       type: string
       description: Short response title
@@ -188,7 +188,7 @@ LeaderBoardOrg:
     type:
       type: string
       description: URN identifying the response category
-      example: dx:controlPlane:success
+      example: urn:dx:controlPlane:success
     title:
       type: string
       description: Short response title

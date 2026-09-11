@@ -376,7 +376,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -468,7 +468,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -588,20 +588,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden – User cannot create request on own asset
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/createNotificationForbidden'
-              example:
-                type: urn:dx:controlPlane:forbidden
-                title: Forbidden
-                detail: User does not have the required role.
         '404':
           description: Not Found – Asset not found in the catalogue
           content:
@@ -708,10 +700,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - User does not have the required role
           content:
@@ -782,20 +770,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden – User does not have the cos_admin role or asset-management scope
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/createNotificationForbidden'
-              example:
-                type: urn:dx:controlPlane:forbidden
-                title: Forbidden
-                detail: User does not have the required role.
         '404':
           description: Not Found – Asset request not found
           content:
@@ -848,10 +828,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - User cannot delete this asset request
           content:
@@ -1225,7 +1201,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -1314,7 +1290,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -1408,7 +1384,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -1484,7 +1460,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -1581,7 +1557,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -1661,7 +1637,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/InternalServerErrorResponse'
   /iudx/v2/cat/item/access:
     get:
       tags:
@@ -1751,7 +1727,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -2035,7 +2011,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -2126,7 +2102,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                     description: URN indicating the response status
                   title:
                     type: string
@@ -2197,10 +2173,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
   /iudx/v2/auth/compute/requests:
     get:
       summary: Get all compute role requests (COS Admin)
@@ -2234,7 +2206,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                     description: URN indicating the response status
                   title:
                     type: string
@@ -2317,20 +2289,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller does not have `cos_admin` role
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/createNotificationForbidden'
-              example:
-                type: urn:dx:controlPlane:forbidden
-                title: Forbidden
-                detail: User does not have the required role.
     post:
       summary: Create a compute role request (User)
       tags:
@@ -2380,7 +2344,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                     description: URN indicating the response status
                   title:
                     type: string
@@ -2461,10 +2425,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
   /iudx/v2/auth/compute/requests/{id}:
     parameters:
       - name: id
@@ -2533,7 +2493,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                     description: URN indicating the response status
                   title:
                     type: string
@@ -2565,20 +2525,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller does not have `cos_admin` role
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/createNotificationForbidden'
-              example:
-                type: urn:dx:controlPlane:forbidden
-                title: Forbidden
-                detail: User does not have the required role.
         '404':
           description: Not Found - Compute role request with given ID does not exist
           content:
@@ -2619,20 +2571,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller does not have `cos_admin` role
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/createNotificationForbidden'
-              example:
-                type: urn:dx:controlPlane:forbidden
-                title: Forbidden
-                detail: User does not have the required role.
   /iudx/v2/auth/user/credit/balance:
     get:
       operationId: get-auth-v2-user-credit-balance
@@ -2660,8 +2604,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: object
                     description: The user's credit record
@@ -2693,10 +2639,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '404':
           description: User credit record not found
   /iudx/v2/auth/admin/user/credit/balance/{id}:
@@ -2734,8 +2676,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   result:
                     type: object
                     description: The user's credit record
@@ -2767,10 +2711,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller does not have `cos_admin` role
           content:
@@ -2811,9 +2751,11 @@ paths:
                   type:
                     type: string
                     description: URN indicating the response status
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     description: Human-readable response title
+                    example: Success
                   result:
                     type: array
                     description: List of the user's credit request records
@@ -2871,10 +2813,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
   /iudx/v2/auth/user/credit/request/{id}:
     delete:
       tags:
@@ -2909,8 +2847,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   detail:
                     type: string
                     example: Pending Credit Request deleted successfully
@@ -2926,10 +2866,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller did not submit this request
           content:
@@ -2978,9 +2914,11 @@ paths:
                   type:
                     type: string
                     description: URN indicating the response status
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     description: Human-readable response title
+                    example: Success
                   result:
                     type: array
                     description: List of credit request records
@@ -3053,20 +2991,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller does not have `cos_admin` role
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/createNotificationForbidden'
-              example:
-                type: urn:dx:controlPlane:forbidden
-                title: Forbidden
-                detail: User does not have the required role.
     post:
       summary: Create a credit request (User)
       tags:
@@ -3096,9 +3026,11 @@ paths:
                   type:
                     type: string
                     description: URN indicating the response status
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     description: Human-readable response title
+                    example: Success
                   result:
                     type: object
                     description: The newly created credit request
@@ -3158,10 +3090,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
       operationId: post-auth-v2-credit-request
       x-codeSamples:
         - lang: cURL
@@ -3272,9 +3200,11 @@ paths:
                   type:
                     type: string
                     description: URN indicating the response status
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     description: Human-readable response title
+                    example: Success
                   result:
                     type: object
                     description: The credit transaction details
@@ -3346,20 +3276,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller does not have `cos_admin` role
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/createNotificationForbidden'
-              example:
-                type: urn:dx:controlPlane:forbidden
-                title: Forbidden
-                detail: User does not have the required role.
   /iudx/v2/auth/admin/user/credit/deduct:
     put:
       summary: Deduct credits from a user's balance (COS Admin)
@@ -3419,9 +3341,11 @@ paths:
                   type:
                     type: string
                     description: URN indicating the response status
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     description: Human-readable response title
+                    example: Success
                   result:
                     type: object
                     description: The debit transaction details
@@ -3492,20 +3416,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller does not have `cos_admin` role or insufficient permissions
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/createNotificationForbidden'
-              example:
-                type: urn:dx:controlPlane:forbidden
-                title: Forbidden
-                detail: User does not have the required role.
   /iudx/v2/auth/admin/user/credit/add:
     put:
       operationId: put-auth-v2-user-credit-add
@@ -3565,9 +3481,11 @@ paths:
                   type:
                     type: string
                     description: URN indicating the response status
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     description: Human-readable response title
+                    example: Success
                   result:
                     type: object
                     description: The credit transaction details
@@ -3638,20 +3556,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller does not have `cos_admin` role
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/createNotificationForbidden'
-              example:
-                type: urn:dx:controlPlane:forbidden
-                title: Forbidden
-                detail: User does not have the required role.
   /iudx/v2/auth/user/compute/requests/{id}:
     delete:
       tags:
@@ -3686,8 +3596,10 @@ paths:
                 properties:
                   type:
                     type: string
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
+                    example: Success
                   detail:
                     type: string
                     example: Pending Compute Request deleted successfully
@@ -3703,10 +3615,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller did not submit this compute request
           content:
@@ -3755,20 +3663,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller does not have `cos_admin` role
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/createNotificationForbidden'
-              example:
-                type: urn:dx:controlPlane:forbidden
-                title: Forbidden
-                detail: User does not have the required role.
   /iudx/v2/auth/delegation:
     post:
       summary: Grant delegation to another user (Delegator)
@@ -3993,10 +3893,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller does not have permission to create delegations
           content:
@@ -4130,10 +4026,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
       x-codeSamples:
         - lang: cURL
           label: get all delegation grants cURL
@@ -4262,10 +4154,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
       x-codeSamples:
         - lang: cURL
           label: get all delegation grants cURL
@@ -4467,10 +4355,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '404':
           description: Delegation grant not found
           content:
@@ -4554,10 +4438,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller is not the delegator
           content:
@@ -4583,7 +4463,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/InternalServerErrorResponse'
   /iudx/v2/auth/delegation/{id}/constraints:
     parameters:
       - name: id
@@ -4697,10 +4577,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - User is not the delegator or is not allowed to delegate the requested scope
           content:
@@ -4810,10 +4686,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - User is not the delegator
           content:
@@ -5344,7 +5216,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -5418,7 +5290,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -5492,7 +5364,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -5561,7 +5433,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -5763,7 +5635,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -5858,7 +5730,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:badRequest
+                    example: urn:dx:controlPlane:badRequest
                   title:
                     type: string
                     example: Bad Request
@@ -7315,7 +7187,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -7389,7 +7261,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -7546,7 +7418,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -7693,7 +7565,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -7758,7 +7630,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -7802,10 +7674,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller does not have `cos_admin` role
           content:
@@ -7928,7 +7796,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -7967,10 +7835,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '409':
           description: Conflict - Duplicate request, name, or manager email already in use
           content:
@@ -8035,7 +7899,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8048,10 +7912,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller does not have `cos_admin` role
           content:
@@ -8097,7 +7957,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8120,10 +7980,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
   /iudx/v2/auth/user/organisations/requests/{id}:
     parameters:
       - name: id
@@ -8161,7 +8017,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8180,10 +8036,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller is not the original requester
           content:
@@ -8223,7 +8075,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8250,10 +8102,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
   /iudx/v2/auth/user/organisations/join_requests/{id}:
     parameters:
       - name: id
@@ -8291,7 +8139,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8310,10 +8158,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller is not the original requester
           content:
@@ -8367,7 +8211,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8417,10 +8261,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller's org ID does not match path parameter
           content:
@@ -8485,7 +8325,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8504,10 +8344,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '409':
           description: Conflict - User already has an active join request or email already in use
           content:
@@ -8583,7 +8419,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8596,10 +8432,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller's org ID does not match path parameter
           content:
@@ -8678,7 +8510,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8697,10 +8529,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Only pending join request can be withdrawn
           content:
@@ -8754,7 +8582,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8815,10 +8643,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
   /iudx/v2/auth/organisations/{id}:
     parameters:
       - name: id
@@ -8857,7 +8681,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8870,10 +8694,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Org Admin tried to delete a different organisation
           content:
@@ -8949,7 +8769,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -8999,10 +8819,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller does not have `cos_admin` role
           content:
@@ -9047,7 +8863,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -9106,10 +8922,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '404':
           description: Not Found - Organisation with given ID does not exist
           content:
@@ -9158,7 +8970,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -9238,10 +9050,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller's org ID does not match path parameter
           content:
@@ -9283,7 +9091,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -9330,10 +9138,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - User is not part of any organisation
           content:
@@ -9381,7 +9185,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -9400,10 +9204,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - User is not part of any organisation
           content:
@@ -9450,7 +9250,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -9463,10 +9263,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - User is not part of any organisation
           content:
@@ -9511,7 +9307,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -9600,10 +9396,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
   /iudx/v2/auth/organization/user/provider_role/requests/{id}:
     parameters:
       - name: id
@@ -9664,7 +9456,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -9677,10 +9469,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller does not have org admin role
           content:
@@ -9754,7 +9542,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -9767,10 +9555,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - User not in org or caller lacks permission
           content:
@@ -9823,10 +9607,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller does not have `cos_admin` role
           content:
@@ -9868,10 +9648,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller does not have `cos_admin` role
           content:
@@ -9921,10 +9697,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller does not have `cos_admin` role
           content:
@@ -9966,10 +9738,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller does not have `cos_admin` role
           content:
@@ -10003,7 +9771,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -10015,7 +9783,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -10067,7 +9835,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -10111,7 +9879,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -10163,7 +9931,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -10185,7 +9953,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -10265,7 +10033,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -10326,7 +10094,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -10400,7 +10168,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -10422,7 +10190,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -10552,7 +10320,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -10679,7 +10447,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:badRequest
+                    example: urn:dx:controlPlane:badRequest
                   title:
                     type: string
                     example: Bad Request
@@ -10697,7 +10465,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -10813,7 +10581,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -10835,7 +10603,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -10935,7 +10703,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -10949,7 +10717,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -11014,7 +10782,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -11071,7 +10839,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -11124,7 +10892,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -11182,7 +10950,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -11202,7 +10970,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/InternalServerErrorResponse'
               example:
                 type: urn:dx:controlPlane:internalServerError
                 title: Internal Server Error
@@ -11244,7 +11012,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -11274,7 +11042,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -11294,7 +11062,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/InternalServerErrorResponse'
       x-codeSamples:
         - lang: cURL
           label: List Resource Servers
@@ -11366,7 +11134,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -11453,7 +11221,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -11523,7 +11291,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -11608,7 +11376,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -11626,10 +11394,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller is not an org admin or org ID mismatch
           content:
@@ -11688,7 +11452,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -11712,10 +11476,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller is not an org admin or org ID mismatch
           content:
@@ -11754,7 +11514,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -11795,10 +11555,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller is not an org admin or org ID mismatch
           content:
@@ -11931,10 +11687,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
     delete:
       summary: Delete Custom Role Scope or Request
       description: |
@@ -11987,10 +11739,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden – Not the requester or admin
           content:
@@ -12034,10 +11782,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden (e.g., constraints not met or role already exists)
           content:
@@ -12083,7 +11827,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -12362,10 +12106,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Insufficient scope
           content:
@@ -12469,10 +12209,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Insufficient scope
           content:
@@ -12563,10 +12299,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Insufficient scope
           content:
@@ -12615,7 +12347,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -12701,20 +12433,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller does not have `cos_admin` role
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/createNotificationForbidden'
-              example:
-                type: urn:dx:controlPlane:forbidden
-                title: Forbidden
-                detail: User does not have the required role.
       security:
         - authorization: []
   /iudx/v2/auth/admin/user:
@@ -12749,7 +12473,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -12842,20 +12566,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller does not have `cos_admin` role
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/createNotificationForbidden'
-              example:
-                type: urn:dx:controlPlane:forbidden
-                title: Forbidden
-                detail: User does not have the required role.
       security:
         - authorization: []
   /iudx/v2/auth/user/basic:
@@ -12891,7 +12607,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -12942,10 +12658,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
       security:
         - authorization: []
   /iudx/v2/auth/user/basic/by-identifier:
@@ -12995,7 +12707,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -13033,10 +12745,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '404':
           description: User not found
           content:
@@ -13093,7 +12801,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -13122,10 +12830,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Insufficient scope
           content:
@@ -13223,20 +12927,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Caller does not have admin role
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/createNotificationForbidden'
-              example:
-                type: urn:dx:controlPlane:forbidden
-                title: Forbidden
-                detail: User does not have the required role.
       security:
         - authorization: []
   /iudx/v2/auth/user/delete:
@@ -13294,10 +12990,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Insufficient scope
           content:
@@ -13426,7 +13118,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -13444,10 +13136,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Insufficient scope
           content:
@@ -13552,7 +13240,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -13570,10 +13258,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Insufficient scope
           content:
@@ -13612,7 +13296,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -13679,10 +13363,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized'
-              example:
-                type: urn:dx:controlPlane:notAuthorized
-                title: Not Authorized
-                detail: Missing or invalid Bearer token
         '403':
           description: Forbidden - Insufficient scope
           content:
@@ -14014,7 +13694,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -14039,7 +13719,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -14059,7 +13739,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/InternalServerErrorResponse'
       x-codeSamples:
         - lang: cURL
           label: List ACL Servers
@@ -14122,7 +13802,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -14207,7 +13887,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -14275,7 +13955,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -14336,7 +14016,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -14358,7 +14038,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Unauthorized'
               example:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
@@ -15190,7 +14870,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -15285,7 +14965,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:badRequest
+                    example: urn:dx:controlPlane:badRequest
                   title:
                     type: string
                     example: Bad Request
@@ -15657,7 +15337,7 @@ paths:
                 properties:
                   type:
                     type: string
-                    example: dx:controlPlane:success
+                    example: urn:dx:controlPlane:success
                   title:
                     type: string
                     example: Success
@@ -16019,28 +15699,6 @@ components:
         - user
         - updatedAt
         - requestedAt
-    UpdateAccessRequest:
-      title: Delete notification forbidden
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:success
-        title: Success
-        detail: Request updated successfully
     AccessRequest:
       type: object
       properties:
@@ -16592,7 +16250,7 @@ components:
       properties:
         type:
           type: string
-          example: dx:controlPlane:success
+          example: urn:dx:controlPlane:success
         title:
           type: string
           example: Success
@@ -17095,116 +16753,6 @@ components:
         type: urn:dx:controlPlane:badRequest
         title: Bad Request
         detail: Bad Request
-    getNotificationNotFoundResponse:
-      title: Update notification forbidden
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:resourceNotFound
-        title: Not Found
-        detail: 'Access request not found, for the server : dummy.server.io'
-    createNotificationForbiddenResponse:
-      title: Create notification forbidden
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:no-access
-        title: Forbidden
-        detail: User does not have access to the given item
-    updateNotificationForbiddenResponse:
-      title: Update notification forbidden
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:forbidden
-        title: Forbidden
-        detail: The access request does not belong to the given provider
-    reportGenerationForbiddenResponse:
-      title: Report generation forbidden
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:forbidden
-        title: Forbidden
-        detail: User doesn't have required role
-    updateNotificationNotFound:
-      title: Update notification not found
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:resourceNotFound
-        title: Not Found
-        detail: Access request not found
     updateNotificationBadRequest:
       title: Update notification bad request
       type: object
@@ -17227,72 +16775,6 @@ components:
         type: urn:dx:controlPlane:badRequest
         title: Bad Request
         detail: Missing or malformed request
-    reportGenerationBadRequest:
-      title: Report generation bad request
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:badRequest
-        title: Bad Request
-        detail: 'Error in CSV generation: No data available for CSV generation'
-    updateNotificationConflict:
-      title: Update notification conflict
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:conflict
-        title: Conflict
-        detail: Request could not be approved as, policy is already created
-    getNotificationForbiddenResponse:
-      title: get notification forbidden response
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:forbidden
-        title: Access Denied
-        detail: 'Access Denied: You do not have ownership rights for this resource.'
     createNotificationSuccessResponse:
       title: Create notification success
       type: object
@@ -17312,30 +16794,9 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:success
+        type: urn:dx:controlPlane:success
         title: Success
         detail: Request inserted successfully!
-    checkAccessRequestSuccessResponse:
-      title: Create notification success
-      type: object
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:success
-        title: Success
-        detail: User has access to the given asset!
     createNotificationResourceNotFoundResponse:
       title: Create notification resource not found
       type: object
@@ -17355,30 +16816,9 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:notFound
+        type: urn:dx:controlPlane:notFound
         title: Not Found
-        detail: Catalogue item not found
-    checkAccessRequestNotFoundResponse:
-      title: Create notification resource not found
-      type: object
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:no-access
-        title: Forbidden
-        detail: User does not have access to the given item
+        detail: Asset request not found
     createNotificationForbidden:
       title: Creating notification is forbidden
       type: object
@@ -17398,9 +16838,9 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:forbidden
+        type: urn:dx:controlPlane:forbidden
         title: Forbidden
-        detail: User cannot create access request for the resource, as the user is a provider of the resource
+        detail: User does not have the required role.
     createNotificationConflictResponse:
       title: Create notification conflict response
       type: object
@@ -17420,500 +16860,9 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:conflict
+        type: urn:dx:controlPlane:conflict
         title: Conflict
         detail: Access request already exists
-    getPolicySuccessResponseWithResourceType:
-      title: get policy for resource item type.
-      additionalProperties: false
-      required:
-        - type
-        - title
-        - results
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        results:
-          type: array
-          minLength: 1
-          items:
-            type: object
-            additionalProperties: false
-            properties:
-              policyId:
-                type: string
-              itemId:
-                type: string
-              itemType:
-                type: string
-                default: RESOURCE
-              consumer:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    name:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          email:
-                            type: string
-                          name:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                firstName:
-                                  type: string
-                                lastName:
-                                  type: string
-                          id:
-                            type: string
-              provider:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    name:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          email:
-                            type: string
-                          name:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                firstName:
-                                  type: string
-                                lastName:
-                                  type: string
-                          id:
-                            type: string
-              status:
-                type: string
-                enum:
-                  - ACTIVE
-                  - DELETED
-              expiryAt:
-                type: string
-              constraints:
-                type: object
-              updatedAt:
-                type: string
-                minLength: 1
-              createdAt:
-                type: string
-                minLength: 1
-      example:
-        type: urn:dx:acl:success
-        title: Success
-        results:
-          - policyId: aaaaaaaa-1234-1234-1234-1234aaaa1234
-            itemId: cccccccc-4576-3455-5645-3565aaaa4255
-            itemType: RESOURCE
-            expiryAt: '2024-03-05T20:00:19'
-            constraints:
-              access:
-                - sub
-            status: ACTIVE
-            updatedAt: '2023-11-07T09:12:44.144204'
-            createdAt: '2023-09-26T11:17:58.473452'
-            consumer:
-              email: dummyConsumer@example.com
-              name:
-                firstName: Some
-                lastName: Consumer
-              id: gklmcd4-4576-3455-5645-3565aaaa4255
-            provider:
-              email: someProvider@example.com
-              name:
-                firstName: Some
-                lastName: Provider
-              id: abcdcd4-4576-3455-5645-3565aaaa4255
-    getPolicySuccessResponseWithResourceGroup:
-      title: get policy for resource-group item type.
-      additionalProperties: false
-      required:
-        - type
-        - title
-        - results
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        results:
-          type: array
-          minLength: 1
-          items:
-            type: object
-            additionalProperties: false
-            properties:
-              policyId:
-                type: string
-              itemId:
-                type: string
-              itemType:
-                type: string
-                default: RESOURCE_GROUP
-              consumer:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    name:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          email:
-                            type: string
-                          name:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                firstName:
-                                  type: string
-                                lastName:
-                                  type: string
-                          id:
-                            type: string
-              provider:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    name:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          email:
-                            type: string
-                          name:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                firstName:
-                                  type: string
-                                lastName:
-                                  type: string
-                          id:
-                            type: string
-              status:
-                type: string
-                enum:
-                  - ACTIVE
-                  - DELETED
-              expiryAt:
-                type: string
-              constraints:
-                type: object
-              updatedAt:
-                type: string
-                minLength: 1
-              createdAt:
-                type: string
-                minLength: 1
-      example:
-        type: urn:dx:acl:success
-        title: Success
-        results:
-          - policyId: aaaaaaaa-6473-3546-5436-8758aaaa5897
-            itemId: cccccccc-6754-8958-2456-3452aaaa5436
-            itemType: RESOURCE_GROUP
-            expiryAt: '2026-09-05T20:00:19'
-            constraints:
-              access:
-                - sub
-            status: ACTIVE
-            updatedAt: '2024-02-14T04:54:16.592540'
-            createdAt: '2023-10-26T11:17:58.473452'
-            consumer:
-              email: dummyConsumerAbcd@example.com
-              name:
-                firstName: Dummy
-                lastName: Consumer
-              id: gklmcd4-4576-3455-5645-3565aaaa4255
-            provider:
-              email: dummyProvider@example.com
-              name:
-                firstName: Dummy
-                lastName: Provider
-              id: bbbbbbbb-8958-2445-2354-7587aaaa6776
-          - policyId: aaaaaaaa-9870-7676-7456-2454aaaa1111
-            itemId: cccccccc-2452-2455-5656-1111aaaa7878
-            itemType: RESOURCE_GROUP
-            expiryAt: '2024-08-05T20:00:29'
-            constraints:
-              access:
-                - sub
-            status: ACTIVE
-            updatedAt: '2023-11-07T09:12:44.144204'
-            createdAt: '2023-09-26T11:17:58.473452'
-            consumer:
-              email: dummyConsumer@example.com
-              name:
-                firstName: Dummy
-                lastName: Consumer
-              id: gklmcd4-4576-3455-5645-3565aaaa4255
-            provider:
-              email: dummyProviderTwo@example.com
-              name:
-                firstName: Some
-                lastName: ProviderTwo
-              id: bbbbbbbb-2652-1167-1766-4587aaaa2454
-    deleteNotificationForbiddenResponse:
-      title: Delete notification forbidden
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:forbidden
-        title: Forbidden
-        detail: 'Access Denied: You do not have ownership rights for this resource.'
-    deleteNotificationNotFound:
-      title: Delete notification not found
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:notFound
-        title: Not Found
-        detail: Request could not be withdrawn, as it is not found
-    deleteNotificationBadRequest:
-      title: Delete notification bad request
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:badRequest
-        title: Bad Request
-        detail: Request could not be withdrawn, as it is not in pending status
-    deleteNotification:
-      title: Delete Notification
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:success
-        title: Success
-        detail: Request deleted successfully
-    deletePolicy:
-      title: deletePolicy
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:success
-        title: Success
-        detail: Policy deleted successfully
-    deletePolicyInvalidUserResponse:
-      title: deletePolicyInvalidUserResponse
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:forbidden
-        title: Forbidden
-        detail: 'Access Denied: You do not have ownership rights for this policy.'
-    getPolicyInvalidUserResponse:
-      title: getPolicyInvalidUserResponse
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:forbidden
-        title: Access Denied
-        detail: Policy could not be fetched, user doesn't own the policy
-    updateNotificationInvalidUserResponse:
-      title: updateNotificationInvalidUserResponse
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-        title:
-          type: string
-        detail:
-          type: string
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:forbidden
-        title: Access Denied
-        detail: Notification could not be updated, notification doesn't belong to the user
-    policyNotFound:
-      title: policyNotFound
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:notFound
-        title: Not Found
-        detail: Policy Not Found
-    deletePolicyErrorResponse:
-      title: deletePolicyErrorResponse
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:badRequest
-        title: Bad Request
-        detail: Policy could not be deleted, as policy is not ACTIVE
-    deletePolicyNotFoundErrorResponse:
-      title: deletePolicyNotFoundErrorResponse
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:notFound
-        title: Not Found
-        detail: Policy could not be deleted, as it doesn't exist
     Unauthorized:
       type: object
       additionalProperties: false
@@ -17932,89 +16881,9 @@ components:
         - title
         - detail
       example:
-        type: urn:dx:acl:invalidAuthorizationToken
+        type: urn:dx:controlPlane:notAuthorized
         title: Not Authorized
-        detail: Not Authorized
-    createPolicyBadRequest:
-      title: Create policy bad request
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:badRequest
-        title: Bad Request
-        detail: Item id given is not present
-    createPolicyForbidden:
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-          minLength: 1
-        title:
-          type: string
-          minLength: 1
-        detail:
-          type: string
-          minLength: 1
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:forbidden
-        title: Forbidden
-        detail: 'Access Denied: You do not have ownership rights for this resource.'
-    createPolicySuccessResponse:
-      title: complete
-      type: object
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-        title:
-          type: string
-        detail:
-          type: string
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:success
-        title: Success
-        detail: Policy created successfully
-    conflictResponse:
-      title: standardPolicyAlreadyExistErrorResponse
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-        title:
-          type: string
-        detail:
-          type: string
-      required:
-        - type
-        - title
-        - detail
-      example:
-        type: urn:dx:acl:conflict
-        title: Conflict
-        detail: Policy already exist for the request object [bf9d8f85-b7b0-40bb-8197-0046725f1ca8]
+        detail: Missing or invalid Bearer token
     generalBadRequest:
       additionalProperties: false
       properties:
@@ -18253,7 +17122,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:cat:InvalidRequest
+          example: urn:dx:controlPlane:badRequest
         title:
           type: string
           example: Invalid Request
@@ -18704,7 +17573,7 @@ components:
       properties:
         type:
           type: string
-          example: dx:controlPlane:success
+          example: urn:dx:controlPlane:success
         title:
           type: string
           example: Success
@@ -19243,7 +18112,7 @@ components:
         type:
           type: string
           description: URN indicating success or error type
-          example: dx:controlPlane:success
+          example: urn:dx:controlPlane:success
         title:
           type: string
           description: Human-readable response title
@@ -22555,7 +21424,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:controlPlane:bad_request
+          example: urn:dx:controlPlane:badRequest
         title:
           type: string
           example: Bad Request
@@ -22587,7 +21456,7 @@ components:
       properties:
         type:
           type: string
-          example: urn:dx:controlPlane:not_found
+          example: urn:dx:controlPlane:notFound
         title:
           type: string
           example: Not Found
@@ -23002,7 +21871,7 @@ components:
       properties:
         type:
           type: string
-          example: dx:controlPlane:success
+          example: urn:dx:controlPlane:success
         title:
           type: string
           example: Success
@@ -23251,7 +22120,7 @@ components:
         type:
           type: string
           description: URN identifying the response category
-          example: dx:controlPlane:success
+          example: urn:dx:controlPlane:success
         title:
           type: string
           description: Short response title
@@ -23339,7 +22208,7 @@ components:
         type:
           type: string
           description: URN identifying the response category
-          example: dx:controlPlane:success
+          example: urn:dx:controlPlane:success
         title:
           type: string
           description: Short response title
@@ -23823,7 +22692,7 @@ components:
       properties:
         type:
           type: string
-          example: dx:controlPlane:success
+          example: urn:dx:controlPlane:success
         title:
           type: string
           example: Success

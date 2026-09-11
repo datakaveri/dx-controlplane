@@ -757,7 +757,7 @@ ErrorResponse:
   properties:
     type:
       type: string
-      example: urn:dx:cat:InvalidRequest
+      example: urn:dx:controlPlane:badRequest
     title:
       type: string
       example: Invalid Request
@@ -1213,7 +1213,7 @@ successResponseForCreateDataBankResourceEntity:
   properties:
     type:
       type: string
-      example: dx:controlPlane:success
+      example: urn:dx:controlPlane:success
     title:
       type: string
       example: Success
@@ -1755,7 +1755,7 @@ successResponseForUpdateAdexAppsEntity:
     type:
       type: string
       description: URN indicating success or error type
-      example: dx:controlPlane:success
+      example: urn:dx:controlPlane:success
     title:
       type: string
       description: Human-readable response title
@@ -5115,7 +5115,7 @@ BadRequest:
   properties:
     type:
       type: string
-      example: urn:dx:controlPlane:bad_request
+      example: urn:dx:controlPlane:badRequest
     title:
       type: string
       example: Bad Request
@@ -5147,7 +5147,7 @@ NotFound:
   properties:
     type:
       type: string
-      example: urn:dx:controlPlane:not_found
+      example: urn:dx:controlPlane:notFound
     title:
       type: string
       example: Not Found
