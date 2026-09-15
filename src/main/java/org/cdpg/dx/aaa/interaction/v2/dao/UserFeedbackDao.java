@@ -1,13 +1,11 @@
 package org.cdpg.dx.aaa.interaction.v2.dao;
 
 import io.vertx.core.Future;
-import org.cdpg.dx.aaa.interaction.v2.model.ProviderFeedback;
-import org.cdpg.dx.aaa.interaction.v2.model.ProviderFeedbackPaginatedResponse;
+import java.util.UUID;
+import org.cdpg.dx.aaa.interaction.v2.model.FeedbackStatus;
 import org.cdpg.dx.aaa.interaction.v2.model.UserFeedback;
 import org.cdpg.dx.aaa.interaction.v2.model.UserFeedbackPaginatedResponse;
 import org.cdpg.dx.common.request.PaginatedRequest;
-
-import java.util.UUID;
 
 public interface UserFeedbackDao {
 
@@ -15,6 +13,9 @@ public interface UserFeedbackDao {
 
   Future<UserFeedbackPaginatedResponse> fetchUserFeedbacks(PaginatedRequest request);
 
+  Future<UserFeedbackPaginatedResponse> fetchPlatformUsersFeedbacks(PaginatedRequest request);
 
   Future<UserFeedback> postFeedback(UserFeedback request);
+
+  Future<UserFeedback> updateFeedbackStatus(UUID feedbackId, FeedbackStatus status, String comment);
 }

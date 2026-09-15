@@ -3,6 +3,7 @@ package org.cdpg.dx.aaa.interaction.v2.controller;
 import static org.cdpg.dx.aaa.apiserver.OperationIds.*;
 import static org.cdpg.dx.auditing.v2.Constant.UserActivityAuditSchema.CREATED_AT;
 
+import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
@@ -11,10 +12,11 @@ import java.util.Set;
 import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.aaa.interaction.v2.enums.InteractionAction;
 import org.cdpg.dx.aaa.interaction.v2.enums.InteractionAuditAction;
 import org.cdpg.dx.aaa.interaction.v2.enums.ProviderFeedbackType;
+import org.cdpg.dx.aaa.interaction.v2.model.FeedbackApprovalRequest;
+import org.cdpg.dx.aaa.interaction.v2.model.FeedbackStatus;
 import org.cdpg.dx.aaa.interaction.v2.model.InteractionDelta;
 import org.cdpg.dx.aaa.interaction.v2.model.ProviderFeedback;
 import org.cdpg.dx.aaa.interaction.v2.model.UserFeedback;
@@ -22,6 +24,7 @@ import org.cdpg.dx.aaa.interaction.v2.model.UserFeedbackResult;
 import org.cdpg.dx.aaa.interaction.v2.model.UserInteractionV2Request;
 import org.cdpg.dx.aaa.interaction.v2.service.UserInteractionV2Service;
 import org.cdpg.dx.aaa.interaction.v2.util.InteractionAuditLogHelper;
+import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
@@ -43,7 +46,10 @@ public class UserInteractionV2Controller implements ApiController {
           "actionSubtype", "action_subtype",
           "userId", "user_id",
           "rating", "entity_rating",
-          "ratingCreatedAt", "feedback_created_at");
+          "ratingCreatedAt", "feedback_created_at",
+          "feedbackStatus", "feedback_status",
+          "feedbackComment", "feedback_comment",
+          "feedbackStatusUpdatedAt", "feedback_status_updated_at");
   private static final Set<String> FEEDBACK_SORT_FIELDS = Set.of("ratingCreatedAt");
   private static final Map<String, String> PROVIDER_FEEDBACK_FILTER_MAP =
       Map.of("assetId", "asset_id", "type", "type", "userId", "user_id");
@@ -71,6 +77,8 @@ public class UserInteractionV2Controller implements ApiController {
         AuthorizationHandler.forScopesWithContext(
             ScopeRule.self(Scopes.OWN_ASSET_MANAGEMENT),
             ScopeRule.org(Scopes.ORG_ASSET_MANAGEMENT));
+    Handler<RoutingContext> cosAdminAccess =
+        AuthorizationHandler.forScopes(Scopes.ASSET_MANAGEMENT);
 
     builder
         .operation(OP_POST_USER_INTERACTION)
@@ -93,10 +101,22 @@ public class UserInteractionV2Controller implements ApiController {
         .handler(this::handlePostUpdateUserFeedbackRequest);
 
     builder
+        .operation(OP_PUT_USER_FEEDBACK)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(cosAdminAccess)
+        .handler(this::handleUpdateUserFeedbackStatusRequest);
+
+    builder
         .operation(OP_GET_USER_FEEDBACK)
         .handler(auditingHandler::handleApiAudit)
         .handler(userScopedAccess)
         .handler(this::handleGetUserFeedbackRequest);
+
+    builder
+        .operation(OP_GET_PLATFORM_USER_FEEDBACK)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(cosAdminAccess)
+        .handler(this::handleGetPlatformUsersFeedbackRequests);
 
     builder
         .operation(OP_DELETE_USER_FEEDBACK)
@@ -277,6 +297,58 @@ public class UserInteractionV2Controller implements ApiController {
     }
   }
 
+  private void handleUpdateUserFeedbackStatusRequest(RoutingContext ctx) {
+
+    LOGGER.info("PUT /feedback/{id} called");
+
+    try {
+
+      String feedbackIdParam = ctx.pathParam("id");
+
+      if (feedbackIdParam == null) {
+        ctx.fail(new IllegalArgumentException("Missing required path parameter: id"));
+        return;
+      }
+
+      UUID feedbackId = UUID.fromString(feedbackIdParam);
+
+      JsonObject req = ctx.body().asJsonObject();
+
+      FeedbackApprovalRequest approvalRequest = FeedbackApprovalRequest.fromJson(req);
+
+      service
+          .updateFeedbackStatus(feedbackId, approvalRequest.status(), approvalRequest.comment())
+          .onSuccess(
+              feedback -> {
+                InteractionAuditAction auditAction =
+                    approvalRequest.status() == FeedbackStatus.APPROVED
+                        ? InteractionAuditAction.APPROVE_RATING
+                        : InteractionAuditAction.REJECT_RATING;
+
+                UserActivityAuditLogBuilder auditLog =
+                    InteractionAuditLogHelper.buildFeedbackAudit(
+                        ctx,
+                        feedback.assetId() != null ? feedback.assetId().toString() : null,
+                        auditAction);
+
+                CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+
+                ResponseBuilder.sendSuccess(ctx, feedback, urnGenerator);
+              })
+          .onFailure(
+              err -> {
+                LOGGER.error("PUT /feedback/{id} failed", err);
+                ctx.fail(err);
+              });
+
+    } catch (Exception e) {
+
+      LOGGER.error("Invalid PUT /feedback/{id} request", e);
+
+      ctx.fail(e);
+    }
+  }
+
   private void handleGetUserFeedbackRequest(RoutingContext ctx) {
     LOGGER.info("GET /user/feedback called");
 
@@ -285,7 +357,7 @@ public class UserInteractionV2Controller implements ApiController {
           PaginationRequestBuilder.from(ctx)
               .allowedFiltersDbMap(FEEDBACK_FILTER_MAP)
               .apiToDbMap(FEEDBACK_FILTER_MAP)
-              //.additionalFilters(Map.of("user_id", ctx.user().subject()))
+              .additionalFilters(Map.of("user_id", ctx.user().subject()))
               .allowedSortFields(FEEDBACK_SORT_FIELDS)
               .defaultSort("feedback_created_at", "desc")
               .defaultTimeField("feedback_created_at")
@@ -293,6 +365,48 @@ public class UserInteractionV2Controller implements ApiController {
       LOGGER.debug("paginated request has been build ");
       service
           .getUserFeedback(paginatedRequest)
+          .onSuccess(
+              result -> {
+                LOGGER.info("Fetched user feedbacks successfully");
+
+                UserActivityAuditLogBuilder auditLog =
+                    InteractionAuditLogHelper.buildFeedbackAudit(
+                        ctx, null, InteractionAuditAction.VIEW_RATING);
+                CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+
+                ResponseBuilder.sendSuccess(
+                    ctx,
+                    new UserFeedbackResult(result.summary(), result.data()),
+                    result.paginationInfo(),
+                    urnGenerator);
+              })
+          .onFailure(
+              err -> {
+                LOGGER.error("Failed to fetch user feedbacks {}", err.getMessage(), err);
+                ctx.fail(err);
+              });
+
+    } catch (Exception e) {
+      LOGGER.error("Invalid GET /user/feedback request:  {} ", e.getMessage(), e);
+      ctx.fail(e);
+    }
+  }
+
+  private void handleGetPlatformUsersFeedbackRequests(RoutingContext ctx) {
+    LOGGER.info("GET /user/feedback called");
+
+    try {
+      PaginatedRequest paginatedRequest =
+          PaginationRequestBuilder.from(ctx)
+              .allowedFiltersDbMap(FEEDBACK_FILTER_MAP)
+              .apiToDbMap(FEEDBACK_FILTER_MAP)
+              .allowedSortFields(FEEDBACK_SORT_FIELDS)
+              .defaultSort("feedback_created_at", "desc")
+              .defaultTimeField("feedback_created_at")
+              .build();
+      LOGGER.debug("paginated request has been build ");
+      service
+          .getPlatformUsersFeedbacks(paginatedRequest)
           .onSuccess(
               result -> {
                 LOGGER.info("Fetched user feedbacks successfully");
