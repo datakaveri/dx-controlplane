@@ -295,6 +295,12 @@ paths:
     $ref: ../controlplane-openapi/paths/interactions.yaml#/~1iudx~1v2~1user~1interactions~1sync
   /iudx/v2/user/feedback:
     $ref: ../controlplane-openapi/paths/interactions.yaml#/~1iudx~1v2~1user~1feedback
+  /iudx/v2/user/feedback/platform:
+    $ref: ../controlplane-openapi/paths/interactions.yaml#/~1iudx~1v2~1user~1feedback~1platform
+  /iudx/v2/user/feedback/user:
+    $ref: ../controlplane-openapi/paths/interactions.yaml#/~1iudx~1v2~1user~1feedback~1user
+  /iudx/v2/user/feedback/{id}:
+    $ref: ../controlplane-openapi/paths/interactions.yaml#/~1iudx~1v2~1user~1feedback~1{id}
   /iudx/v2/provider/feedback:
     $ref: ../controlplane-openapi/paths/interactions.yaml#/~1iudx~1v2~1provider~1feedback
   /iudx/v2/auth/kyc/verify:

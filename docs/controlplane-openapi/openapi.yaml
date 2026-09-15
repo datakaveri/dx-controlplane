@@ -295,6 +295,12 @@ paths:
     $ref: paths/interactions.yaml#/~1iudx~1v2~1user~1interactions~1sync
   /iudx/v2/user/feedback:
     $ref: paths/interactions.yaml#/~1iudx~1v2~1user~1feedback
+  /iudx/v2/user/feedback/platform:
+    $ref: paths/interactions.yaml#/~1iudx~1v2~1user~1feedback~1platform
+  /iudx/v2/user/feedback/user:
+    $ref: paths/interactions.yaml#/~1iudx~1v2~1user~1feedback~1user
+  /iudx/v2/user/feedback/{id}:
+    $ref: paths/interactions.yaml#/~1iudx~1v2~1user~1feedback~1{id}
   /iudx/v2/provider/feedback:
     $ref: paths/interactions.yaml#/~1iudx~1v2~1provider~1feedback
   /iudx/v2/auth/kyc/verify:

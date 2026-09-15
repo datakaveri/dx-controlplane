@@ -11,8 +11,9 @@ public enum InteractionAuditAction {
   REMOVE_RATING("Remove Rating"),
   PROVIDER_FEEDBACK("Provider Feedback"),
   VIEW_PROVIDER_FEEDBACK("View Provider Feedback"),
-  REMOVE_PROVIDER_FEEDBACK("Remove Provider Feedback");
-
+  REMOVE_PROVIDER_FEEDBACK("Remove Provider Feedback"),
+  APPROVE_RATING("Approve Rating"),
+  REJECT_RATING("Reject Rating");
   private final String value;
 
   InteractionAuditAction(String value) {

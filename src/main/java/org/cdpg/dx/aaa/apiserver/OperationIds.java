@@ -146,7 +146,9 @@ public final class OperationIds {
   public static final String OP_GET_ACTIVITY_FOR_ADMIN = "get-activityLogs-for-admin";
   public static final String OP_SYNC_INTERACTION_METRICS = "sync-interaction-metrics";
   public static final String OP_POST_USER_FEEDBACK = "post-user-feedback";
-  public static final String OP_GET_USER_FEEDBACK = "get-user-feedback";
+  public static final String OP_PUT_USER_FEEDBACK = "put-user-feedback";
+  public static final String OP_GET_PLATFORM_USER_FEEDBACK = "get-platform-user-feedback";
+  public static final String OP_GET_USER_FEEDBACK = "get-my-user-feedback";
   public static final String OP_DELETE_USER_FEEDBACK = "delete-user-feedback";
   public static final String OP_POST_PROVIDER_FEEDBACK = "post-provider-feedback";
   public static final String OP_GET_PROVIDER_FEEDBACK = "get-provider-feedback";

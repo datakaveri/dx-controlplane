@@ -757,17 +757,17 @@ paths:
           label: Get access requests
           source: |
             curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/provider' \
-          '--header ''Authorization': <tokenValue>'
+          --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: Get access request with status
           source: |
             curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/provider?requestStatus=GRANTED' \
-          '--header ''Authorization': <tokenValue>'
+          --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: With pagination query params
           source: |
             curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/provider?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc' \
-          '--header ''Authorization': <tokenValue>'
+          --header 'Authorization: <tokenValue>'
   /iudx/acl/apd/v2/access_request/provider/report:
     get:
       tags:
@@ -873,17 +873,17 @@ paths:
           label: Get access requests
           source: |
             curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/provider/report' \
-          '--header ''Authorization': <tokenValue>'
+          --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: Get access request with status
           source: |
             curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/provider/report?requestStatus=GRANTED' \
-          '--header ''Authorization': <tokenValue>'
+          --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: With pagination query params
           source: |
             curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/provider/report?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc' \
-          '--header ''Authorization': <tokenValue>'
+          --header 'Authorization: <tokenValue>'
   /iudx/acl/apd/v2/access_request/organisation/report:
     get:
       tags:
@@ -989,17 +989,17 @@ paths:
           label: Get access requests
           source: |
             curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/organisation/report' \
-          '--header ''Authorization': <tokenValue>'
+          --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: Get access request with status
           source: |
             curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/organisation/report?requestStatus=GRANTED' \
-          '--header ''Authorization': <tokenValue>'
+          --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: With pagination query params
           source: |
             curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/organisation/report?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc' \
-          '--header ''Authorization': <tokenValue>'
+          --header 'Authorization: <tokenValue>'
   /iudx/acl/apd/v2/access_request/organisation:
     get:
       tags:
@@ -1143,17 +1143,17 @@ paths:
           label: Get access requests
           source: |
             curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/organisation' \
-          '--header ''Authorization': <tokenValue>'
+          --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: Get access request with status
           source: |
             curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/organisation?requestStatus=GRANTED' \
-          '--header ''Authorization': <tokenValue>'
+          --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: With pagination query params
           source: |
             curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/organisation?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc' \
-          '--header ''Authorization': <tokenValue>'
+          --header 'Authorization: <tokenValue>'
   /iudx/acl/apd/v2/access_request/consumer:
     get:
       tags:
@@ -1278,17 +1278,17 @@ paths:
           label: Get consumer access requests
           source: |
             curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/consumer' \
-          '--header ''Authorization': <tokenValue>'
+          --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: Get consumer access request with status
           source: |
             curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/consumer?requestStatus=GRANTED' \
-          '--header ''Authorization': <tokenValue>'
+          --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: With pagination query params
           source: |
             curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/consumer?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc' \
-          '--header ''Authorization': <tokenValue>'
+          --header 'Authorization: <tokenValue>'
   /iudx/acl/apd/v2/access_request/has_access:
     post:
       tags:
@@ -1571,17 +1571,17 @@ paths:
           label: Get access requests
           source: |
             curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/platform' \
-          '--header ''Authorization': <tokenValue>'
+          --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: Get access request with status
           source: |
             curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/platform?requestStatus=GRANTED' \
-          '--header ''Authorization': <tokenValue>'
+          --header 'Authorization: <tokenValue>'
         - lang: cURL
           label: With pagination query params
           source: |
             curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/platform?requestStatus=PENDING &timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc' \
-          '--header ''Authorization': <tokenValue>'
+          --header 'Authorization: <tokenValue>'
   /iudx/acl/apd/v2/policy:
     post:
       tags:

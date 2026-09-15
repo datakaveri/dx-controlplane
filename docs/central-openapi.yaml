@@ -6248,13 +6248,93 @@ paths:
             "comment": "Documentation is missing usage examples."
             }
             }'
+    delete:
+      tags:
+        - User Interactions
+      summary: Delete user feedback
+      description: |
+        Clears the feedback fields (entityRating, actionSubtype, actionSubdata) for the authenticated user's feedback entry on the given asset. The record itself is retained. User should be the one who has already interacted with the asset before.
+      operationId: delete-user-feedback
+      security:
+        - authorization: []
+      parameters:
+        - name: assetId
+          in: query
+          description: UUID of the asset whose feedback (from the authenticated user) should be cleared
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Feedback fields cleared successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              example:
+                type: urn:dx:controlPlane:success
+                title: Success
+                detail: Interaction deleted successfully
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              example:
+                type: urn:dx:controlPlane:notFound
+                title: Not Found
+                detail: Feedback not found
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Delete user feedback
+          source: |
+            curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/user/feedback?assetId=811e9876-9381-4a25-8ad1-e8b289616ab8' --header 'Authorization: Bearer <your-token>'
+  /iudx/v2/user/feedback/platform:
     get:
       tags:
         - User Interactions
-      summary: Get user feedback
+      summary: Get user feedback for platform review
       description: |
-        Retrieve paginated user feedback with optional filters by user, asset, or action subtype. Requires an authenticated user token.
-      operationId: get-user-feedback
+        Retrieve a paginated list of user feedback submitted for platform assets that is currently pending COS Admin review. This endpoint is restricted to users with the `cos_admin` role. COS Admins can use the returned feedback to review each submission and subsequently approve or reject it through the feedback approval API. Optional filters can be used to narrow the pending feedback by user, asset, action subtype, rating, or feedback creation time.
+      operationId: get-platform-user-feedback
       security:
         - authorization: []
       parameters:
@@ -6351,43 +6431,192 @@ paths:
         - lang: cURL
           label: Get user feedback (by asset)
           source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback?assetId=811e9876-9381-4a25-8ad1-e8b289616ab8&page=1&size=10' \
-            --header 'Authorization: Bearer <your-token>'
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback/platform?assetId=811e9876-9381-4a25-8ad1-e8b289616ab8&page=1&size=10' \
+              --header 'Authorization: Bearer <your-token>'
         - lang: cURL
           label: Get user feedback (by user)
           source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback?userId=fd62ba22-d338-4dad-b09c-2bccfa20b04a&page=1&size=10' \
-            --header 'Authorization: Bearer <your-token>'
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback/platform?userId=fd62ba22-d338-4dad-b09c-2bccfa20b04a&page=1&size=10' \
+              --header 'Authorization: Bearer <your-token>'
         - lang: cURL
           label: Get user feedback (by action subtype, repeatable)
           source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback?actionSubtype=data_quality&actionSubtype=documentation&page=1&size=10' \
-            --header 'Authorization: Bearer <your-token>'
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback/platform?actionSubtype=data_quality&actionSubtype=documentation&page=1&size=10' \
+              --header 'Authorization: Bearer <your-token>'
         - lang: cURL
           label: Get user feedback (unfiltered, paginated)
           source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback?page=1&size=10' \
-            --header 'Authorization: Bearer <your-token>'
-    delete:
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback/platform?page=1&size=10' \
+              --header 'Authorization: Bearer <your-token>'
+  /iudx/v2/user/feedback/user:
+    get:
       tags:
         - User Interactions
-      summary: Delete user feedback
+      summary: Get my user feedback
       description: |
-        Clears the feedback fields (entityRating, actionSubtype, actionSubdata) for the authenticated user's feedback entry on the given asset. The record itself is retained. User should be the one who has already interacted with the asset before.
-      operationId: delete-user-feedback
+        Retrieve a paginated list of feedback submitted by the authenticated consumer. The response contains only feedback created by the requesting user. Consumers can optionally filter their feedback by asset, action subtype, rating, or feedback creation time. The user identity is derived from the authenticated user token and cannot be supplied as a query parameter.
+      operationId: get-my-user-feedback
       security:
         - authorization: []
       parameters:
         - name: assetId
           in: query
-          description: UUID of the asset whose feedback (from the authenticated user) should be cleared
+          description: Filter feedback by asset UUID
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: actionSubtype
+          in: query
+          description: Filter by action subtype (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - name: rating
+          in: query
+          description: Filter by star rating (repeatable)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: integer
+              minimum: 1
+              maximum: 5
+        - name: time
+          in: query
+          description: |
+            Start of the feedback-creation time window. Requires `timerel`; requires `endtime` for `between`/`during`.
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: endtime
+          in: query
+          description: |
+            End of the feedback-creation time window. Only used with `timerel=between` or `timerel=during`.
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: timerel
+          in: query
+          description: |
+            Temporal relation to apply against the feedback creation time when `time` is provided.
+          required: false
+          schema:
+            type: string
+            enum:
+              - before
+              - after
+              - between
+              - during
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: sort
+          in: query
+          description: |
+            Sort results by feedback creation time. Format: `feedbackCreatedAt:asc` or `feedbackCreatedAt:desc`. Defaults to `feedbackCreatedAt:desc`.
+          required: false
+          schema:
+            type: string
+          example: feedbackCreatedAt:desc
+      responses:
+        '200':
+          description: Successfully retrieved feedback submitted by the authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserFeedbackPaginatedResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Get my feedback
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback/user?page=1&size=10' \
+              --header 'Authorization: Bearer <your-token>'
+        - lang: cURL
+          label: Get my feedback by asset
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback/user?assetId=811e9876-9381-4a25-8ad1-e8b289616ab8&page=1&size=10' \
+              --header 'Authorization: Bearer <your-token>'
+  /iudx/v2/user/feedback/{id}:
+    put:
+      tags:
+        - User Interactions
+      summary: Approve or reject user feedback
+      description: |
+        Approve or reject a pending user feedback entry. This API is restricted to COS Admin users.
+
+        Only feedback entries with `PENDING` status can be processed. Once feedback is approved or rejected, its status cannot be changed through this API.
+
+        When approving feedback, the `comment` field is optional. When rejecting feedback, a non-empty `comment` is mandatory and should describe the reason for rejection.
+
+        A rejected feedback entry remains associated with the submitting user but is not considered for public/provider feedback listings or rating summaries.
+      operationId: put-user-feedback
+      security:
+        - authorization: []
+      parameters:
+        - name: id
+          in: path
+          description: UUID of the feedback entry to approve or reject
           required: true
           schema:
             type: string
             format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  description: Status to apply to the pending feedback
+                  enum:
+                    - APPROVED
+                    - REJECTED
+                comment:
+                  type: string
+                  description: |
+                    Reason for the moderation decision. Required when status is `REJECTED` and optional when status is `APPROVED`.
+            examples:
+              approve:
+                summary: Approve feedback
+                value:
+                  status: APPROVED
+              approveWithComment:
+                summary: Approve feedback with comment
+                value:
+                  status: APPROVED
+                  comment: Feedback reviewed and approved.
+              reject:
+                summary: Reject feedback with reason
+                value:
+                  status: REJECTED
+                  comment: The feedback does not provide sufficient information.
       responses:
         '200':
-          description: Feedback fields cleared successfully
+          description: Feedback status updated successfully
           content:
             application/json:
               schema:
@@ -6402,13 +6631,32 @@ paths:
               example:
                 type: urn:dx:controlPlane:success
                 title: Success
-                detail: Interaction deleted successfully
+                detail: Feedback status updated successfully
         '400':
           description: Bad Request
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/GenericBadRequestResponse'
+              examples:
+                invalidStatus:
+                  summary: Invalid feedback status
+                  value:
+                    type: urn:dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: status must be APPROVED or REJECTED
+                missingComment:
+                  summary: Missing rejection comment
+                  value:
+                    type: urn:dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: Comment is required when rejecting feedback
+                invalidFeedbackId:
+                  summary: Invalid feedback UUID
+                  value:
+                    type: urn:dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: Invalid feedback id
         '401':
           description: Unauthorized
           content:
@@ -6419,8 +6667,18 @@ paths:
                 type: urn:dx:controlPlane:notAuthorized
                 title: Not Authorized
                 detail: Missing or invalid Bearer token
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+              example:
+                type: urn:dx:controlPlane:forbidden
+                title: Forbidden
+                detail: Only COS Admin users can approve or reject feedback
         '404':
-          description: Not Found
+          description: Pending feedback not found
           content:
             application/json:
               schema:
@@ -6435,7 +6693,7 @@ paths:
               example:
                 type: urn:dx:controlPlane:notFound
                 title: Not Found
-                detail: Feedback not found
+                detail: Pending feedback not found
         '500':
           description: Internal Server Error
           content:
@@ -6444,9 +6702,24 @@ paths:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
       x-codeSamples:
         - lang: cURL
-          label: Delete user feedback
-          source: |
-            curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/user/feedback?assetId=811e9876-9381-4a25-8ad1-e8b289616ab8' --header 'Authorization: Bearer <your-token>'
+          label: Approve user feedback
+          source: |-
+            curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/user/feedback/9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8' \
+            --header 'Authorization: Bearer <your-token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+            "status": "APPROVED"
+            }'
+        - lang: cURL
+          label: Reject user feedback
+          source: |-
+            curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/user/feedback/9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8' \
+            --header 'Authorization: Bearer <your-token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+            "status": "REJECTED",
+            "comment": "The feedback does not provide sufficient information."
+            }'
   /iudx/v2/provider/feedback:
     post:
       tags:
@@ -21597,7 +21870,6 @@ components:
       required:
         - type
         - title
-        - summary
         - result
         - paginationInfo
       properties:
@@ -21618,43 +21890,134 @@ components:
       example:
         type: urn:dx:controlPlane:success
         title: Success
-        summary:
-          averageRating: 4.5
-          totalRatings: 2
-          ratingDistribution:
-            '1': 0
-            '2': 0
-            '3': 0
-            '4': 1
-            '5': 1
         result:
-          - id: 3f329ef8-c1e6-417f-93d6-6b568366612b
-            userId: da56e517-f8bc-46fd-95e3-7257acd64da7
-            userName: Asha Rao
-            organisation: Acme Analytics
-            assetId: 00b80a67-a5aa-43cf-ba60-dcd1c09b1c4f
-            assetType: DATABANK
-            entityRating: 5
-            actionSubtype: data_quality
-            actionSubdata:
-              comment: The data is accurate and well documented.
-          - id: c2f5ef34-0362-40ae-b691-e3a6411a51da
-            userId: 23100470-c8ce-4f9d-8555-94087378b5f6
-            userName: Rahul Mehta
-            organisation: null
-            assetId: 02192219-802a-4d7d-a130-8cc892a9d0d2
-            assetType: AI_MODEL
-            entityRating: 4
-            actionSubtype: documentation
-            actionSubdata:
-              issue: Incomplete documentation
-        paginationInfo:
-          page: 1
-          size: 10
-          totalCount: 2
-          totalPages: 1
-          hasNext: false
-          hasPrevious: false
+          summary:
+            averageRating: 3.8
+            totalRatings: 10
+            ratingDistribution:
+              '1': 2
+              '2': 0
+              '3': 0
+              '4': 4
+              '5': 4
+          data:
+            - id: e564fabd-27a5-40da-88f1-e0c0e8c29822
+              userId: 847d1741-9f1e-4583-89f8-96f254ca6e36
+              userName: Test User Consumer
+              organisation: IUDX - New 2020
+              assetId: dd96f3d9-9654-434d-882b-c35a9fa6fc35
+              assetType: DATABANK
+              entityRating: 4
+              ratingCreatedAt: '2026-09-15T05:02:49.906371'
+              ratingUpdatedAt: '2026-09-15T05:02:49.906371'
+              actionSubtype: data_quality
+              actionSubdata:
+                comment: The data is accurate and meets expectations.
+            - id: 96b6a2b2-f09f-4a5d-918c-6e66188dcbb8
+              userId: 847d1741-9f1e-4583-89f8-96f254ca6e36
+              userName: Test User Consumer
+              organisation: IUDX - New 2020
+              assetId: 588a71fc-a7b2-46a2-a06c-a3777db5f07e
+              assetType: DATABANK
+              entityRating: 5
+              ratingCreatedAt: '2026-09-11T10:53:23.666794'
+              ratingUpdatedAt: '2026-09-11T10:53:23.666794'
+              actionSubdata:
+                comment: 5 star
+            - id: 059675ca-a294-4fbe-9679-55ca0c4fb757
+              userId: 847d1741-9f1e-4583-89f8-96f254ca6e36
+              userName: Test User Consumer
+              organisation: IUDX - New 2020
+              assetId: c594efcf-8c3c-4192-b4a3-5411daab69fb
+              assetType: DATABANK
+              entityRating: 5
+              ratingCreatedAt: '2026-09-11T10:44:55.252737'
+              ratingUpdatedAt: '2026-09-11T10:45:14.761093'
+              actionSubdata:
+                comment: Rest
+            - id: c308abf2-f1ff-44f1-96f7-c6d2c985d0ce
+              userId: 847d1741-9f1e-4583-89f8-96f254ca6e36
+              userName: Test User Consumer
+              organisation: IUDX - New 2020
+              assetId: d28c953c-a363-4ab7-8d6f-38400e08958b
+              assetType: DATABANK
+              entityRating: 5
+              ratingCreatedAt: '2026-09-11T05:23:05.136736'
+              ratingUpdatedAt: '2026-09-11T05:23:05.136736'
+              actionSubdata:
+                comment: Heloo Heloo Heloo Heloo Heloo Heloo Heloo
+            - id: f75c85d5-ac91-441d-bc0f-23262dbbd447
+              userId: 847d1741-9f1e-4583-89f8-96f254ca6e36
+              userName: Test User Consumer
+              organisation: IUDX - New 2020
+              assetId: d28c953c-a363-4ab7-8d6f-38400e08958b
+              assetType: DATABANK
+              entityRating: 5
+              ratingCreatedAt: '2026-09-11T05:11:26.884067'
+              ratingUpdatedAt: '2026-09-11T05:21:57.276971'
+              actionSubdata:
+                comment: Heloo Heloo Heloo Heloo Heloo
+            - id: 55713729-6d74-443a-8084-5f80795b5441
+              userId: 847d1741-9f1e-4583-89f8-96f254ca6e36
+              userName: Test User Consumer
+              organisation: IUDX - New 2020
+              assetId: c594efcf-8c3c-4192-b4a3-5411daab69fb
+              assetType: DATABANK
+              entityRating: 4
+              ratingCreatedAt: '2026-09-09T11:22:39.369221'
+              ratingUpdatedAt: '2026-09-09T11:22:39.369221'
+              actionSubdata:
+                comment: test test test test test test test
+            - id: f6579ab5-e46d-44b4-9e70-9583db242214
+              userId: 847d1741-9f1e-4583-89f8-96f254ca6e36
+              userName: Test User Consumer
+              organisation: IUDX - New 2020
+              assetId: d524c54b-1091-4ac7-b4d5-c117dd09f5ff
+              assetType: DATABANK
+              entityRating: 4
+              ratingCreatedAt: '2026-09-08T17:51:12.830709'
+              ratingUpdatedAt: '2026-09-09T14:18:11.544669'
+              actionSubtype: data_quality
+              actionSubdata:
+                comment: The data is accurate and well documented.
+            - id: cf2c4f29-a065-4a44-9093-5c79612b0bff
+              userId: 847d1741-9f1e-4583-89f8-96f254ca6e36
+              userName: Test User Consumer
+              organisation: IUDX - New 2020
+              assetId: 363d880e-bbcd-43ec-8bba-22257fe5876b
+              assetType: DATABANK
+              entityRating: 1
+              ratingCreatedAt: '2026-09-08T17:51:12.830709'
+              ratingUpdatedAt: '2026-09-08T17:51:12.830709'
+              actionSubtype: feedback
+              actionSubdata:
+                hello: world
+            - id: aa98c22d-ddf4-4aed-b95a-94de70ff0320
+              userId: 847d1741-9f1e-4583-89f8-96f254ca6e36
+              userName: Test User Consumer
+              organisation: IUDX - New 2020
+              assetId: 919c31e7-b591-410a-89ad-b9490088e912
+              assetType: DATABANK
+              entityRating: 4
+              ratingCreatedAt: '2026-09-08T17:51:12.830709'
+              ratingUpdatedAt: '2026-09-08T17:51:12.830709'
+            - id: ec68e7cd-18a2-49e8-a38c-c1972fc748d6
+              userId: 847d1741-9f1e-4583-89f8-96f254ca6e36
+              userName: Test User Consumer
+              organisation: IUDX - New 2020
+              assetId: 4ff7614c-efd2-4bbf-ba07-2cf22acae49d
+              assetType: DATABANK
+              entityRating: 1
+              ratingCreatedAt: '2026-09-08T17:51:12.830709'
+              ratingUpdatedAt: '2026-09-08T17:51:12.830709'
+              actionSubtype: testing
+          paginationInfo:
+            page: 1
+            size: 1000
+            totalCount: 10
+            totalPages: 1
+            hasNext: false
+            hasPrevious: false
     ProviderFeedbackPaginatedResponse:
       type: object
       properties:

@@ -213,6 +213,15 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
   }
 
   @Override
+  public Future<UserFeedback> updateFeedbackStatus(
+      UUID feedbackId, FeedbackStatus status, String comment) {
+
+    LOGGER.info("Updating feedback status: feedbackId={}, status={}", feedbackId, status);
+
+    return userFeedbackDao.updateFeedbackStatus(feedbackId, status, comment);
+  }
+
+  @Override
   public Future<ProviderFeedback> postProviderFeedback(ProviderFeedback request) {
     LOGGER.info("Inside service imple method - post provider feedbaack");
     return providerFeedbackDao.postProviderFeedback(request);
@@ -235,6 +244,19 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
     LOGGER.debug("UserInteractionsPaginatedResponse() method started");
     return userFeedbackDao
         .fetchUserFeedbacks(request)
+        .compose(
+            page ->
+                enrichFeedbackList(page.data())
+                    .map(
+                        enriched ->
+                            new UserFeedbackPage(page.summary(), enriched, page.paginationInfo())));
+  }
+
+  @Override
+  public Future<UserFeedbackPage> getPlatformUsersFeedbacks(PaginatedRequest request) {
+    LOGGER.debug("UserInteractionsPaginatedResponse() method started");
+    return userFeedbackDao
+        .fetchPlatformUsersFeedbacks(request)
         .compose(
             page ->
                 enrichFeedbackList(page.data())

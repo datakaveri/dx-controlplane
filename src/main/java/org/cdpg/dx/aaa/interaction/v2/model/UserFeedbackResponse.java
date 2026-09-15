@@ -16,7 +16,10 @@ public record UserFeedbackResponse(
     @JsonProperty("actionSubtype") String actionSubtype,
     @JsonProperty("actionSubdata") JsonObject actionSubdata,
     LocalDateTime ratingCreatedAt,
-    LocalDateTime ratingUpdatedAt) {
+    LocalDateTime ratingUpdatedAt,
+    @JsonProperty("feedbackStatus") String feedbackStatus,
+    @JsonProperty("feedbackComment") String feedbackComment,
+    @JsonProperty("feedbackStatusUpdatedAt") LocalDateTime feedbackStatusUpdatedAt) {
 
   public static UserFeedbackResponse from(UserFeedback feedback, String userName, String organisation) {
     return new UserFeedbackResponse(
@@ -30,6 +33,9 @@ public record UserFeedbackResponse(
         feedback.actionSubType(),
         feedback.actionSubData(),
         feedback.ratingCreatedAt(),
-        feedback.ratingUpdatedAt());
+        feedback.ratingUpdatedAt(),
+        feedback.feedbackStatus(),
+        feedback.feedbackComment(),
+        feedback.feedbackStatusUpdatedAt());
   }
 }
