@@ -18,6 +18,7 @@ import org.cdpg.dx.aaa.interaction.v2.model.RatingSummary;
 import org.cdpg.dx.aaa.interaction.v2.model.UserFeedback;
 import org.cdpg.dx.aaa.interaction.v2.model.UserFeedbackPaginatedResponse;
 import org.cdpg.dx.common.exception.DxConflictException;
+import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.TemporalRequest;
@@ -225,24 +226,24 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implement
                       status -> {
                         if (status == null) {
                           return Future.failedFuture(
-                              new IllegalStateException(
+                              new DxForbiddenException(
                                   "Feedback not found for the specified asset"));
                         }
 
                         if ("APPROVED".equals(status)) {
                           return Future.failedFuture(
-                              new IllegalStateException(
+                              new DxForbiddenException(
                                   "Feedback cannot be updated because it has already been approved"));
                         }
 
                         if ("REJECTED".equals(status)) {
                           return Future.failedFuture(
-                              new IllegalStateException(
+                              new DxForbiddenException(
                                   "Feedback cannot be updated because it has already been rejected"));
                         }
 
                         return Future.failedFuture(
-                            new IllegalStateException(
+                            new DxForbiddenException(
                                 "Feedback can only be updated while it is in PENDING status"));
                       });
             })
