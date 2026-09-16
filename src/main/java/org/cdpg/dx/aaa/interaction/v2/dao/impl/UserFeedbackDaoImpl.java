@@ -17,6 +17,7 @@ import org.cdpg.dx.aaa.interaction.v2.model.FeedbackStatus;
 import org.cdpg.dx.aaa.interaction.v2.model.RatingSummary;
 import org.cdpg.dx.aaa.interaction.v2.model.UserFeedback;
 import org.cdpg.dx.aaa.interaction.v2.model.UserFeedbackPaginatedResponse;
+import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.TemporalRequest;
@@ -35,43 +36,11 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implement
 
   @Override
   public Future<UserFeedback> postFeedback(UserFeedback userFeedback) {
+
     JsonObject json = userFeedback.toJson();
 
-    boolean hasSubtype =
-        json.containsKey("actionSubtype") && json.getString("actionSubtype") != null;
+    validateFeedback(json);
 
-    boolean hasSubdata =
-        json.containsKey("actionSubdata") && json.getJsonObject("actionSubdata") != null;
-
-    if (hasSubtype && !hasSubdata) {
-      return Future.failedFuture(
-          new IllegalArgumentException("actionSubdata is required when actionSubtype is provided"));
-    }
-
-    if (!hasSubtype && hasSubdata) {
-      return Future.failedFuture(
-          new IllegalArgumentException("actionSubtype is required when actionSubdata is provided"));
-    }
-
-    Integer rating = json.getInteger("entityRating");
-
-    if (rating != null && (rating < 1 || rating > 5)) {
-      return Future.failedFuture(
-          new IllegalArgumentException("entityRating must be between 1 and 5"));
-    }
-
-    if (rating == null && !hasSubtype) {
-      return Future.failedFuture(
-          new IllegalArgumentException(
-              "At least one of entityRating or actionSubtype/actionSubdata must be provided"));
-    }
-
-    // feedback_created_at / feedback_updated_at are kept separate from the shared
-    // created_at / updated_at columns on user_interactions, which also track
-    // unrelated like/dislike/bookmark activity on the same row. They are set here
-    // explicitly (not via the generic upsertNew/EXCLUDED path) so that
-    // feedback_created_at is written once and feedback_updated_at only moves when
-    // the feedback content itself changes.
     String sql =
         """
         INSERT INTO user_interactions (
@@ -100,57 +69,7 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implement
         )
 
         ON CONFLICT (user_id, asset_id)
-        DO UPDATE SET
-            asset_type =
-                COALESCE(
-                    EXCLUDED.asset_type,
-                    user_interactions.asset_type
-                ),
-
-            entity_rating =
-                COALESCE(
-                    EXCLUDED.entity_rating,
-                    user_interactions.entity_rating
-                ),
-
-            action_subtype =
-                COALESCE(
-                    EXCLUDED.action_subtype,
-                    user_interactions.action_subtype
-                ),
-
-            action_subdata =
-                COALESCE(
-                    EXCLUDED.action_subdata,
-                    user_interactions.action_subdata
-                ),
-
-            feedback_created_at =
-                CASE
-                    WHEN user_interactions.feedback_status IS NULL
-                    THEN now()
-                    ELSE user_interactions.feedback_created_at
-                END,
-
-            feedback_updated_at = now(),
-
-            feedback_status =
-                CASE
-                    WHEN user_interactions.feedback_status IS NULL
-                    THEN 'PENDING'
-                    ELSE user_interactions.feedback_status
-                END,
-
-            feedback_status_updated_at =
-                CASE
-                    WHEN user_interactions.feedback_status IS NULL
-                    THEN now()
-                    ELSE user_interactions.feedback_status_updated_at
-                END
-
-        WHERE
-            user_interactions.feedback_status IS NULL
-            OR user_interactions.feedback_status = 'PENDING'
+        DO NOTHING
 
         RETURNING
             id,
@@ -176,10 +95,11 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implement
             .addNull()
             .addNull();
 
-    if (rating != null) {
-      params.set(3, rating);
+    if (json.getInteger("entityRating") != null) {
+      params.set(3, json.getInteger("entityRating"));
     }
-    if (hasSubtype) {
+
+    if (json.getString("actionSubtype") != null) {
       params.set(4, json.getString("actionSubtype"));
       params.set(5, json.getJsonObject("actionSubdata"));
     }
@@ -188,15 +108,182 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implement
         .executeQuery(sql, params)
         .compose(
             rows -> {
-              if (rows.getRows().isEmpty()) {
-
-                return Future.failedFuture(
-                    new IllegalStateException(
-                        "Feedback can only be updated while it is in PENDING status"));
+              if (!rows.getRows().isEmpty()) {
+                return Future.succeededFuture(
+                    UserFeedback.fromJson(rows.getRows().getJsonObject(0)));
               }
 
-              return Future.succeededFuture(UserFeedback.fromJson(rows.getRows().getJsonObject(0)));
-            });
+              return Future.failedFuture(
+                  new DxConflictException(
+                      "Feedback already exists for this asset. "
+                          + "Use the PUT /iudx/v2/user/feedback API to update it."));
+            })
+        .onFailure(
+            err ->
+                LOGGER.error(
+                    "Failed to post feedback for userId={}, assetId={}",
+                    userFeedback.userId(),
+                    userFeedback.assetId(),
+                    err));
+  }
+
+  private void validateFeedback(JsonObject json) {
+
+    boolean hasSubtype =
+        json.containsKey("actionSubtype") && json.getString("actionSubtype") != null;
+
+    boolean hasSubdata =
+        json.containsKey("actionSubdata") && json.getJsonObject("actionSubdata") != null;
+
+    if (hasSubtype && !hasSubdata) {
+      throw new IllegalArgumentException(
+          "actionSubdata is required when actionSubtype is provided");
+    }
+
+    if (!hasSubtype && hasSubdata) {
+      throw new IllegalArgumentException(
+          "actionSubtype is required when actionSubdata is provided");
+    }
+
+    Integer rating = json.getInteger("entityRating");
+
+    if (rating != null && (rating < 1 || rating > 5)) {
+      throw new IllegalArgumentException("entityRating must be between 1 and 5");
+    }
+
+    if (rating == null && !hasSubtype) {
+      throw new IllegalArgumentException(
+          "At least one of entityRating or actionSubtype/actionSubdata must be provided");
+    }
+  }
+
+  @Override
+  public Future<UserFeedback> putFeedback(UserFeedback userFeedback) {
+
+    JsonObject json = userFeedback.toJson();
+
+    validateFeedback(json);
+
+    String sql =
+        """
+        UPDATE user_interactions
+        SET
+            asset_type = $3,
+            entity_rating = $4,
+            action_subtype = $5,
+            action_subdata = $6,
+            feedback_updated_at = now()
+        WHERE
+            user_id = $1
+            AND asset_id = $2
+            AND feedback_status = 'PENDING'
+
+        RETURNING
+            id,
+            user_id,
+            asset_id,
+            asset_type,
+            entity_rating,
+            action_subtype,
+            action_subdata,
+            feedback_created_at,
+            feedback_updated_at,
+            feedback_status,
+            feedback_comment,
+            feedback_status_updated_at
+        """;
+
+    JsonArray params =
+        new JsonArray()
+            .add(userFeedback.userId().toString())
+            .add(userFeedback.assetId().toString())
+            .add(userFeedback.assetType())
+            .addNull()
+            .addNull()
+            .addNull();
+
+    if (json.getInteger("entityRating") != null) {
+      params.set(3, json.getInteger("entityRating"));
+    }
+
+    if (json.getString("actionSubtype") != null) {
+      params.set(4, json.getString("actionSubtype"));
+      params.set(5, json.getJsonObject("actionSubdata"));
+    }
+
+    return postgresService
+        .executeQuery(sql, params)
+        .compose(
+            rows -> {
+              if (!rows.getRows().isEmpty()) {
+                return Future.succeededFuture(
+                    UserFeedback.fromJson(rows.getRows().getJsonObject(0)));
+              }
+
+              return getExistingFeedbackStatus(userFeedback.userId(), userFeedback.assetId())
+                  .compose(
+                      status -> {
+                        if (status == null) {
+                          return Future.failedFuture(
+                              new IllegalStateException(
+                                  "Feedback not found for the specified asset"));
+                        }
+
+                        if ("APPROVED".equals(status)) {
+                          return Future.failedFuture(
+                              new IllegalStateException(
+                                  "Feedback cannot be updated because it has already been approved"));
+                        }
+
+                        if ("REJECTED".equals(status)) {
+                          return Future.failedFuture(
+                              new IllegalStateException(
+                                  "Feedback cannot be updated because it has already been rejected"));
+                        }
+
+                        return Future.failedFuture(
+                            new IllegalStateException(
+                                "Feedback can only be updated while it is in PENDING status"));
+                      });
+            })
+        .onFailure(
+            err ->
+                LOGGER.error(
+                    "Failed to update feedback for userId={}, assetId={}",
+                    userFeedback.userId(),
+                    userFeedback.assetId(),
+                    err));
+  }
+
+  private Future<String> getExistingFeedbackStatus(UUID userId, UUID assetId) {
+
+    String sql =
+        """
+        SELECT feedback_status
+        FROM user_interactions
+        WHERE user_id = $1
+          AND asset_id = $2
+        """;
+
+    JsonArray params = new JsonArray().add(userId.toString()).add(assetId.toString());
+
+    return postgresService
+        .executeQuery(sql, params)
+        .map(
+            rows -> {
+              if (rows.getRows().isEmpty()) {
+                return null;
+              }
+
+              return rows.getRows().getJsonObject(0).getString("feedback_status");
+            })
+        .onFailure(
+            err ->
+                LOGGER.error(
+                    "Failed to getExistingFeedbackStatus for userId={}, assetId={}",
+                    userId,
+                    assetId,
+                    err));
   }
 
   // Shared WHERE-clause builder for the paginated feedback list and the (page-invariant)

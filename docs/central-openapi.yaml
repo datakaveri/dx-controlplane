@@ -6063,10 +6063,9 @@ paths:
       summary: Post user feedback on entity
       description: |
         Submit user feedback for a specific data asset: a star rating (1-5) and/or a structured action subtype with associated data. The user must have already interacted with the asset (e.g., via download or API access). Requires an authenticated user token.
-
-        At least one of `entityRating` or the `actionSubtype`/`actionSubdata` pair must be provided; a request with neither results in a 400 Bad Request.
-
-        `actionSubtype` and `actionSubdata` are a paired field: if either one is provided, the other is also required. Providing only one of the two results in a 400 Bad Request. `entityRating` may be supplied independently of the `actionSubtype`/`actionSubdata` pair. Calling this endpoint again for the same `assetId` updates the existing feedback entry instead of creating a duplicate.
+        At least one of `entityRating` or the `actionSubtype`/`actionSubdata` pair must be provided.
+        `actionSubtype` and `actionSubdata` are a paired field: if either one is provided, the other is also required.
+        This endpoint is used only to create feedback for the first time. If feedback already exists for the specified asset, the request is rejected and the consumer must use the PUT endpoint to update the feedback while it is still in `PENDING` status.
       operationId: post-user-feedback
       security:
         - authorization: []
@@ -6153,7 +6152,7 @@ paths:
               example:
                 type: urn:dx:controlPlane:success
                 title: Success
-                detail: Interaction updated successfully
+                detail: Feedback submitted successfully
         '400':
           description: Bad Request
           content:
@@ -6248,6 +6247,231 @@ paths:
             "comment": "Documentation is missing usage examples."
             }
             }'
+    put:
+      tags:
+        - User Interactions
+      summary: Update user feedback on entity
+      description: |
+        Update previously submitted user feedback for a specific data asset. The feedback must have been submitted by the authenticated user and must currently be in `PENDING` status.
+        At least one of `entityRating` or the `actionSubtype`/`actionSubdata` pair must be provided.
+        `actionSubtype` and `actionSubdata` are a paired field: if either one is provided, the other is also required. `entityRating` may be supplied independently of the `actionSubtype`/`actionSubdata` pair.
+        Feedback can only be updated while it is in `PENDING` status, before it has been reviewed by the COS Admin. Once feedback is `APPROVED` or `REJECTED`, it cannot be modified.
+        If no feedback exists for the specified asset and authenticated user, the request is rejected. To submit feedback for the first time, use the POST /iudx/v2/user/feedback endpoint.
+      operationId: put-user-feedback
+      security:
+        - authorization: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - assetId
+                - assetType
+              properties:
+                assetId:
+                  type: string
+                  format: uuid
+                  description: UUID of the asset for which the feedback is being updated
+                assetType:
+                  type: string
+                  description: Type of the asset for which the feedback is being updated
+                  enum:
+                    - DATABANK
+                    - AI_MODEL
+                    - USECASE
+                entityRating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                  description: |
+                    Updated star rating from 1 (lowest) to 5 (highest). Optional when structured feedback is provided.
+                actionSubtype:
+                  type: string
+                  description: |
+                    Updated structured feedback category (e.g., data quality, documentation). Required if actionSubdata is provided.
+                actionSubdata:
+                  type: object
+                  description: |
+                    Updated additional structured data associated with the feedback. Required if actionSubtype is provided.
+            examples:
+              ratingOnly:
+                summary: Update star rating only
+                value:
+                  assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
+                  assetType: DATABANK
+                  entityRating: 4
+              structuredOnly:
+                summary: Update structured feedback only
+                value:
+                  assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
+                  assetType: AI_MODEL
+                  actionSubtype: documentation
+                  actionSubdata:
+                    comment: Documentation should include more usage examples.
+              full:
+                summary: Update star rating and structured feedback
+                value:
+                  assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
+                  assetType: DATABANK
+                  entityRating: 4
+                  actionSubtype: data_quality
+                  actionSubdata:
+                    comment: The data is accurate but some records need correction.
+              useCase:
+                summary: Update feedback on a use case asset
+                value:
+                  assetId: 811e9876-9381-4a25-8ad1-e8b289616ab8
+                  assetType: USECASE
+                  entityRating: 3
+                  actionSubtype: relevance
+                  actionSubdata:
+                    comment: Useful use case, but more edge cases should be covered.
+      responses:
+        '200':
+          description: Feedback successfully updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              example:
+                type: urn:dx:controlPlane:success
+                title: Success
+                detail: Feedback updated successfully
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+              examples:
+                missingRequiredField:
+                  summary: Missing required field
+                  value:
+                    type: urn:dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: Missing or malformed request
+                missingFeedbackContent:
+                  summary: Neither entityRating nor actionSubtype/actionSubdata provided
+                  value:
+                    type: urn:dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: |
+                      At least one of entityRating or actionSubtype/actionSubdata must be provided
+                orphanSubtype:
+                  summary: actionSubtype provided without actionSubdata
+                  value:
+                    type: urn:dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: |
+                      actionSubdata is required when actionSubtype is provided
+                orphanSubdata:
+                  summary: actionSubdata provided without actionSubtype
+                  value:
+                    type: urn:dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: |
+                      actionSubtype is required when actionSubdata is provided
+                invalidRating:
+                  summary: entityRating out of range
+                  value:
+                    type: urn:dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: entityRating must be between 1 and 5
+                feedbackNotFound:
+                  summary: Feedback does not exist
+                  value:
+                    type: urn:dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: |
+                      Feedback not found for the specified asset
+                feedbackNotPending:
+                  summary: Feedback is no longer pending
+                  value:
+                    type: urn:dx:controlPlane:badRequest
+                    title: Bad Request
+                    detail: |
+                      Feedback can only be updated while it is in PENDING status
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Update user feedback (rating + structured)
+          source: |
+            curl --location --request PUT '${HOSTNAME}/iudx/v2/user/feedback' \
+              --header 'Authorization: Bearer <your-token>' \
+              --header 'Content-Type: application/json' \
+              --data '{
+                "assetId": "9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8",
+                "assetType": "DATABANK",
+                "entityRating": 4,
+                "actionSubtype": "data_quality",
+                "actionSubdata": {
+                  "comment": "The data is accurate but some records need correction."
+                }
+              }'
+        - lang: cURL
+          label: Update user feedback (rating only)
+          source: |
+            curl --location --request PUT '${HOSTNAME}/iudx/v2/user/feedback' \
+              --header 'Authorization: Bearer <your-token>' \
+              --header 'Content-Type: application/json' \
+              --data '{
+                "assetId": "9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8",
+                "assetType": "DATABANK",
+                "entityRating": 4
+              }'
+        - lang: cURL
+          label: Update user feedback (structured only)
+          source: |
+            curl --location --request PUT '${HOSTNAME}/iudx/v2/user/feedback' \
+              --header 'Authorization: Bearer <your-token>' \
+              --header 'Content-Type: application/json' \
+              --data '{
+                "assetId": "9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8",
+                "assetType": "AI_MODEL",
+                "actionSubtype": "documentation",
+                "actionSubdata": {
+                  "comment": "Documentation should include more usage examples."
+                }
+              }'
+        - lang: cURL
+          label: Update feedback on a use case asset
+          source: |
+            curl --location --request PUT '${HOSTNAME}/iudx/v2/user/feedback' \
+              --header 'Authorization: Bearer <your-token>' \
+              --header 'Content-Type: application/json' \
+              --data '{
+                "assetId": "811e9876-9381-4a25-8ad1-e8b289616ab8",
+                "assetType": "USECASE",
+                "entityRating": 3,
+                "actionSubtype": "relevance",
+                "actionSubdata": {
+                  "comment": "Useful use case, but more edge cases should be covered."
+                }
+              }'
     delete:
       tags:
         - User Interactions
@@ -6282,7 +6506,7 @@ paths:
               example:
                 type: urn:dx:controlPlane:success
                 title: Success
-                detail: Interaction deleted successfully
+                detail: Feedback deleted successfully
         '400':
           description: Bad Request
           content:
@@ -6569,7 +6793,7 @@ paths:
         When approving feedback, the `comment` field is optional. When rejecting feedback, a non-empty `comment` is mandatory and should describe the reason for rejection.
 
         A rejected feedback entry remains associated with the submitting user but is not considered for public/provider feedback listings or rating summaries.
-      operationId: put-user-feedback
+      operationId: put-platform-user-feedback
       security:
         - authorization: []
       parameters:

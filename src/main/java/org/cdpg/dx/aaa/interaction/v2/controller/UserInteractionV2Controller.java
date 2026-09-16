@@ -98,10 +98,16 @@ public class UserInteractionV2Controller implements ApiController {
         .operation(OP_POST_USER_FEEDBACK)
         .handler(auditingHandler::handleApiAudit)
         .handler(userScopedAccess)
-        .handler(this::handlePostUpdateUserFeedbackRequest);
+        .handler(this::handlePostUserFeedbackRequest);
 
     builder
         .operation(OP_PUT_USER_FEEDBACK)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(userScopedAccess)
+        .handler(this::handlePutUserFeedbackRequest);
+
+    builder
+        .operation(OP_PLATFORM_PUT_USER_FEEDBACK)
         .handler(auditingHandler::handleApiAudit)
         .handler(cosAdminAccess)
         .handler(this::handleUpdateUserFeedbackStatusRequest);
@@ -262,10 +268,12 @@ public class UserInteractionV2Controller implements ApiController {
     return null;
   }
 
-  private void handlePostUpdateUserFeedbackRequest(RoutingContext ctx) {
+  private void handlePostUserFeedbackRequest(RoutingContext ctx) {
     LOGGER.info("POST /user/feedback called");
+
     try {
       JsonObject req = ctx.body().asJsonObject();
+
       UUID userId = UUID.fromString(ctx.user().subject());
       req.put("userId", userId.toString());
 
@@ -274,16 +282,16 @@ public class UserInteractionV2Controller implements ApiController {
       service
           .postUserFeedback(userFeedback)
           .onSuccess(
-              v -> {
+              feedback -> {
                 UserActivityAuditLogBuilder auditLog =
                     InteractionAuditLogHelper.buildFeedbackAudit(
                         ctx,
                         userFeedback.assetId() != null ? userFeedback.assetId().toString() : null,
                         InteractionAuditAction.RATING);
+
                 CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
 
-                ResponseBuilder.sendSuccess(
-                    ctx, "Interaction updated successfully", urnGenerator);
+                ResponseBuilder.sendSuccess(ctx, "Feedback submitted successfully", urnGenerator);
               })
           .onFailure(
               err -> {
@@ -293,6 +301,43 @@ public class UserInteractionV2Controller implements ApiController {
 
     } catch (Exception e) {
       LOGGER.error("Invalid POST /user/feedback request", e);
+      ctx.fail(e);
+    }
+  }
+
+  private void handlePutUserFeedbackRequest(RoutingContext ctx) {
+    LOGGER.info("PUT /user/feedback called");
+
+    try {
+      JsonObject req = ctx.body().asJsonObject();
+
+      UUID userId = UUID.fromString(ctx.user().subject());
+      req.put("userId", userId.toString());
+
+      UserFeedback userFeedback = UserFeedback.fromRequestJson(req);
+
+      service
+          .putUserFeedback(userFeedback)
+          .onSuccess(
+              feedback -> {
+                UserActivityAuditLogBuilder auditLog =
+                    InteractionAuditLogHelper.buildFeedbackAudit(
+                        ctx,
+                        userFeedback.assetId() != null ? userFeedback.assetId().toString() : null,
+                        InteractionAuditAction.RATING);
+
+                CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+
+                ResponseBuilder.sendSuccess(ctx, "Feedback updated successfully", urnGenerator);
+              })
+          .onFailure(
+              err -> {
+                LOGGER.error("PUT /user/feedback failed", err);
+                ctx.fail(err);
+              });
+
+    } catch (Exception e) {
+      LOGGER.error("Invalid PUT /user/feedback request", e);
       ctx.fail(e);
     }
   }
@@ -457,7 +502,7 @@ public class UserInteractionV2Controller implements ApiController {
                 CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
 
                 ResponseBuilder.sendSuccess(
-                    ctx, "Interaction deleted successfully", urnGenerator);
+                    ctx, "Feedback deleted successfully", urnGenerator);
               })
           .onFailure(
               err -> {

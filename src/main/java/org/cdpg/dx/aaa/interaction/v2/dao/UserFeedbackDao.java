@@ -17,5 +17,7 @@ public interface UserFeedbackDao {
 
   Future<UserFeedback> postFeedback(UserFeedback request);
 
+  Future<UserFeedback> putFeedback(UserFeedback request);
+
   Future<UserFeedback> updateFeedbackStatus(UUID feedbackId, FeedbackStatus status, String comment);
 }
