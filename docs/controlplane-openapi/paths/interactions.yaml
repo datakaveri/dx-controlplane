@@ -1325,46 +1325,51 @@
                   - SUGGESTION
                 description: Type of provider feedback
               data:
-                type: object
-                description: Structured feedback data. Content varies by feedback type.
+                type: array
+                description: List of structured feedback entries. Content of each entry varies by feedback type.
+                items:
+                  type: object
+                  additionalProperties: true
           examples:
             faq:
-              summary: FAQ entry
+              summary: FAQ entries
               value:
                 assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
                 type: FAQ
                 data:
-                  question: How frequently is this dataset updated?
-                  answer: The dataset is updated daily.
+                  - question: How frequently is this dataset updated?
+                    answer: The dataset is updated daily.
+                  - question: Is historical data available?
+                    answer: Yes, data is available from 2020 onwards.
             feedback:
               summary: General feedback
               value:
                 assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
                 type: FEEDBACK
                 data:
-                  comment: The API response times have improved significantly.
+                  - comment: The API response times have improved significantly.
             info:
               summary: Informational note
               value:
                 assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
                 type: INFO
                 data:
-                  message: This dataset will be deprecated on 2026-12-31; migrate to v2.
+                  - message: This dataset will be deprecated on 2026-12-31; migrate to v2.
             dataDescription:
               summary: Data description
               value:
                 assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
                 type: DATA_DESCRIPTION
                 data:
-                  field: temperature
-                  description: Ambient temperature in Celsius, sampled every 5 minutes.
+                  - field: temperature
+                    description: Ambient temperature in Celsius, sampled every 5 minutes.
             suggestion:
               summary: Suggestion
               value:
                 assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
                 type: SUGGESTION
                 data:
-                  suggestion: Add a CSV export option for query results.
+                  - suggestion: Add a CSV export option for query results.
             minimal:
               summary: Minimal (no structured data)
               value:
@@ -1439,13 +1444,25 @@
 
         "type": "FAQ",
 
-        "data": {
+        "data": [
+
+        {
 
         "question": "How frequently is this dataset updated?",
 
         "answer": "The dataset is updated daily."
 
+        },
+
+        {
+
+        "question": "Is historical data available?",
+
+        "answer": "Yes, data is available from 2020 onwards."
+
         }
+
+        ]
 
         }''
 
@@ -1464,13 +1481,17 @@
 
         "type": "DATA_DESCRIPTION",
 
-        "data": {
+        "data": [
+
+        {
 
         "field": "temperature",
 
         "description": "Ambient temperature in Celsius, sampled every 5 minutes."
 
         }
+
+        ]
 
         }''
 
@@ -1496,30 +1517,23 @@
     tags:
     - User Interactions
     summary: Get provider feedback
-    description: 'Retrieve paginated provider feedback with optional filters by user, asset, or type. Requires an authenticated user token.
+    description: 'Retrieve paginated provider feedback, grouped by asset with each feedback type listed underneath. Results are always scoped to the calling user (identity taken from the auth token) — a provider can only see their own feedback entries. assetId and/or type, if provided, further narrow the results within the caller''s own data. Requires an authenticated user token.
 
       '
     operationId: get-provider-feedback
     security:
     - authorization: []
     parameters:
-    - name: userId
-      in: query
-      description: Filter by user UUID
-      required: false
-      schema:
-        type: string
-        format: uuid
     - name: assetId
       in: query
-      description: Filter by asset UUID
+      description: Narrow to a specific asset UUID within the caller's own feedback
       required: false
       schema:
         type: string
         format: uuid
     - name: type
       in: query
-      description: Filter by action subtype (repeatable)
+      description: Narrow to specific feedback type(s) within the caller's own feedback (repeatable)
       required: false
       style: form
       explode: true
@@ -1527,6 +1541,12 @@
         type: array
         items:
           type: string
+          enum:
+          - FAQ
+          - FEEDBACK
+          - INFO
+          - DATA_DESCRIPTION
+          - SUGGESTION
     - $ref: ../components/parameters.yaml#/PageParam
     - $ref: ../components/parameters.yaml#/SizeParam
     responses:
@@ -1560,6 +1580,13 @@
               $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
     x-codeSamples:
     - lang: cURL
+      label: Get my provider feedback (no filters)
+      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/provider/feedback?page=1&size=10'' \
+
+        --header ''Authorization: Bearer <your-token>''
+
+        '
+    - lang: cURL
       label: Get provider feedback (by asset)
       source: 'curl --location ''https://${HOSTNAME}/iudx/v2/provider/feedback?assetId=811e9876-9381-4a25-8ad1-e8b289616ab8&page=1&size=10'' \
 
@@ -1569,13 +1596,6 @@
     - lang: cURL
       label: Get provider feedback (by type, repeatable)
       source: 'curl --location ''https://${HOSTNAME}/iudx/v2/provider/feedback?type=FAQ&type=DATA_DESCRIPTION&page=1&size=10'' \
-
-        --header ''Authorization: Bearer <your-token>''
-
-        '
-    - lang: cURL
-      label: Get provider feedback (by user)
-      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/provider/feedback?userId=fd62ba22-d338-4dad-b09c-2bccfa20b04a&page=1&size=10'' \
 
         --header ''Authorization: Bearer <your-token>''
 

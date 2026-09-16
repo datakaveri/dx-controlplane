@@ -1,6 +1,7 @@
 package org.cdpg.dx.aaa.interaction.v2.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.time.LocalDateTime;
@@ -16,7 +17,7 @@ public record ProviderFeedback(
   UUID userId,
   UUID assetId,
   ProviderFeedbackType type,
-  JsonObject data,
+  JsonArray data,
   LocalDateTime createdAt,
   LocalDateTime updatedAt)
   implements BaseEntity<ProviderFeedback> {
@@ -27,7 +28,7 @@ public record ProviderFeedback(
       json.getString("user_id") != null ? UUID.fromString(json.getString("user_id")) : null,      // ← add null check
       json.getString("asset_id") != null ? UUID.fromString(json.getString("asset_id")) : null,    // ← add null check
       json.getString("type") != null ? ProviderFeedbackType.valueOf(json.getString("type")) : null,
-      json.getJsonObject("data"),
+      json.getJsonArray("data"),
       json.getString("created_at") != null ? LocalDateTime.parse(json.getString("created_at")) : null,
       json.getString("updated_at") != null ? LocalDateTime.parse(json.getString("updated_at")) : null
     );
@@ -41,7 +42,7 @@ public record ProviderFeedback(
         json.getString("type") != null
             ? ProviderFeedbackType.valueOf(json.getString("type"))
             : null,
-        json.getJsonObject("data"),
+        json.getJsonArray("data"),
         json.getString("createdAt") != null
             ? LocalDateTime.parse(json.getString("createdAt"))
             : null,

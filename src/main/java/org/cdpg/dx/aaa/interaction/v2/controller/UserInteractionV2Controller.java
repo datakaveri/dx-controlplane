@@ -52,7 +52,7 @@ public class UserInteractionV2Controller implements ApiController {
           "feedbackStatusUpdatedAt", "feedback_status_updated_at");
   private static final Set<String> FEEDBACK_SORT_FIELDS = Set.of("ratingCreatedAt");
   private static final Map<String, String> PROVIDER_FEEDBACK_FILTER_MAP =
-      Map.of("assetId", "asset_id", "type", "type", "userId", "user_id");
+      Map.of("assetId", "asset_id", "type", "type");
 
   private final AuditingHandler auditingHandler;
   private final UserInteractionV2Service service;
@@ -558,12 +558,15 @@ public class UserInteractionV2Controller implements ApiController {
     LOGGER.info("GET /provider/feedback called");
 
     try {
+      // Always scoped to the caller (identity from the token, never a client
+      // param) — a provider can never see another provider's feedback rows.
+      // assetId/type, if given, only narrow further within the caller's own data.
       PaginatedRequest paginatedRequest =
           PaginationRequestBuilder.from(ctx)
               .allowedFiltersDbMap(PROVIDER_FEEDBACK_FILTER_MAP)
               .apiToDbMap(PROVIDER_FEEDBACK_FILTER_MAP)
-              // .additionalFilters(Map.of("userId", ctx.user().subject()))
               .allowedTimeFields(Set.of(CREATED_AT))
+              .additionalFilters(Map.of("user_id", ctx.user().subject()))
               .build();
       LOGGER.debug("paginated request has been build ");
       service
