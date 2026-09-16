@@ -329,6 +329,31 @@ UserFeedbackPaginatedResponse:
         totalPages: 1
         hasNext: false
         hasPrevious: false
+ProviderFeedbackRequest:
+  type: object
+  required:
+  - assetId
+  - type
+  properties:
+    assetId:
+      type: string
+      format: uuid
+      description: UUID of the asset
+    type:
+      type: string
+      enum:
+      - FAQ
+      - FEEDBACK
+      - INFO
+      - DATA_DESCRIPTION
+      - SUGGESTION
+      description: Type of provider feedback
+    data:
+      type: array
+      description: List of structured feedback entries. Content of each entry varies by feedback type. Replaces the full list for this asset+type; not a partial merge.
+      items:
+        type: object
+        additionalProperties: true
 ProviderFeedbackPaginatedResponse:
   type: object
   properties:

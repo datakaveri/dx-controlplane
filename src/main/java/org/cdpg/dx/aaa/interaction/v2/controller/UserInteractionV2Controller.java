@@ -134,7 +134,13 @@ public class UserInteractionV2Controller implements ApiController {
         .operation(OP_POST_PROVIDER_FEEDBACK)
         .handler(auditingHandler::handleApiAudit)
         .handler(providerFeedbackAccess)
-        .handler(this::handlePostUpdateProviderFeedbackRequest);
+        .handler(this::handlePostProviderFeedbackRequest);
+
+    builder
+        .operation(OP_PUT_PROVIDER_FEEDBACK)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(providerFeedbackAccess)
+        .handler(this::handlePutProviderFeedbackRequest);
 
     builder
         .operation(OP_GET_PROVIDER_FEEDBACK)
@@ -516,8 +522,35 @@ public class UserInteractionV2Controller implements ApiController {
     }
   }
 
-  private void handlePostUpdateProviderFeedbackRequest(RoutingContext ctx) {
+  private void handlePostProviderFeedbackRequest(RoutingContext ctx) {
     LOGGER.info("POST /provider/feedback called");
+    handleUpsertProviderFeedbackRequest(
+        ctx,
+        "POST",
+        InteractionAuditAction.SUBMIT_PROVIDER_FEEDBACK,
+        "Feedback submitted successfully");
+  }
+
+  private void handlePutProviderFeedbackRequest(RoutingContext ctx) {
+    LOGGER.info("PUT /provider/feedback called");
+    handleUpsertProviderFeedbackRequest(
+        ctx,
+        "PUT",
+        InteractionAuditAction.UPDATE_PROVIDER_FEEDBACK,
+        "Feedback updated successfully");
+  }
+
+  // POST (create) and PUT (update) are separate operations for callers, but both
+  // resolve to the same upsert underneath (provider_feedback is keyed by
+  // asset_id+type, see V81) - either call replaces the full data list for that
+  // asset+type in one shot, not a partial merge. Message/audit action are chosen
+  // statically per verb, matching /user/feedback's POST-vs-PUT convention, rather
+  // than inferred from the DB result.
+  private void handleUpsertProviderFeedbackRequest(
+      RoutingContext ctx,
+      String httpMethod,
+      InteractionAuditAction auditAction,
+      String successMessage) {
     try {
       JsonObject req = ctx.body().asJsonObject();
       UUID userId = UUID.fromString(ctx.user().subject());
@@ -528,27 +561,26 @@ public class UserInteractionV2Controller implements ApiController {
       service
           .postProviderFeedback(providerFeedback)
           .onSuccess(
-              v -> {
+              savedFeedback -> {
                 UserActivityAuditLogBuilder auditLog =
                     InteractionAuditLogHelper.buildFeedbackAudit(
                         ctx,
                         providerFeedback.assetId() != null
                             ? providerFeedback.assetId().toString()
                             : null,
-                        InteractionAuditAction.PROVIDER_FEEDBACK);
+                        auditAction);
                 CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
 
-                ResponseBuilder.sendSuccess(
-                    ctx, "Interaction updated successfully", urnGenerator);
+                ResponseBuilder.sendSuccess(ctx, successMessage, urnGenerator);
               })
           .onFailure(
               err -> {
-                LOGGER.error("POST /provider/feedback failed", err);
+                LOGGER.error("{} /provider/feedback failed", httpMethod, err);
                 ctx.fail(err);
               });
 
     } catch (Exception e) {
-      LOGGER.error("Invalid POST /user/feedback request", e);
+      LOGGER.error("Invalid {} /provider/feedback request", httpMethod, e);
       ctx.fail(e);
     }
   }
