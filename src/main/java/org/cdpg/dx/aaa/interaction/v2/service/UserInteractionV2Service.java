@@ -1,7 +1,6 @@
 package org.cdpg.dx.aaa.interaction.v2.service;
 
 import io.vertx.core.Future;
-import io.vertx.ext.auth.User;
 import java.util.UUID;
 import org.cdpg.dx.aaa.interaction.v2.enums.ProviderFeedbackType;
 import org.cdpg.dx.aaa.interaction.v2.model.*;
@@ -19,6 +18,8 @@ public interface UserInteractionV2Service {
   Future<BulkSyncResult> syncInteractionMetrics();
 
   Future<UserFeedback> postUserFeedback(UserFeedback request);
+
+  Future<UserFeedback> putUserFeedback(UserFeedback request);
 
   Future<UserFeedback> updateFeedbackStatus(UUID feedbackId, FeedbackStatus status, String comment);
 

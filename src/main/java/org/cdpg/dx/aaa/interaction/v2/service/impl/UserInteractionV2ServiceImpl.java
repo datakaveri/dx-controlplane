@@ -213,6 +213,12 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
   }
 
   @Override
+  public Future<UserFeedback> putUserFeedback(UserFeedback request) {
+    LOGGER.info("Inside service imple method - put user feedbaack");
+    return userFeedbackDao.putFeedback(request);
+  }
+
+  @Override
   public Future<UserFeedback> updateFeedbackStatus(
       UUID feedbackId, FeedbackStatus status, String comment) {
 
