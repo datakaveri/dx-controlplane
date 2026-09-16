@@ -6956,65 +6956,47 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - assetId
-                - type
-              properties:
-                assetId:
-                  type: string
-                  format: uuid
-                  description: UUID of the asset
-                type:
-                  type: string
-                  enum:
-                    - FAQ
-                    - FEEDBACK
-                    - INFO
-                    - DATA_DESCRIPTION
-                    - SUGGESTION
-                  description: Type of provider feedback
-                data:
-                  type: object
-                  description: Structured feedback data. Content varies by feedback type.
+              $ref: '#/components/schemas/ProviderFeedbackRequest'
             examples:
               faq:
-                summary: FAQ entry
+                summary: FAQ entries
                 value:
                   assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
                   type: FAQ
                   data:
-                    question: How frequently is this dataset updated?
-                    answer: The dataset is updated daily.
+                    - question: How frequently is this dataset updated?
+                      answer: The dataset is updated daily.
+                    - question: Is historical data available?
+                      answer: Yes, data is available from 2020 onwards.
               feedback:
                 summary: General feedback
                 value:
                   assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
                   type: FEEDBACK
                   data:
-                    comment: The API response times have improved significantly.
+                    - comment: The API response times have improved significantly.
               info:
                 summary: Informational note
                 value:
                   assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
                   type: INFO
                   data:
-                    message: This dataset will be deprecated on 2026-12-31; migrate to v2.
+                    - message: This dataset will be deprecated on 2026-12-31; migrate to v2.
               dataDescription:
                 summary: Data description
                 value:
                   assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
                   type: DATA_DESCRIPTION
                   data:
-                    field: temperature
-                    description: Ambient temperature in Celsius, sampled every 5 minutes.
+                    - field: temperature
+                      description: Ambient temperature in Celsius, sampled every 5 minutes.
               suggestion:
                 summary: Suggestion
                 value:
                   assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
                   type: SUGGESTION
                   data:
-                    suggestion: Add a CSV export option for query results.
+                    - suggestion: Add a CSV export option for query results.
               minimal:
                 summary: Minimal (no structured data)
                 value:
@@ -7037,7 +7019,7 @@ paths:
               example:
                 type: urn:dx:controlPlane:success
                 title: Success
-                detail: Interaction updated successfully
+                detail: Feedback submitted successfully
         '400':
           description: Bad Request
           content:
@@ -7084,10 +7066,16 @@ paths:
             --data '{
             "assetId": "9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8",
             "type": "FAQ",
-            "data": {
+            "data": [
+            {
             "question": "How frequently is this dataset updated?",
             "answer": "The dataset is updated daily."
+            },
+            {
+            "question": "Is historical data available?",
+            "answer": "Yes, data is available from 2020 onwards."
             }
+            ]
             }'
         - lang: cURL
           label: Post provider feedback (data description)
@@ -7098,10 +7086,12 @@ paths:
             --data '{
             "assetId": "9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8",
             "type": "DATA_DESCRIPTION",
-            "data": {
+            "data": [
+            {
             "field": "temperature",
             "description": "Ambient temperature in Celsius, sampled every 5 minutes."
             }
+            ]
             }'
         - lang: cURL
           label: Post provider feedback (minimal, no data)
@@ -7113,33 +7103,127 @@ paths:
             "assetId": "9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8",
             "type": "FEEDBACK"
             }'
+    put:
+      tags:
+        - User Interactions
+      summary: Update provider feedback on entity
+      description: |
+        Update provider feedback for a specific data asset and feedback type, replacing the full list of structured feedback entries. Same effect as POST if the asset+type entry does not already exist. The user must be the asset owner or a provider who has interacted with the asset. Requires an authenticated user token with `provider` or `org_admin` role.
+      operationId: put-provider-feedback
+      security:
+        - authorization: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderFeedbackRequest'
+            examples:
+              faq:
+                summary: Replace FAQ entries
+                value:
+                  assetId: 9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8
+                  type: FAQ
+                  data:
+                    - question: How frequently is this dataset updated?
+                      answer: The dataset is updated daily, at midnight UTC.
+                    - question: Is historical data available?
+                      answer: Yes, data is available from 2019 onwards.
+      responses:
+        '200':
+          description: Feedback successfully updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  detail:
+                    type: string
+              example:
+                type: urn:dx:controlPlane:success
+                title: Success
+                detail: Feedback updated successfully
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+              example:
+                type: urn:dx:controlPlane:badRequest
+                title: Bad Request
+                detail: Missing or malformed request
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+              example:
+                type: urn:dx:controlPlane:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+              example:
+                type: urn:dx:controlPlane:forbidden
+                title: Forbidden
+                detail: User does not have the required role.
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Update provider feedback (FAQ, full list)
+          source: |
+            curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/provider/feedback' \
+            --header 'Authorization: Bearer <your-token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+            "assetId": "9179b887-04ef-4ce5-ab3a-b5bbd39ea3c8",
+            "type": "FAQ",
+            "data": [
+            {
+            "question": "How frequently is this dataset updated?",
+            "answer": "The dataset is updated daily, at midnight UTC."
+            },
+            {
+            "question": "Is historical data available?",
+            "answer": "Yes, data is available from 2019 onwards."
+            }
+            ]
+            }'
     get:
       tags:
         - User Interactions
       summary: Get provider feedback
       description: |
-        Retrieve paginated provider feedback with optional filters by user, asset, or type. Requires an authenticated user token.
+        Retrieve paginated provider feedback, grouped by asset with each feedback type listed underneath. Results are always scoped to the calling user (identity taken from the auth token) — a provider can only see their own feedback entries. assetId and/or type, if provided, further narrow the results within the caller's own data. Requires an authenticated user token.
       operationId: get-provider-feedback
       security:
         - authorization: []
       parameters:
-        - name: userId
-          in: query
-          description: Filter by user UUID
-          required: false
-          schema:
-            type: string
-            format: uuid
         - name: assetId
           in: query
-          description: Filter by asset UUID
+          description: Narrow to a specific asset UUID within the caller's own feedback
           required: false
           schema:
             type: string
             format: uuid
         - name: type
           in: query
-          description: Filter by action subtype (repeatable)
+          description: Narrow to specific feedback type(s) within the caller's own feedback (repeatable)
           required: false
           style: form
           explode: true
@@ -7147,6 +7231,12 @@ paths:
             type: array
             items:
               type: string
+              enum:
+                - FAQ
+                - FEEDBACK
+                - INFO
+                - DATA_DESCRIPTION
+                - SUGGESTION
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
       responses:
@@ -7180,6 +7270,11 @@ paths:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
       x-codeSamples:
         - lang: cURL
+          label: Get my provider feedback (no filters)
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/provider/feedback?page=1&size=10' \
+            --header 'Authorization: Bearer <your-token>'
+        - lang: cURL
           label: Get provider feedback (by asset)
           source: |
             curl --location 'https://${HOSTNAME}/iudx/v2/provider/feedback?assetId=811e9876-9381-4a25-8ad1-e8b289616ab8&page=1&size=10' \
@@ -7188,11 +7283,6 @@ paths:
           label: Get provider feedback (by type, repeatable)
           source: |
             curl --location 'https://${HOSTNAME}/iudx/v2/provider/feedback?type=FAQ&type=DATA_DESCRIPTION&page=1&size=10' \
-            --header 'Authorization: Bearer <your-token>'
-        - lang: cURL
-          label: Get provider feedback (by user)
-          source: |
-            curl --location 'https://${HOSTNAME}/iudx/v2/provider/feedback?userId=fd62ba22-d338-4dad-b09c-2bccfa20b04a&page=1&size=10' \
             --header 'Authorization: Bearer <your-token>'
     delete:
       tags:
@@ -21715,27 +21805,37 @@ components:
           example: Success
         result:
           type: array
+          description: One entry per asset; totalCount/pagination apply to this list, not to the nested feedback entries.
           items:
             type: object
             properties:
-              id:
-                type: string
-                format: uuid
-              userId:
-                type: string
-                format: uuid
               assetId:
                 type: string
                 format: uuid
-              type:
-                type: string
-                example: FEEDBACK
-              data:
-                type: object
-                additionalProperties: true
-              createdAt:
-                type: string
-                format: date-time
+              feedback:
+                type: array
+                description: Every feedback type recorded for this asset that matches the request's filters.
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      example: FEEDBACK
+                    data:
+                      type: array
+                      items:
+                        type: object
+                        additionalProperties: true
+                    userId:
+                      type: string
+                      format: uuid
+                      description: UUID of the user who most recently submitted or updated this feedback type for this asset.
+                    createdAt:
+                      type: string
+                      format: date-time
+                    updatedAt:
+                      type: string
+                      format: date-time
         paginationInfo:
           type: object
           properties:
@@ -21748,6 +21848,7 @@ components:
             totalCount:
               type: integer
               example: 1
+              description: Number of distinct assets matching the request's filters.
             totalPages:
               type: integer
               example: 1
@@ -21761,13 +21862,21 @@ components:
         type: urn:dx:controlPlane:success
         title: Success
         result:
-          - id: f11be0ea-a9b2-4954-983d-297426c1682d
-            userId: 2f76e6b0-7569-4f30-8bc3-9884ca3d61c2
-            assetId: 8fd42dfc-6a54-46a3-9d5c-ce3f7fb11887
-            type: FEEDBACK
-            data:
-              comment: Thank you for using our dataset.
-            createdAt: '2026-07-01T09:06:28.285092'
+          - assetId: 8fd42dfc-6a54-46a3-9d5c-ce3f7fb11887
+            feedback:
+              - type: FEEDBACK
+                data:
+                  - comment: Thank you for using our dataset.
+                userId: 2f76e6b0-7569-4f30-8bc3-9884ca3d61c2
+                createdAt: '2026-07-01T09:06:28.285092'
+                updatedAt: '2026-07-01T09:06:28.285092'
+              - type: FAQ
+                data:
+                  - question: How frequently is this dataset updated?
+                    answer: The dataset is updated daily.
+                userId: 2f76e6b0-7569-4f30-8bc3-9884ca3d61c2
+                createdAt: '2026-06-20T11:02:10.001000'
+                updatedAt: '2026-07-02T08:15:44.512000'
         paginationInfo:
           page: 1
           size: 10
@@ -22914,6 +23023,31 @@ components:
               type: integer
               format: int64
               example: 1
+    ProviderFeedbackRequest:
+      type: object
+      required:
+        - assetId
+        - type
+      properties:
+        assetId:
+          type: string
+          format: uuid
+          description: UUID of the asset
+        type:
+          type: string
+          enum:
+            - FAQ
+            - FEEDBACK
+            - INFO
+            - DATA_DESCRIPTION
+            - SUGGESTION
+          description: Type of provider feedback
+        data:
+          type: array
+          description: List of structured feedback entries. Content of each entry varies by feedback type. Replaces the full list for this asset+type; not a partial merge.
+          items:
+            type: object
+            additionalProperties: true
     OrgCreateRequestItem:
       type: object
       properties:

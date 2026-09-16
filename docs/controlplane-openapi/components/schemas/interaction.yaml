@@ -329,6 +329,31 @@ UserFeedbackPaginatedResponse:
         totalPages: 1
         hasNext: false
         hasPrevious: false
+ProviderFeedbackRequest:
+  type: object
+  required:
+  - assetId
+  - type
+  properties:
+    assetId:
+      type: string
+      format: uuid
+      description: UUID of the asset
+    type:
+      type: string
+      enum:
+      - FAQ
+      - FEEDBACK
+      - INFO
+      - DATA_DESCRIPTION
+      - SUGGESTION
+      description: Type of provider feedback
+    data:
+      type: array
+      description: List of structured feedback entries. Content of each entry varies by feedback type. Replaces the full list for this asset+type; not a partial merge.
+      items:
+        type: object
+        additionalProperties: true
 ProviderFeedbackPaginatedResponse:
   type: object
   properties:
@@ -340,27 +365,37 @@ ProviderFeedbackPaginatedResponse:
       example: Success
     result:
       type: array
+      description: One entry per asset; totalCount/pagination apply to this list, not to the nested feedback entries.
       items:
         type: object
         properties:
-          id:
-            type: string
-            format: uuid
-          userId:
-            type: string
-            format: uuid
           assetId:
             type: string
             format: uuid
-          type:
-            type: string
-            example: FEEDBACK
-          data:
-            type: object
-            additionalProperties: true
-          createdAt:
-            type: string
-            format: date-time
+          feedback:
+            type: array
+            description: Every feedback type recorded for this asset that matches the request's filters.
+            items:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: FEEDBACK
+                data:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+                userId:
+                  type: string
+                  format: uuid
+                  description: UUID of the user who most recently submitted or updated this feedback type for this asset.
+                createdAt:
+                  type: string
+                  format: date-time
+                updatedAt:
+                  type: string
+                  format: date-time
     paginationInfo:
       type: object
       properties:
@@ -373,6 +408,7 @@ ProviderFeedbackPaginatedResponse:
         totalCount:
           type: integer
           example: 1
+          description: Number of distinct assets matching the request's filters.
         totalPages:
           type: integer
           example: 1
@@ -386,13 +422,21 @@ ProviderFeedbackPaginatedResponse:
     type: urn:dx:controlPlane:success
     title: Success
     result:
-      - id: f11be0ea-a9b2-4954-983d-297426c1682d
-        userId: 2f76e6b0-7569-4f30-8bc3-9884ca3d61c2
-        assetId: 8fd42dfc-6a54-46a3-9d5c-ce3f7fb11887
-        type: FEEDBACK
-        data:
-          comment: Thank you for using our dataset.
-        createdAt: "2026-07-01T09:06:28.285092"
+      - assetId: 8fd42dfc-6a54-46a3-9d5c-ce3f7fb11887
+        feedback:
+          - type: FEEDBACK
+            data:
+              - comment: Thank you for using our dataset.
+            userId: 2f76e6b0-7569-4f30-8bc3-9884ca3d61c2
+            createdAt: "2026-07-01T09:06:28.285092"
+            updatedAt: "2026-07-01T09:06:28.285092"
+          - type: FAQ
+            data:
+              - question: How frequently is this dataset updated?
+                answer: The dataset is updated daily.
+            userId: 2f76e6b0-7569-4f30-8bc3-9884ca3d61c2
+            createdAt: "2026-06-20T11:02:10.001000"
+            updatedAt: "2026-07-02T08:15:44.512000"
     paginationInfo:
       page: 1
       size: 10
