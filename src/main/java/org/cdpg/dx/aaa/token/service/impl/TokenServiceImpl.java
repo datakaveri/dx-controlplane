@@ -74,8 +74,17 @@ public class TokenServiceImpl implements TokenService {
   // ============================
   @Override
   public Future<JsonObject> createToken(AccessTokenRequest request) {
-    if (request.clientId() == null || request.clientSecret() == null) {
-      return Future.failedFuture("Missing clientId or clientSecret");
+    boolean hasAuthenticatedUser = request.authenticatedUser() != null;
+    boolean hasClientCredentials = request.clientId() != null && request.clientSecret() != null;
+    if (hasAuthenticatedUser && hasClientCredentials) {
+      return Future.failedFuture(
+          new DxBadRequestException(
+              "Ambiguous request: provide either an Authorization bearer token or clientId/clientSecret, not both"));
+    }
+    if (!hasAuthenticatedUser && !hasClientCredentials) {
+      return Future.failedFuture(
+          new DxBadRequestException(
+              "Missing clientId or clientSecret, or a valid Authorization bearer token"));
     }
 
     if (request.delegationId() != null && !request.delegationId().isBlank()) {
@@ -94,7 +103,7 @@ public class TokenServiceImpl implements TokenService {
   // ============================
   private Future<JsonObject> createAccessToken(AccessTokenRequest request) {
     LOGGER.info("Creating access token!");
-    return getDxUser(request.clientId(), request.clientSecret())
+    return resolveDxUser(request)
         .compose(
             user ->
                 fetchItemInfo(user, request.itemId())
@@ -105,8 +114,7 @@ public class TokenServiceImpl implements TokenService {
   // IDENTITY TOKEN
   // ============================
   private Future<JsonObject> createIdentityToken(AccessTokenRequest request) {
-    return getDxUser(request.clientId(), request.clientSecret())
-        .compose(user -> generateJwtToken(user, null));
+    return resolveDxUser(request).compose(user -> generateJwtToken(user, null));
   }
 
   // ============================
@@ -114,13 +122,13 @@ public class TokenServiceImpl implements TokenService {
   // ============================
   private Future<JsonObject> createDelegationToken(AccessTokenRequest request) {
     LOGGER.info("Creating delegation token!");
-    return getDelegatedDxUser(request.clientId(), request.clientSecret(), request.delegationId())
+    return resolveDxUser(request)
         .compose(
             user ->
                 fetchDelegationConstraints(request.delegationId(),user.sub().toString())
                     .compose(
                         delegationConstraints ->
-                            fetchItemInfo(user, request.itemId())
+                            fetchItemInfoWithDelegationFallback(user, request.itemId())
                                 .map(
                                     itemInfo -> {
 
@@ -143,20 +151,21 @@ public class TokenServiceImpl implements TokenService {
   // ============================
   // HELPER METHODS
   // ============================
+  private Future<DxUser> resolveDxUser(AccessTokenRequest request) {
+    if (request.authenticatedUser() != null) {
+      // Already resolved by the router's "optionalAuth" handler from a verified
+      // Authorization bearer token - no further Keycloak call needed.
+      return Future.succeededFuture(request.authenticatedUser());
+    }
+    return getDxUser(request.clientId(), request.clientSecret());
+  }
+
   private Future<DxUser> getDxUser(String clientId, String clientSecret) {
     String hashedClientId = hash(clientId);
     String hashedClientSecret = hash(clientSecret);
     return clientcredetialService
         .getUserIdByClientIdAndSecret(hashedClientId, hashedClientSecret)
         .compose(keycloakUserService::getUserById);
-  }
-
-  private Future<DxUser> getDelegatedDxUser(
-      String clientId, String clientSecret, String delegationId) {
-    // Option 1: fetch userId from clientId + clientSecret
-    return getDxUser(clientId, clientSecret);
-    // Option 2 (if delegation service provides user directly):
-    // return delegationService.getUserByDelegationId(delegationId);
   }
 
   private Future<JsonObject> fetchDelegationConstraints(String delegationId, String userId) {
@@ -239,6 +248,12 @@ public class TokenServiceImpl implements TokenService {
 
 
 
+  /**
+   * Resolves DIRECT access to the item only - no delegation fallback. Fails with
+   * DxNotFoundException if the item doesn't exist, or with whatever access-denial error
+   * itemService raises (e.g. DxForbiddenException/DxUnauthorizedException) if it exists but
+   * isn't directly accessible to this user.
+   */
   private Future<ItemInfo> fetchItemInfo(DxUser user, String itemId) {
     LOGGER.info("Fetching item info");
     LOGGER.info("itemId:{}",itemId);
@@ -255,34 +270,41 @@ public class TokenServiceImpl implements TokenService {
     return itemService
       .getItemWithAccessChecks(itemRequest)
       .compose(response -> {
+        JsonArray resultArray = response != null ? response.getResponse().getJsonArray("results") : null;
+        JsonObject item =
+            resultArray != null && !resultArray.isEmpty() ? resultArray.getJsonObject(0) : null;
 
-        if (response == null || response.getResponse() == null) {
-          LOGGER.warn("Item not found in item service for ID: {}. Trying delegation access...", itemId);
-          return handleDelegationAccess(user, itemId)
-            .map(delegationDetails -> {
-              LOGGER.info("Delegation token generated successfully for item {}", itemId);
-              return ItemInfo.fromJson(delegationDetails);
-            });
+        if (item == null) {
+          LOGGER.warn("Item with ID {} does not exist", itemId);
+          return Future.failedFuture(new DxNotFoundException("Item not found: " + itemId));
         }
 
-        JsonArray resultArray = response.getResponse().getJsonArray("results");
-        JsonObject item = resultArray.getJsonObject(0);
         LOGGER.info("Item info: {}",item);
         ItemInfo info = ItemInfo.fromJson(item);
         LOGGER.info("Item info to json: {}",info.toJson());
         LOGGER.info("Item {} exists for user Id (direct access)", itemId);
         return Future.succeededFuture(info);
-
-      })
-      .recover(err -> {
-        return handleDelegationAccess(user, itemId)
-          .map(delegationDetails -> {
-            LOGGER.info("Delegation access granted for item {} after failure from direct access", itemId);
-            LOGGER.debug("ExtraClaims :{}",delegationDetails);
-            LOGGER.debug("ItemInfo from json : {}",ItemInfo.fromJson(delegationDetails));
-            return ItemInfo.fromJson(delegationDetails);
-          });
       });
+  }
+
+  /**
+   * Same as fetchItemInfo, but for the explicit delegation-token flow: if direct access is
+   * denied (item exists but not directly accessible), falls back to checking delegation access.
+   * A genuinely nonexistent item is never retried via delegation.
+   */
+  private Future<ItemInfo> fetchItemInfoWithDelegationFallback(DxUser user, String itemId) {
+    return fetchItemInfo(user, itemId)
+        .recover(err -> {
+          if (err instanceof DxNotFoundException) {
+            return Future.failedFuture(err);
+          }
+          return handleDelegationAccess(user, itemId)
+              .map(delegationDetails -> {
+                LOGGER.info("Delegation access granted for item {} after failure from direct access", itemId);
+                LOGGER.debug("ExtraClaims :{}",delegationDetails);
+                return ItemInfo.fromJson(delegationDetails);
+              });
+        });
   }
 
 //  private Future<DelegationValidationResult> checkDelegationForItem(DxUser user, String itemIdStr) {
@@ -409,11 +431,6 @@ public class TokenServiceImpl implements TokenService {
     if (extraClaims != null ) {
       claims.mergeIn(extraClaims);
     }
-
-    LOGGER.info("claims2 :{}",claims);
-//    claims.put("drl",extraClaims.getString("drl"));
-//    claims.put("did",extraClaims.getString("did"));
-
     String token = provider.generateToken(claims, options);
     return Future.succeededFuture(
         new JsonObject()
