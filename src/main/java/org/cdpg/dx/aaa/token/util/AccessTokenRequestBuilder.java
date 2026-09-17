@@ -7,16 +7,28 @@ import java.util.ArrayList;
 import java.util.List;
 import org.cdpg.dx.aaa.token.model.AccessTokenRequest;
 import org.cdpg.dx.aaa.token.model.ConsentInfo;
+import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.common.util.RoutingContextHelper;
 
 public class AccessTokenRequestBuilder {
 
   public static AccessTokenRequest fromContext(RoutingContext ctx) {
+    // Populated by the router's "optionalAuth" security handler when a valid
+    // Authorization: Bearer <token> header was supplied; null otherwise.
+    DxUser authenticatedUser = ctx.user() != null ? RoutingContextHelper.fromPrincipal(ctx) : null;
     String clientId = ctx.request().getHeader("clientId");
     String clientSecret = ctx.request().getHeader("clientSecret");
     String delegationId = ctx.request().getHeader("delegationId"); // optional
 
-    if (clientId == null || clientSecret == null) {
-      throw new IllegalArgumentException("Missing required headers: clientId or clientSecret");
+    boolean hasClientCredentials = clientId != null || clientSecret != null;
+    if (authenticatedUser != null && hasClientCredentials) {
+      throw new IllegalArgumentException(
+          "Ambiguous request: provide either an Authorization bearer token or clientId/clientSecret, not both");
+    }
+
+    if (authenticatedUser == null && (clientId == null || clientSecret == null)) {
+      throw new IllegalArgumentException(
+          "Missing required headers: either 'Authorization: Bearer <token>' or clientId/clientSecret");
     }
 
     JsonObject body = null;
@@ -42,6 +54,7 @@ public class AccessTokenRequestBuilder {
       }
     }
 
-    return new AccessTokenRequest(clientId, clientSecret, delegationId, itemId, consentList);
+    return new AccessTokenRequest(
+        clientId, clientSecret, authenticatedUser, delegationId, itemId, consentList);
   }
 }

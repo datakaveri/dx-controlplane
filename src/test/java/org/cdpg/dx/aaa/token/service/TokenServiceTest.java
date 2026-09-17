@@ -29,8 +29,6 @@ import org.cdpg.dx.aaa.delegation.DelegationAccessEvaluator;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.token.model.AccessTokenRequest;
-import org.cdpg.dx.aaa.token.model.DelegationValidationResult;
-import org.cdpg.dx.aaa.token.model.ItemInfo;
 import org.cdpg.dx.aaa.token.service.impl.TokenServiceImpl;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
@@ -139,15 +137,19 @@ class TokenServiceTest {
   }
 
   private AccessTokenRequest identityTokenRequest() {
-    return new AccessTokenRequest(CLIENT_ID, CLIENT_SECRET, null, null, null);
+    return new AccessTokenRequest(CLIENT_ID, CLIENT_SECRET, null, null, null, null);
   }
 
   private AccessTokenRequest accessTokenRequest(String itemId) {
-    return new AccessTokenRequest(CLIENT_ID, CLIENT_SECRET, null, itemId, null);
+    return new AccessTokenRequest(CLIENT_ID, CLIENT_SECRET, null, null, itemId, null);
   }
 
   private AccessTokenRequest delegationTokenRequest(String delegationId, String itemId) {
-    return new AccessTokenRequest(CLIENT_ID, CLIENT_SECRET, delegationId, itemId, null);
+    return new AccessTokenRequest(CLIENT_ID, CLIENT_SECRET, null, delegationId, itemId, null);
+  }
+
+  private AccessTokenRequest keycloakTokenRequest(DxUser authenticatedUser) {
+    return new AccessTokenRequest(null, null, authenticatedUser, null, null, null);
   }
 
   /**
@@ -193,7 +195,7 @@ class TokenServiceTest {
     @DisplayName("should fail when clientId is null")
     void createToken_nullClientId_fails(VertxTestContext ctx) {
       AccessTokenRequest request =
-          new AccessTokenRequest(null, CLIENT_SECRET, null, null, null);
+          new AccessTokenRequest(null, CLIENT_SECRET, null, null, null, null);
 
       Future<JsonObject> future = tokenService.createToken(request);
 
@@ -211,7 +213,7 @@ class TokenServiceTest {
     @DisplayName("should fail when clientSecret is null")
     void createToken_nullClientSecret_fails(VertxTestContext ctx) {
       AccessTokenRequest request =
-          new AccessTokenRequest(CLIENT_ID, null, null, null, null);
+          new AccessTokenRequest(CLIENT_ID, null, null, null, null, null);
 
       Future<JsonObject> future = tokenService.createToken(request);
 
@@ -229,7 +231,7 @@ class TokenServiceTest {
     @DisplayName("should fail when both clientId and clientSecret are null")
     void createToken_bothNull_fails(VertxTestContext ctx) {
       AccessTokenRequest request =
-          new AccessTokenRequest(null, null, null, null, null);
+          new AccessTokenRequest(null, null, null, null, null, null);
 
       Future<JsonObject> future = tokenService.createToken(request);
 
@@ -238,6 +240,60 @@ class TokenServiceTest {
           ctx,
           err -> {
             assertThat(err.getMessage()).contains("Missing clientId or clientSecret");
+          });
+    }
+  }
+
+  // ============================
+  // KEYCLOAK BEARER TOKEN TESTS
+  // ============================
+
+  @Nested
+  @DisplayName("Keycloak Bearer Token Authentication")
+  class KeycloakTokenAuth {
+
+    @Test
+    @DisplayName(
+        "should create identity token from a pre-authenticated user, "
+            + "without calling the Keycloak Admin API or client-credential lookup")
+    void createIdentityToken_withAuthenticatedUser_success(VertxTestContext ctx) {
+      UUID userId = UUID.randomUUID();
+      DxUser authenticatedUser = buildTestUser(userId);
+
+      stubJwtGeneration("identity-token-from-keycloak");
+
+      Future<JsonObject> future =
+          tokenService.createToken(keycloakTokenRequest(authenticatedUser));
+
+      assertFutureSuccess(
+          future,
+          ctx,
+          result -> {
+            assertThat(result.getString("access_token")).isEqualTo("identity-token-from-keycloak");
+            verifyNoInteractions(keycloakUserService);
+            verifyNoInteractions(clientcredetialService);
+          });
+    }
+
+    @Test
+    @DisplayName("should reject as ambiguous when both an authenticated user and clientId/clientSecret are present")
+    void createToken_bothAuthenticatedUserAndClientCredentials_fails(VertxTestContext ctx) {
+      UUID userId = UUID.randomUUID();
+      DxUser authenticatedUser = buildTestUser(userId);
+
+      AccessTokenRequest request =
+          new AccessTokenRequest(CLIENT_ID, CLIENT_SECRET, authenticatedUser, null, null, null);
+
+      Future<JsonObject> future = tokenService.createToken(request);
+
+      assertFutureFailure(
+          future,
+          ctx,
+          err -> {
+            assertThat(err.getMessage()).contains("Ambiguous request");
+            verifyNoInteractions(keycloakUserService);
+            verifyNoInteractions(clientcredetialService);
+            verifyNoInteractions(jwtAuth);
           });
     }
   }
@@ -316,7 +372,7 @@ class TokenServiceTest {
 
       // Both empty strings should route to identity token path
       AccessTokenRequest request =
-          new AccessTokenRequest(CLIENT_ID, CLIENT_SECRET, "", "", null);
+          new AccessTokenRequest(CLIENT_ID, CLIENT_SECRET, null, "", "", null);
 
       Future<JsonObject> future = tokenService.createToken(request);
 
@@ -340,7 +396,7 @@ class TokenServiceTest {
       stubJwtGeneration("identity-token");
 
       AccessTokenRequest request =
-          new AccessTokenRequest(CLIENT_ID, CLIENT_SECRET, "   ", "   ", null);
+          new AccessTokenRequest(CLIENT_ID, CLIENT_SECRET, null, "   ", "   ", null);
 
       Future<JsonObject> future = tokenService.createToken(request);
 
@@ -510,109 +566,39 @@ class TokenServiceTest {
 
     @Test
     @DisplayName(
-        "should fall back to delegation access when item service returns null response")
-    void createAccessToken_nullResponse_fallsToDelegation(VertxTestContext ctx) {
+        "should fail with DxNotFoundException when the item doesn't exist, "
+            + "without attempting delegation access")
+    void createAccessToken_nonExistentItem_failsNotFound(VertxTestContext ctx) {
       UUID userId = UUID.randomUUID();
-      UUID delegatorId = UUID.randomUUID();
-      UUID delegationId = UUID.randomUUID();
       String itemId = UUID.randomUUID().toString();
       DxUser user = buildTestUser(userId);
-      DxUser delegatorUser = buildTestUserWithRoles(delegatorId, List.of("provider"));
 
       stubGetDxUser(userId, user);
-      stubJwtGeneration("delegation-fallback-token");
+      stubJwtGeneration("should-not-be-used");
 
-      // Item service returns null response, triggering delegation fallback
-      ResponseModel nullResponseModel = org.mockito.Mockito.mock(ResponseModel.class);
-      when(nullResponseModel.getResponse()).thenReturn(null);
+      // Mirrors ItemServiceImpl's real behavior for a nonexistent item: a "successful"
+      // response whose single result is null.
+      ResponseModel notFoundResponseModel = org.mockito.Mockito.mock(ResponseModel.class);
+      JsonObject responseJson = new JsonObject().put("results", new JsonArray().addNull());
+      when(notFoundResponseModel.getResponse()).thenReturn(responseJson);
       when(itemService.getItemWithAccessChecks(any()))
-          .thenReturn(Future.succeededFuture(nullResponseModel));
-
-      ItemInfo itemInfo =
-          new ItemInfo(
-              new JsonArray().add("iudx:Resource"),
-              "org-123",
-              delegatorId.toString(),
-              "OPEN",
-              "Delegated resource",
-              new JsonArray(),
-              null,
-              null,
-              null,
-              new JsonArray(),
-              itemId);
-      DelegationValidationResult validationResult =
-          new DelegationValidationResult(delegationId, delegatorId, userId, itemInfo);
-
-      when(delegationAccessEvaluator.validateItemAccess(any(DxUser.class), eq(itemId)))
-          .thenReturn(Future.succeededFuture(validationResult));
-      when(keycloakUserService.getUserById(delegatorId))
-          .thenReturn(Future.succeededFuture(delegatorUser));
+          .thenReturn(Future.succeededFuture(notFoundResponseModel));
 
       Future<JsonObject> future = tokenService.createToken(accessTokenRequest(itemId));
 
-      assertFutureSuccess(
+      assertFutureFailure(
           future,
           ctx,
-          result -> {
-            assertThat(result.getString("access_token")).isEqualTo("delegation-fallback-token");
-            verify(delegationAccessEvaluator).validateItemAccess(any(DxUser.class), eq(itemId));
-          });
-    }
-
-    @Test
-    @DisplayName("should fall back to delegation access when item service fails")
-    void createAccessToken_itemServiceFails_fallsToDelegation(VertxTestContext ctx) {
-      UUID userId = UUID.randomUUID();
-      UUID delegatorId = UUID.randomUUID();
-      UUID delegationId = UUID.randomUUID();
-      String itemId = UUID.randomUUID().toString();
-      DxUser user = buildTestUser(userId);
-      DxUser delegatorUser = buildTestUserWithRoles(delegatorId, List.of("provider"));
-
-      stubGetDxUser(userId, user);
-      stubJwtGeneration("delegation-recovery-token");
-
-      // Item service fails entirely
-      when(itemService.getItemWithAccessChecks(any()))
-          .thenReturn(Future.failedFuture("Item not accessible"));
-
-      ItemInfo itemInfo =
-          new ItemInfo(
-              new JsonArray().add("iudx:Resource"),
-              "org-123",
-              delegatorId.toString(),
-              "OPEN",
-              "Delegated resource",
-              new JsonArray(),
-              null,
-              null,
-              null,
-              new JsonArray(),
-              itemId);
-      DelegationValidationResult validationResult =
-          new DelegationValidationResult(delegationId, delegatorId, userId, itemInfo);
-
-      when(delegationAccessEvaluator.validateItemAccess(any(DxUser.class), eq(itemId)))
-          .thenReturn(Future.succeededFuture(validationResult));
-      when(keycloakUserService.getUserById(delegatorId))
-          .thenReturn(Future.succeededFuture(delegatorUser));
-
-      Future<JsonObject> future = tokenService.createToken(accessTokenRequest(itemId));
-
-      assertFutureSuccess(
-          future,
-          ctx,
-          result -> {
-            assertThat(result.getString("access_token")).isEqualTo("delegation-recovery-token");
-            verify(delegationAccessEvaluator).validateItemAccess(any(DxUser.class), eq(itemId));
+          err -> {
+            assertThat(err).isInstanceOf(org.cdpg.dx.common.exception.DxNotFoundException.class);
+            verifyNoInteractions(delegationAccessEvaluator);
           });
     }
 
     @Test
     @DisplayName(
-        "should fail with DxForbiddenException when both direct and delegation access fail")
-    void createAccessToken_allAccessFails(VertxTestContext ctx) {
+        "should fail directly when direct access is denied, without attempting delegation access")
+    void createAccessToken_directAccessDenied_failsDirectly(VertxTestContext ctx) {
       UUID userId = UUID.randomUUID();
       String itemId = UUID.randomUUID().toString();
       DxUser user = buildTestUser(userId);
@@ -621,9 +607,7 @@ class TokenServiceTest {
       stubJwtGeneration("should-not-be-used");
 
       when(itemService.getItemWithAccessChecks(any()))
-          .thenReturn(Future.failedFuture("Item not accessible"));
-      when(delegationAccessEvaluator.validateItemAccess(any(DxUser.class), eq(itemId)))
-          .thenReturn(Future.failedFuture("No delegation found"));
+          .thenReturn(Future.failedFuture(new DxForbiddenException("Item not accessible")));
 
       Future<JsonObject> future = tokenService.createToken(accessTokenRequest(itemId));
 
@@ -632,7 +616,8 @@ class TokenServiceTest {
           ctx,
           err -> {
             assertThat(err).isInstanceOf(DxForbiddenException.class);
-            assertThat(err.getMessage()).contains("No access found via delegation or direct access");
+            assertThat(err.getMessage()).contains("Item not accessible");
+            verifyNoInteractions(delegationAccessEvaluator);
           });
     }
   }
