@@ -81,14 +81,21 @@
     operationId: post-auth-v2-token
     tags:
     - token
-    description: 'Issue a JWT access token using client credentials. Supports three modes: (1) **Identity token** - provide only clientId and clientSecret to get an identity token, (2) **Access token** - additionally provide an `itemId` in the request body to get an access token scoped to a specific resource, (3) **Delegate access token** - additionally provide a `delegationId` header to act on behalf of a delegator. The token is signed using ES256 and can be validated using the public key from `/auth/v2/jwks`.
+    description: |
+      Issue a JWT access token. The caller must authenticate using **exactly one** of the following:
+      - `clientId` + `clientSecret` headers (client credentials obtained from the client registration API), or
+      - an `Authorization: Bearer <token>` header carrying a valid Keycloak-issued access token.
 
-      '
+      Providing both, or neither, results in a `400 Bad Request`.
+
+      Supports two modes: (1) **Identity token** - provide only the credentials above to get an identity token, (2) **Access token** - additionally provide an `itemId` in the request body to get an access token scoped to a specific resource. The token is signed using ES256 and can be validated using the public key from `/auth/v2/jwks`.
+    security:
+    - optionalAuth: []
     parameters:
     - in: header
       name: clientId
-      required: true
-      description: UUID of the client obtained from the client registration API
+      required: false
+      description: UUID of the client obtained from the client registration API. Required unless an `Authorization` bearer token is supplied instead.
       schema:
         type: string
         format: uuid
@@ -96,8 +103,8 @@
         maxLength: 36
     - in: header
       name: clientSecret
-      required: true
-      description: Secret key associated with the clientId
+      required: false
+      description: Secret key associated with the clientId. Required unless an `Authorization` bearer token is supplied instead.
       schema:
         type: string
         minLength: 10
@@ -162,6 +169,11 @@
       source: "curl --location 'https://${HOSTNAME}/iudx/v2/auth/token' \\\n    --header 'clientId: dd0f645d-e286-40f5-ba73-1d3a06aaaa1e'\
         \ \\\n    --header 'clientSecret: dd45b0da4c3614249b8cfcb2e8a418b2b0293cfb' \\\n    --header 'Content-Type: application/json'\
         \ \\\n    --data '{\n            \"itemId\":\"74436122-e6f6-45bf-be53-7ee2c257826b\"\n          }'\n"
+    - lang: curl
+      label: Identity token request using a Keycloak token
+      source: |
+        curl --location --request POST 'https://${HOSTNAME}/iudx/v2/auth/token' \
+              --header 'Authorization: Bearer <keycloak-access-token>'
 /iudx/auth/v2/app/token:
   post:
     tags:
