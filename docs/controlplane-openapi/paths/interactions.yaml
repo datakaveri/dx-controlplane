@@ -1257,12 +1257,7 @@
       - User Interactions
     summary: Get my user feedback
     description: >
-      Retrieve a paginated list of feedback submitted by the authenticated
-      consumer. The response contains only feedback created by the requesting
-      user. Consumers can optionally filter their feedback by asset, action
-      subtype, rating, or feedback creation time. The user identity is derived
-      from the authenticated user token and cannot be supplied as a query
-      parameter.
+      Retrieve a paginated list of feedback submitted by the authenticated consumer. The response contains only feedback created by the requesting user, including feedback in pending, approved, and rejected states. Consumers can optionally filter their feedback by asset, action subtype, rating, or feedback creation time. The user identity is derived from the authenticated user token and cannot be supplied as a query parameter.
     operationId: get-my-user-feedback
     security:
       - authorization: []

@@ -538,7 +538,6 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implement
                 entity_rating IS NOT NULL
                 OR action_subtype IS NOT NULL
             )
-            AND feedback_status = 'APPROVED'
             """,
             filters,
             temporalRequests);

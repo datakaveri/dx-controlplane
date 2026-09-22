@@ -6763,7 +6763,7 @@ paths:
         - User Interactions
       summary: Get my user feedback
       description: |
-        Retrieve a paginated list of feedback submitted by the authenticated consumer. The response contains only feedback created by the requesting user. Consumers can optionally filter their feedback by asset, action subtype, rating, or feedback creation time. The user identity is derived from the authenticated user token and cannot be supplied as a query parameter.
+        Retrieve a paginated list of feedback submitted by the authenticated consumer. The response contains only feedback created by the requesting user, including feedback in pending, approved, and rejected states. Consumers can optionally filter their feedback by asset, action subtype, rating, or feedback creation time. The user identity is derived from the authenticated user token and cannot be supplied as a query parameter.
       operationId: get-my-user-feedback
       security:
         - authorization: []
@@ -21773,6 +21773,8 @@ components:
               assetType: DATABANK
               assetName: Test DataBank1
               entityRating: 4
+              feedbackStatus: APPROVED
+              feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
               ratingCreatedAt: '2026-09-15T05:02:49.906371'
               ratingUpdatedAt: '2026-09-15T05:02:49.906371'
               actionSubtype: data_quality
@@ -21786,6 +21788,8 @@ components:
               assetType: DATABANK
               assetName: Test DataBank2
               entityRating: 5
+              feedbackStatus: APPROVED
+              feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
               ratingCreatedAt: '2026-09-11T10:53:23.666794'
               ratingUpdatedAt: '2026-09-11T10:53:23.666794'
               actionSubdata:
@@ -21798,6 +21802,8 @@ components:
               assetType: DATABANK
               assetName: Test DataBank3
               entityRating: 5
+              feedbackStatus: APPROVED
+              feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
               ratingCreatedAt: '2026-09-11T10:44:55.252737'
               ratingUpdatedAt: '2026-09-11T10:45:14.761093'
               actionSubdata:
@@ -21810,6 +21816,8 @@ components:
               assetType: DATABANK
               assetName: Test DataBank4
               entityRating: 5
+              feedbackStatus: APPROVED
+              feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
               ratingCreatedAt: '2026-09-11T05:23:05.136736'
               ratingUpdatedAt: '2026-09-11T05:23:05.136736'
               actionSubdata:
@@ -21822,6 +21830,8 @@ components:
               assetType: DATABANK
               assetName: Test DataBank5
               entityRating: 5
+              feedbackStatus: APPROVED
+              feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
               ratingCreatedAt: '2026-09-11T05:11:26.884067'
               ratingUpdatedAt: '2026-09-11T05:21:57.276971'
               actionSubdata:
@@ -21834,6 +21844,8 @@ components:
               assetType: DATABANK
               assetName: Test DataBank6
               entityRating: 4
+              feedbackStatus: APPROVED
+              feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
               ratingCreatedAt: '2026-09-09T11:22:39.369221'
               ratingUpdatedAt: '2026-09-09T11:22:39.369221'
               actionSubdata:
@@ -21846,6 +21858,8 @@ components:
               assetType: DATABANK
               assetName: Test DataBank7
               entityRating: 4
+              feedbackStatus: APPROVED
+              feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
               ratingCreatedAt: '2026-09-08T17:51:12.830709'
               ratingUpdatedAt: '2026-09-09T14:18:11.544669'
               actionSubtype: data_quality
@@ -21859,6 +21873,8 @@ components:
               assetType: DATABANK
               assetName: Test DataBank8
               entityRating: 1
+              feedbackStatus: APPROVED
+              feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
               ratingCreatedAt: '2026-09-08T17:51:12.830709'
               ratingUpdatedAt: '2026-09-08T17:51:12.830709'
               actionSubtype: feedback
@@ -21872,6 +21888,8 @@ components:
               assetType: DATABANK
               assetName: Test DataBank9
               entityRating: 4
+              feedbackStatus: APPROVED
+              feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
               ratingCreatedAt: '2026-09-08T17:51:12.830709'
               ratingUpdatedAt: '2026-09-08T17:51:12.830709'
             - id: ec68e7cd-18a2-49e8-a38c-c1972fc748d6
@@ -21882,6 +21900,8 @@ components:
               assetType: DATABANK
               assetName: Test DataBank10
               entityRating: 1
+              feedbackStatus: APPROVED
+              feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
               ratingCreatedAt: '2026-09-08T17:51:12.830709'
               ratingUpdatedAt: '2026-09-08T17:51:12.830709'
               actionSubtype: testing
