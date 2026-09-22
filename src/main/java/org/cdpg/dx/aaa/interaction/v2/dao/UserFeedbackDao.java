@@ -20,4 +20,7 @@ public interface UserFeedbackDao {
   Future<UserFeedback> putFeedback(UserFeedback request);
 
   Future<UserFeedback> updateFeedbackStatus(UUID feedbackId, FeedbackStatus status, String comment);
+
+  Future<UserFeedbackPaginatedResponse> fetchApprovedPlatformUserFeedbacks(
+      PaginatedRequest request);
 }

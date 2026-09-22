@@ -34,6 +34,5 @@ public interface UserInteractionV2Service {
 
   Future<Boolean> deleteProviderFeedback(UUID userId, UUID assetId, ProviderFeedbackType type);
 
-
-
+  Future<UserFeedbackPage> getApprovedPlatformUserFeedbacks(PaginatedRequest request);
 }

@@ -295,6 +295,8 @@ paths:
     $ref: paths/interactions.yaml#/~1iudx~1v2~1user~1interactions~1sync
   /iudx/v2/user/feedback:
     $ref: paths/interactions.yaml#/~1iudx~1v2~1user~1feedback
+  /iudx/v2/user/feedback/approved:
+    $ref: paths/interactions.yaml#/~1iudx~1v2~1user~1feedback~1approved
   /iudx/v2/user/feedback/platform:
     $ref: paths/interactions.yaml#/~1iudx~1v2~1user~1feedback~1platform
   /iudx/v2/user/feedback/user:
