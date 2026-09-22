@@ -149,6 +149,7 @@ public final class OperationIds {
   public static final String OP_PLATFORM_PUT_USER_FEEDBACK = "put-platform-user-feedback";
   public static final String OP_PUT_USER_FEEDBACK = "put-user-feedback";
   public static final String OP_GET_PLATFORM_USER_FEEDBACK = "get-platform-user-feedback";
+  public static final String OP_GET_APPROVED_PLATFORM_USER_FEEDBACK = "get-approved-user-feedback";
   public static final String OP_GET_USER_FEEDBACK = "get-my-user-feedback";
   public static final String OP_DELETE_USER_FEEDBACK = "delete-user-feedback";
   public static final String OP_POST_PROVIDER_FEEDBACK = "post-provider-feedback";

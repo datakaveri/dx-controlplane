@@ -6561,6 +6561,81 @@ paths:
           label: Delete user feedback
           source: |
             curl --location --request DELETE 'https://${HOSTNAME}/iudx/v2/user/feedback?assetId=811e9876-9381-4a25-8ad1-e8b289616ab8' --header 'Authorization: Bearer <your-token>'
+  /iudx/v2/user/feedback/approved:
+    get:
+      tags:
+        - User Interactions
+      summary: Get approved user feedback
+      description: |
+        Retrieve a paginated list of user feedback that has been approved for consumer visibility. This endpoint is accessible to users with the `consumer` role. Only feedback with an `APPROVED` status is returned. Consumers can optionally filter the approved feedback by asset UUID and/or user UUID.
+      operationId: get-approved-user-feedback
+      security:
+        - authorization: []
+      parameters:
+        - name: assetId
+          in: query
+          description: Filter approved feedback by asset UUID
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: userId
+          in: query
+          description: Filter approved feedback by user UUID
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: sort
+          in: query
+          description: |
+            Sort results by feedback creation time. Format: `feedbackCreatedAt:asc` or `feedbackCreatedAt:desc`. Defaults to `feedbackCreatedAt:desc`.
+          required: false
+          schema:
+            type: string
+          example: feedbackCreatedAt:desc
+      responses:
+        '200':
+          description: Successfully retrieved approved user feedback
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserFeedbackPaginatedResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericBadRequestResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+      x-codeSamples:
+        - lang: cURL
+          label: Get approved feedback
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback/approved?page=1&size=10' \
+              --header 'Authorization: Bearer <your-token>'
+        - lang: cURL
+          label: Get approved feedback by asset
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback/approved?assetId=811e9876-9381-4a25-8ad1-e8b289616ab8&page=1&size=10' \
+              --header 'Authorization: Bearer <your-token>'
+        - lang: cURL
+          label: Get approved feedback by user
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback/approved?userId=fd62ba22-d338-4dad-b09c-2bccfa20b04a&page=1&size=10' \
+              --header 'Authorization: Bearer <your-token>'
+        - lang: cURL
+          label: Get approved feedback by asset and user
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback/approved?assetId=811e9876-9381-4a25-8ad1-e8b289616ab8&userId=fd62ba22-d338-4dad-b09c-2bccfa20b04a&page=1&size=10' \
+              --header 'Authorization: Bearer <your-token>'
   /iudx/v2/user/feedback/platform:
     get:
       tags:
@@ -6688,7 +6763,7 @@ paths:
         - User Interactions
       summary: Get my user feedback
       description: |
-        Retrieve a paginated list of feedback submitted by the authenticated consumer. The response contains only feedback created by the requesting user. Consumers can optionally filter their feedback by asset, action subtype, rating, or feedback creation time. The user identity is derived from the authenticated user token and cannot be supplied as a query parameter.
+        Retrieve a paginated list of feedback submitted by the authenticated consumer. The response contains only feedback created by the requesting user, including feedback in pending, approved, and rejected states. Consumers can optionally filter their feedback by asset, action subtype, rating, or feedback creation time. The user identity is derived from the authenticated user token and cannot be supplied as a query parameter.
       operationId: get-my-user-feedback
       security:
         - authorization: []
@@ -21696,7 +21771,10 @@ components:
               organisation: IUDX - New 2020
               assetId: dd96f3d9-9654-434d-882b-c35a9fa6fc35
               assetType: DATABANK
+              assetName: Test DataBank1
               entityRating: 4
+              feedbackStatus: APPROVED
+              feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
               ratingCreatedAt: '2026-09-15T05:02:49.906371'
               ratingUpdatedAt: '2026-09-15T05:02:49.906371'
               actionSubtype: data_quality
@@ -21708,7 +21786,10 @@ components:
               organisation: IUDX - New 2020
               assetId: 588a71fc-a7b2-46a2-a06c-a3777db5f07e
               assetType: DATABANK
+              assetName: Test DataBank2
               entityRating: 5
+              feedbackStatus: APPROVED
+              feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
               ratingCreatedAt: '2026-09-11T10:53:23.666794'
               ratingUpdatedAt: '2026-09-11T10:53:23.666794'
               actionSubdata:
@@ -21719,7 +21800,10 @@ components:
               organisation: IUDX - New 2020
               assetId: c594efcf-8c3c-4192-b4a3-5411daab69fb
               assetType: DATABANK
+              assetName: Test DataBank3
               entityRating: 5
+              feedbackStatus: APPROVED
+              feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
               ratingCreatedAt: '2026-09-11T10:44:55.252737'
               ratingUpdatedAt: '2026-09-11T10:45:14.761093'
               actionSubdata:
@@ -21730,7 +21814,10 @@ components:
               organisation: IUDX - New 2020
               assetId: d28c953c-a363-4ab7-8d6f-38400e08958b
               assetType: DATABANK
+              assetName: Test DataBank4
               entityRating: 5
+              feedbackStatus: APPROVED
+              feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
               ratingCreatedAt: '2026-09-11T05:23:05.136736'
               ratingUpdatedAt: '2026-09-11T05:23:05.136736'
               actionSubdata:
@@ -21741,7 +21828,10 @@ components:
               organisation: IUDX - New 2020
               assetId: d28c953c-a363-4ab7-8d6f-38400e08958b
               assetType: DATABANK
+              assetName: Test DataBank5
               entityRating: 5
+              feedbackStatus: APPROVED
+              feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
               ratingCreatedAt: '2026-09-11T05:11:26.884067'
               ratingUpdatedAt: '2026-09-11T05:21:57.276971'
               actionSubdata:
@@ -21752,7 +21842,10 @@ components:
               organisation: IUDX - New 2020
               assetId: c594efcf-8c3c-4192-b4a3-5411daab69fb
               assetType: DATABANK
+              assetName: Test DataBank6
               entityRating: 4
+              feedbackStatus: APPROVED
+              feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
               ratingCreatedAt: '2026-09-09T11:22:39.369221'
               ratingUpdatedAt: '2026-09-09T11:22:39.369221'
               actionSubdata:
@@ -21763,7 +21856,10 @@ components:
               organisation: IUDX - New 2020
               assetId: d524c54b-1091-4ac7-b4d5-c117dd09f5ff
               assetType: DATABANK
+              assetName: Test DataBank7
               entityRating: 4
+              feedbackStatus: APPROVED
+              feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
               ratingCreatedAt: '2026-09-08T17:51:12.830709'
               ratingUpdatedAt: '2026-09-09T14:18:11.544669'
               actionSubtype: data_quality
@@ -21775,7 +21871,10 @@ components:
               organisation: IUDX - New 2020
               assetId: 363d880e-bbcd-43ec-8bba-22257fe5876b
               assetType: DATABANK
+              assetName: Test DataBank8
               entityRating: 1
+              feedbackStatus: APPROVED
+              feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
               ratingCreatedAt: '2026-09-08T17:51:12.830709'
               ratingUpdatedAt: '2026-09-08T17:51:12.830709'
               actionSubtype: feedback
@@ -21787,7 +21886,10 @@ components:
               organisation: IUDX - New 2020
               assetId: 919c31e7-b591-410a-89ad-b9490088e912
               assetType: DATABANK
+              assetName: Test DataBank9
               entityRating: 4
+              feedbackStatus: APPROVED
+              feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
               ratingCreatedAt: '2026-09-08T17:51:12.830709'
               ratingUpdatedAt: '2026-09-08T17:51:12.830709'
             - id: ec68e7cd-18a2-49e8-a38c-c1972fc748d6
@@ -21796,7 +21898,10 @@ components:
               organisation: IUDX - New 2020
               assetId: 4ff7614c-efd2-4bbf-ba07-2cf22acae49d
               assetType: DATABANK
+              assetName: Test DataBank10
               entityRating: 1
+              feedbackStatus: APPROVED
+              feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
               ratingCreatedAt: '2026-09-08T17:51:12.830709'
               ratingUpdatedAt: '2026-09-08T17:51:12.830709'
               actionSubtype: testing

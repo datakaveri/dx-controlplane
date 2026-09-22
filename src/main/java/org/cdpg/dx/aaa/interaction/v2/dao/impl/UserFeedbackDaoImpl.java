@@ -538,7 +538,6 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implement
                 entity_rating IS NOT NULL
                 OR action_subtype IS NOT NULL
             )
-            AND feedback_status = 'APPROVED'
             """,
             filters,
             temporalRequests);
@@ -717,6 +716,141 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implement
               }
 
               return Future.succeededFuture(UserFeedback.fromJson(rows.getRows().getJsonObject(0)));
+            });
+  }
+
+  @Override
+  public Future<UserFeedbackPaginatedResponse> fetchApprovedPlatformUserFeedbacks(
+      PaginatedRequest request) {
+
+    int page = request.page();
+    int size = request.size();
+    int offset = (page - 1) * size;
+
+    Map<String, Object> filters = request.filters();
+    LOGGER.debug("Approved feedback filters: {}", filters);
+
+    List<TemporalRequest> temporalRequests = request.temporalRequests();
+
+    OrderBy orderBy =
+        request.orderByList() != null && !request.orderByList().isEmpty()
+            ? request.orderByList().getFirst()
+            : null;
+
+    String orderDirection =
+        orderBy != null
+                && "feedback_created_at".equals(orderBy.getColumn())
+                && orderBy.getDirection() == OrderBy.Direction.ASC
+            ? "ASC"
+            : "DESC";
+
+    // ---------------------------------------------------------
+    // Paginated feedback rows
+    // ---------------------------------------------------------
+    //
+    // Only return actual feedback rows and only rows that have
+    // been approved for consumer visibility.
+    //
+    FilterClause pageFilter =
+        buildFilterClause(
+            """
+            (entity_rating IS NOT NULL OR action_subtype IS NOT NULL)
+            AND feedback_status = 'APPROVED'
+            """,
+            filters,
+            temporalRequests);
+
+    int limitIndex = pageFilter.nextIndex();
+    int offsetIndex = limitIndex + 1;
+
+    String sql =
+        """
+        SELECT
+            id,
+            user_id,
+            asset_id,
+            asset_type,
+            entity_rating,
+            action_subtype,
+            action_subdata,
+            feedback_created_at,
+            feedback_updated_at,
+            feedback_status,
+            feedback_comment,
+            feedback_status_updated_at,
+            COUNT(*) OVER() AS total_count
+        FROM user_interactions
+        """
+            + pageFilter.sql()
+            + " ORDER BY feedback_created_at "
+            + orderDirection
+            + " NULLS LAST"
+            + " LIMIT $"
+            + limitIndex
+            + " OFFSET $"
+            + offsetIndex;
+
+    JsonArray params = pageFilter.params().copy();
+    params.add(size);
+    params.add(offset);
+
+    LOGGER.debug("Approved feedback SQL: {}", sql);
+    LOGGER.debug("Approved feedback params: {}", params);
+
+    Future<PagedRows> pageFuture =
+        postgresService
+            .executeQuery(sql, params)
+            .map(
+                rows ->
+                    new PagedRows(
+                        rows.getRows().stream()
+                            .map(obj -> UserFeedback.fromJson((JsonObject) obj))
+                            .toList(),
+                        rows.getTotalCount()));
+
+    // ---------------------------------------------------------
+    // Full-set rating summary
+    // ---------------------------------------------------------
+    FilterClause summaryFilter =
+        buildFilterClause(
+            """
+            entity_rating IS NOT NULL
+            AND feedback_status = 'APPROVED'
+            """,
+            filters,
+            temporalRequests);
+
+    String summarySql =
+        """
+        SELECT
+            COUNT(*) AS total_ratings,
+            COALESCE(AVG(entity_rating), 0)::double precision AS average_rating,
+            COUNT(*) FILTER (WHERE entity_rating = 1) AS rating_1,
+            COUNT(*) FILTER (WHERE entity_rating = 2) AS rating_2,
+            COUNT(*) FILTER (WHERE entity_rating = 3) AS rating_3,
+            COUNT(*) FILTER (WHERE entity_rating = 4) AS rating_4,
+            COUNT(*) FILTER (WHERE entity_rating = 5) AS rating_5
+        FROM user_interactions
+        """
+            + summaryFilter.sql();
+
+    LOGGER.debug("Approved feedback summary SQL: {}", summarySql);
+    LOGGER.debug("Approved feedback summary params: {}", summaryFilter.params());
+
+    Future<RatingSummary> summaryFuture =
+        postgresService
+            .executeQuery(summarySql, summaryFilter.params())
+            .map(rows -> toRatingSummary(rows.getRows().getJsonObject(0)));
+
+    return Future.all(List.of(pageFuture, summaryFuture))
+        .map(
+            cf -> {
+              PagedRows paged = pageFuture.result();
+
+              return new UserFeedbackPaginatedResponse(
+                  paged.data(),
+                  summaryFuture.result(),
+                  PaginationInfo.from(page, size, paged.total()));
             });
   }
 }

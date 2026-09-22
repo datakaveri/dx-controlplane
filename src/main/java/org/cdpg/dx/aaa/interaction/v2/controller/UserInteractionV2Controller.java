@@ -7,6 +7,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -117,6 +118,12 @@ public class UserInteractionV2Controller implements ApiController {
         .handler(auditingHandler::handleApiAudit)
         .handler(userScopedAccess)
         .handler(this::handleGetUserFeedbackRequest);
+
+    builder
+        .operation(OP_GET_APPROVED_PLATFORM_USER_FEEDBACK)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(userScopedAccess)
+        .handler(this::handleGetApprovedPlatformUserFeedbackRequest);
 
     builder
         .operation(OP_GET_PLATFORM_USER_FEEDBACK)
@@ -414,6 +421,12 @@ public class UserInteractionV2Controller implements ApiController {
               .defaultTimeField("feedback_created_at")
               .build();
       LOGGER.debug("paginated request has been build ");
+
+      List<String> assetIdParams = ctx.queryParam("assetId");
+      String assetIdParam =
+          assetIdParams != null && !assetIdParams.isEmpty()
+              ? assetIdParams.getFirst()
+              : null;
       service
           .getUserFeedback(paginatedRequest)
           .onSuccess(
@@ -422,7 +435,7 @@ public class UserInteractionV2Controller implements ApiController {
 
                 UserActivityAuditLogBuilder auditLog =
                     InteractionAuditLogHelper.buildFeedbackAudit(
-                        ctx, null, InteractionAuditAction.VIEW_RATING);
+                        ctx, assetIdParam, InteractionAuditAction.VIEW_RATING);
                 CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
 
                 ResponseBuilder.sendSuccess(
@@ -443,6 +456,57 @@ public class UserInteractionV2Controller implements ApiController {
     }
   }
 
+  private void handleGetApprovedPlatformUserFeedbackRequest(RoutingContext ctx) {
+    LOGGER.info("GET /user/feedback/approved called");
+
+    try {
+      PaginatedRequest paginatedRequest =
+          PaginationRequestBuilder.from(ctx)
+              .allowedFiltersDbMap(FEEDBACK_FILTER_MAP)
+              .apiToDbMap(FEEDBACK_FILTER_MAP)
+              .allowedSortFields(FEEDBACK_SORT_FIELDS)
+              .defaultSort("feedback_created_at", "desc")
+              .defaultTimeField("feedback_created_at")
+              .additionalFilters(Map.of("feedback_status", FeedbackStatus.APPROVED.name()))
+              .build();
+
+      LOGGER.info("Approved feedback pagination request: {}", paginatedRequest);
+
+      List<String> assetIdParams = ctx.queryParam("assetId");
+      String assetIdParam =
+          assetIdParams != null && !assetIdParams.isEmpty()
+              ? assetIdParams.getFirst()
+              : null;
+      service
+          .getApprovedPlatformUserFeedbacks(paginatedRequest)
+          .onSuccess(
+              result -> {
+                LOGGER.info("Fetched approved user feedbacks successfully");
+
+                UserActivityAuditLogBuilder auditLog =
+                    InteractionAuditLogHelper.buildFeedbackAudit(
+                        ctx, assetIdParam, InteractionAuditAction.VIEW_RATING);
+
+                CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+
+                ResponseBuilder.sendSuccess(
+                    ctx,
+                    new UserFeedbackResult(result.summary(), result.data()),
+                    result.paginationInfo(),
+                    urnGenerator);
+              })
+          .onFailure(
+              err -> {
+                LOGGER.error("Failed to fetch approved user feedbacks {}", err.getMessage(), err);
+                ctx.fail(err);
+              });
+
+    } catch (Exception e) {
+      LOGGER.error("Invalid GET /user/feedback/approved request: {}", e.getMessage(), e);
+      ctx.fail(e);
+    }
+  }
+
   private void handleGetPlatformUsersFeedbackRequests(RoutingContext ctx) {
     LOGGER.info("GET /user/feedback called");
 
@@ -456,6 +520,12 @@ public class UserInteractionV2Controller implements ApiController {
               .defaultTimeField("feedback_created_at")
               .build();
       LOGGER.debug("paginated request has been build ");
+
+      List<String> assetIdParams = ctx.queryParam("assetId");
+      String assetIdParam =
+          assetIdParams != null && !assetIdParams.isEmpty()
+              ? assetIdParams.getFirst()
+              : null;
       service
           .getPlatformUsersFeedbacks(paginatedRequest)
           .onSuccess(
@@ -464,7 +534,7 @@ public class UserInteractionV2Controller implements ApiController {
 
                 UserActivityAuditLogBuilder auditLog =
                     InteractionAuditLogHelper.buildFeedbackAudit(
-                        ctx, null, InteractionAuditAction.VIEW_RATING);
+                        ctx, assetIdParam, InteractionAuditAction.VIEW_RATING);
                 CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
 
                 ResponseBuilder.sendSuccess(

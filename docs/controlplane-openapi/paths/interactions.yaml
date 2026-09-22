@@ -1159,18 +1159,105 @@
           "comment": "The feedback does not provide sufficient information."
 
           }'''
+/iudx/v2/user/feedback/approved:
+  get:
+    tags:
+      - User Interactions
+    summary: Get approved user feedback
+    description: >
+      Retrieve a paginated list of user feedback that has been approved for
+      consumer visibility. This endpoint is accessible to users with the
+      `consumer` role. Only feedback with an `APPROVED` status is returned.
+      Consumers can optionally filter the approved feedback by asset UUID
+      and/or user UUID.
+    operationId: get-approved-user-feedback
+    security:
+      - authorization: []
+    parameters:
+      - name: assetId
+        in: query
+        description: Filter approved feedback by asset UUID
+        required: false
+        schema:
+          type: string
+          format: uuid
+
+      - name: userId
+        in: query
+        description: Filter approved feedback by user UUID
+        required: false
+        schema:
+          type: string
+          format: uuid
+
+      - $ref: ../components/parameters.yaml#/PageParam
+
+      - $ref: ../components/parameters.yaml#/SizeParam
+
+      - name: sort
+        in: query
+        description: >
+          Sort results by feedback creation time. Format:
+          `feedbackCreatedAt:asc` or `feedbackCreatedAt:desc`.
+          Defaults to `feedbackCreatedAt:desc`.
+        required: false
+        schema:
+          type: string
+        example: feedbackCreatedAt:desc
+
+    responses:
+      '200':
+        description: Successfully retrieved approved user feedback
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/interaction.yaml#/UserFeedbackPaginatedResponse
+
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+
+    x-codeSamples:
+      - lang: cURL
+        label: Get approved feedback
+        source: |
+          curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback/approved?page=1&size=10' \
+            --header 'Authorization: Bearer <your-token>'
+
+      - lang: cURL
+        label: Get approved feedback by asset
+        source: |
+          curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback/approved?assetId=811e9876-9381-4a25-8ad1-e8b289616ab8&page=1&size=10' \
+            --header 'Authorization: Bearer <your-token>'
+
+      - lang: cURL
+        label: Get approved feedback by user
+        source: |
+          curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback/approved?userId=fd62ba22-d338-4dad-b09c-2bccfa20b04a&page=1&size=10' \
+            --header 'Authorization: Bearer <your-token>'
+
+      - lang: cURL
+        label: Get approved feedback by asset and user
+        source: |
+          curl --location 'https://${HOSTNAME}/iudx/v2/user/feedback/approved?assetId=811e9876-9381-4a25-8ad1-e8b289616ab8&userId=fd62ba22-d338-4dad-b09c-2bccfa20b04a&page=1&size=10' \
+            --header 'Authorization: Bearer <your-token>'
 /iudx/v2/user/feedback/user:
   get:
     tags:
       - User Interactions
     summary: Get my user feedback
     description: >
-      Retrieve a paginated list of feedback submitted by the authenticated
-      consumer. The response contains only feedback created by the requesting
-      user. Consumers can optionally filter their feedback by asset, action
-      subtype, rating, or feedback creation time. The user identity is derived
-      from the authenticated user token and cannot be supplied as a query
-      parameter.
+      Retrieve a paginated list of feedback submitted by the authenticated consumer. The response contains only feedback created by the requesting user, including feedback in pending, approved, and rejected states. Consumers can optionally filter their feedback by asset, action subtype, rating, or feedback creation time. The user identity is derived from the authenticated user token and cannot be supplied as a query parameter.
     operationId: get-my-user-feedback
     security:
       - authorization: []

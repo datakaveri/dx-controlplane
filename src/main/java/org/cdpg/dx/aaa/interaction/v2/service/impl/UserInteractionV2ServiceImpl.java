@@ -3,30 +3,24 @@ package org.cdpg.dx.aaa.interaction.v2.service.impl;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import org.cdpg.dx.aaa.interaction.v2.dao.ProviderFeedbackDao;
 import org.cdpg.dx.aaa.interaction.v2.dao.UserFeedbackDao;
 import org.cdpg.dx.aaa.interaction.v2.dao.UserInteractionV2Dao;
 import org.cdpg.dx.aaa.interaction.v2.enums.ProviderFeedbackType;
 import org.cdpg.dx.aaa.interaction.v2.model.*;
 import org.cdpg.dx.aaa.interaction.v2.service.UserInteractionV2Service;
-
 import org.cdpg.dx.aaa.item.service.ItemService;
-
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.response.PaginatedApiResponse;
-
 import org.cdpg.dx.database.elastic.model.BulkSyncResult;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
@@ -281,21 +275,31 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
     }
 
     Map<UUID, Future<DxUser>> userLookups = new LinkedHashMap<>();
+    Map<UUID, Future<String>> assetLookups = new LinkedHashMap<>();
+
     for (UserFeedback row : rows) {
       userLookups.computeIfAbsent(row.userId(), this::fetchUserSafe);
+      assetLookups.computeIfAbsent(row.assetId(), this::fetchAssetNameSafe);
     }
 
-    return CompositeFuture.all(new ArrayList<>(userLookups.values()))
+    List<Future<?>> lookups = new ArrayList<>();
+    lookups.addAll(userLookups.values());
+    lookups.addAll(assetLookups.values());
+
+    return Future.all(lookups)
         .map(
             cf ->
                 rows.stream()
                     .map(
                         row -> {
                           DxUser user = userLookups.get(row.userId()).result();
+                          String assetName = assetLookups.get(row.assetId()).result();
+
                           return UserFeedbackResponse.from(
                               row,
                               user != null ? user.name() : null,
-                              user != null ? user.organisationName() : null);
+                              user != null ? user.organisationName() : null,
+                              assetName);
                         })
                     .toList());
   }
@@ -306,6 +310,23 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
         .recover(
             err -> {
               LOGGER.warn("Failed to resolve user info for userId={}", userId, err);
+              return Future.succeededFuture(null);
+            });
+  }
+
+  private Future<String> fetchAssetNameSafe(UUID assetId) {
+    return itemService
+        .getItemSource(assetId.toString())
+        .map(
+            source -> {
+              if (source == null) {
+                return null;
+              }
+              return source.getString("name");
+            })
+        .recover(
+            err -> {
+              LOGGER.warn("Failed to resolve asset name for assetId={}", assetId, err);
               return Future.succeededFuture(null);
             });
   }
@@ -321,5 +342,20 @@ public class UserInteractionV2ServiceImpl implements UserInteractionV2Service {
       UUID userId, UUID assetId, ProviderFeedbackType type) {
     LOGGER.info("Inside service imple method - delete user feedbaack");
     return providerFeedbackDao.deleteProviderFeedback(userId, assetId, type);
+  }
+
+  @Override
+  public Future<UserFeedbackPage> getApprovedPlatformUserFeedbacks(PaginatedRequest request) {
+
+    LOGGER.debug("getApprovedPlatformUserFeedbacks() method started");
+
+    return userFeedbackDao
+        .fetchApprovedPlatformUserFeedbacks(request)
+        .compose(
+            page ->
+                enrichFeedbackList(page.data())
+                    .map(
+                        enriched ->
+                            new UserFeedbackPage(page.summary(), enriched, page.paginationInfo())));
   }
 }
