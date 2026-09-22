@@ -19,16 +19,6 @@ public class TokenClaimsBuilder {
     long expEpoch = now.plusSeconds(expiryMinutes * 60).getEpochSecond();
     // **************************************************************************************
 
-    JsonObject delegationAccess = new JsonObject();
-    JsonArray scopesObj = dxUser.scopes();
-
-    LOGGER.info("scopes array :{}", scopesObj.encode());
-    delegationAccess.put("roles", scopesObj);
-    claims.put("delegation_access", delegationAccess);
-    LOGGER.info(" delegation_access :{}", delegationAccess);
-
-    // ***************************************************************************************
-
     JsonObject realmAccess = new JsonObject();
     JsonArray rolesArray = new JsonArray();
 
