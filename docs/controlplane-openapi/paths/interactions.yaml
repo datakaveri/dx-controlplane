@@ -1176,19 +1176,69 @@
     parameters:
       - name: assetId
         in: query
-        description: Filter approved feedback by asset UUID
+        description: Filter feedback by asset UUID
         required: false
         schema:
           type: string
           format: uuid
 
-      - name: userId
+      - name: actionSubtype
         in: query
-        description: Filter approved feedback by user UUID
+        description: Filter by action subtype (repeatable)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+
+      - name: rating
+        in: query
+        description: Filter by star rating (repeatable)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 5
+
+      - name: time
+        in: query
+        description: >
+          Start of the feedback-creation time window. Requires `timerel`;
+          requires `endtime` for `between`/`during`.
         required: false
         schema:
           type: string
-          format: uuid
+          format: date-time
+
+      - name: endtime
+        in: query
+        description: >
+          End of the feedback-creation time window. Only used with
+          `timerel=between` or `timerel=during`.
+        required: false
+        schema:
+          type: string
+          format: date-time
+
+      - name: timerel
+        in: query
+        description: >
+          Temporal relation to apply against the feedback creation time
+          when `time` is provided.
+        required: false
+        schema:
+          type: string
+          enum:
+            - before
+            - after
+            - between
+            - during
 
       - $ref: ../components/parameters.yaml#/PageParam
 
@@ -1198,12 +1248,12 @@
         in: query
         description: >
           Sort results by feedback creation time. Format:
-          `feedbackCreatedAt:asc` or `feedbackCreatedAt:desc`.
-          Defaults to `feedbackCreatedAt:desc`.
+          `ratingCreatedAt:asc` or `ratingCreatedAt:desc`.
+          Defaults to `ratingCreatedAt:desc`.
         required: false
         schema:
           type: string
-        example: feedbackCreatedAt:desc
+        example: ratingCreatedAt:desc
 
     responses:
       '200':
@@ -1336,12 +1386,12 @@
         in: query
         description: >
           Sort results by feedback creation time. Format:
-          `feedbackCreatedAt:asc` or `feedbackCreatedAt:desc`.
-          Defaults to `feedbackCreatedAt:desc`.
+          `ratingCreatedAt:asc` or `ratingCreatedAt:desc`.
+          Defaults to `ratingCreatedAt:desc`.
         required: false
         schema:
           type: string
-        example: feedbackCreatedAt:desc
+        example: ratingCreatedAt:desc
 
     responses:
       '200':
