@@ -56,6 +56,7 @@ import org.cdpg.dx.acl.policy.service.PolicyService;
 import org.cdpg.dx.acl.policy.service.impl.PolicyServiceImpl;
 import org.cdpg.dx.acl.rule.dao.AccessRuleDao;
 import org.cdpg.dx.acl.rule.dao.impl.AccessRuleDaoImpl;
+import org.cdpg.dx.auth.model.Scopes;
 import org.cdpg.dx.catalogueService.config.Constants;
 import org.cdpg.dx.catalogueService.models.Asset;
 import org.cdpg.dx.catalogueService.models.ItemType;
@@ -441,24 +442,18 @@ public class CentralItemServiceImpl implements ItemService {
       return Future.failedFuture("ID not present in request");
     }
 
-    List<String> roles = patchItemRequest.getAllowedRoles();
+    JsonArray scopes = patchItemRequest.getAllowedScopes();
     QueryModel queryModel;
-    if (roles.contains(COS_ADMIN)) {
+    if (scopes.contains(Scopes.ASSET_MANAGEMENT)) {
       queryModel = queryDecoder.getItemIdQueryModel(patchItemRequest.getItemId());
-    } else if (roles.contains(ORG_ADMIN)) {
+    } else if (scopes.contains(Scopes.ORG_ASSET_MANAGEMENT)) {
       queryModel =
           queryDecoder.getItemIdOrgIdQueryModel(
               patchItemRequest.getItemId(), patchItemRequest.getOrgId());
-    } else if (roles.contains(PROVIDER)) {
+    } else if (scopes.contains(Scopes.OWN_ASSET_MANAGEMENT)) {
       queryModel =
           queryDecoder.getItemIdOwnerIdQueryModel(
               patchItemRequest.getItemId(), patchItemRequest.getUserId());
-      // Provider restriction: only allow 'dataUploadStatus'
-      JsonObject patchBody = patchItemRequest.getRequestBody();
-      if (!patchBody.containsKey("dataUploadStatus") || patchBody.size() != 1) {
-        return Future.failedFuture(
-            new DxForbiddenException("Providers can only update dataUploadStatus"));
-      }
     } else {
       return Future.failedFuture(new DxForbiddenException("User role not permitted to patch item"));
     }
@@ -471,22 +466,22 @@ public class CentralItemServiceImpl implements ItemService {
               if (result.getDocId() == null) {
                 String errorMsg;
 
-                if (roles.contains(COS_ADMIN)) {
+                if (scopes.contains(Scopes.ASSET_MANAGEMENT)) {
                   errorMsg = "Item not found for update";
-                } else if (roles.contains(ORG_ADMIN)) {
+                } else if (scopes.contains(Scopes.ORG_ASSET_MANAGEMENT)) {
                   errorMsg = "No item found for update under your organization";
-                } else if (roles.contains(PROVIDER)) {
+                } else if (scopes.contains(Scopes.OWN_ASSET_MANAGEMENT)) {
                   errorMsg = "No item found owned by you for update";
                 } else {
                   errorMsg = "Item not found or access denied";
                 }
 
                 LOGGER.debug(
-                    "Item with ID {} not found for update. Role: {}, message: {}",
+                    "Item with ID {} not found for update. Scope: {}, message: {}",
                     id,
-                    roles,
+                    scopes,
                     errorMsg);
-                promise.fail(new DxBadRequestException(errorMsg));
+                promise.fail(new DxNotFoundException(errorMsg));
               } else {
                 LOGGER.debug("Update item with ID: {}", id);
                 String docId = result.getDocId();
