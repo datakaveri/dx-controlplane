@@ -312,8 +312,16 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implement
 
           for (int i = 0; i < values.size(); i++) {
             if (i > 0) where.append(", ");
+
             where.append("$").append(index.getAndIncrement());
-            params.add(values.get(i));
+
+            Object value = values.get(i);
+
+            if ("entity_rating".equals(column)) {
+              params.add(Integer.valueOf(value.toString()));
+            } else {
+              params.add(value);
+            }
           }
 
           where.append(")");
@@ -325,6 +333,7 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implement
     applyFilter.accept("action_subtype", filters.get("action_subtype"));
     applyFilter.accept("entity_rating", filters.get("entity_rating"));
 
+    // Temporal filters
     // feedback_created_at is a dedicated column (distinct from the shared created_at used by
     // like/dislike/bookmark activity on the same row); only that field is exposed for temporal
     // filtering here, so any other timeField configured upstream is intentionally ignored.
@@ -333,6 +342,7 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implement
         if (!"feedback_created_at".equals(tr.timeField())) continue;
 
         String rel = tr.timeRel() != null ? tr.timeRel().toLowerCase() : "";
+
         switch (rel) {
           case "before" -> {
             where.append(" AND feedback_created_at < $").append(index.getAndIncrement());
@@ -348,6 +358,7 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implement
                 .append(index.getAndIncrement())
                 .append(" AND $")
                 .append(index.getAndIncrement());
+
             params.add(tr.time());
             params.add(tr.endtime());
           }
