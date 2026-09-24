@@ -7,6 +7,7 @@ import io.grpc.stub.StreamObserver;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.util.List;
 import java.util.Set;
@@ -171,7 +172,7 @@ public class CatItemGrpcService extends CatItemServiceGrpc.CatItemServiceImplBas
                 .compose(
                     orgId -> {
                       PatchItemRequest patchReq =
-                          new PatchItemRequest(itemId, orgId, userId, body, roles);
+                          new PatchItemRequest(itemId, orgId, userId, body, null, roles);
                       return itemService.patchItem(patchReq);
                     })
                 .onSuccess(esResponse -> respond(observer, toPatchItemResponse(itemId, esResponse)))

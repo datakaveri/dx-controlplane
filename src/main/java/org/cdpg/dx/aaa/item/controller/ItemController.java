@@ -143,6 +143,10 @@ public class ItemController implements ApiController {
     Handler<RoutingContext> assetManagementAccess =
         AuthorizationHandler.forScopes(
             Scopes.OWN_ASSET_MANAGEMENT, Scopes.ORG_ASSET_MANAGEMENT, Scopes.ASSET_MANAGEMENT);
+    Handler<RoutingContext> assetManagementAndPublishAccess =
+        AuthorizationHandler.forScopes(
+            Scopes.OWN_ASSET_MANAGEMENT, Scopes.ORG_ASSET_MANAGEMENT, Scopes.ASSET_MANAGEMENT,
+            Scopes.ASSET_PUBLISH);
     Handler<RoutingContext> providerScriptAccess =
         AuthorizationHandler.forScopes(Scopes.OWN_ASSET_MANAGEMENT);
 
@@ -174,13 +178,13 @@ public class ItemController implements ApiController {
     builder
         .operation(PATCH_ITEM_META_DATA)
         .handler(auditingHandler::handleApiAudit)
-        .handler(assetManagementAccess)
+        .handler(assetManagementAndPublishAccess)
         .handler(this::handlePatchItemMetaData);
 
     builder
         .operation(PATCH_ITEM)
         .handler(auditingHandler::handleApiAudit)
-        .handler(assetManagementAccess)
+        .handler(assetManagementAndPublishAccess)
         .handler(this::handlePatchItem);
 
     builder
@@ -319,12 +323,10 @@ public class ItemController implements ApiController {
     }
 
     DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
-    List<String> allowedRoles = dxUser.roles();
-    boolean isOrgAdmin = allowedRoles.contains(DxRole.ORG_ADMIN.value());
-    boolean isCosAdmin = allowedRoles.contains(DxRole.COS_ADMIN.value());
-    boolean isAdmin =
-        allowedRoles.contains(DxRole.ORG_ADMIN.value())
-            || allowedRoles.contains(DxRole.COS_ADMIN.value());
+    JsonArray allowedScopes = dxUser.scopes();
+    boolean hasOrgAssetPublishScope = allowedScopes.contains(Scopes.ORG_ASSET_PUBLISH);
+    boolean hasAssetPublishScope = allowedScopes.contains(Scopes.ASSET_PUBLISH);
+    boolean isAdmin  = hasOrgAssetPublishScope || hasAssetPublishScope;
 
     String userId = dxUser.sub().toString();
     AtomicReference<String> orgId = new AtomicReference<>("");
@@ -347,7 +349,7 @@ public class ItemController implements ApiController {
     JsonObject body = ctx.body().asJsonObject();
     LOGGER.debug("Patch item request body: {}", body);
 
-    if (body.containsKey(PUBLISH_STATUS) && !isCosAdmin) {
+    if (body.containsKey(PUBLISH_STATUS) && !hasAssetPublishScope) {
       ctx.fail(new DxForbiddenException(
           "Only cos_admin can update publishStatus"));
       return;
@@ -356,7 +358,7 @@ public class ItemController implements ApiController {
     if (body.containsKey(ITEM_STATUS)) {
       String itemStatus = body.getString(ITEM_STATUS);
 
-      if (VERIFIED.equalsIgnoreCase(itemStatus) && !isOrgAdmin) {
+      if (VERIFIED.equalsIgnoreCase(itemStatus) && !hasOrgAssetPublishScope) {
         ctx.fail(new DxForbiddenException(
             "Only org_admin can update itemStatus to VERIFIED"));
         return;
@@ -378,7 +380,7 @@ public class ItemController implements ApiController {
     }
 
     PatchItemRequest patchItemRequest =
-        new PatchItemRequest(id, orgId.get(), userId, body, allowedRoles);
+        new PatchItemRequest(id, orgId.get(), userId, body, allowedScopes, dxUser.roles());
     itemService
         .patchItem(patchItemRequest)
         .onSuccess(
@@ -442,9 +444,9 @@ public class ItemController implements ApiController {
     }
 
     DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
-    List<String> allowedRoles = dxUser.roles();
-    boolean isOrgAdmin = allowedRoles.contains(DxRole.ORG_ADMIN.value());
-    boolean isCosAdmin = allowedRoles.contains(DxRole.COS_ADMIN.value());
+    JsonArray allowedScopes = dxUser.scopes();
+    boolean hasOrgAssetPublishScope = allowedScopes.contains(Scopes.ORG_ASSET_PUBLISH);
+    boolean hasAssetPublishScope = allowedScopes.contains(Scopes.ASSET_PUBLISH);
 
     String userId = dxUser.sub().toString();
     AtomicReference<String> orgId = new AtomicReference<>("");
@@ -465,7 +467,7 @@ public class ItemController implements ApiController {
 
     LOGGER.debug("Keycloak ID: {},12aa: {}", orgId, id);
 
-    if (body.containsKey(PUBLISH_STATUS) && !isCosAdmin) {
+    if (body.containsKey(PUBLISH_STATUS) && !hasAssetPublishScope) {
       ctx.fail(new DxForbiddenException(
           "Only cos_admin can update publishStatus"));
       return;
@@ -474,7 +476,7 @@ public class ItemController implements ApiController {
     if (body.containsKey(ITEM_STATUS)) {
       String itemStatus = body.getString(ITEM_STATUS);
 
-      if (VERIFIED.equalsIgnoreCase(itemStatus) && !isOrgAdmin) {
+      if (VERIFIED.equalsIgnoreCase(itemStatus) && !hasOrgAssetPublishScope) {
         ctx.fail(new DxForbiddenException(
             "Only org_admin can update itemStatus to VERIFIED"));
         return;
@@ -494,7 +496,7 @@ public class ItemController implements ApiController {
 
     body.put(LAST_UPDATED, getUtcDatetimeAsString());
     PatchItemRequest patchItemRequest =
-        new PatchItemRequest(id, orgId.get(), userId, body, allowedRoles);
+        new PatchItemRequest(id, orgId.get(), userId, body, allowedScopes, dxUser.roles());
     itemService
         .patchItem(patchItemRequest)
         .onSuccess(

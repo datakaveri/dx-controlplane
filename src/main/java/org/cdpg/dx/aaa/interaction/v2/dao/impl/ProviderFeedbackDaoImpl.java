@@ -3,24 +3,6 @@ package org.cdpg.dx.aaa.interaction.v2.dao.impl;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.interaction.dao.impl.UserInteractionDaoImpl;
-import org.cdpg.dx.aaa.interaction.v2.dao.ProviderFeedbackDao;
-import org.cdpg.dx.aaa.interaction.v2.dao.UserFeedbackDao;
-import org.cdpg.dx.aaa.interaction.v2.enums.ProviderFeedbackType;
-import org.cdpg.dx.aaa.interaction.v2.model.ProviderFeedback;
-import org.cdpg.dx.aaa.interaction.v2.model.ProviderFeedbackByAsset;
-import org.cdpg.dx.aaa.interaction.v2.model.ProviderFeedbackEntry;
-import org.cdpg.dx.aaa.interaction.v2.model.ProviderFeedbackPaginatedResponse;
-import org.cdpg.dx.aaa.interaction.v2.model.UserFeedback;
-import org.cdpg.dx.aaa.interaction.v2.model.UserFeedbackPaginatedResponse;
-import org.cdpg.dx.common.request.PaginatedRequest;
-import org.cdpg.dx.common.util.PaginationInfo;
-import org.cdpg.dx.database.postgres.base.dao.AbstractBaseDAO;
-import org.cdpg.dx.database.postgres.models.*;
-import org.cdpg.dx.database.postgres.service.PostgresService;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -28,6 +10,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.interaction.dao.impl.UserInteractionDaoImpl;
+import org.cdpg.dx.aaa.interaction.v2.dao.ProviderFeedbackDao;
+import org.cdpg.dx.aaa.interaction.v2.enums.ProviderFeedbackType;
+import org.cdpg.dx.aaa.interaction.v2.model.ProviderFeedback;
+import org.cdpg.dx.aaa.interaction.v2.model.ProviderFeedbackByAsset;
+import org.cdpg.dx.aaa.interaction.v2.model.ProviderFeedbackEntry;
+import org.cdpg.dx.aaa.interaction.v2.model.ProviderFeedbackPaginatedResponse;
+import org.cdpg.dx.common.request.PaginatedRequest;
+import org.cdpg.dx.common.util.PaginationInfo;
+import org.cdpg.dx.database.postgres.base.dao.AbstractBaseDAO;
+import org.cdpg.dx.database.postgres.models.*;
+import org.cdpg.dx.database.postgres.service.PostgresService;
 
 public class ProviderFeedbackDaoImpl extends AbstractBaseDAO<ProviderFeedback>
     implements ProviderFeedbackDao {
@@ -86,7 +82,6 @@ public class ProviderFeedbackDaoImpl extends AbstractBaseDAO<ProviderFeedback>
           where.append(")");
         };
 
-    applyFilter.accept("user_id", filters.get("user_id"));
     applyFilter.accept("asset_id", filters.get("asset_id"));
     applyFilter.accept("type", filters.get("type"));
 
@@ -158,10 +153,8 @@ public class ProviderFeedbackDaoImpl extends AbstractBaseDAO<ProviderFeedback>
                     detailWhere.append(")");
                   };
 
-              applyDetailFilter.accept("user_id", filters.get("user_id"));
               applyDetailFilter.accept("type", filters.get("type"));
-              applyDetailFilter.accept(
-                  "asset_id", assetIds.stream().map(UUID::toString).toList());
+              applyDetailFilter.accept("asset_id", assetIds.stream().map(UUID::toString).toList());
 
               String detailSql =
                   """
@@ -182,12 +175,13 @@ public class ProviderFeedbackDaoImpl extends AbstractBaseDAO<ProviderFeedback>
 
                         for (Object obj : detailRows.getRows()) {
                           JsonObject r = (JsonObject) obj;
+                          LOGGER.debug("ROW: {}", r);
                           UUID assetId = UUID.fromString(r.getString("asset_id"));
 
                           ProviderFeedbackEntry entry =
                               new ProviderFeedbackEntry(
                                   ProviderFeedbackType.valueOf(r.getString("type")),
-                                  r.getJsonArray("data"),
+                                  r.getValue("data"),
                                   UUID.fromString(r.getString("user_id")),
                                   r.getString("created_at") != null
                                       ? LocalDateTime.parse(r.getString("created_at"))

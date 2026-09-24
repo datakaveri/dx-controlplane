@@ -152,7 +152,6 @@ public class UserInteractionV2Controller implements ApiController {
     builder
         .operation(OP_GET_PROVIDER_FEEDBACK)
         .handler(auditingHandler::handleApiAudit)
-        .handler(providerFeedbackAccess)
         .handler(this::handleGetProviderFeedbackRequest);
 
     builder
@@ -660,15 +659,12 @@ public class UserInteractionV2Controller implements ApiController {
     LOGGER.info("GET /provider/feedback called");
 
     try {
-      // Always scoped to the caller (identity from the token, never a client
-      // param) — a provider can never see another provider's feedback rows.
-      // assetId/type, if given, only narrow further within the caller's own data.
       PaginatedRequest paginatedRequest =
           PaginationRequestBuilder.from(ctx)
               .allowedFiltersDbMap(PROVIDER_FEEDBACK_FILTER_MAP)
               .apiToDbMap(PROVIDER_FEEDBACK_FILTER_MAP)
               .allowedTimeFields(Set.of(CREATED_AT))
-              .additionalFilters(Map.of("user_id", ctx.user().subject()))
+              //.additionalFilters(Map.of("user_id", ctx.user().subject()))
               .build();
       LOGGER.debug("paginated request has been build ");
       service
@@ -676,11 +672,6 @@ public class UserInteractionV2Controller implements ApiController {
           .onSuccess(
               result -> {
                 LOGGER.info("Fetched provider feedbacks successfully");
-
-                UserActivityAuditLogBuilder auditLog =
-                    InteractionAuditLogHelper.buildFeedbackAudit(
-                        ctx, null, InteractionAuditAction.VIEW_PROVIDER_FEEDBACK);
-                CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
 
                 ResponseBuilder.sendSuccess(
                     ctx, result.data(), result.paginationInfo(), urnGenerator);

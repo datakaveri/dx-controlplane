@@ -7343,10 +7343,8 @@ paths:
         - User Interactions
       summary: Get provider feedback
       description: |
-        Retrieve paginated provider feedback, grouped by asset with each feedback type listed underneath. Results are always scoped to the calling user (identity taken from the auth token) — a provider can only see their own feedback entries. assetId and/or type, if provided, further narrow the results within the caller's own data. Requires an authenticated user token.
+        Retrieve a paginated list of feedback provided by providers, grouped by asset with each feedback type listed underneath. assetId and/or type, if provided, can be used to narrow the results.
       operationId: get-provider-feedback
-      security:
-        - authorization: []
       parameters:
         - name: assetId
           in: query
