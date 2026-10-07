@@ -48,7 +48,12 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implement
         FROM user_interactions
         WHERE user_id = $1
           AND asset_id = $2
-        ORDER BY feedback_created_at DESC
+          AND (
+              entity_rating IS NOT NULL
+              OR action_subtype IS NOT NULL
+          )
+        ORDER BY feedback_created_at DESC NULLS LAST
+        LIMIT 1
         """;
 
     JsonArray selectParams =
@@ -354,6 +359,12 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implement
         FROM user_interactions
         WHERE user_id = $1
           AND asset_id = $2
+          AND (
+              entity_rating IS NOT NULL
+              OR action_subtype IS NOT NULL
+          )
+        ORDER BY feedback_created_at DESC NULLS LAST
+        LIMIT 1
         """;
 
     JsonArray params = new JsonArray().add(userId.toString()).add(assetId.toString());

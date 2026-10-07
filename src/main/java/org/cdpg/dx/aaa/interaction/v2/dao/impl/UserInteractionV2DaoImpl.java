@@ -91,6 +91,10 @@ public class UserInteractionV2DaoImpl extends AbstractBaseDAO<InteractionRow>
         CASE WHEN $4 = 'BOOKMARK' THEN TRUE ELSE FALSE END
       )
       ON CONFLICT (user_id, asset_id)
+      WHERE entity_rating IS NULL
+        AND action_subtype IS NULL
+        AND action_subdata IS NULL
+        AND feedback_created_at IS NULL
       DO UPDATE SET
         is_liked = CASE
           WHEN $4 = 'LIKE' THEN TRUE
