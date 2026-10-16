@@ -12,6 +12,13 @@ public class PatchItemRequest {
     private final JsonObject requestBody;
   private  JsonArray allowedScopes;
   private List<String> allowedRoles;
+  /**
+   * Non-null only when the caller is a dept_admin (not the org_admin):
+   * the ids of their administered department and all its descendants. When
+   * set, {@code ItemServiceImpl.patchItem} must restrict the match to these
+   * departments instead of the whole organization.
+   */
+  private List<String> deptScopedNodeIds;
 
   public PatchItemRequest(
       String itemId, String subId, String userId, JsonObject requestBody, JsonArray allowedScopes,
@@ -47,6 +54,14 @@ public class PatchItemRequest {
   public String getUserId() {
         return userId;
     }
+
+  public List<String> getDeptScopedNodeIds() {
+    return deptScopedNodeIds;
+  }
+
+  public void setDeptScopedNodeIds(List<String> deptScopedNodeIds) {
+    this.deptScopedNodeIds = deptScopedNodeIds;
+  }
 }
 
 

@@ -2,9 +2,15 @@ package org.cdpg.dx.aaa.organization.service;
 
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
+import java.util.List;
+import java.util.UUID;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.organization.dao.OrganizationDAOFactory;
 import org.cdpg.dx.aaa.organization.models.*;
+import org.cdpg.dx.aaa.organization.service.impl.DeptAdminServiceImpl;
+import org.cdpg.dx.aaa.organization.service.impl.OrganizationApprovalPolicyImpl;
+import org.cdpg.dx.aaa.organization.service.impl.OrganizationApprovalServiceImpl;
+import org.cdpg.dx.aaa.organization.service.impl.OrganizationHierarchyDefinitionServiceImpl;
 import org.cdpg.dx.aaa.organization.service.impl.OrganizationLifecycleServiceImpl;
 import org.cdpg.dx.aaa.organization.service.impl.OrganizationMembershipServiceImpl;
 import org.cdpg.dx.aaa.organization.service.impl.ProviderRoleServiceImpl;
@@ -12,35 +18,77 @@ import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
-import java.util.List;
-import java.util.UUID;
-
 public class OrganizationServiceImpl implements OrganizationService {
 
   private final OrganizationLifecycleService lifecycle;
   private final OrganizationMembershipService membership;
   private final ProviderRoleService providerRole;
+  private final OrganizationHierarchyService organizationHierarchyService;
+  private final OrganizationApprovalService organizationApprovalService;
+  private final OrganizationHierarchyDefinitionService hierarchyDefinitionService;
+  private final DeptAdminService deptAdminService;
 
   public OrganizationServiceImpl(
       OrganizationLifecycleService lifecycle,
       OrganizationMembershipService membership,
-      ProviderRoleService providerRole) {
+      ProviderRoleService providerRole,
+      OrganizationHierarchyService organizationHierarchyService) {
     this.lifecycle = lifecycle;
     this.membership = membership;
     this.providerRole = providerRole;
+    this.organizationHierarchyService = organizationHierarchyService;
+    this.organizationApprovalService = null;
+    this.hierarchyDefinitionService = null;
+    this.deptAdminService = null;
   }
 
-  public OrganizationServiceImpl(OrganizationDAOFactory factory, KeycloakUserService keycloakUserService, ItemService itemService) {
+  public OrganizationServiceImpl(
+      OrganizationDAOFactory factory,
+      KeycloakUserService keycloakUserService,
+      ItemService itemService,
+      OrganizationHierarchyService organizationHierarchyService) {
+    this.organizationHierarchyService = organizationHierarchyService;
+
     OrganizationLifecycleServiceImpl lifecycleImpl = new OrganizationLifecycleServiceImpl(
-      factory.organizationCreateRequest(), factory.organizationDAO(), factory.organizationUserDAO(), keycloakUserService);
-    OrganizationMembershipServiceImpl membershipImpl = new OrganizationMembershipServiceImpl(
-      factory.organizationJoinRequestDAO(), factory.organizationUserDAO(), factory.organizationDAO(), keycloakUserService, itemService);
+      factory.organizationCreateRequest(), factory.organizationDAO(), factory.organizationUserDAO(),
+      keycloakUserService);
+    OrganizationApprovalService organizationApprovalServiceImpl =
+        new OrganizationApprovalServiceImpl(
+            factory.organizationApprovalDAO(),
+            factory.organizationHierarchyNodeDAO(),
+            factory.organizationUserDAO(),
+            new OrganizationApprovalPolicyImpl(),
+            organizationHierarchyService);
+    OrganizationMembershipServiceImpl membershipImpl =
+        new OrganizationMembershipServiceImpl(
+            factory.organizationJoinRequestDAO(),
+            factory.organizationUserDAO(),
+            factory.organizationDAO(),
+            keycloakUserService,
+            itemService,
+            organizationHierarchyService,
+            organizationApprovalServiceImpl);
     ProviderRoleServiceImpl providerRoleImpl = new ProviderRoleServiceImpl(
-      factory.providerRoleRequestDAO(), factory.organizationUserDAO(), keycloakUserService);
+      factory.providerRoleRequestDAO(), factory.organizationUserDAO(), keycloakUserService,
+      organizationHierarchyService, factory.organizationDAO(), organizationApprovalServiceImpl);
+    OrganizationHierarchyDefinitionServiceImpl hierarchyDefinitionServiceImpl =
+        new OrganizationHierarchyDefinitionServiceImpl(
+            factory.organizationHierarchyDefinitionRequestDAO(),
+            factory.organizationDAO(),
+            organizationHierarchyService);
+    DeptAdminServiceImpl deptAdminServiceImpl =
+        new DeptAdminServiceImpl(
+            factory.organizationUserDAO(),
+            organizationHierarchyService,
+            factory.deptAdminRequestDAO(),
+            organizationApprovalServiceImpl);
 
     this.lifecycle = lifecycleImpl;
     this.membership = membershipImpl;
     this.providerRole = providerRoleImpl;
+    this.organizationApprovalService = organizationApprovalServiceImpl;
+    this.hierarchyDefinitionService = hierarchyDefinitionServiceImpl;
+    this.deptAdminService = deptAdminServiceImpl;
   }
 
   // ============ Organization Lifecycle (create requests, CRUD on orgs) ============
@@ -132,8 +180,9 @@ public class OrganizationServiceImpl implements OrganizationService {
   }
 
   @Override
-  public Future<Boolean> updateOrganizationJoinRequestStatus(UUID requestId, Status status) {
-    return membership.updateOrganizationJoinRequestStatus(requestId, status);
+  public Future<Boolean> updateOrganizationJoinRequestStatus(
+      UUID requestId, Status status, UUID approverUserId) {
+    return membership.updateOrganizationJoinRequestStatus(requestId, status, approverUserId);
   }
 
   @Override
@@ -228,8 +277,9 @@ public class OrganizationServiceImpl implements OrganizationService {
   }
 
   @Override
-  public Future<Boolean> updateProviderRequestStatus(UUID requestId, Status status) {
-    return providerRole.updateProviderRequestStatus(requestId, status);
+  public Future<Boolean> updateProviderRequestStatus(
+      UUID requestId, Status status, UUID approverUserId) {
+    return providerRole.updateProviderRequestStatus(requestId, status, approverUserId);
   }
 
   @Override
@@ -285,5 +335,97 @@ public class OrganizationServiceImpl implements OrganizationService {
   @Override
   public Future<ProviderRoleRequest> getPlatformProviderRoleRequestByUserId(UUID userId) {
     return providerRole.getPlatformProviderRoleRequestByUserId(userId);
+  }
+
+  @Override
+  public Future<List<OrganizationHierarchyNode>> getHierarchyNodes(UUID organizationId) {
+
+    return organizationHierarchyService.getOrganizationNodes(organizationId);
+  }
+
+  @Override
+  public Future<OrganizationHierarchyNode> getHierarchyNode(UUID organizationId, UUID nodeId) {
+
+    return organizationHierarchyService.getNode(organizationId, nodeId);
+  }
+
+  @Override
+  public Future<List<OrganizationHierarchyNode>> getHierarchyNodeChildren(
+      UUID organizationId, UUID nodeId) {
+
+    return organizationHierarchyService.getChildren(organizationId, nodeId);
+  }
+
+  @Override
+  public Future<List<OrganizationHierarchyNode>> getHierarchyNodeDescendants(
+      UUID organizationId, UUID nodeId) {
+
+    return organizationHierarchyService.getDescendants(organizationId, nodeId);
+  }
+
+  @Override
+  public Future<List<UUID>> getDescendantNodeIds(UUID organizationId, UUID nodeId) {
+    return organizationHierarchyService.getDescendantNodeIds(organizationId, nodeId);
+  }
+
+  @Override
+  public Future<Boolean> isAncestorOrSelfNode(
+      UUID organizationId, UUID ancestorNodeId, UUID targetNodeId, boolean strict) {
+    return organizationHierarchyService.isAncestorOrSelf(
+        organizationId, ancestorNodeId, targetNodeId, strict);
+  }
+
+  @Override
+  public Future<OrganizationHierarchyDefinitionRequest> createHierarchyDefinitionRequest(
+      UUID organizationId, List<ProposedDepartmentNode> departments) {
+    return hierarchyDefinitionService.createDefinitionRequest(organizationId, departments);
+  }
+
+  @Override
+  public Future<OrganizationHierarchyDefinitionRequest> getHierarchyDefinitionRequestById(
+      UUID requestId) {
+    return hierarchyDefinitionService.getDefinitionRequestById(requestId);
+  }
+
+  @Override
+  public Future<List<OrganizationHierarchyDefinitionRequest>> getAllHierarchyDefinitionRequests(
+      UUID organizationId) {
+    return hierarchyDefinitionService.getAllDefinitionRequests(organizationId);
+  }
+
+  @Override
+  public Future<OrganizationHierarchyDefinitionRequest> updateHierarchyDefinitionRequestStatus(
+      UUID requestId, Status status, String remarks) {
+    return hierarchyDefinitionService.updateDefinitionRequestStatus(requestId, status, remarks);
+  }
+
+  @Override
+  public Future<OrganizationUser> assignDeptAdmin(
+      UUID organizationId, UUID assignerUserId, UUID targetUserId, UUID departmentNodeId) {
+    return deptAdminService.assignDeptAdmin(
+        organizationId, assignerUserId, targetUserId, departmentNodeId);
+  }
+
+  @Override
+  public Future<DeptAdminRequest> requestDeptAdmin(UUID organizationId, UUID requesterUserId) {
+    return deptAdminService.requestDeptAdmin(organizationId, requesterUserId);
+  }
+
+  @Override
+  public Future<DeptAdminRequest> getDeptAdminRequestById(UUID requestId) {
+    return deptAdminService.getDeptAdminRequestById(requestId);
+  }
+
+  @Override
+  public Future<OrganizationUser> updateDeptAdminRequestStatus(
+      UUID organizationId, UUID requestId, UUID approverUserId, Status status, String remarks) {
+    return deptAdminService.updateDeptAdminRequestStatus(
+        organizationId, requestId, approverUserId, status, remarks);
+  }
+
+  @Override
+  public Future<Boolean> isAuthorizedOverNode(
+      UUID organizationId, UUID userId, UUID targetNodeId) {
+    return deptAdminService.isAuthorizedOverNode(organizationId, userId, targetNodeId);
   }
 }

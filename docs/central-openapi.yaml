@@ -10490,6 +10490,891 @@ paths:
                 type: urn:dx:controlPlane:forbidden
                 title: Forbidden
                 detail: User does not have the required role.
+  /iudx/v2/auth/organizations/{organization_id}/hierarchy/departments:
+    parameters:
+      - name: organization_id
+        in: path
+        required: true
+        description: UUID of the organisation.
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags:
+        - Organisation APIs
+      summary: Get all organisation departments
+      operationId: get-auth-v2-organisation-hierarchy-departments
+      description: |
+        Returns all departments configured for the specified organisation.
+
+        The departments are returned in hierarchy path order.
+
+        **Log Type:** `USER_ACTION`
+      security:
+        - authorization: []
+      x-codeSamples:
+        - lang: cURL
+          label: Get organisation departments
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/auth/organisations/{organization_id}/hierarchy/departments' \
+            --header 'Authorization: Bearer <your-token>'
+      responses:
+        '200':
+          description: List of organisation departments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrganizationDepartment'
+              example:
+                type: urn:dx:controlPlane:success
+                title: Success
+                result:
+                  - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                    organizationId: 4fa85f64-5717-4562-b3fc-2c963f66afa7
+                    parentId: null
+                    name: Engineering
+                    level: 1
+                    path: engineering
+                    createdAt: '2026-10-04T10:54:53.301846'
+                    updatedAt: '2026-10-04T10:54:53.301846'
+                  - id: 5fa85f64-5717-4562-b3fc-2c963f66afa8
+                    organizationId: 4fa85f64-5717-4562-b3fc-2c963f66afa7
+                    parentId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                    name: Data Platform
+                    level: 2
+                    path: engineering.data_platform
+                    createdAt: '2026-10-04T10:54:53.301846'
+                    updatedAt: '2026-10-04T10:54:53.301846'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - Caller is not authorised to access the organisation hierarchy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+        '404':
+          description: Not Found - Organisation does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+  /iudx/v2/auth/organizations/{organization_id}/hierarchy/departments/{department_id}:
+    parameters:
+      - name: organization_id
+        in: path
+        required: true
+        description: UUID of the organisation.
+        schema:
+          type: string
+          format: uuid
+      - name: department_id
+        in: path
+        required: true
+        description: UUID of the department.
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags:
+        - Organisation APIs
+      summary: Get an organisation department
+      operationId: get-auth-v2-organisation-hierarchy-department
+      description: |
+        Returns the department identified by `department_id`.
+
+        The department must belong to the specified organisation.
+
+        **Log Type:** `USER_ACTION`
+      security:
+        - authorization: []
+      x-codeSamples:
+        - lang: cURL
+          label: Get department
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/auth/organisations/{organization_id}/hierarchy/departments/{department_id}' \
+            --header 'Authorization: Bearer <your-token>'
+      responses:
+        '200':
+          description: Organisation department
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    $ref: '#/components/schemas/OrganizationDepartment'
+              example:
+                type: urn:dx:controlPlane:success
+                title: Success
+                result:
+                  id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  organizationId: 4fa85f64-5717-4562-b3fc-2c963f66afa7
+                  parentId: null
+                  name: Engineering
+                  level: 1
+                  path: engineering
+                  createdAt: '2026-10-04T10:54:53.301846'
+                  updatedAt: '2026-10-04T10:54:53.301846'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - Caller is not authorised to access the organisation hierarchy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+        '404':
+          description: Not Found - Organisation or department does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+  /iudx/v2/auth/organizations/{organization_id}/hierarchy/departments/{department_id}/children:
+    parameters:
+      - name: organization_id
+        in: path
+        required: true
+        description: UUID of the organisation.
+        schema:
+          type: string
+          format: uuid
+      - name: department_id
+        in: path
+        required: true
+        description: UUID of the department.
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags:
+        - Organisation APIs
+      summary: Get child departments
+      operationId: get-auth-v2-organisation-hierarchy-department-children
+      description: |
+        Returns the immediate child departments of the specified department.
+
+        The department must belong to the specified organisation.
+
+        **Log Type:** `USER_ACTION`
+      security:
+        - authorization: []
+      x-codeSamples:
+        - lang: cURL
+          label: Get child departments
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/auth/organisations/{organization_id}/hierarchy/departments/{department_id}/children' \
+            --header 'Authorization: Bearer <your-token>'
+      responses:
+        '200':
+          description: List of child departments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrganizationDepartment'
+              example:
+                type: urn:dx:controlPlane:success
+                title: Success
+                result:
+                  - id: 5fa85f64-5717-4562-b3fc-2c963f66afa8
+                    organizationId: 4fa85f64-5717-4562-b3fc-2c963f66afa7
+                    parentId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                    name: Data Platform
+                    level: 2
+                    path: engineering.data_platform
+                    createdAt: '2026-10-04T10:54:53.301846'
+                    updatedAt: '2026-10-04T10:54:53.301846'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - Caller is not authorised to access the organisation hierarchy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+        '404':
+          description: Not Found - Organisation or department does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+  /iudx/v2/auth/organizations/{organization_id}/hierarchy/departments/{department_id}/descendants:
+    parameters:
+      - name: organization_id
+        in: path
+        required: true
+        description: UUID of the organisation.
+        schema:
+          type: string
+          format: uuid
+      - name: department_id
+        in: path
+        required: true
+        description: UUID of the department.
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags:
+        - Organisation APIs
+      summary: Get descendant departments
+      operationId: get-auth-v2-organisation-hierarchy-department-descendants
+      description: |
+        Returns all descendant departments below the specified department.
+
+        The specified department itself is not included in the response.
+
+        The department must belong to the specified organisation.
+
+        **Log Type:** `USER_ACTION`
+      security:
+        - authorization: []
+      x-codeSamples:
+        - lang: cURL
+          label: Get descendant departments
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/auth/organisations/{organization_id}/hierarchy/departments/{department_id}/descendants' \
+            --header 'Authorization: Bearer <your-token>'
+      responses:
+        '200':
+          description: List of descendant departments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrganizationDepartment'
+              example:
+                type: urn:dx:controlPlane:success
+                title: Success
+                result:
+                  - id: 5fa85f64-5717-4562-b3fc-2c963f66afa8
+                    organizationId: 4fa85f64-5717-4562-b3fc-2c963f66afa7
+                    parentId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                    name: Data Platform
+                    level: 2
+                    path: engineering.data_platform
+                    createdAt: '2026-10-04T10:54:53.301846'
+                    updatedAt: '2026-10-04T10:54:53.301846'
+                  - id: 6fa85f64-5717-4562-b3fc-2c963f66afa9
+                    organizationId: 4fa85f64-5717-4562-b3fc-2c963f66afa7
+                    parentId: 5fa85f64-5717-4562-b3fc-2c963f66afa8
+                    name: Provider Team
+                    level: 3
+                    path: engineering.data_platform.provider_team
+                    createdAt: '2026-10-04T10:54:53.301846'
+                    updatedAt: '2026-10-04T10:54:53.301846'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - Caller is not authorised to access the organisation hierarchy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+        '404':
+          description: Not Found - Organisation or department does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+  /iudx/v2/auth/organizations/{organization_id}/hierarchy/definition-requests:
+    parameters:
+      - name: organization_id
+        in: path
+        required: true
+        description: UUID of the organisation.
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags:
+        - Organisation APIs
+      summary: Submit a department hierarchy definition request
+      operationId: post-auth-v2-organisation-hierarchy-definition-requests
+      description: |
+        Org_admin submits the organisation's entire proposed department tree in
+        one request. Cos_admin approves or rejects the whole tree as a single
+        atomic unit (see the approve endpoint below) -- there is no per-department
+        approval step.
+
+        Every organisation starts flat. The hierarchy can be defined only once:
+        the organisation must not already have a department tree, and departments
+        cannot be added individually afterwards.
+
+        **Tree rules:**
+        - The organisation itself is the top of the tree; the listed departments
+          are its top-level (level 1) departments, each with optional nested
+          `subDepartments`.
+        - Department names must be non-blank and unique among siblings.
+        - The org_admin administers the whole organisation by role and is not
+          attached to any department.
+
+        **Log Type:** `USER_ACTION`
+      security:
+        - authorization: []
+      x-codeSamples:
+        - lang: cURL
+          label: Submit a department tree
+          source: |
+            curl --location --request POST 'https://${HOSTNAME}/iudx/v2/auth/organisations/{organization_id}/hierarchy/definition-requests' \
+            --header 'Authorization: Bearer <your-token>' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "departments": [
+                {
+                  "name": "Engineering",
+                  "subDepartments": [
+                    { "name": "Data Platform" },
+                    { "name": "Field Systems" }
+                  ]
+                },
+                { "name": "Finance" }
+              ]
+            }'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - departments
+              properties:
+                departments:
+                  type: array
+                  minItems: 1
+                  description: |
+                    The organisation's top-level departments, each with nested
+                    `subDepartments`. The organisation itself is the implicit top
+                    of the tree. No ids are sent -- the server generates them when
+                    the tree is applied.
+                  items:
+                    $ref: '#/components/schemas/ProposedDepartment'
+      responses:
+        '201':
+          description: Hierarchy definition request submitted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    $ref: '#/components/schemas/OrganizationHierarchyDefinitionRequest'
+        '400':
+          description: Bad Request - Invalid or empty proposed department tree
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalBadRequest'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - Caller is not the organisation's admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+        '404':
+          description: Not Found - Organisation does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+        '409':
+          description: Conflict - Organisation already has a hierarchy, or a request is already pending
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/unAuthorizedAccess'
+    get:
+      tags:
+        - Organisation APIs
+      summary: Get all hierarchy definition requests for an organisation
+      operationId: get-auth-v2-organisation-hierarchy-definition-requests
+      description: |
+        Returns every hierarchy definition request submitted for the specified
+        organisation, regardless of status.
+
+        **Log Type:** `USER_ACTION`
+      security:
+        - authorization: []
+      x-codeSamples:
+        - lang: cURL
+          label: Get hierarchy definition requests
+          source: |
+            curl --location 'https://${HOSTNAME}/iudx/v2/auth/organisations/{organization_id}/hierarchy/definition-requests' \
+            --header 'Authorization: Bearer <your-token>'
+      responses:
+        '200':
+          description: List of hierarchy definition requests
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrganizationHierarchyDefinitionRequest'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+  /iudx/v2/auth/organizations/{organization_id}/hierarchy/definition-requests/{request_id}:
+    parameters:
+      - name: organization_id
+        in: path
+        required: true
+        description: UUID of the organisation.
+        schema:
+          type: string
+          format: uuid
+      - name: request_id
+        in: path
+        required: true
+        description: UUID of the hierarchy definition request.
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags:
+        - Organisation APIs
+      summary: Get a hierarchy definition request
+      operationId: get-auth-v2-organisation-hierarchy-definition-request
+      description: |
+        Returns the hierarchy definition request identified by `request_id`.
+
+        **Log Type:** `USER_ACTION`
+      security:
+        - authorization: []
+      responses:
+        '200':
+          description: Hierarchy definition request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    $ref: '#/components/schemas/OrganizationHierarchyDefinitionRequest'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+        '404':
+          description: Not Found - Request does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+    put:
+      tags:
+        - Organisation APIs
+      summary: Approve or reject a hierarchy definition request
+      operationId: put-auth-v2-organisation-hierarchy-definition-request
+      description: |
+        Cos_admin approves or rejects the entire proposed department tree as one
+        atomic unit. On approval, the whole tree is created, the organisation's
+        hierarchy is enabled. The org_admin needs no department assignment --
+        they administer the whole organisation by role.
+
+        **Log Type:** `USER_ACTION`
+      security:
+        - authorization: []
+      x-codeSamples:
+        - lang: cURL
+          label: Approve a hierarchy definition request
+          source: |
+            curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/auth/organisations/{organization_id}/hierarchy/definition-requests/{request_id}' \
+            --header 'Authorization: Bearer <your-token>' \
+            --header 'Content-Type: application/json' \
+            --data '{ "status": "granted" }'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - granted
+                    - rejected
+                remarks:
+                  type: string
+      responses:
+        '200':
+          description: Hierarchy definition request updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    $ref: '#/components/schemas/OrganizationHierarchyDefinitionRequest'
+        '400':
+          description: Bad Request - Invalid status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalBadRequest'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - Caller is not cos_admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+        '404':
+          description: Not Found - Request does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+        '409':
+          description: Conflict - Request has already been processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/unAuthorizedAccess'
+  /iudx/v2/auth/organizations/{organization_id}/users/{user_id}/dept-admin:
+    parameters:
+      - name: organization_id
+        in: path
+        required: true
+        description: UUID of the organisation.
+        schema:
+          type: string
+          format: uuid
+      - name: user_id
+        in: path
+        required: true
+        description: UUID of the member to assign as department admin.
+        schema:
+          type: string
+          format: uuid
+    put:
+      tags:
+        - Organisation APIs
+      summary: Assign a member as department admin
+      operationId: put-auth-v2-organisation-dept-admin
+      description: |
+        Org_admin, or any dept_admin who is an ancestor of the target
+        department, assigns an existing organisation member as the admin of
+        that department. The target user must already be a member of the
+        organisation.
+
+        **Log Type:** `USER_ACTION`
+      security:
+        - authorization: []
+      x-codeSamples:
+        - lang: cURL
+          label: Assign a department admin
+          source: |
+            curl --location --request PUT 'https://${HOSTNAME}/iudx/v2/auth/organisations/{organization_id}/users/{user_id}/dept-admin' \
+            --header 'Authorization: Bearer <your-token>' \
+            --header 'Content-Type: application/json' \
+            --data '{ "departmentId": "5fa85f64-5717-4562-b3fc-2c963f66afa8" }'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - departmentId
+              properties:
+                departmentId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Department admin assigned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+        '400':
+          description: Bad Request - departmentId missing or invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalBadRequest'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - Caller is not the org_admin or an ancestor dept_admin of this department
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+        '404':
+          description: Not Found - Department or target user does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+  /iudx/v2/auth/organizations/{organization_id}/dept-admin-requests:
+    parameters:
+      - name: organization_id
+        in: path
+        required: true
+        description: UUID of the organisation.
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags:
+        - Organisation APIs
+      summary: Request to become admin of my own department
+      operationId: post-auth-v2-organisation-dept-admin-requests
+      description: |
+        A member requests to become the admin of the department they already
+        belong to. Approvable by the org_admin or any strict ancestor dept_admin
+        above them (never by the department's own, not-yet-existing admin).
+
+        **Log Type:** `USER_ACTION`
+      security:
+        - authorization: []
+      responses:
+        '201':
+          description: Dept_admin request submitted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+                  result:
+                    $ref: '#/components/schemas/DeptAdminRequest'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - Caller is not a member of any department
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+        '409':
+          description: Conflict - Already admin of this department, or a request is already pending
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/unAuthorizedAccess'
+  /iudx/v2/auth/organizations/{organization_id}/dept-admin-requests/{request_id}:
+    parameters:
+      - name: organization_id
+        in: path
+        required: true
+        description: UUID of the organisation.
+        schema:
+          type: string
+          format: uuid
+      - name: request_id
+        in: path
+        required: true
+        description: UUID of the dept_admin request.
+        schema:
+          type: string
+          format: uuid
+    put:
+      tags:
+        - Organisation APIs
+      summary: Approve or reject a dept_admin self-request
+      operationId: put-auth-v2-organisation-dept-admin-request
+      description: |
+        Org_admin, or a strict ancestor dept_admin above the requester's
+        department, approves or rejects the request.
+
+        **Log Type:** `USER_ACTION`
+      security:
+        - authorization: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - granted
+                    - rejected
+                remarks:
+                  type: string
+      responses:
+        '200':
+          description: Dept_admin request updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:controlPlane:success
+                  title:
+                    type: string
+                    example: Success
+        '400':
+          description: Bad Request - Invalid status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalBadRequest'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+        '403':
+          description: Forbidden - Caller is not an authorised approver for this department
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+        '404':
+          description: Not Found - Request does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+        '409':
+          description: Conflict - Request has already been processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/unAuthorizedAccess'
   /iudx/v2/auth/user/platform/provider-requests:
     post:
       tags:
@@ -16352,6 +17237,13 @@ components:
         organizationId:
           type: string
           format: uuid
+        departmentId:
+          type: string
+          format: uuid
+          nullable: true
+          description: |
+            Which department within the organization owns this asset, if the
+            organization has departments enabled.
         organizationName:
           type: string
         uploadedBy:
@@ -23937,6 +24829,14 @@ components:
         officialEmail:
           type: string
           description: Official email of the applicant within the organisation
+        departmentId:
+          type: string
+          format: uuid
+          nullable: true
+          description: |
+            Which department the applicant wants to join, shown to them from the
+            organisation's department tree. Required when the organisation has
+            departments enabled, must be omitted otherwise.
         requestedAt:
           type: string
           format: date-time
@@ -23946,3 +24846,115 @@ components:
           format: date-time
           nullable: true
           description: Timestamp when the request was processed, or null if pending
+    OrganizationDepartment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        name:
+          type: string
+        level:
+          type: integer
+          minimum: 1
+        path:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - organizationId
+        - name
+        - level
+        - path
+        - createdAt
+        - updatedAt
+    ProposedDepartment:
+      type: object
+      description: |
+        One department of a proposed tree, with its sub-departments nested
+        inside it. No ids are supplied -- the server generates them when the
+        approved tree is applied.
+      properties:
+        name:
+          type: string
+          description: Department name; must be unique among its siblings.
+          example: Engineering
+        subDepartments:
+          type: array
+          description: Child departments of this department (may be omitted or empty).
+          items:
+            $ref: '#/components/schemas/ProposedDepartment'
+      required:
+        - name
+    OrganizationHierarchyDefinitionRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        proposedHierarchy:
+          type: object
+          properties:
+            departments:
+              type: array
+              items:
+                $ref: '#/components/schemas/ProposedDepartment'
+        status:
+          type: string
+          enum:
+            - pending
+            - granted
+            - rejected
+        remarks:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    DeptAdminRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+          description: UUID of the member requesting to become dept_admin
+        departmentId:
+          type: string
+          format: uuid
+          description: The requester's own department (what they're requesting to administer)
+        status:
+          type: string
+          enum:
+            - pending
+            - granted
+            - rejected
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time

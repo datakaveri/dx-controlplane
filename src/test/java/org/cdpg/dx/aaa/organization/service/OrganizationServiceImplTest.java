@@ -54,6 +54,7 @@ class OrganizationServiceImplTest {
   @Mock private ProviderRoleRequestDAO providerRequestDAO;
   @Mock private KeycloakUserService keycloakUserService;
   @Mock private ItemService itemService;
+  @Mock private OrganizationHierarchyService organizationHierarchyService;
 
   private OrganizationServiceImpl service;
 
@@ -65,7 +66,7 @@ class OrganizationServiceImplTest {
     when(factory.organizationJoinRequestDAO()).thenReturn(joinRequestDAO);
     when(factory.providerRoleRequestDAO()).thenReturn(providerRequestDAO);
 
-    service = new OrganizationServiceImpl(factory, keycloakUserService, itemService);
+    service = new OrganizationServiceImpl(factory, keycloakUserService, itemService, organizationHierarchyService);
     ctx.completeNow();
   }
 
@@ -396,6 +397,15 @@ class OrganizationServiceImplTest {
       UUID userId = UUID.randomUUID();
       OrganizationJoinRequest joinRequest = TestDataFactory.anOrgJoinRequest(orgId, userId);
       OrganizationJoinRequest created = mock(OrganizationJoinRequest.class);
+
+      // Flat (non-hierarchical) organization -- requestedNodeId stays null,
+      // existing flat join-request behaviour is unaffected.
+      Organization flatOrg =
+          new Organization(
+              orgId, "Test Org", "logo.png", "Private", "Tech", "https://example.com",
+              "123 Main St", "cert.pdf", "pan.pdf", "doc.pdf", "documents", null, null);
+      when(orgDAO.get(orgId)).thenReturn(Future.succeededFuture(flatOrg));
+      when(organizationHierarchyService.hasHierarchy(orgId)).thenReturn(Future.succeededFuture(false));
 
       when(joinRequestDAO.create(joinRequest)).thenReturn(Future.succeededFuture(created));
 

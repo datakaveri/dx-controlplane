@@ -123,6 +123,14 @@ public class OrganizationUserHandler {
     Role role;
     role = Role.fromString(OrgRequestJson.getString("role"));
 
+    if (role == Role.DEPT_ADMIN) {
+      ctx.fail(
+          new DxBadRequestException(
+              "Use the dept-admin assignment endpoint to make a user a department admin --"
+                  + " it also records which department they administer"));
+      return;
+    }
+
     UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "user_id");
 

@@ -76,6 +76,17 @@ public class OrganizationJoinRequestHandler {
         orgRequestJson.put("user_name", keycloakUser.name());
         orgRequestJson.put("organization_id", orgId.toString());
 
+        // Public request body uses "departmentId" (department vocabulary);
+        // translate it to the internal requested_node_id column key that
+        // OrganizationJoinRequest.fromJson expects. Omitted/null means the
+        // user did not pick a department (only valid for a flat organization
+        // -- OrganizationMembershipServiceImpl rejects it for a hierarchical
+        // one).
+        String departmentId = orgRequestJson.getString("departmentId");
+        if (departmentId != null && !departmentId.isBlank()) {
+          orgRequestJson.put(REQUESTED_NODE_ID, departmentId);
+        }
+
         OrganizationJoinRequest organizationJoinRequest =
           OrganizationJoinRequest.fromJson(orgRequestJson);
 
@@ -286,7 +297,7 @@ public class OrganizationJoinRequestHandler {
     Status status = Status.fromString(orgRequestJson.getString("status"));
 
     organizationService
-      .updateOrganizationJoinRequestStatus(requestId, status)
+      .updateOrganizationJoinRequestStatus(requestId, status, dxUser.sub())
       .onSuccess(
         approved -> {
           if (!approved) {

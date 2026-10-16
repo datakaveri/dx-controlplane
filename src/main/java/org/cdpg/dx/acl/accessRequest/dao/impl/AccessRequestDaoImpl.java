@@ -114,7 +114,11 @@ public class AccessRequestDaoImpl extends AbstractBaseDAO<AccessRequestDto>
   // select * from request where request_id = given id  AND itemOrgId = org Admin organizationId
   // From token AND status = PENDING
   public Future<Boolean> ownershipCheck(
-      UUID requestId, UUID providerId, UUID providerOrganizationId, boolean isUserOrgAdmin) {
+      UUID requestId,
+      UUID providerId,
+      UUID providerOrganizationId,
+      boolean isUserOrgAdmin,
+      List<String> deptScopedNodeIds) {
     Promise<Boolean> promise = Promise.promise();
 
     get(requestId)
@@ -134,9 +138,21 @@ public class AccessRequestDaoImpl extends AbstractBaseDAO<AccessRequestDto>
                         && accessRequestDto
                             .getItemOrganizationId()
                             .equals(providerOrganizationId.toString());
+
+                // A dept_admin's org-admin-equivalent authority is additionally
+                // restricted to their own department subtree -- an item with no
+                // department (null) is intentionally never matched here, same
+                // as the item-patch policy, and stays a root-admin-only concern.
+                boolean doesDeptMatch =
+                    deptScopedNodeIds == null
+                        || deptScopedNodeIds.isEmpty()
+                        || (accessRequestDto.getItemHierarchyNodeId() != null
+                            && deptScopedNodeIds.contains(
+                                accessRequestDto.getItemHierarchyNodeId()));
+
                 allowed =
                     (doesProviderIdMatch && doesProviderOrganizationMatch)
-                        || (isUserOrgAdmin && doesProviderOrganizationMatch);
+                        || (isUserOrgAdmin && doesProviderOrganizationMatch && doesDeptMatch);
               }
 
               if (allowed) {

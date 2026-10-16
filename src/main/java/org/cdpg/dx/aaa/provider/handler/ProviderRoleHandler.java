@@ -91,6 +91,16 @@ public class ProviderRoleHandler {
             .put("organization_id", orgID)
             .put("provider_type", PROVIDER_TYPE_ORG);
 
+    // Optional request body lets the consumer pick which department the
+    // provider request is scoped to (departmentId, public vocabulary) so a
+    // dept_admin can later approve it -- flat organizations must omit this.
+    if (ctx.body() != null && !ctx.body().isEmpty() && ctx.body().asJsonObject() != null) {
+      String departmentId = ctx.body().asJsonObject().getString("departmentId");
+      if (departmentId != null && !departmentId.isBlank()) {
+        req.put(REQUESTED_NODE_ID, departmentId);
+      }
+    }
+
     ProviderRoleRequest providerRoleRequest = ProviderRoleRequest.fromJson(req);
 
     organizationService
@@ -152,9 +162,10 @@ public class ProviderRoleHandler {
     JsonObject orgRequestJson = ctx.body().asJsonObject();
     UUID reqId = RequestHelper.getPathParamAsUUID(ctx, "id");
     Status status = Status.fromString(orgRequestJson.getString("status"));
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
 
     organizationService
-        .updateProviderRequestStatus(reqId, status)
+        .updateProviderRequestStatus(reqId, status, dxUser.sub())
         .onSuccess(
             v -> {
               UserActivityAuditLogBuilder auditLogBuilder =
@@ -512,9 +523,10 @@ public class ProviderRoleHandler {
     JsonObject body = ctx.body().asJsonObject();
     UUID reqId = RequestHelper.getPathParamAsUUID(ctx, "id");
     Status status = Status.fromString(body.getString("status"));
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
 
     organizationService
-        .updateProviderRequestStatus(reqId, status)
+        .updateProviderRequestStatus(reqId, status, dxUser.sub())
         .onSuccess(
             v -> {
               UserActivityAuditLogBuilder auditLogBuilder =

@@ -361,6 +361,24 @@ paths:
     $ref: paths/organisations.yaml#/~1iudx~1v2~1auth~1organisations~1{id}~1join_requests~1report
   /iudx/v2/auth/organization/user/provider_role/requests/report:
     $ref: paths/organisations.yaml#/~1iudx~1v2~1auth~1organization~1user~1provider_role~1requests~1report
+  /iudx/v2/auth/organizations/{organization_id}/hierarchy/departments:
+    $ref: paths/organisations.yaml#/~1iudx~1v2~1auth~1organizations~1{organization_id}~1hierarchy~1departments
+  /iudx/v2/auth/organizations/{organization_id}/hierarchy/departments/{department_id}:
+    $ref: paths/organisations.yaml#/~1iudx~1v2~1auth~1organizations~1{organization_id}~1hierarchy~1departments~1{department_id}
+  /iudx/v2/auth/organizations/{organization_id}/hierarchy/departments/{department_id}/children:
+    $ref: paths/organisations.yaml#/~1iudx~1v2~1auth~1organizations~1{organization_id}~1hierarchy~1departments~1{department_id}~1children
+  /iudx/v2/auth/organizations/{organization_id}/hierarchy/departments/{department_id}/descendants:
+    $ref: paths/organisations.yaml#/~1iudx~1v2~1auth~1organizations~1{organization_id}~1hierarchy~1departments~1{department_id}~1descendants
+  /iudx/v2/auth/organizations/{organization_id}/hierarchy/definition-requests:
+    $ref: paths/organisations.yaml#/~1iudx~1v2~1auth~1organizations~1{organization_id}~1hierarchy~1definition-requests
+  /iudx/v2/auth/organizations/{organization_id}/hierarchy/definition-requests/{request_id}:
+    $ref: paths/organisations.yaml#/~1iudx~1v2~1auth~1organizations~1{organization_id}~1hierarchy~1definition-requests~1{request_id}
+  /iudx/v2/auth/organizations/{organization_id}/users/{user_id}/dept-admin:
+    $ref: paths/organisations.yaml#/~1iudx~1v2~1auth~1organizations~1{organization_id}~1users~1{user_id}~1dept-admin
+  /iudx/v2/auth/organizations/{organization_id}/dept-admin-requests:
+    $ref: paths/organisations.yaml#/~1iudx~1v2~1auth~1organizations~1{organization_id}~1dept-admin-requests
+  /iudx/v2/auth/organizations/{organization_id}/dept-admin-requests/{request_id}:
+    $ref: paths/organisations.yaml#/~1iudx~1v2~1auth~1organizations~1{organization_id}~1dept-admin-requests~1{request_id}
   /iudx/v2/auth/user/platform/provider-requests:
     $ref: paths/platform-provider-requests.yaml#/~1iudx~1v2~1auth~1user~1platform~1provider-requests
   /iudx/v2/auth/admin/platform/provider-requests:

@@ -3981,6 +3981,14 @@ components:
                   assetType:
                     type: string
                     minLength: 1
+                  itemDepartmentId:
+                    type: string
+                    format: uuid
+                    nullable: true
+                    description: |
+                      Which department (within the item's organization) owns this
+                      asset, if the organization has departments enabled. Lets a
+                      dept_admin see which requests fall within their subtree.
                 required:
                   - itemId
                   - assetName

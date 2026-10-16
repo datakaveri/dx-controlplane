@@ -17,8 +17,10 @@ import org.cdpg.dx.aaa.delegation.service.DelegationServiceImpl;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.aaa.organization.dao.OrganizationDAOFactory;
+import org.cdpg.dx.aaa.organization.service.OrganizationHierarchyService;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.organization.service.OrganizationServiceImpl;
+import org.cdpg.dx.aaa.organization.service.impl.OrganizationHierarchyServiceImpl;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
@@ -67,9 +69,14 @@ public class DelegationVerticle extends AbstractVerticle {
               docIndex,
               deletedDocsIndex,
               apdUrl); // direct instance
+      OrganizationHierarchyService organizationHierarchyService =
+          new OrganizationHierarchyServiceImpl(organizationDAOFactory.organizationDAO(),
+              organizationDAOFactory.organizationHierarchyNodeDAO());
       OrganizationService organizationService =
           new OrganizationServiceImpl(
-              organizationDAOFactory, keycloakUserService, itemService); // direct instance
+              organizationDAOFactory, keycloakUserService, itemService,
+              organizationHierarchyService); //
+      // direct instance
 
       // ------------------- Delegation Service -------------------
       DelegationService delegationService =

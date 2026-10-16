@@ -15,6 +15,12 @@ import org.cdpg.dx.aaa.item.service.ItemRegistryServiceImpl;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.aaa.item.service.central.CentralItemServiceImpl;
+import org.cdpg.dx.aaa.organization.dao.OrganizationUserDAO;
+import org.cdpg.dx.aaa.organization.dao.impl.OrganizationDAOImpl;
+import org.cdpg.dx.aaa.organization.dao.impl.OrganizationHierarchyNodeDAOImpl;
+import org.cdpg.dx.aaa.organization.dao.impl.OrganizationUserDAOImpl;
+import org.cdpg.dx.aaa.organization.service.OrganizationHierarchyService;
+import org.cdpg.dx.aaa.organization.service.impl.OrganizationHierarchyServiceImpl;
 import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
 import org.cdpg.dx.acl.accessRequest.dao.impl.AccessRequestDaoImpl;
 import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
@@ -59,6 +65,13 @@ public class ItemControllerFactory {
     AccessRuleDao accessRuleDao = new AccessRuleDaoImpl(pgService);
     AccessRequestDao accessRequestDao =
         new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
+    // Narrow, DAO-level dependencies only -- avoids a circular ItemService/
+    // OrganizationService dependency (OrganizationServiceImpl already takes
+    // an ItemService as a constructor argument).
+    OrganizationUserDAO organizationUserDAO = new OrganizationUserDAOImpl(pgService);
+    OrganizationHierarchyService organizationHierarchyService =
+        new OrganizationHierarchyServiceImpl(
+            new OrganizationDAOImpl(pgService), new OrganizationHierarchyNodeDAOImpl(pgService));
     ItemService itemService =
         new ItemServiceImpl(
             elasticsearchService,
@@ -107,6 +120,8 @@ public class ItemControllerFactory {
         policyDao,
         accessRuleDao,
         accessRequestDao,
-        apdURL);
+        apdURL,
+        organizationUserDAO,
+        organizationHierarchyService);
   }
 }

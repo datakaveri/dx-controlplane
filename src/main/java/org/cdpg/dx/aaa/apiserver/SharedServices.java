@@ -1,5 +1,10 @@
 package org.cdpg.dx.aaa.apiserver;
 
+import static org.cdpg.dx.aaa.common.Constants.DELETED_DOCS_INDEX;
+import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
+import static org.cdpg.dx.aaa.common.Constants.DOC_USER_INDEX;
+import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
+
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.aaa.credit.factory.CreditControllerFactory;
 import org.cdpg.dx.aaa.credit.service.CreditService;
@@ -9,8 +14,13 @@ import org.cdpg.dx.aaa.email.factory.EmailComposerFactory;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
+import org.cdpg.dx.aaa.organization.dao.OrganizationDAO;
+import org.cdpg.dx.aaa.organization.dao.OrganizationDAOFactory;
+import org.cdpg.dx.aaa.organization.dao.impl.OrganizationDAOImpl;
 import org.cdpg.dx.aaa.organization.factory.OrganizationControllerFactory;
+import org.cdpg.dx.aaa.organization.service.OrganizationHierarchyService;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
+import org.cdpg.dx.aaa.organization.service.impl.OrganizationHierarchyServiceImpl;
 import org.cdpg.dx.aaa.user.dao.CustomRoleDAO;
 import org.cdpg.dx.aaa.user.dao.impl.CustomRoleDAOImpl;
 import org.cdpg.dx.aaa.user.factory.UserControllerFactory;
@@ -20,11 +30,6 @@ import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
-
-import static org.cdpg.dx.aaa.common.Constants.DELETED_DOCS_INDEX;
-import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
-import static org.cdpg.dx.aaa.common.Constants.DOC_USER_INDEX;
-import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
 
 /**
  * Groups the shared domain services and cross-cutting concerns that are created once during
@@ -84,13 +89,18 @@ public record SharedServices(
         new ItemServiceImpl(
             infra.esService(), keycloakUserService, infra.pgService(), policyDao,
             infra.webClient(), docIndex, deleteDocsIndex, apdURL);
+    OrganizationDAO organizationDAO = new OrganizationDAOImpl(infra.pgService());
+    OrganizationDAOFactory organizationDAOFactory = new OrganizationDAOFactory(infra.pgService());
+    OrganizationHierarchyService organizationHierarchyService =
+        new OrganizationHierarchyServiceImpl(
+            organizationDAO, organizationDAOFactory.organizationHierarchyNodeDAO());
 
     CreditService creditService =
         CreditControllerFactory.createService(infra.pgService(), keycloakUserService, config);
 
     OrganizationService organizationService =
         OrganizationControllerFactory.createService(
-            infra.pgService(), keycloakUserService, itemService);
+            infra.pgService(), keycloakUserService, itemService, organizationHierarchyService);
 
     DelegationService delegationService =
         DelegationControllerFactory.createService(

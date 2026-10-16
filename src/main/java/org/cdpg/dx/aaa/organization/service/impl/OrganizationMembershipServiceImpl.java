@@ -1,14 +1,28 @@
 package org.cdpg.dx.aaa.organization.service.impl;
 
+import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
+
+import static org.cdpg.dx.aaa.organization.config.Constants.*;
+import static org.cdpg.dx.aaa.organization.models.Status.PENDING;
+import static org.cdpg.dx.aaa.organization.models.Status.WITHDRAWN;
+
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import org.cdpg.dx.aaa.item.service.ItemService;
+import org.cdpg.dx.aaa.organization.config.Constants;
 import org.cdpg.dx.aaa.organization.dao.OrganizationDAO;
 import org.cdpg.dx.aaa.organization.dao.OrganizationJoinRequestDAO;
 import org.cdpg.dx.aaa.organization.dao.OrganizationUserDAO;
-import org.cdpg.dx.aaa.organization.config.Constants;
 import org.cdpg.dx.aaa.organization.models.*;
+import org.cdpg.dx.aaa.organization.service.OrganizationApprovalService;
+import org.cdpg.dx.aaa.organization.service.OrganizationHierarchyService;
 import org.cdpg.dx.aaa.organization.service.OrganizationMembershipService;
 import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.exception.*;
@@ -19,15 +33,6 @@ import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static org.cdpg.dx.aaa.organization.config.Constants.*;
-import static org.cdpg.dx.aaa.organization.models.Status.PENDING;
-import static org.cdpg.dx.aaa.organization.models.Status.WITHDRAWN;
-
 public class OrganizationMembershipServiceImpl implements OrganizationMembershipService {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(OrganizationMembershipServiceImpl.class);
@@ -37,23 +42,90 @@ public class OrganizationMembershipServiceImpl implements OrganizationMembership
   private final OrganizationDAO orgDAO;
   private final KeycloakUserService keycloakUserService;
   private final ItemService itemService;
+  private final OrganizationHierarchyService hierarchyService;
+  private final OrganizationApprovalService organizationApprovalService;
 
   public OrganizationMembershipServiceImpl(
       OrganizationJoinRequestDAO joinRequestDAO,
       OrganizationUserDAO orgUserDAO,
       OrganizationDAO orgDAO,
       KeycloakUserService keycloakUserService,
-      ItemService itemService) {
+      ItemService itemService,
+      OrganizationHierarchyService hierarchyService,
+      OrganizationApprovalService organizationApprovalService) {
     this.joinRequestDAO = joinRequestDAO;
     this.orgUserDAO = orgUserDAO;
     this.orgDAO = orgDAO;
     this.keycloakUserService = keycloakUserService;
     this.itemService = itemService;
+    this.hierarchyService = hierarchyService;
+    this.organizationApprovalService = organizationApprovalService;
   }
 
   @Override
-  public Future<OrganizationJoinRequest> joinOrganizationRequest(OrganizationJoinRequest organizationJoinRequest) {
-    return joinRequestDAO.create(organizationJoinRequest);
+  public Future<OrganizationJoinRequest> joinOrganizationRequest(
+      OrganizationJoinRequest organizationJoinRequest) {
+    UUID organizationId = organizationJoinRequest.organizationId();
+    UUID requestedNodeId = organizationJoinRequest.requestedNodeId();
+
+    return orgDAO
+        .get(organizationId)
+        .compose(
+            organization -> {
+              if (organization == null) {
+                return Future.failedFuture(new DxNotFoundException("Organization not found"));
+              }
+
+              return hierarchyService.hasHierarchy(organizationId);
+            })
+        .compose(
+            hasHierarchy -> {
+              if (!hasHierarchy) {
+                if (organizationJoinRequest.requestedNodeId() != null) {
+                  return Future.failedFuture(
+                      new DxValidationException(
+                          "Hierarchy node cannot be specified for a non-hierarchical organization"));
+                }
+                // Existing flat organization behaviour.
+                // requestedNodeId should normally be null.
+                return joinRequestDAO.create(organizationJoinRequest);
+              }
+
+              if (requestedNodeId == null) {
+                return Future.failedFuture(
+                    new DxValidationException("Hierarchy node is required for this organization"));
+              }
+
+              return hierarchyService
+                  .getNode(organizationId, requestedNodeId)
+                  .compose(
+                      node -> {
+                        if (node == null) {
+                          return Future.failedFuture(
+                              new DxNotFoundException("Requested hierarchy node not found"));
+                        }
+
+                        return joinRequestDAO
+                            .create(organizationJoinRequest)
+                            .compose(
+                                createdRequest -> {
+
+                                  /*
+                                   * Hierarchical organisation:
+                                   *
+                                   * The request remains publicly "pending".
+                                   * Internally, an approval task is created for L1.
+                                   */
+                                  return organizationApprovalService
+                                      .createApproval(
+                                          organizationId,
+                                          createdRequest.id(),
+                                          OrganizationApprovalType.ORGANIZATION_USER_JOIN,
+                                          requestedNodeId)
+                                      .map(ignored -> createdRequest);
+                                });
+                      });
+            });
   }
 
   @Override
@@ -88,62 +160,199 @@ public class OrganizationMembershipServiceImpl implements OrganizationMembership
   }
 
   @Override
-  public Future<Boolean> updateOrganizationJoinRequestStatus(UUID requestId, Status status) {
-    Map<String, Object> conditionMap = Map.of(
-      Constants.ORG_JOIN_ID, requestId.toString()
-    );
-    Map<String, Object> updateDataMap = Map.of(
-      Constants.STATUS, status.getStatus()
-    );
+  public Future<Boolean> updateOrganizationJoinRequestStatus(
+      UUID requestId, Status status, UUID approverUserId) {
 
-    return joinRequestDAO.update(conditionMap, updateDataMap)
-      .compose(approved -> {
-        if (Status.GRANTED.getStatus().equals(status.getStatus())) {
-          return addUserToOrganizationFromRequest(requestId);
-        }
-        return Future.succeededFuture(true);
-      }).recover(ServiceErrorHelper.mapNotFound("No request found with given ID"));
+    return joinRequestDAO
+        .get(requestId)
+        .compose(
+            joinRequest -> {
+              if (joinRequest == null) {
+                return Future.succeededFuture(false);
+              }
+
+              UUID organizationId = joinRequest.organizationId();
+
+              return orgDAO
+                  .get(organizationId)
+                  .compose(
+                      organization -> {
+                        if (organization == null) {
+                          return Future.failedFuture(
+                              new DxNotFoundException("Organisation not found: " + organizationId));
+                        }
+
+                        return hierarchyService.hasHierarchy(organizationId);
+                      })
+                  .compose(
+                      hasHierarchy -> {
+                        /*
+                         * Existing organisation behaviour.
+                         *
+                         * No department tree means the organisation is flat and the
+                         * existing Org Admin workflow continues to work exactly as before.
+                         */
+                        if (!hasHierarchy) {
+                          return updateFlatOrganizationJoinRequest(requestId, status);
+                        }
+
+                        /*
+                         * Hierarchical organisation.
+                         *
+                         * The old direct status update is not allowed to bypass
+                         * the approval engine.
+                         */
+                        if (status == Status.GRANTED) {
+
+                          return organizationApprovalService
+                              .approve(
+                                  organizationId,
+                                  requestId,
+                                  OrganizationApprovalType.ORGANIZATION_USER_JOIN,
+                                  joinRequest.requestedNodeId(),
+                                  approverUserId,
+                                  null)
+                              .compose(
+                                  approval -> finalizeHierarchicalJoinRequest(requestId, approval));
+                        }
+
+                        if (status == Status.REJECTED) {
+
+                          return organizationApprovalService
+                              .reject(
+                                  organizationId,
+                                  requestId,
+                                  OrganizationApprovalType.ORGANIZATION_USER_JOIN,
+                                  joinRequest.requestedNodeId(),
+                                  approverUserId,
+                                  null)
+                              .compose(
+                                  approval -> updateJoinRequestStatus(requestId, Status.REJECTED));
+                        }
+
+                        return Future.failedFuture(
+                            new DxValidationException(
+                                "Only granted or rejected status is allowed"));
+                      });
+            });
   }
 
+  private Future<Boolean> updateJoinRequestStatus(UUID requestId, Status status) {
+
+    Map<String, Object> conditionMap = Map.of(Constants.ORG_JOIN_ID, requestId.toString());
+
+    Map<String, Object> updateFields = new HashMap<>();
+
+    updateFields.put(STATUS, status.getStatus());
+
+    updateFields.put(PROCESSED_AT, LocalDateTime.now().format(FORMATTER));
+
+    return joinRequestDAO
+        .update(conditionMap, updateFields)
+        .compose(
+            updated -> {
+              if (status == Status.GRANTED) {
+                return addUserToOrganizationFromRequest(requestId);
+              }
+              return Future.succeededFuture(true);
+            })
+        .recover(ServiceErrorHelper.mapNotFound("No request found with given ID"));
+  }
+
+  private Future<Boolean> updateFlatOrganizationJoinRequest(UUID requestId, Status status) {
+
+    Map<String, Object> conditionMap = Map.of(Constants.ORG_JOIN_ID, requestId.toString());
+    Map<String, Object> updateDataMap = Map.of(Constants.STATUS, status.getStatus());
+
+    return joinRequestDAO
+        .update(conditionMap, updateDataMap)
+        .compose(
+            updated -> {
+              if (status == Status.GRANTED) {
+                return addUserToOrganizationFromRequest(requestId);
+              }
+
+              return Future.succeededFuture(true);
+            })
+        .recover(ServiceErrorHelper.mapNotFound("No request found with given ID"));
+  }
+
+  private Future<Boolean> finalizeHierarchicalJoinRequest(
+      UUID requestId, OrganizationApproval approval) {
+
+    if (approval.status() != OrganizationApprovalStage.APPROVED) {
+      return Future.failedFuture(
+          new DxValidationException("Join request approval is not in approved state"));
+    }
+
+    Map<String, Object> conditionMap = Map.of(Constants.ORG_JOIN_ID, requestId.toString());
+    Map<String, Object> updateDataMap = Map.of(Constants.STATUS, Status.GRANTED.getStatus());
+
+    return joinRequestDAO
+        .update(conditionMap, updateDataMap)
+        .compose(updated -> addUserToOrganizationFromRequest(requestId))
+        .recover(ServiceErrorHelper.mapNotFound("No request found with given ID"));
+  }
+
+  @Override
   public Future<Boolean> addUserToOrganizationFromRequest(UUID requestId) {
-    return joinRequestDAO.get(requestId)
-      .compose(joinRequest -> {
-        UUID orgId = joinRequest.organizationId();
-        UUID userId = joinRequest.userId();
 
-        return orgDAO.get(orgId)
-          .compose(organization -> {
-            OrganizationUser newOrgUser = new OrganizationUser(
-              null,
-              orgId,
-              userId,
-              joinRequest.userName(),
-              Role.USER,
-              joinRequest.jobTitle(),
-              joinRequest.empId(),
-              null,
-              joinRequest.officialEmail(),
-              null,
-              null
-            );
+    return joinRequestDAO
+        .get(requestId)
+        .compose(
+            joinRequest -> {
+              if (joinRequest == null) {
+                return Future.failedFuture(
+                    new DxNotFoundException("Organization join request not found"));
+              }
 
-            return orgUserDAO.create(newOrgUser)
-              .compose(createdUser ->
-                // Call Keycloak to set organization details
-                keycloakUserService.setOrganisationDetails(
-                  userId,
-                  orgId,
-                  organization.orgName()
-                )
-              )
-              .compose(success -> {
-                if (!success) {
-                  return Future.failedFuture("Failed to set organization details in Keycloak");
-                }
-                return Future.succeededFuture(true);
-              });
-          });
-      });
+              UUID orgId = joinRequest.organizationId();
+              UUID userId = joinRequest.userId();
+
+              return orgDAO
+                  .get(orgId)
+                  .compose(
+                      organization -> {
+                        if (organization == null) {
+                          return Future.failedFuture(
+                              new DxNotFoundException("Organisation not found"));
+                        }
+
+                        OrganizationUser organizationUser =
+                            new OrganizationUser(
+                                null,
+                                orgId,
+                                userId,
+                                joinRequest.userName(),
+                                Role.USER,
+                                joinRequest.jobTitle(),
+                                joinRequest.empId(),
+                                null,
+                                joinRequest.officialEmail(),
+                                joinRequest.requestedNodeId(),
+                                null,
+                                null,
+                                null);
+
+                        return orgUserDAO
+                            .create(organizationUser)
+                            .compose(
+                                created ->
+                                    // Call Keycloak to set organization details
+                                    keycloakUserService
+                                        .setOrganisationDetails(
+                                            userId, orgId, organization.orgName())
+                                        .compose(
+                                            success -> {
+                                              if (!success) {
+                                                return Future.failedFuture(
+                                                    "Failed to set organization details in Keycloak");
+                                              }
+
+                                              return Future.succeededFuture(true);
+                                            }));
+                      });
+            });
   }
 
   @Override
@@ -266,9 +475,15 @@ public class OrganizationMembershipServiceImpl implements OrganizationMembership
     );
 
 
-    Map<String, Object> updateDataMap = Map.of(
-      Constants.ROLE, role.getRoleName()
-    );
+    // Role.DEPT_ADMIN can only be granted via the dedicated dept-admin
+    // assignment flow (it must also set admin_of_node_id) -- any other role
+    // change through this generic path must not leave a stale administered
+    // department behind.
+    Map<String, Object> updateDataMap = new HashMap<>();
+    updateDataMap.put(Constants.ROLE, role.getRoleName());
+    if (role != Role.DEPT_ADMIN) {
+      updateDataMap.put(Constants.ADMIN_OF_NODE_ID, null);
+    }
 
     return orgUserDAO.update(conditionMap, updateDataMap).map(
       true

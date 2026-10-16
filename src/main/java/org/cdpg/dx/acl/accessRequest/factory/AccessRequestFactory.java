@@ -17,6 +17,12 @@ import org.cdpg.dx.acl.accessRequest.dao.impl.AccessRequestDaoImpl;
 import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
 import org.cdpg.dx.acl.accessRequest.service.AccessRequestService;
 import org.cdpg.dx.acl.accessRequest.service.impl.AccessRequestServiceImpl;
+import org.cdpg.dx.aaa.organization.dao.OrganizationUserDAO;
+import org.cdpg.dx.aaa.organization.dao.impl.OrganizationDAOImpl;
+import org.cdpg.dx.aaa.organization.dao.impl.OrganizationHierarchyNodeDAOImpl;
+import org.cdpg.dx.aaa.organization.dao.impl.OrganizationUserDAOImpl;
+import org.cdpg.dx.aaa.organization.service.OrganizationHierarchyService;
+import org.cdpg.dx.aaa.organization.service.impl.OrganizationHierarchyServiceImpl;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
 import org.cdpg.dx.acl.rule.dao.AccessRuleDao;
@@ -63,9 +69,16 @@ public class AccessRequestFactory {
             config.getString(DELETED_DOCS_INDEX),
             config.getString(APD_URL));
 
+    // Narrow, DAO-level dependencies only -- same rationale as ItemControllerFactory:
+    // avoids a circular dependency on the full OrganizationService.
+    OrganizationUserDAO organizationUserDAO = new OrganizationUserDAOImpl(pgService);
+    OrganizationHierarchyService organizationHierarchyService =
+        new OrganizationHierarchyServiceImpl(
+            new OrganizationDAOImpl(pgService), new OrganizationHierarchyNodeDAOImpl(pgService));
+
     AccessRequestService accessRequestService =
         new AccessRequestServiceImpl(keycloakUserService, itemService, accessRequestDao,
-            policyDao, accessRuleDao);
+            policyDao, accessRuleDao, organizationUserDAO, organizationHierarchyService);
 
     return new AccessRequestController(
         accessRequestService,

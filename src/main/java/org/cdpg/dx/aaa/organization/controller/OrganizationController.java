@@ -21,6 +21,9 @@ public class OrganizationController implements ApiController {
   private final OrganizationQueryHandler queryHandler;
   private final OrganizationCreateRequestHandler createRequestHandler;
   private final OrganizationJoinRequestHandler joinRequestHandler;
+  private final OrganizationHierarchyHandler hierarchyHandler;
+  private final OrganizationHierarchyDefinitionHandler hierarchyDefinitionHandler;
+  private final DeptAdminHandler deptAdminHandler;
   private final OrganizationUserHandler userHandler;
   private final AuditingHandler auditingHandler;
   private final Boolean isKycRequired;
@@ -30,6 +33,9 @@ public class OrganizationController implements ApiController {
       OrganizationQueryHandler queryHandler,
       OrganizationCreateRequestHandler createRequestHandler,
       OrganizationJoinRequestHandler joinRequestHandler,
+      OrganizationHierarchyHandler hierarchyHandler,
+      OrganizationHierarchyDefinitionHandler hierarchyDefinitionHandler,
+      DeptAdminHandler deptAdminHandler,
       OrganizationUserHandler userHandler,
       AuditingHandler auditingHandler,
       Boolean isKycRequired) {
@@ -38,6 +44,9 @@ public class OrganizationController implements ApiController {
     this.queryHandler = queryHandler;
     this.createRequestHandler = createRequestHandler;
     this.joinRequestHandler = joinRequestHandler;
+    this.hierarchyHandler = hierarchyHandler;
+    this.hierarchyDefinitionHandler = hierarchyDefinitionHandler;
+    this.deptAdminHandler = deptAdminHandler;
     this.userHandler = userHandler;
     this.auditingHandler = auditingHandler;
     this.isKycRequired = isKycRequired;
@@ -185,6 +194,87 @@ public class OrganizationController implements ApiController {
         .handler(auditingHandler::handleApiAudit)
         .handler(orgAdminAccess)
         .handler(userHandler::updateOrganisationUserRole);
+
+    /* =========================
+     * Organization hierarchy
+     * ========================= */
+
+    routerBuilder
+        .operation(OP_GET_ORG_HIERARCHY_NODES)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(orgAdminAccess)
+        .handler(hierarchyHandler::getHierarchyNodes);
+
+    routerBuilder
+        .operation(OP_GET_ORG_HIERARCHY_NODE)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(orgAdminAccess)
+        .handler(hierarchyHandler::getHierarchyNode);
+
+    routerBuilder
+        .operation(OP_GET_ORG_HIERARCHY_NODE_CHILDREN)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(orgAdminAccess)
+        .handler(hierarchyHandler::getHierarchyNodeChildren);
+
+    routerBuilder
+        .operation(OP_GET_ORG_HIERARCHY_NODE_DESCENDANTS)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(orgAdminAccess)
+        .handler(hierarchyHandler::getHierarchyNodeDescendants);
+
+    /* =========================
+     * Organization hierarchy -- bulk definition request
+     * (single submission, cos_admin approves/rejects as one unit)
+     * ========================= */
+
+    routerBuilder
+        .operation(OP_CREATE_ORG_HIERARCHY_DEFINITION_REQUEST)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(orgAdminAccess)
+        .handler(hierarchyDefinitionHandler::createDefinitionRequest);
+
+    routerBuilder
+        .operation(OP_GET_ORG_HIERARCHY_DEFINITION_REQUESTS)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(orgAdminAccess)
+        .handler(hierarchyDefinitionHandler::getDefinitionRequests);
+
+    routerBuilder
+        .operation(OP_GET_ORG_HIERARCHY_DEFINITION_REQUEST)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(orgAdminAccess)
+        .handler(hierarchyDefinitionHandler::getDefinitionRequest);
+
+    routerBuilder
+        .operation(OP_APPROVE_ORG_HIERARCHY_DEFINITION_REQUEST)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(cosAdminAccess)
+        .handler(hierarchyDefinitionHandler::updateDefinitionRequestStatus);
+
+    /* =========================
+     * Dept admin assignment / self-request
+     * (authorization against the target department is done inside the
+     * handler/service, not the route guard -- an org_admin or any ancestor
+     * dept_admin may act, which plain scope membership can't express)
+     * ========================= */
+
+    routerBuilder
+        .operation(OP_ASSIGN_DEPT_ADMIN)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(orgAdminAccess)
+        .handler(deptAdminHandler::assignDeptAdmin);
+
+    routerBuilder
+        .operation(OP_REQUEST_DEPT_ADMIN)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(deptAdminHandler::requestDeptAdmin);
+
+    routerBuilder
+        .operation(OP_APPROVE_DEPT_ADMIN_REQUEST)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(orgAdminAccess)
+        .handler(deptAdminHandler::updateDeptAdminRequestStatus);
 
   }
 }

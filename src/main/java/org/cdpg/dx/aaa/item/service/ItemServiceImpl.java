@@ -510,9 +510,13 @@ public class ItemServiceImpl implements ItemService {
     if (scopes.contains(Scopes.ASSET_MANAGEMENT) || scopes.contains(Scopes.ASSET_PUBLISH)) {
       queryModel = queryDecoder.getItemIdQueryModel(patchItemRequest.getItemId());
     } else if (scopes.contains(Scopes.ORG_ASSET_MANAGEMENT) || scopes.contains(Scopes.ORG_ASSET_PUBLISH)) {
+      List<String> deptScopedNodeIds = patchItemRequest.getDeptScopedNodeIds();
       queryModel =
-          queryDecoder.getItemIdOrgIdQueryModel(
-              patchItemRequest.getItemId(), patchItemRequest.getOrgId());
+          (deptScopedNodeIds != null && !deptScopedNodeIds.isEmpty())
+              ? queryDecoder.getItemIdOrgIdNodeIdsQueryModel(
+                  patchItemRequest.getItemId(), patchItemRequest.getOrgId(), deptScopedNodeIds)
+              : queryDecoder.getItemIdOrgIdQueryModel(
+                  patchItemRequest.getItemId(), patchItemRequest.getOrgId());
     } else if (scopes.contains(Scopes.OWN_ASSET_MANAGEMENT)) {
       queryModel =
           queryDecoder.getItemIdOwnerIdQueryModel(

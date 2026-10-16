@@ -20,6 +20,7 @@ public record ProviderRoleRequest(
     UUID orgId, // nullable — null for platform providers
     String providerType, // "org" or "platform"
     String status,
+    UUID requestedNodeId, // nullable — which department this provider request is scoped to
     LocalDateTime createdAt,
     LocalDateTime updatedAt)
     implements BaseEntity<ProviderRoleRequest> {
@@ -34,6 +35,12 @@ public record ProviderRoleRequest(
         providerType = Constants.PROVIDER_TYPE_ORG;
       }
 
+      String requestedNodeIdStr = json.getString(Constants.REQUESTED_NODE_ID);
+      UUID requestedNodeId =
+          (requestedNodeIdStr != null && !requestedNodeIdStr.isBlank())
+              ? UUID.fromString(requestedNodeIdStr)
+              : null;
+
       return new ProviderRoleRequest(
           json.getString(Constants.ORG_CREATE_ID) != null
               ? UUID.fromString(json.getString(Constants.ORG_CREATE_ID))
@@ -44,6 +51,7 @@ public record ProviderRoleRequest(
           json.getString(org.cdpg.dx.aaa.credit.util.Constants.STATUS) != null
               ? json.getString(org.cdpg.dx.aaa.credit.util.Constants.STATUS)
               : Status.PENDING.getStatus(),
+          requestedNodeId,
           parseDateTime(json.getString(Constants.CREATED_AT)),
           parseDateTime(json.getString(Constants.UPDATED_AT)));
     } catch (IllegalArgumentException e) {
@@ -60,6 +68,7 @@ public record ProviderRoleRequest(
     if (orgId != null) json.put("organization_id", orgId.toString());
     json.put(Constants.PROVIDER_TYPE, providerType);
     json.put("status", status);
+    if (requestedNodeId != null) json.put(Constants.REQUESTED_NODE_ID, requestedNodeId.toString());
     if (createdAt != null) json.put(Constants.CREATED_AT, createdAt.format(FORMATTER));
     if (updatedAt != null) json.put(Constants.UPDATED_AT, updatedAt.format(FORMATTER));
 
@@ -68,11 +77,12 @@ public record ProviderRoleRequest(
 
   public Map<String, Object> toNonEmptyFieldsMap() {
     Map<String, Object> map = new HashMap<>();
-    if (id != null) map.put(Constants.ORG_CREATE_ID, id);
+    if (id != null) map.put(Constants.ORG_CREATE_ID, id.toString());
     map.put("user_id", userId.toString());
     if (orgId != null) map.put("organization_id", orgId.toString());
     map.put(Constants.PROVIDER_TYPE, providerType);
     map.put("status", status);
+    if (requestedNodeId != null) map.put(Constants.REQUESTED_NODE_ID, requestedNodeId.toString());
     if (createdAt != null) map.put(Constants.CREATED_AT, createdAt.format(FORMATTER));
     if (updatedAt != null) map.put(Constants.UPDATED_AT, updatedAt.format(FORMATTER));
 
