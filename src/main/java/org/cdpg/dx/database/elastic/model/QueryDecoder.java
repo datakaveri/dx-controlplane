@@ -177,6 +177,16 @@ public class QueryDecoder {
     QueryModel boolQuery = new QueryModel(QueryType.BOOL);
     List<QueryModel> mustQueries = new ArrayList<>();
     mustQueries.add(orgMatchQuery);
+
+    // --- must: hierarchyNodeId in subtree (dept_admin callers only) ---
+    // Items with no hierarchyNodeId are intentionally never matched -- same
+    // policy as getItemIdOrgIdNodeIdsQueryModel.
+    if (request.getHierarchyNodeIds() != null) {
+      Map<String, Object> termsParams = new HashMap<>();
+      termsParams.put(FIELD, "hierarchyNodeId" + KEYWORD_KEY);
+      termsParams.put(VALUE, request.getHierarchyNodeIds());
+      mustQueries.add(new QueryModel(QueryType.TERMS, termsParams));
+    }
     boolQuery.setMustQueries(mustQueries);
 
     // --- must_not: ownerId == sub (only when filter_myassets=true) ---
@@ -417,6 +427,35 @@ public class QueryDecoder {
 
         return buildBooleanQuery(filterQueries);
     }
+
+  /**
+   * Like {@link #getItemIdOrgIdQueryModel(String, String)}, but additionally
+   * restricts the match to a dept_admin's own department subtree -- used
+   * instead of the plain org-id variant when the caller is a dept_admin
+   * rather than the org_admin. {@code nodeIds} must be the dept_admin's
+   * administered department plus all of its descendants (inclusive);
+   * items with no hierarchyNodeId set are intentionally never matched here,
+   * since an unassigned item remains a root-admin-only concern.
+   */
+  public QueryModel getItemIdOrgIdNodeIdsQueryModel(String id, String orgId, List<String> nodeIds) {
+    List<QueryModel> filterQueries = buildIdTermQuery(id);
+
+    if (orgId != null && !orgId.isBlank()) {
+      QueryModel orgIdTermQuery = new QueryModel(QueryType.TERM);
+      orgIdTermQuery.setQueryParameters(Map.of(FIELD, ORGANIZATION_ID_KEYWORD, VALUE, orgId));
+      filterQueries.add(orgIdTermQuery);
+    }
+
+    // "hierarchyNodeId" has no shared Constants entry (unlike ORGANIZATION_ID_KEYWORD) --
+    // literal field name + the shared KEYWORD_KEY suffix, same convention used
+    // for NAME/ITEM_STATUS/PUBLISH_STATUS above.
+    Map<String, Object> termsParams = new HashMap<>();
+    termsParams.put(FIELD, "hierarchyNodeId" + KEYWORD_KEY);
+    termsParams.put(VALUE, nodeIds);
+    filterQueries.add(new QueryModel(QueryType.TERMS, termsParams));
+
+    return buildBooleanQuery(filterQueries);
+  }
 
   public QueryModel getItemIdOwnerIdQueryModel(String itemId, String ownerId) {
     List<QueryModel> filterQueries = buildIdTermQuery(itemId);

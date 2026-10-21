@@ -8,6 +8,7 @@ import static org.cdpg.dx.acl.accessRequest.config.Constants.DELETE_POLICY_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.DETAIL;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_POLICIES_CONSUMER_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_POLICIES_FOR_COS_ADMIN_API;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_POLICIES_FOR_DEPT_ADMIN_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_POLICIES_FOR_ORG_ADMIN_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_POLICIES_PROVIDER_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.HEADER_X_CONTENT_TYPE_OPTIONS;
@@ -17,6 +18,7 @@ import static org.cdpg.dx.acl.accessRequest.config.Constants.VERIFY_ACTIVE_POLIC
 import static org.cdpg.dx.acl.accessRequest.config.Constants.VERIFY_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.X_CONTENT_TYPE_OPTIONS_NOSNIFF;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ASSET_ORGANIZATION_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ITEM_HIERARCHY_NODE_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CREATED_AT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_EXPIRY_AT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_OWNER_ID;
@@ -44,6 +46,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.cdpg.dx.aaa.organization.handler.DeptAdminAccessHandler;
+import org.cdpg.dx.aaa.organization.models.DeptAdminScope;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.common.Constants;
@@ -80,6 +84,7 @@ public class PolicyController implements ApiController {
   private final URNGenerator urnGenerator;
   private final JsonObject config;
   private final AccessRuleDao accessRuleDao;
+  private final DeptAdminAccessHandler deptAdminAccess;
 
   public PolicyController(
       PolicyService policyService,
@@ -95,6 +100,7 @@ public class PolicyController implements ApiController {
     this.urnGenerator = urnGenerator;
     this.config = config;
     this.accessRuleDao = new AccessRuleDaoImpl(postgresService);
+    this.deptAdminAccess = DeptAdminAccessHandler.create(postgresService);
   }
 
   @Override
@@ -104,10 +110,16 @@ public class PolicyController implements ApiController {
     Handler<RoutingContext> verifyAccess =
         AuthorizationHandler.forScopes(
             Scopes.DATA_ACCESS, Scopes.OWN_ASSET_MANAGEMENT, Scopes.ORG_ASSET_MANAGEMENT);
+    // DEPT must outrank SELF: a dept_admin who is also a provider holds OWN_ASSET_MANAGEMENT
     Handler<RoutingContext> policyAdminAccess =
-        AuthorizationHandler.forScopesWithContext(
-            ScopeRule.self(Scopes.OWN_ASSET_MANAGEMENT),
-            ScopeRule.org(Scopes.ORG_ASSET_MANAGEMENT));
+        deptAdminAccess.withDeptScopes(
+            AuthorizationHandler.forScopesWithContext(
+                ScopeRule.org(Scopes.ORG_ASSET_MANAGEMENT),
+                ScopeRule.dept(Scopes.DEPT_ASSET_MANAGEMENT),
+                ScopeRule.self(Scopes.OWN_ASSET_MANAGEMENT)));
+    Handler<RoutingContext> deptAdminAccessHandler =
+        deptAdminAccess.withDeptScopes(
+            AuthorizationHandler.forScopes(Scopes.DEPT_ASSET_MANAGEMENT));
 
     Handler<RoutingContext> cosAdminAccessHandler =
         AuthorizationHandler.forScopes(Scopes.ASSET_MANAGEMENT);
@@ -128,6 +140,8 @@ public class PolicyController implements ApiController {
     UserAccessHandler userAccessHandler =
         new UserAccessHandler(postgresService, keycloakUserService);
 
+    // dept_admins may also create/deactivate policies; the service restricts them to items owned
+    // by a department in their subtree.
     builder
         .operation(CREATE_POLICY_API)
         .handler(auditingHandler::handleApiAudit)
@@ -158,6 +172,12 @@ public class PolicyController implements ApiController {
         .handler(auditingHandler::handleApiAudit)
         .handler(orgAdminAccessHandler)
         .handler(this::getOrganizationPoliciesHandler);
+
+    builder
+        .operation(GET_POLICIES_FOR_DEPT_ADMIN_API)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(deptAdminAccessHandler)
+        .handler(this::getDepartmentPoliciesHandler);
 
     builder
         .operation(GET_POLICIES_FOR_COS_ADMIN_API)
@@ -298,6 +318,73 @@ public class PolicyController implements ApiController {
             });
   }
 
+  /**
+   * Dept Admin: policies on items owned by the department the caller administers or any of its
+   * sub-departments, narrowable by {@code ?departmentScope=}. Only reachable by a dept_admin (the
+   * route guard publishes their subtree).
+   */
+  private void getDepartmentPoliciesHandler(RoutingContext ctx) {
+    LOGGER.info("Handling getDepartmentPoliciesHandler request...");
+    User user = ctx.user();
+
+    DeptAdminScope deptAdminScope = DeptAdminAccessHandler.scopeOf(ctx);
+    if (deptAdminScope == null) {
+      ctx.fail(new DxForbiddenException("Only a department admin can access this endpoint"));
+      return;
+    }
+    Map<String, String> allowedFilters =
+        DeptAdminAccessHandler.withDepartmentScopeParam(
+            Map.of(
+                "status",
+                DB_STATUS,
+                "ownerId",
+                DB_OWNER_ID,
+                "policyType",
+                DB_POLICY_TYPE,
+                "requestId",
+                DB_REQUEST_ID),
+            DB_ITEM_HIERARCHY_NODE_ID);
+    Map<String, Object> additionalFilters =
+        Map.of(
+            DB_ASSET_ORGANIZATION_ID, deptAdminScope.organizationId().toString(),
+            DB_ITEM_HIERARCHY_NODE_ID,
+                DeptAdminAccessHandler.requestedNodeIds(ctx, deptAdminScope));
+    Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
+    Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
+
+    PaginatedRequest request =
+        PaginationRequestBuilder.from(ctx)
+            .allowedFiltersDbMap(allowedFilters)
+            .apiToDbMap(API_TO_DB_MAP)
+            .additionalFilters(additionalFilters)
+            .allowedTimeFields(allowedTimeFields)
+            .defaultTimeField(DB_CREATED_AT)
+            .defaultSort(DB_UPDATED_AT, DEFAULT_SORTING_ORDER)
+            .allowedSortFields(allowedSortFields)
+            .build();
+
+    LOGGER.info("PaginatedRequest getDepartmentPoliciesHandler for dept admin :  {}", request);
+
+    policyService
+        .listPolicies(request)
+        .compose(policyService::enrichPolicyRequestsWithItemDetails)
+        .compose(policyService::enrichPolicyRequestsWithUserInfo)
+        .onSuccess(
+            pagedResult -> {
+              LOGGER.info("Successfully fetched policies for dept admin user: {}", user.subject());
+              ResponseBuilder.sendSuccess(
+                  ctx,
+                  pagedResult.data().stream().map(PolicyDto::toJson).collect(Collectors.toList()),
+                  pagedResult.paginationInfo(),
+                  urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Error fetching policies: {}", err.getMessage(), err);
+              ctx.fail(err);
+            });
+  }
+
   private void getPoliciesHandler(RoutingContext ctx) {
     LOGGER.info("Handling getPolicies request...");
     User user = ctx.user();
@@ -388,7 +475,7 @@ public class PolicyController implements ApiController {
         CreatePolicyRequest.jsonArrayToList(policyList, request.getLong("defaultExpiryDays"));
 
     policyService
-        .createPolicy(requests, user)
+        .createPolicy(requests, user, deptScopedNodeIds(ctx))
         .onSuccess(
             ar -> {
               LOGGER.info("Policy created successfully ");
@@ -435,7 +522,7 @@ public class PolicyController implements ApiController {
         .onSuccess(
             keycloakUser ->
                 policyService
-                    .deActivatePolicy(policyId, keycloakUser)
+                    .deActivatePolicy(policyId, keycloakUser, deptScopedNodeIds(ctx))
                     .onComplete(
                         handler -> {
                           if (handler.succeeded()) {
@@ -448,6 +535,12 @@ public class PolicyController implements ApiController {
                             handleFailureResponse(ctx, handler.cause().getMessage());
                           }
                         }));
+  }
+
+  /** The dept_admin caller's whole department subtree, or null when not a dept_admin. */
+  private static List<String> deptScopedNodeIds(RoutingContext ctx) {
+    DeptAdminScope deptAdminScope = DeptAdminAccessHandler.scopeOf(ctx);
+    return deptAdminScope == null ? null : deptAdminScope.nodeIdStrings();
   }
 
   private void verifyRequestHandler(RoutingContext ctx) {

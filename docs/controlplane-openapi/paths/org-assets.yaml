@@ -479,3 +479,128 @@
       label: patch item
       source: "curl --location --request PATCH\n'https://${HOSTNAME}/iudx/v2/organisation/asset?id=uuid' \\\n--header 'token:\
         \ <token>'\n--data-raw '{\n  \"publishStatus\": \"ACTIVE\",\n  \"dataUploadStatus\": true\n}'\n"
+/iudx/v2/cat/organisation/department/asset:
+  post:
+    summary: Retrieve department assets with filters (Dept Admin)
+    description: |
+      Retrieve assets owned by the department the authenticated user administers and
+      by all of its sub-departments, using advanced discovery filters -- the
+      department-level counterpart of `POST /iudx/v2/cat/organisation/asset`.
+
+      Supports the same property-based, temporal, numeric range, and full-text search
+      filters, and returns items regardless of publication status. Use
+      `departmentScope` to narrow results to the caller's own department (`own`) or
+      to its sub-departments only (`sub`).
+
+      This endpoint is restricted to `dept_admin` users. Assets with no owning
+      department are not returned (they remain an org_admin concern).
+
+      Optionally, set `filter_myassets=true` to exclude assets owned by the
+      authenticated user from the results.
+    operationId: get department assets with filters
+    tags:
+    - Organisation Assets Management
+    security:
+    - authorization: []
+    parameters:
+    - $ref: ../components/parameters.yaml#/DepartmentScopeParam
+    - name: page
+      in: query
+      description: Page number for pagination
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    - name: size
+      in: query
+      description: Page size for pagination
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 100
+    - name: sort
+      in: query
+      description: 'Sort by up to 3 fields separated by `;`, each as `fieldName:asc` or `fieldName:desc`,
+        e.g. `itemCreatedAt:desc;name:asc`.'
+      required: false
+      schema:
+        type: string
+    - name: filter_myassets
+      in: query
+      description: When `true`, excludes assets owned by the authenticated user. Default is `false`.
+      required: false
+      schema:
+        type: boolean
+        default: false
+    requestBody:
+      description: Request body containing unified search filters
+      required: true
+      content:
+        application/json:
+          schema:
+            anyOf:
+            - $ref: ../components/schemas/catalogue.yaml#/TextSearchRequest
+            - $ref: ../components/schemas/catalogue.yaml#/SearchCriteriaRequest
+            - $ref: ../components/schemas/catalogue.yaml#/AutocompleteFuzzyTextSearchRequest
+            - $ref: ../components/schemas/catalogue.yaml#/ComplexSearchRequest
+    responses:
+      '200':
+        description: A successful search response with assets owned by the caller's department subtree
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/catalogue.yaml#/SearchResponse
+      '400':
+        description: Invalid request parameters
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            examples:
+              InvalidDepartmentScope:
+                summary: Invalid departmentScope value
+                value:
+                  type: urn:dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: 'Invalid departmentScope: children (expected one of all, own, sub)'
+              MissingOrMalformedRequest:
+                summary: Missing or malformed request body
+                value:
+                  type: urn:dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: Missing or malformed request
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller does not hold the dept-asset-management scope (not a department admin)
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not hold the required role
+    x-codeSamples:
+    - lang: cURL
+      label: get department assets with filters
+      source: |
+        curl --location --request POST 'https://${HOSTNAME}/iudx/v2/cat/organisation/department/asset?departmentScope=all&size=100&page=1' \
+        --header 'Authorization: Bearer <token>' \
+        --header 'Content-Type: application/json' \
+        --data '{
+          "searchCriteria": [
+            {
+              "searchType": "term",
+              "field": "publishStatus",
+              "values": ["PENDING"]
+            }
+          ],
+          "filter": ["id", "type", "label", "organizationId", "hierarchyNodeId", "ownerUserId", "itemCreatedAt"]
+        }'

@@ -17,7 +17,7 @@ public interface OrganizationMembershipService {
 
   Future<PaginatedResult<OrganizationJoinRequest>> getOrganizationPendingJoinRequests(PaginatedRequest paginatedRequest);
 
-  Future<Boolean> updateOrganizationJoinRequestStatus(UUID requestId, Status status);
+  Future<Boolean> updateOrganizationJoinRequestStatus(UUID requestId, Status status, UUID approverUserId);
 
   Future<OrganizationJoinRequest> withdrawJoinRequest(UUID userId, UUID requestId);
 

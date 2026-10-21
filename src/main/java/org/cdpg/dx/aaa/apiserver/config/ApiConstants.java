@@ -64,6 +64,7 @@ public class ApiConstants {
   public static final String DELETE_ACL_SERVER = "delete acl server";
   public static final String GET_ORG_ASSETS = "get organisation assets";
   public static final String GET_ORG_ASSETS_VTH_FILTERS = "get org assets with filters";
+  public static final String GET_DEPT_ASSETS_VTH_FILTERS = "get department assets with filters";
   public static final String GET_PLATFORM_ASSETS = "get platform assets";
   public static final String GET_PLATFORM_ASSETS_VTH_FILTERS = "get platform assets with filters";
 

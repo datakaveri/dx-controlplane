@@ -26,6 +26,8 @@ import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
 import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestSummary;
 import org.cdpg.dx.acl.accessRequest.dao.model.Status;
 import org.cdpg.dx.acl.accessRequest.service.impl.AccessRequestServiceImpl;
+import org.cdpg.dx.aaa.organization.dao.OrganizationUserDAO;
+import org.cdpg.dx.aaa.organization.service.OrganizationHierarchyService;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.service.model.CreatePolicyRequest;
 import org.cdpg.dx.acl.rule.dao.AccessRuleDao;
@@ -55,6 +57,8 @@ class AccessRequestServiceTest {
   @Mock private AccessRuleDao accessRuleDao;
   @Mock private ItemService itemService;
   @Mock private KeycloakUserService keycloakUserService;
+  @Mock private OrganizationUserDAO organizationUserDAO;
+  @Mock private OrganizationHierarchyService organizationHierarchyService;
 
   private AccessRequestServiceImpl accessRequestService;
 
@@ -71,7 +75,8 @@ class AccessRequestServiceTest {
   void setUp() {
     accessRequestService =
         new AccessRequestServiceImpl(
-            keycloakUserService, itemService, accessRequestDao, policyDao, accessRuleDao);
+            keycloakUserService, itemService, accessRequestDao, policyDao, accessRuleDao,
+            organizationUserDAO, organizationHierarchyService);
   }
 
   private DxUser createConsumerUser(UUID sub) {
@@ -276,8 +281,10 @@ class AccessRequestServiceTest {
               .put(
                   "subjects", new JsonObject().put("allowedUserIds", new JsonArray().add("user1")));
 
-      // Mock ownership check
-      when(accessRequestDao.ownershipCheck(requestId, providerId, providerOrgId, false))
+      // Mock ownership check -- caller is not a dept_admin, so no subtree restriction
+      when(organizationUserDAO.getByOrganizationIdAndUserId(providerOrgId, providerId))
+          .thenReturn(Future.succeededFuture(null));
+      when(accessRequestDao.ownershipCheck(requestId, providerId, providerOrgId, false, null))
           .thenReturn(Future.succeededFuture(true));
 
       // Mock get request
@@ -326,7 +333,7 @@ class AccessRequestServiceTest {
                             assertThat(result).isNotNull();
                             assertThat(result.getStatus()).isEqualTo(Status.GRANTED);
                             verify(accessRequestDao)
-                                .ownershipCheck(requestId, providerId, providerOrgId, false);
+                                .ownershipCheck(requestId, providerId, providerOrgId, false, null);
                             verify(policyDao).insertPolicies(anyList(), eq(providerId));
                             verify(accessRequestDao)
                                 .approveAccessRequest(requestId, "GRANTED", expiryAt);
@@ -345,8 +352,10 @@ class AccessRequestServiceTest {
     @Test
     @DisplayName("should reject access request and update status to REJECTED")
     void rejectAccessRequest_success(VertxTestContext ctx) {
-      // Mock ownership check
-      when(accessRequestDao.ownershipCheck(requestId, providerId, providerOrgId, false))
+      // Mock ownership check -- caller is not a dept_admin, so no subtree restriction
+      when(organizationUserDAO.getByOrganizationIdAndUserId(providerOrgId, providerId))
+          .thenReturn(Future.succeededFuture(null));
+      when(accessRequestDao.ownershipCheck(requestId, providerId, providerOrgId, false, null))
           .thenReturn(Future.succeededFuture(true));
 
       // Mock get request
@@ -378,7 +387,7 @@ class AccessRequestServiceTest {
                             assertThat(result).isNotNull();
                             assertThat(result.getStatus()).isEqualTo(Status.REJECTED);
                             verify(accessRequestDao)
-                                .ownershipCheck(requestId, providerId, providerOrgId, false);
+                                .ownershipCheck(requestId, providerId, providerOrgId, false, null);
                             verify(accessRequestDao).get(requestId);
                             ctx.completeNow();
                           })));

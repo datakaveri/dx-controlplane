@@ -158,6 +158,7 @@ public class ControllerFactory {
             shared.emailComposer(),
             urnGenerator,
             shared.auditingHandler(),
+            infra.pgService(),
             isKycRequired));
 
     OrganizationReportController organizationReportController =
@@ -222,7 +223,8 @@ public class ControllerFactory {
             visibilityService,
             shared.auditingHandler(),
             docIndex,
-            urnGenerator);
+            urnGenerator,
+            infra.pgService());
     controllers.add(searchController);
 
     // Central catalogue (optional)

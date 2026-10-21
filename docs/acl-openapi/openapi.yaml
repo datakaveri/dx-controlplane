@@ -46,6 +46,8 @@ paths:
     $ref: paths/access-request.yaml#/~1iudx~1acl~1apd~1v2~1access_request~1organisation~1report
   /iudx/acl/apd/v2/access_request/organisation:
     $ref: paths/access-request.yaml#/~1iudx~1acl~1apd~1v2~1access_request~1organisation
+  /iudx/acl/apd/v2/access_request/organization/department:
+    $ref: paths/access-request.yaml#/~1iudx~1acl~1apd~1v2~1access_request~1organization~1department
   /iudx/acl/apd/v2/access_request/consumer:
     $ref: paths/access-request.yaml#/~1iudx~1acl~1apd~1v2~1access_request~1consumer
   /iudx/acl/apd/v2/access_request/has_access:
@@ -60,6 +62,8 @@ paths:
     $ref: paths/policy.yaml#/~1iudx~1acl~1apd~1v2~1policy~1organisation
   /iudx/acl/apd/v2/policy/platform:
     $ref: paths/policy.yaml#/~1iudx~1acl~1apd~1v2~1policy~1platform
+  /iudx/acl/apd/v2/policy/organization/department:
+    $ref: paths/policy.yaml#/~1iudx~1acl~1apd~1v2~1policy~1organization~1department
   /iudx/acl/apd/v2/policy/provider:
     $ref: paths/policy.yaml#/~1iudx~1acl~1apd~1v2~1policy~1provider
   /iudx/acl/apd/v2/verify:

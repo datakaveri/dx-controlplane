@@ -8,6 +8,7 @@ import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.model.UserInfo;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,6 +35,10 @@ public interface KeycloakUserService {
     Future<Boolean> updateUserPassword(UUID userId, String password);
     Future<Boolean> setDelegationScopes(UUID userId , List<String> scope,UUID delegatorId);
     Future<Boolean> setCustomScopeToUser(UUID userId , List<String> scope);
+    /** Adds {@code scopes} to the user's scope attribute, keeping whatever it already holds. */
+    Future<Boolean> addUserScopes(UUID userId, Collection<String> scopes);
+    /** Removes {@code scopes} from the user's scope attribute, leaving every other scope. */
+    Future<Boolean> removeUserScopes(UUID userId, Collection<String> scopes);
     Future<Boolean> addCustomRoleToUser(UUID userId,String role);
     Future<Boolean> clearDelegationScopes(    UUID userId,
                                               Set<String> scopesToRemove);

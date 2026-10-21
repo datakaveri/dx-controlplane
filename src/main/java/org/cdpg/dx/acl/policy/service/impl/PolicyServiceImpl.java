@@ -23,6 +23,7 @@ import static org.cdpg.dx.acl.accessRequest.config.Constants.USER_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ALLOWED_ORG_IDS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ALLOWED_ROLES;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.ALLOWED_USER_IDS;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ITEM_HIERARCHY_NODE_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSTRAINTS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_FIRST_NAME;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.CONSUMER_ID;
@@ -123,7 +124,8 @@ public class PolicyServiceImpl implements PolicyService {
   }
 
   @Override
-  public Future<Void> createPolicy(List<CreatePolicyRequest> requests, DxUser caller) {
+  public Future<Void> createPolicy(
+      List<CreatePolicyRequest> requests, DxUser caller, List<String> deptScopedNodeIds) {
     // ownership checks -- caller must be owner or org delegate; simplified here
     UUID userId = caller.sub();
 
@@ -167,6 +169,8 @@ public class PolicyServiceImpl implements PolicyService {
                     if (orgId != null) {
                       req.setItemOrganizationId(orgId.toString());
                     }
+                    UUID nodeId = resourceMap.get(req.getItemId()).getHierarchyNodeId();
+                    req.setItemHierarchyNodeId(nodeId != null ? nodeId.toString() : null);
                     if (!itemOrgMap.containsKey(req.getItemId())) {
                       throw new IllegalStateException("Missing orgId for item: " + req.getItemId());
                     }
@@ -193,9 +197,15 @@ public class PolicyServiceImpl implements PolicyService {
                     .compose(v -> policyDao.checkExistingPoliciesForIds(requests, userId));
               }
 
+              if (deptScopedNodeIds != null) {
+                return validateDeptAdminAccess(resourceObjs, caller, deptScopedNodeIds)
+                    .compose(v -> policyDao.checkExistingPoliciesForIds(requests, userId));
+              }
+
               return Future.failedFuture(
                   generateErrorResponse(
-                      FORBIDDEN, "Access Denied: Not owner or org_admin of same organisation"));
+                      FORBIDDEN,
+                      "Access Denied: Not owner, org_admin or dept_admin of the item's department"));
             })
         .compose(
             queryResult -> {
@@ -466,6 +476,42 @@ public class PolicyServiceImpl implements PolicyService {
     return Future.succeededFuture();
   }
 
+  /**
+   * A dept_admin may manage items of their own organisation whose owning department lies in their
+   * subtree. Items with no department are never matched -- they stay an owner/org_admin concern,
+   * same as access-request approval.
+   */
+  private Future<Void> validateDeptAdminAccess(
+      List<ResourceObj> resources, DxUser caller, List<String> deptScopedNodeIds) {
+
+    String callerOrgId = caller.organisationId();
+
+    for (ResourceObj resource : resources) {
+      UUID resourceOrgId = resource.getOrganizationId();
+      if (resourceOrgId == null || !resourceOrgId.toString().equals(callerOrgId)) {
+        return Future.failedFuture(
+            generateErrorResponse(
+                FORBIDDEN,
+                "Dept Admin cannot create policy for resources outside their organisation"));
+      }
+
+      if (!isInDeptScope(resource.getHierarchyNodeId(), deptScopedNodeIds)) {
+        return Future.failedFuture(
+            generateErrorResponse(
+                FORBIDDEN,
+                "Dept Admin cannot create policy for resources outside their department"));
+      }
+    }
+
+    return Future.succeededFuture();
+  }
+
+  private static boolean isInDeptScope(Object nodeId, List<String> deptScopedNodeIds) {
+    return nodeId != null
+        && deptScopedNodeIds != null
+        && deptScopedNodeIds.contains(nodeId.toString());
+  }
+
   private List<String> getSubjectList(JsonObject subjects, String key) {
     return subjects.getJsonArray(key, new JsonArray()).stream().map(Object::toString).toList();
   }
@@ -641,6 +687,10 @@ public class PolicyServiceImpl implements PolicyService {
                     resourceObj.setOrganizationId(
                         UUID.fromString(resultJson.getString(ORGANIZATION_ID)));
                   }
+                  String hierarchyNodeId = resultJson.getString("hierarchyNodeId");
+                  if (hierarchyNodeId != null && !hierarchyNodeId.isBlank()) {
+                    resourceObj.setHierarchyNodeId(UUID.fromString(hierarchyNodeId));
+                  }
                   promise.complete(resourceObj);
                 }
               } else {
@@ -748,7 +798,8 @@ public class PolicyServiceImpl implements PolicyService {
   }
 
   @Override
-  public Future<Void> deActivatePolicy(String policyId, DxUser user) {
+  public Future<Void> deActivatePolicy(
+      String policyId, DxUser user, List<String> deptScopedNodeIds) {
 
     return policyDao
         .verifyPolicy(UUID.fromString(policyId))
@@ -769,9 +820,15 @@ public class PolicyServiceImpl implements PolicyService {
               boolean isOwner = ownerId.equals(user.sub().toString());
               boolean isOrgAdmin =
                   user.roles().contains("org_admin") && assetOrgId.equals(user.organisationId());
+              boolean isDeptAdmin =
+                  deptScopedNodeIds != null
+                      && assetOrgId != null
+                      && assetOrgId.equals(user.organisationId())
+                      && isInDeptScope(
+                          row.getString(DB_ITEM_HIERARCHY_NODE_ID), deptScopedNodeIds);
 
               LOGGER.debug(
-                  "ownerId={}, status={}, assetOrgId={}, userId={}, userOrgId={}, roles={}, isOwner={}, isOrgAdmin={}",
+                  "ownerId={}, status={}, assetOrgId={}, userId={}, userOrgId={}, roles={}, isOwner={}, isOrgAdmin={}, isDeptAdmin={}",
                   ownerId,
                   status,
                   assetOrgId,
@@ -779,8 +836,9 @@ public class PolicyServiceImpl implements PolicyService {
                   user.organisationId(),
                   user.roles(),
                   isOwner,
-                  isOrgAdmin);
-              if (!isOwner && !isOrgAdmin) {
+                  isOrgAdmin,
+                  isDeptAdmin);
+              if (!isOwner && !isOrgAdmin && !isDeptAdmin) {
                 LOGGER.error("Failure : policy does not belong to the user or organisation");
                 return Future.failedFuture(
                     new JsonObject()

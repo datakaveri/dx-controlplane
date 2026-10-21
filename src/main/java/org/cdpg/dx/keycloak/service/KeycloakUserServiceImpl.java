@@ -7,12 +7,14 @@ import jakarta.ws.rs.ForbiddenException;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
 import org.cdpg.dx.auth.authorization.registry.SystemRoleScopeMap;
 import org.cdpg.dx.auth.model.DxRole;
+import org.cdpg.dx.auth.model.Scopes;
 import org.cdpg.dx.common.exception.BaseDxException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
@@ -684,8 +686,11 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
       Map<String, List<String>> attrs =
           Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>());
 
-      // Deduplicate + preserve order
-      Set<String> cleanScopes = new LinkedHashSet<>(scope);
+      // Deduplicate + preserve order. Dept-admin scopes share this attribute but are managed by
+      // addUserScopes/removeUserScopes, so a custom-role change must not drop them.
+      Set<String> cleanScopes = new LinkedHashSet<>();
+      readUserScopes(attrs).stream().filter(Scopes.DEPT_ADMIN::contains).forEach(cleanScopes::add);
+      cleanScopes.addAll(scope);
 
       // Build final JSON array
       JsonArray scopesArray = new JsonArray();
@@ -707,5 +712,60 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
       LOGGER.error("Failed to set custom scope for user {}", userId, e);
       return Future.failedFuture(e);
     }
+  }
+
+  @Override
+  public Future<Boolean> addUserScopes(UUID userId, Collection<String> scopes) {
+    return updateUserScopes(userId, current -> current.addAll(scopes));
+  }
+
+  @Override
+  public Future<Boolean> removeUserScopes(UUID userId, Collection<String> scopes) {
+    return updateUserScopes(userId, current -> current.removeAll(scopes));
+  }
+
+  /**
+   * Applies {@code change} to the user's scope attribute (a JSON-encoded array, the format {@link
+   * #setCustomScopeToUser} writes), skipping the Keycloak update when nothing changed.
+   */
+  private Future<Boolean> updateUserScopes(
+      UUID userId, Predicate<Set<String>> change) {
+    return BlockingExecutionUtil.runBlocking(
+        () -> {
+          try {
+            UserRepresentation user = usersResource().get(userId.toString()).toRepresentation();
+            Map<String, List<String>> attrs =
+                Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>());
+
+            Set<String> current = readUserScopes(attrs);
+            if (!change.test(current)) {
+              return true;
+            }
+
+            attrs.put(
+                KeycloakConstants.USER_SCOPE, List.of(new JsonArray(List.copyOf(current)).encode()));
+            user.setAttributes(attrs);
+            usersResource().get(userId.toString()).update(user);
+            LOGGER.info("Updated scopes for user {} : {}", userId, current);
+            return true;
+          } catch (Exception e) {
+            throw new KeycloakServiceException(
+                "Failed to update scopes for user with ID: " + userId, e);
+          }
+        });
+  }
+
+  private static Set<String> readUserScopes(Map<String, List<String>> attrs) {
+    Set<String> scopes = new LinkedHashSet<>();
+    List<String> values = attrs.get(KeycloakConstants.USER_SCOPE);
+    if (values == null || values.isEmpty()) {
+      return scopes;
+    }
+    try {
+      new JsonArray(values.get(0)).forEach(s -> scopes.add(s.toString()));
+    } catch (Exception e) {
+      LOGGER.warn("Failed to parse existing user scopes, starting fresh: {}", e.getMessage());
+    }
+    return scopes;
   }
 }

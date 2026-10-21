@@ -291,6 +291,16 @@
           }
         }
       },
+      "hierarchyNodeId": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256,
+            "normalizer": "case_insensitive_sort"
+          }
+        }
+      },
       "id_bck": {
         "type": "text",
         "fields": {

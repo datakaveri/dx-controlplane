@@ -7,6 +7,10 @@ import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.aaa.organization.controller.OrganizationController;
+import org.cdpg.dx.aaa.organization.dao.OrganizationDAO;
+import org.cdpg.dx.aaa.organization.dao.impl.OrganizationDAOImpl;
+import org.cdpg.dx.aaa.organization.service.OrganizationHierarchyService;
+import org.cdpg.dx.aaa.organization.service.impl.OrganizationHierarchyServiceImpl;
 import org.cdpg.dx.aaa.provider.controller.ProviderController;
 import org.cdpg.dx.aaa.provider.handler.ProviderRoleHandler;
 import org.cdpg.dx.aaa.organization.dao.OrganizationDAOFactory;
@@ -56,8 +60,13 @@ public class OrganizationControllerFactory {
             esService, keycloakUserService, pgService, policyDao, webClient, docIndex,
             deletedDocsIdex, apdURL);
 
+    OrganizationDAO organizationDAO = new OrganizationDAOImpl(pgService);
+    OrganizationHierarchyService organizationHierarchyService =
+        new OrganizationHierarchyServiceImpl(
+            organizationDAO, organizationDAOFactory.organizationHierarchyNodeDAO());
+
     OrganizationService organizationService =
-        new OrganizationServiceImpl(organizationDAOFactory, keycloakUserService, itemService);
+        new OrganizationServiceImpl(organizationDAOFactory, keycloakUserService, itemService, organizationHierarchyService);
 
     /* =========================
      * Handlers (share service)
@@ -87,6 +96,17 @@ public class OrganizationControllerFactory {
     ProviderRoleHandler providerRoleHandler =
         new ProviderRoleHandler(
             organizationService, userService, emailComposer, urnGenerator);
+    OrganizationHierarchyHandler organizationHierarchyHandler =
+        new OrganizationHierarchyHandler(organizationService, urnGenerator);
+
+    OrganizationHierarchyDefinitionHandler organizationHierarchyDefinitionHandler =
+        new OrganizationHierarchyDefinitionHandler(organizationService, urnGenerator);
+
+    DeptAdminHandler deptAdminHandler = new DeptAdminHandler(organizationService, urnGenerator);
+
+    DeptAdminAccessHandler deptAdminAccess =
+        new DeptAdminAccessHandler(
+            organizationDAOFactory.organizationUserDAO(), organizationHierarchyService);
 
     /* =========================
      * Controller (ONLY wiring)
@@ -97,7 +117,11 @@ public class OrganizationControllerFactory {
         queryHandler,
         createRequestHandler,
         joinRequestHandler,
+        organizationHierarchyHandler,
+        organizationHierarchyDefinitionHandler,
+        deptAdminHandler,
         userHandler,
+        deptAdminAccess,
         auditingHandler,
         kycRequired);
   }
@@ -108,20 +132,27 @@ public class OrganizationControllerFactory {
       EmailComposer emailComposer,
       URNGenerator urnGenerator,
       AuditingHandler auditingHandler,
+      PostgresService pgService,
       Boolean kycRequired) {
 
     ProviderRoleHandler providerRoleHandler =
         new ProviderRoleHandler(organizationService, userService, emailComposer, urnGenerator);
 
-    return new ProviderController(providerRoleHandler, auditingHandler, kycRequired);
+    return new ProviderController(
+        providerRoleHandler,
+        DeptAdminAccessHandler.create(pgService),
+        auditingHandler,
+        kycRequired);
   }
 
   /* =========================
   todo: this method is to be removed later this is just to help with the migration
    * ========================= */
   public static OrganizationService createService(
-      PostgresService pgService, KeycloakUserService keycloakUserService, ItemService itemService) {
+      PostgresService pgService, KeycloakUserService keycloakUserService, ItemService itemService,
+      OrganizationHierarchyService organizationHierarchyService) {
     OrganizationDAOFactory organizationDAOFactory = new OrganizationDAOFactory(pgService);
-    return new OrganizationServiceImpl(organizationDAOFactory, keycloakUserService, itemService);
+    return new OrganizationServiceImpl(organizationDAOFactory, keycloakUserService, itemService,
+        organizationHierarchyService);
   }
 }

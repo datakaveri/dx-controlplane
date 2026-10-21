@@ -1160,6 +1160,147 @@ paths:
           source: |
             curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/access_request/organisation?requestStatus=PENDING&timerel=after&time=2022-06-26T07:19:11.325746&sort=requestId:desc;createdAt:asc' \
           --header 'Authorization: <tokenValue>'
+  /iudx/acl/apd/v2/access_request/organization/department:
+    get:
+      tags:
+        - Access Request
+      summary: List Department Access Requests (Dept Admin)
+      description: |
+        Returns a paginated list of access requests for items owned by the
+        caller's department or any of its sub-departments. Items with no owning
+        department are not included.
+
+        Restricted to `dept_admin` users -- the org_admin uses the organisation-level
+        endpoint instead. Results cover the department the caller administers and
+        all of its sub-departments.
+
+        **Log Type:** `USER_ACTION`
+      operationId: get-auth-v2-access-requests-department
+      parameters:
+        - $ref: '#/components/parameters/DepartmentScopeParam'
+        - name: requestStatus
+          in: query
+          description: Status of the access request. Displays all the access requests if status is not specified
+          required: false
+          schema:
+            type: string
+            enum:
+              - PENDING
+              - GRANTED
+              - REJECTED
+              - WITHDRAWN
+              - REVOKED
+        - name: assetType
+          in: query
+          description: Type of the asset for which the access request is made. Displays all the access requests if assetType is not specified
+          required: false
+          schema:
+            type: string
+            enum:
+              - adex:DataBank
+              - adex:AiModel
+        - name: organizationId
+          in: query
+          description: Filter access requests by organization ID of the asset. Displays all requests if not specified.
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+        - $ref: '#/components/parameters/TimeParam'
+        - $ref: '#/components/parameters/EndTimeParam'
+        - $ref: '#/components/parameters/TimeRelParam'
+      responses:
+        '200':
+          description: |-
+            OK
+            - Successfully fetched all the requests of a consumer or of a provider in the organization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessRequest'
+              examples:
+                ListResults:
+                  value:
+                    type: urn:dx:aclApd:success
+                    title: Success
+                    result:
+                      - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
+                        requestStatus: GRANTED
+                        requestType: DOWNLOAD
+                        additionalInfo:
+                          name: Miles Morales,
+                          email: miles.morales@acmecorp.org,
+                          phoneNo: 9876543210,
+                          purpose: academia,
+                          description: AI model would be used for non-commercial, academia purposes to test the application abcd
+                        user:
+                          consumerId: a13eb955-c691-4fd3-b200-f18bc78810b5
+                          consumerFirstName: Plutonian
+                          consumerLastName: Resident
+                          consumerEmail: scroopy@noopers.com
+                          consumerOrganization: Scroopy Noopers Corp
+                        owner:
+                          ownerId: 497f6eca-6276-4993-bfeb-53cbbbba6f08
+                          ownerFirstName: Rick
+                          ownerLastName: Sanchez
+                          ownerEmail: rick@cdpg.org
+                          ownerOrganization: CDPG
+                        asset:
+                          itemId: 316cd4eb-71b3-42c2-beb2-785a77999321
+                          assetName: Ice Estimation Model
+                          assetType: adex:AiModel
+                          shortDescription: This is a test AI model for estimating percentage of ice on Pluto
+                          organization: CDPG, IISC
+                          organizationId: 74e3b919-1d1b-44de-ace1-504f1887fdd3
+                        expiryAt: '3000-03-05T20:00:19'
+                        updatedAt: '2025-06-04T07:25:08.663637'
+                        createdAt: '2025-06-04T09:10:57.267564'
+                    paginationInfo:
+                      page: 1
+                      size: 1
+                      totalCount: 3
+                      totalPages: 3
+                      hasNext: true
+                      hasPrevious: false
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+        '400':
+          description: Bad Request- Schema validation, missing or incorrect fields & values
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/updateNotificationBadRequest'
+              example:
+                type: urn:dx:aclApd:badRequest
+                title: Bad Request
+                detail: Missing or malformed request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+        '401':
+          description: '- Unauthorized - `token` invalid/expired'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+              example:
+                type: urn:dx:aclApd:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: application/json
+      security:
+        - authorization: []
   /iudx/acl/apd/v2/access_request/consumer:
     get:
       tags:
@@ -1601,6 +1742,8 @@ paths:
 
         - The resource owner (`provider`)
         - An `org_admin` belonging to the same organization as the resource
+        - A `dept_admin` of the department owning the resource, or of any department
+          above it (resources with no owning department are excluded)
 
         A policy defines:
 
@@ -2013,8 +2156,10 @@ paths:
         ## Who Can Delete
 
         - The resource `provider or org_admin of that organization`
+        - A `dept_admin` of the department owning the policy's resource, or of any department above it
         - The policy must exist
         - The policy must belong to the requesting provider or, in case of an `org_admin`, to their organization
+          (for a `dept_admin`, to a department in their subtree)
         - The policy must currently be in `ACTIVE` state
 
         ## Effects
@@ -2451,6 +2596,107 @@ paths:
           source: |
             curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/policy/platform?policyType=ACCESS_REQUEST_APPROVED' \
             --header 'Authorization: <tokenValue>'
+  /iudx/acl/apd/v2/policy/organization/department:
+    get:
+      tags:
+        - Policies
+      operationId: get-policies-dept_admin-api
+      summary: List Department Policies (Dept Admin)
+      description: |
+        Lists the latest policies on assets owned by the department the caller
+        administers and by all of its sub-departments -- the department-level
+        counterpart of `GET /iudx/acl/apd/v2/policy/organisation`.
+
+        Restricted to `dept_admin` users. Use `departmentScope` to narrow results to
+        the caller's own department (`own`) or to its sub-departments only (`sub`).
+
+        Policies on assets with no owning department, and policies created directly
+        (not through an access request) before department tracking was introduced,
+        are not returned -- they remain an owner/org_admin concern.
+
+        The optional `ownerId` query parameter filters by the policy creator, and
+        `policyType` by how the policy was created (`INDIVIDUAL`, `GROUP` or
+        `ACCESS_REQUEST_APPROVED`).
+      security:
+        - authorization: []
+      parameters:
+        - $ref: '#/components/parameters/DepartmentScopeParam'
+        - name: status
+          in: query
+          description: Status of the policy. Displays all the policies if status is not specified
+          required: false
+          schema:
+            type: string
+            enum:
+              - ACTIVE
+              - DELETED
+        - name: ownerId
+          in: query
+          description: Filter policies by the owner who created the policy.
+          required: false
+          schema:
+            type: string
+            example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+        - name: policyType
+          in: query
+          description: |
+            Filter policies by policy type. Can be specified multiple times to return
+            policies matching any of the provided types.
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - INDIVIDUAL
+                - GROUP
+                - ACCESS_REQUEST_APPROVED
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortingParam'
+        - $ref: '#/components/parameters/TimeParam'
+        - $ref: '#/components/parameters/EndTimeParam'
+        - $ref: '#/components/parameters/TimeRelParam'
+      responses:
+        '200':
+          description: Successfully fetched department policies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyListResponse'
+        '400':
+          description: Invalid query parameter (e.g. an unknown departmentScope value)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:aclApd:notAuthorized
+                title: Not Authorized
+                detail: Missing or invalid Bearer token
+        '403':
+          description: Forbidden - Caller does not hold the dept-asset-management scope (not a department admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: urn:dx:aclApd:forbidden
+                title: Forbidden
+                detail: User does not hold the required role
+      x-codeSamples:
+        - lang: cURL
+          label: List policies of my sub-departments only
+          source: |
+            curl --location --request GET 
+            'https://${HOSTNAME}/iudx/acl/apd/v2/policy/organization/department?departmentScope=sub&status=ACTIVE' \
+            --header 'Authorization: <tokenValue>'
   /iudx/acl/apd/v2/policy/provider:
     get:
       tags:
@@ -2836,6 +3082,22 @@ components:
       required: false
       schema:
         type: string
+    DepartmentScopeParam:
+      name: departmentScope
+      in: query
+      description: |
+        Narrows a dept_admin listing within the caller's department subtree:
+        `all` (default) -- the department the caller administers and all of its sub-departments;
+        `own` -- only the department the caller administers;
+        `sub` -- only its sub-departments, excluding the department itself.
+      required: false
+      schema:
+        type: string
+        enum:
+          - all
+          - own
+          - sub
+        default: all
   schemas:
     AssetRequest:
       type: object
@@ -3981,6 +4243,14 @@ components:
                   assetType:
                     type: string
                     minLength: 1
+                  itemDepartmentId:
+                    type: string
+                    format: uuid
+                    nullable: true
+                    description: |
+                      Which department (within the item's organization) owns this
+                      asset, if the organization has departments enabled. Lets a
+                      dept_admin see which requests fall within their subtree.
                 required:
                   - itemId
                   - assetName

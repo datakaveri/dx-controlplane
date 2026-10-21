@@ -11,6 +11,8 @@
 
       - The resource owner (`provider`)
       - An `org_admin` belonging to the same organization as the resource
+      - A `dept_admin` of the department owning the resource, or of any department
+        above it (resources with no owning department are excluded)
 
       A policy defines:
 
@@ -422,8 +424,10 @@
       ## Who Can Delete
 
       - The resource `provider or org_admin of that organization`
+      - A `dept_admin` of the department owning the policy's resource, or of any department above it
       - The policy must exist
       - The policy must belong to the requesting provider or, in case of an `org_admin`, to their organization
+        (for a `dept_admin`, to a department in their subtree)
       - The policy must currently be in `ACTIVE` state
 
       ## Effects
@@ -754,6 +758,108 @@
         label: List policies created through access request approval
         source: |
           curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/policy/organisation?policyType=ACCESS_REQUEST_APPROVED' \
+          --header 'Authorization: <tokenValue>'
+/iudx/acl/apd/v2/policy/organization/department:
+  get:
+    tags:
+      - Policies
+    operationId: get-policies-dept_admin-api
+    summary: List Department Policies (Dept Admin)
+    description: |
+      Lists the latest policies on assets owned by the department the caller
+      administers and by all of its sub-departments -- the department-level
+      counterpart of `GET /iudx/acl/apd/v2/policy/organisation`.
+
+      Restricted to `dept_admin` users. Use `departmentScope` to narrow results to
+      the caller's own department (`own`) or to its sub-departments only (`sub`).
+
+      Policies on assets with no owning department, and policies created directly
+      (not through an access request) before department tracking was introduced,
+      are not returned -- they remain an owner/org_admin concern.
+
+      The optional `ownerId` query parameter filters by the policy creator, and
+      `policyType` by how the policy was created (`INDIVIDUAL`, `GROUP` or
+      `ACCESS_REQUEST_APPROVED`).
+    security:
+      - authorization: []
+    parameters:
+      - $ref: ../components/parameters.yaml#/DepartmentScopeParam
+      - name: status
+        in: query
+        description: Status of the policy. Displays all the policies if status is not
+          specified
+        required: false
+        schema:
+          type: string
+          enum:
+            - ACTIVE
+            - DELETED
+      - name: ownerId
+        in: query
+        description: Filter policies by the owner who created the policy.
+        required: false
+        schema:
+          type: string
+          example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+      - name: policyType
+        in: query
+        description: |
+          Filter policies by policy type. Can be specified multiple times to return
+          policies matching any of the provided types.
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+              - INDIVIDUAL
+              - GROUP
+              - ACCESS_REQUEST_APPROVED
+      - $ref: ../components/parameters.yaml#/PageParam
+      - $ref: ../components/parameters.yaml#/SizeParam
+      - $ref: ../components/parameters.yaml#/SortingParam
+      - $ref: ../components/parameters.yaml#/TimeParam
+      - $ref: ../components/parameters.yaml#/EndTimeParam
+      - $ref: ../components/parameters.yaml#/TimeRelParam
+    responses:
+      '200':
+        description: Successfully fetched department policies
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/PolicyListResponse
+      '400':
+        description: Invalid query parameter (e.g. an unknown departmentScope value)
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/ErrorResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/ErrorResponse
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+      '403':
+        description: Forbidden - Caller does not hold the dept-asset-management scope (not a department admin)
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/ErrorResponse
+            example:
+              type: urn:dx:aclApd:forbidden
+              title: Forbidden
+              detail: User does not hold the required role
+    x-codeSamples:
+      - lang: cURL
+        label: List policies of my sub-departments only
+        source: |
+          curl --location --request GET 
+          'https://${HOSTNAME}/iudx/acl/apd/v2/policy/organization/department?departmentScope=sub&status=ACTIVE' \
           --header 'Authorization: <tokenValue>'
 /iudx/acl/apd/v2/policy/platform:
   get:

@@ -26,10 +26,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
+import org.cdpg.dx.aaa.organization.dao.OrganizationUserDAO;
+import org.cdpg.dx.aaa.organization.models.Role;
+import org.cdpg.dx.aaa.organization.service.OrganizationHierarchyService;
 import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
 import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
 import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestSummary;
@@ -67,18 +71,53 @@ public class AccessRequestServiceImpl implements AccessRequestService {
   private final PolicyDao policyDao;
   private final AccessRuleDao accessRuleDao;
   private final KeycloakUserService keycloakUserService;
+  private final OrganizationUserDAO organizationUserDAO;
+  private final OrganizationHierarchyService organizationHierarchyService;
 
   public AccessRequestServiceImpl(
       KeycloakUserService keycloakUserService,
       ItemService itemService,
       AccessRequestDao accessRequestDao,
       PolicyDao policyDao,
-      AccessRuleDao accessRuleDao) {
+      AccessRuleDao accessRuleDao,
+      OrganizationUserDAO organizationUserDAO,
+      OrganizationHierarchyService organizationHierarchyService) {
     this.keycloakUserService = keycloakUserService;
     this.itemService = itemService;
     this.accessRequestDao = Objects.requireNonNull(accessRequestDao);
     this.policyDao = policyDao;
     this.accessRuleDao = accessRuleDao;
+    this.organizationUserDAO = organizationUserDAO;
+    this.organizationHierarchyService = organizationHierarchyService;
+  }
+
+  /**
+   * Resolves the department-subtree restriction (if any) a dept_admin's
+   * approve/reject must be scoped to -- null when the caller isn't a
+   * dept_admin (including the org_admin, who stays unrestricted).
+   */
+  private Future<List<String>> resolveDeptScopedNodeIds(UUID organizationId, UUID userId) {
+    if (organizationId == null) {
+      return Future.succeededFuture(null);
+    }
+
+    return organizationUserDAO
+        .getByOrganizationIdAndUserId(organizationId, userId)
+        .compose(
+            orgUser -> {
+              if (orgUser == null
+                  || orgUser.role() != Role.DEPT_ADMIN
+                  || orgUser.adminOfNodeId() == null) {
+                return Future.succeededFuture(null);
+              }
+
+              return organizationHierarchyService
+                  .getDescendantNodeIds(organizationId, orgUser.adminOfNodeId())
+                  .map(ids -> ids.stream().map(UUID::toString).collect(Collectors.toList()));
+            });
+    // No recover-to-null here: dept_admins reach approve/reject with org-admin
+    // authority, so a failed lookup must fail the request rather than silently
+    // lift their subtree restriction.
   }
 
   @Override
@@ -125,6 +164,13 @@ public class AccessRequestServiceImpl implements AccessRequestService {
                         JsonObject itemJson = responseModel.getElasticsearchResponses().getFirst();
 
                         Asset asset = parseAndGetAsset(itemJson, itemId.toString());
+
+                        // Snapshot the item's owning department at request-creation
+                        // time, mirroring itemOrganizationId -- lets a dept_admin
+                        // approve/reject this request later without re-fetching the
+                        // (possibly since-moved) item.
+                        accessRequestDto.setItemHierarchyNodeId(
+                            itemJson.getString("hierarchyNodeId"));
 
                         // Provider cannot request own resource
                         if (asset.getProviderId().equals(fullUser.sub().toString())) {
@@ -174,8 +220,12 @@ public class AccessRequestServiceImpl implements AccessRequestService {
     // -------------------------
     // 1. Ownership Check (ensures that caller can act on request)
     // -------------------------
-    return accessRequestDao
-        .ownershipCheck(requestId, providerId, providerOrganizationId, isUserOrgAdmin)
+    return resolveDeptScopedNodeIds(providerOrganizationId, providerId)
+        .compose(
+            deptScopedNodeIds ->
+                accessRequestDao.ownershipCheck(
+                    requestId, providerId, providerOrganizationId, isUserOrgAdmin,
+                    deptScopedNodeIds))
         .compose(
             owned -> {
               if (!owned) {
@@ -304,6 +354,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
                         // No existing policy → SAFE TO CREATE POLICY
                         return createPolicyForApproval(
                             request.getItemOrganizationId(),
+                            request.getItemHierarchyNodeId(),
                             request.getConsumerId(),
                             itemId.toString(),
                             ItemType.fromCatalogueItemType(request.getAssetType()),
@@ -520,6 +571,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
 
   private Future<UUID> createPolicyForApproval(
       String itemOrganizationId,
+      String itemHierarchyNodeId,
       String consumerId,
       String itemId,
       ItemType itemType,
@@ -537,6 +589,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
     request.setItemId(itemId);
     request.setItemType(itemType);
     request.setItemOrganizationId(itemOrganizationId);
+    request.setItemHierarchyNodeId(itemHierarchyNodeId);
     request.setRequestId(requestId);
     request.setPolicyType(policyType);
 
@@ -584,8 +637,12 @@ public class AccessRequestServiceImpl implements AccessRequestService {
       String providerComment,
       String feedbackToConsumer) {
 
-    return accessRequestDao
-        .ownershipCheck(requestId, providerId, providerOrganizationId, isUserOrgAdmin)
+    return resolveDeptScopedNodeIds(providerOrganizationId, providerId)
+        .compose(
+            deptScopedNodeIds ->
+                accessRequestDao.ownershipCheck(
+                    requestId, providerId, providerOrganizationId, isUserOrgAdmin,
+                    deptScopedNodeIds))
         .compose(
             owned -> {
               if (!owned) {
@@ -803,6 +860,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
                       dto.setAssetType(asset.getAssetType());
                       dto.setShortDescription(asset.getShortDescription());
                       dto.setItemOrganizationId(asset.getOrganizationId());
+                      dto.setItemHierarchyNodeId(itemJson.getString("hierarchyNodeId"));
                       dto.setItemOrganizationName(asset.getOrganizationName());
                       dto.setProviderId(asset.getProviderId());
                     }

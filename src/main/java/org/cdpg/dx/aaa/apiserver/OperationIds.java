@@ -28,6 +28,10 @@ public final class OperationIds {
       "post-auth-v2-organisations-join-requests";
 
   public static final String OP_GET_ORG_JOIN_REQUESTS = "get-auth-v2-organisations-join-requests";
+  public static final String OP_GET_DEPT_HIERARCHY =
+      "get-auth-v2-organisation-hierarchy-my-department";
+  public static final String OP_GET_DEPT_JOIN_REQUESTS =
+      "get-auth-v2-organisations-department-join-requests";
 
   public static final String OP_GET_USER_ORG_JOIN_REQUESTS =
       "get-auth-v2-user-organisations-join-requests";
@@ -58,6 +62,7 @@ public final class OperationIds {
    * ===================================================== */
 
   public static final String OP_GET_ORG_USERS = "get-auth-v2-org-users";
+  public static final String OP_GET_DEPT_USERS = "get-auth-v2-org-department-users";
 
   public static final String OP_GET_ORG_USER_INFO = "get-auth-v2-organisations-id-users-user_id";
 
@@ -66,12 +71,47 @@ public final class OperationIds {
   public static final String OP_UPDATE_ORG_USER_ROLE = "put-auth-v2-organization-users-role";
 
   /* =====================================================
+   * Org Hierarchy
+   * ===================================================== */
+  // Constant names kept as "NODE" (internal naming, unchanged) -- only the
+  // operationId strings below (which must match the OpenAPI paths) use the
+  // public "department" vocabulary.
+  public static final String OP_GET_ORG_HIERARCHY_NODES = "get-auth-v2-organisation-hierarchy-departments";
+  public static final String OP_GET_ORG_HIERARCHY_NODE = "get-auth-v2-organisation-hierarchy-department";
+  public static final String OP_GET_ORG_HIERARCHY_NODE_CHILDREN = "get-auth-v2-organisation-hierarchy-department-children";
+  public static final String OP_GET_ORG_HIERARCHY_NODE_DESCENDANTS = "get-auth-v2-organisation-hierarchy-department-descendants";
+
+  /* =====================================================
+   * Org Hierarchy – bulk definition request (cos_admin approval)
+   * ===================================================== */
+  public static final String OP_CREATE_ORG_HIERARCHY_DEFINITION_REQUEST =
+      "post-auth-v2-organisation-hierarchy-definition-requests";
+  public static final String OP_GET_ORG_HIERARCHY_DEFINITION_REQUESTS =
+      "get-auth-v2-organisation-hierarchy-definition-requests";
+  public static final String OP_GET_ORG_HIERARCHY_DEFINITION_REQUEST =
+      "get-auth-v2-organisation-hierarchy-definition-request";
+  public static final String OP_APPROVE_ORG_HIERARCHY_DEFINITION_REQUEST =
+      "put-auth-v2-organisation-hierarchy-definition-request";
+
+  /* =====================================================
+   * Org Hierarchy – dept_admin assignment / self-request
+   * ===================================================== */
+  public static final String OP_ASSIGN_DEPT_ADMIN = "put-auth-v2-organisation-dept-admin";
+  public static final String OP_REQUEST_DEPT_ADMIN = "post-auth-v2-organisation-dept-admin-requests";
+  public static final String OP_APPROVE_DEPT_ADMIN_REQUEST =
+      "put-auth-v2-organisation-dept-admin-request";
+
+
+  /* =====================================================
    * Provider roles
    * ===================================================== */
 
   public static final String OP_CREATE_PROVIDER_REQUEST = "post-auth-v2-user-roles";
 
   public static final String OP_GET_PROVIDER_REQUEST = "get-auth-v2-provider-requests";
+
+  public static final String OP_GET_DEPT_PROVIDER_REQUESTS =
+      "get-auth-v2-department-provider-requests";
 
   public static final String OP_UPDATE_PROVIDER_REQUEST = "put-auth-v2-user-roles";
 

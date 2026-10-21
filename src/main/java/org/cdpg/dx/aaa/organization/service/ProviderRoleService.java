@@ -13,7 +13,7 @@ public interface ProviderRoleService {
 
   Future<ProviderRoleRequest> createProviderRequest(ProviderRoleRequest providerRoleRequest);
 
-  Future<Boolean> updateProviderRequestStatus(UUID requestId, Status status);
+  Future<Boolean> updateProviderRequestStatus(UUID requestId, Status status, UUID approverUserId);
 
   Future<List<ProviderRoleRequest>> getAllPendingProviderRoleRequests(UUID orgId);
 

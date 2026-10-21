@@ -123,6 +123,10 @@ class PolicyServiceTest {
   }
 
   private ResponseModel createMockResponseModel(UUID itemId, UUID providerId) {
+    return createMockResponseModel(itemId, providerId, null);
+  }
+
+  private ResponseModel createMockResponseModel(UUID itemId, UUID providerId, UUID nodeId) {
     // Build a fake JsonObject that looks like a catalogue item
     JsonObject itemJson =
         new JsonObject()
@@ -134,6 +138,9 @@ class PolicyServiceTest {
             .put(
                 "resourceServer",
                 new JsonArray().add(new JsonObject().put("url", "https://rs.example.com")));
+    if (nodeId != null) {
+      itemJson.put("hierarchyNodeId", nodeId.toString());
+    }
 
     // We need to create a ResponseModel. Since its constructor requires ElasticsearchResponse
     // objects, we mock the ResponseModel itself and configure getElasticsearchResponses.
@@ -410,6 +417,192 @@ class PolicyServiceTest {
                           () -> {
                             assertThat(err.getMessage()).contains("doesn't exist");
                             verify(policyDao).verifyPolicy(policyId);
+                            verify(policyDao, never()).deActivatePolicy(any(UUID.class));
+                            ctx.completeNow();
+                          })));
+    }
+  }
+
+  // =========================================================================
+  // dept_admin: createPolicy / deActivatePolicy scoped to the department subtree
+  // =========================================================================
+  @Nested
+  @DisplayName("dept_admin policy management")
+  class DeptAdminPolicyTests {
+
+    private final UUID itemOwnerId = UUID.randomUUID();
+    private final UUID deptNode = UUID.randomUUID();
+    private final UUID subDeptNode = UUID.randomUUID();
+    private final List<String> deptScope = List.of(deptNode.toString(), subDeptNode.toString());
+
+    private CreatePolicyRequest policyRequest() {
+      CreatePolicyRequest req = new CreatePolicyRequest();
+      req.setUserId(consumerId.toString());
+      req.setItemId(itemId.toString());
+      req.setItemType(ItemType.DATABANK);
+      req.setExpiryTime("2030-01-01T00:00:00");
+      req.setConstraints(null);
+      return req;
+    }
+
+    @Test
+    @DisplayName("creates a policy for an item owned by a sub-department, snapshotting its node")
+    void createPolicy_itemInSubtree_succeeds(VertxTestContext ctx) {
+      DxUser deptAdmin = createConsumerUser(userId, orgId);
+      ResponseModel responseModel = createMockResponseModel(itemId, itemOwnerId, subDeptNode);
+      when(itemService.getItem(any(GetItemRequest.class)))
+          .thenReturn(Future.succeededFuture(responseModel));
+
+      QueryResult emptyResult = new QueryResult();
+      emptyResult.setRows(new JsonArray());
+      when(policyDao.checkExistingPoliciesForIds(anyList(), eq(userId)))
+          .thenReturn(Future.succeededFuture(emptyResult));
+
+      QueryResult insertResult = new QueryResult();
+      insertResult.setRows(
+          new JsonArray()
+              .add(
+                  new JsonObject()
+                      .put("_id", policyId.toString())
+                      .put("user_emailid", "consumer@example.com")
+                      .put("item_id", itemId.toString())
+                      .put("expiry_at", "2030-01-01T00:00:00")
+                      .put("owner_id", userId.toString())));
+      when(policyDao.insertPolicies(anyList(), eq(userId)))
+          .thenReturn(Future.succeededFuture(List.of(insertResult)));
+
+      CreatePolicyRequest req = policyRequest();
+      policyService
+          .createPolicy(List.of(req), deptAdmin, deptScope)
+          .onComplete(
+              ctx.succeeding(
+                  v ->
+                      ctx.verify(
+                          () -> {
+                            verify(policyDao).insertPolicies(anyList(), eq(userId));
+                            assertThat(req.getItemHierarchyNodeId())
+                                .isEqualTo(subDeptNode.toString());
+                            ctx.completeNow();
+                          })));
+    }
+
+    @Test
+    @DisplayName("rejects an item owned by a department outside the caller's subtree")
+    void createPolicy_itemOutsideSubtree_fails(VertxTestContext ctx) {
+      DxUser deptAdmin = createConsumerUser(userId, orgId);
+      ResponseModel responseModel =
+          createMockResponseModel(itemId, itemOwnerId, UUID.randomUUID());
+      when(itemService.getItem(any(GetItemRequest.class)))
+          .thenReturn(Future.succeededFuture(responseModel));
+
+      policyService
+          .createPolicy(List.of(policyRequest()), deptAdmin, deptScope)
+          .onComplete(
+              ctx.failing(
+                  err ->
+                      ctx.verify(
+                          () -> {
+                            assertThat(err.getMessage()).contains("outside their department");
+                            verify(policyDao, never()).insertPolicies(anyList(), any(UUID.class));
+                            ctx.completeNow();
+                          })));
+    }
+
+    @Test
+    @DisplayName("rejects an item with no owning department")
+    void createPolicy_itemWithoutDepartment_fails(VertxTestContext ctx) {
+      DxUser deptAdmin = createConsumerUser(userId, orgId);
+      ResponseModel responseModel = createMockResponseModel(itemId, itemOwnerId);
+      when(itemService.getItem(any(GetItemRequest.class)))
+          .thenReturn(Future.succeededFuture(responseModel));
+
+      policyService
+          .createPolicy(List.of(policyRequest()), deptAdmin, deptScope)
+          .onComplete(
+              ctx.failing(
+                  err ->
+                      ctx.verify(
+                          () -> {
+                            assertThat(err.getMessage()).contains("outside their department");
+                            verify(policyDao, never()).insertPolicies(anyList(), any(UUID.class));
+                            ctx.completeNow();
+                          })));
+    }
+
+    @Test
+    @DisplayName("rejects an item of another organisation even if its node id is in scope")
+    void createPolicy_otherOrganisation_fails(VertxTestContext ctx) {
+      DxUser deptAdmin = createConsumerUser(userId, UUID.randomUUID());
+      ResponseModel responseModel = createMockResponseModel(itemId, itemOwnerId, deptNode);
+      when(itemService.getItem(any(GetItemRequest.class)))
+          .thenReturn(Future.succeededFuture(responseModel));
+
+      policyService
+          .createPolicy(List.of(policyRequest()), deptAdmin, deptScope)
+          .onComplete(
+              ctx.failing(
+                  err ->
+                      ctx.verify(
+                          () -> {
+                            assertThat(err.getMessage()).contains("outside their organisation");
+                            verify(policyDao, never()).insertPolicies(anyList(), any(UUID.class));
+                            ctx.completeNow();
+                          })));
+    }
+
+    private void givenActivePolicyOn(UUID itemNode) {
+      JsonObject verifyRow =
+          new JsonObject()
+              .put("owner_id", itemOwnerId.toString())
+              .put("status", "ACTIVE")
+              .put("item_organization_id", orgId.toString())
+              .put("item_hierarchy_node_id", itemNode.toString());
+      QueryResult verifyResult = new QueryResult();
+      verifyResult.setRows(new JsonArray().add(verifyRow));
+      when(policyDao.verifyPolicy(policyId)).thenReturn(Future.succeededFuture(verifyResult));
+    }
+
+    @Test
+    @DisplayName("deactivates a policy on an item owned by a department in the subtree")
+    void deActivatePolicy_itemInSubtree_succeeds(VertxTestContext ctx) {
+      DxUser deptAdmin = createConsumerUser(userId, orgId);
+      givenActivePolicyOn(subDeptNode);
+
+      QueryResult deactivateResult = new QueryResult();
+      deactivateResult.setRows(new JsonArray().add(new JsonObject().put("_id", policyId.toString())));
+      when(policyDao.deActivatePolicy(policyId))
+          .thenReturn(Future.succeededFuture(deactivateResult));
+      QueryResult ruleUpdateResult = new QueryResult();
+      ruleUpdateResult.setRows(new JsonArray());
+      when(accessRuleDao.updateStatusByPolicyId(policyId, "INACTIVE"))
+          .thenReturn(Future.succeededFuture(ruleUpdateResult));
+
+      policyService
+          .deActivatePolicy(policyId.toString(), deptAdmin, deptScope)
+          .onComplete(
+              ctx.succeeding(
+                  v ->
+                      ctx.verify(
+                          () -> {
+                            verify(policyDao).deActivatePolicy(policyId);
+                            ctx.completeNow();
+                          })));
+    }
+
+    @Test
+    @DisplayName("refuses to deactivate a policy on an item outside the subtree")
+    void deActivatePolicy_itemOutsideSubtree_fails(VertxTestContext ctx) {
+      DxUser deptAdmin = createConsumerUser(userId, orgId);
+      givenActivePolicyOn(UUID.randomUUID());
+
+      policyService
+          .deActivatePolicy(policyId.toString(), deptAdmin, deptScope)
+          .onComplete(
+              ctx.failing(
+                  err ->
+                      ctx.verify(
+                          () -> {
+                            assertThat(err.getMessage()).contains("doesn't belong");
                             verify(policyDao, never()).deActivatePolicy(any(UUID.class));
                             ctx.completeNow();
                           })));

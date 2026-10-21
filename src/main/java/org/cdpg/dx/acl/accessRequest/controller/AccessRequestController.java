@@ -4,6 +4,7 @@ import static org.cdpg.dx.acl.accessRequest.config.Constants.CHECK_ACCESS_REQUES
 import static org.cdpg.dx.acl.accessRequest.config.Constants.CREATE_ACCESS_REQUEST_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_ACCESS_REQUEST_CONSUMER_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_ACCESS_REQUEST_FOR_COS_ADMIN_API;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_ACCESS_REQUEST_FOR_DEPT_ADMIN_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_ACCESS_REQUEST_FOR_ORG_ADMIN_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_ACCESS_REQUEST_PROVIDER_API;
 import static org.cdpg.dx.acl.accessRequest.config.Constants.UPDATE_ACCESS_REQUEST_API;
@@ -12,6 +13,7 @@ import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ASSET_ORGA
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ASSET_TYPE;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CREATED_AT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_EXPIRY_AT;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ITEM_HIERARCHY_NODE_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ITEM_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_UPDATED_AT;
@@ -35,6 +37,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.organization.handler.DeptAdminAccessHandler;
+import org.cdpg.dx.aaa.organization.models.DeptAdminScope;
 import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
 import org.cdpg.dx.acl.accessRequest.dao.model.Status;
 import org.cdpg.dx.acl.accessRequest.model.AccessRequestAuditOperation;
@@ -68,6 +72,12 @@ import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class AccessRequestController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(AccessRequestController.class);
+  private static final Map<String, String> ORG_ACCESS_REQUEST_FILTERS =
+      Map.of(
+          "requestStatus", DB_STATUS,
+          "assetType", DB_ASSET_TYPE,
+          "organizationId", DB_ASSET_ORGANIZATION_ID,
+          "itemId", DB_ITEM_ID);
 
   private final AccessRequestService accessRequestService;
   private final PostgresService postgresService;
@@ -77,6 +87,7 @@ public class AccessRequestController implements ApiController {
   private final URNGenerator urnGenerator;
   private final String emailExchange;
   private final String emailRoutingKey;
+  private final DeptAdminAccessHandler deptAdminAccess;
   public AccessRequestController(
       AccessRequestService accessRequestService,
       AuditingHandler auditingHandler,
@@ -94,6 +105,7 @@ public class AccessRequestController implements ApiController {
     this.keycloakUserService = keycloakUserService;
     this.emailExchange = emailExchange;
     this.emailRoutingKey = emailRoutingKey;
+    this.deptAdminAccess = DeptAdminAccessHandler.create(postgresService);
   }
 
   private static LocalDateTime parseAndValidateFutureTime(String timeString) {
@@ -127,6 +139,16 @@ public class AccessRequestController implements ApiController {
         AuthorizationHandler.forScopesWithContext(
             ScopeRule.self(Scopes.OWN_ASSET_MANAGEMENT),
             ScopeRule.org(Scopes.ORG_ASSET_MANAGEMENT));
+    // DEPT must outrank SELF: a dept_admin who is also a provider holds OWN_ASSET_MANAGEMENT
+    Handler<RoutingContext> providerOrDeptAdminAccess =
+        deptAdminAccess.withDeptScopes(
+            AuthorizationHandler.forScopesWithContext(
+                ScopeRule.org(Scopes.ORG_ASSET_MANAGEMENT),
+                ScopeRule.dept(Scopes.DEPT_ASSET_MANAGEMENT),
+                ScopeRule.self(Scopes.OWN_ASSET_MANAGEMENT)));
+    Handler<RoutingContext> deptAdminAccessHandler =
+        deptAdminAccess.withDeptScopes(
+            AuthorizationHandler.forScopes(Scopes.DEPT_ASSET_MANAGEMENT));
     UserAccessHandler userAccessHandler =
         new UserAccessHandler(postgresService, keycloakUserService);
 
@@ -155,6 +177,12 @@ public class AccessRequestController implements ApiController {
         .handler(this::getOrganizationAccessRequestHandler);
 
     builder
+        .operation(GET_ACCESS_REQUEST_FOR_DEPT_ADMIN_API)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(deptAdminAccessHandler)
+        .handler(this::getDepartmentAccessRequestHandler);
+
+    builder
         .operation(GET_ACCESS_REQUEST_FOR_COS_ADMIN_API)
         .handler(auditingHandler::handleApiAudit)
         .handler(cosAdminAccess)
@@ -170,7 +198,7 @@ public class AccessRequestController implements ApiController {
         .operation(UPDATE_ACCESS_REQUEST_API)
         .handler(auditingHandler::handleApiAudit)
         .handler(userAccessHandler)
-        .handler(providerAdminAccess)
+        .handler(providerOrDeptAdminAccess)
         .handler(this::updateAccessRequestHandler);
 
     builder
@@ -276,61 +304,82 @@ public class AccessRequestController implements ApiController {
               ctx.fail(new DxForbiddenException("Invalid user"));
             })
         .onSuccess(
-            keycloakUser -> {
-              String organizationId = keycloakUser.organisationId();
+            keycloakUser ->
+                listOrganizationAccessRequests(
+                    ctx,
+                    ORG_ACCESS_REQUEST_FILTERS,
+                    Map.of(DB_ASSET_ORGANIZATION_ID, keycloakUser.organisationId())));
+  }
 
-              Map<String, String> allowedFilters =
-                  Map.of(
-                      "requestStatus", DB_STATUS,
-                      "assetType", DB_ASSET_TYPE,
-                      "organizationId", DB_ASSET_ORGANIZATION_ID,
-                      "itemId", DB_ITEM_ID);
+  /**
+   * Dept Admin: access requests for items owned by the department the caller administers or any
+   * of its sub-departments, narrowable by {@code ?departmentScope=}. Only reachable by a
+   * dept_admin (the route guard publishes their subtree).
+   */
+  private void getDepartmentAccessRequestHandler(RoutingContext ctx) {
+    LOGGER.info("Handling getDepartmentAccessRequestHandler request...");
 
-              Map<String, Object> additionalFilters =
-                  Map.of(DB_ASSET_ORGANIZATION_ID, organizationId);
+    DeptAdminScope deptAdminScope = DeptAdminAccessHandler.scopeOf(ctx);
+    if (deptAdminScope == null) {
+      ctx.fail(new DxForbiddenException("Only a department admin can access this endpoint"));
+      return;
+    }
 
-              Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
+    listOrganizationAccessRequests(
+        ctx,
+        DeptAdminAccessHandler.withDepartmentScopeParam(
+            ORG_ACCESS_REQUEST_FILTERS, DB_ITEM_HIERARCHY_NODE_ID),
+        Map.of(
+            DB_ASSET_ORGANIZATION_ID, deptAdminScope.organizationId().toString(),
+            DB_ITEM_HIERARCHY_NODE_ID,
+                DeptAdminAccessHandler.requestedNodeIds(ctx, deptAdminScope)));
+  }
 
-              Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
+  private void listOrganizationAccessRequests(
+      RoutingContext ctx,
+      Map<String, String> allowedFilters,
+      Map<String, Object> additionalFilters) {
+    User user = ctx.user();
 
-              PaginatedRequest request =
-                  PaginationRequestBuilder.from(ctx)
-                      .allowedFiltersDbMap(allowedFilters)
-                      .apiToDbMap(API_TO_DB_MAP)
-                      .additionalFilters(additionalFilters)
-                      .allowedTimeFields(allowedTimeFields)
-                      .defaultTimeField(DB_CREATED_AT)
-                      .defaultSort(DB_UPDATED_AT, DEFAULT_SORTING_ORDER)
-                      .allowedSortFields(allowedSortFields)
-                      .build();
+    Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
 
+    Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
+
+    PaginatedRequest request =
+        PaginationRequestBuilder.from(ctx)
+            .allowedFiltersDbMap(allowedFilters)
+            .apiToDbMap(API_TO_DB_MAP)
+            .additionalFilters(additionalFilters)
+            .allowedTimeFields(allowedTimeFields)
+            .defaultTimeField(DB_CREATED_AT)
+            .defaultSort(DB_UPDATED_AT, DEFAULT_SORTING_ORDER)
+            .allowedSortFields(allowedSortFields)
+            .build();
+
+    LOGGER.info("PaginatedRequest for organisation access requests: {}", request);
+
+    accessRequestService
+        .listAccessRequestForProvider(request)
+        .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
+        .compose(accessRequestService::enrichAccessRequestsWithProviderInfo)
+        .onSuccess(
+            pagedResult -> {
               LOGGER.info(
-                  "PaginatedRequest getOrganizationAccessRequestHandler for org admin: {}",
-                  request);
+                  "Successfully fetched organisation access requests for user: {}",
+                  user.subject());
 
-              accessRequestService
-                  .listAccessRequestForProvider(request)
-                  .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
-                  .compose(accessRequestService::enrichAccessRequestsWithProviderInfo)
-                  .onSuccess(
-                      pagedResult -> {
-                        LOGGER.info(
-                            "Successfully fetched access requests for org admin user: {}",
-                            user.subject());
-
-                        ResponseBuilder.sendSuccess(
-                            ctx,
-                            pagedResult.data().stream()
-                                .map(AccessRequestDto::toJson)
-                                .collect(Collectors.toList()),
-                            pagedResult.paginationInfo(),
-                            urnGenerator);
-                      })
-                  .onFailure(
-                      err -> {
-                        LOGGER.error("Error fetching access requests: {}", err.getMessage(), err);
-                        ctx.fail(err);
-                      });
+              ResponseBuilder.sendSuccess(
+                  ctx,
+                  pagedResult.data().stream()
+                      .map(AccessRequestDto::toJson)
+                      .collect(Collectors.toList()),
+                  pagedResult.paginationInfo(),
+                  urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Error fetching access requests: {}", err.getMessage(), err);
+              ctx.fail(err);
             });
   }
 
@@ -464,7 +513,11 @@ public class AccessRequestController implements ApiController {
                       : null;
               LOGGER.debug(
                   "Updating provider organization id from Keycloak: {}", providerOrganizationId);
-              boolean isUserOrgAdmin = provider.roles().contains(DxRole.ORG_ADMIN.value());
+              // A dept_admin acts with org-admin authority here; the service then restricts
+              // it to requests for items owned by a department in their subtree.
+              boolean isUserOrgAdmin =
+                  provider.roles().contains(DxRole.ORG_ADMIN.value())
+                      || DeptAdminAccessHandler.scopeOf(ctx) != null;
               if (status == Status.GRANTED) {
                 LocalDateTime expiryAt = parseAndValidateFutureTime(body.getString("expiryAt"));
                 accessRequestService

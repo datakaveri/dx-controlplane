@@ -19,6 +19,7 @@ public class ResourceObj {
   private final ItemType itemType;
 
   private UUID organizationId;
+  private UUID hierarchyNodeId;
 
   public ResourceObj(
       UUID itemId,
@@ -60,6 +61,15 @@ public class ResourceObj {
 
   public void setOrganizationId(UUID organizationId) {
     this.organizationId = organizationId;
+  }
+
+  /** The department owning the item, or null when it has none. */
+  public UUID getHierarchyNodeId() {
+    return hierarchyNodeId;
+  }
+
+  public void setHierarchyNodeId(UUID hierarchyNodeId) {
+    this.hierarchyNodeId = hierarchyNodeId;
   }
 
   @Override

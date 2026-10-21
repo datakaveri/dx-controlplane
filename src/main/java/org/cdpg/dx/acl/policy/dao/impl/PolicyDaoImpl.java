@@ -19,6 +19,7 @@ import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_POLICY_TYP
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_PROVIDER_COMMENT;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ITEM_HIERARCHY_NODE_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.POLICY_TABLE;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.USER_TABLE;
 import static org.cdpg.dx.common.HttpStatusCode.INTERNAL_SERVER_ERROR;
@@ -155,6 +156,10 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
                     columns.add(DB_ASSET_ORGANIZATION_ID);
                     values.add(req.getItemOrganizationId());
                   }
+                  if (req.getItemHierarchyNodeId() != null) {
+                    columns.add(DB_ITEM_HIERARCHY_NODE_ID);
+                    values.add(req.getItemHierarchyNodeId());
+                  }
                   if (req.getRequestId() != null) {
                     columns.add(DB_REQUEST_ID);
                     values.add(req.getRequestId());
@@ -280,7 +285,13 @@ public class PolicyDaoImpl extends AbstractBaseDAO<PolicyDto> implements PolicyD
         new SelectQuery()
             .setTable(POLICY_TABLE)
             .setTableAlias("p")
-            .setColumns(List.of("p.owner_id", "p.status", "p.item_organization_id", "p.request_id"))
+            .setColumns(
+                List.of(
+                    "p.owner_id",
+                    "p.status",
+                    "p.item_organization_id",
+                    "p.item_hierarchy_node_id",
+                    "p.request_id"))
             .setCondition(condition);
 
     return postgresService.select(query, false);

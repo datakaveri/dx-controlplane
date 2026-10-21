@@ -65,6 +65,7 @@ public final class TestDataFactory {
         "EMP001",
         "user@example.com",
         null,
+        null,
         null);
   }
 
@@ -79,6 +80,8 @@ public final class TestDataFactory {
         "EMP001",
         "9876543210",
         "user@example.com",
+        null,
+        null,
         null,
         null);
   }

@@ -1,18 +1,22 @@
 package org.cdpg.dx.aaa.organization.service;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
+
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.ext.auth.User;
-import io.vertx.ext.web.RoutingContext;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import org.cdpg.dx.aaa.item.service.ItemService;
-import org.cdpg.dx.aaa.organization.models.*;
 import org.cdpg.dx.aaa.organization.config.Constants;
 import org.cdpg.dx.aaa.organization.dao.*;
+import org.cdpg.dx.aaa.organization.models.*;
 import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.request.PaginatedRequest;
-import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.util.PaginationInfo;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
@@ -21,19 +25,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import io.vertx.core.Future;
-import static org.mockito.Mockito.when;
-
-
-
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith({VertxExtension.class,MockitoExtension.class})
 class OrganizationServiceTest {
@@ -61,7 +53,7 @@ class OrganizationServiceTest {
 
   @Mock
   private ProviderRoleRequestDAO providerRequestDAO;
-
+  @Mock private OrganizationHierarchyService organizationHierarchyService;
 
   private OrganizationServiceImpl organizationService;
 
@@ -79,7 +71,9 @@ class OrganizationServiceTest {
     when(factory.providerRoleRequestDAO()).thenReturn(providerRequestDAO);
 
     // Create the service under test
-    organizationService = new OrganizationServiceImpl(factory, keycloakUserService,itemService);
+    organizationService =
+        new OrganizationServiceImpl(
+            factory, keycloakUserService, itemService, organizationHierarchyService);
 
     vertxTestContext.completeNow();
   }
@@ -489,6 +483,15 @@ class OrganizationServiceTest {
   void testJoinOrganizationRequest_success(VertxTestContext testContext) {
     OrganizationJoinRequest joinRequest = mock(OrganizationJoinRequest.class);
     OrganizationJoinRequest createdRequest = mock(OrganizationJoinRequest.class);
+
+    // Flat (non-hierarchical) organization -- requestedNodeId stays null,
+    // existing flat join-request behaviour is unaffected.
+    Organization flatOrg =
+        new Organization(
+            UUID.randomUUID(), "Test Org", "logo.png", "Private", "Tech", "https://example.com",
+            "123 Main St", "cert.pdf", "pan.pdf", "doc.pdf", "documents", null, null);
+    when(orgDAO.get(any())).thenReturn(Future.succeededFuture(flatOrg));
+    when(organizationHierarchyService.hasHierarchy(any())).thenReturn(Future.succeededFuture(false));
 
     when(joinRequestDAO.create(joinRequest)).thenReturn(Future.succeededFuture(createdRequest));
 

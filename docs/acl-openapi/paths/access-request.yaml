@@ -1639,3 +1639,150 @@
 
         '
       --header 'Authorization: <tokenValue>'
+/iudx/acl/apd/v2/access_request/organization/department:
+  get:
+    tags:
+    - Access Request
+    summary: List Department Access Requests (Dept Admin)
+    description: |
+      Returns a paginated list of access requests for items owned by the
+      caller's department or any of its sub-departments. Items with no owning
+      department are not included.
+
+      Restricted to `dept_admin` users -- the org_admin uses the organisation-level
+      endpoint instead. Results cover the department the caller administers and
+      all of its sub-departments.
+
+      **Log Type:** `USER_ACTION`
+    operationId: get-auth-v2-access-requests-department
+    parameters:
+    - $ref: ../components/parameters.yaml#/DepartmentScopeParam
+    - name: requestStatus
+      in: query
+      description: Status of the access request. Displays all the access requests
+        if status is not specified
+      required: false
+      schema:
+        type: string
+        enum:
+        - PENDING
+        - GRANTED
+        - REJECTED
+        - WITHDRAWN
+        - REVOKED
+    - name: assetType
+      in: query
+      description: Type of the asset for which the access request is made. Displays
+        all the access requests if assetType is not specified
+      required: false
+      schema:
+        type: string
+        enum:
+        - adex:DataBank
+        - adex:AiModel
+    - name: organizationId
+      in: query
+      description: Filter access requests by organization ID of the asset. Displays all requests if not specified.
+      required: false
+      schema:
+        type: string
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    - $ref: ../components/parameters.yaml#/TimeParam
+    - $ref: ../components/parameters.yaml#/EndTimeParam
+    - $ref: ../components/parameters.yaml#/TimeRelParam
+    responses:
+      '200':
+        description: 'OK
+
+          - Successfully fetched all the requests of a consumer or of a provider in
+          the organization'
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/AccessRequest
+            examples:
+              ListResults:
+                value:
+                  type: urn:dx:aclApd:success
+                  title: Success
+                  result:
+                  - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
+                    requestStatus: GRANTED
+                    requestType: DOWNLOAD
+                    additionalInfo:
+                      name: Miles Morales,
+                      email: miles.morales@acmecorp.org,
+                      phoneNo: 9876543210,
+                      purpose: academia,
+                      description: AI model would be used for non-commercial, academia
+                        purposes to test the application abcd
+                    user:
+                      consumerId: a13eb955-c691-4fd3-b200-f18bc78810b5
+                      consumerFirstName: Plutonian
+                      consumerLastName: Resident
+                      consumerEmail: scroopy@noopers.com
+                      consumerOrganization: Scroopy Noopers Corp
+                    owner:
+                      ownerId: 497f6eca-6276-4993-bfeb-53cbbbba6f08
+                      ownerFirstName: Rick
+                      ownerLastName: Sanchez
+                      ownerEmail: rick@cdpg.org
+                      ownerOrganization: CDPG
+                    asset:
+                      itemId: 316cd4eb-71b3-42c2-beb2-785a77999321
+                      assetName: Ice Estimation Model
+                      assetType: adex:AiModel
+                      shortDescription: This is a test AI model for estimating percentage
+                        of ice on Pluto
+                      organization: CDPG, IISC
+                      organizationId: 74e3b919-1d1b-44de-ace1-504f1887fdd3
+                    expiryAt: '3000-03-05T20:00:19'
+                    updatedAt: '2025-06-04T07:25:08.663637'
+                    createdAt: '2025-06-04T09:10:57.267564'
+                  paginationInfo:
+                    page: 1
+                    size: 1
+                    totalCount: 3
+                    totalPages: 3
+                    hasNext: true
+                    hasPrevious: false
+        headers:
+          Content-Type:
+            schema:
+              type: string
+            description: application/json
+      '400':
+        description: Bad Request- Schema validation, missing or incorrect fields &
+          values
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/updateNotificationBadRequest
+            example:
+              type: urn:dx:aclApd:badRequest
+              title: Bad Request
+              detail: Missing or malformed request
+        headers:
+          Content-Type:
+            schema:
+              type: string
+            description: application/json
+      '401':
+        description: '- Unauthorized - `token` invalid/expired'
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/Unauthorized
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+        headers:
+          Content-Type:
+            schema:
+              type: string
+            description: application/json
+    security:
+    - authorization: []

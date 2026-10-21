@@ -94,6 +94,7 @@ public class Constants {
   public static final String GET_ACCESS_REQUEST_REPORT_API = "get-auth-v2-access-requests-provider-report";
   public static final String GET_ACCESS_REQUEST_REPORT_FOR_ORG_ADMIN_API = "get-auth-v2-access-requests-org-admin-report";
   public static final String GET_ACCESS_REQUEST_FOR_ORG_ADMIN_API = "get-auth-v2-access-requests-organisation";
+  public static final String GET_ACCESS_REQUEST_FOR_DEPT_ADMIN_API = "get-auth-v2-access-requests-department";
   public static final String GET_ACCESS_REQUEST_FOR_COS_ADMIN_API = "get-auth-v2-access-requests-platform";
   public static final String WITHDRAW_ACCESS_REQUEST_API_FOR_CONSUMER = "patch-auth-v2-access-requests";
   public static final String CREATE_POLICY_API = "post-auth-v1-policies";
@@ -102,6 +103,7 @@ public class Constants {
   public static final String GET_POLICIES_PROVIDER_API = "get-policies-provider-api";
   public static final String GET_POLICIES_FOR_ORG_ADMIN_API = "get-policies-org_admin-api";
   public static final String GET_POLICIES_FOR_COS_ADMIN_API = "get-policies-cos_admin-api";
+  public static final String GET_POLICIES_FOR_DEPT_ADMIN_API = "get-policies-dept_admin-api";
   public static final String DELETE_POLICY_API = "deactivate-auth-v1-policies";
   public static final String VERIFY_API = "get-auth-v1-verify";
   public static final String VERIFY_ACTIVE_POLICIES_FOR_AN_ASSET =

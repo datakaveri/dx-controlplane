@@ -100,6 +100,14 @@ OrgJoinRequestItem:
     officialEmail:
       type: string
       description: Official email of the applicant within the organisation
+    departmentId:
+      type: string
+      format: uuid
+      nullable: true
+      description: |
+        Which department the applicant wants to join, shown to them from the
+        organisation's department tree. Required when the organisation has
+        departments enabled, must be omitted otherwise.
     requestedAt:
       type: string
       format: date-time
@@ -163,6 +171,13 @@ ProviderRoleRequestItem:
     status:
       type: string
       enum: [pending, granted, rejected]
+    departmentId:
+      type: string
+      format: uuid
+      nullable: true
+      description: |
+        Which department this provider-role request is scoped to, if the
+        organisation has departments enabled -- lets a dept_admin approve it.
     createdAt:
       type: string
       format: date-time
@@ -176,3 +191,109 @@ ProviderRoleRequestItem:
       description: Platform-level Keycloak roles of the user
     accountEnabled:
       type: boolean
+OrganizationDepartment:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    organizationId:
+      type: string
+      format: uuid
+    parentId:
+      type: string
+      format: uuid
+      nullable: true
+    name:
+      type: string
+    level:
+      type: integer
+      minimum: 1
+    path:
+      type: string
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+  required:
+    - id
+    - organizationId
+    - name
+    - level
+    - path
+    - createdAt
+    - updatedAt
+ProposedDepartment:
+  type: object
+  description: |
+    One department of a proposed tree, with its sub-departments nested
+    inside it. No ids are supplied -- the server generates them when the
+    approved tree is applied.
+  properties:
+    name:
+      type: string
+      description: Department name; must be unique among its siblings.
+      example: Engineering
+    subDepartments:
+      type: array
+      description: Child departments of this department (may be omitted or empty).
+      items:
+        $ref: '#/ProposedDepartment'
+  required:
+    - name
+OrganizationHierarchyDefinitionRequest:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    organizationId:
+      type: string
+      format: uuid
+    proposedHierarchy:
+      type: object
+      properties:
+        departments:
+          type: array
+          items:
+            $ref: '#/ProposedDepartment'
+    status:
+      type: string
+      enum: [pending, granted, rejected]
+    remarks:
+      type: string
+      nullable: true
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+DeptAdminRequest:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    organizationId:
+      type: string
+      format: uuid
+    userId:
+      type: string
+      format: uuid
+      description: UUID of the member requesting to become dept_admin
+    departmentId:
+      type: string
+      format: uuid
+      description: The requester's own department (what they're requesting to administer)
+    status:
+      type: string
+      enum: [pending, granted, rejected]
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time

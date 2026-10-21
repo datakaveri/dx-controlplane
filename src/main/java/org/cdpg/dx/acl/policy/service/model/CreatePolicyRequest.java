@@ -20,6 +20,8 @@ public class CreatePolicyRequest {
   private String requestId;
   private String policyType;
   private String itemOrganizationId;
+  // Server-side only (from the catalogue / access request), never read from the client body.
+  private String itemHierarchyNodeId;
   private UUID itemId;
   private ItemType itemType;
   private LocalDateTime expiryTime;
@@ -177,6 +179,15 @@ public class CreatePolicyRequest {
     return this;
   }
 
+  public String getItemHierarchyNodeId() {
+    return itemHierarchyNodeId;
+  }
+
+  public CreatePolicyRequest setItemHierarchyNodeId(String itemHierarchyNodeId) {
+    this.itemHierarchyNodeId = itemHierarchyNodeId;
+    return this;
+  }
+
   @Override
   public String toString() {
     return "CreatePolicyRequest{" +
@@ -185,6 +196,7 @@ public class CreatePolicyRequest {
         ", requestId=" + requestId +
         ", policyType=" + policyType +
         ", itemOrganizationId=" + itemOrganizationId +
+        ", itemHierarchyNodeId=" + itemHierarchyNodeId +
         ", itemType=" + itemType +
         ", expiryTime=" + expiryTime +
         ", constraints=" + constraints +

@@ -13,9 +13,28 @@ import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
 
 public interface PolicyService {
-  Future<Void> createPolicy(List<CreatePolicyRequest> policy, DxUser caller);
+  default Future<Void> createPolicy(List<CreatePolicyRequest> policy, DxUser caller) {
+    return createPolicy(policy, caller, null);
+  }
+
+  /**
+   * @param deptScopedNodeIds the dept_admin caller's department subtree, or null when the caller
+   *     is not a dept_admin
+   */
+  Future<Void> createPolicy(
+      List<CreatePolicyRequest> policy, DxUser caller, List<String> deptScopedNodeIds);
+
   Future<List<PolicyDto>> getPolicy(DxUser caller);
-  Future<Void> deActivatePolicy(String policyId, DxUser user);
+
+  default Future<Void> deActivatePolicy(String policyId, DxUser user) {
+    return deActivatePolicy(policyId, user, null);
+  }
+
+  /**
+   * @param deptScopedNodeIds the dept_admin caller's department subtree, or null when the caller
+   *     is not a dept_admin
+   */
+  Future<Void> deActivatePolicy(String policyId, DxUser user, List<String> deptScopedNodeIds);
 
   Future<List<VerifyPolicyDto>> initiateVerifyPolicy(
       UUID ownerId, String userEmail, UUID itemId, ItemType itemType, DxUser user);

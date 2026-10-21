@@ -13,9 +13,12 @@ import org.cdpg.dx.aaa.search.service.SearchService;
 import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
+import org.cdpg.dx.auth.model.Scopes;
 import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.request.GetSearchRequestBuilder;
+import org.cdpg.dx.aaa.organization.handler.DeptAdminAccessHandler;
+import org.cdpg.dx.aaa.organization.models.DeptAdminScope;
 import org.cdpg.dx.common.request.OrganisationAssetRequestBuilder;
 import org.cdpg.dx.common.request.PlatformAssetRequestBuilder;
 import org.cdpg.dx.common.request.PostSearchRequestBuilder;
@@ -32,16 +35,22 @@ public class SearchController implements ApiController {
   private final KeycloakUserService keycloakUserService;
   Handler<RoutingContext> orgAdminAccessHandler = AuthorizationHandler.forRoles(DxRole.ORG_ADMIN);
   Handler<RoutingContext> pfAdminAccessHandler = AuthorizationHandler.forRoles(DxRole.COS_ADMIN);
+  // department-level asset listing -- dept_admins only
+  private final Handler<RoutingContext> deptAdminAccessHandler;
 
   public SearchController(
       SearchService searchService,
       KeycloakUserService keycloakUserService,
       AuditingHandler auditingHandler,
-      URNGenerator urnGenerator) {
+      URNGenerator urnGenerator,
+      DeptAdminAccessHandler deptAdminAccess) {
     this.searchService = searchService;
     this.auditingHandler = auditingHandler;
     this.urnGenerator = urnGenerator;
     this.keycloakUserService = keycloakUserService;
+    this.deptAdminAccessHandler =
+        deptAdminAccess.withDeptScopes(
+            AuthorizationHandler.forScopes(Scopes.DEPT_ASSET_MANAGEMENT));
   }
 
   @Override
@@ -80,6 +89,13 @@ public class SearchController implements ApiController {
         .handler(TOKEN_CHECK)
         .handler(orgAdminAccessHandler)
         .handler(this::handleOrganisationAssetsVthFilters)
+        .handler(auditingHandler::handleApiAudit);
+
+    builder
+        .operation(GET_DEPT_ASSETS_VTH_FILTERS)
+        .handler(TOKEN_CHECK)
+        .handler(deptAdminAccessHandler)
+        .handler(this::handleDepartmentAssetsVthFilters)
         .handler(auditingHandler::handleApiAudit);
 
     builder
@@ -151,6 +167,29 @@ public class SearchController implements ApiController {
         .onFailure(
             err -> {
               LOGGER.error("Error processing asset request: {}", err.getMessage(), err);
+              ctx.fail(err);
+            });
+  }
+
+  /**
+   * Dept Admin: filtered search over assets owned by the department the caller administers and
+   * all of its sub-departments -- the department-level counterpart of {@link
+   * #handleOrganisationAssetsVthFilters}.
+   */
+  private void handleDepartmentAssetsVthFilters(RoutingContext ctx) {
+    LOGGER.debug("Received POST request on at search'{}'", GET_DEPT_ASSETS_VTH_FILTERS);
+
+    PostSearchRequestBuilder.fromRoutingContext(ctx, keycloakUserService)
+        .setPlatformAssetSearch(false)
+        .setOrgAssetsSearch(true)
+        .setAssetSearch(false)
+        .setCountApi(false)
+        .build()
+        .map(queryDecoder -> restrictToDeptAdminScope(ctx, queryDecoder))
+        .onSuccess(queryDecoder -> processSearchRequest(ctx, queryDecoder))
+        .onFailure(
+            err -> {
+              LOGGER.error("Error processing department asset request: {}", err.getMessage(), err);
               ctx.fail(err);
             });
   }
@@ -250,6 +289,21 @@ public class SearchController implements ApiController {
               LOGGER.error("Count request failed: {}", err.getMessage(), err);
               ctx.fail(err);
             });
+  }
+
+  /**
+   * Narrows an organisation-asset query to the dept_admin caller's department subtree (or the
+   * part of it selected by {@code ?departmentScope=}).
+   */
+  private static QueryDecoderRequestDTO restrictToDeptAdminScope(
+      RoutingContext ctx, QueryDecoderRequestDTO queryDecoder) {
+    DeptAdminScope deptAdminScope = DeptAdminAccessHandler.scopeOf(ctx);
+    if (deptAdminScope != null) {
+      queryDecoder.setOrganisationId(deptAdminScope.organizationId().toString());
+      queryDecoder.setHierarchyNodeIds(
+          DeptAdminAccessHandler.requestedNodeIds(ctx, deptAdminScope));
+    }
+    return queryDecoder;
   }
 
   private void processSearchRequest(RoutingContext ctx, QueryDecoderRequestDTO queryDecoder) {

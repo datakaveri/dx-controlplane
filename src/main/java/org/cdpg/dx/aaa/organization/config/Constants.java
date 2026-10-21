@@ -1,12 +1,9 @@
 package org.cdpg.dx.aaa.organization.config;
 
-import net.sf.saxon.expr.Component;
-import org.cdpg.dx.aaa.organization.models.Role;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 public final class Constants {
 
@@ -15,8 +12,6 @@ public final class Constants {
   public static final String ORG_NAME = "name";
   public static final String CREATED_AT = "created_at";
   public static final String UPDATED_AT = "updated_at";
-
-
 
   public static final String ORG_JOIN_REQUEST_TABLE = "organization_join_requests";
 
@@ -27,7 +22,22 @@ public final class Constants {
   public static final String REQUESTED_AT = "requested_at";
   public static final String PROCESSED_AT = "processed_at";
   public static final String OFFICIAL_EMAIL = "official_email";
+  public static final String ORGANIZATION_HIERARCHY_NODE_TABLE = "organization_hierarchy_nodes";
 
+  public static final String HIERARCHY_NODE_ID = "hierarchy_node_id";
+  public static final String ADMIN_OF_NODE_ID = "admin_of_node_id";
+  public static final String REQUESTED_NODE_ID = "requested_node_id";
+  public static final String PARENT_ID = "parent_id";
+
+  public static final String NODE_NAME = "name";
+
+  public static final String LEVEL = "level";
+
+  public static final String PATH = "path";
+  public static final String PROCESSED_BY_USER_ID = "processed_by_user_id";
+  public static final String PROCESSED_BY_NODE_ID = "processed_by_node_id";
+  public static final String PROCESSED_BY_LEVEL = "processed_by_level";
+  public static final String REMARKS = "remarks";
 
   public static final String ORG_USER_ID="id";
   public static final String ROLE="role";
@@ -50,6 +60,7 @@ public final class Constants {
   public static final String USER_NAME = "user_name";
   public static final String MANAGER_EMAIL = "manager_email";
   public static final String ORG_DOCUMENTS = "organisation_documents";
+  public static final String PROPOSED_HIERARCHY = "proposed_hierarchy";
 
 
 
@@ -239,4 +250,10 @@ public final class Constants {
 
   public static final Set<String> ALLOWED_SORT_FIELDS_COMPUTE_ROLE = Set.of("createdAt", "updatedAt");
 
+  public static final String ORGANIZATION_APPROVAL_TABLE = "organization_approvals";
+
+  public static final String ORG_HIERARCHY_DEFINITION_REQUEST_TABLE =
+      "organization_hierarchy_definition_requests";
+
+  public static final String DEPT_ADMIN_REQUEST_TABLE = "dept_admin_requests";
 }

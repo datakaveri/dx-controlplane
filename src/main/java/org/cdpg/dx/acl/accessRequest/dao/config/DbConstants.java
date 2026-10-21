@@ -28,6 +28,7 @@ public class DbConstants {
   public static final String DB_CONSUMER_EMAIL = "consumer_email_id";
   public static final String DB_EXPIRY_AT = "expiry_at";
   public static final String DB_ASSET_ORGANIZATION_ID = "item_organization_id";
+  public static final String DB_ITEM_HIERARCHY_NODE_ID = "item_hierarchy_node_id";
   public static final String DB_SHORT_DESCRIPTION = "short_description";
   public static final String ORGANIZATION = "organization";
   public static final String DB_CREATED_AT = "created_at";
@@ -87,4 +88,5 @@ public class DbConstants {
   public static final String ALLOWED_USER_IDS = "allowedUserIds";
   public static final String ALLOWED_ROLES = "allowedRoles";
   public static final String SUBJECTS = "subjects";
+  public static final String ITEM_DEPARTMENT_ID = "itemDepartmentId";
 }

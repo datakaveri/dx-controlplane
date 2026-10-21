@@ -96,3 +96,19 @@ StatusParam:
   required: false
   schema:
     type: string
+DepartmentScopeParam:
+  name: departmentScope
+  in: query
+  description: |
+    Narrows a dept_admin listing within the caller's department subtree:
+    `all` (default) -- the department the caller administers and all of its sub-departments;
+    `own` -- only the department the caller administers;
+    `sub` -- only its sub-departments, excluding the department itself.
+  required: false
+  schema:
+    type: string
+    enum:
+    - all
+    - own
+    - sub
+    default: all

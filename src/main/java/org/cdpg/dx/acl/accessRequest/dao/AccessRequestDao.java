@@ -15,7 +15,19 @@ public interface AccessRequestDao extends BaseDAO<AccessRequestDto> {
 
   Future<Boolean> hasAccess(String consumerId, String itemId);
 
-  Future<Boolean> ownershipCheck(UUID requestId, UUID providerId, UUID providerOrganizationId, boolean isUserOrgAdmin);
+  /**
+   * @param deptScopedNodeIds non-null only when the caller is a dept_admin
+   *     (not the org_admin): their administered department plus all
+   *     descendants. When set, the request's snapshotted item department
+   *     must fall within this set, not just the org, for {@code
+   *     isUserOrgAdmin} to grant ownership.
+   */
+  Future<Boolean> ownershipCheck(
+      UUID requestId,
+      UUID providerId,
+      UUID providerOrganizationId,
+      boolean isUserOrgAdmin,
+      List<String> deptScopedNodeIds);
 
   Future<AccessRequestDto> approveAccessRequest(UUID requestId, String granted, LocalDateTime expiryTime);
 

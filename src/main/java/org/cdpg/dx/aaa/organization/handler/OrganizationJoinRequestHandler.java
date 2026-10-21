@@ -12,6 +12,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
+import org.cdpg.dx.aaa.organization.models.DeptAdminScope;
 import org.cdpg.dx.aaa.organization.models.OrganisationAuditOperation;
 import org.cdpg.dx.aaa.organization.models.OrganizationJoinRequest;
 import org.cdpg.dx.aaa.organization.models.Status;
@@ -75,6 +76,17 @@ public class OrganizationJoinRequestHandler {
         orgRequestJson.put("user_id", userId.toString());
         orgRequestJson.put("user_name", keycloakUser.name());
         orgRequestJson.put("organization_id", orgId.toString());
+
+        // Public request body uses "departmentId" (department vocabulary);
+        // translate it to the internal requested_node_id column key that
+        // OrganizationJoinRequest.fromJson expects. Omitted/null means the
+        // user did not pick a department (only valid for a flat organization
+        // -- OrganizationMembershipServiceImpl rejects it for a hierarchical
+        // one).
+        String departmentId = orgRequestJson.getString("departmentId");
+        if (departmentId != null && !departmentId.isBlank()) {
+          orgRequestJson.put(REQUESTED_NODE_ID, departmentId);
+        }
 
         OrganizationJoinRequest organizationJoinRequest =
           OrganizationJoinRequest.fromJson(orgRequestJson);
@@ -142,12 +154,45 @@ public class OrganizationJoinRequestHandler {
       return;
     }
 
+    listJoinRequests(
+      ctx, ALLOWED_FILTER_MAP_FOR_ORG_JOIN_REQUEST, Map.of(ORGANIZATION_ID, orgId.toString()));
+  }
+
+  /**
+   * Dept Admin: join requests for the department the caller administers and
+   * all of its sub-departments, narrowable by {@code ?departmentScope=}. Only
+   * reachable by a dept_admin (the route guard publishes their subtree).
+   */
+  public void getDepartmentJoinRequests(RoutingContext ctx) {
+
+    UUID orgId = RequestHelper.getPathParamAsUUID(ctx, "id");
+    DeptAdminScope deptAdminScope = DeptAdminAccessHandler.scopeOf(ctx);
+
+    if (deptAdminScope == null || !deptAdminScope.organizationId().equals(orgId)) {
+      ctx.fail(new DxForbiddenException(
+        "The org id of the user and the path parameter are not same"));
+      return;
+    }
+
+    listJoinRequests(
+      ctx,
+      DeptAdminAccessHandler.withDepartmentScopeParam(
+        ALLOWED_FILTER_MAP_FOR_ORG_JOIN_REQUEST, REQUESTED_NODE_ID),
+      Map.of(
+        ORGANIZATION_ID, orgId.toString(),
+        REQUESTED_NODE_ID, DeptAdminAccessHandler.requestedNodeIds(ctx, deptAdminScope)));
+  }
+
+  private void listJoinRequests(
+    RoutingContext ctx,
+    Map<String, String> allowedFilters,
+    Map<String, Object> additionalFilters) {
+
     PaginatedRequest request =
       PaginationRequestBuilder.from(ctx)
-        .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_ORG_JOIN_REQUEST)
+        .allowedFiltersDbMap(allowedFilters)
         .apiToDbMap(API_TO_DB_ORG_JOIN_REQUEST)
-        .additionalFilters(
-          Map.of(ORGANIZATION_ID, orgId.toString()))
+        .additionalFilters(additionalFilters)
         .allowedTimeFields(Set.of(REQUESTED_AT))
         .defaultTimeField(REQUESTED_AT)
         .defaultSort(REQUESTED_AT, DEFAULT_SORTING_ORDER)
@@ -285,8 +330,21 @@ public class OrganizationJoinRequestHandler {
     UUID requestId = RequestHelper.getPathParamAsUUID(ctx, "req_id");
     Status status = Status.fromString(orgRequestJson.getString("status"));
 
+    // The request must belong to the caller's own organisation -- a flat
+    // organisation's update path has no approver check of its own.
+    // (Whether a dept_admin covers its department is enforced by the
+    // approval engine in the service.)
     organizationService
-      .updateOrganizationJoinRequestStatus(requestId, status)
+      .getOrganizationJoinRequestById(requestId)
+      .compose(
+        joinRequest -> {
+          if (joinRequest == null
+            || !joinRequest.organizationId().toString().equals(dxUser.organisationId())) {
+            return Future.failedFuture(new DxNotFoundException("Request Not Found"));
+          }
+          return organizationService.updateOrganizationJoinRequestStatus(
+            requestId, status, dxUser.sub());
+        })
       .onSuccess(
         approved -> {
           if (!approved) {

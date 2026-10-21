@@ -20,6 +20,9 @@ public class QueryDecoderRequestDTO {
   private List<OrderBy> sort;
   private boolean filterMyAssets;
   private List<String> sharedItemIds;
+  // Non-null only for a dept_admin's organisation-asset search: restricts it
+  // to items owned by these departments (their subtree).
+  private List<String> hierarchyNodeIds;
 
   public QueryDecoderRequestDTO(
       String searchType,
@@ -134,6 +137,14 @@ public class QueryDecoderRequestDTO {
 
   public String getOrganisationId() {
     return organisationId;
+  }
+
+  public List<String> getHierarchyNodeIds() {
+    return hierarchyNodeIds;
+  }
+
+  public void setHierarchyNodeIds(List<String> hierarchyNodeIds) {
+    this.hierarchyNodeIds = hierarchyNodeIds;
   }
 
   public void setOrganisationId(String organisationId) {

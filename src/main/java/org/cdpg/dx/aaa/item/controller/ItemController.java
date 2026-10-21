@@ -37,7 +37,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -54,6 +53,12 @@ import org.cdpg.dx.aaa.item.service.ItemRegistryService;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ScriptGenerationService;
 import org.cdpg.dx.aaa.item.util.*;
+import org.cdpg.dx.aaa.organization.dao.OrganizationUserDAO;
+import org.cdpg.dx.aaa.organization.handler.DeptAdminAccessHandler;
+import org.cdpg.dx.aaa.organization.models.DeptAdminScope;
+import org.cdpg.dx.aaa.organization.models.OrganizationUser;
+import org.cdpg.dx.aaa.organization.models.Role;
+import org.cdpg.dx.aaa.organization.service.OrganizationHierarchyService;
 import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
 import org.cdpg.dx.acl.policy.service.PolicyService;
@@ -98,6 +103,9 @@ public class ItemController implements ApiController {
   private final KeycloakUserService keycloakUserService;
   private final EmailComposer emailComposer;
   private final PolicyService policyService;
+  private final OrganizationUserDAO organizationUserDAO;
+  private final OrganizationHierarchyService organizationHierarchyService;
+  private final DeptAdminAccessHandler deptAdminAccess;
 
   public ItemController(
       AuditingHandler auditingHandler,
@@ -115,7 +123,9 @@ public class ItemController implements ApiController {
       PolicyDao policyDao,
       AccessRuleDao accessRuleDao,
       AccessRequestDao accessRequestDao,
-      String apdURL) {
+      String apdURL,
+      OrganizationUserDAO organizationUserDAO,
+      OrganizationHierarchyService organizationHierarchyService) {
     this.auditingHandler = auditingHandler;
     this.itemService = itemService;
     this.centralItemService = centralItemService;
@@ -136,6 +146,98 @@ public class ItemController implements ApiController {
     this.policyService =
         new PolicyServiceImpl(itemService, keycloakUserService, policyDao, accessRuleDao,
             accessRequestDao, apdURL);
+    this.organizationUserDAO = organizationUserDAO;
+    this.organizationHierarchyService = organizationHierarchyService;
+    this.deptAdminAccess =
+        new DeptAdminAccessHandler(organizationUserDAO, organizationHierarchyService);
+  }
+
+  /**
+   * A dept_admin holds no org-level scope, only DEPT_ASSET_PUBLISH (granted by
+   * DeptAdminAccessHandler), which lets them verify items owned by a department in their subtree
+   * -- and change nothing else on them. Such a patch is evaluated as
+   * the org_admin's would be (ORG_ASSET_PUBLISH added to its scopes), with
+   * {@code ItemServiceImpl.patchItem} restricting the match to the subtree via the request's
+   * deptScopedNodeIds.
+   */
+  private static boolean isDeptAdminVerification(
+      DeptAdminScope deptAdminScope, JsonArray allowedScopes, JsonObject body) {
+    return deptAdminScope != null
+        && allowedScopes.contains(Scopes.DEPT_ASSET_PUBLISH)
+        && !allowedScopes.contains(Scopes.ORG_ASSET_PUBLISH)
+        && body.containsKey(ITEM_STATUS)
+        && VERIFIED.equalsIgnoreCase(body.getString(ITEM_STATUS));
+  }
+
+  /** Builds the patch request, applying a dept_admin verification's subtree restriction. */
+  private Future<PatchItemRequest> buildPatchItemRequest(
+      String id,
+      String userId,
+      JsonObject body,
+      JsonArray allowedScopes,
+      List<String> roles,
+      DeptAdminScope deptAdminScope,
+      boolean deptAdminVerification) {
+    if (deptAdminVerification) {
+      JsonArray effectiveScopes = allowedScopes.copy().add(Scopes.ORG_ASSET_PUBLISH);
+      PatchItemRequest patchItemRequest =
+          new PatchItemRequest(
+              id,
+              deptAdminScope.organizationId().toString(),
+              userId,
+              body,
+              effectiveScopes,
+              roles);
+      patchItemRequest.setDeptScopedNodeIds(deptAdminScope.nodeIdStrings());
+      return Future.succeededFuture(patchItemRequest);
+    }
+
+    // Fetch orgId from Keycloak, then (for org-scoped admins) resolve whether
+    // the caller is a dept_admin who must be restricted to their own subtree.
+    return keycloakUserService
+        .getUserById(UUID.fromString(userId))
+        .compose(
+            keycloakUser -> {
+              String orgId = keycloakUser.organisationId();
+              return resolveDeptScopedNodeIds(orgId, userId)
+                  .map(deptScopedNodeIds -> {
+                    PatchItemRequest patchItemRequest =
+                        new PatchItemRequest(id, orgId, userId, body, allowedScopes, roles);
+                    patchItemRequest.setDeptScopedNodeIds(deptScopedNodeIds);
+                    return patchItemRequest;
+                  });
+            });
+  }
+
+  /**
+   * Resolves the department-subtree restriction (if any) a dept_admin's
+   * patch must be scoped to. Returns {@code null} when the caller isn't a
+   * dept_admin (including the org_admin, who stays unrestricted) --
+   * callers should fall back to the existing flat org-id query in that case.
+   */
+  private Future<List<String>> resolveDeptScopedNodeIds(String orgIdStr, String userIdStr) {
+    if (orgIdStr == null || orgIdStr.isBlank()) {
+      return Future.succeededFuture(null);
+    }
+
+    UUID orgId = UUID.fromString(orgIdStr);
+    UUID userId = UUID.fromString(userIdStr);
+
+    return organizationUserDAO
+        .getByOrganizationIdAndUserId(orgId, userId)
+        .compose(
+            (OrganizationUser orgUser) -> {
+              if (orgUser == null
+                  || orgUser.role() != Role.DEPT_ADMIN
+                  || orgUser.adminOfNodeId() == null) {
+                return Future.succeededFuture(null);
+              }
+
+              return organizationHierarchyService
+                  .getDescendantNodeIds(orgId, orgUser.adminOfNodeId())
+                  .map(ids -> ids.stream().map(UUID::toString).collect(Collectors.toList()));
+            })
+        .recover(err -> Future.succeededFuture(null));
   }
 
   @Override
@@ -144,10 +246,12 @@ public class ItemController implements ApiController {
         AuthorizationHandler.forScopes(
             Scopes.OWN_ASSET_MANAGEMENT, Scopes.ORG_ASSET_MANAGEMENT, Scopes.ASSET_MANAGEMENT,
             Scopes.ORG_ASSET_PUBLISH);
-    Handler<RoutingContext> assetManagementAndPublishAccess =
-        AuthorizationHandler.forScopes(
-            Scopes.OWN_ASSET_MANAGEMENT, Scopes.ORG_ASSET_MANAGEMENT, Scopes.ASSET_MANAGEMENT,
-            Scopes.ASSET_PUBLISH, Scopes.ORG_ASSET_PUBLISH);
+    // dept_admins may additionally reach the patch routes to verify items in their subtree
+    Handler<RoutingContext> patchAccess =
+        deptAdminAccess.withDeptScopes(
+            AuthorizationHandler.forScopes(
+                Scopes.OWN_ASSET_MANAGEMENT, Scopes.ORG_ASSET_MANAGEMENT, Scopes.ASSET_MANAGEMENT,
+                Scopes.ASSET_PUBLISH, Scopes.ORG_ASSET_PUBLISH, Scopes.DEPT_ASSET_PUBLISH));
     Handler<RoutingContext> providerScriptAccess =
         AuthorizationHandler.forScopes(Scopes.OWN_ASSET_MANAGEMENT);
 
@@ -179,13 +283,13 @@ public class ItemController implements ApiController {
     builder
         .operation(PATCH_ITEM_META_DATA)
         .handler(auditingHandler::handleApiAudit)
-        .handler(assetManagementAndPublishAccess)
+        .handler(patchAccess)
         .handler(this::handlePatchItemMetaData);
 
     builder
         .operation(PATCH_ITEM)
         .handler(auditingHandler::handleApiAudit)
-        .handler(assetManagementAndPublishAccess)
+        .handler(patchAccess)
         .handler(this::handlePatchItem);
 
     builder
@@ -255,6 +359,7 @@ public class ItemController implements ApiController {
     keycloakUserService
         .getUserById(userId)
         .map(dxUser -> injectKeycloakInfoIfApplicable(ctx, dxUser, body, itemType))
+        .compose(doc -> attachHierarchyNodeIdOnCreate(method, userId, doc))
         .onFailure(ctx::fail)
         .onSuccess(
             doc -> {
@@ -330,23 +435,7 @@ public class ItemController implements ApiController {
     boolean isAdmin  = hasOrgAssetPublishScope || hasAssetPublishScope;
 
     String userId = dxUser.sub().toString();
-    AtomicReference<String> orgId = new AtomicReference<>("");
-    // orgId = user.organisationId();
 
-    // Fetch orgId from Keycloak
-    keycloakUserService
-        .getUserById(UUID.fromString(userId))
-        .onSuccess(
-            keycloakUser -> {
-              orgId.set(keycloakUser.organisationId());
-            })
-        .onFailure(
-            err -> {
-              LOGGER.error("Failed to fetch user from Keycloak", err);
-              ctx.fail(err);
-            });
-
-    LOGGER.debug("Keycloak ID: {},12aa: {}", orgId, id);
     JsonObject body = ctx.body().asJsonObject();
     LOGGER.debug("Patch item request body: {}", body);
 
@@ -356,14 +445,26 @@ public class ItemController implements ApiController {
       return;
     }
 
+    DeptAdminScope deptAdminScope = DeptAdminAccessHandler.scopeOf(ctx);
+    boolean deptAdminVerification =
+        isDeptAdminVerification(deptAdminScope, allowedScopes, body);
+
     if (body.containsKey(ITEM_STATUS)) {
       String itemStatus = body.getString(ITEM_STATUS);
 
-      if (VERIFIED.equalsIgnoreCase(itemStatus) && !hasOrgAssetPublishScope) {
+      if (VERIFIED.equalsIgnoreCase(itemStatus)
+          && !hasOrgAssetPublishScope
+          && !deptAdminVerification) {
         ctx.fail(new DxForbiddenException(
-            "Only org_admin can update itemStatus to VERIFIED"));
+            "Only org_admin or the item's dept_admin can update itemStatus to VERIFIED"));
         return;
       }
+    }
+
+    if (deptAdminVerification && !Set.of(ITEM_STATUS).containsAll(body.fieldNames())) {
+      ctx.fail(new DxForbiddenException(
+          "A dept_admin can only update itemStatus on items of their department"));
+      return;
     }
 
     if (!isAdmin) {
@@ -380,10 +481,10 @@ public class ItemController implements ApiController {
       }
     }
 
-    PatchItemRequest patchItemRequest =
-        new PatchItemRequest(id, orgId.get(), userId, body, allowedScopes, dxUser.roles());
-    itemService
-        .patchItem(patchItemRequest)
+    buildPatchItemRequest(
+            id, userId, body, allowedScopes, dxUser.roles(), deptAdminScope,
+            deptAdminVerification)
+        .compose(itemService::patchItem)
         .onSuccess(
             elasticsearchResponse -> {
               JsonObject itemJson = elasticsearchResponse.getSource();
@@ -450,23 +551,6 @@ public class ItemController implements ApiController {
     boolean hasAssetPublishScope = allowedScopes.contains(Scopes.ASSET_PUBLISH);
 
     String userId = dxUser.sub().toString();
-    AtomicReference<String> orgId = new AtomicReference<>("");
-    // orgId = user.organisationId();
-
-    // Fetch orgId from Keycloak
-    keycloakUserService
-        .getUserById(UUID.fromString(userId))
-        .onSuccess(
-            keycloakUser -> {
-              orgId.set(keycloakUser.organisationId());
-            })
-        .onFailure(
-            err -> {
-              LOGGER.error("Failed to fetch user from Keycloak", err);
-              ctx.fail(err);
-            });
-
-    LOGGER.debug("Keycloak ID: {},12aa: {}", orgId, id);
 
     if (body.containsKey(PUBLISH_STATUS) && !hasAssetPublishScope) {
       ctx.fail(new DxForbiddenException(
@@ -474,14 +558,26 @@ public class ItemController implements ApiController {
       return;
     }
 
+    DeptAdminScope deptAdminScope = DeptAdminAccessHandler.scopeOf(ctx);
+    boolean deptAdminVerification =
+        isDeptAdminVerification(deptAdminScope, allowedScopes, body);
+
     if (body.containsKey(ITEM_STATUS)) {
       String itemStatus = body.getString(ITEM_STATUS);
 
-      if (VERIFIED.equalsIgnoreCase(itemStatus) && !hasOrgAssetPublishScope) {
+      if (VERIFIED.equalsIgnoreCase(itemStatus)
+          && !hasOrgAssetPublishScope
+          && !deptAdminVerification) {
         ctx.fail(new DxForbiddenException(
-            "Only org_admin can update itemStatus to VERIFIED"));
+            "Only org_admin or the item's dept_admin can update itemStatus to VERIFIED"));
         return;
       }
+    }
+
+    if (deptAdminVerification && !Set.of(ITEM_STATUS).containsAll(body.fieldNames())) {
+      ctx.fail(new DxForbiddenException(
+          "A dept_admin can only update itemStatus on items of their department"));
+      return;
     }
 
     // Restricted fields
@@ -496,10 +592,11 @@ public class ItemController implements ApiController {
     }
 
     body.put(LAST_UPDATED, getUtcDatetimeAsString());
-    PatchItemRequest patchItemRequest =
-        new PatchItemRequest(id, orgId.get(), userId, body, allowedScopes, dxUser.roles());
-    itemService
-        .patchItem(patchItemRequest)
+
+    buildPatchItemRequest(
+            id, userId, body, allowedScopes, dxUser.roles(), deptAdminScope,
+            deptAdminVerification)
+        .compose(itemService::patchItem)
         .onSuccess(
             elasticsearchResponse -> {
               JsonObject itemJson = elasticsearchResponse.getSource();
@@ -540,6 +637,36 @@ public class ItemController implements ApiController {
       ctx.fail(new DxBadRequestException("Invalid type for item/type not present"));
       return null;
     }
+  }
+
+  /**
+   * On item creation, default the item's owning department to the creating
+   * provider's own membership department (if their organization has
+   * departments enabled) -- same auto-attribution already done for
+   * organizationId. Does nothing on update, or when the creator isn't
+   * assigned to a department, or already supplied hierarchyNodeId themself.
+   */
+  private Future<JsonObject> attachHierarchyNodeIdOnCreate(
+      String method, UUID userId, JsonObject doc) {
+    if (!REQUEST_POST.equalsIgnoreCase(method)) {
+      return Future.succeededFuture(doc);
+    }
+
+    String orgId = doc.getString(ORGANIZATION_ID);
+    if (orgId == null || orgId.isBlank() || doc.getString("hierarchyNodeId") != null) {
+      return Future.succeededFuture(doc);
+    }
+
+    return organizationUserDAO
+        .getByOrganizationIdAndUserId(UUID.fromString(orgId), userId)
+        .map(
+            orgUser -> {
+              if (orgUser != null && orgUser.hierarchyNodeId() != null) {
+                doc.put("hierarchyNodeId", orgUser.hierarchyNodeId().toString());
+              }
+              return doc;
+            })
+        .recover(err -> Future.succeededFuture(doc));
   }
 
   private JsonObject injectKeycloakInfoIfApplicable(

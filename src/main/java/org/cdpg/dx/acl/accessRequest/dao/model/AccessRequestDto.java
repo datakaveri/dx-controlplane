@@ -39,6 +39,7 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
   private String consumerFirstName;
   private String consumerLastName;
   private String itemOrganizationId;
+  private String itemHierarchyNodeId;
   private String itemOrganizationName;
   private String shortDescription;
   private String ownerId;
@@ -67,6 +68,7 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
     setItemOrganizationId(
         request.getString(
             DB_ASSET_ORGANIZATION_ID)); // TODO: change the reference to the appropriate column name
+    setItemHierarchyNodeId(request.getString(DB_ITEM_HIERARCHY_NODE_ID));
     setShortDescription(request.getString(DB_SHORT_DESCRIPTION));
     if (request.getString(DB_EXPIRY_AT) != null) {
       setExpiryAt(LocalDateTime.parse(request.getString(DB_EXPIRY_AT)));
@@ -98,6 +100,7 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
     dto.setItemOrganizationId(
         entries.getString(
             DB_ASSET_ORGANIZATION_ID)); // TODO: change the reference to the appropriate column name
+    dto.setItemHierarchyNodeId(entries.getString(DB_ITEM_HIERARCHY_NODE_ID));
     dto.setShortDescription(entries.getString(DB_SHORT_DESCRIPTION));
     if (entries.getString(DB_EXPIRY_AT) != null) {
       dto.setExpiryAt(LocalDateTime.parse(entries.getString(DB_EXPIRY_AT)));
@@ -129,6 +132,7 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
     EntityUtil.putIfPresent(fieldsMap, DB_ITEM_ID, getItemId());
     EntityUtil.putIfPresent(fieldsMap, DB_SHORT_DESCRIPTION, getShortDescription());
     EntityUtil.putIfPresent(fieldsMap, DB_ASSET_ORGANIZATION_ID, getItemOrganizationId());
+    EntityUtil.putIfPresent(fieldsMap, DB_ITEM_HIERARCHY_NODE_ID, getItemHierarchyNodeId());
 
     return fieldsMap;
   }
@@ -167,7 +171,8 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
                     .put(ASSET_TYPE, getAssetType())
                     .put(SHORT_DESCRIPTION, getShortDescription())
                     .put(ORGANIZATION, getItemOrganizationName())
-                    .put(ORGANIZATION_ID, getItemOrganizationId()))
+                    .put(ORGANIZATION_ID, getItemOrganizationId())
+                    .put(ITEM_DEPARTMENT_ID, getItemHierarchyNodeId()))
             .put(CREATED_AT, getCreatedAt())
             .put(UPDATED_AT, getUpdatedAt())
             .put(EXPIRY_AT, getExpiryAt());
@@ -338,6 +343,15 @@ public class AccessRequestDto implements BaseEntity<AccessRequestDto> {
 
   public AccessRequestDto setItemOrganizationId(String providerOrganization) {
     this.itemOrganizationId = providerOrganization;
+    return this;
+  }
+
+  public String getItemHierarchyNodeId() {
+    return itemHierarchyNodeId;
+  }
+
+  public AccessRequestDto setItemHierarchyNodeId(String itemHierarchyNodeId) {
+    this.itemHierarchyNodeId = itemHierarchyNodeId;
     return this;
   }
 

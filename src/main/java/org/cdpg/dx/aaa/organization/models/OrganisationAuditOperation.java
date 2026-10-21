@@ -25,9 +25,13 @@ public enum OrganisationAuditOperation
   UPDATE_ORG("Update org details"),
   REQUEST_PLATFORM_PROVIDER_ROLE("Request for platform provider role"),
   GET_PLATFORM_PROVIDER_REQS("Get platform provider role requests"),
-  UPDATE_PLATFORM_PROVIDER_REQUEST("Update platform provider role request");
-  ;
-
+  UPDATE_PLATFORM_PROVIDER_REQUEST("Update platform provider role request"),
+  GET_HIERARCHY_NODES("Get organisation hierarchy nodes"),
+  REQUEST_HIERARCHY_DEFINITION("Request definition of organisation department hierarchy"),
+  UPDATE_HIERARCHY_DEFINITION_REQUEST("Update organisation hierarchy definition request status"),
+  ASSIGN_DEPT_ADMIN("Assign department admin"),
+  REQUEST_DEPT_ADMIN("Request to become department admin"),
+  APPROVE_DEPT_ADMIN_REQUEST("Approve or reject department admin request");
 
   private final String value;
 

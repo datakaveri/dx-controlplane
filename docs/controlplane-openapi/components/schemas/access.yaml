@@ -25,6 +25,13 @@ AssetSummary:
     organizationId:
       type: string
       format: uuid
+    departmentId:
+      type: string
+      format: uuid
+      nullable: true
+      description: |
+        Which department within the organization owns this asset, if the
+        organization has departments enabled.
     organizationName:
       type: string
     uploadedBy:

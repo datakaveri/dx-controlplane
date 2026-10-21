@@ -13,6 +13,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
+import org.cdpg.dx.aaa.organization.handler.DeptAdminAccessHandler;
+import org.cdpg.dx.aaa.organization.models.DeptAdminScope;
 import org.cdpg.dx.aaa.organization.models.OrganisationAuditOperation;
 import org.cdpg.dx.aaa.organization.models.OrganizationJoinRequest;
 import org.cdpg.dx.aaa.organization.models.ProviderRoleRequest;
@@ -91,6 +93,16 @@ public class ProviderRoleHandler {
             .put("organization_id", orgID)
             .put("provider_type", PROVIDER_TYPE_ORG);
 
+    // Optional request body lets the consumer pick which department the
+    // provider request is scoped to (departmentId, public vocabulary) so a
+    // dept_admin can later approve it -- flat organizations must omit this.
+    if (ctx.body() != null && !ctx.body().isEmpty() && ctx.body().asJsonObject() != null) {
+      String departmentId = ctx.body().asJsonObject().getString("departmentId");
+      if (departmentId != null && !departmentId.isBlank()) {
+        req.put(REQUESTED_NODE_ID, departmentId);
+      }
+    }
+
     ProviderRoleRequest providerRoleRequest = ProviderRoleRequest.fromJson(req);
 
     organizationService
@@ -152,9 +164,22 @@ public class ProviderRoleHandler {
     JsonObject orgRequestJson = ctx.body().asJsonObject();
     UUID reqId = RequestHelper.getPathParamAsUUID(ctx, "id");
     Status status = Status.fromString(orgRequestJson.getString("status"));
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
 
+    // The request must belong to the caller's own organisation -- a flat
+    // organisation's update path has no approver check of its own. (Whether a
+    // dept_admin covers its department is enforced by the approval engine.)
     organizationService
-        .updateProviderRequestStatus(reqId, status)
+        .getProviderRequestById(reqId)
+        .compose(
+            existing -> {
+              if (existing == null
+                  || existing.orgId() == null
+                  || !existing.orgId().toString().equals(dxUser.organisationId())) {
+                return Future.failedFuture(new DxNotFoundException("No request found with given ID"));
+              }
+              return organizationService.updateProviderRequestStatus(reqId, status, dxUser.sub());
+            })
         .onSuccess(
             v -> {
               UserActivityAuditLogBuilder auditLogBuilder =
@@ -190,11 +215,48 @@ public class ProviderRoleHandler {
     }
     UUID resOrgId = UUID.fromString(orgIdStr);
 
+    listOrgProviderRequests(
+        ctx,
+        resOrgId,
+        ALLOWED_FILTER_MAP_FOR_PROVIDER_ROLE_REQUEST,
+        Map.of(ORGANIZATION_ID, resOrgId.toString()));
+  }
+
+  /**
+   * Dept Admin: provider role requests scoped to the department the caller administers or any of
+   * its sub-departments, narrowable by {@code ?departmentScope=}. Only reachable by a dept_admin
+   * (the route guard publishes their subtree).
+   */
+  public void getDepartmentProviderRequests(RoutingContext ctx) {
+
+    DeptAdminScope deptAdminScope = DeptAdminAccessHandler.scopeOf(ctx);
+    if (deptAdminScope == null) {
+      ctx.fail(new DxForbiddenException("Only a department admin can access this endpoint"));
+      return;
+    }
+    UUID resOrgId = deptAdminScope.organizationId();
+
+    listOrgProviderRequests(
+        ctx,
+        resOrgId,
+        DeptAdminAccessHandler.withDepartmentScopeParam(
+            ALLOWED_FILTER_MAP_FOR_PROVIDER_ROLE_REQUEST, REQUESTED_NODE_ID),
+        Map.of(
+            ORGANIZATION_ID, resOrgId.toString(),
+            REQUESTED_NODE_ID, DeptAdminAccessHandler.requestedNodeIds(ctx, deptAdminScope)));
+  }
+
+  private void listOrgProviderRequests(
+      RoutingContext ctx,
+      UUID resOrgId,
+      Map<String, String> allowedFilters,
+      Map<String, Object> additionalFilters) {
+
     PaginatedRequest request =
         PaginationRequestBuilder.from(ctx)
-            .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_PROVIDER_ROLE_REQUEST)
+            .allowedFiltersDbMap(allowedFilters)
             .apiToDbMap(API_TO_DB_PROVIDER_ROLE_REQUEST)
-            .additionalFilters(Map.of(ORGANIZATION_ID, resOrgId.toString()))
+            .additionalFilters(additionalFilters)
             .allowedTimeFields(Set.of(CREATED_AT))
             .defaultTimeField(CREATED_AT)
             .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
@@ -512,9 +574,10 @@ public class ProviderRoleHandler {
     JsonObject body = ctx.body().asJsonObject();
     UUID reqId = RequestHelper.getPathParamAsUUID(ctx, "id");
     Status status = Status.fromString(body.getString("status"));
+    DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
 
     organizationService
-        .updateProviderRequestStatus(reqId, status)
+        .updateProviderRequestStatus(reqId, status, dxUser.sub())
         .onSuccess(
             v -> {
               UserActivityAuditLogBuilder auditLogBuilder =
