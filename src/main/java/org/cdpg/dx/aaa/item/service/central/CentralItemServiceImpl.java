@@ -453,12 +453,6 @@ public class CentralItemServiceImpl implements ItemService {
       queryModel =
           queryDecoder.getItemIdOwnerIdQueryModel(
               patchItemRequest.getItemId(), patchItemRequest.getUserId());
-      // Provider restriction: only allow 'dataUploadStatus'
-      JsonObject patchBody = patchItemRequest.getRequestBody();
-      if (!patchBody.containsKey("dataUploadStatus") || patchBody.size() != 1) {
-        return Future.failedFuture(
-            new DxForbiddenException("Providers can only update dataUploadStatus"));
-      }
     } else {
       return Future.failedFuture(new DxForbiddenException("User role not permitted to patch item"));
     }
@@ -486,7 +480,7 @@ public class CentralItemServiceImpl implements ItemService {
                     id,
                     roles,
                     errorMsg);
-                promise.fail(new DxBadRequestException(errorMsg));
+                promise.fail(new DxNotFoundException(errorMsg));
               } else {
                 LOGGER.debug("Update item with ID: {}", id);
                 String docId = result.getDocId();

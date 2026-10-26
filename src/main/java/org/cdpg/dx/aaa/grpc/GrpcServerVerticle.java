@@ -1,8 +1,11 @@
 package org.cdpg.dx.aaa.grpc;
 
+import static org.cdpg.dx.aaa.common.Constants.CENTRAL_CAT_DOC_INDEX;
 import static org.cdpg.dx.aaa.common.Constants.DELETED_DOCS_INDEX;
+import static org.cdpg.dx.aaa.common.Constants.IS_CENTRAL_CATALOGUE_ENABLED;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
 import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.REQUEST_TABLE;
+import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.CENTRAL_ELASTIC_SERVICE_ADDRESS;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DATA_BROKER_SERVICE_ADDRESS;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DELEGATION_SERVICE_ADDRESS;
 import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.ELASTIC_SERVICE_ADDRESS;
@@ -36,8 +39,10 @@ import org.cdpg.dx.aaa.grpc.apis.PolicyApiService;
 import org.cdpg.dx.aaa.grpc.apis.UserApiService;
 import org.cdpg.dx.aaa.grpc.auth.JwksCache;
 import org.cdpg.dx.aaa.grpc.auth.ServiceAuthInterceptor;
+import org.cdpg.dx.aaa.item.service.CentralSyncedItemPatcher;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
+import org.cdpg.dx.aaa.item.service.central.CentralItemServiceImpl;
 import org.cdpg.dx.acl.accessRequest.dao.impl.AccessRequestDaoImpl;
 import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
 import org.cdpg.dx.acl.policy.dao.PolicyDao;
@@ -102,8 +107,25 @@ public class GrpcServerVerticle extends AbstractVerticle {
         new AppIdVerificationGrpcService(
             vertx, appCredentialsService, itemService, delegationService, keycloakUserService);
 
+    // Keep PATCHes in sync with the central catalogue, as the HTTP item handlers do.
+    boolean isCentralCatEnabled = config().getBoolean(IS_CENTRAL_CATALOGUE_ENABLED, false);
+    ItemService centralItemService =
+        isCentralCatEnabled
+            ? new CentralItemServiceImpl(
+                ElasticsearchService.createProxy(vertx, CENTRAL_ELASTIC_SERVICE_ADDRESS),
+                keycloakUserService,
+                postgresService,
+                policyDao,
+                webClient,
+                config().getString(CENTRAL_CAT_DOC_INDEX),
+                deletedDocsIndex,
+                apdUrl)
+            : null;
+    CentralSyncedItemPatcher itemPatcher =
+        new CentralSyncedItemPatcher(itemService, centralItemService, isCentralCatEnabled);
+
     CatItemGrpcService catItemGrpcService =
-        new CatItemGrpcService(vertx, itemService, keycloakUserService);
+        new CatItemGrpcService(vertx, itemService, itemPatcher, keycloakUserService);
 
     // Shared dx.apis.* contracts, also served by the Go services (dx-common
     // src/main/proto/dx/apis). Additive: the services above are unchanged.

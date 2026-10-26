@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.common.Constants;
 import org.cdpg.dx.aaa.common.ResponseModel;
+import org.cdpg.dx.aaa.item.service.CentralSyncedItemPatcher;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.item.util.PatchItemRequest;
@@ -34,7 +35,7 @@ import org.cdpg.dx.keycloak.service.KeycloakUserService;
  *   <li>{@link #getItem} — mirrors {@code GET /iudx/v2/cat/item} → {@code ItemService#getItem}
  *   <li>{@link #patchItem} — mirrors {@code PATCH /iudx/v2/cat/item} (operationId {@code patch item
  *       metadata}, handler {@code ItemController#handlePatchItemMetaData}) → {@code
- *       ItemService#patchItem}
+ *       CentralSyncedItemPatcher#patchItem} (local + central catalogue when enabled)
  * </ul>
  *
  * <p>The HTTP handlers derive the caller's identity from the bearer JWT; over gRPC the acting
@@ -57,12 +58,17 @@ public class CatItemGrpcService extends CatItemServiceGrpc.CatItemServiceImplBas
 
   private final Context vertxContext;
   private final ItemService itemService;
+  private final CentralSyncedItemPatcher itemPatcher;
   private final KeycloakUserService keycloakUserService;
 
   public CatItemGrpcService(
-      Vertx vertx, ItemService itemService, KeycloakUserService keycloakUserService) {
+      Vertx vertx,
+      ItemService itemService,
+      CentralSyncedItemPatcher itemPatcher,
+      KeycloakUserService keycloakUserService) {
     this.vertxContext = vertx.getOrCreateContext();
     this.itemService = itemService;
+    this.itemPatcher = itemPatcher;
     this.keycloakUserService = keycloakUserService;
   }
 
@@ -172,7 +178,7 @@ public class CatItemGrpcService extends CatItemServiceGrpc.CatItemServiceImplBas
                     orgId -> {
                       PatchItemRequest patchReq =
                           new PatchItemRequest(itemId, orgId, userId, body, roles);
-                      return itemService.patchItem(patchReq);
+                      return itemPatcher.patchItem(patchReq);
                     })
                 .onSuccess(esResponse -> respond(observer, toPatchItemResponse(itemId, esResponse)))
                 .onFailure(

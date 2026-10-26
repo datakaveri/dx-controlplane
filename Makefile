@@ -2,6 +2,7 @@
 
 ## Bundle split OpenAPI specs into single files for Vert.x
 docs:
+	python3 scripts/sync-central-openapi-root.py
 	npx @redocly/cli bundle docs/controlplane-openapi/openapi.yaml -o docs/openapi.yaml --ext yaml
 	npx @redocly/cli bundle docs/acl-openapi/openapi.yaml -o docs/acl-openapi.yaml --ext yaml
 	npx @redocly/cli bundle docs/central-openapi/openapi.yaml -o docs/central-openapi.yaml --ext yaml
