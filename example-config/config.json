@@ -32,7 +32,10 @@
     "docUserIndex": "<tenantPrefix>__userdoc",
     "initialCreditBalance": 1,
     "isCentralCatEnabled": false,
-    "itemTypePrefixes": ["adex", "iudx"],
+    "itemTypePrefixes": [
+      "adex",
+      "iudx"
+    ],
     "kycRequired": false,
     "ogcDataPlaneUrl": "<domain>/geoserver",
     "publisherPanelUrl": "<domain>",
@@ -241,7 +244,7 @@
     "databaseUserName": "<tenantPrefix>_controlplane_user",
     "poolSize": 25
   },
-  "version": 3,
+  "version": 4,
   "zookeepers": [
     "zookeeper-client.zookeeper.svc.cluster.local"
   ]
