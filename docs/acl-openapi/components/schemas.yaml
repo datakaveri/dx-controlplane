@@ -1950,7 +1950,6 @@ exampleEntityWIdDataBankResource:
   - industry
   - uploadedBy
   - geoCoverage
-  - yearRange
   - verifiedBy
   - uploadFrequency
   - license
@@ -2183,7 +2182,6 @@ successResponseForCreateDataBankResourceEntity:
       - industry
       - uploadedBy
       - geoCoverage
-      - yearRange
       - verifiedBy
       - uploadFrequency
       - license
@@ -2567,7 +2565,6 @@ successResponseForUpdateDataBankEntity:
       - industry
       - uploadedBy
       - geoCoverage
-      - yearRange
       - verifiedBy
       - uploadFrequency
       - license
@@ -3877,7 +3874,6 @@ exampleEntityDataBank:
   - fileFormat
   - industry
   - geoCoverage
-  - yearRange
   - verifiedBy
   - uploadFrequency
   - license

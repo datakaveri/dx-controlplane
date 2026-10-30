@@ -2,9 +2,6 @@ package org.cdpg.dx.database.elastic.model;
 
 import static org.cdpg.dx.aaa.common.Constants.ACTIVE;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_STATUS;
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_AI_MODEL;
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_APPS;
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
 import static org.cdpg.dx.aaa.common.Constants.VERIFIED;
 import static org.cdpg.dx.aaa.common.Constants.VERIFIED_API;
 import static org.cdpg.dx.aaa.common.Constants.VERIFIED_SFTP;
@@ -13,6 +10,7 @@ import static org.cdpg.dx.database.elastic.util.Constants.*;
 import java.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.common.ItemType;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxEsException;
 import org.cdpg.dx.database.elastic.util.AggregationType;
@@ -54,6 +52,7 @@ public class QueryDecoder {
     if (searchType != null && searchType.matches(SEARCH_CRITERIA_REGEX)) {
       LOGGER.debug("Info: searchCriteria block");
       try {
+        expandItemTypeCriteria(request.getSearchCriteriaRequest());
         new SearchCriteriaQueryDecorator(queryMap, request.getSearchCriteriaRequest()).add();
         isValidQuery = true;
       } catch (DxEsException e) {
@@ -96,11 +95,9 @@ public class QueryDecoder {
     if (!searchType.matches(MY_ASSETS_SEARCH_REGEX)
         && !searchType.matches(PF_ASSETS_SEARCH_REGEX)
         && !searchType.matches(ORG_ASSETS_SEARCH_REGEX)) {
-      QueryModel excludeDatabankFalse = buildUploadStatusExclusion(ITEM_TYPE_DATA_BANK);
-      QueryModel excludeAiModelFalse = buildUploadStatusExclusion(ITEM_TYPE_AI_MODEL);
-      QueryModel activePublishStatus =
-          buildActivePublishStatusQuery(
-              List.of(ITEM_TYPE_DATA_BANK, ITEM_TYPE_AI_MODEL, ITEM_TYPE_APPS));
+      QueryModel excludeDatabankFalse = buildUploadStatusExclusion(ItemType.DATA_BANK.typeValues());
+      QueryModel excludeAiModelFalse = buildUploadStatusExclusion(ItemType.AI_MODEL.typeValues());
+      QueryModel activePublishStatus = buildActivePublishStatusQuery(ItemType.allTypeValues());
       queryMap.get(FilterType.MUST_NOT).add(excludeDatabankFalse);
       queryMap.get(FilterType.MUST_NOT).add(excludeAiModelFalse);
       queryMap.get(FilterType.MUST).add(activePublishStatus);
@@ -247,7 +244,7 @@ public class QueryDecoder {
 
     Map<String, Object> termsParams = new HashMap<>();
     termsParams.put(FIELD, TYPE_KEYWORD);
-    termsParams.put(VALUE, List.of(ITEM_TYPE_DATA_BANK, ITEM_TYPE_AI_MODEL, ITEM_TYPE_APPS));
+    termsParams.put(VALUE, ItemType.allTypeValues());
 
     QueryModel termsQuery = new QueryModel(QueryType.TERMS, termsParams);
 
@@ -295,6 +292,7 @@ public class QueryDecoder {
 
     try {
       new AccessPolicyQueryDecorator(queryMap, request.getAccessPolicyRequest()).add();
+      expandItemTypeCriteria(request.getSearchCriteriaRequest());
       new SearchCriteriaQueryDecorator(queryMap, request.getSearchCriteriaRequest()).add();
       new InstanceFilterQueryDecorator(queryMap, request.getInstanceFilterRequest()).add();
     } catch (DxEsException ex) {
@@ -302,11 +300,9 @@ public class QueryDecoder {
       throw new DxBadRequestException(ex.getMessage(), ex);
     }
 
-    QueryModel excludeDatabankFalse = buildUploadStatusExclusion(ITEM_TYPE_DATA_BANK);
-    QueryModel excludeAiModelFalse = buildUploadStatusExclusion(ITEM_TYPE_AI_MODEL);
-    QueryModel activePublishStatus =
-        buildActivePublishStatusQuery(
-            List.of(ITEM_TYPE_DATA_BANK, ITEM_TYPE_AI_MODEL, ITEM_TYPE_APPS));
+    QueryModel excludeDatabankFalse = buildUploadStatusExclusion(ItemType.DATA_BANK.typeValues());
+    QueryModel excludeAiModelFalse = buildUploadStatusExclusion(ItemType.AI_MODEL.typeValues());
+    QueryModel activePublishStatus = buildActivePublishStatusQuery(ItemType.allTypeValues());
     queryMap.get(FilterType.MUST_NOT).add(excludeDatabankFalse);
     queryMap.get(FilterType.MUST_NOT).add(excludeAiModelFalse);
     queryMap.get(FilterType.MUST).add(activePublishStatus);
@@ -342,15 +338,34 @@ public class QueryDecoder {
     return finalQuery;
   }
 
-  private QueryModel buildUploadStatusExclusion(String itemType) {
+  /**
+   * Widens term filters on the item type to every accepted prefix, e.g. a filter on adex:DataBank
+   * also returns iudx:DataBank items when both prefixes are configured.
+   */
+  private static void expandItemTypeCriteria(SearchCriteriaRequestDTO searchCriteriaRequest) {
+    if (searchCriteriaRequest == null || searchCriteriaRequest.getSearchCriteria() == null) {
+      return;
+    }
+    for (SearchCriteriaDTO criterion : searchCriteriaRequest.getSearchCriteria()) {
+      boolean isTypeField =
+          TYPE_KEY.equals(criterion.getField()) || TYPE_KEYWORD.equals(criterion.getField());
+      boolean isTermSearch =
+          criterion.getSearchType() == null || TERM.equals(criterion.getSearchType());
+      if (isTypeField && isTermSearch && criterion.getValues() != null) {
+        criterion.setValues(ItemType.withAliases(criterion.getValues()));
+      }
+    }
+  }
+
+  private QueryModel buildUploadStatusExclusion(List<String> itemTypes) {
     return new QueryModel(QueryType.BOOL)
         .setMustQueries(
             List.of(
-                new QueryModel(QueryType.TERM)
+                new QueryModel(QueryType.TERMS)
                     .setQueryParameters(
                         Map.of(
                             FIELD, TYPE_KEYWORD,
-                            VALUE, itemType)),
+                            VALUE, itemTypes)),
                 new QueryModel(QueryType.TERM)
                     .setQueryParameters(Map.of(FIELD, DATA_UPLOAD_STATUS, VALUE, false))));
   }
@@ -405,8 +420,15 @@ public class QueryDecoder {
   }
 
   public QueryModel buildGetItemWithNameExistsQuery(String type, String name) {
-    QueryModel typeMatchQuery = new QueryModel(QueryType.MATCH);
-    typeMatchQuery.setQueryParameters(Map.of(FIELD, TYPE_KEY, VALUE, type));
+    // every accepted prefix of a type shares one namespace, so match any of them
+    List<QueryModel> typeAliasQueries = new ArrayList<>();
+    for (Object alias : ItemType.withAliases(List.of(type))) {
+      typeAliasQueries.add(
+          new QueryModel(QueryType.MATCH).setQueryParameters(Map.of(FIELD, TYPE_KEY, VALUE, alias)));
+    }
+    QueryModel typeMatchQuery = new QueryModel(QueryType.BOOL);
+    typeMatchQuery.setShouldQueries(typeAliasQueries);
+    typeMatchQuery.setMinimumShouldMatch(String.valueOf(1));
     QueryModel nameMatchQuery = new QueryModel(QueryType.MATCH);
     nameMatchQuery.setQueryParameters(Map.of(FIELD, NAME + KEYWORD_KEY, VALUE, name));
 

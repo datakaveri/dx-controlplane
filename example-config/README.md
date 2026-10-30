@@ -423,6 +423,28 @@ its own `required`. Adding a config key without adding its block to the consumin
   registered on the central service address. Missing `centralCatDocIndex` behaves the same way —
   healthy boot, failing central queries.
 
+### `commonOptions.itemTypePrefixes`
+
+- **Type / format:** array of strings — the namespaces before the `:` in platform item types
+- **Required:** no
+- **Purpose:** Prefixes of the DataBank, AiModel and Apps item types this deployment accepts, e.g.
+  `adex` gives `adex:DataBank`, `iudx` gives `iudx:DataBank`. Items may be created with any listed
+  prefix and are stored as sent; every listed prefix of a type is treated as the same type in the
+  server-side type checks, `type` filters, name-uniqueness checks and catalogue visibility filters.
+  The **first** entry is the primary prefix: per-type counts from `/count` are merged under it
+  (e.g. `iudx:DataBank` items are counted under `adex:DataBank` when `adex` is first). Read via
+  `ItemType.configurePrefix` in every verticle that handles items; a verticle whose config lacks
+  the key keeps the prefixes already set, so list `commonOptions` in each such verticle's
+  `required`. Items stored under a prefix that is no longer listed are not matched, so drop a
+  prefix only after migrating its items.
+- **Expected value:** the primary prefix must be the one the UI sends and compares against; add
+  further prefixes only where metadata with those prefixes must also be onboarded (e.g. a dev
+  deployment moving from `adex` to `iudx`). The UI should compare item types by the part after
+  the `:`, since listings return each item with the prefix it was created with.
+- **Example value:** `["adex"]`; a dev deployment accepting both: `["adex", "iudx"]`
+- **Default if omitted:** `["adex"]`. The older single-string key `itemTypePrefix` (e.g.
+  `"adex"`) is still read when `itemTypePrefixes` is absent.
+
 ### `commonOptions.kycRequired`
 
 - **Type / format:** bool — **feature flag**

@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.common.ItemType;
 import org.cdpg.dx.acl.accessReport.service.ReportService;
 import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
@@ -74,6 +75,7 @@ public class AccessReportController implements ApiController {
             .defaultSort(DB_UPDATED_AT, DEFAULT_SORTING_ORDER)
             .allowedSortFields(allowedSortFields)
             .build();
+    ItemType.expandFilterAliases(request.filters(), DB_ASSET_TYPE);
 
     LOGGER.info("PaginatedRequest created for handleGenerateCsvForProvider:  {}", request);
     reportService
@@ -132,6 +134,7 @@ public class AccessReportController implements ApiController {
             .defaultSort(DB_UPDATED_AT, DEFAULT_SORTING_ORDER)
             .allowedSortFields(allowedSortFields)
             .build();
+    ItemType.expandFilterAliases(request.filters(), DB_ASSET_TYPE);
 
     LOGGER.info("PaginatedRequest created for handleGenerateCsvForOrgAdmin:  {}", request);
     reportService

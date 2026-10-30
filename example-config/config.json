@@ -32,6 +32,7 @@
     "docUserIndex": "<tenantPrefix>__userdoc",
     "initialCreditBalance": 1,
     "isCentralCatEnabled": false,
+    "itemTypePrefixes": ["adex", "iudx"],
     "kycRequired": false,
     "ogcDataPlaneUrl": "<domain>/geoserver",
     "publisherPanelUrl": "<domain>",

@@ -1,9 +1,6 @@
 package org.cdpg.dx.aaa.item.util;
 
 import static org.cdpg.dx.aaa.common.Constants.ID;
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_AI_MODEL;
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_APPS;
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
 import static org.cdpg.dx.aaa.common.Constants.NAME;
 import static org.cdpg.dx.aaa.common.Constants.TYPE;
 
@@ -11,16 +8,17 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import java.util.Map;
 import java.util.UUID;
+import org.cdpg.dx.aaa.common.ItemType;
 import org.cdpg.dx.aaa.item.enums.ItemAuditOperation;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.auditing.v2.util.AssetTypeUtil;
 import org.cdpg.dx.auditing.v2.util.AuditLogHelper;
 
 public final class ItemAuditLogHelper {
-  private static final Map<String, String> ASSET_TYPE_MAPPING = Map.of(
-      ITEM_TYPE_DATA_BANK, "DATABANK",
-      ITEM_TYPE_AI_MODEL, "AI_MODEL",
-      ITEM_TYPE_APPS, "USECASE"
+  private static final Map<ItemType, String> ASSET_TYPE_MAPPING = Map.of(
+      ItemType.DATA_BANK, "DATABANK",
+      ItemType.AI_MODEL, "AI_MODEL",
+      ItemType.APPS, "USECASE"
   );
 
   private ItemAuditLogHelper() {}
@@ -46,7 +44,10 @@ public final class ItemAuditLogHelper {
       applyAssetInfo(builder, itemJson);
     } else if (ItemAuditOperation.DELETE.equals(operation)) {
       String rawType = itemJson.getJsonArray(TYPE).getString(0);
-      String type = ASSET_TYPE_MAPPING.getOrDefault(rawType, "UNKNOWN");
+      String type =
+          ItemType.isPlatformType(rawType)
+              ? ASSET_TYPE_MAPPING.get(ItemType.fromTypeValue(rawType))
+              : "UNKNOWN";
 
       builder
           .withAssetName(itemJson.getString(NAME))

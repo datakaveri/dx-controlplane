@@ -10,6 +10,7 @@ import org.cdpg.dx.aaa.activity.dao.UserActivityLogDao;
 import org.cdpg.dx.aaa.activity.dao.impl.UserActivityLogDaoImpl;
 import org.cdpg.dx.aaa.activity.service.UserActivityAuditLogService;
 import org.cdpg.dx.aaa.activity.service.impl.UserActivityAuditLogServiceImpl;
+import org.cdpg.dx.aaa.common.ItemType;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.aaa.leaderboard.dao.LeaderboardWriteDao;
@@ -37,6 +38,7 @@ public class DataBrokerVerticle extends BaseDataBrokerVerticle {
   @Override
   protected void onBrokerReady(
       RabbitMQClient internalClient, RabbitMQClient prodClient, RabbitClient rabbitClient) {
+    ItemType.configurePrefix(config());
 
     PostgresService pgService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
     ElasticsearchService esService =

@@ -615,9 +615,6 @@
       required: false
       schema:
         type: string
-        enum:
-        - adex:DataBank
-        - adex:AiModel
     - name: organizationId
       in: query
       description: Filter access requests by organization ID of the asset. Displays all requests if not specified.
@@ -777,9 +774,6 @@
       required: false
       schema:
         type: string
-        enum:
-        - adex:AiModel
-        - adex:DataBank
     - $ref: ../components/parameters.yaml#/PageParam
     - $ref: ../components/parameters.yaml#/SizeParam
     - $ref: ../components/parameters.yaml#/SortingParam
@@ -907,9 +901,6 @@
       required: false
       schema:
         type: string
-        enum:
-        - adex:AiModel
-        - adex:DataBank
     - $ref: ../components/parameters.yaml#/PageParam
     - $ref: ../components/parameters.yaml#/SizeParam
     - $ref: ../components/parameters.yaml#/SortingParam
@@ -1049,9 +1040,6 @@
       required: false
       schema:
         type: string
-        enum:
-        - adex:DataBank
-        - adex:AiModel
     - name: organizationId
       in: query
       description: Filter access requests by organization ID of the asset. Displays all requests if not specified.
@@ -1211,9 +1199,6 @@
       required: false
       schema:
         type: string
-        enum:
-        - adex:DataBank
-        - adex:AiModel
     - name: organizationId
       in: query
       description: Filter access requests by organization ID of the asset. Displays all requests if not specified.
@@ -1516,9 +1501,6 @@
       required: false
       schema:
         type: string
-        enum:
-        - adex:DataBank
-        - adex:AiModel
     - name: organizationId
       in: query
       description: Filter access requests by organization ID of the asset. Displays
@@ -1687,9 +1669,6 @@
       required: false
       schema:
         type: string
-        enum:
-        - adex:DataBank
-        - adex:AiModel
     - name: organizationId
       in: query
       description: Filter access requests by organization ID of the asset. Displays all requests if not specified.

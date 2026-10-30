@@ -9,6 +9,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.KeyStoreOptions;
 import java.util.List;
 import java.util.function.Supplier;
+import org.cdpg.dx.aaa.common.ItemType;
 import org.cdpg.dx.aaa.publicKey.service.PublicService;
 import org.cdpg.dx.aaa.publicKey.service.impl.PublicServiceImpl;
 import org.cdpg.dx.apiserver.AbstractApiServerVerticle;
@@ -39,6 +40,7 @@ public class ApiServerVerticle extends AbstractApiServerVerticle {
   @Override
   protected List<ApiController> createControllers(
       Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
+    ItemType.configurePrefix(config);
     return ControllerFactory.createControllers(vertx, config, urnGenerator);
   }
 

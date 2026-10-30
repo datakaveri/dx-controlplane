@@ -1031,7 +1031,6 @@ exampleEntityWIdDataBankResource:
   - industry
   - uploadedBy
   - geoCoverage
-  - yearRange
   - uploadFrequency
   - license
   example:
@@ -4747,7 +4746,6 @@ exampleEntityDataBank:
   - accessPolicy
   - fileFormat
   - industry
-  - yearRange
   - uploadFrequency
   - license
   - resourceServer

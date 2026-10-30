@@ -358,7 +358,9 @@
 
       Aggregation is always done on `type.keyword`. The response contains a `result` array
 
-      with type→count pairs.
+      with type→count pairs. Counts for every accepted prefix are merged under the primary
+
+      (first) prefix in `itemTypePrefixes`, and a `type` filter matches every accepted prefix.
 
 
       The request body supports:

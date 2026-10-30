@@ -15,6 +15,7 @@ import io.vertx.serviceproxy.ServiceBinder;
 import io.vertx.sqlclient.Pool;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.common.ItemType;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.email.service.EmailService;
 import org.cdpg.dx.email.service.EmailServiceImpl;
@@ -32,6 +33,7 @@ public class EmailVerticle extends AbstractVerticle {
 
   @Override
   public void start(Promise<Void> startPromise) {
+    ItemType.configurePrefix(config());
 
     String emailHostname = config().getString("emailHostName");
     int emailPort = config().getInteger("emailPort");

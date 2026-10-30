@@ -654,9 +654,6 @@ paths:
           required: false
           schema:
             type: string
-            enum:
-              - adex:DataBank
-              - adex:AiModel
         - name: organizationId
           in: query
           description: Filter access requests by organization ID of the asset. Displays all requests if not specified.
@@ -805,9 +802,6 @@ paths:
           required: false
           schema:
             type: string
-            enum:
-              - adex:AiModel
-              - adex:DataBank
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
         - $ref: '#/components/parameters/SortingParam'
@@ -922,9 +916,6 @@ paths:
           required: false
           schema:
             type: string
-            enum:
-              - adex:AiModel
-              - adex:DataBank
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
         - $ref: '#/components/parameters/SortingParam'
@@ -1044,9 +1035,6 @@ paths:
           required: false
           schema:
             type: string
-            enum:
-              - adex:DataBank
-              - adex:AiModel
         - name: organizationId
           in: query
           description: Filter access requests by organization ID of the asset. Displays all requests if not specified.
@@ -1202,9 +1190,6 @@ paths:
           required: false
           schema:
             type: string
-            enum:
-              - adex:DataBank
-              - adex:AiModel
         - name: organizationId
           in: query
           description: Filter access requests by organization ID of the asset. Displays all requests if not specified.
@@ -1335,9 +1320,6 @@ paths:
           required: false
           schema:
             type: string
-            enum:
-              - adex:DataBank
-              - adex:AiModel
         - name: organizationId
           in: query
           description: Filter access requests by organization ID of the asset. Displays all requests if not specified.
@@ -1618,9 +1600,6 @@ paths:
           required: false
           schema:
             type: string
-            enum:
-              - adex:DataBank
-              - adex:AiModel
         - name: organizationId
           in: query
           description: Filter access requests by organization ID of the asset. Displays all requests if not specified.
@@ -5045,7 +5024,6 @@ components:
         - industry
         - uploadedBy
         - geoCoverage
-        - yearRange
         - verifiedBy
         - uploadFrequency
         - license
@@ -5273,7 +5251,6 @@ components:
             - industry
             - uploadedBy
             - geoCoverage
-            - yearRange
             - verifiedBy
             - uploadFrequency
             - license
@@ -5647,7 +5624,6 @@ components:
             - industry
             - uploadedBy
             - geoCoverage
-            - yearRange
             - verifiedBy
             - uploadFrequency
             - license
@@ -6916,7 +6892,6 @@ components:
         - fileFormat
         - industry
         - geoCoverage
-        - yearRange
         - verifiedBy
         - uploadFrequency
         - license

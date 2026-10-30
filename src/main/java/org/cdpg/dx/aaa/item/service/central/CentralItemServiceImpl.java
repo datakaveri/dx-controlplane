@@ -1,9 +1,6 @@
 package org.cdpg.dx.aaa.item.service.central;
 
 import static org.cdpg.dx.aaa.common.Constants.FIELD;
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_AI_MODEL;
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_APPS;
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
 import static org.cdpg.dx.aaa.common.Constants.NAME;
 import static org.cdpg.dx.aaa.common.Constants.PII;
 import static org.cdpg.dx.aaa.common.Constants.PRIVATE;
@@ -285,11 +282,11 @@ public class CentralItemServiceImpl implements ItemService {
     String apdUrl = response.getSource().getString(APD_URL);
     String type = response.getSource().getJsonArray(TYPE).getString(0);
     ItemType itemType = null;
-    if (type.equalsIgnoreCase(ITEM_TYPE_DATA_BANK)) {
+    if (org.cdpg.dx.aaa.common.ItemType.DATA_BANK.matches(type)) {
       itemType = ItemType.DATABANK;
-    } else if (type.equalsIgnoreCase(ITEM_TYPE_AI_MODEL)) {
+    } else if (org.cdpg.dx.aaa.common.ItemType.AI_MODEL.matches(type)) {
       itemType = ItemType.AIMODEL;
-    } else if (type.equalsIgnoreCase(ITEM_TYPE_APPS)) {
+    } else if (org.cdpg.dx.aaa.common.ItemType.APPS.matches(type)) {
       itemType = ItemType.APPS;
     }
     if (apdUrl == null || apdUrl.isBlank()) {
@@ -588,8 +585,10 @@ public class CentralItemServiceImpl implements ItemService {
     QueryModel boolQuery = new QueryModel(QueryType.BOOL);
     QueryModel termQuery = new QueryModel(QueryType.TERM);
     termQuery.setQueryParameters(Map.of(FIELD, ID_KEYWORD, VALUE, id));
-    QueryModel matchQuery = new QueryModel(QueryType.MATCH);
-    matchQuery.setQueryParameters(Map.of(FIELD, TYPE_KEYWORD, VALUE, type));
+    // the stored type may carry any accepted prefix, e.g. a PUT with iudx:DataBank on an adex:DataBank item
+    QueryModel matchQuery = new QueryModel(QueryType.TERMS);
+    List<Object> typeAliases = org.cdpg.dx.aaa.common.ItemType.withAliases(List.of(type));
+    matchQuery.setQueryParameters(Map.of(FIELD, TYPE_KEYWORD, VALUE, typeAliases));
 
     boolQuery.setMustQueries(List.of(termQuery, matchQuery));
 

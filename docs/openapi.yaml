@@ -1120,6 +1120,9 @@ paths:
       description: |
         Create a new catalogue item. The request body defines the entity type
         (e.g., `adex:AiModel`, `adex:DataBank`, `adex:Apps`) and its metadata.
+        Every prefix in the deployment's `itemTypePrefixes` is accepted (e.g. `iudx:DataBank` when
+        `iudx` is configured) and is treated as the same type; the type is stored as sent.
+        `yearRange` is optional for DataBank items.
 
         ### Backend-managed fields
         The following fields are automatically set by the backend and must not be modified by the client:
@@ -4798,6 +4801,7 @@ paths:
         Unified catalogue search query for discovering entities that meet complex criteria. The
         `/search` endpoint supports a rich combination of property-based (`term`, `flattenedTerm`),
         range-based, and temporal-based searches using a common `searchCriteria` array format.
+        A `type` filter matches the type under every prefix in `itemTypePrefixes`, e.g. `adex:DataBank` also returns `iudx:DataBank` items when both are configured.
 
         ### 📌 Visibility of Entities in Discovery
         The `/search` API returns only entities that are fully published and available for discovery. An entity is included in results when:<br> - `publishStatus` is `ACTIVE`<br> - `dataUploadStatus` is `true`<br> - `itemStatus` is one of:<br> - `VERIFIED`<br> - `VERIFIED-SFTP`<br> - `VERIFIED-API`
@@ -5171,7 +5175,8 @@ paths:
         AI Models, and Applications.
 
         Aggregation is always done on `type.keyword`. The response contains a `result` array
-        with type→count pairs.
+        with type→count pairs. Counts for every accepted prefix are merged under the primary
+        (first) prefix in `itemTypePrefixes`, and a `type` filter matches every accepted prefix.
 
         The request body supports:
         - **Text-only count search** (via `q`)
@@ -19039,7 +19044,6 @@ components:
         - industry
         - uploadedBy
         - geoCoverage
-        - yearRange
         - uploadFrequency
         - license
       example:
@@ -22715,7 +22719,6 @@ components:
         - accessPolicy
         - fileFormat
         - industry
-        - yearRange
         - uploadFrequency
         - license
         - resourceServer
@@ -23175,22 +23178,17 @@ components:
         Scope of access being delegated. Each scope is restricted to specific roles.Check the roles description for more information.
     DelegationEntityType:
       type: string
-      enum:
-        - org
-        - provider
-        - adex:AiModel
-        - adex:DataBank
-        - adex:Apps
       description: |
-        The type of entity this delegation is scoped to.
+        The type of entity this delegation is scoped to. Item types use the deployment's
+        item type prefixes (`itemTypePrefixes`, e.g. `adex`).
 
-        | Entity Type      | Description                                      |
-        |------------------|--------------------------------------------------|
-        | `org`            | Organisation-level delegation                    |
-        | `provider`       | Provider-level delegation                        |
-        | `adex:AiModel`   | Delegation scoped to an AI Model asset           |
-        | `adex:DataBank`  | Delegation scoped to a DataBank asset            |
-        | `adex:Apps`      | Delegation scoped to an Apps asset               |
+        | Entity Type         | Description                                      |
+        |---------------------|--------------------------------------------------|
+        | `org`               | Organisation-level delegation                    |
+        | `provider`          | Provider-level delegation                        |
+        | `<prefix>:AiModel`  | Delegation scoped to an AI Model asset           |
+        | `<prefix>:DataBank` | Delegation scoped to a DataBank asset            |
+        | `<prefix>:Apps`     | Delegation scoped to an Apps asset               |
     UserInteractionRequest:
       type: object
       required:

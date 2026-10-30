@@ -33,6 +33,7 @@ import org.cdpg.dx.aaa.appCredentials.dao.impl.AppConstraintsDAOImpl;
 import org.cdpg.dx.aaa.appCredentials.dao.impl.AppCredentialsDAOImpl;
 import org.cdpg.dx.aaa.appCredentials.service.AppCredentialsService;
 import org.cdpg.dx.aaa.appCredentials.service.impl.AppCredentialsServiceImpl;
+import org.cdpg.dx.aaa.common.ItemType;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.grpc.apis.ItemApiService;
 import org.cdpg.dx.aaa.grpc.apis.PolicyApiService;
@@ -64,6 +65,7 @@ public class GrpcServerVerticle extends AbstractVerticle {
 
   @Override
   public void start(Promise<Void> startPromise) {
+    ItemType.configurePrefix(config());
     int grpcPort = config().getInteger("grpcPort", 9090);
     String docIndex = config().getString("docIndex", "iudx-docs");
     String deletedDocsIndex = config().getString(DELETED_DOCS_INDEX);

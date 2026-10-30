@@ -10,13 +10,13 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.central.catalogue.search.util.ResponseModel;
+import org.cdpg.dx.aaa.common.ItemType;
 import org.cdpg.dx.common.exception.DxBadRequestException;
-import org.cdpg.dx.database.elastic.model.ElasticsearchSearchResult;
-import org.cdpg.dx.database.postgres.models.OrderBy;
 import org.cdpg.dx.database.elastic.model.QueryDecoder;
 import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
 import org.cdpg.dx.database.elastic.model.QueryModel;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
+import org.cdpg.dx.database.postgres.models.OrderBy;
 
 public class CentralSearchServiceImpl implements CentralSearchService {
   private static final Logger LOGGER = LogManager.getLogger(CentralSearchServiceImpl.class);
@@ -97,7 +97,9 @@ public class CentralSearchServiceImpl implements CentralSearchService {
           .search(docIndex, queryModel, COUNT_AGGREGATION_ONLY)
           .map(
               searchResult ->
-                  new ResponseModel(searchResult.getResults(), searchResult.getAggregations()))
+                  new ResponseModel(
+                      searchResult.getResults(),
+                      ItemType.mergeAliasCounts(searchResult.getAggregations())))
           .onFailure(err -> LOGGER.error("Count execution failed: {}", err.getMessage()));
     } catch (Exception e) {
       LOGGER.error("Error during postCount: {}", e.getMessage(), e);

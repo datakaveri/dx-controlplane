@@ -5,9 +5,6 @@ import static org.cdpg.dx.aaa.common.Constants.ACTIVE;
 import static org.cdpg.dx.aaa.common.Constants.DETAIL;
 import static org.cdpg.dx.aaa.common.Constants.ID;
 import static org.cdpg.dx.aaa.common.Constants.IN_ACTIVE;
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_AI_MODEL;
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_APPS;
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_RESOURCE_GROUP;
 import static org.cdpg.dx.aaa.common.Constants.NAME;
 import static org.cdpg.dx.aaa.common.Constants.ORGANIZATION_ID;
@@ -618,9 +615,7 @@ public class PolicyServiceImpl implements PolicyService {
                 String type = resultJson.getJsonArray(TYPE).getString(0);
                 String idFromResponse = resultJson.getString(ID);
                 /* check if the id being sent is of valid type*/
-                if (!ITEM_TYPE_DATA_BANK.equalsIgnoreCase(type)
-                    && !ITEM_TYPE_AI_MODEL.equalsIgnoreCase(type)
-                    && !ITEM_TYPE_APPS.equalsIgnoreCase(type)) {
+                if (!org.cdpg.dx.aaa.common.ItemType.isPlatformType(type)) {
                   LOGGER.error("Invalid item type: {}", type);
                   promise.fail(
                       generateFailureMessage(
@@ -674,11 +669,11 @@ public class PolicyServiceImpl implements PolicyService {
                   promise.fail(failureMessage);
                 } else {
                   ItemType itemType = null;
-                  if (type.equalsIgnoreCase(ITEM_TYPE_DATA_BANK)) {
+                  if (org.cdpg.dx.aaa.common.ItemType.DATA_BANK.matches(type)) {
                     itemType = ItemType.DATABANK;
-                  } else if (type.equalsIgnoreCase(ITEM_TYPE_AI_MODEL)) {
+                  } else if (org.cdpg.dx.aaa.common.ItemType.AI_MODEL.matches(type)) {
                     itemType = ItemType.AIMODEL;
-                  } else if (type.equalsIgnoreCase(ITEM_TYPE_APPS)) {
+                  } else if (org.cdpg.dx.aaa.common.ItemType.APPS.matches(type)) {
                     itemType = ItemType.APPS;
                   }
                   ResourceObj resourceObj =

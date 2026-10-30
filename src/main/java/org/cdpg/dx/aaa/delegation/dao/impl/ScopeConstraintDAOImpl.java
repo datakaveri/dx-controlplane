@@ -4,9 +4,13 @@ import static org.cdpg.dx.aaa.delegation.util.Constants.*;
 
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.common.ItemType;
 import org.cdpg.dx.aaa.delegation.dao.ScopeConstraintDAO;
 import org.cdpg.dx.aaa.delegation.models.DelegationScopeConstraint;
 import org.cdpg.dx.common.exception.BaseDxException;
@@ -25,6 +29,13 @@ public class ScopeConstraintDAOImpl extends AbstractBaseDAO<DelegationScopeConst
   public Future<Integer> deleteByConstraint(
       UUID delegationId, String role, String scope, String entityId, String entityType) {
 
+    // every accepted prefix of an item type is the same entity type
+    List<Object> entityTypes = ItemType.withAliases(List.of(entityType));
+    String entityTypePlaceholders =
+        IntStream.range(0, entityTypes.size())
+            .mapToObj(i -> "$" + (i + 5))
+            .collect(Collectors.joining(", "));
+
     String sql =
         """
         DELETE FROM delegation_scope_constraints
@@ -32,16 +43,17 @@ public class ScopeConstraintDAOImpl extends AbstractBaseDAO<DelegationScopeConst
           AND role = $2
           AND scope = $3
           AND entity_id = $4
-          AND entity_type = $5
-        """;
+          AND entity_type IN (%s)
+        """
+            .formatted(entityTypePlaceholders);
 
     JsonArray params =
         new JsonArray()
             .add(delegationId.toString())
             .add(role)
             .add(scope)
-            .add(entityId)
-            .add(entityType);
+            .add(entityId);
+    entityTypes.forEach(params::add);
 
     return postgresService
         .executeQuery(sql, params)

@@ -5,6 +5,9 @@
     description: |
       Create a new catalogue item. The request body defines the entity type
       (e.g., `adex:AiModel`, `adex:DataBank`, `adex:Apps`) and its metadata.
+      Every prefix in the deployment's `itemTypePrefixes` is accepted (e.g. `iudx:DataBank` when
+      `iudx` is configured) and is treated as the same type; the type is stored as sent.
+      `yearRange` is optional for DataBank items.
 
       ### Backend-managed fields
       The following fields are automatically set by the backend and must not be modified by the client:

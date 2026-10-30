@@ -11,6 +11,7 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.serviceproxy.ServiceBinder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.common.ItemType;
 import org.cdpg.dx.aaa.delegation.dao.DelegationDAOFactory;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.delegation.service.DelegationServiceImpl;
@@ -37,6 +38,7 @@ public class DelegationVerticle extends AbstractVerticle {
 
   @Override
   public void start(Promise<Void> startPromise) {
+    ItemType.configurePrefix(config());
     try {
       // ------------------- DB Pool -------------------
       //      Pool pool = /* get or create your shared SQL pool */;

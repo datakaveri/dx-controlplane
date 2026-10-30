@@ -5,9 +5,6 @@ import static org.cdpg.dx.aaa.common.Constants.ID;
 import static org.cdpg.dx.aaa.common.Constants.CREATED_BY;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_CREATED_AT;
 import static org.cdpg.dx.aaa.common.Constants.ITEM_STATUS;
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_AI_MODEL;
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_APPS;
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
 import static org.cdpg.dx.aaa.common.Constants.LAST_UPDATED;
 import static org.cdpg.dx.aaa.common.Constants.METRICS;
 import static org.cdpg.dx.aaa.common.Constants.NAME;
@@ -37,6 +34,7 @@ import java.util.TimeZone;
 import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.common.ItemType;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.auth.model.Scopes;
 import org.cdpg.dx.common.exception.DxBadRequestException;
@@ -68,7 +66,7 @@ public class ItemExistenceValidator {
   private Future<Boolean> itemExists(ItemService service, String itemType, String name) {
     return service
         .itemWithTheNameExists(itemType, name)
-        .map(res -> getReturnTypeForValidation(res.toJson()).contains(itemType))
+        .map(res -> isOfType(res.toJson(), itemType))
         .recover(
             err -> {
               if (DETAIL_ITEM_NOT_FOUND.equals(err.getMessage())) {
@@ -106,11 +104,11 @@ public class ItemExistenceValidator {
 
     String name = request.getString(NAME);
 
-    Future<Boolean> localExists = itemExists(itemService, ITEM_TYPE_APPS, name);
+    Future<Boolean> localExists = itemExists(itemService, ItemType.APPS.getTypeValue(), name);
 
     Future<Boolean> centralExists =
         isCentralCatEnabled
-            ? itemExists(centralItemService, ITEM_TYPE_APPS, name)
+            ? itemExists(centralItemService, ItemType.APPS.getTypeValue(), name)
             : Future.succeededFuture(false);
 
     Future.all(localExists, centralExists)
@@ -182,12 +180,9 @@ public class ItemExistenceValidator {
     // -------- Local existence check --------
     Future<Boolean> localExistsFuture =
         itemService
-            .itemWithTheNameExists(ITEM_TYPE_AI_MODEL, name)
+            .itemWithTheNameExists(ItemType.AI_MODEL.getTypeValue(), name)
             .map(
-                res -> {
-                  String returnType = getReturnTypeForValidation(res.toJson());
-                  return returnType.contains(ITEM_TYPE_AI_MODEL);
-                })
+                res -> isOfType(res.toJson(), ItemType.AI_MODEL.getTypeValue()))
             .recover(
                 err -> {
                   if (DETAIL_ITEM_NOT_FOUND.equals(err.getMessage())) {
@@ -201,12 +196,9 @@ public class ItemExistenceValidator {
     Future<Boolean> centralExistsFuture =
         isCentralCatEnabled
             ? centralItemService
-                .itemWithTheNameExists(ITEM_TYPE_AI_MODEL, name)
+                .itemWithTheNameExists(ItemType.AI_MODEL.getTypeValue(), name)
                 .map(
-                    res -> {
-                      String returnType = getReturnTypeForValidation(res.toJson());
-                      return returnType.contains(ITEM_TYPE_AI_MODEL);
-                    })
+                    res -> isOfType(res.toJson(), ItemType.AI_MODEL.getTypeValue()))
                 .recover(
                     err -> {
                       if (DETAIL_ITEM_NOT_FOUND.equals(err.getMessage())) {
@@ -305,12 +297,9 @@ public class ItemExistenceValidator {
 
     Future<Boolean> localExistsFuture =
         itemService
-            .itemWithTheNameExists(ITEM_TYPE_DATA_BANK, name)
+            .itemWithTheNameExists(ItemType.DATA_BANK.getTypeValue(), name)
             .map(
-                res -> {
-                  String returnType = getReturnTypeForValidation(res.toJson());
-                  return returnType.contains(ITEM_TYPE_DATA_BANK);
-                })
+                res -> isOfType(res.toJson(), ItemType.DATA_BANK.getTypeValue()))
             .recover(
                 err -> {
                   if (DETAIL_ITEM_NOT_FOUND.equals(err.getMessage())) {
@@ -323,12 +312,9 @@ public class ItemExistenceValidator {
     Future<Boolean> centralExistsFuture =
         isCentralCatEnabled
             ? centralItemService
-                .itemWithTheNameExists(ITEM_TYPE_DATA_BANK, name)
+                .itemWithTheNameExists(ItemType.DATA_BANK.getTypeValue(), name)
                 .map(
-                    res -> {
-                      String returnType = getReturnTypeForValidation(res.toJson());
-                      return returnType.contains(ITEM_TYPE_DATA_BANK);
-                    })
+                    res -> isOfType(res.toJson(), ItemType.DATA_BANK.getTypeValue()))
                 .recover(
                     err -> {
                       if (DETAIL_ITEM_NOT_FOUND.equals(err.getMessage())) {
@@ -499,7 +485,9 @@ public class ItemExistenceValidator {
     }
   }
 
-  private String getReturnTypeForValidation(JsonObject result) {
-    return result.getJsonArray(TYPE).toString();
+  /** True if the item carries the given type under any accepted prefix. */
+  private boolean isOfType(JsonObject result, String itemType) {
+    ItemType type = ItemType.fromTypeValue(itemType);
+    return result.getJsonArray(TYPE).stream().anyMatch(t -> type.matches(String.valueOf(t)));
   }
 }

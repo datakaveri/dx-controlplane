@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.common.ItemType;
 import org.cdpg.dx.aaa.search.util.ResponseModel;
 import org.cdpg.dx.aaa.shareAssets.service.VisibilityService;
 import org.cdpg.dx.common.exception.DxBadRequestException;
@@ -142,7 +143,8 @@ public class SearchServiceImpl implements SearchService {
                     .map(
                         searchResult ->
                             new ResponseModel(
-                                searchResult.getResults(), searchResult.getAggregations()));
+                                searchResult.getResults(),
+                                ItemType.mergeAliasCounts(searchResult.getAggregations())));
               })
           .onFailure(err -> LOGGER.error("Count execution failed: {}", err.getMessage(), err));
 

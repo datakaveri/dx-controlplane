@@ -16,6 +16,7 @@
   "commonOptions": {
     "isCentralCatEnabled": true,
     "isEdgeCatalogue": false,
+    "itemTypePrefixes": ["adex"],
     "isStandalone": false,
     "dxApiBasePath": "/dx/apd/acl/v1",
     "cosDomain":"asdasd",
@@ -170,7 +171,8 @@
       "verticleInstances": 1,
       "required": [
         "databrokerOptions",
-        "auditOptions"
+        "auditOptions",
+        "commonOptions"
       ]
     },
     {

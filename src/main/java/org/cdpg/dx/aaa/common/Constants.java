@@ -67,14 +67,14 @@ public class Constants {
     public static final String ITEM_TYPE_COS = "iudx:COS";
     public static final String ITEM_TYPE_OWNER = "iudx:Owner";
     public static final String ITEM_TYPE_INSTANCE = "iudx:Instance";
-    public static final String ITEM_TYPE_AI_MODEL = "adex:AiModel";
-    public static final String ITEM_TYPE_DATA_BANK = "adex:DataBank";
-    public static final String ITEM_TYPE_APPS = "adex:Apps";
+    // Platform item types (DataBank, AiModel, Apps) carry a per-deployment prefix; see ItemType
+    public static final String ITEM_TYPE_PREFIXES = "itemTypePrefixes";
+    // single-prefix form of itemTypePrefixes, still read for older configs
+    public static final String ITEM_TYPE_PREFIX = "itemTypePrefix";
 
     public static final ArrayList<String> ITEM_TYPES =
             new ArrayList<String>(Arrays.asList(ITEM_TYPE_RESOURCE, ITEM_TYPE_RESOURCE_GROUP,
-                    ITEM_TYPE_RESOURCE_SERVER, ITEM_TYPE_PROVIDER, ITEM_TYPE_COS, ITEM_TYPE_OWNER,
-                    ITEM_TYPE_AI_MODEL, ITEM_TYPE_DATA_BANK, ITEM_TYPE_APPS));
+                    ITEM_TYPE_RESOURCE_SERVER, ITEM_TYPE_PROVIDER, ITEM_TYPE_COS, ITEM_TYPE_OWNER));
 
     public static final String AGGREGATIONS = "aggregations";
     public static final String INSTANCE = "instance";

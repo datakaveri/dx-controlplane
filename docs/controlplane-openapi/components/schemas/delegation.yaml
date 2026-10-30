@@ -39,19 +39,14 @@ DelegationScope:
 
 DelegationEntityType:
   type: string
-  enum:
-    - org
-    - provider
-    - adex:AiModel
-    - adex:DataBank
-    - adex:Apps
   description: |
-    The type of entity this delegation is scoped to.
+    The type of entity this delegation is scoped to. Item types use the deployment's
+    item type prefixes (`itemTypePrefixes`, e.g. `adex`).
 
-    | Entity Type      | Description                                      |
-    |------------------|--------------------------------------------------|
-    | `org`            | Organisation-level delegation                    |
-    | `provider`       | Provider-level delegation                        |
-    | `adex:AiModel`   | Delegation scoped to an AI Model asset           |
-    | `adex:DataBank`  | Delegation scoped to a DataBank asset            |
-    | `adex:Apps`      | Delegation scoped to an Apps asset               |
+    | Entity Type         | Description                                      |
+    |---------------------|--------------------------------------------------|
+    | `org`               | Organisation-level delegation                    |
+    | `provider`          | Provider-level delegation                        |
+    | `<prefix>:AiModel`  | Delegation scoped to an AI Model asset           |
+    | `<prefix>:DataBank` | Delegation scoped to a DataBank asset            |
+    | `<prefix>:Apps`     | Delegation scoped to an Apps asset               |

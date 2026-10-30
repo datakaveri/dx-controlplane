@@ -1,18 +1,20 @@
 package org.cdpg.dx.acl.accessRequest.dao.model;
 
+import org.cdpg.dx.aaa.common.ItemType;
+
 /*Do not allow potential applications as they dont have ownerUserId*/
 public enum AssetType {
-  DATA_BANK("adex:DataBank"),
-  AI_MODEL("adex:AiModel");
-  private final String assetType;
+  DATA_BANK(ItemType.DATA_BANK),
+  AI_MODEL(ItemType.AI_MODEL);
+  private final ItemType itemType;
 
-  AssetType(String assetType) {
-    this.assetType = assetType;
+  AssetType(ItemType itemType) {
+    this.itemType = itemType;
   }
 
   public static AssetType fromString(String assetType) {
     for (AssetType assetTypeEnum : values()) {
-      if (assetTypeEnum.getAssetType().equalsIgnoreCase(assetType)) {
+      if (assetTypeEnum.itemType.matches(assetType)) {
         return assetTypeEnum;
       }
     }
@@ -20,6 +22,6 @@ public enum AssetType {
   }
 
   public String getAssetType() {
-    return assetType;
+    return itemType.getTypeValue();
   }
 }
