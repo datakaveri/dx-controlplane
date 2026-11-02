@@ -117,7 +117,6 @@ public class ActivityController implements ApiController {
     AuthorizationContext authCtx = context.get(AuthorizationContext.KEY);
     Map<String, String> allowedFilters = Util.getAllowedFilterMapForAdmin(authCtx);
     Map<String, Object> additionalFilter = new HashMap<>(Util.getAdditionalFilters(authCtx));
-    additionalFilter.putAll(Util.getDelegationFilters(context));
 
     LOGGER.info("Admin auth level: {}, allowed filters: {}", authCtx.getLevel(), allowedFilters);
 

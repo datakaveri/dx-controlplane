@@ -26,10 +26,10 @@ public class Util {
   }
 
   /**
-   * When the request (consumer or admin) went through header-based delegation (the {@code did}
-   * header), forces the results down to just this delegate's own actions rather than everything
-   * visible to the delegator/admin identity being acted as. Returns an empty map for
-   * non-delegated requests.
+   * When a consumer request went through header-based delegation (the {@code did} header),
+   * forces the results down to just this delegate's own actions rather than everything visible to
+   * the delegator being acted as. Not applied on admin endpoints: a delegate that passes the admin
+   * scope check gets the full admin view. Returns an empty map for non-delegated requests.
    */
   public static Map<String, Object> getDelegationFilters(RoutingContext ctx) {
     UUID delegateId = AuditContextExtractor.getDelegateId(ctx);

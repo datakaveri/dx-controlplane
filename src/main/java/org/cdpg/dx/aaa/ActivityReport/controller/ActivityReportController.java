@@ -62,10 +62,6 @@ public class ActivityReportController implements ApiController {
     Map<String, String> allowedFilters = Util.getAllowedFilterMapForAdmin(authCtx);
     Map<String, Object> additionalFilter = new HashMap<>(Util.getAdditionalFilters(authCtx));
 
-    // A delegated (DID header) request has its subject swapped to the admin being acted as,
-    // so scope the results to just this delegate's own actions rather than the full admin view.
-    additionalFilter.putAll(Util.getDelegationFilters(routingContext));
-
     LOGGER.info("Admin auth level: {}, allowed filters: {}", authCtx.getLevel(), allowedFilters);
 
     PaginatedRequest request =
