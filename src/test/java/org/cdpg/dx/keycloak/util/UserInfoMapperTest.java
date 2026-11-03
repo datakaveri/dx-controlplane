@@ -94,4 +94,21 @@ class UserInfoMapperTest {
     // buildName concatenates and trims the outer result
     assertThat(result.name()).isNotBlank();
   }
+  @Test
+  @DisplayName("status is ACTIVE for an enabled user")
+  void statusActiveWhenEnabled() {
+    UserRepresentation u = makeUser(UUID.randomUUID().toString(), "jdoe", "jdoe@example.com", "John", "Doe");
+    u.setEnabled(true);
+
+    assertThat(UserInfoMapper.fromUserRepresentation(u).status()).isEqualTo("ACTIVE");
+  }
+
+  @Test
+  @DisplayName("status is INACTIVE for a disabled user")
+  void statusInactiveWhenDisabled() {
+    UserRepresentation u = makeUser(UUID.randomUUID().toString(), "jdoe", "jdoe@example.com", "John", "Doe");
+    u.setEnabled(false);
+
+    assertThat(UserInfoMapper.fromUserRepresentation(u).status()).isEqualTo("INACTIVE");
+  }
 }

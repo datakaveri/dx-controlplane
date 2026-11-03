@@ -4,6 +4,9 @@ import org.keycloak.representations.idm.UserRepresentation;
 
 import java.util.UUID;
 
+import static org.cdpg.dx.aaa.common.Constants.ACTIVE;
+import static org.cdpg.dx.aaa.common.Constants.IN_ACTIVE;
+
 public class UserInfoMapper {
 
   public static UserInfo fromUserRepresentation(UserRepresentation user) {
@@ -14,7 +17,8 @@ public class UserInfoMapper {
       user.getUsername(),
       user.getFirstName(),
       user.getLastName(),
-      user.getEmail()
+      user.getEmail(),
+      Boolean.TRUE.equals(user.isEnabled()) ? ACTIVE : IN_ACTIVE
     );
   }
 

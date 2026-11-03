@@ -1417,6 +1417,10 @@
                       type: string
                     email:
                       type: string
+                    status:
+                      type: string
+                      enum: [ACTIVE, INACTIVE]
+                      description: INACTIVE when the user has been deactivated by a platform admin.
             examples:
               Success:
                 value:
@@ -1429,6 +1433,7 @@
                     givenName: Anirudh
                     familyName: s
                     email: anirudhs441@gmail.com
+                    status: ACTIVE
       '401':
         description: Unauthorized - Token missing or invalid
         content:
