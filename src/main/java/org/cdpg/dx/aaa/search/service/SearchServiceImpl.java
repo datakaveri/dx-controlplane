@@ -4,6 +4,7 @@ import static org.cdpg.dx.database.elastic.util.Constants.COUNT_AGGREGATION_ONLY
 import static org.cdpg.dx.database.elastic.util.Constants.SOURCE_ONLY;
 
 import io.vertx.core.Future;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -116,8 +117,15 @@ public class SearchServiceImpl implements SearchService {
   private void applySorting(QueryModel queryModel, QueryDecoderRequestDTO requestDTO) {
     List<OrderBy> sortList = requestDTO.getSort();
     if (sortList != null && !sortList.isEmpty()) {
-      Map<String, String> sortFields = sortList.stream()
-              .collect(Collectors.toMap(OrderBy::getColumn, sort -> sort.getDirection().toString()));
+      // LinkedHashMap keeps the requested field priority (sort=a:asc;b:desc => a first, then b).
+      Map<String, String> sortFields =
+          sortList.stream()
+              .collect(
+                  Collectors.toMap(
+                      OrderBy::getColumn,
+                      sort -> sort.getDirection().toString(),
+                      (first, second) -> first,
+                      LinkedHashMap::new));
       queryModel.setSortFields(sortFields);
     }
   }
