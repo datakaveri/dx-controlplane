@@ -115,6 +115,8 @@ public class SearchServiceImpl implements SearchService {
   }
 
   private void applySorting(QueryModel queryModel, QueryDecoderRequestDTO requestDTO) {
+    // Free-text search (q) ranks by relevance first; otherwise requested sort fields win.
+    queryModel.setRelevanceFirst(hasTextQuery(requestDTO));
     List<OrderBy> sortList = requestDTO.getSort();
     if (sortList != null && !sortList.isEmpty()) {
       // LinkedHashMap keeps the requested field priority (sort=a:asc;b:desc => a first, then b).
@@ -128,6 +130,12 @@ public class SearchServiceImpl implements SearchService {
                       LinkedHashMap::new));
       queryModel.setSortFields(sortFields);
     }
+  }
+
+  private static boolean hasTextQuery(QueryDecoderRequestDTO requestDTO) {
+    return requestDTO.getTextSearchRequest() != null
+        && requestDTO.getTextSearchRequest().q() != null
+        && !requestDTO.getTextSearchRequest().q().isBlank();
   }
 
   @Override
