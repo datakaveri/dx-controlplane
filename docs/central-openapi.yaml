@@ -19599,7 +19599,8 @@ components:
         fileFormat:
           type: string
         dataReadiness:
-          type: integer
+          type: number
+          format: float
           minimum: 0
           maximum: 100
         industry:
@@ -20854,7 +20855,8 @@ components:
                 type: string
                 description: File format of the dataset
               dataReadiness:
-                type: integer
+                type: number
+                format: float
                 description: Percentage indicating dataset readiness
               resourceType:
                 type: string
@@ -21535,7 +21537,8 @@ components:
                 type: string
                 description: File format of the dataset
               dataReadiness:
-                type: integer
+                type: number
+                format: float
                 description: Percentage indicating dataset readiness
               resourceType:
                 type: string
@@ -22203,7 +22206,8 @@ components:
                 format: date-time
                 description: Item creation timestamp in ISO 8601 format
               dataReadiness:
-                type: integer
+                type: number
+                format: float
                 description: Optional field indicating how ready the data is (if applicable)
             required:
               - type
@@ -22468,7 +22472,8 @@ components:
                   type: string
                 description: List of tags associated with the resource
               dataReadiness:
-                type: integer
+                type: number
+                format: float
                 description: Optional field indicating how ready the data is (if applicable)
             required:
               - id
@@ -22722,7 +22727,8 @@ components:
                 type: string
                 format: date-time
               dataReadiness:
-                type: integer
+                type: number
+                format: float
               ownerUserId:
                 type: string
             required:
@@ -22826,7 +22832,8 @@ components:
                 items:
                   type: string
               dataReadiness:
-                type: integer
+                type: number
+                format: float
               ownerUserId:
                 type: string
             required:
@@ -23232,7 +23239,8 @@ components:
         fileFormat:
           type: string
         dataReadiness:
-          type: integer
+          type: number
+          format: float
         department:
           type: string
         resourceType:

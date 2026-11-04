@@ -4987,7 +4987,8 @@ components:
         fileFormat:
           type: string
         dataReadiness:
-          type: integer
+          type: number
+          format: float
           minimum: 0
           maximum: 100
         industry:
@@ -6420,7 +6421,8 @@ components:
                   type: string
                 description: List of tags associated with the resource
               dataReadiness:
-                type: integer
+                type: number
+                format: float
                 description: Optional field indicating how ready the data is (if applicable)
             required:
               - id
@@ -6862,7 +6864,8 @@ components:
         fileFormat:
           type: string
         dataReadiness:
-          type: integer
+          type: number
+          format: float
         department:
           type: string
         resourceType:
