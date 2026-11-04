@@ -4,6 +4,7 @@ import static org.cdpg.dx.database.elastic.util.Constants.COUNT_AGGREGATION_ONLY
 import static org.cdpg.dx.database.elastic.util.Constants.SOURCE_ONLY;
 
 import io.vertx.core.Future;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -70,12 +71,26 @@ public class CentralSearchServiceImpl implements CentralSearchService {
   }
 
   private void applySorting(QueryModel queryModel, QueryDecoderRequestDTO requestDTO) {
+    // Free-text search (q) ranks by relevance first; otherwise requested sort fields win.
+    queryModel.setRelevanceFirst(hasTextQuery(requestDTO));
     List<OrderBy> sortList = requestDTO.getSort();
     if (sortList != null && !sortList.isEmpty()) {
-      Map<String, String> sortFields = sortList.stream()
-              .collect(Collectors.toMap(OrderBy::getColumn, sort -> sort.getDirection().toString()));
+      Map<String, String> sortFields =
+          sortList.stream()
+              .collect(
+                  Collectors.toMap(
+                      OrderBy::getColumn,
+                      sort -> sort.getDirection().toString(),
+                      (first, second) -> first,
+                      LinkedHashMap::new));
       queryModel.setSortFields(sortFields);
     }
+  }
+
+  private static boolean hasTextQuery(QueryDecoderRequestDTO requestDTO) {
+    return requestDTO.getTextSearchRequest() != null
+        && requestDTO.getTextSearchRequest().q() != null
+        && !requestDTO.getTextSearchRequest().q().isBlank();
   }
 
   @Override
