@@ -1,17 +1,25 @@
 package org.cdpg.dx.databroker.listeners;
 
+import static org.cdpg.dx.email.util.Constants.EMAIL_PERMANENT_FAILURE_CODE;
+
+import io.vertx.core.Vertx;
+import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 import io.vertx.rabbitmq.QueueOptions;
 import io.vertx.rabbitmq.RabbitMQClient;
 import io.vertx.rabbitmq.RabbitMQConsumer;
 import io.vertx.rabbitmq.RabbitMQMessage;
+import io.vertx.serviceproxy.ServiceException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.email.service.EmailService;
 
 public class EmailMessageConsumer implements RabitMqConsumer {
+  static final int MAX_RETRIES = 6;
+  static final long RETRY_DELAY_MS = 5000;
   private static final Logger LOGGER = LogManager.getLogger(EmailMessageConsumer.class);
-  static int COUNTER = 0;
+  private static final int PREFETCH_COUNT = 10;
+  private final Vertx vertx;
   private final RabbitMQClient rabbitMQClient;
   private final String queueName;
   private final QueueOptions options =
@@ -19,7 +27,8 @@ public class EmailMessageConsumer implements RabitMqConsumer {
   private final EmailService emailService;
 
   public EmailMessageConsumer(
-      RabbitMQClient rabbitMQClient, String queueName, EmailService emailService) {
+      Vertx vertx, RabbitMQClient rabbitMQClient, String queueName, EmailService emailService) {
+    this.vertx = vertx;
     this.rabbitMQClient = rabbitMQClient;
     this.queueName = queueName;
     this.emailService = emailService;
@@ -34,6 +43,9 @@ public class EmailMessageConsumer implements RabitMqConsumer {
   private void consume() {
     rabbitMQClient
         .start()
+        // Messages stay unacked while they wait to be retried, so this also caps how many
+        // sends are in progress during an SMTP outage.
+        .compose(v -> rabbitMQClient.basicQos(PREFETCH_COUNT))
         .onSuccess(
             v ->
                 rabbitMQClient.basicConsumer(
@@ -57,35 +69,56 @@ public class EmailMessageConsumer implements RabitMqConsumer {
   private void handleMessage(RabbitMQMessage message) {
     LOGGER.info("Consuming email message: {}", message.body());
     long deliveryTag = message.envelope().getDeliveryTag();
-    JsonObject json = message.body().toJsonObject();
-    /*EmailRequest emailRequest = EmailRequest.fromJson(json);*/
+    JsonObject json;
+    try {
+      json = message.body().toJsonObject();
+    } catch (DecodeException e) {
+      LOGGER.error(
+          "Email message with deliveryTag: {} is not valid JSON. Error: {}",
+          deliveryTag,
+          e.getMessage());
+      deadLetter(deliveryTag);
+      return;
+    }
+    send(deliveryTag, json, 0);
+  }
+
+  /**
+   * The delivery stays unacked between attempts, so the retry count belongs to this message alone
+   * and RabbitMQ redelivers it if the process dies mid-retry.
+   */
+  private void send(long deliveryTag, JsonObject json, int retries) {
     emailService
         .sendEmailService(json)
         .onComplete(
-            success -> {
-              if (success.succeeded()) {
+            result -> {
+              if (result.succeeded()) {
                 LOGGER.info(
                     "Email sent successfully for message with deliveryTag: {}", deliveryTag);
                 rabbitMQClient.basicAck(deliveryTag, false);
+                return;
+              }
+              LOGGER.error(
+                  "Failed to send email for message with deliveryTag: {} (retry {} of {}). Error: {}",
+                  deliveryTag,
+                  retries,
+                  MAX_RETRIES,
+                  result.cause().getMessage());
+              if (isPermanent(result.cause()) || retries >= MAX_RETRIES) {
+                deadLetter(deliveryTag);
               } else {
-                LOGGER.error(
-                    "Failed to send email for message with deliveryTag: {}. Error: {}",
-                    deliveryTag,
-                    success.cause().getMessage());
-                if (COUNTER < 6) {
-                  rabbitMQClient.basicNack(deliveryTag, false, true);
-                  try {
-                    Thread.sleep(5000);
-                  } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                  }
-                  COUNTER++;
-                } else {
-                  LOGGER.debug("sending message to dead letter queue");
-                  rabbitMQClient.basicNack(deliveryTag, false, false);
-                  COUNTER = 0;
-                }
+                vertx.setTimer(RETRY_DELAY_MS, id -> send(deliveryTag, json, retries + 1));
               }
             });
+  }
+
+  private void deadLetter(long deliveryTag) {
+    LOGGER.debug("sending message to dead letter queue");
+    rabbitMQClient.basicNack(deliveryTag, false, false);
+  }
+
+  private static boolean isPermanent(Throwable cause) {
+    return cause instanceof ServiceException serviceException
+        && serviceException.failureCode() == EMAIL_PERMANENT_FAILURE_CODE;
   }
 }

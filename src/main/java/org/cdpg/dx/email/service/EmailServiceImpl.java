@@ -1,13 +1,19 @@
 package org.cdpg.dx.email.service;
 
+import static org.cdpg.dx.email.util.Constants.EMAIL_PERMANENT_FAILURE_CODE;
+
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mail.MailClient;
 import io.vertx.ext.mail.MailMessage;
+import io.vertx.ext.mail.SMTPException;
+import io.vertx.serviceproxy.ServiceException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.acl.accessRequest.util.EmailType;
+import org.cdpg.dx.common.exception.DxBadRequestException;
+import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.email.model.EmailRequest;
 import org.cdpg.dx.email.util.EmailComposer;
@@ -65,6 +71,36 @@ public class EmailServiceImpl implements EmailService {
 
   @Override
   public Future<Void> sendEmailService(JsonObject jsonObject) {
+    Future<Void> result;
+    try {
+      result = composeAndSend(jsonObject);
+    } catch (RuntimeException e) {
+      // Thrown while parsing the payload or building the mail, so a retry would throw again.
+      LOGGER.error("Could not build email from message: {}", e.getMessage());
+      return Future.failedFuture(permanentFailure(e));
+    }
+    return result.recover(
+        err -> Future.failedFuture(isPermanent(err) ? permanentFailure(err) : err));
+  }
+
+  /**
+   * The event-bus proxy reduces failures to a code and a message, so permanence has to be decided
+   * here, where the original exception is still available.
+   */
+  private static boolean isPermanent(Throwable err) {
+    if (err instanceof SMTPException smtpException) {
+      return smtpException.isPermanent();
+    }
+    return err instanceof DxBadRequestException
+        || err instanceof DxNotFoundException
+        || err instanceof IllegalArgumentException;
+  }
+
+  private static ServiceException permanentFailure(Throwable err) {
+    return new ServiceException(EMAIL_PERMANENT_FAILURE_CODE, err.getMessage());
+  }
+
+  private Future<Void> composeAndSend(JsonObject jsonObject) {
     EmailRequest emailRequest = EmailRequest.fromJson(jsonObject);
     Promise<Void> promise = Promise.promise();
     EmailType emailType = EmailType.valueOf(jsonObject.getString("emailType"));
