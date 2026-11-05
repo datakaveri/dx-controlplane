@@ -24,6 +24,7 @@ import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
 
 public class EmailVerticle extends AbstractVerticle {
   private static final Logger LOGGER = LogManager.getLogger(EmailVerticle.class);
+  private static final String DEFAULT_AUTH_METHODS = "LOGIN PLAIN";
   private MessageConsumer<JsonObject> consumer;
   private ServiceBinder binder;
   private DataBrokerService dataBrokerService;
@@ -33,25 +34,11 @@ public class EmailVerticle extends AbstractVerticle {
   @Override
   public void start(Promise<Void> startPromise) {
 
-    String emailHostname = config().getString("emailHostName");
-    int emailPort = config().getInteger("emailPort");
-    String emailUserName = config().getString("emailUserName");
-    String emailPassword = config().getString("emailPassword");
     boolean notifyByEmail = config().getBoolean("notifyByEmail", true);
     dataBrokerService = DataBrokerService.createProxy(vertx, DATA_BROKER_SERVICE_ADDRESS);
     keycloakUserService = new KeycloakUserServiceImpl(config());
 
-    MailConfig config = new MailConfig();
-    config.setHostname(emailHostname);
-    config.setLogin(LoginOption.REQUIRED);
-    config.setKeepAliveTimeout(5);
-    config.setAllowRcptErrors(true);
-    config.setPort(emailPort);
-    config.setStarttls(StartTLSOptions.REQUIRED);
-    config.setUsername(emailUserName);
-    config.setPassword(emailPassword);
-
-    MailClient mailClient = MailClient.create(vertx, config);
+    MailClient mailClient = MailClient.create(vertx, buildMailConfig(config()));
     EmailComposer emailComposer = new EmailComposer(config(), keycloakUserService);
     EmailService service =
         new EmailServiceImpl(
@@ -59,6 +46,22 @@ public class EmailVerticle extends AbstractVerticle {
     binder = new ServiceBinder(vertx);
     consumer = binder.setAddress(EMAIL_SERVICE_ADDRESS).register(EmailService.class, service);
     startPromise.complete();
+  }
+
+  static MailConfig buildMailConfig(JsonObject verticleConfig) {
+    MailConfig config = new MailConfig();
+    config.setHostname(verticleConfig.getString("emailHostName"));
+    config.setLogin(LoginOption.REQUIRED);
+    config.setKeepAliveTimeout(5);
+    config.setAllowRcptErrors(true);
+    config.setPort(verticleConfig.getInteger("emailPort"));
+    config.setStarttls(StartTLSOptions.REQUIRED);
+    config.setUsername(verticleConfig.getString("emailUserName"));
+    config.setPassword(verticleConfig.getString("emailPassword"));
+    // Left unrestricted, the client tries XOAUTH2 first on servers that offer it, sending the
+    // password as a token. Office365 then rejects the LOGIN fallback in the same session (535).
+    config.setAuthMethods(verticleConfig.getString("emailAuthMethods", DEFAULT_AUTH_METHODS));
+    return config;
   }
 
   @Override
