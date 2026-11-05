@@ -11,4 +11,7 @@ public class Constants {
   public static final String TEMPLATE_TYPE = "templateType";
   public static final String TEMPLATE_STRUCTURE = "templateStructure";
   public static final String ASSET_NAME = "assetName";
+
+  /** ServiceException code for send failures that will fail the same way if retried. */
+  public static final int EMAIL_PERMANENT_FAILURE_CODE = 19001;
 }

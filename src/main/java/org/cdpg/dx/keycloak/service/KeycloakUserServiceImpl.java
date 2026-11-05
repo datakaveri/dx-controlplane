@@ -4,6 +4,7 @@ import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.NotFoundException;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -211,6 +212,9 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
             List<RoleRepresentation> roles =
                 usersResource().get(userId.toString()).roles().realmLevel().listEffective();
             return DxUserMapper.fromUserRepresentation(user, roles);
+          } catch (NotFoundException e) {
+            LOGGER.warn("User with ID {} not found: {}", userId, e.getMessage());
+            throw new DxNotFoundException("User not found: " + userId);
           } catch (Exception e) {
             LOGGER.warn("Error retrieving user with ID {}: {}", userId, e.getMessage(), e);
             throw new KeycloakServiceException("Failed to retrieve user with ID: " + userId, e);

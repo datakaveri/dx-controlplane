@@ -86,7 +86,7 @@ public class DataBrokerVerticle extends BaseDataBrokerVerticle {
     EmailService emailService = EmailService.createProxy(vertx, EMAIL_SERVICE_ADDRESS);
     String emailQueue = config().getString("emailQueue", "email-notification");
     EmailMessageConsumer emailMessageConsumer =
-        new EmailMessageConsumer(internalClient, emailQueue, emailService);
+        new EmailMessageConsumer(vertx, internalClient, emailQueue, emailService);
     emailMessageConsumer.start();
 
     LOGGER.info("DataBrokerVerticle: audit, leaderboard, and email consumers started");
