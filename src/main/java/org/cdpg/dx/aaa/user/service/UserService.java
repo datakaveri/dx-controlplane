@@ -1,36 +1,64 @@
 package org.cdpg.dx.aaa.user.service;
 
 import io.vertx.core.Future;
+import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.cdpg.dx.aaa.common.ResponseModel;
+import org.cdpg.dx.aaa.user.models.CustomRole;
+import org.cdpg.dx.aaa.user.models.UserInfo;
 import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.common.request.PaginatedRequest;
+import org.cdpg.dx.database.postgres.models.PaginatedResult;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.IntStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public interface UserService {
+    Logger LOGGER = LoggerFactory.getLogger(UserService.class);
 
     Future<DxUser> getUserInfo(DxUser dxUser);
     Future<DxUser> getUserInfoByID(UUID userId);
 
-    default <T> Future<List<JsonObject>> enrichWithUserRoles(
+    Future<Void> createUserInfo(UserInfo userInfo);
+    Future<UserInfo> getUserInfo(String userId);
+    Future<UserInfo> patchUserInfo(String userId, JsonObject updates);
+    Future<DxUser> updateUserInfo(UUID userId,Boolean status);
+    Future<PaginatedResult<CustomRole>> getAllCustomRoles(PaginatedRequest customRoles);
+    Future<CustomRole> addCustomRoleAndScope(JsonObject body);
+    Future<CustomRole> updateCustomScope(UUID requestId , JsonArray scopes);
+    Future<PaginatedResult<CustomRole>> getCustomRoleRequestByRequester(PaginatedRequest paginatedRequest);
+    Future<CustomRole> getCustomRoleByUserAndRequester(UUID targetUserId, UUID requesterId);
+    Future<Boolean> deleteScope(UUID requestedBy, JsonObject body);
+
+
+  default <T> Future<List<JsonObject>> enrichWithUserRoles(
             List<T> items,
             Function<T, UUID> userIdExtractor,
             Function<T, JsonObject> baseJsonMapper
     ) {
         List<Future<JsonObject>> futures = items.stream()
-                .map(item ->
-                        getUserInfoByID(userIdExtractor.apply(item))
-                                .map(user -> {
-                                    JsonObject enriched = baseJsonMapper.apply(item);
-                                    System.out.println("Fetching ORG ID!!!: " + user.organisationId());
-                                    enriched.put("roles", user.roles());
-                                    enriched.put("account_enabled", user.account_enabled());
-                                    return enriched;
-                                })
-                )
+                .map(item -> {
+                    UUID userId = userIdExtractor.apply(item);
+                    return getUserInfoByID(userId)
+                            .map(user -> {
+                                JsonObject enriched = baseJsonMapper.apply(item);
+                                LOGGER.debug("Enriching user roles for orgId: {}", user.organisationId());
+                                enriched.put("roles", user.roles());
+                                enriched.put("account_enabled", user.account_enabled());
+                                return enriched;
+                            })
+                            .recover(err -> {
+                                LOGGER.warn("User {} not found in Keycloak, excluding from response: {}", userId, err.getMessage());
+                                return Future.succeededFuture(null);
+                            });
+                })
                 .toList();
 
         return Future.all(futures)
@@ -38,6 +66,7 @@ public interface UserService {
                         IntStream.range(0, cf.size())
                                 .mapToObj(cf::resultAt)
                                 .map(result -> (JsonObject) result)
+                                .filter(Objects::nonNull)
                                 .toList()
                 );
     }

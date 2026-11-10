@@ -1,0 +1,409 @@
+package org.cdpg.dx.aaa.leaderboard.dao.impl;
+
+import io.vertx.core.Future;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.leaderboard.dao.LeaderboardWriteDao;
+import org.cdpg.dx.aaa.leaderboard.model.LeaderboardEvent;
+import org.cdpg.dx.database.postgres.service.PostgresService;
+
+import java.util.UUID;
+
+public class LeaderboardWriteDaoImpl implements LeaderboardWriteDao {
+
+  private static final Logger LOGGER = LogManager.getLogger(LeaderboardWriteDaoImpl.class);
+  private final PostgresService postgresService;
+
+  public LeaderboardWriteDaoImpl(PostgresService postgresService) {
+    this.postgresService = postgresService;
+  }
+
+  // ------------------------------------------------
+  // ASSET
+  // ------------------------------------------------
+
+  /**
+   * Upserts the asset row and reports whether it was newly inserted, so callers can bump
+   * provider/organization published counters exactly once per asset (UPDATE events must not
+   * re-count). Organization fields are nullable — platform providers publish without an org.
+   */
+  public Future<Boolean> upsertAssetOnCreate(LeaderboardEvent e) {
+
+    String sql =
+        """
+            INSERT INTO asset_leaderboard (
+              asset_id, asset_name, asset_type, access_policy, provider_id, provider_name,
+              organization_id, organization_name, organization_type, data_upload_status, publish_status
+            )
+            VALUES ($1, $2, $3, $4, $5,
+              COALESCE($6, (SELECT ou.user_name
+                            FROM organization_users ou
+                            WHERE ou.user_id = $5
+                            LIMIT 1)),
+              $7, $8, $9, $10, $11
+            )
+            ON CONFLICT (asset_id)
+            DO UPDATE SET
+              asset_name        = EXCLUDED.asset_name,
+              asset_type        = EXCLUDED.asset_type,
+              access_policy     = EXCLUDED.access_policy,
+              provider_id       = EXCLUDED.provider_id,
+              provider_name     = COALESCE(EXCLUDED.provider_name, asset_leaderboard.provider_name),
+              organization_id   = COALESCE(EXCLUDED.organization_id, asset_leaderboard.organization_id),
+              organization_name = COALESCE(EXCLUDED.organization_name, asset_leaderboard.organization_name),
+              organization_type = COALESCE(EXCLUDED.organization_type, asset_leaderboard.organization_type),
+              data_upload_status = EXCLUDED.data_upload_status,
+              publish_status = EXCLUDED.publish_status
+            RETURNING (xmax = 0) AS inserted
+          """;
+    JsonArray params =
+        new JsonArray()
+            .add(e.assetId().toString())
+            .add(e.assetName())
+            .add(e.assetType())
+            .add(e.accessPolicy())
+            .add(e.providerId().toString()) // $5 used twice
+            .add(e.providerName())
+            .add(toStringOrNull(e.organizationId()))
+            .add(e.organizationName())
+            .add(e.organizationType())
+            .add(e.dataUploadStatus())
+            .add(e.publishStatus());
+    LOGGER.debug("Upserting asset leaderboard row with params: {}", params.encode());
+    return postgresService
+        .executeQuery(sql, params)
+        .map(
+            result ->
+                !result.getRows().isEmpty()
+                    && Boolean.TRUE.equals(
+                        result.getRows().getJsonObject(0).getBoolean("inserted")));
+  }
+
+  @Override
+  public Future<Void> incrementAssetView(LeaderboardEvent e) {
+    return incrementCounter("asset_leaderboard", "views", "asset_id", e.assetId());
+  }
+
+  @Override
+  public Future<Void> incrementAssetDownload(LeaderboardEvent e) {
+    return incrementCounter("asset_leaderboard", "downloads", "asset_id", e.assetId());
+  }
+
+  @Override
+  public Future<Void> incrementAssetLike(LeaderboardEvent e) {
+    return incrementCounter("asset_leaderboard", "likes", "asset_id", e.assetId());
+  }
+
+  // ------------------------------------------------
+  // PROVIDER
+  // ------------------------------------------------
+  @Override
+  public Future<Void> upsertProviderOnCreate(LeaderboardEvent e, boolean newAsset) {
+
+    String sql =
+        """
+            INSERT INTO provider_leaderboard (
+              provider_id,
+              provider_name,
+              organization_id,
+              organization_name,
+              organization_type,
+              published_databank,
+              published_ai_models,
+              published_usecases,
+              total_published,
+              downloads,
+              likes,
+              views,
+              updated_at
+            )
+            VALUES (
+              $1,
+              COALESCE($2, (SELECT ou.user_name
+                            FROM organization_users ou
+                            WHERE ou.user_id = $1
+                            LIMIT 1)),
+              $3, $4, $5,
+              $6, $7, $8,
+              $9,
+              0, 0, 0,
+              now()
+            )
+            ON CONFLICT (provider_id)
+            DO UPDATE SET
+              provider_name        = COALESCE(EXCLUDED.provider_name, provider_leaderboard.provider_name),
+              organization_id      = COALESCE(EXCLUDED.organization_id, provider_leaderboard.organization_id),
+              organization_name    = COALESCE(EXCLUDED.organization_name, provider_leaderboard.organization_name),
+              organization_type    = COALESCE(EXCLUDED.organization_type, provider_leaderboard.organization_type),
+              published_databank   = provider_leaderboard.published_databank + EXCLUDED.published_databank,
+              published_ai_models  = provider_leaderboard.published_ai_models + EXCLUDED.published_ai_models,
+              published_usecases   = provider_leaderboard.published_usecases + EXCLUDED.published_usecases,
+              total_published      = provider_leaderboard.total_published + EXCLUDED.total_published,
+              updated_at           = now();
+            """;
+
+    // UPDATE events on an existing asset must still refresh names but not re-count publishes
+    int db = newAsset && e.assetType().equals("DATABANK") ? 1 : 0;
+    int ai = newAsset && e.assetType().equals("AI_MODEL") ? 1 : 0;
+    int uc = newAsset && e.assetType().equals("USECASE") ? 1 : 0;
+    int total = newAsset ? 1 : 0;
+
+    JsonArray params =
+        new JsonArray()
+            .add(e.providerId().toString()) // UUID is OK directly
+            .add(e.providerName())
+            .add(toStringOrNull(e.organizationId()))
+            .add(e.organizationName())
+            .add(e.organizationType())
+            .add(db)
+            .add(ai)
+            .add(uc)
+            .add(total);
+
+    LOGGER.debug("Upserting provider leaderboard row with params: {}", params.encode());
+
+    return postgresService.executeQuery(sql, params).mapEmpty();
+  }
+
+  @Override
+  public Future<Void> incrementProviderView(LeaderboardEvent e) {
+    return incrementCounter("provider_leaderboard", "views", "provider_id", e.providerId());
+  }
+
+  @Override
+  public Future<Void> incrementProviderDownload(LeaderboardEvent e) {
+    return incrementCounter("provider_leaderboard", "downloads", "provider_id", e.providerId());
+  }
+
+  @Override
+  public Future<Void> incrementProviderLike(LeaderboardEvent e) {
+    return incrementCounter("provider_leaderboard", "likes", "provider_id", e.providerId());
+  }
+
+  // ------------------------------------------------
+  // ORGANIZATION
+  // ------------------------------------------------
+
+  @Override
+  public Future<Void> upsertOrganizationOnCreate(LeaderboardEvent e, boolean newAsset) {
+
+    // Platform providers publish directly on the exchange without an organisation
+    if (e.organizationId() == null) {
+      LOGGER.debug(
+          "No organization on event [assetId={}], skipping organization leaderboard", e.assetId());
+      return Future.succeededFuture();
+    }
+
+    String sql =
+        """
+            INSERT INTO organization_leaderboard (
+              organization_id,
+              organization_name,
+              organization_type,
+              published_databank,
+              published_ai_models,
+              published_usecases,
+              total_published,
+              downloads,
+              likes,
+              views,
+              updated_at
+            )
+            VALUES (
+              $1, $2, $3,
+              $4, $5, $6,
+              $7,
+              0, 0, 0,
+              now()
+            )
+            ON CONFLICT (organization_id)
+            DO UPDATE SET
+              organization_name    = COALESCE(EXCLUDED.organization_name, organization_leaderboard.organization_name),
+              organization_type    = COALESCE(EXCLUDED.organization_type, organization_leaderboard.organization_type),
+              published_databank   = organization_leaderboard.published_databank + EXCLUDED.published_databank,
+              published_ai_models  = organization_leaderboard.published_ai_models + EXCLUDED.published_ai_models,
+              published_usecases   = organization_leaderboard.published_usecases + EXCLUDED.published_usecases,
+              total_published      = organization_leaderboard.total_published + EXCLUDED.total_published,
+              updated_at           = now();
+            """;
+
+    // UPDATE events on an existing asset must still refresh names but not re-count publishes
+    int db = newAsset && e.assetType().equals("DATABANK") ? 1 : 0;
+    int ai = newAsset && e.assetType().equals("AI_MODEL") ? 1 : 0;
+    int uc = newAsset && e.assetType().equals("USECASE") ? 1 : 0;
+    int total = newAsset ? 1 : 0;
+
+    JsonArray params =
+        new JsonArray()
+            .add(e.organizationId().toString())
+            .add(e.organizationName())
+            .add(e.organizationType())
+            .add(db)
+            .add(ai)
+            .add(uc)
+            .add(total);
+
+    LOGGER.debug("Upserting organization leaderboard row with params: {}", params.encode());
+
+    return postgresService.executeQuery(sql, params).mapEmpty();
+  }
+
+  @Override
+  public Future<Void> incrementOrganizationView(LeaderboardEvent e) {
+    return incrementCounter(
+        "organization_leaderboard", "views", "organization_id", e.organizationId());
+  }
+
+  @Override
+  public Future<Void> incrementOrganizationDownload(LeaderboardEvent e) {
+    return incrementCounter(
+        "organization_leaderboard", "downloads", "organization_id", e.organizationId());
+  }
+
+  @Override
+  public Future<Void> incrementOrganizationLike(LeaderboardEvent e) {
+    return incrementCounter(
+        "organization_leaderboard", "likes", "organization_id", e.organizationId());
+  }
+
+  @Override
+  public Future<Void> decrementAssetLike(LeaderboardEvent e) {
+    return decrementCounter("asset_leaderboard", "likes", "asset_id", e.assetId());
+  }
+
+  @Override
+  public Future<Void> decrementProviderLike(LeaderboardEvent e) {
+    return decrementCounter("provider_leaderboard", "likes", "provider_id", e.providerId());
+  }
+
+  @Override
+  public Future<Void> decrementOrganizationLike(LeaderboardEvent e) {
+    return decrementCounter(
+        "organization_leaderboard", "likes", "organization_id", e.organizationId());
+  }
+
+  private static String toStringOrNull(UUID id) {
+    return id != null ? id.toString() : null;
+  }
+
+  // ------------------------------------------------
+  // COMMON COUNTER (UPDATE ONLY)
+  // ------------------------------------------------
+
+  private Future<Void> incrementCounter(String table, String column, String idColumn, UUID id) {
+    if (id == null) {
+      LOGGER.debug("No {} on event, skipping {} increment on {}", idColumn, column, table);
+      return Future.succeededFuture();
+    }
+    String sql =
+        String.format(
+            """
+                    UPDATE %s
+                    SET
+                      %s = %s + 1,
+                      updated_at = now()
+                    WHERE %s = $1
+                    """,
+            table, column, column, idColumn);
+
+    LOGGER.debug("Incrementing {} in {} for id={}", column, table, id);
+    return postgresService.executeQuery(sql, new JsonArray().add(id.toString())).mapEmpty();
+  }
+
+  private Future<Void> decrementCounter(String table, String column, String idColumn, UUID id) {
+    if (id == null) {
+      LOGGER.debug("No {} on event, skipping {} decrement on {}", idColumn, column, table);
+      return Future.succeededFuture();
+    }
+    LOGGER.debug("Decrementing {} in {} for id={}", column, table, id);
+
+    String sql =
+        String.format(
+            """
+                    UPDATE %s
+                    SET
+                      %s = GREATEST(%s - 1, 0),
+                      updated_at = now()
+                    WHERE %s = $1
+                    """,
+            table, column, column, idColumn);
+
+    return postgresService.executeQuery(sql, new JsonArray().add(id.toString())).mapEmpty();
+  }
+
+  @Override
+  public Future<Void> deleteAssetAndAdjustLeaderboards(LeaderboardEvent e) {
+
+    // Single atomic statement: the DELETE returns exactly the counters this asset accumulated,
+    // and the provider/org rows give back that engagement plus the inventory slot. One statement
+    // means no partial state on crash and idempotent redelivery (second run deletes nothing, so
+    // nothing is subtracted). Data-modifying CTEs run to completion even when unreferenced.
+    // NULL provider/organization ids simply match no row, mirroring the old null checks.
+    String sql =
+        """
+            WITH removed AS (
+                DELETE FROM asset_leaderboard
+                WHERE asset_id = $1
+                RETURNING asset_type, provider_id, organization_id, views, downloads, likes
+            ),
+            provider_adjust AS (
+                UPDATE provider_leaderboard p
+                SET
+                  views               = GREATEST(p.views     - r.views, 0),
+                  downloads           = GREATEST(p.downloads - r.downloads, 0),
+                  likes               = GREATEST(p.likes     - r.likes, 0),
+                  published_databank  = GREATEST(p.published_databank  - COALESCE((r.asset_type = 'DATABANK')::int, 0), 0),
+                  published_ai_models = GREATEST(p.published_ai_models - COALESCE((r.asset_type = 'AI_MODEL')::int, 0), 0),
+                  published_usecases  = GREATEST(p.published_usecases  - COALESCE((r.asset_type = 'USECASE')::int, 0), 0),
+                  total_published     = GREATEST(p.total_published - 1, 0),
+                  updated_at          = now()
+                FROM removed r
+                WHERE p.provider_id = r.provider_id
+            ),
+            organization_adjust AS (
+                UPDATE organization_leaderboard o
+                SET
+                  views               = GREATEST(o.views     - r.views, 0),
+                  downloads           = GREATEST(o.downloads - r.downloads, 0),
+                  likes               = GREATEST(o.likes     - r.likes, 0),
+                  published_databank  = GREATEST(o.published_databank  - COALESCE((r.asset_type = 'DATABANK')::int, 0), 0),
+                  published_ai_models = GREATEST(o.published_ai_models - COALESCE((r.asset_type = 'AI_MODEL')::int, 0), 0),
+                  published_usecases  = GREATEST(o.published_usecases  - COALESCE((r.asset_type = 'USECASE')::int, 0), 0),
+                  total_published     = GREATEST(o.total_published - 1, 0),
+                  updated_at          = now()
+                FROM removed r
+                WHERE o.organization_id = r.organization_id
+            )
+            SELECT asset_type, provider_id, organization_id, views, downloads, likes
+            FROM removed
+            """;
+
+    return postgresService
+        .executeQuery(sql, new JsonArray().add(e.assetId().toString()))
+        .onSuccess(
+            result -> {
+              if (result.getRows().isEmpty()) {
+                LOGGER.info(
+                    "Leaderboard delete no-op: asset {} already absent (duplicate or never"
+                        + " eligible)",
+                    e.assetId());
+                return;
+              }
+              JsonObject removed = result.getRows().getJsonObject(0);
+              LOGGER.info(
+                  "Leaderboard updated for asset deletion [assetId={}, assetType={},"
+                      + " providerId={}, organizationId={}]: reclaimed views={}, downloads={},"
+                      + " likes={}, published slot released",
+                  e.assetId(),
+                  removed.getString("asset_type"),
+                  removed.getString("provider_id"),
+                  removed.getString("organization_id"),
+                  removed.getLong("views"),
+                  removed.getLong("downloads"),
+                  removed.getLong("likes"));
+            })
+        .mapEmpty();
+  }
+}

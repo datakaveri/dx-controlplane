@@ -1,19 +1,127 @@
 package org.cdpg.dx.aaa.item.factory;
 
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_REQUEST_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.REQUEST_TABLE;
+
+import io.vertx.ext.web.client.WebClient;
+import org.cdpg.dx.aaa.connector.service.ConnectorService;
+import org.cdpg.dx.aaa.delegation.ItemOwnershipValidator;
+import org.cdpg.dx.aaa.delegation.service.DelegationService;
+import org.cdpg.dx.aaa.email.util.EmailComposer;
+import org.cdpg.dx.aaa.ingestion.service.IngestionService;
 import org.cdpg.dx.aaa.item.controller.ItemController;
+import org.cdpg.dx.aaa.item.service.ItemRegistryService;
+import org.cdpg.dx.aaa.item.service.ItemRegistryServiceImpl;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
+import org.cdpg.dx.aaa.item.service.central.CentralItemServiceImpl;
+import org.cdpg.dx.aaa.organization.dao.OrganizationUserDAO;
+import org.cdpg.dx.aaa.organization.dao.impl.OrganizationDAOImpl;
+import org.cdpg.dx.aaa.organization.dao.impl.OrganizationHierarchyNodeDAOImpl;
+import org.cdpg.dx.aaa.organization.dao.impl.OrganizationUserDAOImpl;
+import org.cdpg.dx.aaa.organization.service.OrganizationHierarchyService;
+import org.cdpg.dx.aaa.organization.service.impl.OrganizationHierarchyServiceImpl;
+import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
+import org.cdpg.dx.acl.accessRequest.dao.impl.AccessRequestDaoImpl;
+import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
+import org.cdpg.dx.acl.policy.dao.PolicyDao;
+import org.cdpg.dx.acl.policy.dao.impl.PolicyDaoImpl;
+import org.cdpg.dx.acl.rule.dao.AccessRuleDao;
+import org.cdpg.dx.acl.rule.dao.impl.AccessRuleDaoImpl;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
+import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
+import org.cdpg.dx.database.postgres.service.PostgresService;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class ItemControllerFactory {
 
   public static ItemController createCrudController(
       AuditingHandler auditingHandler,
       ElasticsearchService elasticsearchService,
+      ElasticsearchService centralElasticsearchService,
+      PostgresService pgService,
+      KeycloakUserService keycloakUserService,
+      ItemOwnershipValidator itemOwnershipValidator,
+      String centralDocIndex,
       String docIndex,
-      String vocContext) {
-    ItemService crudService = new ItemServiceImpl(elasticsearchService, docIndex);
-    return new ItemController(auditingHandler, crudService, vocContext);
+      String deletedDocsIndex,
+      String vocContext,
+      String apdURL,
+      String uploadedBy,
+      URNGenerator urnGenerator,
+      WebClient webClient,
+      IngestionService ingestionService,
+      ConnectorService connectorService,
+      String dataPlaneUrl,
+      String controlPlaneUrl,
+      String ogcDataPlaneUrl,
+      boolean isCentralCatEnabled,
+      boolean isEdgeCatalogue,
+      boolean isStandalone,
+      DelegationService delegationService,
+      EmailComposer emailComposer) {
+    PolicyDao policyDao = new PolicyDaoImpl(pgService);
+    AccessRuleDao accessRuleDao = new AccessRuleDaoImpl(pgService);
+    AccessRequestDao accessRequestDao =
+        new AccessRequestDaoImpl(pgService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
+    // Narrow, DAO-level dependencies only -- avoids a circular ItemService/
+    // OrganizationService dependency (OrganizationServiceImpl already takes
+    // an ItemService as a constructor argument).
+    OrganizationUserDAO organizationUserDAO = new OrganizationUserDAOImpl(pgService);
+    OrganizationHierarchyService organizationHierarchyService =
+        new OrganizationHierarchyServiceImpl(
+            new OrganizationDAOImpl(pgService), new OrganizationHierarchyNodeDAOImpl(pgService));
+    ItemService itemService =
+        new ItemServiceImpl(
+            elasticsearchService,
+            keycloakUserService,
+            pgService,
+            policyDao,
+            webClient,
+            docIndex,
+            deletedDocsIndex,
+            apdURL);
+    ItemService centralItemService =
+        new CentralItemServiceImpl(
+            centralElasticsearchService,
+            keycloakUserService,
+            pgService,
+            policyDao,
+            webClient,
+            centralDocIndex,
+            deletedDocsIndex,
+            apdURL);
+
+    ItemRegistryService orchestrationService =
+        new ItemRegistryServiceImpl(
+            itemService,
+            centralItemService,
+            ingestionService,
+            connectorService,
+            webClient,
+            dataPlaneUrl,
+            controlPlaneUrl,
+            ogcDataPlaneUrl,
+            isCentralCatEnabled);
+    return new ItemController(
+        auditingHandler,
+        itemService,
+        itemOwnershipValidator,
+        centralItemService,
+        vocContext,
+        uploadedBy,
+        isCentralCatEnabled,
+        urnGenerator,
+        orchestrationService,
+        delegationService,
+        keycloakUserService,
+        emailComposer,
+        policyDao,
+        accessRuleDao,
+        accessRequestDao,
+        apdURL,
+        organizationUserDAO,
+        organizationHierarchyService);
   }
 }

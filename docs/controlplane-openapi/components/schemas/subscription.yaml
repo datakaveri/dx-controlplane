@@ -1,0 +1,80 @@
+NgsiLdSubscriptionResponse:
+  title: createstreaming
+  required:
+  - id
+  - username
+  - apiKey
+  - queueName
+  - URL
+  - port
+  - vHost
+  type: object
+  properties:
+    results:
+      description: An array of objects
+      type: array
+      items:
+        type: object
+  example:
+  - id: 3fcXXd38-5b8a-XXe1-8cf7-e1ZZ4406e169
+    userId: 5XX824Xb-7bXb-XXXX-8003-7fbXX559965a
+    apiKey: Use the apiKey returned on registration, if lost please use /resetPassword API
+    queueName: 5XX824Xb-7bXb-XXXX-8003-7fbXX559965a/sub-73547979
+    url: databroker.iudx.io
+    port: 24567
+    vHost: IUDX-V2
+NgsiLdSubscriptionErrorResponse400:
+  title: NgsiLdSubscriptionErrorResponse400
+  properties:
+    type:
+      type: string
+    title:
+      type: string
+    detail:
+      type: string
+    instance:
+      type: string
+NgsiLdSubscriptionErrorResponse404:
+  title: NgsiLdSubscriptionErrorResponse404
+  properties:
+    type:
+      type: string
+    title:
+      type: string
+    detail:
+      type: string
+    instance:
+      type: string
+NgsiLdSubscriptionErrorResponse401:
+  title: NgsiLdSubscriptionErrorResponse401
+  properties:
+    type:
+      type: string
+    title:
+      type: string
+    detail:
+      type: string
+    instance:
+      type: string
+NgsiLdSubscriptionErrorResponse409:
+  title: NgsiLdSubscriptionErrorResponse409
+  properties:
+    type:
+      type: string
+    title:
+      type: string
+    detail:
+      type: string
+    instance:
+      type: string
+NgsiLdSubscriptionErrorResponse500:
+  title: NgsiLdSubscriptionErrorResponse500
+  properties:
+    type:
+      type: string
+    title:
+      type: string
+    detail:
+      type: string
+    instance:
+      type: string

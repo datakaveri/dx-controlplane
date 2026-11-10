@@ -8,6 +8,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.function.Function;
 import org.cdpg.dx.common.HttpStatusCode;
+import org.cdpg.dx.common.URNGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,11 +35,12 @@ public class Util {
     }
   }
 
-  public static String errorResponse(HttpStatusCode code) {
+  public static String errorResponse(HttpStatusCode code, URNGenerator urnGenerator) {
+    String urn = urnGenerator.generateUrn(code.getPath());
     return new JsonObject()
-        .put("type", code.getUrn())
-        .put("title", code.getDescription())
-        .put("detail", code.getDescription())
-        .toString();
+      .put("type", urn)
+      .put("title", code.getDescription())
+      .put("detail", code.getDescription())
+      .toString();
   }
 }

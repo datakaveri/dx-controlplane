@@ -14,6 +14,7 @@
     "poolSize": 25
   },
   "commonOptions":{
+    "itemTypePrefixes": ["adex", "iudx"],
     "dxApiBasePath": "/dx/apd/acl/v1",
     "clientId": "<apd-delegate-client-id>",
     "clientSecret": "<apd-delegate-client-secret>",

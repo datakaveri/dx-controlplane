@@ -4,54 +4,71 @@ import io.vertx.ext.web.openapi.RouterBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.admin.handler.AdminHandler;
-import org.cdpg.dx.aaa.apiserver.ApiController;
-import org.cdpg.dx.aaa.organization.handler.OrganizationHandler;
+import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.model.Scopes;
 
 public class AdminController implements ApiController {
-    private static final Logger LOGGER = LogManager.getLogger(AdminController.class);
-    private final AdminHandler adminHandler;
+  private static final Logger LOGGER = LogManager.getLogger(AdminController.class);
+  private final AdminHandler adminHandler;
 
-    public AdminController(AdminHandler adminHandler) {
-        this.adminHandler = adminHandler;
-    }
-    @Override
-    public void register(RouterBuilder routerBuilder) {
+  public AdminController(AdminHandler adminHandler) {
+    this.adminHandler = adminHandler;
+  }
 
-        routerBuilder
-                .operation("get-auth-v1-user")
-                .handler(adminHandler::getDxUserInfo);
+  @Override
+  public void register(RouterBuilder routerBuilder) {
 
-        routerBuilder
-                .operation("get-auth-v1-user-id-admin")
-                .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
-                .handler(adminHandler::getDxUserFromKeycloak);
+    var selfAccess = AuthorizationHandler.forScopes(Scopes.DATA_ACCESS);
+    var adminAccess = AuthorizationHandler.forScopes(Scopes.USER_MANAGEMENT);
 
-        routerBuilder
-                .operation("get-auth-v1-admin-user")
-                .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
-                .handler(adminHandler::getAllDxUsersKeycloak);
+    routerBuilder
+        .operation("get-auth-v2-user")
+        //.handler(selfAccess)
+        .handler(adminHandler::getDxUserInfo);
 
-        routerBuilder
-                .operation("put-auth-v1-user")
-                .handler(adminHandler::updateDxUserInfo);
-        routerBuilder
-                .operation("put-auth-v1-user-password")
-                .handler(adminHandler::updatePassword);
+    routerBuilder
+        .operation("get-auth-v2-user-id-admin")
+        .handler(adminAccess)
+        .handler(adminHandler::getDxUserFromKeycloak);
 
-      routerBuilder
-        .operation("post-auth-v1-user-update")
+    routerBuilder
+        .operation("get-auth-v2-admin-user")
+        .handler(adminAccess)
+        .handler(adminHandler::getAllDxUsersKeycloak);
+
+    routerBuilder
+        .operation("get-auth-v2-user-search")
+        //.handler(selfAccess)
+        .handler(adminHandler::getAllUsersInfoKeycloak);
+
+    routerBuilder
+        .operation("get-auth-v2-user-basic-username")
+       // .handler(selfAccess)
+        .handler(adminHandler::getUserByUserIdOrEmail);
+
+    routerBuilder
+        .operation("put-auth-v2-user")
+        //.handler(selfAccess)
+        .handler(adminHandler::updateDxUserInfo);
+    routerBuilder
+        .operation("put-auth-v2-user-password")
+        //.handler(selfAccess)
+        .handler(adminHandler::updatePassword);
+
+    routerBuilder
+        .operation("post-auth-v2-user-update")
+      //  .handler(selfAccess)
         .handler(adminHandler::updateUserStatus);
 
-      routerBuilder
-        .operation("delete-auth-v1-user")
+    routerBuilder
+        .operation("delete-auth-v2-user")
+        //.handler(selfAccess)
         .handler(adminHandler::deleteDxUser);
 
-      routerBuilder
-        .operation("post-auth-v1-admin-id-update")
-        .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
+    routerBuilder
+        .operation("post-auth-v2-admin-id-update")
+        .handler(adminAccess)
         .handler(adminHandler::updateDxUserStatusById);
-
-    }
+  }
 }

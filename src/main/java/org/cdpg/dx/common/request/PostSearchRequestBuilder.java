@@ -1,9 +1,13 @@
 package org.cdpg.dx.common.request;
 
 import static org.cdpg.dx.database.elastic.util.Constants.ATTRIBUTE;
+import static org.cdpg.dx.database.elastic.util.Constants.BOOST;
+import static org.cdpg.dx.database.elastic.util.Constants.FIELDS;
 import static org.cdpg.dx.database.elastic.util.Constants.FILTER;
+import static org.cdpg.dx.database.elastic.util.Constants.FILTER_MYASSETS;
 import static org.cdpg.dx.database.elastic.util.Constants.INSTANCE;
 import static org.cdpg.dx.database.elastic.util.Constants.KEYWORD_KEY;
+import static org.cdpg.dx.database.elastic.util.Constants.NAME;
 import static org.cdpg.dx.database.elastic.util.Constants.PAGE_KEY;
 import static org.cdpg.dx.database.elastic.util.Constants.Q_VALUE;
 import static org.cdpg.dx.database.elastic.util.Constants.RESPONSE_FILTER;
@@ -15,41 +19,54 @@ import static org.cdpg.dx.database.elastic.util.Constants.SEARCH_TYPE_PF_ASSETS_
 import static org.cdpg.dx.database.elastic.util.Constants.SEARCH_TYPE_TEXT;
 import static org.cdpg.dx.database.elastic.util.Constants.SIZE_KEY;
 
+import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.common.exception.DxBadRequestException;
+import org.cdpg.dx.common.exception.DxEsException;
 import org.cdpg.dx.database.elastic.model.AccessPolicyRequestDTO;
 import org.cdpg.dx.database.elastic.model.InstanceFilterRequestDTO;
-import org.cdpg.dx.database.elastic.model.OrderBy;
+import org.cdpg.dx.database.elastic.model.TextFieldDTO;
+import org.cdpg.dx.database.elastic.model.TextSearchOptionsDTO;
+import org.cdpg.dx.database.postgres.models.OrderBy;
 import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
 import org.cdpg.dx.database.elastic.model.ResponseFilterRequestDTO;
 import org.cdpg.dx.database.elastic.model.SearchCriteriaDTO;
 import org.cdpg.dx.database.elastic.model.SearchCriteriaRequestDTO;
 import org.cdpg.dx.database.elastic.model.TextSearchRequestDTO;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
 public class PostSearchRequestBuilder {
   private static final Logger LOGGER = LogManager.getLogger(PostSearchRequestBuilder.class);
+  private static final Set<String> ALLOWED_FIELDS =
+      Set.of("name", "label", "tags", "description");
+  private final RoutingContext routingContext;
+  private final KeycloakUserService keycloakUserService;
+  private final String defaultSortBy = "itemCreatedAt";
+  private final String defaultOrder = "desc";
+  private final String requestType = "search";
   boolean isCountApi = false;
   boolean isAssetSearch = false;
   boolean isPFAssetsSearch = false;
   boolean isOrgAssetsSearch = false;
-  private final RoutingContext routingContext;
-  private final String defaultSortBy = "itemCreatedAt";
-  private final String defaultOrder = "desc";
-  private final String requestType = "search";
 
-  public PostSearchRequestBuilder(RoutingContext routingContext) {
+  public PostSearchRequestBuilder(
+      RoutingContext routingContext, KeycloakUserService keycloakUserService) {
     this.routingContext = routingContext;
+    this.keycloakUserService = keycloakUserService;
   }
 
-  public static PostSearchRequestBuilder fromRoutingContext(RoutingContext routingContext) {
-    return new PostSearchRequestBuilder(routingContext);
+  public static PostSearchRequestBuilder fromRoutingContext(
+      RoutingContext routingContext, KeycloakUserService keycloakUserService) {
+    return new PostSearchRequestBuilder(routingContext, keycloakUserService);
   }
 
   public PostSearchRequestBuilder setCountApi(boolean countApi) {
@@ -72,30 +89,56 @@ public class PostSearchRequestBuilder {
     return this;
   }
 
-  public QueryDecoderRequestDTO build() {
+  public Future<QueryDecoderRequestDTO> build() {
     JsonObject requestBody = routingContext.getBodyAsJson();
     MultiMap params = routingContext.queryParams();
 
-    QueryDecoderRequestDTO dto = new QueryDecoderRequestDTO(
-        buildSearchType(requestBody),
-        getSize(params),
-        getPage(params),
-        getId(requestBody),
-        getFilters(requestBody),
-        getTextSearchRequest(requestBody),
-        getSearchCriteriaRequest(requestBody),
-        getAccessPolicyRequest(isAssetSearch, getSub(routingContext)),
-        getInstanceFilterRequest(requestBody),
-        getResponseFilterRequest(requestBody),
-        extractSortOrders(),
-        requestType
-    );
+    int size = getSize(params);
+    int page = getPage(params);
+    // ---------------------------
+    // Pagination validation
+    // ---------------------------
+    int offset = (page - 1) * size;
+    int limitWindow = offset + size;
 
-    if (isOrgAssetsSearch) {
-      dto.setOrganisationId(getOrgId(routingContext));
+    // Allow only first 10,000 records
+    if (limitWindow > 10000) {
+      throw new DxBadRequestException(
+          "Invalid pagination. The value of (page * size) must be between 1 and 10,000");
     }
 
-    return dto;
+    if (size <= 0 || page <= 0) {
+      throw new DxBadRequestException("'page' and 'size' must be positive integers");
+    }
+
+    boolean filterMyAssets = Boolean.parseBoolean(params.get(FILTER_MYASSETS));
+
+    QueryDecoderRequestDTO dto =
+        new QueryDecoderRequestDTO(
+            buildSearchType(requestBody),
+            size,
+            page,
+            getId(requestBody),
+            getFilters(requestBody),
+            getTextSearchRequest(requestBody),
+            getSearchCriteriaRequest(requestBody),
+            getAccessPolicyRequest(isAssetSearch, getSub(routingContext)),
+            getInstanceFilterRequest(requestBody),
+            getResponseFilterRequest(requestBody),
+            extractSortOrders(),
+            requestType);
+
+    if (isOrgAssetsSearch) {
+      return getOrgId(routingContext)
+          .map(
+              orgId -> {
+                dto.setOrganisationId(orgId);
+                dto.setFilterMyAssets(filterMyAssets);
+                return dto;
+              });
+    }
+
+    return Future.succeededFuture(dto);
   }
 
   public int getSize(MultiMap params) {
@@ -173,7 +216,41 @@ public class PostSearchRequestBuilder {
     String qValue = requestBody.getString(Q_VALUE);
     boolean fuzzy = requestBody.getBoolean("fuzzy", false);
     boolean autoComplete = requestBody.getBoolean("autoComplete", false);
-    return new TextSearchRequestDTO(qValue, fuzzy, autoComplete);
+
+    JsonObject optionsJson = requestBody.getJsonObject("textSearchOptions");
+    TextSearchOptionsDTO options = null;
+
+    if (optionsJson != null) {
+      options = parseTextSearchOptions(optionsJson);
+    }
+
+    return new TextSearchRequestDTO(qValue, fuzzy, autoComplete, options);
+  }
+
+  private TextSearchOptionsDTO parseTextSearchOptions(JsonObject optionsJson) {
+    List<TextFieldDTO> fields = new ArrayList<>();
+
+    var fieldsArray = optionsJson.getJsonArray(FIELDS);
+    if (fieldsArray != null) {
+      for (int i = 0; i < fieldsArray.size(); i++) {
+        JsonObject fieldJson = fieldsArray.getJsonObject(i);
+
+        String name = fieldJson.getString(NAME);
+        Double boost = fieldJson.getDouble(BOOST);
+
+        //validateField(name);
+
+        fields.add(new TextFieldDTO(name, boost));
+      }
+    }
+
+    return new TextSearchOptionsDTO(fields);
+  }
+
+  private void validateField(String field) {
+    if (!ALLOWED_FIELDS.contains(field)) {
+      throw new DxEsException("Invalid text search field: " + field);
+    }
   }
 
   private SearchCriteriaRequestDTO getSearchCriteriaRequest(JsonObject requestBody) {
@@ -256,14 +333,32 @@ public class PostSearchRequestBuilder {
     return orderByList;
   }
 
-  private String getOrgId(RoutingContext ctx) {
-    try {
-      if (ctx.user() != null) {
-        return ctx.user().principal().getString("organisation_id");
-      }
-    } catch (Exception e) {
-      throw new DxBadRequestException("User not found in context", e);
+  private Future<String> getOrgId(RoutingContext ctx) {
+
+    if (ctx.user() == null) {
+      return Future.failedFuture(new DxBadRequestException("User not found in context"));
     }
-    return null;
+
+    try {
+      String userIdStr = ctx.user().principal().getString("sub");
+      if (userIdStr == null || userIdStr.isBlank()) {
+        return Future.failedFuture(new DxBadRequestException("User ID missing in token"));
+      }
+
+      UUID userId = UUID.fromString(userIdStr);
+
+      return keycloakUserService
+          .getUserById(userId)
+          .map(user -> user != null ? user.organisationId() : null)
+          .recover(
+              err -> {
+                LOGGER.warn("Failed to fetch organisationId for user {}", userId, err);
+                return Future.succeededFuture(null);
+              });
+
+    } catch (Exception e) {
+      LOGGER.warn("Failed extracting userId from context", e);
+      return Future.succeededFuture(null);
+    }
   }
 }

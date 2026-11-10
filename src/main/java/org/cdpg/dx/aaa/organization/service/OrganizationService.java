@@ -2,14 +2,14 @@ package org.cdpg.dx.aaa.organization.service;
 
 
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonObject;
+import java.util.List;
+import java.util.UUID;
 import org.cdpg.dx.aaa.organization.models.*;
 import org.cdpg.dx.aaa.organization.models.Role;
 import org.cdpg.dx.aaa.organization.models.Status;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
-
-import java.util.List;
-import java.util.UUID;
 
 public interface OrganizationService {
 
@@ -37,11 +37,16 @@ public interface OrganizationService {
 
   Future<OrganizationJoinRequest> getOrganizationJoinRequestById(UUID requestId);
 
-  Future<Boolean> updateOrganizationJoinRequestStatus(UUID requestId, Status Status);
+  Future<OrganizationJoinRequest> withdrawJoinRequest(UUID userId, UUID requestId);
+
+  Future<Boolean> updateOrganizationJoinRequestStatus(
+      UUID requestId, Status Status, UUID approverUserId);
 
   Future<List<OrganizationJoinRequest>> getOrganizationJoinRequestsByUser(UUID userId);
 
+  Future<List<OrganizationJoinRequest>> getAllOrganizationJoinRequests();
 
+  Future<List<OrganizationJoinRequest>> getOrganizationJoinRequestsByOrgId(UUID orgId);
   // ************ ORGANIZATION *********
   Future<Boolean> deleteOrganization(UUID orgId);
 
@@ -66,11 +71,15 @@ public interface OrganizationService {
 
   Future<PaginatedResult<OrganizationUser>> getOrganizationUsers(PaginatedRequest paginatedRequest); //UUID orgId
 
+  Future<OrganizationUser> getOrganisationUserByUserId(UUID userId);
+
   Future<Boolean> updateUserRole(UUID orgId, UUID userId, Role Role);
 
   Future<Boolean> isOrgAdmin (UUID orgid, UUID userid);
 
   Future<OrganizationUser> getOrganizationUserInfo(UUID userId);
+
+    Future<List<JsonObject>> enrichWithUserInfo(List<JsonObject> computeReqs);
 
   // to check - info about the users
  // Future<OrganizationUser> getOrganizationUserById(UUID userId);
@@ -82,7 +91,7 @@ public interface OrganizationService {
 
   Future<ProviderRoleRequest> createProviderRequest(ProviderRoleRequest providerRoleRequest);
 
-  Future<Boolean> updateProviderRequestStatus(UUID requestId, Status status);
+  Future<Boolean> updateProviderRequestStatus(UUID requestId, Status status, UUID approverUserId);
 
   Future<List<ProviderRoleRequest>> getAllPendingProviderRoleRequests(UUID orgId);
 
@@ -100,5 +109,56 @@ public interface OrganizationService {
 
   Future<UUID> getUserOrgAdminId(UUID orgId);
 
+  Future<Boolean> deleteOrganizationRequestById(UUID requestId);
+
+  Future<Boolean> deleteOrganizationJoinRequestById(UUID requestId);
+
+  Future<ProviderRoleRequest> getProviderRoleRequestByUserId(UUID userId);
+
+  Future<Boolean> deleteProviderRoleRequestById(UUID id);
+
+  Future<Boolean> hasPendingPlatformProviderRole(UUID userId);
+
+  Future<PaginatedResult<ProviderRoleRequest>> getAllPlatformProviderRequests(PaginatedRequest request);
+
+  Future<ProviderRoleRequest> getPlatformProviderRoleRequestByUserId(UUID userId);
+
+  Future<List<OrganizationHierarchyNode>> getHierarchyNodes(UUID organizationId);
+
+  Future<OrganizationHierarchyNode> getHierarchyNode(UUID organizationId, UUID nodeId);
+
+  Future<List<OrganizationHierarchyNode>> getHierarchyNodeChildren(
+      UUID organizationId, UUID nodeId);
+
+  Future<List<OrganizationHierarchyNode>> getHierarchyNodeDescendants(
+      UUID organizationId, UUID nodeId);
+
+  Future<List<UUID>> getDescendantNodeIds(UUID organizationId, UUID nodeId);
+
+  Future<Boolean> isAncestorOrSelfNode(
+      UUID organizationId, UUID ancestorNodeId, UUID targetNodeId, boolean strict);
+
+  Future<OrganizationHierarchyDefinitionRequest> createHierarchyDefinitionRequest(
+      UUID organizationId, List<ProposedDepartmentNode> departments);
+
+  Future<OrganizationHierarchyDefinitionRequest> getHierarchyDefinitionRequestById(UUID requestId);
+
+  Future<List<OrganizationHierarchyDefinitionRequest>> getAllHierarchyDefinitionRequests(
+      UUID organizationId);
+
+  Future<OrganizationHierarchyDefinitionRequest> updateHierarchyDefinitionRequestStatus(
+      UUID requestId, Status status, String remarks);
+
+  Future<OrganizationUser> assignDeptAdmin(
+      UUID organizationId, UUID assignerUserId, UUID targetUserId, UUID departmentNodeId);
+
+  Future<DeptAdminRequest> requestDeptAdmin(UUID organizationId, UUID requesterUserId);
+
+  Future<DeptAdminRequest> getDeptAdminRequestById(UUID requestId);
+
+  Future<OrganizationUser> updateDeptAdminRequestStatus(
+      UUID organizationId, UUID requestId, UUID approverUserId, Status status, String remarks);
+
+  Future<Boolean> isAuthorizedOverNode(UUID organizationId, UUID userId, UUID targetNodeId);
 }
 

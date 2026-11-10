@@ -1,0 +1,173 @@
+package org.cdpg.dx.databroker.listeners;
+
+import io.vertx.core.json.JsonObject;
+import io.vertx.rabbitmq.QueueOptions;
+import io.vertx.rabbitmq.RabbitMQClient;
+import io.vertx.rabbitmq.RabbitMQConsumer;
+import io.vertx.rabbitmq.RabbitMQMessage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.item.service.ItemService;
+import org.cdpg.dx.auditing.v2.enrichment.AssetEnrichmentService;
+import org.cdpg.dx.auditing.v2.enrichment.AuditEnrichmentService;
+import org.cdpg.dx.auditing.v2.model.ActivityAuditLogEntity;
+import org.cdpg.dx.aaa.activity.service.UserActivityAuditLogService;
+
+import java.util.UUID;
+
+public class AuditMessageConsumer implements RabitMqConsumer {
+
+  private static final Logger LOGGER = LogManager.getLogger(AuditMessageConsumer.class);
+
+  private final RabbitMQClient rabbitMqClient;
+  private final String queueName;
+  private final AuditEnrichmentService auditEnrichmentService;
+  private final UserActivityAuditLogService auditService;
+  private final ItemService itemService;
+  private final boolean dlqEnabled;
+
+  private RabbitMQConsumer consumer;
+
+  private final QueueOptions queueOptions =
+      new QueueOptions().setAutoAck(false).setMaxInternalQueueSize(100).setKeepMostRecent(true);
+
+  public AuditMessageConsumer(
+      RabbitMQClient rabbitMqClient,
+      String queueName,
+      AuditEnrichmentService auditEnrichmentService,
+      UserActivityAuditLogService auditService,
+      ItemService itemService,
+      boolean dlqEnabled) {
+
+    this.rabbitMqClient = rabbitMqClient;
+    this.queueName = queueName;
+    this.auditEnrichmentService = auditEnrichmentService;
+    this.auditService = auditService;
+    this.itemService = itemService;
+    this.dlqEnabled = dlqEnabled;
+  }
+
+  // ----------------------------------------------------
+  // Lifecycle
+  // ----------------------------------------------------
+  @Override
+  public void start() {
+    rabbitMqClient
+        .start()
+        .onSuccess(v -> consume())
+        .onFailure(err -> LOGGER.fatal("RabbitMQ client start failed", err));
+  }
+
+  private void consume() {
+    rabbitMqClient.basicConsumer(
+        queueName,
+        queueOptions,
+        ar -> {
+          if (ar.failed()) {
+            LOGGER.error("Failed to create RabbitMQ consumer", ar.cause());
+            return;
+          }
+
+          consumer = ar.result();
+          consumer.handler(this::handleMessage);
+
+          LOGGER.info(
+              "AuditMessageConsumer started on queue {} (dlqEnabled={})", queueName, dlqEnabled);
+        });
+  }
+
+  // ----------------------------------------------------
+  // Message handling
+  // ----------------------------------------------------
+  private void handleMessage(RabbitMQMessage message) {
+
+    long deliveryTag = message.envelope().getDeliveryTag();
+    boolean redelivered = message.envelope().isRedeliver();
+
+    LOGGER.info(
+        "Audit message received [deliveryTag={}, redelivered={}]", deliveryTag, redelivered);
+
+    JsonObject body = message.body().toJsonObject();
+
+    ActivityAuditLogEntity entity;
+    try {
+      entity = ActivityAuditLogEntity.fromJson(body);
+    } catch (Exception e) {
+      LOGGER.error("Invalid audit message, acking and discarding: {}", body, e);
+      rabbitMqClient.basicAck(deliveryTag, false);
+      return;
+    }
+
+    auditEnrichmentService
+        .enrich(entity)
+        .compose(auditService::insertUserActivityLogIntoDb)
+        .onSuccess(
+            v -> {
+              updateAssetMetricIfApplicable(entity);
+              rabbitMqClient.basicAck(deliveryTag, false);
+              LOGGER.debug("Audit log persisted successfully, id={}", entity.getId());
+            })
+        .onFailure(err -> handleFailure(err, message));
+  }
+
+  // ----------------------------------------------------
+  // Failure handling (ONLY ONE RETRY)
+  // ----------------------------------------------------
+  private void handleFailure(Throwable err, RabbitMQMessage message) {
+
+    long deliveryTag = message.envelope().getDeliveryTag();
+
+    // 1️⃣ First failure → retry once
+    if (!message.envelope().isRedeliver()) {
+      LOGGER.warn("Audit insert failed (first attempt), retrying once", err);
+      rabbitMqClient.basicNack(deliveryTag, false, true);
+      return;
+    }
+
+    // 2️⃣ Second failure → DLQ or drop
+    if (dlqEnabled) {
+      LOGGER.error("Audit insert failed (second attempt), sending to DLQ", err);
+      rabbitMqClient.basicNack(deliveryTag, false, false);
+    } else {
+      LOGGER.error("Audit insert failed (second attempt), dropping message", err);
+      rabbitMqClient.basicAck(deliveryTag, false);
+    }
+  }
+
+  // ----------------------------------------------------
+  // Asset metrics update (best-effort)
+  // ----------------------------------------------------
+  private void updateAssetMetricIfApplicable(ActivityAuditLogEntity entity) {
+
+    // Only asset-level audit logs
+    if (!"ASSET".equalsIgnoreCase(entity.getLogType())) {
+      return;
+    }
+
+    String action = entity.getAction();
+    String metricField;
+
+    if ("VIEW".equalsIgnoreCase(action)) {
+      metricField = "views";
+    } else if ("DOWNLOAD".equalsIgnoreCase(action)) {
+      metricField = "downloads";
+    } else {
+      return;
+    }
+
+    UUID assetId;
+    try {
+      assetId = entity.getAssetId();
+    } catch (Exception e) {
+      LOGGER.warn("Invalid assetId in audit log: {}", entity.getAssetId(), e);
+      return;
+    }
+
+    itemService
+        .updateMetric(assetId, metricField, 1)
+        .onFailure(
+            err ->
+                LOGGER.warn(
+                    "Failed to update {} metric for assetId={}", metricField, assetId, err));
+  }
+}

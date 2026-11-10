@@ -1,28 +1,24 @@
 package org.cdpg.dx.aaa.asset.service;
 
+import static org.cdpg.dx.aaa.asset.util.Constants.*;
+import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
+
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import org.cdpg.dx.aaa.asset.dao.AssetRequestDAO;
 import org.cdpg.dx.aaa.asset.models.AssetRequest;
 import org.cdpg.dx.aaa.asset.models.Status;
-import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.cdpg.dx.common.exception.BaseDxException;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.NoRowFoundException;
 import org.cdpg.dx.common.request.PaginatedRequest;
-import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.UUID;
-
-import static org.cdpg.dx.aaa.asset.util.Constants.*;
-import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
-
 
 public class AssetServiceImpl implements AssetService {
 
@@ -45,7 +41,7 @@ public class AssetServiceImpl implements AssetService {
   @Override
   public Future<PaginatedResult<AssetRequest>> getAllAssetRequest(PaginatedRequest paginatedRequest) {
     // Implementation for retrieving all asset requests
-    return assetRequestDAO.getAll(paginatedRequest);
+    return assetRequestDAO.getAllWithFilters(paginatedRequest);
   }
 
   @Override
@@ -81,10 +77,13 @@ public class AssetServiceImpl implements AssetService {
 
   public Future<Boolean> getAssetRequestById(UUID requestId,UUID userId) {
 
-    Map<String, Object> conditionMap = Map.of(
-      ASSET_ID, requestId.toString() ,
-      USER_ID, userId.toString()
-    );
+    // Only an active (pending/granted) request blocks a new one; after a rejection the user
+    // may raise a fresh request, stored as a new row.
+    Map<String, Object> conditionMap =
+        Map.of(
+            ASSET_ID, requestId.toString(),
+            USER_ID, userId.toString(),
+            STATUS, List.of(Status.PENDING.getStatus(), Status.GRANTED.getStatus()));
 
     return assetRequestDAO.getAllWithFilters(conditionMap)
       .compose(assetRequest -> {
@@ -95,5 +94,34 @@ public class AssetServiceImpl implements AssetService {
         }
       });
 
+  }
+
+  @Override
+  public Future<AssetRequest> getAssetRequestDetailsById(UUID requestId) {
+
+    return assetRequestDAO.get(requestId)
+      .compose(assetRequest -> {
+        if (assetRequest != null) { // assetRequest exists
+          return Future.succeededFuture(assetRequest); //return true
+          }
+        else
+        {
+          return Future.failedFuture(new DxNotFoundException("Asset Request not found!"));
+        }
+    });
+
+  }
+
+  @Override
+  public Future<Boolean> deleteAssetRequestById(UUID requestId) {
+
+    return assetRequestDAO.delete(requestId)
+      .map(deletedRows -> {
+        if (deletedRows) {
+          return true; // Deletion successful
+        } else {
+          throw new DxNotFoundException("Asset request not found with ID: " + requestId);
+        }
+      });
   }
 }

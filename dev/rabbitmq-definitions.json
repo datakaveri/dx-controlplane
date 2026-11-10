@@ -1,0 +1,78 @@
+{
+  "users": [
+    {
+      "name": "admin",
+      "password": "admin",
+      "tags": "administrator"
+    }
+  ],
+  "vhosts": [
+    { "name": "/" },
+    { "name": "/prod" },
+    { "name": "/internal" },
+    { "name": "/external" }
+  ],
+  "permissions": [
+    { "user": "admin", "vhost": "/",         "configure": ".*", "write": ".*", "read": ".*" },
+    { "user": "admin", "vhost": "/prod",     "configure": ".*", "write": ".*", "read": ".*" },
+    { "user": "admin", "vhost": "/internal", "configure": ".*", "write": ".*", "read": ".*" },
+    { "user": "admin", "vhost": "/external", "configure": ".*", "write": ".*", "read": ".*" }
+  ],
+  "exchanges": [
+    { "name": "auditing",             "vhost": "/internal", "type": "topic", "durable": true, "auto_delete": false },
+    { "name": "Email",                "vhost": "/internal", "type": "topic", "durable": true, "auto_delete": false },
+    { "name": "rpc-adapter-requests", "vhost": "/prod",     "type": "topic", "durable": true, "auto_delete": false },
+    { "name": "rpc-adapter-requests", "vhost": "/external",  "type": "topic", "durable": true, "auto_delete": false }
+  ],
+  "queues": [
+    {
+      "name": "dummy-auditing",
+      "vhost": "/internal",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-message-ttl": 86400000,
+        "x-max-length": 10000,
+        "x-queue-mode": "lazy"
+      }
+    },
+    {
+      "name": "email-notification",
+      "vhost": "/internal",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-message-ttl": 86400000,
+        "x-max-length": 10000,
+        "x-queue-mode": "lazy"
+      }
+    },
+    {
+      "name": "leaderboard",
+      "vhost": "/internal",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-message-ttl": 86400000,
+        "x-max-length": 10000,
+        "x-queue-mode": "lazy"
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "source": "auditing",
+      "vhost": "/internal",
+      "destination": "dummy-auditing",
+      "destination_type": "queue",
+      "routing_key": "##"
+    },
+    {
+      "source": "Email",
+      "vhost": "/internal",
+      "destination": "email-notification",
+      "destination_type": "queue",
+      "routing_key": "##"
+    }
+  ]
+}

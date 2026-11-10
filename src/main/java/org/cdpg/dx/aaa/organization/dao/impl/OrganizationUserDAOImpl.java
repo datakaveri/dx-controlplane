@@ -13,7 +13,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+import static org.cdpg.dx.aaa.organization.config.Constants.ORGANIZATION_ID;
 import static org.cdpg.dx.aaa.organization.config.Constants.ORG_USER_ID;
+import static org.cdpg.dx.aaa.organization.config.Constants.USER_ID;
 
 public class OrganizationUserDAOImpl extends AbstractBaseDAO<OrganizationUser> implements  OrganizationUserDAO {
 
@@ -33,7 +35,7 @@ public class OrganizationUserDAOImpl extends AbstractBaseDAO<OrganizationUser> i
     Condition conditions = new Condition(
       List.of(
         new Condition(Constants.ORGANIZATION_ID, Condition.Operator.EQUALS, List.of(orgId.toString())),
-        new Condition(Constants.USER_ID, Condition.Operator.EQUALS , List.of(userID.toString()))
+        new Condition(USER_ID, Condition.Operator.EQUALS , List.of(userID.toString()))
       ),
       Condition.LogicalOperator.AND
     );
@@ -49,7 +51,7 @@ public class OrganizationUserDAOImpl extends AbstractBaseDAO<OrganizationUser> i
     Condition conditions = new Condition(
       List.of(
         new Condition(Constants.ORGANIZATION_ID, Condition.Operator.EQUALS, List.of(orgid.toString())),
-        new Condition(Constants.USER_ID, Condition.Operator.EQUALS, List.of(userid.toString()))
+        new Condition(USER_ID, Condition.Operator.EQUALS, List.of(userid.toString()))
       ),
       Condition.LogicalOperator.AND
     );
@@ -74,5 +76,15 @@ public class OrganizationUserDAOImpl extends AbstractBaseDAO<OrganizationUser> i
       });
   }
 
+  @Override
+  public Future<OrganizationUser> getByOrganizationIdAndUserId(
+      UUID organizationId,
+      UUID userId) {
 
+    return getAllWithFilters(
+        Map.of(
+            ORGANIZATION_ID, organizationId.toString(),
+            USER_ID, userId.toString()))
+        .map(users -> users.isEmpty() ? null : users.getFirst());
+  }
 }

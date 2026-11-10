@@ -6,7 +6,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import java.util.*;
-import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxUnauthorizedException;
 
@@ -48,7 +48,7 @@ public class VerifyItemTypeAndRole implements Handler<RoutingContext> {
             .map(
                 roleName -> {
                   return Arrays.stream(DxRole.values())
-                      .filter(r -> r.getRole().equalsIgnoreCase(roleName))
+                      .filter(r -> r.value().equalsIgnoreCase(roleName))
                       .findFirst()
                       .orElse(null);
                 })
@@ -76,6 +76,8 @@ public class VerifyItemTypeAndRole implements Handler<RoutingContext> {
     providerItemTypes.add(DATA_BANK);
     providerItemTypes.add(APPS);
     cosAdminItemTypes.add(APPS);
+    cosAdminItemTypes.add(AI_MODEL);
+    cosAdminItemTypes.add(DATA_BANK);
 
     this.roleItemTypeMap.put(DxRole.PROVIDER, providerItemTypes);
     this.roleItemTypeMap.put(DxRole.COS_ADMIN, cosAdminItemTypes);

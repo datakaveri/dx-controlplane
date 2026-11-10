@@ -1,22 +1,26 @@
 package org.cdpg.dx.aaa.credit.service;
 
-import co.elastic.clients.elasticsearch.ingest.Local;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.aaa.credit.dao.*;
 import org.cdpg.dx.aaa.credit.models.*;
 import org.cdpg.dx.aaa.organization.config.Constants;
-import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.model.DxRole;
 import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.request.PaginatedRequest;
+import org.cdpg.dx.common.util.ServiceErrorHelper;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -47,8 +51,34 @@ public class CreditServiceImpl implements CreditService {
 
   @Override
   public Future<CreditRequest> createCreditRequest(CreditRequest creditRequest) {
-    return creditRequestDAO.create(creditRequest);
+    Map<String,Object> filter = Map.of(USER_ID,creditRequest.userId().toString(),
+                                        STATUS, PENDING.getStatus());
+
+    return creditRequestDAO.getAllWithFilters(filter).compose(existingRequests -> {
+
+      Instant oneHourAgo = Instant.now().minus(1, ChronoUnit.HOURS);
+      LOGGER.info("Now (UTC): {}", LocalDateTime.now(ZoneOffset.UTC));
+      LOGGER.info("Now (System): {}", LocalDateTime.now());
+
+      boolean hasRecentPendingRequest = existingRequests.stream()
+        .anyMatch(req ->
+          req.requestedAt()
+            .toInstant(ZoneOffset.UTC)
+            .isAfter(oneHourAgo)
+        );
+
+      LOGGER.info("hasRecentPendingRequest: {}",hasRecentPendingRequest);
+      if (hasRecentPendingRequest) {
+        return Future.failedFuture(
+          new DxForbiddenException("A credit request is already pending. Please try again later.")
+        );
+      }
+
+      // No recent pending request → allow creation
+      return creditRequestDAO.create(creditRequest);
+    });
   }
+
 
   @Override
   public Future<PaginatedResult<CreditRequest>> getAllCreditRequests(PaginatedRequest request) {
@@ -74,13 +104,7 @@ public class CreditServiceImpl implements CreditService {
           return Future.succeededFuture(null); // No transaction needed
         }
         return processCreditGrant(requestId, transactedBy, amount, expirationDate);
-      }).recover(err -> {
-        BaseDxException dxEx = BaseDxException.from(err);
-        if (dxEx instanceof NoRowFoundException) {
-          return Future.failedFuture(new DxNotFoundException("No request found with given ID", dxEx));
-        }
-        return Future.failedFuture(dxEx);
-      });
+      }).recover(ServiceErrorHelper.mapNotFound("No request found with given ID"));
 
     });
   }
@@ -136,7 +160,7 @@ public class CreditServiceImpl implements CreditService {
   public Future<CreditTransaction> addCredits(CreditTransaction creditTransaction)
   {
     LocalDateTime reqAt = creditTransaction.requestedAt();
-    System.out.println("Request at: " + reqAt);
+    LOGGER.debug("Processing credit transaction at: {}", reqAt);
     UUID userId = creditTransaction.userId();
 
     if (creditTransaction.amount() == null) {
@@ -174,19 +198,13 @@ public class CreditServiceImpl implements CreditService {
 
         });
       });
-    }).recover(err -> {
-      BaseDxException dxEx = BaseDxException.from(err);
-      if (dxEx instanceof NoRowFoundException) {
-        return Future.failedFuture(new DxNotFoundException("User entry not found", dxEx));
-      }
-      return Future.failedFuture(dxEx);
-    });
+    }).recover(ServiceErrorHelper.mapNotFound("User entry not found"));
   }
 
   @Override
   public Future<CreditTransaction> deductCredits(CreditTransaction creditTransaction) {
     LocalDateTime reqAt = creditTransaction.requestedAt();
-    System.out.println("Request at: " + reqAt);
+    LOGGER.debug("Processing credit transaction at: {}", reqAt);
     UUID userId = creditTransaction.userId();
 
     if (creditTransaction.amount() == null) {
@@ -227,13 +245,7 @@ public class CreditServiceImpl implements CreditService {
           return creditTransactionDAO.create(transaction);
         });
       });
-    }).recover(err -> {
-      BaseDxException dxEx = BaseDxException.from(err);
-      if (dxEx instanceof NoRowFoundException) {
-        return Future.failedFuture(new DxNotFoundException("User or balance entry not found", dxEx));
-      }
-      return Future.failedFuture(dxEx);
-    });
+    }).recover(ServiceErrorHelper.mapNotFound("User or balance entry not found"));
   }
 
   @Override
@@ -260,7 +272,7 @@ public class CreditServiceImpl implements CreditService {
 
   @Override
   public Future<PaginatedResult<ComputeRole>> getAllComputeRequests(PaginatedRequest paginatedRequest) {
-    return computeRoleDAO.getAll(paginatedRequest);
+    return computeRoleDAO.getAllWithFilters(paginatedRequest);
   }
 
   @Override
@@ -274,8 +286,6 @@ public class CreditServiceImpl implements CreditService {
     return computeRoleDAO.update(conditionMap, updateMap).compose(updated -> {
       return computeRoleDAO.get(requestId).compose(req -> {
         UUID userId = req.userId();
-
-        LOGGER.info("InitialCreditBalance in config: "+ config.getInteger("initialCreditBalance"));
 
         if (GRANTED.equals(status)) {
           return userCreditDAO.create(new UserCredit(null, userId, config.getInteger("initialCreditBalance"),LocalDateTime.now().plusDays(30), LocalDateTime.now()))
@@ -306,13 +316,7 @@ public class CreditServiceImpl implements CreditService {
 
         return Future.succeededFuture(true);
       });
-    }).recover(err -> {
-      BaseDxException dxEx = BaseDxException.from(err);
-      if (dxEx instanceof NoRowFoundException) {
-        return Future.failedFuture(new DxNotFoundException("No matching requestId found in computeRole table", dxEx));
-      }
-      return Future.failedFuture(dxEx);
-    });
+    }).recover(ServiceErrorHelper.mapNotFound("No matching requestId found in computeRole table"));
   }
 
   @Override
@@ -368,26 +372,14 @@ public class CreditServiceImpl implements CreditService {
   public Future<ComputeRole> getComputeRequestById(UUID requestId)
   {
     return computeRoleDAO.get(requestId)
-      .recover(err -> {
-        BaseDxException dxEx = BaseDxException.from(err);
-        if (dxEx instanceof NoRowFoundException) {
-          return Future.failedFuture(new DxNotFoundException("No matching requestId found in computeRole table", dxEx));
-        }
-        return Future.failedFuture(dxEx);
-      });
+      .recover(ServiceErrorHelper.mapNotFound("No matching requestId found in computeRole table"));
   }
 
   @Override
   public Future<CreditRequest> getCreditRequestById(UUID requestId)
   {
     return creditRequestDAO.get(requestId)
-      .recover(err -> {
-        BaseDxException dxEx = BaseDxException.from(err);
-        if (dxEx instanceof NoRowFoundException) {
-          return Future.failedFuture(new DxNotFoundException("No matching requestId found in creditRequest table", dxEx));
-        }
-        return Future.failedFuture(dxEx);
-      });
+      .recover(ServiceErrorHelper.mapNotFound("No matching requestId found in creditRequest table"));
   }
 
 
@@ -422,13 +414,7 @@ public class CreditServiceImpl implements CreditService {
         }));
       }
       return CompositeFuture.all(futures);
-    }).recover(err -> {
-      BaseDxException dxEx = BaseDxException.from(err);
-      if (dxEx instanceof NoRowFoundException) {
-        return Future.failedFuture(new DxNotFoundException("No matching requestId found in credit Request table", dxEx));
-      }
-      return Future.failedFuture(dxEx);
-    });
+    }).recover(ServiceErrorHelper.mapNotFound("No matching requestId found in credit Request table"));
     return Future.succeededFuture(true);
   }
 
@@ -453,13 +439,7 @@ public class CreditServiceImpl implements CreditService {
         }));
       }
       return CompositeFuture.all(futures);
-    }).recover(err -> {
-      BaseDxException dxEx = BaseDxException.from(err);
-      if (dxEx instanceof NoRowFoundException) {
-        return Future.failedFuture(new DxNotFoundException("No matching requestId found in compute request table", dxEx));
-      }
-      return Future.failedFuture(dxEx);
-    });
+    }).recover(ServiceErrorHelper.mapNotFound("No matching requestId found in compute request table"));
     return Future.succeededFuture(true);
   }
 
@@ -505,14 +485,67 @@ public class CreditServiceImpl implements CreditService {
         }
         return Future.succeededFuture(userCredits.get(0)); // Return the first matching UserCredit
       })
-      .recover(err -> {
-        BaseDxException dxEx = BaseDxException.from(err);
-        if (dxEx instanceof NoRowFoundException) {
-          return Future.failedFuture(new DxNotFoundException("No matching userId found in userCredit table", dxEx));
+      .recover(ServiceErrorHelper.mapNotFound("No matching userId found in userCredit table"));
+  }
+
+  @Override
+  public Future<List<CreditRequest>> getCreditRequestsByUserId(UUID userId) {
+    Map<String, Object> filter = Map.of(
+      Constants.USER_ID, userId.toString()
+    );
+
+    return creditRequestDAO.getAllWithFilters(filter)
+      .compose(requests -> {
+        if (requests.isEmpty()) {
+          return Future.failedFuture(new DxNotFoundException(
+            "No pending credit request found for userId: " + userId));
         }
-        return Future.failedFuture(dxEx);
+        return Future.succeededFuture(requests);
       });
   }
+
+  @Override
+  public Future<ComputeRole> getComputeRequestByUserId(UUID userId) {
+    Map<String, Object> filter = Map.of(
+      Constants.USER_ID, userId.toString()
+    );
+
+    return computeRoleDAO.getAllWithFilters(filter)
+      .compose(requests -> {
+        if (requests.isEmpty()) {
+          return Future.failedFuture(new DxNotFoundException(
+            "No pending compute request found for userId: " + userId));
+        }
+        return Future.succeededFuture(requests.get(0));  // since compute request can be made only once
+      });
+  }
+
+  @Override
+  public Future<Boolean> deletePendingCreditRequestById(UUID requestId) {
+        return creditRequestDAO.delete(requestId)
+          .compose(deleted -> {
+            if (!deleted) {
+              return Future.failedFuture(new DxNotFoundException(
+                "Failed to delete pending credit request with ID: " + requestId));
+            }
+            return Future.succeededFuture(true);
+          });
+
+  }
+
+  @Override
+  public Future<Boolean> deletePendingComputeRequestById(UUID requestId) {
+        return computeRoleDAO.delete(requestId)
+          .compose(deleted -> {
+            if (!deleted) {
+              return Future.failedFuture(
+                new DxNotFoundException("Failed to delete pending compute request with ID: " + requestId)
+              );
+            }
+            return Future.succeededFuture(true);
+          });
+  }
+
 
 
 

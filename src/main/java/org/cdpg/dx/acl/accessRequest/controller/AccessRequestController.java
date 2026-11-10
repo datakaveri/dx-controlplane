@@ -1,0 +1,763 @@
+package org.cdpg.dx.acl.accessRequest.controller;
+
+import static org.cdpg.dx.acl.accessRequest.config.Constants.CHECK_ACCESS_REQUEST_API;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.CREATE_ACCESS_REQUEST_API;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_ACCESS_REQUEST_CONSUMER_API;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_ACCESS_REQUEST_FOR_COS_ADMIN_API;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_ACCESS_REQUEST_FOR_DEPT_ADMIN_API;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_ACCESS_REQUEST_FOR_ORG_ADMIN_API;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.GET_ACCESS_REQUEST_PROVIDER_API;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.UPDATE_ACCESS_REQUEST_API;
+import static org.cdpg.dx.acl.accessRequest.config.Constants.WITHDRAW_ACCESS_REQUEST_API_FOR_CONSUMER;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ASSET_ORGANIZATION_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ASSET_TYPE;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_CREATED_AT;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_EXPIRY_AT;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ITEM_HIERARCHY_NODE_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_ITEM_ID;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_STATUS;
+import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.DB_UPDATED_AT;
+import static org.cdpg.dx.acl.accessRequest.util.Constants.API_TO_DB_MAP;
+import static org.cdpg.dx.acl.accessRequest.util.EmailType.CONSUMER_ACK;
+import static org.cdpg.dx.acl.accessRequest.util.EmailType.CONSUMER_UPDATE;
+import static org.cdpg.dx.acl.accessRequest.util.EmailType.PROVIDER_CREATE;
+import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER;
+
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.auth.User;
+import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.openapi.RouterBuilder;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.common.ItemType;
+import org.cdpg.dx.aaa.organization.handler.DeptAdminAccessHandler;
+import org.cdpg.dx.aaa.organization.models.DeptAdminScope;
+import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
+import org.cdpg.dx.acl.accessRequest.dao.model.Status;
+import org.cdpg.dx.acl.accessRequest.model.AccessRequestAuditOperation;
+import org.cdpg.dx.acl.accessRequest.service.AccessRequestService;
+import org.cdpg.dx.acl.accessRequest.util.AccessRequestAuditLogHelper;
+import org.cdpg.dx.acl.policy.dao.model.PolicyDto;
+import org.cdpg.dx.acl.policy.util.UserAccessHandler;
+import org.cdpg.dx.apiserver.ApiController;
+import org.cdpg.dx.auditing.handler.AuditingHandler;
+import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
+import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
+import org.cdpg.dx.auth.authorization.model.ScopeRule;
+import org.cdpg.dx.auth.model.DxRole;
+import org.cdpg.dx.auth.model.Scopes;
+import org.cdpg.dx.common.URNGenerator;
+import org.cdpg.dx.common.email.SendEmail;
+import org.cdpg.dx.common.exception.DxForbiddenException;
+import org.cdpg.dx.common.exception.DxValidationException;
+import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.common.model.RequestType;
+import org.cdpg.dx.common.request.PaginatedRequest;
+import org.cdpg.dx.common.request.PaginationRequestBuilder;
+import org.cdpg.dx.common.response.ResponseBuilder;
+import org.cdpg.dx.common.util.CpRoutingContextHelper;
+import org.cdpg.dx.common.util.RequestHelper;
+import org.cdpg.dx.common.util.RoutingContextHelper;
+import org.cdpg.dx.database.postgres.models.PaginatedResult;
+import org.cdpg.dx.database.postgres.service.PostgresService;
+import org.cdpg.dx.databroker.service.DataBrokerService;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
+
+public class AccessRequestController implements ApiController {
+  private static final Logger LOGGER = LogManager.getLogger(AccessRequestController.class);
+  private static final Map<String, String> ORG_ACCESS_REQUEST_FILTERS =
+      Map.of(
+          "requestStatus", DB_STATUS,
+          "assetType", DB_ASSET_TYPE,
+          "organizationId", DB_ASSET_ORGANIZATION_ID,
+          "itemId", DB_ITEM_ID);
+
+  private final AccessRequestService accessRequestService;
+  private final PostgresService postgresService;
+  private final AuditingHandler auditingHandler;
+  private final DataBrokerService dataBrokerService;
+  private final KeycloakUserService keycloakUserService;
+  private final URNGenerator urnGenerator;
+  private final String emailExchange;
+  private final String emailRoutingKey;
+  private final DeptAdminAccessHandler deptAdminAccess;
+  public AccessRequestController(
+      AccessRequestService accessRequestService,
+      AuditingHandler auditingHandler,
+      DataBrokerService dataBrokerService,
+      URNGenerator urnGenerator,
+      PostgresService postgresService,
+      KeycloakUserService keycloakUserService,
+      String emailExchange,
+      String emailRoutingKey) {
+    this.accessRequestService = accessRequestService;
+    this.auditingHandler = auditingHandler;
+    this.dataBrokerService = dataBrokerService;
+    this.urnGenerator = urnGenerator;
+    this.postgresService = postgresService;
+    this.keycloakUserService = keycloakUserService;
+    this.emailExchange = emailExchange;
+    this.emailRoutingKey = emailRoutingKey;
+    this.deptAdminAccess = DeptAdminAccessHandler.create(postgresService);
+  }
+
+  private static LocalDateTime parseAndValidateFutureTime(String timeString) {
+    if (timeString == null || timeString.isBlank()) {
+      LOGGER.warn("expiryAt not provided, defaulting to one year from now.");
+      return LocalDateTime.now().plusYears(1);
+    }
+
+    try {
+      LocalDateTime parsedTime = LocalDateTime.parse(timeString);
+      LOGGER.info(
+          "Parsed time: {}, isFuture: {}", parsedTime, parsedTime.isAfter(LocalDateTime.now()));
+      if (parsedTime.isAfter(LocalDateTime.now())) {
+        return parsedTime;
+      } else {
+        throw new DxValidationException("expiryAt must be a future time");
+      }
+    } catch (DateTimeParseException e) {
+      throw new DxValidationException("expiryAt has invalid format, expected ISO format");
+    }
+  }
+
+  @Override
+  public void register(RouterBuilder builder) {
+    Handler<RoutingContext> selfAccess = AuthorizationHandler.forScopes(Scopes.DATA_ACCESS);
+    Handler<RoutingContext> orgAdminAccess =
+        AuthorizationHandler.forScopes(Scopes.ORG_ASSET_MANAGEMENT);
+    Handler<RoutingContext> cosAdminAccess =
+        AuthorizationHandler.forScopes(Scopes.ASSET_MANAGEMENT);
+    Handler<RoutingContext> providerAdminAccess =
+        AuthorizationHandler.forScopesWithContext(
+            ScopeRule.self(Scopes.OWN_ASSET_MANAGEMENT),
+            ScopeRule.org(Scopes.ORG_ASSET_MANAGEMENT));
+    // DEPT must outrank SELF: a dept_admin who is also a provider holds OWN_ASSET_MANAGEMENT
+    Handler<RoutingContext> providerOrDeptAdminAccess =
+        deptAdminAccess.withDeptScopes(
+            AuthorizationHandler.forScopesWithContext(
+                ScopeRule.org(Scopes.ORG_ASSET_MANAGEMENT),
+                ScopeRule.dept(Scopes.DEPT_ASSET_MANAGEMENT),
+                ScopeRule.self(Scopes.OWN_ASSET_MANAGEMENT)));
+    Handler<RoutingContext> deptAdminAccessHandler =
+        deptAdminAccess.withDeptScopes(
+            AuthorizationHandler.forScopes(Scopes.DEPT_ASSET_MANAGEMENT));
+    UserAccessHandler userAccessHandler =
+        new UserAccessHandler(postgresService, keycloakUserService);
+
+    builder
+        .operation(CREATE_ACCESS_REQUEST_API)
+        .handler(auditingHandler::handleApiAudit)
+        //.handler(selfAccess)
+        .handler(this::createAccessRequestHandler);
+
+    builder
+        .operation(GET_ACCESS_REQUEST_CONSUMER_API)
+        .handler(auditingHandler::handleApiAudit)
+        //.handler(selfAccess)
+        .handler(this::getConsumerAccessRequestHandler);
+
+    builder
+        .operation(WITHDRAW_ACCESS_REQUEST_API_FOR_CONSUMER)
+        .handler(auditingHandler::handleApiAudit)
+        //.handler(selfAccess)
+        .handler(this::updateAccessRequestHandlerForConumser);
+
+    builder
+        .operation(GET_ACCESS_REQUEST_FOR_ORG_ADMIN_API)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(orgAdminAccess)
+        .handler(this::getOrganizationAccessRequestHandler);
+
+    builder
+        .operation(GET_ACCESS_REQUEST_FOR_DEPT_ADMIN_API)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(deptAdminAccessHandler)
+        .handler(this::getDepartmentAccessRequestHandler);
+
+    builder
+        .operation(GET_ACCESS_REQUEST_FOR_COS_ADMIN_API)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(cosAdminAccess)
+        .handler(this::getPlatformAccessRequestHandler);
+
+    builder
+        .operation(GET_ACCESS_REQUEST_PROVIDER_API)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(providerAdminAccess)
+        .handler(this::getAccessRequestHandler);
+
+    builder
+        .operation(UPDATE_ACCESS_REQUEST_API)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(userAccessHandler)
+        .handler(providerOrDeptAdminAccess)
+        .handler(this::updateAccessRequestHandler);
+
+    builder
+        .operation(CHECK_ACCESS_REQUEST_API)
+        .handler(auditingHandler::handleApiAudit)
+        //.handler(selfAccess)
+        .handler(this::checkAccessRequestHandler);
+  }
+
+  private void updateAccessRequestHandlerForConumser(RoutingContext routingContext) {
+    LOGGER.info("Handling deleteAccessRequest request...");
+
+    UUID userId = UUID.fromString(routingContext.user().subject());
+    UUID requestId = RequestHelper.getPathParamAsUUID(routingContext, "id");
+
+    accessRequestService
+        .updateAccessRequestForConsumer(userId, requestId)
+        .onSuccess(
+            accessRequestDto -> {
+
+              //          Future<Void> future =
+              //            emailComposer.sendEmailForUpdateAccessRequest(accessRequestDto, status);
+
+              UserActivityAuditLogBuilder auditLog =
+                  AccessRequestAuditLogHelper.buildAudit(
+                      routingContext, accessRequestDto, AccessRequestAuditOperation.WITHDRAW);
+              CpRoutingContextHelper.setAuditingLogV2(routingContext, auditLog);
+              ResponseBuilder.sendSuccess(
+                  routingContext, "Request updated successfully", urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Error withdrawing access request: {}", err.getMessage(), err);
+              routingContext.fail(err);
+            });
+  }
+
+  private void getAccessRequestHandler(RoutingContext ctx) {
+    LOGGER.info("Handling getAccessRequest request...");
+    User user = ctx.user();
+
+    Map<String, String> allowedFilters =
+        Map.of(
+            "requestStatus",
+            DB_STATUS,
+            "assetType",
+            DB_ASSET_TYPE,
+            "organizationId",
+            DB_ASSET_ORGANIZATION_ID,
+            "itemId",
+            DB_ITEM_ID);
+    Map<String, Object> additionalFilters = Map.of("provider_id", user.subject());
+    Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
+    Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
+
+    PaginatedRequest request =
+        PaginationRequestBuilder.from(ctx)
+            .allowedFiltersDbMap(allowedFilters)
+            .apiToDbMap(API_TO_DB_MAP)
+            .additionalFilters(additionalFilters)
+            .allowedTimeFields(allowedTimeFields)
+            .defaultTimeField("created_at")
+            .defaultSort("updated_at", DEFAULT_SORTING_ORDER)
+            .allowedSortFields(allowedSortFields)
+            .build();
+    ItemType.expandFilterAliases(request.filters(), DB_ASSET_TYPE);
+
+    LOGGER.info("PaginatedRequest created getAccessRequest for Provider :  {}", request);
+
+    accessRequestService
+        .listAccessRequestForProvider(request)
+        .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
+        .compose(accessRequestService::enrichAccessRequestsWithProviderInfo)
+        .onSuccess(
+            pagedResult -> {
+              LOGGER.info(
+                  "Successfully fetched access requests for provider user: {}", user.subject());
+              ResponseBuilder.sendSuccess(
+                  ctx,
+                  pagedResult.data().stream()
+                      .map(AccessRequestDto::toJson)
+                      .collect(Collectors.toList()),
+                  pagedResult.paginationInfo(),
+                  urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Error fetching access requests: {}", err.getMessage(), err);
+              ctx.fail(err);
+            });
+  }
+
+  private void getOrganizationAccessRequestHandler(RoutingContext ctx) {
+    LOGGER.info("Handling getOrganizationAccessRequestHandler request...");
+
+    User user = ctx.user();
+    UUID userId = UUID.fromString(user.subject());
+
+    keycloakUserService
+        .getUserById(userId)
+        .onFailure(
+            err -> {
+              LOGGER.error("Failed to fetch user from Keycloak", err);
+              ctx.fail(new DxForbiddenException("Invalid user"));
+            })
+        .onSuccess(
+            keycloakUser ->
+                listOrganizationAccessRequests(
+                    ctx,
+                    ORG_ACCESS_REQUEST_FILTERS,
+                    Map.of(DB_ASSET_ORGANIZATION_ID, keycloakUser.organisationId())));
+  }
+
+  /**
+   * Dept Admin: access requests for items owned by the department the caller administers or any
+   * of its sub-departments, narrowable by {@code ?departmentScope=}. Only reachable by a
+   * dept_admin (the route guard publishes their subtree).
+   */
+  private void getDepartmentAccessRequestHandler(RoutingContext ctx) {
+    LOGGER.info("Handling getDepartmentAccessRequestHandler request...");
+
+    DeptAdminScope deptAdminScope = DeptAdminAccessHandler.scopeOf(ctx);
+    if (deptAdminScope == null) {
+      ctx.fail(new DxForbiddenException("Only a department admin can access this endpoint"));
+      return;
+    }
+
+    listOrganizationAccessRequests(
+        ctx,
+        DeptAdminAccessHandler.withDepartmentScopeParam(
+            ORG_ACCESS_REQUEST_FILTERS, DB_ITEM_HIERARCHY_NODE_ID),
+        Map.of(
+            DB_ASSET_ORGANIZATION_ID, deptAdminScope.organizationId().toString(),
+            DB_ITEM_HIERARCHY_NODE_ID,
+                DeptAdminAccessHandler.requestedNodeIds(ctx, deptAdminScope)));
+  }
+
+  private void listOrganizationAccessRequests(
+      RoutingContext ctx,
+      Map<String, String> allowedFilters,
+      Map<String, Object> additionalFilters) {
+    User user = ctx.user();
+
+    Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
+
+    Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
+
+    PaginatedRequest request =
+        PaginationRequestBuilder.from(ctx)
+            .allowedFiltersDbMap(allowedFilters)
+            .apiToDbMap(API_TO_DB_MAP)
+            .additionalFilters(additionalFilters)
+            .allowedTimeFields(allowedTimeFields)
+            .defaultTimeField(DB_CREATED_AT)
+            .defaultSort(DB_UPDATED_AT, DEFAULT_SORTING_ORDER)
+            .allowedSortFields(allowedSortFields)
+            .build();
+    ItemType.expandFilterAliases(request.filters(), DB_ASSET_TYPE);
+
+    LOGGER.info("PaginatedRequest for organisation access requests: {}", request);
+
+    accessRequestService
+        .listAccessRequestForProvider(request)
+        .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
+        .compose(accessRequestService::enrichAccessRequestsWithProviderInfo)
+        .onSuccess(
+            pagedResult -> {
+              LOGGER.info(
+                  "Successfully fetched organisation access requests for user: {}",
+                  user.subject());
+
+              ResponseBuilder.sendSuccess(
+                  ctx,
+                  pagedResult.data().stream()
+                      .map(AccessRequestDto::toJson)
+                      .collect(Collectors.toList()),
+                  pagedResult.paginationInfo(),
+                  urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Error fetching access requests: {}", err.getMessage(), err);
+              ctx.fail(err);
+            });
+  }
+
+  private void getPlatformAccessRequestHandler(RoutingContext ctx) {
+    LOGGER.info("Handling getPlatformAccessRequestHandler request...");
+    User user = ctx.user();
+
+    Map<String, String> allowedFilters =
+        Map.of(
+            "requestStatus",
+            DB_STATUS,
+            "assetType",
+            DB_ASSET_TYPE,
+            "organizationId",
+            DB_ASSET_ORGANIZATION_ID,
+            "itemId",
+            DB_ITEM_ID);
+    Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
+    Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
+
+    PaginatedRequest request =
+        PaginationRequestBuilder.from(ctx)
+            .allowedFiltersDbMap(allowedFilters)
+            .apiToDbMap(API_TO_DB_MAP)
+            .allowedTimeFields(allowedTimeFields)
+            .defaultTimeField(DB_CREATED_AT)
+            .defaultSort(DB_UPDATED_AT, DEFAULT_SORTING_ORDER)
+            .allowedSortFields(allowedSortFields)
+            .build();
+    ItemType.expandFilterAliases(request.filters(), DB_ASSET_TYPE);
+
+    LOGGER.info("PaginatedRequest getPlatformAccessRequestHandler for cos admin :  {}", request);
+
+    accessRequestService
+        .listAccessRequestForProvider(request)
+        .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
+        .compose(accessRequestService::enrichAccessRequestsWithProviderInfo)
+        .onSuccess(
+            pagedResult -> {
+              LOGGER.info(
+                  "Successfully fetched access requests for cos admin user: {}", user.subject());
+              ResponseBuilder.sendSuccess(
+                  ctx,
+                  pagedResult.data().stream()
+                      .map(AccessRequestDto::toJson)
+                      .collect(Collectors.toList()),
+                  pagedResult.paginationInfo(),
+                  urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Error fetching access requests: {}", err.getMessage(), err);
+              ctx.fail(err);
+            });
+  }
+
+  private void checkAccessRequestHandler(RoutingContext ctx) {
+    LOGGER.info("Handling checkAccessRequest request...");
+
+    JsonObject body = ctx.body().asJsonObject();
+    String itemId = body.getString("itemId");
+    UUID consumerId = UUID.fromString(ctx.user().subject());
+
+    accessRequestService
+        .checkAccessRequest(consumerId, itemId)
+        .compose(
+            response -> {
+              if (response.getPolicies() == null || response.getPolicies().isEmpty()) {
+                return Future.succeededFuture(response);
+              }
+
+              PaginatedResult<PolicyDto> pagedResult =
+                  new PaginatedResult<>(null, response.getPolicies());
+
+              return accessRequestService
+                  .enrichPolicyRequestsWithItemDetails(pagedResult)
+                  .compose(accessRequestService::enrichPolicyRequestsWithUserInfo)
+                  .map(
+                      enriched -> {
+                        response.setPolicies(enriched.data());
+                        return response;
+                      });
+            })
+        .onSuccess(
+            response -> {
+              String message = "User has access to the given asset!";
+
+              boolean hasPolicies =
+                  response.getPolicies() != null && !response.getPolicies().isEmpty();
+
+              if (!hasPolicies && response.isHasPendingRequests()) {
+                ResponseBuilder.sendForbiddenAccessPending(
+                    ctx,
+                    "Access request is still pending for the given item",
+                    response.toJson(),
+                    urnGenerator);
+                return;
+              }
+
+              ResponseBuilder.sendSuccess(ctx, message, response.toJson(), urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Error checking access request: {}", err.getMessage(), err);
+              ctx.fail(err);
+            });
+  }
+
+  private void updateAccessRequestHandler(RoutingContext ctx) {
+    LOGGER.info("Handling updateAccessRequest request...");
+    JsonObject body = ctx.body().asJsonObject();
+    UUID requestId = UUID.fromString(body.getString("requestId"));
+    Status status = Status.fromString(body.getString("status"));
+    JsonObject constraints = body.getJsonObject("constraints");
+    String feedbackToConsumer = body.getString("feedbackToConsumer", "");
+    String providerComment = body.getString("providerComment", "");
+    UUID providerId = UUID.fromString(ctx.user().subject());
+
+    keycloakUserService
+        .getUserById(providerId)
+        .onFailure(
+            err -> {
+              LOGGER.error("Failed to fetch provider from Keycloak", err);
+              ctx.fail(new DxForbiddenException("Invalid provider"));
+            })
+        .onSuccess(
+            provider -> {
+              LOGGER.debug("provider : {}", provider);
+              UUID providerOrganizationId =
+                  provider.organisationId() != null && !provider.organisationId().isBlank()
+                      ? UUID.fromString(provider.organisationId())
+                      : null;
+              LOGGER.debug(
+                  "Updating provider organization id from Keycloak: {}", providerOrganizationId);
+              // A dept_admin acts with org-admin authority here; the service then restricts
+              // it to requests for items owned by a department in their subtree.
+              boolean isUserOrgAdmin =
+                  provider.roles().contains(DxRole.ORG_ADMIN.value())
+                      || DeptAdminAccessHandler.scopeOf(ctx) != null;
+              if (status == Status.GRANTED) {
+                LocalDateTime expiryAt = parseAndValidateFutureTime(body.getString("expiryAt"));
+                accessRequestService
+                    .approveAccessRequest(
+                        providerId,
+                        requestId,
+                        expiryAt,
+                        providerOrganizationId,
+                        isUserOrgAdmin,
+                        constraints,
+                        providerComment,
+                        feedbackToConsumer)
+                    .onSuccess(
+                        accessRequestDto -> {
+                          UserActivityAuditLogBuilder auditLog =
+                              AccessRequestAuditLogHelper.buildAudit(
+                                  ctx, accessRequestDto, AccessRequestAuditOperation.GRANT);
+                          CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+                          ResponseBuilder.sendSuccess(
+                              ctx, "Request updated successfully", urnGenerator);
+
+                          String expiryAtStr =
+                              (accessRequestDto.getExpiryAt() != null)
+                                  ? accessRequestDto.getExpiryAt().toString()
+                                  : "";
+
+                          JsonObject jsonObject =
+                              new SendEmail(
+                                      accessRequestDto.getConsumerId(),
+                                      "PATH",
+                                      "templates/AssetRequestApprovedEmailTemplate.html",
+                                      null,
+                                      accessRequestDto.getAssetType(),
+                                      accessRequestDto.getItemId(),
+                                      accessRequestDto.getShortDescription(),
+                                      expiryAtStr,
+                                      false,
+                                      status.getStatus(),
+                                      accessRequestDto.getAssetName(),
+                                      CONSUMER_UPDATE)
+                                  .toJson();
+                          Future<Void> future =
+                              dataBrokerService.publishMessageInternal(
+                                  jsonObject, emailExchange, emailRoutingKey);
+                        })
+                    .onFailure(
+                        err -> {
+                          LOGGER.error("Error updating access request: {}", err.getMessage(), err);
+                          ctx.fail(err);
+                        });
+              } else {
+                // pass providerComment and feedbackToConsumer to be stored
+                accessRequestService
+                    .rejectAccessRequest(
+                        providerId,
+                        requestId,
+                        providerOrganizationId,
+                        isUserOrgAdmin,
+                        providerComment,
+                        feedbackToConsumer)
+                    .onSuccess(
+                        accessRequestDto -> {
+                          UserActivityAuditLogBuilder auditLog =
+                              AccessRequestAuditLogHelper.buildAudit(
+                                  ctx, accessRequestDto, AccessRequestAuditOperation.REJECT);
+                          CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+                          // RoutingContextHelper.setAuditingLog(ctx, auditLog);
+                          ResponseBuilder.sendSuccess(
+                              ctx, "Request updated successfully", urnGenerator);
+
+                          String expiryAtStr =
+                              (accessRequestDto.getExpiryAt() != null)
+                                  ? accessRequestDto.getExpiryAt().toString()
+                                  : "";
+
+                          JsonObject jsonObject =
+                              new SendEmail(
+                                      accessRequestDto.getConsumerId(),
+                                      "PATH",
+                                      "templates/AssetRequestApprovedEmailTemplate.html",
+                                      null,
+                                      accessRequestDto.getAssetType(),
+                                      accessRequestDto.getItemId(),
+                                      accessRequestDto.getShortDescription(),
+                                      expiryAtStr,
+                                      false,
+                                      status.getStatus(),
+                                      accessRequestDto.getAssetName(),
+                                      CONSUMER_UPDATE)
+                                  .toJson();
+                          Future<Void> future =
+                              dataBrokerService.publishMessageInternal(
+                                  jsonObject, emailExchange, emailRoutingKey);
+                        })
+                    .onFailure(
+                        err -> {
+                          LOGGER.error("Error rejecting access request: {}", err.getMessage(), err);
+                          ctx.fail(err);
+                        });
+              }
+            });
+  }
+
+  private void createAccessRequestHandler(RoutingContext ctx) {
+    LOGGER.info("Handling createAccessRequest request...");
+    JsonObject body = ctx.body().asJsonObject();
+    UUID itemId = UUID.fromString(body.getString("itemId"));
+    RequestType requestType = RequestType.valueOf(body.getString("requestType"));
+    JsonObject additionalInfo = body.getJsonObject("additionalInfo");
+    JsonObject constraints = body.getJsonObject("constraints");
+    DxUser dxUser;
+
+    try {
+      dxUser = RoutingContextHelper.fromPrincipal(ctx);
+    } catch (Exception e) {
+      LOGGER.error("Error extracting user from token: {}", e.getMessage(), e);
+      ctx.fail(new DxForbiddenException("Invalid user"));
+      return;
+    }
+
+    String authenticatedSub =
+        dxUser.delegateeId() != null ? dxUser.delegateeId() : dxUser.sub().toString();
+    UUID consumerId = UUID.fromString(authenticatedSub);
+
+    accessRequestService
+        .createAccessRequest(consumerId, itemId, requestType, additionalInfo, constraints)
+        .onSuccess(
+            accessRequestDto -> {
+              UserActivityAuditLogBuilder auditLog =
+                  AccessRequestAuditLogHelper.buildAudit(
+                      ctx, accessRequestDto, AccessRequestAuditOperation.REQUEST);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLog);
+              // RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              ResponseBuilder.sendSuccess(ctx, "Request inserted successfully!", urnGenerator);
+
+              String expiryAtStr =
+                  (accessRequestDto.getExpiryAt() != null)
+                      ? accessRequestDto.getExpiryAt().toString()
+                      : "";
+
+              JsonObject jsonObject =
+                  new SendEmail(
+                          accessRequestDto.getConsumerId(),
+                          "PATH",
+                          "templates/AssetRequestEmailTemplate.html",
+                          accessRequestDto.getProviderId(),
+                          accessRequestDto.getAssetType(),
+                          accessRequestDto.getItemId(),
+                          accessRequestDto.getShortDescription(),
+                          expiryAtStr,
+                          true,
+                          null,
+                          accessRequestDto.getAssetName(),
+                          PROVIDER_CREATE)
+                      .toJson();
+              Future<Void> providerFuture =
+                  dataBrokerService.publishMessageInternal(
+                      jsonObject, emailExchange, emailRoutingKey);
+
+              JsonObject consumerObject =
+                  new SendEmail(
+                          accessRequestDto.getConsumerId(),
+                          "PATH",
+                          "templates/AssetRequestConsumerAckEmailTemplate.html",
+                          accessRequestDto.getProviderId(),
+                          accessRequestDto.getAssetType(),
+                          accessRequestDto.getItemId(),
+                          accessRequestDto.getShortDescription(),
+                          expiryAtStr,
+                          true,
+                          null,
+                          accessRequestDto.getAssetName(),
+                          CONSUMER_ACK)
+                      .toJson();
+              Future<Void> consumerFuture =
+                  dataBrokerService.publishMessageInternal(
+                      consumerObject, emailExchange, emailRoutingKey);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Error creating access request: {}", err.getMessage(), err);
+              ctx.fail(err);
+            });
+  }
+
+  private void getConsumerAccessRequestHandler(RoutingContext ctx) {
+    LOGGER.info("Handling getAccessRequest request...");
+    User user = ctx.user();
+
+    Map<String, String> allowedFilters =
+        Map.of(
+            "requestStatus",
+            DB_STATUS,
+            "assetType",
+            DB_ASSET_TYPE,
+            "organizationId",
+            DB_ASSET_ORGANIZATION_ID,
+            "itemId",
+            DB_ITEM_ID);
+    Map<String, Object> additionalFilters = Map.of("consumer_id", user.subject());
+    Set<String> allowedTimeFields = Set.of(DB_CREATED_AT, DB_UPDATED_AT, DB_EXPIRY_AT);
+    Set<String> allowedSortFields = API_TO_DB_MAP.keySet();
+
+    PaginatedRequest request =
+        PaginationRequestBuilder.from(ctx)
+            .allowedFiltersDbMap(allowedFilters)
+            .apiToDbMap(API_TO_DB_MAP)
+            .additionalFilters(additionalFilters)
+            .allowedTimeFields(allowedTimeFields)
+            .defaultTimeField("created_at")
+            .defaultSort("updated_at", DEFAULT_SORTING_ORDER)
+            .allowedSortFields(allowedSortFields)
+            .build();
+    ItemType.expandFilterAliases(request.filters(), DB_ASSET_TYPE);
+
+    LOGGER.info("PaginatedRequest created for getActivityLogForConsumer:  {}", request);
+
+    accessRequestService
+        .listAccessRequestForConsumer(request)
+        .compose(accessRequestService::enrichAccessRequestsWithItemDetails)
+        .compose(accessRequestService::enrichAccessRequestsWithProviderInfo)
+        .onSuccess(
+            pagedResult -> {
+              LOGGER.info("Successfully fetched access requests for user: {}", user.subject());
+              ResponseBuilder.sendSuccess(
+                  ctx,
+                  pagedResult.data().stream()
+                      .map(AccessRequestDto::toJson) // call toJson on each object
+                      .collect(Collectors.toList()),
+                  pagedResult.paginationInfo(),
+                  urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Error fetching access requests: {}", err.getMessage(), err);
+              ctx.fail(err);
+            });
+  }
+}

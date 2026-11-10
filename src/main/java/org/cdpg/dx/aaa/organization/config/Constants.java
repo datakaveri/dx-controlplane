@@ -1,12 +1,9 @@
 package org.cdpg.dx.aaa.organization.config;
 
-import net.sf.saxon.expr.Component;
-import org.cdpg.dx.aaa.organization.models.Role;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 public final class Constants {
 
@@ -15,8 +12,6 @@ public final class Constants {
   public static final String ORG_NAME = "name";
   public static final String CREATED_AT = "created_at";
   public static final String UPDATED_AT = "updated_at";
-
-
 
   public static final String ORG_JOIN_REQUEST_TABLE = "organization_join_requests";
 
@@ -27,7 +22,22 @@ public final class Constants {
   public static final String REQUESTED_AT = "requested_at";
   public static final String PROCESSED_AT = "processed_at";
   public static final String OFFICIAL_EMAIL = "official_email";
+  public static final String ORGANIZATION_HIERARCHY_NODE_TABLE = "organization_hierarchy_nodes";
 
+  public static final String HIERARCHY_NODE_ID = "hierarchy_node_id";
+  public static final String ADMIN_OF_NODE_ID = "admin_of_node_id";
+  public static final String REQUESTED_NODE_ID = "requested_node_id";
+  public static final String PARENT_ID = "parent_id";
+
+  public static final String NODE_NAME = "name";
+
+  public static final String LEVEL = "level";
+
+  public static final String PATH = "path";
+  public static final String PROCESSED_BY_USER_ID = "processed_by_user_id";
+  public static final String PROCESSED_BY_NODE_ID = "processed_by_node_id";
+  public static final String PROCESSED_BY_LEVEL = "processed_by_level";
+  public static final String REMARKS = "remarks";
 
   public static final String ORG_USER_ID="id";
   public static final String ROLE="role";
@@ -50,6 +60,7 @@ public final class Constants {
   public static final String USER_NAME = "user_name";
   public static final String MANAGER_EMAIL = "manager_email";
   public static final String ORG_DOCUMENTS = "organisation_documents";
+  public static final String PROPOSED_HIERARCHY = "proposed_hierarchy";
 
 
 
@@ -117,7 +128,8 @@ public final class Constants {
   );
 
   public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_ORG_JOIN_REQUEST = Map.of(
-    "status", STATUS
+    "status", STATUS,
+    "delegatorId" , "delegatorId"
   );
 
   public static final Map<String, String> API_TO_DB_ORG_JOIN_REQUEST = Map.ofEntries(
@@ -128,14 +140,15 @@ public final class Constants {
     Map.entry("jobTitle", JOB_TITLE),
     Map.entry("empId", EMP_ID),
     Map.entry("requestedAt", REQUESTED_AT),
-    Map.entry("processedAt", PROCESSED_AT)
+    Map.entry("processedAt", PROCESSED_AT),
+    Map.entry("delegatorId","delegatorId")
   );
 
   public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_ORG_USERS = Map.of(
     "organizationId", ORGANIZATION_ID,
     "userId", USER_ID,
-    "userName", USER_NAME,
-    "role", ROLE
+    "role", ROLE,
+    "delegatorId" , "delegatorId"
   );
 
   public static final Map<String, String> API_TO_DB_ORG_USERS = Map.ofEntries(
@@ -154,7 +167,8 @@ public final class Constants {
     "orgName", ORG_NAME,
     "entityType", ENTITY_TYPE,
     "orgSector", ORG_SECTOR,
-    "status", STATUS);
+    "status", STATUS,
+    "delegatorId","delegatorId");
 
   public static final Map<String, String> API_TO_DB_ORG_CREATE_REQUEST = Map.ofEntries(
           Map.entry("orgName", ORG_NAME),
@@ -179,18 +193,42 @@ public final class Constants {
 
   public static final Set<String> ALLOWED_SORT_FEILDS_ORG = Set.of("createdAt", "orgName", "entityType", "orgSector");
 
+  // Provider request table name (fixes bug: was pointing to organization_create_requests)
+  public static final String PROVIDER_REQUEST_TABLE = "provider_requests";
+
+  // provider_type discriminator column
+  public static final String PROVIDER_TYPE          = "provider_type";
+  public static final String PROVIDER_TYPE_ORG      = "org";
+  public static final String PROVIDER_TYPE_PLATFORM = "platform";
+
   public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_PROVIDER_ROLE_REQUEST = Map.of(
-          "status", STATUS
+    "status", STATUS,
+    "delegatorId", "delegatorId"
   );
-    public static final Map<String, String> API_TO_DB_PROVIDER_ROLE_REQUEST = Map.ofEntries(
+
+  public static final Map<String, String> API_TO_DB_PROVIDER_ROLE_REQUEST = Map.ofEntries(
             Map.entry("userId", USER_ID),
             Map.entry("orgID", ORGANIZATION_ID),
             Map.entry("status", STATUS),
             Map.entry("createdAt", CREATED_AT),
             Map.entry("updatedAt", UPDATED_AT)
-    );
+  );
 
   public static final Set<String> ALLOWED_SORT_FIELDS_PROVIDER_ROLE_REQUEST = Set.of("createdAt", "updatedAt");
+
+  // Platform provider request filter maps (COS Admin view)
+  public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_PLATFORM_PROVIDER_REQUEST = Map.of(
+    "status", STATUS,
+    "userId", USER_ID
+  );
+
+  public static final Map<String, String> API_TO_DB_PLATFORM_PROVIDER_REQUEST = Map.ofEntries(
+    Map.entry("userId",       USER_ID),
+    Map.entry("status",       STATUS),
+    Map.entry("providerType", PROVIDER_TYPE),
+    Map.entry("createdAt",    CREATED_AT),
+    Map.entry("updatedAt",    UPDATED_AT)
+  );
 
   public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_COMPUTE_ROLE = Map.of(
           "userName", USER_NAME,
@@ -212,4 +250,10 @@ public final class Constants {
 
   public static final Set<String> ALLOWED_SORT_FIELDS_COMPUTE_ROLE = Set.of("createdAt", "updatedAt");
 
+  public static final String ORGANIZATION_APPROVAL_TABLE = "organization_approvals";
+
+  public static final String ORG_HIERARCHY_DEFINITION_REQUEST_TABLE =
+      "organization_hierarchy_definition_requests";
+
+  public static final String DEPT_ADMIN_REQUEST_TABLE = "dept_admin_requests";
 }

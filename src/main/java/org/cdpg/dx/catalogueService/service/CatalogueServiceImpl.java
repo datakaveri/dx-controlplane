@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.accessRequest.dao.model.AssetType;
+import org.cdpg.dx.acl.accessRequest.dao.model.AssetType;
 import org.cdpg.dx.aaa.apiserver.util.Util;
 import org.cdpg.dx.catalogueService.client.CatalogueClient;
 import org.cdpg.dx.catalogueService.models.Asset;

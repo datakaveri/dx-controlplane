@@ -7,7 +7,7 @@ secrets/all-verticles-configs/*.json
 secrets/one-verticle-configs/*.json
 secrets/*.jks
 /configs/
-
+generated_scripts/
 logs/
 configs/catkeystore.ks
 configs/keystore.jks
@@ -92,6 +92,9 @@ allure-results
 
 # Annotation Processing
 .apt_generated/
+
+# Vert.x code generation
+src/main/generated/
 
 # Scala IDE specific (Scala & Java development for Eclipse)
 .cache-main
@@ -196,6 +199,3 @@ $RECYCLE.BIN/
 iudx.catalogue.server.iml
 
 # End of https://www.gitignore.io/api/git,java,maven,eclipse,windows
-1. A butt or mark to shoot at, as for practice, or to test the accuracy of a firearm, or the force of a projectile.
-2. A goal or objective.
-3. A kind of small shield or buckler, used as a defensive weapon in war.

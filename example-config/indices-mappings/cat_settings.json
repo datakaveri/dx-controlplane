@@ -1,0 +1,20 @@
+{
+  "settings": {
+    "analysis": {
+      "normalizer": {
+        "uppercase_normalizer": {
+          "type": "custom",
+          "filter": [
+            "uppercase"
+          ]
+        },
+        "case_insensitive_sort": {
+          "type": "custom",
+          "filter": [
+            "lowercase"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.credit.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.aaa.credit.util.Constants;
 import org.cdpg.dx.common.exception.DxValidationException;
@@ -88,6 +89,7 @@ public record CreditTransaction(
   }
 
   @Override
+  @JsonIgnore
   public String getTableName() {
     return Constants.CREDIT_TRANSACTION_TABLE;
   }

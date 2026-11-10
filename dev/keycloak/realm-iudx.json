@@ -1,0 +1,167 @@
+{
+  "realm": "iudx",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": false,
+  "roles": {
+    "realm": [
+      { "name": "cos_admin", "description": "COS Administrator" },
+      { "name": "org_admin", "description": "Organization Administrator" },
+      { "name": "provider", "description": "Data Provider" },
+      { "name": "consumer", "description": "Data Consumer" },
+      { "name": "delegate", "description": "Delegate" },
+      { "name": "compute", "description": "Compute User" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "admin-cli",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "admin-secret",
+      "serviceAccountsEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "fullScopeAllowed": true
+    },
+    {
+      "clientId": "postman-client",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "fullScopeAllowed": true,
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "angular-client",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "fullScopeAllowed": true,
+      "protocol": "openid-connect",
+      "redirectUris": [
+        "http://localhost:4001/*",
+        "http://localhost:4002/*",
+        "http://localhost:4003/*"
+      ],
+      "webOrigins": [
+        "http://localhost:4001",
+        "http://localhost:4002",
+        "http://localhost:4003"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-admin-cli",
+      "enabled": true,
+      "serviceAccountClientId": "admin-cli",
+      "realmRoles": ["default-roles-iudx"],
+      "clientRoles": {
+        "realm-management": [
+          "manage-users",
+          "view-users",
+          "manage-clients",
+          "view-clients",
+          "manage-realm",
+          "view-realm",
+          "query-users",
+          "query-clients"
+        ]
+      }
+    },
+    {
+      "username": "cosadmin",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "cosadmin@test.com",
+      "firstName": "COS",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "cosadmin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["default-roles-iudx", "cos_admin"]
+    },
+    {
+      "username": "orgadmin",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "orgadmin@test.com",
+      "firstName": "Org",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "orgadmin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["default-roles-iudx", "org_admin"]
+    },
+    {
+      "username": "provider1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "provider1@test.com",
+      "firstName": "Test",
+      "lastName": "Provider",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "provider123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["default-roles-iudx", "provider"]
+    },
+    {
+      "username": "consumer1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "consumer1@test.com",
+      "firstName": "Test",
+      "lastName": "Consumer",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "consumer123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["default-roles-iudx", "consumer"]
+    },
+    {
+      "username": "delegate1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "delegate1@test.com",
+      "firstName": "Test",
+      "lastName": "Delegate",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "delegate123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["default-roles-iudx", "delegate"]
+    }
+  ]
+}

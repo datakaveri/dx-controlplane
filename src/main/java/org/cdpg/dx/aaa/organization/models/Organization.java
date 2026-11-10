@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.organization.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.aaa.organization.config.Constants;
 import org.cdpg.dx.common.exception.DxValidationException;
@@ -87,6 +88,7 @@ public record Organization(
     json.put("orgSector", orgSector);
     json.put("websiteLink", websiteLink);
     json.put("address", address);
+    if (relevantDocPath != null && !relevantDocPath.isEmpty())json.put("relevantDocPath", relevantDocPath);
     if (createdAt != null) json.put("createdAt", createdAt.format(FORMATTER));
     if (updatedAt != null) json.put("updatedAt", updatedAt.format(FORMATTER));
     return json;
@@ -114,6 +116,7 @@ public record Organization(
   }
 
   @Override
+  @JsonIgnore
   public String getTableName() {
     return Constants.ORGANIZATION_TABLE;
   }

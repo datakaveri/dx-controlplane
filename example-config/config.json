@@ -1,128 +1,251 @@
 {
-  "version": "1.0",
-  "zookeepers": [
-    "0.0.0.0:2181"
-  ],
-  "clusterId": "tgdex-control-panel-cluster",
-  "postgresOptions": {
-    "databaseIP": "<database-ip>",
-    "databasePort": 5433,
-    "databaseName": "<db-name>",
-    "databaseSchema": "<schema-name>",
-    "databaseUserName": "<db-username>",
-    "databasePassword": "<db-password>",
-    "poolSize": 25
+  "KYCOptions": {
+    "clientId": "<KYC Client ID>",
+    "clientSecret": "<KYC Client Secret>",
+    "digilockerAadhaarUrl": "<Digilocker Aadhaar URL>",
+    "digilockerTokenUrl": "<Digilocker Token URL>",
+    "redirectUri": "<domain>/kyc"
   },
-  "commonOptions":{
-    "dxApiBasePath": "/dx/apd/acl/v1",
-    "clientId": "<apd-delegate-client-id>",
-    "clientSecret": "<apd-delegate-client-secret>",
-    "apdURL": "<acl-apd-url>",
-    "jwtIgnoreExpiry": true,
-    "routingKey": "##",
-    "cosDomain":"asdasd",
-    "cosAdminUserId": "<cos-admin-user-id>",
-    "initialCreditBalance": 1000,
-    "corsAllowedOrigin": ["*", "http://localhost:4001"]
+  "auditOptions": {
+    "auditingExchange": "auditing",
+    "auditingQueue": "auditing",
+    "auditingRoutingKey": "##",
+    "isRemoteAudit": false,
+    "leaderboardQueue": "leaderboard"
   },
-  "emailOptions": {
-    "emailSender": "some@dummy.com",
-    "senderName": "<email-sender-name>",
-    "cosAdminEmailId":"<cos-admin-email-id>",
-    "TGDxUrl": "https://something.com/"
+  "clusterId": "<tenantPrefix>-controlplane-cluster",
+  "commonOptions": {
+    "apdURL": "<domain>/controlplane/acl",
+    "appIdRevokeExchange": "revoked-appid",
+    "baseUrl": "<domain>/controlplane",
+    "centralCatDocIndex": "<tenantPrefix>__central_cat",
+    "controlPlaneDomain": "https://<domain>/controlplane",
+    "controlPlaneUrl": "<domain>/controlplane",
+    "corsAllowedOrigin": [
+      "*"
+    ],
+    "cosDomain": "<domain>/controlplane",
+    "dataPlaneUrl": "<domain>/dataplane",
+    "defaultExpiryDays": 15,
+    "deletedDocsIndex": "<tenantPrefix>__deleted_assets",
+    "docIndex": "<tenantPrefix>__cat",
+    "docUserIndex": "<tenantPrefix>__userdoc",
+    "initialCreditBalance": 1,
+    "isCentralCatEnabled": false,
+    "itemTypePrefixes": [
+      "adex",
+      "iudx"
+    ],
+    "kycRequired": false,
+    "ogcDataPlaneUrl": "<domain>/geoserver",
+    "publisherPanelUrl": "<domain>",
+    "supportEmail": "support@datakaveri.org",
+    "tokenExpirationMinutes": 60,
+    "uploadedBy": "Centre of Data for Public Good (CDPG), IISc",
+    "vocContext": "https://voc.<domain>/"
+  },
+  "databrokerOptions": {
+    "automaticRecoveryEnabled": "true",
+    "brokerAmqpIp": "<domain>",
+    "brokerAmqpPort": 24567,
+    "connectionTimeout": 6000,
+    "dataBrokerIP": "rabbitmq.rabbitmq.svc.cluster.local",
+    "dataBrokerManagementPort": 15672,
+    "dataBrokerPassword": "<databroker-admin password :- cat iudx-installer/K8s-deployment/Charts/databroker/secrets/credentials/admin-password>",
+    "dataBrokerPort": 5672,
+    "dataBrokerUserName": "<tenantPrefix>-controlplane-user",
+    "externalVhost": "<TENANTPREFIX>-EXTERNAL",
+    "handshakeTimeout": 6000,
+    "internalVhost": "<TENANTPREFIX>-INTERNAL",
+    "networkRecoveryInterval": 500,
+    "portSsl": true,
+    "prodVhost": "<TENANTPREFIX>",
+    "publishExchange": "rpc-adapter-requests",
+    "requestedChannelMax": 5,
+    "requestedHeartbeat": 60
   },
   "emailConfig": {
-    "emailSender": "some@dummy.com",
+    "emailSender": "<smtp-sender-email>",
     "emailSupport": [
-      "dummy@email.com"
+      ""
     ],
-    "publisherPanelUrl": "<dashboard-url>",
-    "senderName": "<Email-Sender-Name>"
+    "senderName": "<platform-name-full>"
   },
-  "keycloakOptions":{
-    "keycloakRealm": "<keycloak-realm>",
-    "keycloakUrl": "<keycloak-url>",
-    "keycloakAdminClientId": "<admin-client-id>",
-    "keycloakAdminClientSecret": "<admin-client-secret>",
-    "keycloakAdminPoolSize": "25",
-    "keycloakJwtLeeway": 90,
-    "keycloakCertUrl": "<keycloak-cert-url>",
-    "iss": "<keycloak-issuer-url>",
-    "jwksRefreshIntervalMs": 21600000,
-    "adminUsername": "<keycloak-admin-username>",
-    "adminPassword": "<keycloak-admin-password>"
+  "emailNotification": {
+    "emailExchange": "Email",
+    "emailQueue": "email-notification",
+    "emailRoutingKey": "##"
   },
-  "KYCOptions": {
-    "digilockerTokenUrl":"<digilocker-token-url>",
-    "digilockerAadhaarUrl":"<digilocker-aadhaar-url>",
-    "clientId" :"<client-id>",
-    "clientSecret": "<client-secret>",
-    "redirectUri":"<redirection-uri>"
+  "emailOptions": {
+    "TGDxUrl": "https://<domain>/",
+    "cosAdminEmailId": "<cos-admin-email>",
+    "emailSender": "<smtp-sender-email>",
+    "envSuffix": "<Use [DEV/STAGING/UAT]. Leave empty for production>",
+    "platformName": "<platform-name-full>",
+    "platformShortName": "<platform-name-short>"
   },
-  "jwtKeystoreOptions":{
-    "keystorePath": "configs/keystore.jks",
-    "keystorePassword": "<keystore-password>"
+  "jwtKeystoreOptions": {
+    "keystorePassword": "<keystore-password>",
+    "keystorePath": "secrets/all-verticles-configs/keystore.jks"
+  },
+  "keycloakOptions": {
+    "issuers": {
+      "<domain>/controlplane": {
+        "audience": [],
+        "type": "internal"
+      },
+      "https://<domain>/auth/realms/<tenantPrefix>": {
+        "audience": [],
+        "jwksUrl": "https://<domain>/auth/realms/<tenantPrefix>/protocol/openid-connect/certs",
+        "type": "remote"
+      },
+      "jwksRefreshIntervalMs": 21600000,
+      "jwtIgnoreExpiry": false,
+      "jwtLeeway": 30
+    },
+    "keycloakAdminClientId": "<AAA-admin Client ID :- get-from-configured-realm>",
+    "keycloakAdminClientSecret": "<AAA-admin Client Secret :- get-from-configured-realm>",
+    "keycloakRealm": "<tenantPrefix>",
+    "keycloakUrl": "https://<domain>/auth"
   },
   "modules": [
     {
       "id": "org.cdpg.dx.database.postgres.verticle.PostgresVerticle",
-      "verticleInstances": 1,
       "isWorkerVerticle": false,
-      "required":["postgresOptions", "commonOptions"]
-    },{
-      "id": "org.cdpg.dx.email.verticle.EmailVerticle",
-      "verticleInstances": 1,
-      "isWorkerVerticle": true,
-      "threadPoolName": "emailVerticleThreadPool",
-      "threadPoolSize": 10,
-      "required":["commonOptions"],
-      "emailHostName": "<email-smtp-host-url>",
-      "emailPort": 587,
-      "emailUserName": "<email-username>",
-      "emailPassword": "<email-password>",
-      "notifyByEmail": true
+      "required": [
+        "postgresOptions",
+        "commonOptions"
+      ],
+      "verticleInstances": 1
     },
     {
-      "id": "org.cdpg.dx.catalogueService.CatalogueVerticle",
-      "isWorkerVerticle": false,
-      "verticleInstances": 1,
-      "dxCatalogueBasePath": "/iudx/cat/v1",
-      "catServerHost": "<dx-catalogue-server-url>",
-      "catServerPort": 443,
+      "emailHostName": "<smtp-host>",
+      "emailPassword": "<smtp-password>",
+      "emailPort": 587,
+      "emailUserName": "<smtp-sender-email>",
+      "id": "org.cdpg.dx.email.verticle.EmailVerticle",
+      "isWorkerVerticle": true,
+      "notifyByEmail": true,
       "required": [
-        "commonOptions"
-      ]
+        "commonOptions",
+        "databrokerOptions",
+        "keycloakOptions",
+        "emailOptions",
+        "emailConfig"
+      ],
+      "threadPoolName": "emailVerticleThreadPool",
+      "threadPoolSize": 10,
+      "verticleInstances": 1
     },
     {
       "id": "org.cdpg.dx.databroker.DataBrokerVerticle",
       "isWorkerVerticle": false,
-      "verticleInstances": 1,
-      "required":["commonOptions"],
-      "dataBrokerIP": "<databroker-ip>",
-      "dataBrokerPort": 24568,
-      "prodVhost": "IUDX",
-      "internalVhost": "IUDX-INTERNAL",
-      "externalVhost": "IUDX-EXTERNAL",
-      "dataBrokerUserName": "<databroker-username>",
-      "dataBrokerPassword": "<databroker-password>",
-      "dataBrokerManagementPort": 28042,
-      "connectionTimeout": 6000,
-      "requestedHeartbeat": 60,
-      "handshakeTimeout": 6000,
-      "requestedChannelMax": 5,
-      "networkRecoveryInterval": 500,
-      "automaticRecoveryEnabled": "true",
-      "brokerAmqpIp": "<databroker-ip>",
-      "brokerAmqpPort": 24567
+      "required": [
+        "databrokerOptions",
+        "auditOptions",
+        "emailNotification",
+        "commonOptions",
+        "keycloakOptions"
+      ],
+      "verticleInstances": 1
     },
     {
-      "id": "org.cdpg.dx.aaa.apiserver.ApiServerVerticle",
-      "verticleInstances": 1,
+      "databaseIP": "elastic-es-http.elastic.svc.cluster.local",
+      "databasePassword": "<elasticsearch-cat password :- cat iudx-installer/K8s-deployment/Charts/elk/secrets/passwords/elasticsearch-cat-password>",
+      "databasePort": 9200,
+      "databaseUser": "<tenantPrefix>-controlplane-user",
+      "id": "org.cdpg.dx.database.elastic.ElasticsearchVerticle",
       "isWorkerVerticle": false,
-      "httpPort":8443,
-      "required":["postgresOptions", "commonOptions", "keycloakOptions", "KYCOptions","emailOptions", "emailConfig"],
-      "serverTimeoutMs": 30000,
-      "corsRegexString":"^https://.+\\.iudx\\.org\\.in$"
+      "verticleInstances": 1
+    },
+    {
+      "httpPort": 8080,
+      "id": "org.cdpg.dx.aaa.apiserver.ApiServerVerticle",
+      "isWorkerVerticle": false,
+      "required": [
+        "postgresOptions",
+        "commonOptions",
+        "keycloakOptions",
+        "KYCOptions",
+        "emailOptions",
+        "emailConfig",
+        "jwtKeystoreOptions",
+        "databrokerOptions",
+        "auditOptions"
+      ],
+      "urnPrefix": "urn:dx:controlPlane:",
+      "verticleInstances": 1
+    },
+    {
+      "httpPort": 8444,
+      "id": "org.cdpg.dx.acl.apiserver.ApdApiServerVerticle",
+      "isWorkerVerticle": false,
+      "required": [
+        "postgresOptions",
+        "commonOptions",
+        "keycloakOptions",
+        "KYCOptions",
+        "emailOptions",
+        "emailConfig",
+        "emailNotification",
+        "jwtKeystoreOptions",
+        "databrokerOptions",
+        "auditOptions"
+      ],
+      "urnPrefix": "urn:dx:aclApd:",
+      "verticleInstances": 1
+    },
+    {
+      "id": "org.cdpg.dx.scheduler.verticle.SchedulerVerticle",
+      "isWorkerVerticle": true,
+      "schedulerTimeIntervalInMinutes": 30,
+      "threadPoolSize": 3,
+      "verticleInstances": 1
+    },
+    {
+      "id": "org.cdpg.dx.aaa.delegation.DelegationVerticle",
+      "isWorkerVerticle": false,
+      "required": [
+        "commonOptions",
+        "keycloakOptions"
+      ],
+      "verticleInstances": 1
+    },
+    {
+      "grpcAllowedServiceClients": [
+        "svc-dx-dataplane",
+        "svc-dx-dataplane-ogc",
+        "svc-dx-marketplace-go"
+      ],
+      "grpcPort": 9090,
+      "grpcRoleGrants": {
+        "svc-dx-marketplace-go": [
+          "mor_admin",
+          "seller"
+        ]
+      },
+      "id": "org.cdpg.dx.aaa.grpc.GrpcServerVerticle",
+      "isWorkerVerticle": false,
+      "keycloakJwksUrl": "https://<domain>/auth/realms/<tenantPrefix>/protocol/openid-connect/certs",
+      "required": [
+        "postgresOptions",
+        "commonOptions",
+        "keycloakOptions"
+      ],
+      "verticleInstances": 1
     }
+  ],
+  "postgresOptions": {
+    "databaseIP": "psql-pooler-rw.postgres.svc.cluster.local",
+    "databaseName": "<tenantPrefix>_controlplane",
+    "databasePassword": "<postgres-controlplane-password :- cat iudx-installer/K8s-deployment/Charts/postgresql/secrets/passwords/postgres-auth-password>",
+    "databasePort": 5432,
+    "databaseSchema": "aaa",
+    "databaseUserName": "<tenantPrefix>_controlplane_user",
+    "poolSize": 25
+  },
+  "version": 4,
+  "zookeepers": [
+    "zookeeper-client.zookeeper.svc.cluster.local"
   ]
 }

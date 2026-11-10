@@ -1,0 +1,9 @@
+authorization:
+  type: http
+  scheme: bearer
+  bearerFormat: JWT
+  description: Keycloak issued Bearer token
+optionalAuth:
+  type: http
+  scheme: bearer
+  bearerFormat: JWT

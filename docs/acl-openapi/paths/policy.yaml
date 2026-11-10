@@ -1,0 +1,1085 @@
+/iudx/acl/apd/v2/policy:
+  post:
+    tags:
+      - Policies
+    summary: Create Policy
+    operationId: post-auth-v1-policies
+    description: |
+      Creates one or more ACTIVE access policies for DATABANK, AIMODEL resources.
+
+      This API can be invoked by:
+
+      - The resource owner (`provider`)
+      - An `org_admin` belonging to the same organization as the resource
+      - A `dept_admin` of the department owning the resource, or of any department
+        above it (resources with no owning department are excluded)
+
+      A policy defines:
+
+      - Who can access the resource
+      - Which access types are allowed
+      - Optional usage limits and expiry conditions
+
+      ## Policy Types
+
+      ### INDIVIDUAL
+
+      Grants access to a specific user.
+
+      - `userId` is required
+      - Access is evaluated for the specified user
+
+      ### GROUP
+
+      Grants access to users matching subject criteria.
+
+      - `constraints.subjects` is required
+      - Supports organization, user, and role-based access control
+
+      When `constraints.subjects` is provided, the system automatically creates
+      access rules linked to the policy for subject-based authorization.
+
+      ## Access Types
+
+      Access types are defined under `constraints.access`.
+
+      Supported values depend on the resource metadata and may include:
+
+      - `api`
+      - `file`
+      - `sub`
+
+      Each requested access type must be supported by the resource.
+      Otherwise the request is rejected with `400 Bad Request`.
+
+      ## Batch Creation
+
+      Multiple policies may be created in a single request using the `request` array.
+
+      Each policy request is validated independently.
+
+      ## Conflict Behaviour
+
+      Only one ACTIVE policy may exist for the same resource and access type combination.
+
+      If an ACTIVE policy already exists for any requested access type,
+      the API returns `409 Conflict`.
+
+      Example:
+
+      - Existing policy: `api`
+      - New policy request: `api`, `file`
+
+      Result:
+
+      - Conflict for `api`
+      - Request is rejected
+
+      ## Restrictions
+      - Resource ownership is mandatory for providers
+      - `org_admin` users may manage only resources belonging to their organization
+    parameters:
+      - name: Authorization
+        in: header
+        description: DX Auth issued identity token
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          pattern: Bearer [a-zA-Z0-9_*\-*\.\/]+$|^[a-zA-Z0-9_*\-*\.\/]+$
+    requestBody:
+      description: "**Request Body Details:**\n\n  The request body should be a JSON\
+        \ object containing a JSON array of request.\n\n  ### User Policy Request:\n\
+        \n  - `userId`: The ID of the user for whom the policy is being defined.\n\
+        \  - `itemId`: The UUID value of the item for which the policy is being established.\n\
+        \  - `itemType`: An enum value representing the type of the item.\n  - `expiryTime`:\
+        \ An optional field, representing the policy's expiry time in ISO8601 format\
+        \ compatible with UTC (yyyy-MM-dd'T'HH:mm:ss). If not provided, a default\
+        \ expiry time is set for the policy.\n  - `constraints`: JSON object defining\
+        \ subjects and access controls.\n### Constraints Structure:\n`constraints`\
+        \ may contain:\n- `subjects`\n  - allowedOrgIds\n  - allowedUserIds\n  - allowedRoles\n\
+        \      \n- `access` (array)\n  - accessType: api | file | sub\n  - expiry\
+        \ (epoch seconds)\n  - limits (optional, varies per accessType)\n"
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              request:
+                type: array
+                minItems: 1
+                items:
+                  oneOf:
+                    - $ref: '../components/schemas.yaml#/IndividualPolicyRequest'
+                    - $ref: '../components/schemas.yaml#/GroupPolicyRequest'
+            required:
+              - request
+            x-examples:
+              example-1:
+                request:
+                  - userId: <uuid>
+                    policyType: GROUP
+                    itemId: example-resource-group
+                    itemType: DATABANK
+                    expiryTime: '2023-08-30T21:10:06'
+                    constraints:
+                      subjects:
+                        allowedOrgIds:
+                          - <uuid>
+                          - <uuid>
+                        allowedUserIds:
+                          - <uuid>
+                        allowedRoles:
+                          - consumer
+                      access:
+                        - accessType: api
+                          expiry: '2026-03-05T20:00:19'
+                          limits:
+                            dataUsage: 100:gb
+                            apiHits: 100
+                        - accessType: file
+                          expiry: '2026-03-05T20:00:19'
+                          limits:
+                            dataUsage: 10:gb
+                        - accessType: sub
+                          expiry: '2026-03-05T20:00:19'
+                  - userId: <uuid>
+                    itemId: example-resource-group
+                    itemType: DATABANK
+                    expiryTime: '2023-08-30T21:10:06'
+                    constraints:
+                      subjects:
+                        allowedOrgIds:
+                          - <uuid>
+                          - <uuid>
+                        allowedUserIds:
+                          - <uuid>
+                        allowedRoles:
+                          - consumer
+                      access:
+                        - accessType: api
+                          expiry: '2026-03-05T20:00:19'
+                          limits:
+                            dataUsage: 100:gb
+                            apiHits: 100
+                        - accessType: file
+                          expiry: '2026-03-05T20:00:19'
+                          limits:
+                            dataUsage: 10:gb
+                        - accessType: sub
+                          expiry: '2026-03-05T20:00:19'
+          examples:
+            Request for resource with additionalInfo:
+              value:
+                request:
+                    policyType: GROUP
+                    itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
+                    itemType: DATABANK
+                    expiryTime: '2022-08-04T20:00:19'
+                    constraints:
+                      subjects:
+                        allowedOrgIds:
+                          - <uuid>
+                          - <uuid>
+                        allowedUserIds:
+                          - <uuid>
+                        allowedRoles:
+                          - consumer
+                      access:
+                        - accessType: api
+                          expiry: '2026-03-05T20:00:19'
+                          limits:
+                            dataUsage: 100:gb
+                            apiHits: 100
+                        - accessType: file
+                          expiry: '2026-03-05T20:00:19'
+                          limits:
+                            dataUsage: 10:gb
+                        - accessType: sub
+                          expiry: '2026-03-05T20:00:19'
+                    additionalInfo:
+                      name: Miles Davis
+                    providerComment: The resource is used for transportation data analysis
+                    feedbackToConsumer: This resource can be used for testing purposes
+            Request for resource user policy:
+              value:
+                request:
+                    policyType: GROUP
+                    itemId: b34eb955-c691-4fd3-b200-f18bc78810a2
+                    itemType: DATABANK
+                    expiryTime: '2022-10-10T04:00:19'
+                    constraints:
+                      subjects:
+                        allowedOrgIds:
+                          - <uuid>
+                          - <uuid>
+                        allowedUserIds:
+                          - <uuid>
+                        allowedRoles:
+                          - consumer
+                      access:
+                        - accessType: api
+                          expiry: '2026-03-05T20:00:19'
+                          limits:
+                            dataUsage: 100:gb
+                            apiHits: 100
+                        - accessType: file
+                          expiry: '2026-03-05T20:00:19'
+                          limits:
+                            dataUsage: 10:gb
+                        - accessType: sub
+                          expiry: '2026-03-05T20:00:19'
+    responses:
+      '200':
+        description: The policy has been successfully created.
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/createPolicySuccessResponse
+      '400':
+        description: '- Missing or malformed data
+
+          - Invalid expiry - dateTime in the past or invalid format
+
+          - Invalid user - UserId is not present in db'
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/createPolicyBadRequest
+        headers:
+          Content-Type:
+            schema:
+              type: string
+            description: application/json
+      '401':
+        description: '- Unauthorized - `token` invalid/expired'
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/Unauthorized
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+        headers:
+          Content-Type:
+            schema:
+              type: string
+            description: application/json
+      '403':
+        description: |
+          - If the user trying to create a policy does not have a `provider`
+            or `org_admin` role.
+
+          - If the user is neither the owner of the resource item
+            nor belongs to the organization that owns the databank item/ ai model.
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/createPolicyForbidden
+            example:
+              type: urn:dx:aclApd:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
+        headers:
+          Content-Type:
+            schema:
+              type: string
+            description: application/json
+      '409':
+        description: |
+          Conflict
+
+          An ACTIVE policy already exists for one or more requested access types.
+
+          Policies are validated per access type. A duplicate ACTIVE policy
+          cannot be created for the same resource and access type combination.
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/conflictResponse
+            examples:
+              duplicateAccessType:
+                summary: Active policy already exists for the requested accessType
+                value:
+                  type: urn:dx:aclApd:conflict
+                  title: Conflict
+                  detail: "Active policy already exists for accessType(s): api, file."
+
+              duplicateSubjectPolicy:
+                summary: Active policy already exists for the requested organisations and roles
+                value:
+                  type: urn:dx:aclApd:conflict
+                  title: Conflict
+                  detail: >-
+                    An active policy already exists for the following subject(s):
+                    orgs: a14b4e80-d6d7-4722-a0d5-e515f381502f |
+                    roles: provider with accessType(s): file.
+
+              duplicateUserPolicy:
+                summary: Active policy already exists for the requested users
+                value:
+                  type: urn:dx:aclApd:conflict
+                  title: Conflict
+                  detail: >-
+                    An active policy already exists for the following subject(s):
+                    users: 7fd5aef2-1234-4d1c-8a89-12c0f1b23abc
+                    with accessType(s): api, file.
+    security:
+      - authorization: []
+    x-codeSamples:
+      - lang: cURL
+        label: Create INDIVIDUAL Policy
+        source: |
+          curl --location 'https://${HOSTNAME}/iudx/acl/apd/v2/policy' \
+          --header 'Authorization: Bearer <tokenValue>' \
+          --header 'Content-Type: application/json' \
+          --data-raw '{
+            "request": [
+              {
+                "policyType": "INDIVIDUAL",
+                "userId": "5067611f-0835-4cee-9b3e-fe81adab65f1",
+                "itemId": "5011676f-0835-4cee-9b3e-fe81adab65f1",
+                "itemType": "DATABANK",
+                "expiryTime": "2026-08-04T20:00:19Z",
+                "constraints": {
+                  "access": [
+                    {
+                      "accessType": "api",
+                      "expiry": 1785873619,
+                      "limits": {
+                        "apiHits": 1000,
+                        "dataUsage": "100:gb"
+                      }
+                    },
+                    {
+                      "accessType": "file",
+                      "expiry": 1785873619,
+                      "limits": {
+                        "dataUsage": "10:gb"
+                      }
+                    }
+                  ]
+                },
+                "providerComment": "Access granted for analytics usage",
+                "feedbackToConsumer": "Use only for internal testing"
+              }
+            ]
+          }'
+
+      - lang: cURL
+        label: Create GROUP Policy
+        source: |
+          curl --location 'https://${HOSTNAME}/iudx/acl/apd/v2/policy' \
+          --header 'Authorization: Bearer <tokenValue>' \
+          --header 'Content-Type: application/json' \
+          --data-raw '{
+            "request": [
+              {
+                "policyType": "GROUP",
+                "itemId": "7f1f6f2d-6b6e-45c0-98a8-cdc8d3db0aa1",
+                "itemType": "DATABANK",
+                "expiryTime": "2026-12-31T23:59:59Z",
+                "constraints": {
+                  "subjects": {
+                    "allowedOrgIds": [
+                      "2ef0f344-dc41-4369-a50b-1515a0db5db2"
+                    ],
+                    "allowedRoles": [
+                      "consumer"
+                    ]
+                  },
+                  "access": [
+                    {
+                      "accessType": "api",
+                      "expiry": 1785873619,
+                      "limits": {
+                        "apiHits": 5000
+                      }
+                    },
+                    {
+                      "accessType": "sub",
+                      "expiry": 1785873619
+                    }
+                  ]
+                },
+                "providerComment": "Organization-wide access for subscribed consumers"
+              }
+            ]
+          }'
+  put:
+    tags:
+      - Policies
+    summary: Delete Policy
+    description: |
+      This API performs a **soft delete** of an existing ACTIVE policy.
+
+      Instead of permanently removing the policy from the system:
+
+      - The policy status is updated from `ACTIVE` → `DELETE`
+      - All access rules associated with the policy are also updated to `DELETE`
+      - The policy record is retained for audit and traceability purposes
+
+      ## Who Can Delete
+
+      - The resource `provider or org_admin of that organization`
+      - A `dept_admin` of the department owning the policy's resource, or of any department above it
+      - The policy must exist
+      - The policy must belong to the requesting provider or, in case of an `org_admin`, to their organization
+        (for a `dept_admin`, to a department in their subtree)
+      - The policy must currently be in `ACTIVE` state
+
+      ## Effects
+
+      - Access granted via this policy is immediately revoked
+      - The policy cannot be reactivated via this API (a new policy must be created)
+
+      Users can retrieve the policy ID using the GET Policies API.
+    operationId: deactivate-auth-v1-policies
+    parameters:
+      - name: Authorization
+        in: header
+        description: DX Auth issued identity token
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          pattern: Bearer [a-zA-Z0-9_*\-*\.\/]+$|^[a-zA-Z0-9_*\-*\.\/]+$
+      - name: id
+        in: query
+        description: ID of the DX Entity
+        required: true
+        schema:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$
+    responses:
+      '200':
+        description: Policy deleted successfully.
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/deletePolicy
+        headers:
+          Content-Type:
+            schema:
+              type: string
+            description: application/json
+      '400':
+        description: 'Bad Request
+
+          - Id is not a valid policyId
+
+          - Policy has expired
+
+          - Policy was previously deleted'
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/deletePolicyErrorResponse
+        headers:
+          Content-Type:
+            schema:
+              type: string
+            description: application/json
+      '401':
+        description: "Unauthorized\n  - `token` invalid/expired"
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/deletePolicyNotFoundErrorResponse
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+        headers:
+          Content-Type:
+            schema:
+              type: string
+            description: application/json
+      '403':
+        description: |
+          Forbidden
+            - Policy does not belong to the user
+            - User is not authorized to delete the policy
+            - User is not an org admin of the policy owner's organization
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dx:aclApd:forbidden
+                title:
+                  type: string
+                  example: Forbidden
+                detail:
+                  type: string
+                  example: Failure, as policy doesn't belong to the user or organisation
+            example:
+              type: urn:dx:aclApd:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
+        headers:
+          Content-Type:
+            schema:
+              type: string
+            description: application/json
+      '404':
+        description: "Not Found\n  - Policy id does not exist"
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/Unauthorized
+        headers:
+          Content-Type:
+            schema:
+              type: string
+            description: application/json
+    security:
+      - authorization: []
+    x-codeSamples:
+      - lang: cURL
+        label: Delete policy
+        source: |
+          curl --location --request PUT \
+            'https://${HOSTNAME}/iudx/acl/apd/v2/policy?id=231f6eca-6276-4993-bfeb-53cbbbba6f06' \
+            --header 'Authorization: Bearer <tokenValue>'
+/iudx/acl/apd/v2/policy/consumer:
+  get:
+    tags:
+      - Policies
+    operationId: get-policies-consumer-api
+    summary: List Consumer Policies
+    description: |
+      Lists all policies applicable to the consumer calling the API.
+
+      The optional `policyType` query parameter can be used to filter policies by how they were created. Specify `INDIVIDUAL` and/or `GROUP` to retrieve policies created through the policy APIs, or `ACCESS_REQUEST_APPROVED` to retrieve policies created internally when an access request is approved.
+    security:
+      - authorization: []
+    parameters:
+      - name: status
+        in: query
+        description: Status of the policy. Displays all the policies if status is not
+          specified
+        required: false
+        schema:
+          type: string
+          enum:
+            - ACTIVE
+            - DELETED
+            - EXPIRED
+      - name: organizationId
+        in: query
+        description: Filter policies by organization ID of the asset. Displays all policies
+          if not specified.
+        required: false
+        schema:
+          type: string
+      - name: ownerId
+        in: query
+        description: |
+          Filter policies by the owner who created the policy.
+
+          This parameter can be used to distinguish
+          between policies created by different owners within the organization.
+
+          If not specified, policies created by all owners within the organization
+          are returned.
+        required: false
+        schema:
+          type: string
+          example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+      - name: policyType
+        in: query
+        description: |
+          Filter policies by policy type.
+
+          This parameter can be specified multiple times to return policies
+          matching any of the provided policy types.
+
+          If not specified, policies of all types are returned.
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+              - INDIVIDUAL
+              - GROUP
+              - ACCESS_REQUEST_APPROVED
+      - $ref: ../components/parameters.yaml#/PageParam
+      - $ref: ../components/parameters.yaml#/SizeParam
+      - $ref: ../components/parameters.yaml#/SortingParam
+      - $ref: ../components/parameters.yaml#/TimeParam
+      - $ref: ../components/parameters.yaml#/EndTimeParam
+      - $ref: ../components/parameters.yaml#/TimeRelParam
+    responses:
+      '200':
+        description: Successfully fetched consumer policies
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/PolicyListResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/ErrorResponse
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+    x-codeSamples:
+      - lang: cURL
+        label: List directly created policies
+        source: |
+          curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/policy/consumer?policyType=INDIVIDUAL&policyType=GROUP' \
+          --header 'Authorization: <tokenValue>'
+      - lang: cURL
+        label: List policies created through access request approval
+        source: |
+          curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/policy/consumer?policyType=ACCESS_REQUEST_APPROVED' \
+          --header 'Authorization: <tokenValue>'
+/iudx/acl/apd/v2/policy/organisation:
+  get:
+    tags:
+      - Policies
+    operationId: get-policies-org_admin-api
+    summary: List Organization Policies
+    description: |
+      Lists the latest policies associated with assets belonging to the organization.
+
+      Organization administrators can view policies created by both providers and
+      organization administrators for assets within their organization.
+
+      The optional `ownerId` query parameter can be used to filter policies by
+      the policy creator.
+
+      The optional `policyType` query parameter can be used to filter policies by
+      how they were created. Specify `INDIVIDUAL` and/or `GROUP` to retrieve
+      policies created through the policy APIs, or `ACCESS_REQUEST_APPROVED` to
+      retrieve policies created internally when an access request is approved.
+    security:
+      - authorization: []
+    parameters:
+      - name: status
+        in: query
+        description: Status of the policy. Displays all the policies if status is not
+          specified
+        required: false
+        schema:
+          type: string
+          enum:
+            - ACTIVE
+            - DELETED
+            - EXPIRED
+      - name: organizationId
+        in: query
+        description: Filter policies by organization ID of the asset. Displays all policies
+          if not specified.
+        required: false
+        schema:
+          type: string
+      - name: ownerId
+        in: query
+        description: |
+            Filter policies by the owner who created the policy.
+
+            This parameter can be used by organization administrators to distinguish
+            between policies created by different owners within the organization,
+            such as provider-created policies and organization-admin-created policies.
+
+            If not specified, policies created by all owners within the organization
+            are returned.
+        required: false
+        schema:
+          type: string
+          example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+      - name: policyType
+        in: query
+        description: |
+          Filter policies by policy type.
+
+          This parameter can be specified multiple times to return policies
+          matching any of the provided policy types.
+
+          If not specified, policies of all types are returned.
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+              - INDIVIDUAL
+              - GROUP
+              - ACCESS_REQUEST_APPROVED
+      - $ref: ../components/parameters.yaml#/PageParam
+      - $ref: ../components/parameters.yaml#/SizeParam
+      - $ref: ../components/parameters.yaml#/SortingParam
+      - $ref: ../components/parameters.yaml#/TimeParam
+      - $ref: ../components/parameters.yaml#/EndTimeParam
+      - $ref: ../components/parameters.yaml#/TimeRelParam
+    responses:
+      '200':
+        description: Successfully fetched organization policies
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/PolicyListResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/ErrorResponse
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/ErrorResponse
+            example:
+              type: urn:dx:aclApd:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
+    x-codeSamples:
+      - lang: cURL
+        label: List directly created policies
+        source: |
+          curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/policy/organisation?policyType=INDIVIDUAL&policyType=GROUP' \
+          --header 'Authorization: <tokenValue>'
+      - lang: cURL
+        label: List policies created through access request approval
+        source: |
+          curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/policy/organisation?policyType=ACCESS_REQUEST_APPROVED' \
+          --header 'Authorization: <tokenValue>'
+/iudx/acl/apd/v2/policy/organization/department:
+  get:
+    tags:
+      - Policies
+    operationId: get-policies-dept_admin-api
+    summary: List Department Policies (Dept Admin)
+    description: |
+      Lists the latest policies on assets owned by the department the caller
+      administers and by all of its sub-departments -- the department-level
+      counterpart of `GET /iudx/acl/apd/v2/policy/organisation`.
+
+      Restricted to `dept_admin` users. Use `departmentScope` to narrow results to
+      the caller's own department (`own`) or to its sub-departments only (`sub`).
+
+      Policies on assets with no owning department, and policies created directly
+      (not through an access request) before department tracking was introduced,
+      are not returned -- they remain an owner/org_admin concern.
+
+      The optional `ownerId` query parameter filters by the policy creator, and
+      `policyType` by how the policy was created (`INDIVIDUAL`, `GROUP` or
+      `ACCESS_REQUEST_APPROVED`).
+    security:
+      - authorization: []
+    parameters:
+      - $ref: ../components/parameters.yaml#/DepartmentScopeParam
+      - name: status
+        in: query
+        description: Status of the policy. Displays all the policies if status is not
+          specified
+        required: false
+        schema:
+          type: string
+          enum:
+            - ACTIVE
+            - DELETED
+      - name: ownerId
+        in: query
+        description: Filter policies by the owner who created the policy.
+        required: false
+        schema:
+          type: string
+          example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+      - name: policyType
+        in: query
+        description: |
+          Filter policies by policy type. Can be specified multiple times to return
+          policies matching any of the provided types.
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+              - INDIVIDUAL
+              - GROUP
+              - ACCESS_REQUEST_APPROVED
+      - $ref: ../components/parameters.yaml#/PageParam
+      - $ref: ../components/parameters.yaml#/SizeParam
+      - $ref: ../components/parameters.yaml#/SortingParam
+      - $ref: ../components/parameters.yaml#/TimeParam
+      - $ref: ../components/parameters.yaml#/EndTimeParam
+      - $ref: ../components/parameters.yaml#/TimeRelParam
+    responses:
+      '200':
+        description: Successfully fetched department policies
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/PolicyListResponse
+      '400':
+        description: Invalid query parameter (e.g. an unknown departmentScope value)
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/ErrorResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/ErrorResponse
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+      '403':
+        description: Forbidden - Caller does not hold the dept-asset-management scope (not a department admin)
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/ErrorResponse
+            example:
+              type: urn:dx:aclApd:forbidden
+              title: Forbidden
+              detail: User does not hold the required role
+    x-codeSamples:
+      - lang: cURL
+        label: List policies of my sub-departments only
+        source: |
+          curl --location --request GET 
+          'https://${HOSTNAME}/iudx/acl/apd/v2/policy/organization/department?departmentScope=sub&status=ACTIVE' \
+          --header 'Authorization: <tokenValue>'
+/iudx/acl/apd/v2/policy/platform:
+  get:
+    tags:
+      - Policies
+    operationId: get-policies-cos_admin-api
+    summary: List Platform Policies (COS Admin)
+    description: |
+      Lists all policies across the platform. Accessible only to COS Admin users.
+
+      The optional `policyType` query parameter can be used to filter policies by
+      how they were created. Specify `INDIVIDUAL` and/or `GROUP` to retrieve
+      policies created through the policy APIs, or `ACCESS_REQUEST_APPROVED` to
+      retrieve policies created internally when an access request is approved.
+    security:
+      - authorization: []
+    parameters:
+      - name: status
+        in: query
+        description: Status of the policy. Displays all the policies if status is not
+          specified
+        required: false
+        schema:
+          type: string
+          enum:
+            - ACTIVE
+            - DELETED
+            - EXPIRED
+      - name: organizationId
+        in: query
+        description: Filter policies by organization ID of the asset. Displays all policies
+          if not specified.
+        required: false
+        schema:
+          type: string
+      - name: ownerId
+        in: query
+        description: |
+          Filter policies by the owner who created the policy.
+
+          This parameter can be used to distinguish
+          between policies created by different owners within the organization.
+
+          If not specified, policies created by all owners within the organization
+          are returned.
+        required: false
+        schema:
+          type: string
+          example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+      - name: policyType
+        in: query
+        description: |
+          Filter policies by policy type.
+
+          This parameter can be specified multiple times to return policies
+          matching any of the provided policy types.
+
+          If not specified, policies of all types are returned.
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+              - INDIVIDUAL
+              - GROUP
+              - ACCESS_REQUEST_APPROVED
+      - $ref: ../components/parameters.yaml#/PageParam
+      - $ref: ../components/parameters.yaml#/SizeParam
+      - $ref: ../components/parameters.yaml#/SortingParam
+      - $ref: ../components/parameters.yaml#/TimeParam
+      - $ref: ../components/parameters.yaml#/EndTimeParam
+      - $ref: ../components/parameters.yaml#/TimeRelParam
+    responses:
+      '200':
+        description: Successfully fetched platform policies
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/PolicyListResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/ErrorResponse
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/ErrorResponse
+            example:
+              type: urn:dx:aclApd:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
+    x-codeSamples:
+      - lang: cURL
+        label: List directly created policies
+        source: |
+          curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/policy/platform?policyType=INDIVIDUAL&policyType=GROUP' \
+          --header 'Authorization: <tokenValue>'
+      - lang: cURL
+        label: List policies created through access request approval
+        source: |
+          curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/policy/platform?policyType=ACCESS_REQUEST_APPROVED' \
+          --header 'Authorization: <tokenValue>'
+/iudx/acl/apd/v2/policy/provider:
+  get:
+    tags:
+      - Policies
+    operationId: get-policies-provider-api
+    summary: List Provider Policies
+    description: |
+      Lists all policies created by the provider calling the API.
+
+      The optional `policyType` query parameter can be used to filter policies by
+      how they were created. Specify `INDIVIDUAL` and/or `GROUP` to retrieve
+      policies created through the policy APIs, or `ACCESS_REQUEST_APPROVED` to
+      retrieve policies created internally when an access request is approved.
+    security:
+      - authorization: []
+    parameters:
+      - name: status
+        in: query
+        description: Status of the policy. Displays all the policies if status is not
+          specified
+        required: false
+        schema:
+          type: string
+          enum:
+            - ACTIVE
+            - DELETED
+            - EXPIRED
+      - name: organizationId
+        in: query
+        description: Filter policies by organization ID of the asset. Displays all policies
+          if not specified.
+        required: false
+        schema:
+          type: string
+      - name: ownerId
+        in: query
+        description: |
+          Filter policies by the owner who created the policy.
+          
+          This parameter can be used to distinguish
+          between policies created by different owners within the organization.
+          
+          If not specified, policies created by all owners within the organization
+          are returned.
+        required: false
+        schema:
+          type: string
+          example: fffb1ea9-7c57-4f2c-b410-7b5a163166a0
+      - name: policyType
+        in: query
+        description: |
+          Filter policies by policy type.
+
+          This parameter can be specified multiple times to return policies
+          matching any of the provided policy types.
+
+          If not specified, policies of all types are returned.
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+              - INDIVIDUAL
+              - GROUP
+              - ACCESS_REQUEST_APPROVED
+      - $ref: ../components/parameters.yaml#/PageParam
+      - $ref: ../components/parameters.yaml#/SizeParam
+      - $ref: ../components/parameters.yaml#/SortingParam
+      - $ref: ../components/parameters.yaml#/TimeParam
+      - $ref: ../components/parameters.yaml#/EndTimeParam
+      - $ref: ../components/parameters.yaml#/TimeRelParam
+    responses:
+      '200':
+        description: Successfully fetched provider policies
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/PolicyListResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/ErrorResponse
+            example:
+              type: urn:dx:aclApd:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas.yaml#/ErrorResponse
+            example:
+              type: urn:dx:aclApd:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
+    x-codeSamples:
+      - lang: cURL
+        label: List directly created policies
+        source: |
+          curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/policy/provider?policyType=INDIVIDUAL&policyType=GROUP' \
+          --header 'Authorization: <tokenValue>'
+      - lang: cURL
+        label: List policies created through access request approval
+        source: |
+          curl --location --request GET 'https://${HOSTNAME}/iudx/acl/apd/v2/policy/provider?policyType=ACCESS_REQUEST_APPROVED' \
+          --header 'Authorization: <tokenValue>'

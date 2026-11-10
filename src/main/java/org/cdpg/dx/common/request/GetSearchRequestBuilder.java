@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.database.elastic.model.*;
+import org.cdpg.dx.database.postgres.models.OrderBy;
 public class GetSearchRequestBuilder {
   private static final Logger LOGGER = LogManager.getLogger(GetSearchRequestBuilder.class);
   private final RoutingContext routingContext;

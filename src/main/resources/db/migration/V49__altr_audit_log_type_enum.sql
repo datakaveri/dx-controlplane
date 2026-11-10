@@ -1,0 +1,2 @@
+ALTER TYPE audit_log_type_enum
+    ADD VALUE IF NOT EXISTS 'COMPUTE';

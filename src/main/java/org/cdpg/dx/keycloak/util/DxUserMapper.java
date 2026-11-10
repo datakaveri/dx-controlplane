@@ -1,5 +1,6 @@
 package org.cdpg.dx.keycloak.util;
 
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.keycloak.config.KeycloakConstants;
 import org.cdpg.dx.common.model.DxUser;
@@ -14,40 +15,68 @@ import java.time.ZoneOffset;
 
 
 public class DxUserMapper {
-    public static DxUser fromUserRepresentation(UserRepresentation user, List<RoleRepresentation> roles) {
-        Map<String, List<String>> attrs = Optional.ofNullable(user.getAttributes()).orElse(Map.of());
-        List<String> roleNames = roles.stream().map(RoleRepresentation::getName).collect(Collectors.toList());
+  public static DxUser fromUserRepresentation(UserRepresentation user, List<RoleRepresentation> roles) {
+    Map<String, List<String>> attrs = Optional.ofNullable(user.getAttributes()).orElse(Map.of());
+    List<String> roleNames = roles.stream().map(RoleRepresentation::getName).collect(Collectors.toList());
 
-        Long createdTs = user.getCreatedTimestamp();
-        LocalDateTime createdAt = createdTs != null
-                ? Instant.ofEpochMilli(createdTs).atZone(ZoneOffset.UTC).toLocalDateTime()
-                : null;
+    Long createdTs = user.getCreatedTimestamp();
+    LocalDateTime createdAt = createdTs != null
+      ? Instant.ofEpochMilli(createdTs).atZone(ZoneOffset.UTC).toLocalDateTime()
+      : null;
 
-        return new DxUser(
-                roleNames,
-                getAttr(attrs, KeycloakConstants.ORGANISATION_ID),
-                getAttr(attrs, KeycloakConstants.ORGANISATION_NAME),
-                UUID.fromString(user.getId()),
-                user.isEmailVerified(),
-                Boolean.parseBoolean(getAttr(attrs, KeycloakConstants.KYC_VERIFIED)),
-                user.getFirstName() + " " + user.getLastName(),
-                user.getUsername(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getEmail(),
-                new ArrayList<>(),
-                new JsonObject(),
-                createdAt,
-                getAttr(attrs, "aadhaar_kyc_data").isBlank() ? new JsonObject() : new JsonObject(getAttr(attrs, "aadhaar_kyc_data")),
-                getAttr(attrs, "twitter_account") != null ? getAttr(attrs, "twitter_account") : "",
-                getAttr(attrs, "linkedin_account") != null ? getAttr(attrs, "linkedin_account") : "",
-                getAttr(attrs, "github_account") != null ? getAttr(attrs, "github_account") : "",
-                user.isEnabled()
-        );
+    return new DxUser(
+      roleNames,
+      getAttr(attrs, KeycloakConstants.ORGANISATION_ID),
+      getAttr(attrs, KeycloakConstants.ORGANISATION_NAME),
+      UUID.fromString(user.getId()),
+      user.isEmailVerified(),
+      Boolean.parseBoolean(getAttr(attrs, KeycloakConstants.KYC_VERIFIED)),
+      user.getFirstName() + " " + user.getLastName(),
+      user.getUsername(),
+      user.getFirstName(),
+      user.getLastName(),
+      user.getEmail(),
+      new ArrayList<>(),
+      new JsonObject(),
+      createdAt,
+      getAttr(attrs, "aadhaar_kyc_data").isBlank() ? new JsonObject() : new JsonObject(getAttr(attrs, "aadhaar_kyc_data")),
+      getAttr(attrs, "twitter_account") != null ? getAttr(attrs, "twitter_account") : "",
+      getAttr(attrs, "linkedin_account") != null ? getAttr(attrs, "linkedin_account") : "",
+      getAttr(attrs, "github_account") != null ? getAttr(attrs, "github_account") : "",
+      user.isEnabled(),
+      getAttr(attrs, KeycloakConstants.DID),
+      getAttr(attrs, KeycloakConstants.AUD),
+      parseScopes(attrs),
+      null,  // delegateeId — not applicable for direct user lookup
+      null   // appId — not applicable for direct user lookup
+    );
+  }
+
+  private static JsonArray parseScopes(Map<String, List<String>> attrs) {
+    // Look for the scopes stored by setDelegationScopes method
+    List<String> values = attrs.getOrDefault(KeycloakConstants.SCOPES, List.of());
+
+    // Return empty array if no scopes found
+    if (values.isEmpty() || values.get(0) == null || values.get(0).isBlank()) {
+      return new JsonArray();
     }
 
+    String raw = values.get(0).trim();
 
-    private static String getAttr(Map<String, List<String>> attrs, String key) {
-        return attrs.getOrDefault(key, List.of("")).get(0);
+    try {
+      // Parse the JSON array string stored in Keycloak
+      JsonArray parsed = new JsonArray(raw);
+
+      // Return the parsed array directly
+      return parsed;
+
+    } catch (Exception e) {
+      // If parsing fails, treat it as a single scope string
+      return new JsonArray().add(raw);
     }
+  }
+
+  private static String getAttr(Map<String, List<String>> attrs, String key) {
+    return attrs.getOrDefault(key, List.of("")).get(0);
+  }
 }

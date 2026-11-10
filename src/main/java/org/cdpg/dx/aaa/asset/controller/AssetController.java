@@ -3,11 +3,12 @@ package org.cdpg.dx.aaa.asset.controller;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.apiserver.ApiController;
+import org.cdpg.dx.apiserver.ApiController;
 import org.cdpg.dx.aaa.asset.handler.AssetHandler;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
-import org.cdpg.dx.auth.authorization.model.DxRole;
+import org.cdpg.dx.auth.model.DxRole;
+import org.cdpg.dx.auth.model.Scopes;
 
 public class AssetController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(AssetController.class);
@@ -18,29 +19,36 @@ public class AssetController implements ApiController {
   public AssetController(AssetHandler assetHandler, AuditingHandler auditingHandler) {
     this.assetHandler = assetHandler;
     this.auditingHandler = auditingHandler;
-   }
+  }
 
-   @Override
-   public void register(RouterBuilder routerBuilder)
-   {
+  @Override
+  public void register(RouterBuilder routerBuilder) {
     routerBuilder
-      .operation("post-auth-v1-asset-request")
-      .handler(auditingHandler::handleApiAudit)
-      .handler(AuthorizationHandler.forRoles(DxRole.PROVIDER))
-      .handler(assetHandler::createAssetRequest);
-
-    routerBuilder
-      .operation("get-auth-v1-asset-request")
-      .handler(auditingHandler::handleApiAudit)
-      .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN,DxRole.CONSUMER))
-      .handler(assetHandler::getAllAssetRequests);
+        .operation("post-auth-v2-asset-request")
+        .handler(auditingHandler::handleApiAudit)
+        .handler(AuthorizationHandler.forScopes(Scopes.OWN_ASSET_MANAGEMENT))
+        .handler(assetHandler::createAssetRequest);
 
     routerBuilder
-      .operation("put-auth-v1-asset-request")
-      .handler(auditingHandler::handleApiAudit)
-      .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
-      .handler(assetHandler::updateAssetRequestStatus);
+        .operation("get-auth-v2-asset-request")
+        .handler(auditingHandler::handleApiAudit)
+        // .handler(AuthorizationHandler.forRoles(DxRole.PROVIDER,DxRole.ORG_ADMIN,DxRole.COS_ADMIN))
+        .handler(
+            AuthorizationHandler.forScopes(
+                Scopes.ASSET_MANAGEMENT, Scopes.ORG_ASSET_MANAGEMENT, Scopes.OWN_ASSET_MANAGEMENT))
+        .handler(assetHandler::getAllAssetRequests);
 
-   }
+    routerBuilder
+        .operation("put-auth-v2-asset-request")
+        .handler(auditingHandler::handleApiAudit)
+        // .handler(AuthorizationHandler.forRoles(DxRole.COS_ADMIN))
+        .handler(AuthorizationHandler.forScopes(Scopes.ASSET_MANAGEMENT))
+        .handler(assetHandler::updateAssetRequestStatus);
 
+    routerBuilder
+        .operation("delete-auth-v2-asset-request")
+        .handler(auditingHandler::handleApiAudit)
+        // .handler(AuthorizationHandler.forRoles(DxRole.CONSUMER))
+        .handler(assetHandler::deleteAssetRequest);
+  }
 }

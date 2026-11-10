@@ -19,6 +19,7 @@ public class AiModelItem implements Item {
   private String organizationId;
   private String industry;
   private String department;
+  private String hierarchyNodeId;
   private String id;
   private String itemStatus;
   private String itemCreatedAt;
@@ -48,6 +49,7 @@ public class AiModelItem implements Item {
     item.setOrganizationId(json.getString("organizationId"));
     item.setIndustry(json.getString("industry"));
     item.setDepartment(json.getString("department"));
+    item.setHierarchyNodeId(json.getString("hierarchyNodeId"));
     item.setId(json.getString("id"));
     item.setItemStatus(json.getString("itemStatus"));
 
@@ -76,6 +78,7 @@ public class AiModelItem implements Item {
                 "organizationId",
                 "industry",
                 "department",
+                "hierarchyNodeId",
                 "id",
                 "itemStatus",
                 "itemCreatedAt",
@@ -207,6 +210,15 @@ public class AiModelItem implements Item {
   }
 
   @Override
+  public String getHierarchyNodeId() {
+    return hierarchyNodeId;
+  }
+
+  public void setHierarchyNodeId(String hierarchyNodeId) {
+    this.hierarchyNodeId = hierarchyNodeId;
+  }
+
+  @Override
   public String getId() {
     return id;
   }
@@ -312,6 +324,7 @@ public class AiModelItem implements Item {
     json.put("organizationId", organizationId);
     json.put("industry", industry);
     json.put("department", department);
+    json.put("hierarchyNodeId", hierarchyNodeId);
     json.put("id", id);
     json.put("itemStatus", itemStatus);
     json.put("itemCreatedAt", itemCreatedAt != null ? itemCreatedAt.toString() : null);

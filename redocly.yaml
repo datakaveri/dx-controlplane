@@ -1,0 +1,17 @@
+apis:
+  control-plane:
+    root: docs/controlplane-openapi/openapi.yaml
+  acl-apd:
+    root: docs/acl-openapi/openapi.yaml
+  central:
+    root: docs/central-openapi/openapi.yaml
+
+rules:
+  no-unused-components: warn
+  no-empty-servers: error
+  operation-operationId: error
+  operation-summary: warn
+  tag-description: warn
+
+extends:
+  - recommended

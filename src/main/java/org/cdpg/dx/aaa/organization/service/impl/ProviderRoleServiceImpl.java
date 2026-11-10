@@ -1,0 +1,435 @@
+package org.cdpg.dx.aaa.organization.service.impl;
+
+import io.vertx.core.Future;
+import org.cdpg.dx.aaa.organization.dao.OrganizationDAO;
+import org.cdpg.dx.aaa.organization.dao.OrganizationUserDAO;
+import org.cdpg.dx.aaa.organization.dao.ProviderRoleRequestDAO;
+import org.cdpg.dx.aaa.organization.config.Constants;
+import org.cdpg.dx.aaa.organization.models.OrganizationApprovalType;
+import org.cdpg.dx.aaa.organization.models.ProviderRoleRequest;
+import org.cdpg.dx.aaa.organization.models.Status;
+import org.cdpg.dx.aaa.organization.service.OrganizationApprovalService;
+import org.cdpg.dx.aaa.organization.service.OrganizationHierarchyService;
+import org.cdpg.dx.aaa.organization.service.ProviderRoleService;
+import org.cdpg.dx.auth.model.DxRole;
+import org.cdpg.dx.common.exception.DxConflictException;
+import org.cdpg.dx.common.exception.DxNotFoundException;
+import org.cdpg.dx.common.exception.DxPgException;
+import org.cdpg.dx.common.exception.DxRuntimeException;
+import org.cdpg.dx.common.exception.NoRowFoundException;
+import org.cdpg.dx.common.request.PaginatedRequest;
+import org.cdpg.dx.common.util.ServiceErrorHelper;
+import org.cdpg.dx.database.postgres.models.PaginatedResult;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import static org.cdpg.dx.aaa.organization.config.Constants.*;
+import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
+
+public class ProviderRoleServiceImpl implements ProviderRoleService {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(ProviderRoleServiceImpl.class);
+
+  private final ProviderRoleRequestDAO providerRequestDAO;
+  private final OrganizationUserDAO orgUserDAO;
+  private final KeycloakUserService keycloakUserService;
+  private final OrganizationHierarchyService hierarchyService;
+  private final OrganizationDAO organizationDAO;
+  private final OrganizationApprovalService organizationApprovalService;
+
+  public ProviderRoleServiceImpl(
+      ProviderRoleRequestDAO providerRequestDAO,
+      OrganizationUserDAO orgUserDAO,
+      KeycloakUserService keycloakUserService,
+      OrganizationHierarchyService hierarchyService,
+      OrganizationDAO organizationDAO,
+      OrganizationApprovalService organizationApprovalService) {
+    this.providerRequestDAO = providerRequestDAO;
+    this.orgUserDAO = orgUserDAO;
+    this.keycloakUserService = keycloakUserService;
+    this.hierarchyService = hierarchyService;
+    this.organizationDAO = organizationDAO;
+    this.organizationApprovalService = organizationApprovalService;
+  }
+
+  @Override
+  public Future<ProviderRoleRequest> createProviderRequest(
+      ProviderRoleRequest providerRoleRequest) {
+    Map<String, Object> filterMap =
+        Map.of(
+            USER_ID,
+            providerRoleRequest.userId().toString(),
+            Constants.STATUS,
+            List.of(Status.PENDING.getStatus(), Status.GRANTED.getStatus()));
+
+    Future<Void> nodeValidation =
+        (providerRoleRequest.orgId() != null && providerRoleRequest.requestedNodeId() != null)
+            ? hierarchyService
+                .getNode(providerRoleRequest.orgId(), providerRoleRequest.requestedNodeId())
+                .compose(
+                    node ->
+                        node == null
+                            ? Future.failedFuture(
+                                new DxNotFoundException("Requested department not found"))
+                            : Future.<Void>succeededFuture())
+            : Future.succeededFuture();
+
+    return nodeValidation
+        .compose(v -> providerRequestDAO.getAllWithFilters(filterMap))
+        .compose(
+            requests -> {
+              if (!requests.isEmpty()) {
+                return Future.failedFuture(
+                    new DxConflictException(
+                        "A pending or granted provider role request already exists for this user"));
+              }
+              return providerRequestDAO.create(providerRoleRequest);
+            })
+        .compose(
+            created -> {
+              if (created.orgId() == null) {
+                // Platform-scoped request -- no hierarchy involved.
+                return Future.succeededFuture(created);
+              }
+
+              return hierarchyService
+                  .hasHierarchy(created.orgId())
+                  .compose(
+                      hasHierarchy -> {
+                        if (hasHierarchy) {
+                          return organizationApprovalService
+                              .createApproval(
+                                  created.orgId(),
+                                  created.id(),
+                                  OrganizationApprovalType.PROVIDER_ROLE,
+                                  created.requestedNodeId())
+                              .map(ignored -> created);
+                        }
+                        return Future.succeededFuture(created);
+                      });
+            });
+  }
+
+  @Override
+  public Future<Boolean> updateProviderRequestStatus(
+      UUID requestId, Status status, UUID approverUserId) {
+    return providerRequestDAO
+        .get(requestId)
+        .compose(
+            existing -> {
+              if (!Status.PENDING.getStatus().equals(existing.status())) {
+                return Future.failedFuture(
+                    new DxConflictException(
+                        "Only pending provider role requests can be updated. Current status: "
+                            + existing.status()));
+              }
+
+              if (existing.orgId() == null) {
+                // Platform-scoped request -- no hierarchy involved.
+                return applyProviderStatusUpdate(requestId, status, existing);
+              }
+
+              return organizationDAO
+                  .get(existing.orgId())
+                  .compose(
+                      organization -> {
+                        if (organization == null) {
+                          return Future.failedFuture(
+                              new DxNotFoundException(
+                                  "Organisation not found: " + existing.orgId()));
+                        }
+
+                        return hierarchyService.hasHierarchy(existing.orgId());
+                      })
+                  .compose(
+                      hasHierarchy -> {
+                        if (!hasHierarchy) {
+                          // Existing flat organisation behaviour, unchanged.
+                          return applyProviderStatusUpdate(requestId, status, existing);
+                        }
+
+                        OrganizationApprovalType approvalType =
+                            OrganizationApprovalType.PROVIDER_ROLE;
+                        Future<?> approvalFuture =
+                            status == Status.GRANTED
+                                ? organizationApprovalService.approve(
+                                    existing.orgId(),
+                                    requestId,
+                                    approvalType,
+                                    existing.requestedNodeId(),
+                                    approverUserId,
+                                    null)
+                                : organizationApprovalService.reject(
+                                    existing.orgId(),
+                                    requestId,
+                                    approvalType,
+                                    existing.requestedNodeId(),
+                                    approverUserId,
+                                    null);
+
+                        return approvalFuture.compose(
+                            ignored -> applyProviderStatusUpdate(requestId, status, existing));
+                      });
+            })
+        .recover(ServiceErrorHelper.mapNotFound("No request found with given ID"));
+  }
+
+  private Future<Boolean> applyProviderStatusUpdate(
+      UUID requestId, Status status, ProviderRoleRequest existing) {
+    Map<String, Object> conditionMap = Map.of(Constants.ORG_CREATE_ID, requestId.toString());
+    Map<String, Object> updateDataMap =
+        Map.of(
+            Constants.STATUS, status.getStatus(),
+            Constants.UPDATED_AT, FORMATTER.format(LocalDateTime.now()));
+
+    return providerRequestDAO
+        .update(conditionMap, updateDataMap)
+        .compose(
+            updated -> {
+              if (Status.GRANTED.getStatus().equals(status.getStatus())) {
+                return keycloakUserService
+                    .addRoleToUser(existing.userId(), DxRole.PROVIDER)
+                    .compose(
+                        success -> {
+                          if (!success) {
+                            return Future.failedFuture(
+                                "Failed to assign PROVIDER role in Keycloak");
+                          }
+                          return Future.succeededFuture(true);
+                        })
+                    .recover(
+                        err -> {
+                          LOGGER.error(
+                              "Keycloak role assignment failed for user {}, reverting DB status to pending: {}",
+                              existing.userId(),
+                              err.getMessage());
+                          Map<String, Object> revertCondition =
+                              Map.of(Constants.ORG_CREATE_ID, requestId.toString());
+                          Map<String, Object> revertData =
+                              Map.of(Constants.STATUS, Status.PENDING.getStatus());
+                          return providerRequestDAO
+                              .update(revertCondition, revertData)
+                              .recover(
+                                  revertErr -> {
+                                    LOGGER.error(
+                                        "CRITICAL: Failed to revert DB status for request {} after Keycloak failure. Manual intervention required. Revert error: {}",
+                                        requestId,
+                                        revertErr.getMessage());
+                                    return Future.failedFuture(
+                                        new DxRuntimeException(
+                                            "Keycloak role assignment failed and DB revert also failed for request: "
+                                                + requestId,
+                                            revertErr));
+                                  })
+                              .compose(reverted -> Future.<Boolean>failedFuture(
+                                  new DxRuntimeException("Keycloak role assignment failed, DB status reverted to pending", err)));
+                        });
+              }
+              return Future.succeededFuture(true);
+            });
+  }
+
+  @Override
+  public Future<List<ProviderRoleRequest>> getAllPendingProviderRoleRequests(UUID orgId) {
+    Map<String, Object> filterMap = Map.of(
+      Constants.ORGANIZATION_ID, orgId.toString()
+    );
+    return providerRequestDAO.getAllWithFilters(filterMap);
+  }
+
+  @Override
+  public Future<PaginatedResult<ProviderRoleRequest>> getAllPendingProviderRoleRequests(PaginatedRequest paginatedRequest) {
+    return providerRequestDAO.getAllWithFilters(paginatedRequest);
+  }
+
+  @Override
+  public Future<Boolean> hasPendingProviderRole(UUID userId, UUID orgId) {
+    Map<String, Object> filterMap = Map.of(
+      Constants.STATUS, Status.PENDING.getStatus(), USER_ID, userId.toString(), Constants.ORGANIZATION_ID, orgId.toString()
+    );
+
+    return providerRequestDAO.getAllWithFilters(filterMap)
+      .map(list -> !list.isEmpty());
+  }
+
+  @Override
+  public Future<Boolean> createProviderRole(ProviderRoleRequest providerRoleRequest) {
+
+    // Checks:
+    // 1. User id is present in organisation of org admin
+    // 2. If user Id is present in provider request and role status is pending, then change the status to granted
+
+    UUID orgId = providerRoleRequest.orgId();
+    UUID userId = providerRoleRequest.userId();
+    String status = providerRoleRequest.status();
+
+    Map<String, Object> filterMap = Map.of(
+      Constants.ORGANIZATION_ID, orgId.toString(),
+      USER_ID, userId.toString()
+    );
+
+    return orgUserDAO.getAllWithFilters(filterMap).compose(ar -> {
+      if (ar.isEmpty()) {
+        return Future.failedFuture(new DxNotFoundException("User not found in organization"));
+      } else {
+        Map<String, Object> filterMapProviderRole = Map.of(
+          Constants.ORGANIZATION_ID, orgId.toString(),
+          USER_ID, userId.toString()
+        );
+
+        return providerRequestDAO.getAllWithFilters(filterMapProviderRole)
+          .compose(providerRoleRequests -> {
+            if (providerRoleRequests.isEmpty()) {
+              return providerRequestDAO.create(providerRoleRequest)
+                .compose(createdRequest -> keycloakUserService.addRoleToUser(userId, DxRole.PROVIDER)
+                  .compose(success -> {
+                    if (!success) {
+                      return Future.failedFuture("Failed to assign PROVIDER role in Keycloak");
+                    }
+                    return Future.succeededFuture(true);
+                  }))
+                .recover(ServiceErrorHelper.mapNotFound("No User found in Keycloak"));
+            } else {
+              ProviderRoleRequest existingRequest = providerRoleRequests.get(0);
+              if (!Status.PENDING.getStatus().equals(existingRequest.status())) {
+                return Future.failedFuture(new DxConflictException("Provider role request is not in PENDING status"));
+              }
+
+              Map<String, Object> updateDataMap = Map.of(
+                Constants.STATUS, status
+              );
+
+              Map<String, Object> conditionMap = Map.of(
+                Constants.ORG_CREATE_ID, existingRequest.id().toString()
+              );
+              return providerRequestDAO.update(conditionMap, updateDataMap)
+                .compose(updated -> {
+                  return keycloakUserService.addRoleToUser(userId, DxRole.PROVIDER)
+                    .compose(success -> {
+                      if (!success) {
+                        return Future.failedFuture("Failed to assign PROVIDER role in Keycloak");
+                      }
+                      return Future.succeededFuture(true);
+                    });
+                });
+            }
+          }).recover(ServiceErrorHelper.mapNotFound("No Request or  user found in organization"));
+      }
+    });
+  }
+
+  @Override
+  public Future<ProviderRoleRequest> getProviderRequestById(UUID requestId) {
+    return providerRequestDAO.get(requestId)
+      .compose(request -> {
+        if (request == null) {
+          return Future.failedFuture(
+            new DxNotFoundException("Provider request not found for ID: " + requestId)
+          );
+        }
+        return Future.succeededFuture(request);
+      })
+      .recover(err -> {
+        LOGGER.error("Failed to fetch provider request for ID {}: {}", requestId, err.getMessage());
+        if (err instanceof DxNotFoundException || err instanceof NoRowFoundException) {
+          return Future.failedFuture(err);
+        } else {
+          return Future.failedFuture(new DxRuntimeException("Database error while fetching provider request", err));
+        }
+      });
+  }
+
+  @Override
+  public Future<ProviderRoleRequest> getProviderRoleRequestByUserId(UUID userId) {
+    Map<String, Object> filter = Map.of(
+      USER_ID, userId.toString(),
+      Constants.STATUS, Status.PENDING.getStatus()
+    );
+
+    return providerRequestDAO.getAllWithFilters(filter)
+      .compose(requests -> {
+        if (requests.isEmpty()) {
+          return Future.failedFuture(new DxNotFoundException(
+            "No pending provider request found for userId: " + userId));
+        }
+        return Future.succeededFuture(requests.get(0));
+      });
+  }
+
+  @Override
+  public Future<Boolean> deleteProviderRoleRequest(UUID orgId, UUID userId) {
+    Map<String, Object> conditionMap = Map.of(
+      USER_ID, userId.toString(),
+      Constants.ORGANIZATION_ID, orgId.toString()
+    );
+
+    return providerRequestDAO.getAllWithFilters(conditionMap).compose(ar -> {
+      ProviderRoleRequest res = ar.isEmpty() ? null : ar.get(0);
+      if (res == null) {
+        return Future.failedFuture(new DxNotFoundException("No provider request found for user in organization"));
+      }
+
+      UUID id = res.id();
+
+      return providerRequestDAO.delete(id).compose(success -> {
+        if (!success) {
+          return Future.failedFuture(new DxPgException("Failed to delete provider request"));
+        }
+        return Future.succeededFuture(true);
+      });
+    });
+  }
+
+  @Override
+  public Future<ProviderRoleRequest> getPlatformProviderRoleRequestByUserId(UUID userId) {
+    Map<String, Object> filter = Map.of(
+      USER_ID, userId.toString(),
+      Constants.STATUS, Status.PENDING.getStatus(),
+      Constants.PROVIDER_TYPE, Constants.PROVIDER_TYPE_PLATFORM
+    );
+    return providerRequestDAO.getAllWithFilters(filter)
+      .compose(requests -> {
+        if (requests.isEmpty()) {
+          return Future.failedFuture(new DxNotFoundException(
+            "No pending platform provider request found for userId: " + userId));
+        }
+        return Future.succeededFuture(requests.get(0));
+      });
+  }
+
+  @Override
+  public Future<Boolean> hasPendingPlatformProviderRole(UUID userId) {
+    Map<String, Object> filterMap = Map.of(
+      Constants.STATUS,        Status.PENDING.getStatus(),
+      USER_ID,                 userId.toString(),
+      Constants.PROVIDER_TYPE, Constants.PROVIDER_TYPE_PLATFORM
+    );
+    return providerRequestDAO.getAllWithFilters(filterMap)
+      .map(list -> !list.isEmpty());
+  }
+
+  @Override
+  public Future<PaginatedResult<ProviderRoleRequest>> getAllPlatformProviderRequests(
+      PaginatedRequest paginatedRequest) {
+    return providerRequestDAO.getAllWithFilters(paginatedRequest);
+  }
+
+  @Override
+  public Future<Boolean> deleteProviderRoleRequestById(UUID id) {
+    return providerRequestDAO.delete(id)
+      .compose(deleted -> {
+        if (!deleted) {
+          return Future.failedFuture(
+            new DxNotFoundException("Failed to delete provider role request with ID: " + id)
+          );
+        }
+        return Future.succeededFuture(true);
+      });
+  }
+}

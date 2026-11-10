@@ -1,712 +1,432 @@
 package org.cdpg.dx.aaa.organization.service;
 
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonObject;
+import java.util.List;
+import java.util.UUID;
 import org.cdpg.dx.aaa.item.service.ItemService;
-import org.cdpg.dx.aaa.organization.dao.*;
+import org.cdpg.dx.aaa.organization.dao.OrganizationDAOFactory;
 import org.cdpg.dx.aaa.organization.models.*;
-import org.cdpg.dx.aaa.organization.config.Constants;
-import org.cdpg.dx.auth.authorization.model.DxRole;
-import org.cdpg.dx.common.exception.*;
+import org.cdpg.dx.aaa.organization.service.impl.DeptAdminServiceImpl;
+import org.cdpg.dx.aaa.organization.service.impl.OrganizationApprovalPolicyImpl;
+import org.cdpg.dx.aaa.organization.service.impl.OrganizationApprovalServiceImpl;
+import org.cdpg.dx.aaa.organization.service.impl.OrganizationHierarchyDefinitionServiceImpl;
+import org.cdpg.dx.aaa.organization.service.impl.OrganizationLifecycleServiceImpl;
+import org.cdpg.dx.aaa.organization.service.impl.OrganizationMembershipServiceImpl;
+import org.cdpg.dx.aaa.organization.service.impl.ProviderRoleServiceImpl;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.Map;
-
-import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
 
 public class OrganizationServiceImpl implements OrganizationService {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(OrganizationServiceImpl.class);
+  private final OrganizationLifecycleService lifecycle;
+  private final OrganizationMembershipService membership;
+  private final ProviderRoleService providerRole;
+  private final OrganizationHierarchyService organizationHierarchyService;
+  private final OrganizationApprovalService organizationApprovalService;
+  private final OrganizationHierarchyDefinitionService hierarchyDefinitionService;
+  private final DeptAdminService deptAdminService;
 
-  private final OrganizationCreateRequestDAO createRequestDAO;
-  private final OrganizationUserDAO orgUserDAO;
-  private final OrganizationDAO orgDAO;
-  private final OrganizationJoinRequestDAO joinRequestDAO;
-  private final ProviderRoleRequestDAO providerRequestDAO;
-  private final KeycloakUserService keycloakUserService;
-  private final ItemService itemService;
-
-  public OrganizationServiceImpl(OrganizationDAOFactory factory, KeycloakUserService keycloakUserService,ItemService itemService) {
-    this.createRequestDAO = factory.organizationCreateRequest();
-    this.orgUserDAO = factory.organizationUserDAO();
-    this.orgDAO = factory.organizationDAO();
-    this.joinRequestDAO = factory.organizationJoinRequestDAO();
-    this.providerRequestDAO = factory.providerRoleRequestDAO();
-    this.keycloakUserService = keycloakUserService;
-    this.itemService = itemService;
+  public OrganizationServiceImpl(
+      OrganizationLifecycleService lifecycle,
+      OrganizationMembershipService membership,
+      ProviderRoleService providerRole,
+      OrganizationHierarchyService organizationHierarchyService) {
+    this.lifecycle = lifecycle;
+    this.membership = membership;
+    this.providerRole = providerRole;
+    this.organizationHierarchyService = organizationHierarchyService;
+    this.organizationApprovalService = null;
+    this.hierarchyDefinitionService = null;
+    this.deptAdminService = null;
   }
+
+  public OrganizationServiceImpl(
+      OrganizationDAOFactory factory,
+      KeycloakUserService keycloakUserService,
+      ItemService itemService,
+      OrganizationHierarchyService organizationHierarchyService) {
+    this.organizationHierarchyService = organizationHierarchyService;
+
+    OrganizationLifecycleServiceImpl lifecycleImpl = new OrganizationLifecycleServiceImpl(
+      factory.organizationCreateRequest(), factory.organizationDAO(), factory.organizationUserDAO(),
+      keycloakUserService);
+    OrganizationApprovalService organizationApprovalServiceImpl =
+        new OrganizationApprovalServiceImpl(
+            factory.organizationApprovalDAO(),
+            factory.organizationHierarchyNodeDAO(),
+            factory.organizationUserDAO(),
+            new OrganizationApprovalPolicyImpl(),
+            organizationHierarchyService);
+    OrganizationMembershipServiceImpl membershipImpl =
+        new OrganizationMembershipServiceImpl(
+            factory.organizationJoinRequestDAO(),
+            factory.organizationUserDAO(),
+            factory.organizationDAO(),
+            keycloakUserService,
+            itemService,
+            organizationHierarchyService,
+            organizationApprovalServiceImpl);
+    ProviderRoleServiceImpl providerRoleImpl = new ProviderRoleServiceImpl(
+      factory.providerRoleRequestDAO(), factory.organizationUserDAO(), keycloakUserService,
+      organizationHierarchyService, factory.organizationDAO(), organizationApprovalServiceImpl);
+    OrganizationHierarchyDefinitionServiceImpl hierarchyDefinitionServiceImpl =
+        new OrganizationHierarchyDefinitionServiceImpl(
+            factory.organizationHierarchyDefinitionRequestDAO(),
+            factory.organizationDAO(),
+            organizationHierarchyService);
+    DeptAdminServiceImpl deptAdminServiceImpl =
+        new DeptAdminServiceImpl(
+            factory.organizationUserDAO(),
+            organizationHierarchyService,
+            factory.deptAdminRequestDAO(),
+            organizationApprovalServiceImpl,
+            keycloakUserService);
+
+    this.lifecycle = lifecycleImpl;
+    this.membership = membershipImpl;
+    this.providerRole = providerRoleImpl;
+    this.organizationApprovalService = organizationApprovalServiceImpl;
+    this.hierarchyDefinitionService = hierarchyDefinitionServiceImpl;
+    this.deptAdminService = deptAdminServiceImpl;
+  }
+
+  // ============ Organization Lifecycle (create requests, CRUD on orgs) ============
 
   @Override
   public Future<OrganizationCreateRequest> createOrganizationRequest(OrganizationCreateRequest request) {
-    return createRequestDAO.create(request);
-  }
-
-  @Override
-  public Future<List<OrganizationCreateRequest>> getAllPendingGrantedOrganizationCreateRequests() {
-    Map<String, Object> filterMapPending = Map.of(
-      Constants.STATUS, Status.PENDING.getStatus()
-    );
-    Map<String, Object> filterMapGranted = Map.of(
-      Constants.STATUS, Status.GRANTED.getStatus()
-    );
-
-    Future<List<OrganizationCreateRequest>> pendingFuture = createRequestDAO.getAllWithFilters(filterMapPending);
-    Future<List<OrganizationCreateRequest>> grantedFuture = createRequestDAO.getAllWithFilters(filterMapGranted);
-
-    return Future.all(pendingFuture, grantedFuture)
-      .map(cf -> {
-        List<OrganizationCreateRequest> merged = new ArrayList<>();
-        merged.addAll(cf.resultAt(0));
-        merged.addAll(cf.resultAt(1));
-        return merged;
-      });
-  }
-
-  @Override
-  public
-  Future <PaginatedResult<OrganizationCreateRequest>> getAllOrganizationCreateRequests(PaginatedRequest request) {
-    return createRequestDAO.getAllWithFilters(request);
+    return lifecycle.createOrganizationRequest(request);
   }
 
   @Override
   public Future<OrganizationCreateRequest> getOrganizationCreateRequestById(UUID requestId) {
-    return createRequestDAO.get(requestId);
+    return lifecycle.getOrganizationCreateRequestById(requestId);
   }
 
   @Override
-  public Future<OrganizationJoinRequest> getOrganizationJoinRequestById(UUID requestId) {
-    return joinRequestDAO.get(requestId);
+  public Future<List<OrganizationCreateRequest>> getOrganizationCreateRequestsByUserId(UUID userId) {
+    return lifecycle.getOrganizationCreateRequestsByUserId(userId);
   }
 
   @Override
-  public Future<ProviderRoleRequest> getProviderRequestById(UUID requestId) {
-    return providerRequestDAO.get(requestId);
+  public Future<List<OrganizationCreateRequest>> getAllPendingGrantedOrganizationCreateRequests() {
+    return lifecycle.getAllPendingGrantedOrganizationCreateRequests();
   }
 
+  @Override
+  public Future<PaginatedResult<OrganizationCreateRequest>> getAllOrganizationCreateRequests(PaginatedRequest request) {
+    return lifecycle.getAllOrganizationCreateRequests(request);
+  }
 
   @Override
   public Future<Boolean> updateOrganizationCreateRequestStatus(UUID requestId, Status status) {
-    Map<String, Object> conditionMap = Map.of(
-      Constants.ORG_CREATE_ID, requestId.toString()
-    );
-    Map<String, Object> updateDataMap = Map.of(
-      Constants.STATUS, status.getStatus()
-    );
-
-    return createRequestDAO.update(conditionMap, updateDataMap).
-      compose(updated -> {
-        if (Status.GRANTED.getStatus().equals(status.getStatus())) {
-          return createOrganizationFromRequest(requestId);
-        }
-        return Future.succeededFuture(true);
-      }).recover(dxEx -> {
-        if (dxEx instanceof NoRowFoundException) {
-          return Future.failedFuture(
-            new DxNotFoundException("No request found with given ID", dxEx)
-          );
-        }
-        return Future.failedFuture(dxEx);
-      });
-
+    return lifecycle.updateOrganizationCreateRequestStatus(requestId, status);
   }
 
-
   public Future<Boolean> createOrganizationFromRequest(UUID requestId) {
-    return createRequestDAO.get(requestId)
-      .compose(request -> {
-        Organization org = new Organization(
-          null,
-          request.name(),
-          request.logoPath(),
-          request.entityType(),
-          request.orgSector(),
-          request.websiteLink(),
-          request.address(),
-          request.certificatePath(),
-          request.pancardPath(),
-          request.relevantDocPath(),
-          request.letterOfAuthorization(),
-          null,
-          null
-        );
-        return orgDAO.create(org)
-          .compose(createdOrg ->
-          {
-            OrganizationUser orgUser = new OrganizationUser(
-              null,
-              createdOrg.id(),
-              request.requestedBy(),
-              request.userName(),
-              Role.ADMIN,
-              request.jobTitle(),
-              request.empId(),
-              request.orgManagerphoneNo(),
-              request.managerEmail(),
-              null,
-              null
-            );
-            //TODO need to revert the update status and create organisation request if fails
-            return Future.all(
-              keycloakUserService.addRoleToUser(request.requestedBy(), DxRole.ORG_ADMIN),
-              keycloakUserService.addRoleToUser(request.requestedBy(), DxRole.PROVIDER),
-              keycloakUserService.setOrganisationDetails(request.requestedBy(), createdOrg.id(), createdOrg.orgName())
-            ).compose(compositeResult -> {
-              boolean roleAssigned1 = compositeResult.resultAt(0);
-              boolean roleAssigned2 = compositeResult.resultAt(1);
-
-              boolean orgDetailsSet = compositeResult.resultAt(2);
-
-              if (!roleAssigned1) {
-                return Future.failedFuture("Failed to assign ORG_ADMIN role to user");
-              }
-
-              if (!roleAssigned2) {
-                return Future.failedFuture("Failed to assign PROVIDER role to user");
-              }
-
-              if (!orgDetailsSet) {
-                return Future.failedFuture("Failed to set organization details for user");
-              }
-
-              return orgUserDAO.create(orgUser).map(user -> true);
-            });
-
-          });
-      });
+    return lifecycle.createOrganizationFromRequest(requestId);
   }
 
   @Override
   public Future<Organization> getOrganizationById(UUID orgId) {
-    return orgDAO.get(orgId);
+    return lifecycle.getOrganizationById(orgId);
   }
 
   @Override
   public Future<List<Organization>> getOrganizations() {
-    return orgDAO.getAll();
+    return lifecycle.getOrganizations();
   }
 
   @Override
   public Future<PaginatedResult<Organization>> getOrganizations(PaginatedRequest paginatedRequest) {
-    return orgDAO.getAll(paginatedRequest);
+    return lifecycle.getOrganizations(paginatedRequest);
+  }
+
+  @Override
+  public Future<Organization> getOrganizationByName(String orgName) {
+    return lifecycle.getOrganizationByName(orgName);
   }
 
   @Override
   public Future<Organization> updateOrganizationById(UUID orgId, UpdateOrgDTO updateOrgDTO) {
-
-    Map<String, Object> conditionMap = Map.of(
-      Constants.ORG_CREATE_ID, orgId.toString()
-    );
-    Map<String, Object> updateDataMap = updateOrgDTO.toNonEmptyFieldsMap();
-
-    return orgDAO.update(conditionMap, updateDataMap).compose(
-      updated -> orgDAO.get(orgId)
-    );
+    return lifecycle.updateOrganizationById(orgId, updateOrgDTO);
   }
 
   @Override
   public Future<Boolean> deleteOrganization(UUID orgId) {
-    return orgDAO.delete(orgId);
+    return lifecycle.deleteOrganization(orgId);
   }
+
+  @Override
+  public Future<Boolean> deleteOrganizationRequestById(UUID requestId) {
+    return lifecycle.deleteOrganizationRequestById(requestId);
+  }
+
+  // ============ Organization Membership (join requests, users) ============
 
   @Override
   public Future<OrganizationJoinRequest> joinOrganizationRequest(OrganizationJoinRequest organizationJoinRequest) {
-    return joinRequestDAO.create(organizationJoinRequest);
+    return membership.joinOrganizationRequest(organizationJoinRequest);
   }
-
 
   @Override
-  public Future<Boolean> updateOrganizationJoinRequestStatus(UUID requestId, Status status) {
-    Map<String, Object> conditionMap = Map.of(
-      Constants.ORG_JOIN_ID, requestId.toString()
-    );
-    Map<String, Object> updateDataMap = Map.of(
-      Constants.STATUS, status.getStatus()
-    );
-
-    return joinRequestDAO.update(conditionMap, updateDataMap)
-      .compose(approved -> {
-        if (Status.GRANTED.getStatus().equals(status.getStatus())) {
-          return addUserToOrganizationFromRequest(requestId);
-        }
-        return Future.succeededFuture(true);
-      }).recover(err -> {
-        BaseDxException dxEx = BaseDxException.from(err);
-        if (dxEx instanceof NoRowFoundException) {
-          return Future.failedFuture(
-            new DxNotFoundException("No request found with given ID", dxEx)
-          );
-        }
-        return Future.failedFuture(dxEx);
-      });
-  }
-
-  public Future<Boolean> addUserToOrganizationFromRequest(UUID requestId) {
-    return joinRequestDAO.get(requestId)
-      .compose(joinRequest -> {
-        UUID orgId = joinRequest.organizationId();
-        UUID userId = joinRequest.userId();
-
-        return orgDAO.get(orgId)
-          .compose(organization -> {
-            OrganizationUser newOrgUser = new OrganizationUser(
-              null,
-              orgId,
-              userId,
-              joinRequest.userName(),
-              Role.USER,
-              joinRequest.jobTitle(),
-              joinRequest.empId(),
-              null,
-              joinRequest.officialEmail(),
-              null,
-              null
-            );
-
-            return orgUserDAO.create(newOrgUser)
-              .compose(createdUser ->
-                // Call Keycloak to set organization details
-                keycloakUserService.setOrganisationDetails(
-                  userId,
-                  orgId,
-                  organization.orgName()
-                )
-              )
-              .compose(success -> {
-                if (!success) {
-                  return Future.failedFuture("Failed to set organization details in Keycloak");
-                }
-                return Future.succeededFuture(true);
-              });
-          });
-      });
+  public Future<OrganizationJoinRequest> getOrganizationJoinRequestById(UUID requestId) {
+    return membership.getOrganizationJoinRequestById(requestId);
   }
 
   @Override
   public Future<PaginatedResult<OrganizationJoinRequest>> getOrganizationPendingJoinRequests(PaginatedRequest paginatedRequest) {
-    //TODO need to create another funtion for this
-//        Map<String, Object> filterMap = Map.of(
-//                Constants.ORGANIZATION_ID, orgId.toString()
-//        );
-
-    return joinRequestDAO.getAllWithFilters(paginatedRequest);
+    return membership.getOrganizationPendingJoinRequests(paginatedRequest);
   }
 
+  @Override
+  public Future<Boolean> updateOrganizationJoinRequestStatus(
+      UUID requestId, Status status, UUID approverUserId) {
+    return membership.updateOrganizationJoinRequestStatus(requestId, status, approverUserId);
+  }
 
+  @Override
+  public Future<OrganizationJoinRequest> withdrawJoinRequest(UUID userId, UUID requestId) {
+    return membership.withdrawJoinRequest(userId, requestId);
+  }
+
+  public Future<Boolean> addUserToOrganizationFromRequest(UUID requestId) {
+    return membership.addUserToOrganizationFromRequest(requestId);
+  }
+
+  @Override
+  public Future<List<OrganizationJoinRequest>> getOrganizationJoinRequestsByUser(UUID userId) {
+    return membership.getOrganizationJoinRequestsByUser(userId);
+  }
+
+  @Override
+  public Future<List<OrganizationJoinRequest>> getOrganizationJoinRequestsByOrgId(UUID orgId) {
+    return membership.getOrganizationJoinRequestsByOrgId(orgId);
+  }
+
+  @Override
+  public Future<List<OrganizationJoinRequest>> getAllOrganizationJoinRequests() {
+    return membership.getAllOrganizationJoinRequests();
+  }
 
   @Override
   public Future<PaginatedResult<OrganizationUser>> getOrganizationUsers(PaginatedRequest paginatedRequest) {
-//        Map<String, Object> filterMap = Map.of(Constants.ORGANIZATION_ID, paginatedRequest);
-    return orgUserDAO.getAllWithFilters(paginatedRequest);
+    return membership.getOrganizationUsers(paginatedRequest);
   }
-
 
   @Override
   public Future<Boolean> updateUserRole(UUID orgId, UUID userId, Role role) {
-
-    Map<String, Object> conditionMap = Map.of(
-      Constants.ORGANIZATION_ID, orgId.toString(),
-      Constants.USER_ID, userId.toString()
-    );
-
-
-    Map<String, Object> updateDataMap = Map.of(
-      Constants.ROLE, role.getRoleName()
-    );
-
-    return orgUserDAO.update(conditionMap, updateDataMap).map(
-      true
-    ).recover(err -> {
-      BaseDxException dxEx = BaseDxException.from(err);
-      if (dxEx instanceof NoRowFoundException) {
-        return Future.failedFuture(
-          new DxNotFoundException("No matching user found in organization", dxEx)
-        );
-      }
-      return Future.failedFuture(dxEx);
-    });
-  }
-
-  @Override
-  public Future<Boolean> isOrgAdmin(UUID orgid, UUID userid) {
-    return orgUserDAO.isOrgAdmin(orgid, userid);
+    return membership.updateUserRole(orgId, userId, role);
   }
 
   @Override
   public Future<Boolean> deleteOrganizationUser(UUID orgId, UUID userId) {
-    return orgUserDAO.deleteUserByOrgId(orgId, userId)
-      .compose(deleted -> {
-        if (deleted) {
-
-          return keycloakUserService.updateUserAttributes(userId, Map.of(
-              "organisation_id", "",
-              "organisation_name", ""
-            ))
-            .map(v -> true);
-        } else {
-          return Future.succeededFuture(false);
-        }
-      });
+    return membership.deleteOrganizationUser(orgId, userId);
   }
 
   @Override
   public Future<Boolean> deleteProviderUser(UUID userId, UUID orgAdminId, UUID orgId) {
-    return orgUserDAO.deleteUserByOrgId(orgId, userId)
-      .compose(deleted -> {
-        if (deleted) {
-          return keycloakUserService.updateUserAttributes(userId, Map.of(
-              "organisation_id", "",
-              "organisation_name", ""
-            ))
-            .compose(ar-> itemService.ownerShipTransfer(userId.toString(), orgAdminId.toString(), orgId.toString()))
-            .onFailure(err -> LOGGER.error("Failed to update user attributes in Keycloak after deleting organization user", err))
-            .map(v -> true);
-        } else {
-          return Future.succeededFuture(false);
-        }
-      });
+    return membership.deleteProviderUser(userId, orgAdminId, orgId);
   }
-
 
   @Override
   public Future<OrganizationUser> getOrganizationUserInfo(UUID userId) {
-    Map<String, Object> filterMap = Map.of(Constants.USER_ID, userId.toString());
-    return orgUserDAO.getAllWithFilters(filterMap).compose(orgUserList -> {
-      if (orgUserList.isEmpty()) {
-        return Future.failedFuture(new DxNotFoundException("No user found !"));
-      } else if (orgUserList.size() == 1) {
-        return Future.succeededFuture(orgUserList.get(0));
-      } else {
-        LOGGER.error("multiple org users found");
-        return Future.failedFuture(new DxPgException("Some thing went wrong"));
-      }
-    }).recover(
-      err -> {
-        // Log or transform the error if needed
-        return Future.failedFuture(new DxPgException("Some thing went wrong", err));
-      });
+    return membership.getOrganizationUserInfo(userId);
   }
 
   @Override
-  public Future<ProviderRoleRequest> createProviderRequest(ProviderRoleRequest providerRoleRequest) {
-    Map<String, Object> filterMap = Map.of(Constants.USER_ID, providerRoleRequest.userId().toString());
-
-    // check if there is a pending or granted request for the same user
-    // if yes then dont create a new request
-    // if status is rejected then only allow to create a new request
-
-    return providerRequestDAO.getAllWithFilters(filterMap)
-      .compose(requests -> {
-        if (!requests.isEmpty()) {
-          // If there is a pending or granted request, do not create a new one
-          ProviderRoleRequest existingRequest = requests.get(0);
-          if (Status.PENDING.getStatus().equals(existingRequest.status()) ||
-            Status.GRANTED.getStatus().equals(existingRequest.status())) {
-            return Future.failedFuture(new DxConflictException("A pending or granted provider role request already exists for this user"));
-          }
-          else if( Status.REJECTED.getStatus().equals(existingRequest.status())) {
-            // If the existing request is rejected, allow to create a new one
-            LOGGER.info("Existing request is rejected, allowing to create a new provider role request");
-            return providerRequestDAO.create(providerRoleRequest);
-          } else {
-            return Future.failedFuture(new DxConflictException("Provider role request is not in a state that allows creation of a new request"));
-          }
-        }
-        else {
-          // No existing requests found, proceed to create a new one
-          return providerRequestDAO.create(providerRoleRequest);
-        }
-      });
+  public Future<OrganizationUser> getOrganisationUserByUserId(UUID userId) {
+    return membership.getOrganisationUserByUserId(userId);
   }
 
   @Override
-  public Future<Boolean> updateProviderRequestStatus(UUID requestId, Status status) {
-    Map<String, Object> conditionMap = Map.of(
-      Constants.ORG_CREATE_ID, requestId.toString()
-    );
-    Map<String, Object> updateDataMap = Map.of(
-      Constants.STATUS, status.getStatus(),
-      Constants.UPDATED_AT, FORMATTER.format(LocalDateTime.now())
-    );
-
-    return providerRequestDAO.update(conditionMap, updateDataMap)
-      .compose(updated -> {
-        if (Status.GRANTED.getStatus().equals(status.getStatus())) {
-          return providerRequestDAO.get(requestId)
-            .compose(providerRequest -> {
-              // Update role in Keycloak
-              return keycloakUserService.addRoleToUser(
-                  providerRequest.userId(),
-                  DxRole.PROVIDER
-                )
-                .compose(success -> {
-                  if (!success) {
-                    return Future.failedFuture("Failed to assign PROVIDER role in Keycloak");
-                  }
-                  return Future.succeededFuture(true);
-                });
-            });
-        }
-
-        return Future.succeededFuture(true);
-      })
-      .recover(err -> {
-        BaseDxException dxEx = BaseDxException.from(err);
-        if (dxEx instanceof NoRowFoundException) {
-          return Future.failedFuture(
-            new DxNotFoundException("No request found with given ID", dxEx)
-          );
-        }
-        return Future.failedFuture(dxEx);
-      });
-  }
-
-  //TODO need to create another one
-  public Future<List<ProviderRoleRequest>> getAllPendingProviderRoleRequests(UUID orgId) {
-    Map<String, Object> filterMap = Map.of(
-      Constants.ORGANIZATION_ID, orgId.toString()
-    );
-    return providerRequestDAO.getAllWithFilters(filterMap);
+  public Future<List<OrganizationUser>> getOrganisationAdminId(UUID orgId) {
+    return membership.getOrganisationAdminId(orgId);
   }
 
   @Override
-  public Future<PaginatedResult<ProviderRoleRequest>> getAllPendingProviderRoleRequests(PaginatedRequest paginatedRequest) {
-    return providerRequestDAO.getAllWithFilters(paginatedRequest);
-  }
-
-
-  @Override
-  public Future<Organization> getOrganizationByName(String orgName) {
-
-    Map<String, Object> filterMap = Map.of(Constants.ORG_NAME, orgName);
-
-    return orgDAO.getAllWithFilters(filterMap).compose(orgList -> {
-      if (orgList.isEmpty()) {
-        return Future.failedFuture("Organization not found with name: " + orgName);
-      } else if (orgList.size() == 1) {
-        return Future.succeededFuture(orgList.get(0));
-      } else {
-        return Future.failedFuture("Multiple organizations found with name: " + orgName);
-      }
-    }).recover(
-      err -> {
-        // Log or transform the error if needed
-        return Future.failedFuture("Failed to fetch organization: " + err.getMessage());
-      });
-  }
-
-  public Future<Boolean> hasPendingProviderRole(UUID userId, UUID orgId){
-    Map<String, Object> filterMap = Map.of(
-      Constants.STATUS, Status.PENDING.getStatus(), Constants.USER_ID, userId.toString(), Constants.ORGANIZATION_ID, orgId.toString()
-    );
-
-    return providerRequestDAO.getAllWithFilters(filterMap)
-      .map(list -> !list.isEmpty());
-  }
-
-  public Future<List<OrganizationJoinRequest>> getOrganizationJoinRequestsByUser(UUID userId){
-    Map<String, Object> pendingFilter = Map.of(
-      Constants.USER_ID, userId.toString(),
-      Constants.STATUS, Status.PENDING.getStatus()
-    );
-    Map<String, Object> grantedFilter = Map.of(
-      Constants.USER_ID, userId.toString(),
-      Constants.STATUS, Status.GRANTED.getStatus()
-    );
-
-    Future<List<OrganizationJoinRequest>> pendingFuture = joinRequestDAO.getAllWithFilters(pendingFilter);
-    Future<List<OrganizationJoinRequest>> grantedFuture = joinRequestDAO.getAllWithFilters(grantedFilter);
-
-    return Future.all(pendingFuture, grantedFuture)
-      .map(cf -> {
-        List<OrganizationJoinRequest> merged = new java.util.ArrayList<>();
-        merged.addAll(cf.resultAt(0));
-        merged.addAll(cf.resultAt(1));
-        return merged;
-      });
-  }
-
-  public Future<List<OrganizationCreateRequest>> getOrganizationCreateRequestsByUserId(UUID userId){
-
-    Map<String, Object> pendingFilter = Map.of(
-      Constants.REQUESTED_BY, userId.toString(),
-      Constants.STATUS, Status.PENDING.getStatus()
-    );
-    Map<String, Object> grantedFilter = Map.of(
-      Constants.REQUESTED_BY, userId.toString(),
-      Constants.STATUS, Status.GRANTED.getStatus()
-    );
-
-    Future<List<OrganizationCreateRequest>> pendingFuture = createRequestDAO.getAllWithFilters(pendingFilter);
-    Future<List<OrganizationCreateRequest>> grantedFuture = createRequestDAO.getAllWithFilters(grantedFilter);
-
-    return Future.all(pendingFuture, grantedFuture)
-      .map(cf -> {
-        List<OrganizationCreateRequest> merged = new java.util.ArrayList<>();
-        merged.addAll(cf.resultAt(0));
-        merged.addAll(cf.resultAt(1));
-        return merged;
-      });
-  }
-
-  public Future<Boolean> createProviderRole(ProviderRoleRequest providerRoleRequest) {
-
-    // Checks:
-    // 1. User id is present in organisation of org admin
-    // 2. If user Id is present in provider request and role status is pending, then change the status to granted
-
-    UUID orgId = providerRoleRequest.orgId();
-    UUID userId = providerRoleRequest.userId();
-    String status = providerRoleRequest.status();
-
-    Map<String, Object> filterMap = Map.of(
-      Constants.ORGANIZATION_ID, orgId.toString(),
-      Constants.USER_ID, userId.toString()
-    );
-
-    return orgUserDAO.getAllWithFilters(filterMap).compose(ar -> {
-      if (ar.isEmpty()) {
-        return Future.failedFuture(new DxNotFoundException("User not found in organization"));
-      } else {
-        Map<String, Object> filterMapProviderRole = Map.of(
-          Constants.ORGANIZATION_ID, orgId.toString(),
-          Constants.USER_ID, userId.toString()
-        );
-
-        return providerRequestDAO.getAllWithFilters(filterMapProviderRole)
-          .compose(providerRoleRequests -> {
-            if (providerRoleRequests.isEmpty()) {
-              return providerRequestDAO.create(providerRoleRequest)
-                .compose(createdRequest -> keycloakUserService.addRoleToUser(userId, DxRole.PROVIDER)
-                  .compose(success -> {
-                    if (!success) {
-                      return Future.failedFuture("Failed to assign PROVIDER role in Keycloak");
-                    }
-                    return Future.succeededFuture(true);
-                  }))
-                .recover(err -> {
-                  BaseDxException dxEx = BaseDxException.from(err);
-                  if (dxEx instanceof NoRowFoundException) {
-                    return Future.failedFuture(
-                      new DxNotFoundException("No User found in Keycloak", dxEx)
-                    );
-                  }
-                  return Future.failedFuture(dxEx);
-                });
-            } else {
-              ProviderRoleRequest existingRequest = providerRoleRequests.get(0);
-              if (!Status.PENDING.getStatus().equals(existingRequest.status())) {
-                return Future.failedFuture(new DxConflictException("Provider role request is not in PENDING status"));
-              }
-
-              Map<String, Object> updateDataMap = Map.of(
-                Constants.STATUS, status
-              );
-
-              Map<String, Object> conditionMap = Map.of(
-                Constants.ORG_CREATE_ID, existingRequest.id().toString()
-              );
-              return providerRequestDAO.update(conditionMap, updateDataMap)
-                .compose(updated -> {
-                  return keycloakUserService.addRoleToUser(userId, DxRole.PROVIDER)
-                    .compose(success -> {
-                      if (!success) {
-                        return Future.failedFuture("Failed to assign PROVIDER role in Keycloak");
-                      }
-                      return Future.succeededFuture(true);
-                    });
-                });
-            }
-          }).recover(err -> {
-            BaseDxException dxEx = BaseDxException.from(err);
-            if (dxEx instanceof NoRowFoundException) {
-              return Future.failedFuture(
-                new DxNotFoundException("No Request or  user found in organization", dxEx)
-              );
-            }
-            return Future.failedFuture(dxEx);
-          });
-      }
-    });
-  }
-
-  @Override
-  public Future<List<OrganizationUser>> getOrganisationAdminId(UUID orgId)
-  {
-    Map<String,Object> conditonMap = Map.of(
-      Constants.ORGANIZATION_ID ,orgId.toString(),
-      Constants.ROLE , Role.ADMIN.getRoleName());
-
-    return orgUserDAO.getAllWithFilters(conditonMap);
-  }
-
-  public Future<Boolean> deleteOrganizationJoinRequest(UUID orgId, UUID userId) {
-    Map<String, Object> conditionMap = Map.of(
-      Constants.USER_ID, userId.toString(),
-      Constants.ORGANIZATION_ID, orgId.toString()
-    );
-
-    return joinRequestDAO.getAllWithFilters(conditionMap).compose(ar -> {
-      OrganizationJoinRequest res = ar.isEmpty() ? null : ar.get(0);
-      if (res == null) {
-        return Future.failedFuture(new DxNotFoundException("No join request found for user in organization"));
-      }
-
-      UUID id = res.id();
-
-      return joinRequestDAO.delete(id).compose(success -> {
-        if (!success) {
-          return Future.failedFuture(new DxPgException("Failed to delete join request"));
-        }
-        return Future.succeededFuture(true);
-      });
-    });
-  }
-
-  public Future<Boolean> deleteProviderRoleRequest(UUID orgId, UUID userId) {
-    Map<String, Object> conditionMap = Map.of(
-      Constants.USER_ID, userId.toString(),
-      Constants.ORGANIZATION_ID, orgId.toString()
-    );
-
-    return providerRequestDAO.getAllWithFilters(conditionMap).compose(ar -> {
-      ProviderRoleRequest res = ar.isEmpty() ? null : ar.get(0);
-      if (res == null) {
-        return Future.failedFuture(new DxNotFoundException("No provider request found for user in organization"));
-      }
-
-      UUID id = res.id();
-
-      return providerRequestDAO.delete(id).compose(success -> {
-        if (!success) {
-          return Future.failedFuture(new DxPgException("Failed to delete provider request"));
-        }
-        return Future.succeededFuture(true);
-      });
-    });
+  public Future<Boolean> isOrgAdmin(UUID orgid, UUID userid) {
+    return membership.isOrgAdmin(orgid, userid);
   }
 
   @Override
   public Future<UUID> getUserOrgAdminId(UUID orgId) {
-    Map<String, Object> conditionMap = Map.of(
-      Constants.ORGANIZATION_ID, orgId.toString(),
-      Constants.ROLE, Role.ADMIN.getRoleName()
-    );
-
-    return orgUserDAO.getAllWithFilters(conditionMap).compose(orgUsers -> {
-      if (orgUsers.isEmpty()) {
-        return Future.failedFuture(new DxNotFoundException("No organization admin found for the given organization ID"));
-      }
-      return Future.succeededFuture(orgUsers.get(0).userId());
-    });
+    return membership.getUserOrgAdminId(orgId);
   }
 
+  @Override
+  public Future<Boolean> deleteOrganizationJoinRequest(UUID orgId, UUID userId) {
+    return membership.deleteOrganizationJoinRequest(orgId, userId);
+  }
 
+  @Override
+  public Future<Boolean> deleteOrganizationJoinRequestById(UUID requestId) {
+    return membership.deleteOrganizationJoinRequestById(requestId);
+  }
+
+  @Override
+  public Future<List<JsonObject>> enrichWithUserInfo(List<JsonObject> computeReqs) {
+    return membership.enrichWithUserInfo(computeReqs);
+  }
+
+  // ============ Provider Role (provider requests, role management) ============
+
+  @Override
+  public Future<ProviderRoleRequest> createProviderRequest(ProviderRoleRequest providerRoleRequest) {
+    return providerRole.createProviderRequest(providerRoleRequest);
+  }
+
+  @Override
+  public Future<Boolean> updateProviderRequestStatus(
+      UUID requestId, Status status, UUID approverUserId) {
+    return providerRole.updateProviderRequestStatus(requestId, status, approverUserId);
+  }
+
+  @Override
+  public Future<List<ProviderRoleRequest>> getAllPendingProviderRoleRequests(UUID orgId) {
+    return providerRole.getAllPendingProviderRoleRequests(orgId);
+  }
+
+  @Override
+  public Future<PaginatedResult<ProviderRoleRequest>> getAllPendingProviderRoleRequests(PaginatedRequest paginatedRequest) {
+    return providerRole.getAllPendingProviderRoleRequests(paginatedRequest);
+  }
+
+  @Override
+  public Future<Boolean> hasPendingProviderRole(UUID userId, UUID orgId) {
+    return providerRole.hasPendingProviderRole(userId, orgId);
+  }
+
+  @Override
+  public Future<Boolean> createProviderRole(ProviderRoleRequest providerRoleRequest) {
+    return providerRole.createProviderRole(providerRoleRequest);
+  }
+
+  @Override
+  public Future<ProviderRoleRequest> getProviderRequestById(UUID requestId) {
+    return providerRole.getProviderRequestById(requestId);
+  }
+
+  @Override
+  public Future<ProviderRoleRequest> getProviderRoleRequestByUserId(UUID userId) {
+    return providerRole.getProviderRoleRequestByUserId(userId);
+  }
+
+  @Override
+  public Future<Boolean> deleteProviderRoleRequest(UUID orgId, UUID userId) {
+    return providerRole.deleteProviderRoleRequest(orgId, userId);
+  }
+
+  @Override
+  public Future<Boolean> deleteProviderRoleRequestById(UUID id) {
+    return providerRole.deleteProviderRoleRequestById(id);
+  }
+
+  @Override
+  public Future<Boolean> hasPendingPlatformProviderRole(UUID userId) {
+    return providerRole.hasPendingPlatformProviderRole(userId);
+  }
+
+  @Override
+  public Future<PaginatedResult<ProviderRoleRequest>> getAllPlatformProviderRequests(PaginatedRequest request) {
+    return providerRole.getAllPlatformProviderRequests(request);
+  }
+
+  @Override
+  public Future<ProviderRoleRequest> getPlatformProviderRoleRequestByUserId(UUID userId) {
+    return providerRole.getPlatformProviderRoleRequestByUserId(userId);
+  }
+
+  @Override
+  public Future<List<OrganizationHierarchyNode>> getHierarchyNodes(UUID organizationId) {
+
+    return organizationHierarchyService.getOrganizationNodes(organizationId);
+  }
+
+  @Override
+  public Future<OrganizationHierarchyNode> getHierarchyNode(UUID organizationId, UUID nodeId) {
+
+    return organizationHierarchyService.getNode(organizationId, nodeId);
+  }
+
+  @Override
+  public Future<List<OrganizationHierarchyNode>> getHierarchyNodeChildren(
+      UUID organizationId, UUID nodeId) {
+
+    return organizationHierarchyService.getChildren(organizationId, nodeId);
+  }
+
+  @Override
+  public Future<List<OrganizationHierarchyNode>> getHierarchyNodeDescendants(
+      UUID organizationId, UUID nodeId) {
+
+    return organizationHierarchyService.getDescendants(organizationId, nodeId);
+  }
+
+  @Override
+  public Future<List<UUID>> getDescendantNodeIds(UUID organizationId, UUID nodeId) {
+    return organizationHierarchyService.getDescendantNodeIds(organizationId, nodeId);
+  }
+
+  @Override
+  public Future<Boolean> isAncestorOrSelfNode(
+      UUID organizationId, UUID ancestorNodeId, UUID targetNodeId, boolean strict) {
+    return organizationHierarchyService.isAncestorOrSelf(
+        organizationId, ancestorNodeId, targetNodeId, strict);
+  }
+
+  @Override
+  public Future<OrganizationHierarchyDefinitionRequest> createHierarchyDefinitionRequest(
+      UUID organizationId, List<ProposedDepartmentNode> departments) {
+    return hierarchyDefinitionService.createDefinitionRequest(organizationId, departments);
+  }
+
+  @Override
+  public Future<OrganizationHierarchyDefinitionRequest> getHierarchyDefinitionRequestById(
+      UUID requestId) {
+    return hierarchyDefinitionService.getDefinitionRequestById(requestId);
+  }
+
+  @Override
+  public Future<List<OrganizationHierarchyDefinitionRequest>> getAllHierarchyDefinitionRequests(
+      UUID organizationId) {
+    return hierarchyDefinitionService.getAllDefinitionRequests(organizationId);
+  }
+
+  @Override
+  public Future<OrganizationHierarchyDefinitionRequest> updateHierarchyDefinitionRequestStatus(
+      UUID requestId, Status status, String remarks) {
+    return hierarchyDefinitionService.updateDefinitionRequestStatus(requestId, status, remarks);
+  }
+
+  @Override
+  public Future<OrganizationUser> assignDeptAdmin(
+      UUID organizationId, UUID assignerUserId, UUID targetUserId, UUID departmentNodeId) {
+    return deptAdminService.assignDeptAdmin(
+        organizationId, assignerUserId, targetUserId, departmentNodeId);
+  }
+
+  @Override
+  public Future<DeptAdminRequest> requestDeptAdmin(UUID organizationId, UUID requesterUserId) {
+    return deptAdminService.requestDeptAdmin(organizationId, requesterUserId);
+  }
+
+  @Override
+  public Future<DeptAdminRequest> getDeptAdminRequestById(UUID requestId) {
+    return deptAdminService.getDeptAdminRequestById(requestId);
+  }
+
+  @Override
+  public Future<OrganizationUser> updateDeptAdminRequestStatus(
+      UUID organizationId, UUID requestId, UUID approverUserId, Status status, String remarks) {
+    return deptAdminService.updateDeptAdminRequestStatus(
+        organizationId, requestId, approverUserId, status, remarks);
+  }
+
+  @Override
+  public Future<Boolean> isAuthorizedOverNode(
+      UUID organizationId, UUID userId, UUID targetNodeId) {
+    return deptAdminService.isAuthorizedOverNode(organizationId, userId, targetNodeId);
+  }
 }
-

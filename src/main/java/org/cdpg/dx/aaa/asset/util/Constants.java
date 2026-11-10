@@ -13,10 +13,10 @@ public class Constants {
   public static final String REQUESTED_AT = "requested_at";
   public static final String ADDITONAL_INFO = "additional_info";
   public static final String UPDATED_AT = "updated_at";
+  public static final String ASSET = "asset";
 
 
   public static final Map<String, String> ALLOWED_FILTER_MAP_FOR_ASSET_REQUEST = Map.of(
-    "type", TYPE,
     "status", STATUS,
     "userId" , USER_ID,
     "assetId", ASSET_ID,

@@ -1,146 +1,391 @@
 package org.cdpg.dx.aaa.apiserver;
 
-import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.*;
+import static org.cdpg.dx.aaa.common.Constants.CENTRAL_CAT_DOC_INDEX;
+import static org.cdpg.dx.aaa.common.Constants.DELETED_DOCS_INDEX;
+import static org.cdpg.dx.aaa.common.Constants.DOC_INDEX;
+import static org.cdpg.dx.aaa.common.Constants.IS_CENTRAL_CATALOGUE_ENABLED;
+import static org.cdpg.dx.aaa.common.Constants.UPLOADED_BY;
+import static org.cdpg.dx.aaa.common.Constants.VOC_CONTEXT;
+import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.aaa.accessReport.controller.AccessReportController;
-import org.cdpg.dx.aaa.accessReport.factory.AccessReportFactory;
-import org.cdpg.dx.aaa.accessRequest.controller.AccessRequestController;
-import org.cdpg.dx.aaa.accessRequest.factory.AccessRequestFactory;
+import org.cdpg.dx.aaa.ActivityReport.controller.ActivityReportController;
+import org.cdpg.dx.aaa.ActivityReport.factory.ActivityReportControllerFactory;
+import org.cdpg.dx.aaa.aclserver.factory.AclServerControllerFactory;
+import org.cdpg.dx.aaa.activity.controller.ActivityController;
+import org.cdpg.dx.aaa.activity.factory.ActivityControllerFactory;
 import org.cdpg.dx.aaa.admin.controller.AdminController;
 import org.cdpg.dx.aaa.admin.handler.AdminHandler;
+import org.cdpg.dx.aaa.appCredentials.factory.AppCredentialsControllerFactory;
 import org.cdpg.dx.aaa.asset.controller.AssetController;
 import org.cdpg.dx.aaa.asset.factory.AssetFactory;
 import org.cdpg.dx.aaa.asset.handler.AssetHandler;
-import org.cdpg.dx.aaa.clientSecret.controller.ClientController;
+import org.cdpg.dx.aaa.central.catalogue.list.controller.CentralListController;
+import org.cdpg.dx.aaa.central.catalogue.list.factory.CentralListControllerFactory;
+import org.cdpg.dx.aaa.central.catalogue.search.controller.CentralSearchController;
+import org.cdpg.dx.aaa.central.catalogue.search.factory.CentralSearchControllerFactory;
 import org.cdpg.dx.aaa.clientSecret.factory.ClientControllerFactory;
+import org.cdpg.dx.aaa.connector.service.ConnectorService;
+import org.cdpg.dx.aaa.connector.service.ConnectorServiceImpl;
+import org.cdpg.dx.aaa.conversation.factory.ConversationControllerFactory;
 import org.cdpg.dx.aaa.credit.factory.CreditControllerFactory;
-import org.cdpg.dx.aaa.credit.service.CreditService;
-import org.cdpg.dx.aaa.email.util.EmailComposer;
+import org.cdpg.dx.aaa.delegation.ItemOwnershipValidator;
+import org.cdpg.dx.aaa.delegation.OrgOwnershipValidator;
+import org.cdpg.dx.aaa.delegation.factory.DelegationControllerFactory;
+import org.cdpg.dx.aaa.delegationReport.controller.DelegationReportController;
+import org.cdpg.dx.aaa.delegationReport.factory.DelegationReportControllerFactory;
+import org.cdpg.dx.aaa.ingestion.service.IngestionService;
+import org.cdpg.dx.aaa.ingestion.service.IngestionServiceImpl;
+import org.cdpg.dx.aaa.interaction.v2.factory.UserInteractionV2controllerFactory;
 import org.cdpg.dx.aaa.item.controller.ItemController;
 import org.cdpg.dx.aaa.item.factory.ItemControllerFactory;
-import org.cdpg.dx.aaa.item.service.ItemService;
-import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
 import org.cdpg.dx.aaa.kyc.controller.KYCController;
 import org.cdpg.dx.aaa.kyc.factory.KYCFactory;
 import org.cdpg.dx.aaa.kyc.handler.KYCHandler;
+import org.cdpg.dx.aaa.leaderboard.factory.LeaderboardControllerFactory;
 import org.cdpg.dx.aaa.list.controller.ListController;
 import org.cdpg.dx.aaa.list.factory.ListControllerFactory;
+import org.cdpg.dx.aaa.organization.controller.OrganizationReportController;
 import org.cdpg.dx.aaa.organization.factory.OrganizationControllerFactory;
-import org.cdpg.dx.aaa.organization.service.OrganizationService;
-import org.cdpg.dx.aaa.publicKey.controller.PublicController;
+import org.cdpg.dx.aaa.organization.factory.OrganizationReportControllerFactory;
 import org.cdpg.dx.aaa.publicKey.factory.PublicKeycontrllerFactory;
+import org.cdpg.dx.aaa.resourceserver.factory.ResourceServerControllerFactory;
 import org.cdpg.dx.aaa.search.controller.SearchController;
 import org.cdpg.dx.aaa.search.factory.SearchControllerFactory;
+import org.cdpg.dx.aaa.shareAssets.dao.VisibilityDao;
+import org.cdpg.dx.aaa.shareAssets.dao.impl.VisibilityDaoImpl;
+import org.cdpg.dx.aaa.shareAssets.factory.VisibilityControllerFactory;
+import org.cdpg.dx.aaa.shareAssets.service.VisibilityService;
+import org.cdpg.dx.aaa.shareAssets.service.impl.VisibilityServiceImpl;
+import org.cdpg.dx.aaa.subscription.factory.SubscriptionControllerFactory;
 import org.cdpg.dx.aaa.token.controller.TokenController;
+import org.cdpg.dx.aaa.token.factory.AppTokenControllerFactory;
 import org.cdpg.dx.aaa.token.factory.TokenControllerFactory;
-import org.cdpg.dx.aaa.user.service.UserService;
-import org.cdpg.dx.aaa.user.service.UserServiceImpl;
-import org.cdpg.dx.auditing.handler.AuditingHandler;
-import org.cdpg.dx.database.elastic.service.ElasticsearchService;
-import org.cdpg.dx.database.postgres.service.PostgresService;
-import org.cdpg.dx.databroker.service.DataBrokerService;
-import org.cdpg.dx.email.service.EmailService;
-import org.cdpg.dx.keycloak.service.KeycloakUserService;
-import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
+import org.cdpg.dx.aaa.user.factory.UserControllerFactory;
+import org.cdpg.dx.apiserver.ApiController;
+import org.cdpg.dx.common.URNGenerator;
 
+/**
+ * Creates and wires all API controllers for the application.
+ *
+ * <p>Uses {@link InfrastructureServices} for low-level service proxies and {@link SharedServices}
+ * for domain services, eliminating the need to pass dozens of individual parameters.
+ */
 public class ControllerFactory {
   private static final Logger LOGGER = LogManager.getLogger(ControllerFactory.class);
 
   private ControllerFactory() {}
 
-  public static List<ApiController> createControllers(Vertx vertx, JsonObject config) {
+  public static List<ApiController> createControllers(
+      Vertx vertx, JsonObject config, URNGenerator urnGenerator) {
 
-    final String docIndex = config.getString("docIndex");
-    final String vocContext = config.getString("vocContext");
+    // ── Config values ──
+    boolean isCentralCatEnabled = config.getBoolean(IS_CENTRAL_CATALOGUE_ENABLED, false);
 
-    PostgresService pgService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
-    DataBrokerService dataBrokerService =
-        DataBrokerService.createProxy(vertx, DATA_BROKER_SERVICE_ADDRESS);
-    EmailService emailService = EmailService.createProxy(vertx, EMAIL_SERVICE_ADDRESS);
-    ElasticsearchService esService =
-        ElasticsearchService.createProxy(vertx, ELASTIC_SERVICE_ADDRESS);
+    // ── Infrastructure & shared services ──
+    InfrastructureServices infra = InfrastructureServices.create(vertx, isCentralCatEnabled);
+    SharedServices shared = SharedServices.create(infra, config);
 
-    ItemService itemService = new ItemServiceImpl(esService, docIndex);
+    final String docIndex = config.getString(DOC_INDEX);
+    final String deletedDocsIndex = config.getString(DELETED_DOCS_INDEX);
+    final String centralCatDocIndex = config.getString(CENTRAL_CAT_DOC_INDEX);
+    final String vocContext = config.getString(VOC_CONTEXT);
+    final String apdURL = config.getString(APD_URL);
+    final String uploadedBy = config.getString(UPLOADED_BY);
+    final String dataPlaneUrl = config.getString("dataPlaneUrl");
+    final String controlPlaneUrl = config.getString("controlPlaneUrl");
+    final String controlPlaneDomain = config.getString("controlPlaneDomain");
+    final String ogcDataPlaneUrl = config.getString("ogcDataPlaneUrl");
+    final Boolean isKycRequired = config.getBoolean("kycRequired", false);
+    boolean isEdgeCatalogue = config.getBoolean("isEdgeCatalogue", false);
+    boolean isStandalone = config.getBoolean("isStandalone", false);
 
-    AuditingHandler auditingHandler = new AuditingHandler(dataBrokerService);
-    KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config);
-    CreditService creditService =
-        CreditControllerFactory.createService(pgService, keycloakUserService, config);
-    OrganizationService organizationService =
-        OrganizationControllerFactory.createService(pgService, keycloakUserService, itemService);
-    UserService userService =
-        new UserServiceImpl(keycloakUserService, organizationService, creditService);
-    EmailComposer emailComposer =
-        new EmailComposer(
-            emailService,
-            keycloakUserService,
-            config,
-            organizationService,
-            userService,
-            creditService);
+    // ── Validators ──
+    ItemOwnershipValidator itemOwnershipValidator =
+        new ItemOwnershipValidator(shared.itemService());
+    OrgOwnershipValidator orgOwnershipValidator =
+        new OrgOwnershipValidator(shared.organizationService());
 
-    AssetHandler assetHandler = AssetFactory.createHandler(pgService, config, emailComposer);
-    ApiController assetController = new AssetController(assetHandler, auditingHandler);
+    // ── Messaging services ──
+    IngestionService ingestionService = new IngestionServiceImpl(infra.dataBrokerService());
+    String publishExchange = config.getString("publishExchange");
+    ConnectorService connectorService =
+        new ConnectorServiceImpl(infra.dataBrokerService(), publishExchange);
 
-    ApiController creditApiController =
-        CreditControllerFactory.create(creditService, emailComposer, userService);
-    KYCHandler kycHandler = KYCFactory.createHandler(vertx, config, creditService, pgService);
-    ApiController kycController = new KYCController(kycHandler);
+    // ── Controllers ──
+    List<ApiController> controllers = new ArrayList<>();
+
+    // Activity
+    ActivityController activityController =
+        ActivityControllerFactory.create(infra.pgService(), urnGenerator);
+    controllers.add(activityController);
+
+    ActivityReportController activityReportController =
+        ActivityReportControllerFactory.create(infra.pgService(), vertx);
+    controllers.add(activityReportController);
+
+    DelegationReportController delegationReportController =
+        DelegationReportControllerFactory.create(infra.pgService(), vertx);
+    controllers.add(delegationReportController);
+
+    // Organization
     ApiController organizationController =
         OrganizationControllerFactory.create(
-            organizationService,
-            userService,
-            auditingHandler,
-            emailComposer,
-            vertx,
-            pgService,
-            creditService,
-            keycloakUserService);
+            shared.userService(),
+            shared.auditingHandler(),
+            shared.emailComposer(),
+            infra.pgService(),
+            infra.esService(),
+            shared.keycloakUserService(),
+            urnGenerator,
+            infra.webClient(),
+            isKycRequired,
+            docIndex,
+            deletedDocsIndex,
+            apdURL);
+    controllers.add(organizationController);
 
+    // Provider roles (org-based + platform track)
+    controllers.add(
+        OrganizationControllerFactory.createProviderController(
+            shared.organizationService(),
+            shared.userService(),
+            shared.emailComposer(),
+            urnGenerator,
+            shared.auditingHandler(),
+            infra.pgService(),
+            isKycRequired));
+
+    OrganizationReportController organizationReportController =
+        OrganizationReportControllerFactory.create(vertx, infra.pgService());
+    controllers.add(organizationReportController);
+
+    // Credit & KYC
+    ApiController creditApiController =
+        CreditControllerFactory.create(
+            shared.creditService(),
+            shared.emailComposer(),
+            shared.userService(),
+            shared.organizationService(),
+            shared.keycloakUserService(),
+            shared.auditingHandler(),
+            urnGenerator,
+            isKycRequired);
+    controllers.add(creditApiController);
+
+    KYCHandler kycHandler =
+        KYCFactory.createHandler(
+            vertx, config, shared.creditService(), infra.pgService(), urnGenerator);
+    controllers.add(new KYCController(kycHandler, shared.auditingHandler()));
+
+    // Admin
     AdminHandler adminHandler =
-        new AdminHandler(userService, keycloakUserService, creditService, organizationService);
-    ApiController adminController = new AdminController(adminHandler);
+        new AdminHandler(
+            shared.userService(),
+            shared.keycloakUserService(),
+            shared.creditService(),
+            shared.organizationService(),
+            urnGenerator,
+            shared.emailComposer());
+    controllers.add(new AdminController(adminHandler));
 
-    AccessRequestController accessRequestController =
-        AccessRequestFactory.createAccessRequestController(
-            pgService, esService, emailService, keycloakUserService, auditingHandler, config);
+    // Asset
+    AssetHandler assetHandler =
+        AssetFactory.createHandler(
+            infra.pgService(), shared.itemService(), config, shared.emailComposer(), urnGenerator);
+    controllers.add(new AssetController(assetHandler, shared.auditingHandler()));
 
-    AccessReportController accessReportController = AccessReportFactory.create(pgService, vertx);
+    // Catalogue (list, search, item CRUD)
+    VisibilityDao visibilityDao = new VisibilityDaoImpl(infra.pgService());
+    VisibilityService visibilityService =
+        new VisibilityServiceImpl(
+            visibilityDao, shared.keycloakUserService(), shared.organizationService());
 
-    final ListController listController =
-        ListControllerFactory.createListController(esService, auditingHandler, docIndex);
-    final SearchController searchController =
-        SearchControllerFactory.createSearchController(esService, auditingHandler, docIndex);
-    final ItemController itemController =
+    ListController listController =
+        ListControllerFactory.createListController(
+            infra.esService(),
+            shared.keycloakUserService(),
+            visibilityService,
+            shared.auditingHandler(),
+            docIndex,
+            urnGenerator);
+    controllers.add(listController);
+
+    SearchController searchController =
+        SearchControllerFactory.createSearchController(
+            infra.esService(),
+            shared.keycloakUserService(),
+            visibilityService,
+            shared.auditingHandler(),
+            docIndex,
+            urnGenerator,
+            infra.pgService());
+    controllers.add(searchController);
+
+    // Central catalogue (optional)
+    if (isCentralCatEnabled) {
+      LOGGER.debug("Central catalogue mode enabled.");
+
+      CentralSearchController centralSearchController =
+          CentralSearchControllerFactory.createSearchController(
+              infra.centralEsService(),
+              shared.keycloakUserService(),
+              shared.auditingHandler(),
+              centralCatDocIndex,
+              urnGenerator);
+      controllers.add(centralSearchController);
+
+      CentralListController centralListController =
+          CentralListControllerFactory.createListController(
+              infra.centralEsService(),
+              shared.keycloakUserService(),
+              shared.auditingHandler(),
+              centralCatDocIndex,
+              urnGenerator);
+      controllers.add(centralListController);
+    }
+
+    ItemController itemController =
         ItemControllerFactory.createCrudController(
-            auditingHandler, esService, docIndex, vocContext);
+            shared.auditingHandler(),
+            infra.esService(),
+            infra.centralEsService(),
+            infra.pgService(),
+            shared.keycloakUserService(),
+            itemOwnershipValidator,
+            centralCatDocIndex,
+            docIndex,
+            deletedDocsIndex,
+            vocContext,
+            apdURL,
+            uploadedBy,
+            urnGenerator,
+            infra.webClient(),
+            ingestionService,
+            connectorService,
+            dataPlaneUrl,
+            controlPlaneUrl,
+            ogcDataPlaneUrl,
+            isCentralCatEnabled,
+            isEdgeCatalogue,
+            isStandalone,
+            shared.delegationService(),
+            shared.emailComposer());
+    controllers.add(itemController);
 
-    // TODO create other controllers
+    // Acl server
+    controllers.add(
+        AclServerControllerFactory.createController(
+            infra.pgService(), shared.auditingHandler(), urnGenerator));
 
-    ClientController controller = ClientControllerFactory.create(pgService);
+    // Resource server
+    controllers.add(
+        ResourceServerControllerFactory.createController(
+            infra.pgService(), shared.auditingHandler(), urnGenerator));
 
-    TokenController tokenController = TokenControllerFactory.create(pgService, config, vertx);
+    // Share Assets
+    controllers.add(
+        VisibilityControllerFactory.createController(
+            infra.pgService(),
+            infra.esService(),
+            shared.keycloakUserService(),
+            shared.organizationService(),
+            docIndex,
+            urnGenerator));
 
-    PublicController publicController = PublicKeycontrllerFactory.create(config, vertx);
+    // Client secrets
+    controllers.add(ClientControllerFactory.create(infra.pgService(), urnGenerator));
 
-    return List.of(
-        organizationController,
-        creditApiController,
-        kycController,
-        adminController,
-        accessRequestController,
-        accessReportController,
-        assetController,
-        listController,
-        searchController,
-        itemController,
-        controller,
-        tokenController,
-        publicController);
+    // Token
+    TokenController tokenController =
+        TokenControllerFactory.create(
+            infra.pgService(),
+            infra.esService(),
+            config,
+            vertx,
+            infra.webClient(),
+            shared.policyDao(),
+            shared.delegationService(),
+            urnGenerator);
+    controllers.add(tokenController);
+
+    // Public keys
+    controllers.add(PublicKeycontrllerFactory.create(config, vertx));
+
+    // User
+    controllers.add(UserControllerFactory.create(shared.userService(), urnGenerator));
+
+    // Delegation
+    controllers.add(
+        DelegationControllerFactory.create(
+            shared.delegationService(),
+            shared.emailComposer(),
+            shared.userService(),
+            urnGenerator,
+            shared.keycloakUserService()));
+
+    // Subscription
+    controllers.add(
+        SubscriptionControllerFactory.create(
+            shared.auditingHandler(),
+            infra.dataBrokerService(),
+            infra.pgService(),
+            urnGenerator,
+            controlPlaneDomain));
+
+    // App credentials & tokens
+    controllers.add(
+        AppCredentialsControllerFactory.create(
+            infra.pgService(),
+            shared.organizationService(),
+            shared.itemService(),
+            urnGenerator,
+            infra.dataBrokerService(),
+            config.getString("appIdRevokeExchange", "revoked-appid"),
+            shared.userService()));
+
+    controllers.add(
+        AppTokenControllerFactory.create(
+            infra.pgService(),
+            shared.keycloakUserService(),
+            shared.organizationService(),
+            shared.userService(),
+            shared.itemService(),
+            urnGenerator,
+            config,
+            vertx,
+            infra.dataBrokerService()));
+
+    // Summary / dashboard
+   // controllers.add(SummaryControllerFactory.create(infra.pgService(), urnGenerator));
+
+    // Leaderboard
+    controllers.add(LeaderboardControllerFactory.create(infra.pgService(), urnGenerator));
+
+    // User interactions v2
+    controllers.add(
+        UserInteractionV2controllerFactory.create(
+            infra.pgService(),
+            shared.itemService(),
+            shared.auditingHandler(),
+            urnGenerator,
+            shared.keycloakUserService()));
+
+    // Request conversations
+    controllers.add(
+        ConversationControllerFactory.create(
+            infra.pgService(),
+            shared.organizationService(),
+            shared.delegationService(),
+            shared.userService(),
+            shared.emailComposer(),
+            urnGenerator));
+
+    return controllers;
   }
 }

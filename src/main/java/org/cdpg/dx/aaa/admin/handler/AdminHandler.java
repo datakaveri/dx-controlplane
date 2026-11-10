@@ -10,11 +10,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.audit.util.AuditingHelper;
 import org.cdpg.dx.aaa.credit.service.CreditService;
-import org.cdpg.dx.aaa.organization.models.ProviderRoleRequest;
+import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.model.AuditLog;
+import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.exception.DxBadRequestException;
+import org.cdpg.dx.common.model.UserInfo;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.request.PaginationRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
@@ -34,89 +36,242 @@ public class AdminHandler {
   private final KeycloakUserService keycloakUserService;
   private final CreditService creditService;
   private final OrganizationService organizationService;
+  private final URNGenerator urnGenerator;
+  private final EmailComposer emailComposer;
 
-  public AdminHandler(UserService userService, KeycloakUserService keycloakUserService,
-                      CreditService creditService, OrganizationService organizationService) {
+  public AdminHandler(
+      UserService userService,
+      KeycloakUserService keycloakUserService,
+      CreditService creditService,
+      OrganizationService organizationService,
+      URNGenerator urnGenerator,
+      EmailComposer emailComposer) {
     this.userService = userService;
     this.keycloakUserService = keycloakUserService;
     this.creditService = creditService;
     this.organizationService = organizationService;
+    this.urnGenerator = urnGenerator;
+    this.emailComposer = emailComposer;
   }
 
   public void getDxUserInfo(RoutingContext ctx) {
     User user = ctx.user();
-    System.out.println("User ID: " + user.subject());
+    LOGGER.debug("Fetching DxUser info for userId: {}", user.subject());
 
-    userService.getUserInfoByID(UUID.fromString(user.subject()))
-      .compose(userService::getUserInfo)
-      .onSuccess(response -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx), "GET", "Get DxUser Info");
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, response);
-      })
-      .onFailure(err -> {
-        LOGGER.error("Failed to get DxUser info: {}", err.getMessage(), err);
-        ctx.fail(err);
-      });
+    userService
+        .getUserInfoByID(UUID.fromString(user.subject()))
+        .compose(userService::getUserInfo)
+        .onSuccess(
+            response -> {
+              AuditLog auditLog =
+                  AuditingHelper.createAuditLog(
+                      ctx.user(),
+                      RoutingContextHelper.getRequestPath(ctx),
+                      "GET",
+                      "Get DxUser Info");
+              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              ResponseBuilder.sendSuccess(ctx, response, urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Failed to get DxUser info: {}", err.getMessage(), err);
+              ctx.fail(err);
+            });
   }
 
   public void getDxUserFromKeycloak(RoutingContext ctx) {
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "id");
 
-    userService.getUserInfoByID(userId)
-      .compose(userService::getUserInfo)
-      .onSuccess(response -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx), "GET", "Get User Info by ID");
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, response);
-      })
-      .onFailure(err -> {
-        LOGGER.error("Failed to get DxUser info: {}", err.getMessage(), err.getCause());
-        ctx.fail(err);
-      });
+    userService
+        .getUserInfoByID(userId)
+        .compose(userService::getUserInfo)
+        .onSuccess(
+            response -> {
+              AuditLog auditLog =
+                  AuditingHelper.createAuditLog(
+                      ctx.user(),
+                      RoutingContextHelper.getRequestPath(ctx),
+                      "GET",
+                      "Get User Info by ID");
+              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              ResponseBuilder.sendSuccess(ctx, response, urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Failed to get DxUser info: {}", err.getMessage(), err.getCause());
+              ctx.fail(err);
+            });
   }
-
 
   public void getAllDxUsersKeycloak(RoutingContext ctx) {
 
     PaginatedRequest request = PaginationRequestBuilder.from(ctx).build();
     String name = ctx.queryParam("search_term").stream().findFirst().orElse(null);
 
-    keycloakUserService.getTotalCount().compose(totalCount -> keycloakUserService.getUsers(request.page(), request.size(), name)
-      .compose(users -> {
-        List<Future> futures = new ArrayList<>();
-        for (DxUser user : users) {
-          futures.add(userService.getUserInfo(user).map(DxUser::toJson));
-        }
-        return CompositeFuture.all(futures)
-          .map(cf -> {
-            JsonArray array = new JsonArray();
-            for (int i = 0; i < cf.size(); i++) {
-              array.add(cf.resultAt(i));
-            }
+    keycloakUserService
+        .getTotalCount(name)
+        .compose(
+            totalCount ->
+                keycloakUserService
+                    .getUsers(request.page(), request.size(), name)
+                    .compose(
+                        users -> {
+                          List<Future> futures = new ArrayList<>();
+                          for (DxUser user : users) {
+                            futures.add(userService.getUserInfo(user).map(DxUser::toJson));
+                          }
+                          return CompositeFuture.all(futures)
+                              .map(
+                                  cf -> {
+                                    JsonArray array = new JsonArray();
+                                    for (int i = 0; i < cf.size(); i++) {
+                                      array.add(cf.resultAt(i));
+                                    }
 
-            int totalPages = (int) Math.ceil((double) totalCount / request.size());
-            boolean hasNext = request.page() < totalPages;
-            boolean hasPrevious = request.page() > 1;
+                                    int totalPages =
+                                        (int) Math.ceil((double) totalCount / request.size());
+                                    boolean hasNext = request.page() < totalPages;
+                                    boolean hasPrevious = request.page() > 1;
 
-            PaginationInfo paginationInfo = new PaginationInfo(request.page(),request.size(),totalCount,totalPages,hasNext,hasPrevious);
+                                    PaginationInfo paginationInfo =
+                                        new PaginationInfo(
+                                            request.page(),
+                                            request.size(),
+                                            totalCount,
+                                            totalPages,
+                                            hasNext,
+                                            hasPrevious);
 
-            Map<String, Object> resultMap = new HashMap<>();
-            resultMap.put("result", array);
-            resultMap.put("paginationInfo", paginationInfo);
-            return resultMap;
-          });
-      })).onSuccess(response -> {
-      AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-        RoutingContextHelper.getRequestPath(ctx), "GET", "Get DxUser Info");
-      RoutingContextHelper.setAuditingLog(ctx, auditLog);
-      ResponseBuilder.sendSuccess(ctx, response.get("result"), (PaginationInfo) response.get("paginationInfo"));
-    }).onFailure(ctx::fail);
+                                    Map<String, Object> resultMap = new HashMap<>();
+                                    resultMap.put("result", array);
+                                    resultMap.put("paginationInfo", paginationInfo);
+                                    return resultMap;
+                                  });
+                        }))
+        .onSuccess(
+            response -> {
+              AuditLog auditLog =
+                  AuditingHelper.createAuditLog(
+                      ctx.user(),
+                      RoutingContextHelper.getRequestPath(ctx),
+                      "GET",
+                      "Get DxUser Info");
+              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              ResponseBuilder.sendSuccess(
+                  ctx,
+                  response.get("result"),
+                  (PaginationInfo) response.get("paginationInfo"),
+                  urnGenerator);
+            })
+        .onFailure(ctx::fail);
   }
 
+  private String maskEmail(String email) {
+    if (email == null || !email.contains("@")) return email;
+    int atIndex = email.indexOf('@');
+    String local = email.substring(0, atIndex);
+    String domain = email.substring(atIndex);
+    String visible = local.substring(0, Math.min(2, local.length()));
+    return visible + "***" + domain;
+  }
 
+  public void getAllUsersInfoKeycloak(RoutingContext ctx) {
+
+    PaginatedRequest request = PaginationRequestBuilder.from(ctx).build();
+    String name = ctx.queryParam("search_term").stream().findFirst().orElse(null);
+
+    keycloakUserService
+        .getTotalCount(name)
+        .compose(
+            totalCount ->
+                keycloakUserService
+                    .getUsersInfo(request.page(), request.size(), name)
+                    .map(
+                        users -> {
+                          JsonArray array = new JsonArray();
+                          for (UserInfo user : users) {
+                            JsonObject userJson = user.toJson();
+                            if (userJson.containsKey("email")) {
+                              userJson.put("email", maskEmail(userJson.getString("email")));
+                            }
+                            if (userJson.containsKey("preferredUsername")) {
+                              userJson.put(
+                                  "preferredUsername",
+                                  maskEmail(userJson.getString("preferredUsername")));
+                            }
+                            array.add(userJson);
+                          }
+
+                          int totalPages = (int) Math.ceil((double) totalCount / request.size());
+                          boolean hasNext = request.page() < totalPages;
+                          boolean hasPrevious = request.page() > 1;
+
+                          PaginationInfo paginationInfo =
+                              new PaginationInfo(
+                                  request.page(),
+                                  request.size(),
+                                  totalCount,
+                                  totalPages,
+                                  hasNext,
+                                  hasPrevious);
+
+                          Map<String, Object> resultMap = new HashMap<>();
+                          resultMap.put("result", array);
+                          resultMap.put("paginationInfo", paginationInfo);
+
+                          return resultMap;
+                        }))
+        .onSuccess(
+            response -> {
+              AuditLog auditLog =
+                  AuditingHelper.createAuditLog(
+                      ctx.user(), RoutingContextHelper.getRequestPath(ctx), "GET", "Get User Info");
+
+              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+
+              ResponseBuilder.sendSuccess(
+                  ctx,
+                  response.get("result"),
+                  (PaginationInfo) response.get("paginationInfo"),
+                  urnGenerator);
+            })
+        .onFailure(ctx::fail);
+  }
+
+  public void getUserByUserIdOrEmail(RoutingContext ctx) {
+    String userId = ctx.queryParam("userId").stream().findFirst().orElse(null);
+    String email = ctx.queryParam("email").stream().findFirst().orElse(null);
+
+    if ((userId == null || userId.isBlank()) && (email == null || email.isBlank())) {
+      ctx.fail(
+          new DxBadRequestException("Exactly one of query params 'userId' or 'email' is required"));
+      return;
+    }
+    if ((userId != null && !userId.isBlank()) && (email != null && !email.isBlank())) {
+      ctx.fail(
+          new DxBadRequestException("Only one of 'userId' or 'email' may be provided, not both"));
+      return;
+    }
+
+    Future<UserInfo> lookup =
+        (userId != null && !userId.isBlank())
+            ? keycloakUserService.getUserByUserId(userId)
+            : keycloakUserService.getUserByEmail(email);
+
+    lookup
+        .onSuccess(
+            user -> {
+              AuditLog auditLog =
+                  AuditingHelper.createAuditLog(
+                      ctx.user(),
+                      RoutingContextHelper.getRequestPath(ctx),
+                      "GET",
+                      "Get User By UserId Or Email");
+              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              ResponseBuilder.sendSuccess(ctx, user, urnGenerator);
+            })
+        .onFailure(ctx::fail);
+  }
 
   public void updateDxUserInfo(RoutingContext ctx) {
     User user = ctx.user();
@@ -137,17 +292,24 @@ public class AdminHandler {
       attributes.put("github_account", requestBody.getString("github_account"));
     }
 
-    keycloakUserService.updateUserAttributes(UUID.fromString(user.subject()), attributes, firstName, lastName)
-      .onSuccess(response -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx), "POST", "Update User Info");
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, "User info updated successfully");
-      })
-      .onFailure(err -> {
-        LOGGER.error("Failed to update DxUser info: {}", err.getMessage(), err);
-        ctx.fail(err);
-      });
+    keycloakUserService
+        .updateUserAttributes(UUID.fromString(user.subject()), attributes, firstName, lastName)
+        .onSuccess(
+            response -> {
+              AuditLog auditLog =
+                  AuditingHelper.createAuditLog(
+                      ctx.user(),
+                      RoutingContextHelper.getRequestPath(ctx),
+                      "POST",
+                      "Update User Info");
+              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              ResponseBuilder.sendSuccess(ctx, "User info updated successfully", urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Failed to update DxUser info: {}", err.getMessage(), err);
+              ctx.fail(err);
+            });
   }
 
   public void updatePassword(RoutingContext ctx) {
@@ -156,17 +318,24 @@ public class AdminHandler {
     JsonObject requestBody = ctx.body().asJsonObject();
     String newPassword = requestBody.getString("new_password");
 
-    keycloakUserService.updateUserPassword(UUID.fromString(user.subject()), newPassword)
-      .onSuccess(response -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx), "POST", "Update User Password");
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, "User password updated successfully");
-      })
-      .onFailure(err -> {
-        LOGGER.error("Failed to update Password info: {}", err.getMessage(), err);
-        ctx.fail(err);
-      });
+    keycloakUserService
+        .updateUserPassword(UUID.fromString(user.subject()), newPassword)
+        .onSuccess(
+            response -> {
+              AuditLog auditLog =
+                  AuditingHelper.createAuditLog(
+                      ctx.user(),
+                      RoutingContextHelper.getRequestPath(ctx),
+                      "POST",
+                      "Update User Password");
+              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              ResponseBuilder.sendSuccess(ctx, "User password updated successfully", urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Failed to update Password info: {}", err.getMessage(), err);
+              ctx.fail(err);
+            });
   }
 
   public void updateUserStatus(RoutingContext ctx) {
@@ -174,123 +343,203 @@ public class AdminHandler {
 
     JsonObject status = ctx.body().asJsonObject();
     String statusValue = status.getString("status");
+    UUID userId = UUID.fromString(user.subject());
 
-
-    if (statusValue == null || (!statusValue.equalsIgnoreCase("activate") && !statusValue.equalsIgnoreCase("deactivate"))) {
-      ctx.fail(new DxBadRequestException("Invalid status value. Must be 'activate' or 'deactivate'."));
+    if (statusValue == null
+        || (!statusValue.equalsIgnoreCase("activate")
+            && !statusValue.equalsIgnoreCase("deactivate"))) {
+      ctx.fail(
+          new DxBadRequestException("Invalid status value. Must be 'activate' or 'deactivate'."));
       return;
     }
 
     if (statusValue.equalsIgnoreCase("deactivate")) {
-      keycloakUserService.disableUser(UUID.fromString(user.subject()))
-        .onSuccess(response -> {
-          LOGGER.info("User {} deactivated successfully in Keycloak", user.subject());
-          AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-            RoutingContextHelper.getRequestPath(ctx), "POST", "Deactivate User");
-          RoutingContextHelper.setAuditingLog(ctx, auditLog);
-          ResponseBuilder.sendSuccess(ctx, "User deactivated successfully");
-        })
-        .onFailure(err -> {
-          LOGGER.error("Failed to deactivate DxUser: {}", err.getMessage(), err.getCause());
-          ctx.fail(err);
-        });
+      keycloakUserService
+          .disableUser(userId)
+          .compose(v -> (userService.updateUserInfo(userId, false)))
+          .onSuccess(
+              response -> {
+                LOGGER.info("DxUser {}", response);
+                LOGGER.info("User {} deactivated successfully in Keycloak", user.subject());
+                AuditLog auditLog =
+                    AuditingHelper.createAuditLog(
+                        ctx.user(),
+                        RoutingContextHelper.getRequestPath(ctx),
+                        "POST",
+                        "Deactivate User");
+                RoutingContextHelper.setAuditingLog(ctx, auditLog);
+                ResponseBuilder.sendSuccess(ctx, "User deactivated successfully", urnGenerator);
+                emailComposer.sendEmailForUpdatingUserStatus(user, statusValue);
+              })
+          .onFailure(
+              err -> {
+                LOGGER.error("Failed to deactivate DxUser: {}", err.getMessage(), err.getCause());
+                ctx.fail(err);
+              });
     } else {
-      keycloakUserService.enableUser(UUID.fromString(user.subject()))
-        .onSuccess(response -> {
-          LOGGER.info("User {} activated successfully in Keycloak", user.subject());
-          AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-            RoutingContextHelper.getRequestPath(ctx), "POST", "Activate User");
-          RoutingContextHelper.setAuditingLog(ctx, auditLog);
-          ResponseBuilder.sendSuccess(ctx, "User activated successfully");
-        })
-        .onFailure(err -> {
-          LOGGER.error("Failed to activate DxUser: {}", err.getMessage(), err.getCause());
-          ctx.fail(err);
-        });
+      keycloakUserService
+          .enableUser(userId)
+          .compose(v -> (userService.updateUserInfo(userId, true)))
+          .onSuccess(
+              response -> {
+                LOGGER.info("DxUser {}", response);
+                LOGGER.info("User {} activated successfully in Keycloak", user.subject());
+                AuditLog auditLog =
+                    AuditingHelper.createAuditLog(
+                        ctx.user(),
+                        RoutingContextHelper.getRequestPath(ctx),
+                        "POST",
+                        "Activate User");
+                RoutingContextHelper.setAuditingLog(ctx, auditLog);
+                ResponseBuilder.sendSuccess(ctx, "User activated successfully", urnGenerator);
+                emailComposer.sendEmailForUpdatingUserStatus(user, statusValue);
+              })
+          .onFailure(
+              err -> {
+                LOGGER.error("Failed to activate DxUser: {}", err.getMessage(), err.getCause());
+                ctx.fail(err);
+              });
     }
-
   }
+
   public void deleteDxUser(RoutingContext ctx) {
     User user = ctx.user();
     UUID userId = UUID.fromString(user.subject());
 
-    userService.getUserInfoByID(userId).compose(userInfo -> {
-        if (userInfo == null) {
-          return Future.failedFuture(new IllegalArgumentException("User not found"));
-        }
+    userService
+        .getUserInfoByID(userId)
+        .compose(
+            userInfo -> {
+              if (userInfo == null) {
+                return Future.failedFuture(new IllegalArgumentException("User not found"));
+              }
 
-        if (userInfo.roles().contains(KeycloakConstants.ORG_ADMIN_ROLE)) {
-          return Future.failedFuture(new DxBadRequestException("Cannot delete org admin user"));
-        }
+              if (userInfo.roles().contains(KeycloakConstants.ORG_ADMIN_ROLE)) {
+                return Future.failedFuture(
+                    new DxBadRequestException("Cannot delete org admin user"));
+              }
 
-        if (userInfo.roles().contains(KeycloakConstants.PF_ADMIN_ROLE)) {
-          return Future.failedFuture(new DxBadRequestException("Cannot delete cos admin user"));
-        }
+              if (userInfo.roles().contains(KeycloakConstants.PF_ADMIN_ROLE)) {
+                return Future.failedFuture(
+                    new DxBadRequestException("Cannot delete cos admin user"));
+              }
 
-        LOGGER.info("Organization ID is : {}", userInfo.organisationId());
+              LOGGER.info("Organization ID is : {}", userInfo.organisationId());
 
-        if (userInfo.organisationId() != null && !userInfo.organisationId().isEmpty()) {
-          UUID orgId = UUID.fromString(userInfo.organisationId());
+              if (userInfo.organisationId() != null && !userInfo.organisationId().isEmpty()) {
+                UUID orgId = UUID.fromString(userInfo.organisationId());
 
-          return organizationService.getUserOrgAdminId(orgId).compose(orgAdminId -> {
-            if (orgAdminId == null) {
-              return Future.failedFuture(new IllegalArgumentException("Organization admin not found for organization: " + orgId));
-            }
+                return organizationService
+                    .getUserOrgAdminId(orgId)
+                    .compose(
+                        orgAdminId -> {
+                          if (orgAdminId == null) {
+                            return Future.failedFuture(
+                                new IllegalArgumentException(
+                                    "Organization admin not found for organization: " + orgId));
+                          }
 
-            if (orgAdminId.equals(userId)) {
-              return Future.failedFuture(new DxBadRequestException("Cannot delete organization admin user"));
-            }
+                          if (orgAdminId.equals(userId)) {
+                            return Future.failedFuture(
+                                new DxBadRequestException("Cannot delete organization admin user"));
+                          }
 
-            Future<Boolean> chain = Future.succeededFuture();
+                          Future<Boolean> chain = Future.succeededFuture();
 
-            if (userInfo.roles().contains(KeycloakConstants.PROVIDER_ROLE)) {
-              LOGGER.info("Deleting provider user with ID: {}", userId);
-              chain = chain.compose(v -> organizationService.deleteProviderUser(userId, orgAdminId, orgId)
-                .mapEmpty());
-            } else {
-              chain = chain.compose(v -> organizationService.deleteOrganizationUser(orgId, userId)
-                .mapEmpty());
-            }
+                          if (userInfo.roles().contains(KeycloakConstants.PROVIDER_ROLE)) {
+                            LOGGER.info("Deleting provider user with ID: {}", userId);
+                            chain =
+                                chain.compose(
+                                    v ->
+                                        organizationService
+                                            .deleteProviderUser(userId, orgAdminId, orgId)
+                                            .mapEmpty());
+                          } else {
+                            chain =
+                                chain.compose(
+                                    v ->
+                                        organizationService
+                                            .deleteOrganizationUser(orgId, userId)
+                                            .mapEmpty());
+                          }
 
-            chain = chain
-              .compose(v -> organizationService.deleteOrganizationJoinRequest(orgId, userId)
-                .recover(err -> {
-                  LOGGER.warn("Failed to delete join request for user {}: {}", userId, err.getMessage());
-                  return Future.succeededFuture();
-                })
-              );
-            return chain;
-          });
-        }
+                          chain =
+                              chain
+                                  .compose(
+                                      v ->
+                                          organizationService
+                                              .deleteOrganizationJoinRequest(orgId, userId)
+                                              .recover(
+                                                  err -> {
+                                                    LOGGER.warn(
+                                                        "Failed to delete join request for user {}: {}",
+                                                        userId,
+                                                        err.getMessage());
+                                                    return Future.succeededFuture();
+                                                  }))
+                                  .compose(
+                                      v ->
+                                          organizationService
+                                              .deleteProviderRoleRequest(orgId, userId)
+                                              .recover(
+                                                  err -> {
+                                                    LOGGER.warn(
+                                                        "Failed to delete provider role request for user {}: {}",
+                                                        userId,
+                                                        err.getMessage());
+                                                    return Future.succeededFuture();
+                                                  }));
+                          return chain;
+                        });
+              }
 
-        return keycloakUserService.deleteUser(userId)
-          .onSuccess(r -> LOGGER.info("User {} deleted from Keycloak", userId))
-          .mapEmpty()
-          .compose(v -> creditService.deleteCreditRequest(userId)
-            .recover(err -> {
-              LOGGER.warn("Failed to delete credit request for user {}: {}", userId, err.getMessage());
-              return Future.succeededFuture();
+              return keycloakUserService
+                  .deleteUser(userId)
+                  .onSuccess(r -> LOGGER.info("User {} deleted from Keycloak", userId))
+                  .mapEmpty()
+                  .compose(
+                      v ->
+                          creditService
+                              .deleteCreditRequest(userId)
+                              .recover(
+                                  err -> {
+                                    LOGGER.warn(
+                                        "Failed to delete credit request for user {}: {}",
+                                        userId,
+                                        err.getMessage());
+                                    return Future.succeededFuture();
+                                  }))
+                  .compose(
+                      v ->
+                          creditService
+                              .deleteComputeRoleRequest(userId)
+                              .recover(
+                                  err -> {
+                                    LOGGER.warn(
+                                        "Failed to delete compute request for user {}: {}",
+                                        userId,
+                                        err.getMessage());
+                                    return Future.succeededFuture();
+                                  }));
             })
-          )
-          .compose(v -> creditService.deleteComputeRoleRequest(userId)
-            .recover(err -> {
-              LOGGER.warn("Failed to delete compute request for user {}: {}", userId, err.getMessage());
-              return Future.succeededFuture();
-            }));
-      })
-      .onSuccess(v -> {
-        AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-          RoutingContextHelper.getRequestPath(ctx), "DELETE", "Delete User");
-        RoutingContextHelper.setAuditingLog(ctx, auditLog);
-        ResponseBuilder.sendSuccess(ctx, "User deleted successfully from Keycloak and DB");
-      })
-      .onFailure(err -> {
-        LOGGER.error("Failed to delete user: {}", err.getMessage(), err);
-        ctx.fail(err);
-      });
+        .onSuccess(
+            v -> {
+              AuditLog auditLog =
+                  AuditingHelper.createAuditLog(
+                      ctx.user(),
+                      RoutingContextHelper.getRequestPath(ctx),
+                      "DELETE",
+                      "Delete User");
+              RoutingContextHelper.setAuditingLog(ctx, auditLog);
+              ResponseBuilder.sendSuccess(
+                  ctx, "User deleted successfully from Keycloak and DB", urnGenerator);
+            })
+        .onFailure(
+            err -> {
+              LOGGER.error("Failed to delete user: {}", err.getMessage(), err);
+              ctx.fail(err);
+            });
   }
-
-
 
   public void updateDxUserStatusById(RoutingContext ctx) {
     UUID userId = RequestHelper.getPathParamAsUUID(ctx, "id");
@@ -299,38 +548,60 @@ public class AdminHandler {
 
     String statusValue = status.getString("status");
 
-
-    if (statusValue == null || (!statusValue.equalsIgnoreCase("activate") && !statusValue.equalsIgnoreCase("deactivate"))) {
-      ctx.fail(new DxBadRequestException("Invalid status value. Must be 'activate' or 'deactivate'."));
+    if (statusValue == null
+        || (!statusValue.equalsIgnoreCase("activate")
+            && !statusValue.equalsIgnoreCase("deactivate"))) {
+      ctx.fail(
+          new DxBadRequestException("Invalid status value. Must be 'activate' or 'deactivate'."));
       return;
     }
 
     if (statusValue.equalsIgnoreCase("activate")) {
-      keycloakUserService.enableUser(userId)
-        .onSuccess(response -> {
-          LOGGER.info("User {} activated successfully by PF Admin in Keycloak", userId);
-          AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-            RoutingContextHelper.getRequestPath(ctx), "POST", "Activate User");
-          RoutingContextHelper.setAuditingLog(ctx, auditLog);
-          ResponseBuilder.sendSuccess(ctx, "User activated successfully");
-        })
-        .onFailure(err -> {
-          LOGGER.error("Failed to activate DxUser: {}", err.getMessage(), err.getCause());
-          ctx.fail(err);
-        });
+      keycloakUserService
+          .enableUser(userId)
+          .compose(v -> (userService.updateUserInfo(userId, true)))
+          .onSuccess(
+              response -> {
+                LOGGER.info("User {} activated successfully by PF Admin in Keycloak", userId);
+                LOGGER.info("DxUser {}", response);
+                AuditLog auditLog =
+                    AuditingHelper.createAuditLog(
+                        ctx.user(),
+                        RoutingContextHelper.getRequestPath(ctx),
+                        "POST",
+                        "Activate User");
+                RoutingContextHelper.setAuditingLog(ctx, auditLog);
+                ResponseBuilder.sendSuccess(ctx, "User activated successfully", urnGenerator);
+                emailComposer.sendEmailForUpdatingUserStatusByAdmin(userId, statusValue);
+              })
+          .onFailure(
+              err -> {
+                LOGGER.error("Failed to activate DxUser: {}", err.getMessage(), err.getCause());
+                ctx.fail(err);
+              });
     } else {
-      keycloakUserService.disableUser(userId)
-        .onSuccess(response -> {
-          LOGGER.info("User {} deactivated successfully by PF Admin in Keycloak", userId);
-          AuditLog auditLog = AuditingHelper.createAuditLog(ctx.user(),
-            RoutingContextHelper.getRequestPath(ctx), "POST", "Deactivate User");
-          RoutingContextHelper.setAuditingLog(ctx, auditLog);
-          ResponseBuilder.sendSuccess(ctx, "User deactivated successfully");
-        })
-        .onFailure(err -> {
-          LOGGER.error("Failed to deactivate DxUser: {}", err.getMessage(), err.getCause());
-          ctx.fail(err);
-        });
+      keycloakUserService
+          .disableUser(userId)
+          .compose(v -> (userService.updateUserInfo(userId, false)))
+          .onSuccess(
+              response -> {
+                LOGGER.info("User {} deactivated successfully by PF Admin in Keycloak", userId);
+                LOGGER.info("DxUser {}", response);
+                AuditLog auditLog =
+                    AuditingHelper.createAuditLog(
+                        ctx.user(),
+                        RoutingContextHelper.getRequestPath(ctx),
+                        "POST",
+                        "Deactivate User");
+                RoutingContextHelper.setAuditingLog(ctx, auditLog);
+                ResponseBuilder.sendSuccess(ctx, "User deactivated successfully", urnGenerator);
+                emailComposer.sendEmailForUpdatingUserStatusByAdmin(userId, statusValue);
+              })
+          .onFailure(
+              err -> {
+                LOGGER.error("Failed to deactivate DxUser: {}", err.getMessage(), err.getCause());
+                ctx.fail(err);
+              });
     }
   }
 }

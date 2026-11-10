@@ -1,5 +1,6 @@
 package org.cdpg.dx.aaa.common;
 
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.regex.Pattern;
@@ -19,6 +20,11 @@ public class Constants {
     public static final String DATABASE_PORT = "databasePort";
     public static final String DATABASE_UNAME = "databaseUser";
     public static final String DOC_INDEX = "docIndex";
+    public static final String DELETED_DOCS_INDEX = "deletedDocsIndex";
+    public static final String CENTRAL_CAT_DOC_INDEX = "centralCatDocIndex";
+    public static final String IS_CENTRAL_CATALOGUE_ENABLED = "isCentralCatEnabled";
+    public static final String DOC_USER_INDEX = "docUserIndex";
+    public static final String VOC_CONTEXT = "vocContext";
 
     public static final String PUBLIC_KEY = "publicKey";
     public static final String DATABASE_PASSWD = "databasePassword";
@@ -61,14 +67,14 @@ public class Constants {
     public static final String ITEM_TYPE_COS = "iudx:COS";
     public static final String ITEM_TYPE_OWNER = "iudx:Owner";
     public static final String ITEM_TYPE_INSTANCE = "iudx:Instance";
-    public static final String ITEM_TYPE_AI_MODEL = "adex:AiModel";
-    public static final String ITEM_TYPE_DATA_BANK = "adex:DataBank";
-    public static final String ITEM_TYPE_APPS = "adex:Apps";
+    // Platform item types (DataBank, AiModel, Apps) carry a per-deployment prefix; see ItemType
+    public static final String ITEM_TYPE_PREFIXES = "itemTypePrefixes";
+    // single-prefix form of itemTypePrefixes, still read for older configs
+    public static final String ITEM_TYPE_PREFIX = "itemTypePrefix";
 
     public static final ArrayList<String> ITEM_TYPES =
             new ArrayList<String>(Arrays.asList(ITEM_TYPE_RESOURCE, ITEM_TYPE_RESOURCE_GROUP,
-                    ITEM_TYPE_RESOURCE_SERVER, ITEM_TYPE_PROVIDER, ITEM_TYPE_COS, ITEM_TYPE_OWNER,
-                    ITEM_TYPE_AI_MODEL, ITEM_TYPE_DATA_BANK, ITEM_TYPE_APPS));
+                    ITEM_TYPE_RESOURCE_SERVER, ITEM_TYPE_PROVIDER, ITEM_TYPE_COS, ITEM_TYPE_OWNER));
 
     public static final String AGGREGATIONS = "aggregations";
     public static final String INSTANCE = "instance";
@@ -76,6 +82,9 @@ public class Constants {
     public static final String ID = "id";
     public static final String ITEM = "item";
     public static final String SUB = "sub";
+    public static final String REALM_ACCESS = "realm_access";
+    public static final String ROLES = "roles";
+    public static final String SCOPES = "scopes";
 
     public static final String RESOURCE_ID = "resourceId";
 
@@ -87,12 +96,21 @@ public class Constants {
     public static final String OPEN = "OPEN";
     public static final String PRIVATE = "PRIVATE";
     public static final String RESTRICTED = "RESTRICTED";
+    public static final String PII = "PII";
     public static final String VALIDATION_FAILURE_MSG = "Validation failed";
 
     public static final String ITEM_STATUS = "itemStatus";
     public static final String ACTIVE = "ACTIVE";
+    public static final String REQUESTED = "REQUESTED";
+    public static final String VERIFIED = "VERIFIED";
+    public static final String UNVERIFIED = "UNVERIFIED";
+    public static final String VERIFIED_SFTP = "VERIFIED-SFTP";
+    public static final String VERIFIED_API = "VERIFIED-API";
+    public static final String IN_ACTIVE = "INACTIVE";
     public static final String ITEM_CREATED_AT = "itemCreatedAt";
     public static final String LAST_UPDATED = "lastUpdated";
+    public static final String CREATED_BY = "createdBy";
+    public static final String LAST_UPDATED_BY = "lastUpdatedBy";
 
 
     /** GeoRels. */
@@ -169,6 +187,7 @@ public class Constants {
     public static final String MUST_NOT = "must_not";
     public static final String TAGS = "tags";
     public static final String DEPARTMENT = "department";
+    public static final String ORGANIZATION = "organization";
 
     public static final String UPLOADED_BY = "uploadedBy";
     public static final String ORGANIZATION_NAME = "organizationName";
@@ -330,6 +349,15 @@ public class Constants {
     // COMMON KC CONSTANTS
 
     public static final String ORGANISATION_ID="organisation_id";
+
+  // item metrics
+  public static final String METRICS = "metrics";
+  public static final String VIEWS = "views";
+  public static final String DOWNLOADS = "downloads";
+  public static final String LIKES = "likes";
+  public static final String DISLIKES = "dislikes";
+    public static final String BOOKMARKS = "bookmarks";
+
 }
 
 

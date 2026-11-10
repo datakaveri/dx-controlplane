@@ -29,6 +29,7 @@ public class ApiConstants {
   public static final String CONTENT_TYPE = "Content-Type";
   public static final String X_REQUESTED_WITH = "X-Requested-With";
   public static final String USER = "user";
+  public static final String DX_USER = "dxUser";
 
   /** Accept Headers and CORS */
   public static final String MIME_APPLICATION_JSON = "application/json";
@@ -47,8 +48,23 @@ public class ApiConstants {
   public static final String GET_ITEM = "get item";
   public static final String UPDATE_ITEM = "update item";
   public static final String PATCH_ITEM = "patch item";
+  public static final String PATCH_ITEM_META_DATA ="patch item metadata";
+  public static final String GET_ITEM_WITH_ACCESS = "get item with accessPolicy";
+  public static final String CHECK_ITEM_NAME_AVAILABILITY = "validate item name availability";
+  public static final String DOWNLOAD_SCRIPT = "download script";
+  public static final String CREATE_RESOURCE_SERVER = "create resource server";
+  public static final String GET_RESOURCE_SERVER = "get resource server";
+  public static final String LIST_RESOURCE_SERVERS = "list resource servers";
+  public static final String UPDATE_RESOURCE_SERVER = "update resource server";
+  public static final String DELETE_RESOURCE_SERVER = "delete resource server";
+  public static final String CREATE_ACL_SERVER = "create acl server";
+  public static final String GET_ACL_SERVER = "get acl server";
+  public static final String LIST_ACL_SERVERS = "list acl servers";
+  public static final String UPDATE_ACL_SERVER = "update acl server";
+  public static final String DELETE_ACL_SERVER = "delete acl server";
   public static final String GET_ORG_ASSETS = "get organisation assets";
   public static final String GET_ORG_ASSETS_VTH_FILTERS = "get org assets with filters";
+  public static final String GET_DEPT_ASSETS_VTH_FILTERS = "get department assets with filters";
   public static final String GET_PLATFORM_ASSETS = "get platform assets";
   public static final String GET_PLATFORM_ASSETS_VTH_FILTERS = "get platform assets with filters";
 
@@ -60,6 +76,11 @@ public class ApiConstants {
   public static final String ID = "id";
   public static final String POST_ASSET_SEARCH = "post myAssetsSearch";
   public static final String GET_ASSET_SEARCH = "get myAssetsSearch";
+
+
+  public static final String LIST_AVAILABLE_CENTRAL_CAT_FILTERS = "listAvailableCentralCatFilters";
+  public static final String CENTRAL_POST_SEARCH = "centralSearch";
+  public static final String CENTRAL_POST_COUNT_SEARCH = "count-across-central-catalogue";
 
 
   public static final String CONTEXT = "@context";
@@ -224,6 +245,9 @@ public class ApiConstants {
   public static final String API = "api";
   public static final String DRL = "drl";
   public static final String DID = "did";
+  public static final String IS_DELEGATOR = "isDelegator";
+  public static final String RESULT = "result";
+  public static final String AUDIT_ENABLED = "auditEnabled";
   public static final String ENCODED_KEY = "encodedKey";
   public static final String ENCODED_CIPHER_TEXT = "encodedCipherText";
   public static final String ENCRYPTED_DATA = "encryptedData";
@@ -324,4 +348,10 @@ public class ApiConstants {
   public static final String EVENTTYPE_DELETED = "SUBS_DELETED";
   public static final String EVENTTYPE_APPEND = "SUBS_APPEND";
   public static final String EVENTTYPE_UPDATE = "SUBS_UPDATED";
+
+    public static final String GET_ADAPTER_LIST = "getAdapterExchangeList";
+    public static final String POST_ADAPTER = "registerAdapter";
+    public static final String GET_ADAPTOR_BY_ID = "getAdaptorDetailsById";
+    public static final String DELETE_ADAPTER_BY_ID = "deleteAdaptorById";
+    public static final String POST_INGESTION_ADAPTER_ENTITIES = "postIngestionAdaptorEntities";
 }

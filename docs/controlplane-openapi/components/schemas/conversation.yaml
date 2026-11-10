@@ -1,0 +1,102 @@
+ConversationMessage:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      example: c0ca7a6c-597f-4e03-b861-bb912b3cb1ec
+    request_type:
+      type: string
+      description: Type of request this conversation belongs to (e.g. join_orgs, create_orgs, credit_request, delegation)
+      example: join_orgs
+    request_type_id:
+      type: string
+      format: uuid
+      description: UUID of the specific request instance this conversation thread is attached to
+      example: 7a1b2c3d-4e5f-6789-abcd-ef0123456789
+    parent_msg_id:
+      type: string
+      format: uuid
+      nullable: true
+      description: UUID of the parent message for replies; null for root-level messages
+      example: null
+    sender_id:
+      type: string
+      format: uuid
+      example: 1dc28cc6-d614-461a-9b8f-d6110feb3e2f
+    sender_role:
+      type: string
+      enum:
+      - requester
+      - approver
+      example: requester
+    message_type:
+      type: string
+      enum:
+      - text
+      - question
+      - answer
+      - info_request
+      - note
+      - system
+      example: question
+    content:
+      type: string
+      example: Do I need to add my phone number?
+    is_internal:
+      type: boolean
+      description: If true, the message is visible only to approvers; if false, visible to all participants
+      example: false
+    metadata:
+      type: object
+      nullable: true
+      description: Optional arbitrary JSON metadata attached to the message
+    reply_count:
+      type: integer
+      description: Number of direct child replies to this message
+      example: 4
+    hasReplies:
+      type: boolean
+      description: True if reply_count > 0
+      example: true
+    created_at:
+      type: string
+      format: date-time
+      example: '2026-05-07T08:00:00Z'
+ThreadedReplies:
+  type: object
+  properties:
+    result:
+      type: array
+      items:
+        $ref: '#/ConversationMessage'
+    paginationInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        size:
+          type: integer
+          example: 3
+        totalCount:
+          type: integer
+          description: Total direct replies for this message
+          example: 4
+        totalPages:
+          type: integer
+          example: 2
+        hasNext:
+          type: boolean
+          description: true if there are more replies beyond the current page
+          example: true
+        hasPrevious:
+          type: boolean
+          example: false
+ThreadedMessage:
+  allOf:
+  - $ref: '#/ConversationMessage'
+  - type: object
+    properties:
+      replies:
+        $ref: '#/ThreadedReplies'

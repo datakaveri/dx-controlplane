@@ -1,0 +1,325 @@
+/iudx/v2/auth/asset/request:
+  post:
+    summary: Create Asset Request
+    tags:
+      - Ingestion type(API/SFTP) APIs
+    operationId: post-auth-v2-asset-request
+    description: |
+      Creates a data ingestion request for the authenticated user for a specific asset
+      in the catalogue. The request is created in `PENDING` status and must be approved by a `cos_admin`.
+
+      **Allowed Roles:** `provider`
+
+      **Log Type:** `USER_ACTION`
+    requestBody:
+      description: |
+        - `asset_id`: The catalogue ID of the asset for which the request is to be created.
+        - `type`: The type of data ingestion.
+        
+          **Examples:** `SFTP`, `API`, `UNVERIFIED-SFTP`, `UNVERIFIED-API`
+        - `additional_info`: Optional extra details about the requester and intent (e.g. purpose, description).
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            properties:
+              asset_id:
+                type: string
+                format: uuid
+                pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+              type:
+                type: string
+                example: UNVERIFIED-SFTP
+                minLength: 1
+              additional_info:
+                description: |
+                  Used to define additional information to access data for educational, research,
+                  testing, non-commercial, or academic purposes.
+                type: object
+            required:
+              - asset_id
+              - type
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/createNotificationSuccessResponse
+      '400':
+        description: Bad Request – Schema validation or missing/invalid fields
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/generalBadRequest
+            examples:
+              Example:
+                value:
+                  type: urn:dx:asset:badRequest
+                  title: Bad Request
+                  detail: Request could not be created, as the assetId or type is invalid
+      '401':
+        description: Unauthorized – Token invalid/expired or user not authorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden – User cannot create request on own asset
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/createNotificationForbidden
+      '404':
+        description: Not Found – Asset not found in the catalogue
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/createNotificationResourceNotFoundResponse
+      '409':
+        description: Conflict – A request for the asset already exists
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/createNotificationConflictResponse
+    security:
+      - authorization: []
+
+  get:
+    tags:
+      - Ingestion type(API/SFTP) APIs
+    summary: List Asset Requests
+    description: |
+      Lists all the latest asset requests visible to the authenticated user, regardless of status.
+      Results are scoped by the caller's role — a `provider` sees only their own requests,
+      while `org_admin` and `cos_admin` can see requests across their scope.
+
+      **Allowed Roles:** `provider`, `org_admin`, `cos_admin`
+
+      Supports pagination and the following filter query parameters:
+
+      | Query Parameter | Description                                      |
+      |-----------------|--------------------------------------------------|
+      | `type` | Filter by ingestion type using a case-insensitive fuzzy (contains) search. For example: `SFTP`, `API`, `UNVERIFIED-SFTP`, or `UNVERIFIED-API`. |
+      | `status`        | Filter by request status (e.g. `PENDING`, `GRANTED`, `REJECTED`) |
+      | `userId`        | Filter by the ID of the user who made the request |
+      | `assetId`       | Filter by the catalogue asset ID |
+      | `requestedAt`   | Filter by the time the request was made |
+      | `updatedAt`     | Filter by the last updated time |
+
+      **Log Type:** `USER_ACTION`
+    operationId: get-auth-v2-asset-request
+    parameters:
+      - $ref: ../components/parameters.yaml#/PageParam
+      - $ref: ../components/parameters.yaml#/SizeParam
+      - $ref: ../components/parameters.yaml#/SortingParam
+      - $ref: ../components/parameters.yaml#/TimeParam
+      - $ref: ../components/parameters.yaml#/EndTimeParam
+      - $ref: ../components/parameters.yaml#/TimeRelParam
+      - name: type
+        in: query
+        required: false
+        schema:
+          type: string
+          example: SFTP
+        description: |
+          Filter asset requests by ingestion type.
+
+          Performs a partial (contains) match rather than an exact match.
+
+          **Examples:** `SFTP`, `API`, `UNVERIFIED-SFTP`, `UNVERIFIED-API`
+    responses:
+      '200':
+        description: Successfully fetched all asset requests
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/access.yaml#/AssetRequest
+            examples:
+              ListResults:
+                value:
+                  type: urn:dx:asset:success
+                  title: Success
+                  results:
+                    - requestId: ea48d233-5d3b-4bdb-9545-691680c99cee
+                      status: GRANTED
+                      type: SFTP
+                      additionalInfo:
+                        name: John Doe
+                        email: john.doe@example.org
+                        phone: 9876543210
+                        purpose: research
+                        description: This dataset will be used for non-commercial, educational purposes
+                      user:
+                        userId: a13eb955-c691-4fd3-b200-f18bc78810b5
+                        firstName: John
+                        lastName: Doe
+                        email: john.doe@example.org
+                        organization: Open Science Org
+                      updatedAt: '2025-06-04T07:25:08.663637'
+                      requestedAt: '2025-06-04T09:10:57.267564'
+                  paginationInfo:
+                    page: 1
+                    size: 1
+                    totalCount: 10
+                    totalPages: 10
+                    hasNext: true
+                    hasPrevious: false
+      '400':
+        description: Bad Request – Schema validation failed or incorrect query parameters
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/updateNotificationBadRequest
+      '401':
+        description: Unauthorized - Token invalid or expired, or caller lacks permission
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - User does not have the required role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
+    security:
+      - authorization: []
+
+/iudx/v2/auth/asset/request/{id}:
+  put:
+    summary: Update Asset Request Status
+    tags:
+      - Ingestion type(API/SFTP) APIs
+    operationId: put-auth-v2-asset-request
+    description: |
+      Updates the status of an existing data ingestion access request by its ID.
+      Only a `cos_admin` with the `asset-management` scope can perform this action.
+      Use this to approve, reject, or update the state of a pending asset request.
+
+      **Allowed Roles:** `cos_admin`
+
+      **Required Scope:** `asset-management`
+
+      **Log Type:** `USER_ACTION`
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Unique ID of the asset request
+        schema:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+    requestBody:
+      description: Status to update in the asset request
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            properties:
+              status:
+                type: string
+            required:
+              - status
+    responses:
+      '200':
+        description: Status update successful
+        content:
+          application/json:
+            schema:
+              type: string
+              example: Asset request updated successfully
+      '400':
+        description: Bad Request – Schema validation, invalid status, or the request is no longer pending
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/generalBadRequest
+      '401':
+        description: Unauthorized – Token invalid/expired or user not authorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden – User does not have the cos_admin role or asset-management scope
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/createNotificationForbidden
+      '404':
+        description: Not Found – Asset request not found
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/createNotificationResourceNotFoundResponse
+      '409':
+        description: Conflict – Invalid state transition or already in target state
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/createNotificationConflictResponse
+    security:
+      - authorization: []
+
+  delete:
+    tags:
+      - Ingestion type(API/SFTP) APIs
+    summary: Delete User Asset Request
+    description: |
+      Permanently deletes a pending asset request made by the authenticated user.
+      Only requests in `PENDING` status can be deleted — requests that have already been
+      approved or rejected cannot be removed. Only the `consumer` who created the request
+      can delete it. Requires an authenticated user token.
+
+      **Allowed Roles:** `consumer`
+
+      **Log Type:** `USER_ACTION`
+    operationId: delete-auth-v2-asset-request
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Unique ID of the asset request
+        schema:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+    responses:
+      '200':
+        description: OK - Successfully deleted asset request
+      '400':
+        description: Bad Request – Schema validation failed or incorrect query parameters
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/updateNotificationBadRequest
+      '401':
+        description: Unauthorized - Token invalid or expired, or caller lacks permission
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - User cannot delete this asset request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
+      '404':
+        description: Not Found - Asset request not found or not in deletable state
+    security:
+      - authorization: []

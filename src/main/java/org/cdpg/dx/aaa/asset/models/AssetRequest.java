@@ -22,6 +22,7 @@ public record AssetRequest (
     String status,
     String type,
     JsonObject additionalInfo,
+    JsonObject asset,
     LocalDateTime requestedAt,
     LocalDateTime updatedAt
 ) implements BaseEntity<AssetRequest> {
@@ -39,6 +40,7 @@ public record AssetRequest (
           : Status.PENDING.getStatus(),
         json.getString(Constants.TYPE),
         json.getJsonObject(Constants.ADDITONAL_INFO),
+        json.getJsonObject(Constants.ASSET),
         parseDateTime(json.getString(Constants.REQUESTED_AT)),
         parseDateTime(json.getString(Constants.UPDATED_AT))
       );
@@ -57,6 +59,7 @@ public record AssetRequest (
     if (additionalInfo != null) json.put(Constants.ADDITONAL_INFO, additionalInfo);
     if (status != null && !status.isEmpty()) json.put(Constants.STATUS, status);
     if (type != null) json.put(Constants.TYPE, type);
+    if (asset != null) json.put(Constants.ASSET, asset);
     if (requestedAt != null) json.put(Constants.REQUESTED_AT, requestedAt.format(FORMATTER));
     if (updatedAt != null) json.put(Constants.UPDATED_AT, updatedAt.format(FORMATTER));
 
@@ -73,6 +76,7 @@ public record AssetRequest (
     if (additionalInfo != null) map.put(Constants.ADDITONAL_INFO, additionalInfo);
     if (status != null && !status.isEmpty()) map.put(Constants.STATUS, status);
     if (type != null) map.put(Constants.TYPE, type);
+    if (asset!=null) map.put(Constants.ASSET,asset);
     if (requestedAt != null) map.put(Constants.REQUESTED_AT, requestedAt.format(FORMATTER));
     if (updatedAt != null) map.put(Constants.UPDATED_AT, updatedAt.format(FORMATTER));
 

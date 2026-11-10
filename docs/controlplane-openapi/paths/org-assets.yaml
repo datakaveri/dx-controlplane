@@ -1,0 +1,614 @@
+/iudx/v2/cat/organisation/asset:
+  get:
+    tags:
+    - Organisation Assets Management
+    description: 'Retrieve all assets belonging to the organisation of the authenticated user.
+
+      By default, all organisation-owned assets are returned.
+
+      Optionally, set `filter_myassets=true` to exclude assets owned by the authenticated user.
+
+
+      This endpoint is restricted to users with the `org_admin` role and returns
+
+      organisation-owned assets regardless of their publication status.
+
+      It supports pagination and sorting but is not part of public catalogue discovery.
+
+      '
+    operationId: get organisation assets
+    security:
+    - authorization: []
+    parameters:
+    - name: page
+      in: query
+      description: Page number for pagination
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    - name: size
+      in: query
+      description: Page size for pagination
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 100
+    - name: sort
+      in: query
+      description: 'This parameter allows sorting the results by up to 3 fields, separated by a semicolon (;). The format
+        for each field is `fieldName:asc` or `fieldName:desc`. For example: `itemCreatedAt:desc;dataReadiness:asc;name:desc`
+        will sort by creation date (descending), then dataReadiness (ascending), then name (descending).
+
+        '
+      required: false
+      schema:
+        type: string
+    - name: filter_myassets
+      in: query
+      description: 'When set to `true`, excludes assets owned by the authenticated user from the response. Ownership is determined
+        by comparing the asset''s `ownerUserId` with the `sub` (userId) from the authentication token. Default is `false`.
+
+        '
+      required: false
+      schema:
+        type: boolean
+        default: false
+    responses:
+      '200':
+        description: Assets belonging to an organisation | org_admin can access this endpoint
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: urn:dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                result:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+                paginationInfo:
+                  $ref: ../components/schemas/pagination.yaml#/PaginationInfo
+            example:
+              type: urn:dx:controlPlane:success
+              title: Success
+              result:
+              - id: 674caec0-b39d-418b-8e23-167306751396
+                name: Subdistrict Weather Information for PM103
+                label: Subdistrict Weather Information
+                shortDescription: Daily aggregated temperature and rainfall data at subdistrict level.
+                description: Daily weather statistics at subdistrict level including temperature and rainfall metrics.
+                type:
+                - adex:DataBank
+                department: Test Org11
+                organizationId: 74e3b919-1d1b-44de-ace1-504f1887fcc1
+                organizationType: Public
+                industry: Environmental Monitoring
+                geoCoverage: Karnataka, India
+                tags:
+                - weather
+                - temperature
+                - rainfall
+                - environment
+                publishStatus: PENDING
+                itemStatus: ACTIVE
+                dataUploadStatus: false
+                uploadFrequency: Daily
+                yearRange: 2021-2024
+                license: CC-BY 4.0
+                fileFormat: xlsx
+                accessPolicy: RESTRICTED
+                ownerUserId: 2f945b8d-0cc8-4c5d-9a3e-53fa88e6e9b2
+                itemCreatedAt: 2025-12-12T01:31:54+0530
+                lastUpdated: 12 December, 2025 - 01:31 PM
+                resourceServer:
+                - name: NGSI-LD
+                  type: ngsi-ld
+                  datasetType: DATASET
+                  url: v2.dev.rs.iudx.io
+                  accessTypes:
+                  - api
+                  queryTypes:
+                  - ATTR
+              paginationInfo:
+                page: 1
+                size: 1
+                totalCount: 77
+                totalPages: 77
+                hasNext: true
+                hasPrevious: false
+      '400':
+        description: Invalid request parameters
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:badRequest
+              title: Bad Request
+              detail: 'Invalid sort format: itemCreatedAt-desc. Expected field:order'
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+      '403':
+        description: Forbidden - User does not have the org_admin role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
+    x-codeSamples:
+    - lang: cURL
+      label: get organisation assets
+      source: 'curl --location --request GET
+
+        ''https://${HOSTNAME}/iudx/v2/cat/organisation/asset?sort=name:asc&page=1'' \
+
+        --header ''Authorization: Bearer <token>''
+
+        '
+    - lang: cURL
+      label: get organisation assets (excluding my assets)
+      source: 'curl --location --request GET
+
+        ''https://${HOSTNAME}/iudx/v2/cat/organisation/asset?filter_myassets=true&page=1&size=50'' \
+
+        --header ''Authorization: Bearer <token>''
+
+        '
+  post:
+    summary: Retrieve organisation assets with filters
+    description: 'Retrieve organisation assets using advanced discovery filters.
+
+
+      This endpoint allows organisation administrators to perform filtered searches
+
+      over all assets owned by their organisation, including unpublished items.
+
+      It supports property-based, temporal, numeric range, and full-text search
+
+      filters.
+
+
+      This operation is restricted to users with the `org_admin` role and is not part
+
+      of public catalogue discovery.
+
+
+      Optionally, set `filter_myassets=true` to exclude assets owned by the
+
+      authenticated user from the results.
+
+      '
+    operationId: get org assets with filters
+    tags:
+    - Organisation Assets Management
+    security:
+    - authorization: []
+    parameters:
+    - name: page
+      in: query
+      description: Page number for pagination
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    - name: size
+      in: query
+      description: Page size for pagination
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 100
+    - name: sort
+      in: query
+      description: 'This parameter allows sorting the results by up to 3 fields, separated by a semicolon (;). The format
+        for each field is `fieldName:asc` or `fieldName:desc`. For example: `itemCreatedAt:desc;dataReadiness:asc;name:desc`
+        will sort by creation date (descending), then dataReadiness (ascending), then name (descending).
+
+        '
+      required: false
+      schema:
+        type: string
+    - name: filter_myassets
+      in: query
+      description: 'When set to `true`, excludes assets owned by the authenticated user from the filtered search results.
+        Ownership is determined by comparing the asset''s `ownerUserId` with the `sub` (userId) from the authentication token.
+        Default is `false`.
+
+        '
+      required: false
+      schema:
+        type: boolean
+        default: false
+    requestBody:
+      description: Request body containing unified search filters
+      required: true
+      content:
+        application/json:
+          schema:
+            anyOf:
+            - $ref: ../components/schemas/catalogue.yaml#/TextSearchRequest
+            - $ref: ../components/schemas/catalogue.yaml#/SearchCriteriaRequest
+            - $ref: ../components/schemas/catalogue.yaml#/AutocompleteFuzzyTextSearchRequest
+            - $ref: ../components/schemas/catalogue.yaml#/ComplexSearchRequest
+    responses:
+      '200':
+        description: A successful search response with assets owned by the organization
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/catalogue.yaml#/SearchResponse
+            examples:
+              ExampleResponse:
+                summary: Organisation assets response
+                value:
+                  type: urn:dx:controlPlane:success
+                  title: Success
+                  results:
+                  - id: e86cca04-83ae-4467-bf4f-2e5bd30bb3fd
+                    type:
+                    - adex:AiModel
+                    label: testmodel789
+                    organizationId: 74e3b919-1d1b-44de-ace1-504f1887fcc1
+                    ownerUserId: 2f945b8d-0cc8-4c5d-9a3e-53fa88e6e9b2
+                    itemCreatedAt: 2025-08-26T10:06:20+0530
+                  - id: 51b148a4-2b47-4e49-b629-cf0e89cb019f
+                    type:
+                    - adex:AiModel
+                    label: g4h5h
+                    organizationId: 74e3b919-1d1b-44de-ace1-504f1887fcc1
+                    ownerUserId: 2f945b8d-0cc8-4c5d-9a3e-53fa88e6e9b2
+                    itemCreatedAt: 2025-08-27T10:57:00+0530
+                  - id: ee3ee905-899f-4452-a7ea-ee83d4316fa7
+                    type:
+                    - adex:DataBank
+                    label: Air Quality Data
+                    organizationId: 74e3b919-1d1b-44de-ace1-504f1887fcc1
+                    ownerUserId: 2f945b8d-0cc8-4c5d-9a3e-53fa88e6e9b2
+                    itemCreatedAt: 2025-09-19T02:34:41+0530
+                  paginationInfo:
+                    page: 1
+                    size: 1000
+                    totalCount: 3
+                    totalPages: 1
+                    hasNext: false
+                    hasPrevious: false
+      '400':
+        description: Invalid request parameters
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            examples:
+              InvalidSortFormat:
+                summary: Invalid sort format
+                value:
+                  type: urn:dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: 'Invalid sort format: itemCreatedAt-desc. Expected field:order'
+              MissingOrMalformedRequest:
+                summary: Missing or malformed request body
+                value:
+                  type: urn:dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: Missing or malformed request
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+      '403':
+        description: Forbidden - User does not have the org_admin role
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
+    x-codeSamples:
+    - lang: cURL
+      label: get organisation assets with filters
+      source: "curl --location --request POST 'https://example\n.com/iudx/v2/cat/organisation/asset?size=100&page=1' \\\n\
+        \  --header 'Content-Type: application/json' \\\n  --data '{\n    \"searchCriteria\": [\n      {\n        \"searchType\"\
+        : \"term\",\n        \"field\": \"publishStatus\",\n        \"values\": [\"PENDING\"]\n      }\n    ],\n    \"filter\"\
+        : [\"id\", \"type\", \"label\", \"organizationId\", \"ownerUserId\", \"itemCreatedAt\"]\n  }\n"
+  patch:
+    tags:
+    - Organisation Assets Management
+    description: |
+      Update the publication or data upload status of an organisation asset.
+
+      **Role-based behavior:**
+      - only `cos_admin` can update `publishStatus`.
+      - `provider` can update only `dataUploadStatus`.
+      - `itemStatus` can also be updated through this API:
+        - `UNVERIFIED` → `VERIFIED` can only be performed by an `org_admin`.
+        - `UNVERIFIED` → `SFTP` or `API` can be performed by either the asset `provider` or an `org_admin`.
+      - At least one of `publishStatus`, `dataUploadStatus`, or `itemStatus` must be provided.
+      - Attempting to update fields or status transitions that the caller is not authorized to modify will result in `403 Forbidden`.
+      - `lastUpdated` and `lastUpdatedBy` are set automatically; `lastUpdatedBy` is the id of the user making the request (the delegate's own id when called by a delegate).
+    operationId: patch item
+    security:
+    - authorization: []
+    parameters:
+    - name: id
+      in: query
+      description: ID of the DX Entity
+      required: true
+      schema:
+        type: string
+        format: uuid
+    requestBody:
+      description: |
+        Request payload to update the asset status.
+
+        At least one of `publishStatus`, `dataUploadStatus`, or `itemStatus` must be provided.
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              publishStatus:
+                type: string
+                enum:
+                  - ACTIVE
+                  - PENDING
+                  - DECLINED
+                  - HIDE
+                description: Publication status of the asset.
+                example: ACTIVE
+              dataUploadStatus:
+                type: boolean
+                description: Indicates whether data has been uploaded for the asset.
+                example: true
+              itemStatus:
+                type: string
+                description: |
+                  Verification status of the asset.
+
+                  Allowed transitions:
+                  - `VERIFIED` can only be set by an `org_admin`.
+                  - `API` and `SFTP` can be set by the asset `provider` or an `org_admin`.
+                example: VERIFIED
+            additionalProperties: false
+          examples:
+            Update publish status:
+              value:
+                publishStatus: ACTIVE
+
+            Update data upload status:
+              value:
+                dataUploadStatus: true
+
+            Verify asset:
+              value:
+                itemStatus: VERIFIED
+
+            Mark asset as API:
+              value:
+                itemStatus: API
+
+            Update multiple fields:
+              value:
+                itemStatus: VERIFIED
+                dataUploadStatus: true
+    responses:
+      '200':
+        description: Item status updated successfully
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/successResponseWithObjects
+            examples:
+              Patch Success:
+                value:
+                  type: urn:dx:controlPlane:success
+                  title: Success
+                  detail: 'Success: Item patched successfully'
+                  result:
+                  - id: f5600bf0-7312-4b09-9583-ba742281ebf1
+      '400':
+        description: Invalid request or update not permitted
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            examples:
+              MissingOrMalformedRequest:
+                summary: Missing or malformed request body
+                value:
+                  type: urn:dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: Missing or malformed request
+              ItemNotFoundUnderOrganisation:
+                summary: Item does not belong to the organisation
+                value:
+                  type: urn:dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: No item found for update under your organization
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+      '403':
+        description: Forbidden – insufficient privileges, or setting itemStatus to VERIFIED without being org_admin or the item's dept_admin
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            examples:
+              missingRole:
+                value:
+                  type: urn:dx:controlPlane:forbidden
+                  title: Forbidden
+                  detail: User does not have the required role.
+              itemStatusVerifiedNotAllowed:
+                value:
+                  type: urn:dx:controlPlane:forbidden
+                  title: Forbidden
+                  detail: "Only org_admin or the item's dept_admin can update itemStatus to VERIFIED"
+    x-codeSamples:
+    - lang: cURL
+      label: patch item
+      source: "curl --location --request PATCH\n'https://${HOSTNAME}/iudx/v2/organisation/asset?id=uuid' \\\n--header 'token:\
+        \ <token>'\n--data-raw '{\n  \"publishStatus\": \"ACTIVE\",\n  \"dataUploadStatus\": true\n}'\n"
+/iudx/v2/cat/organisation/department/asset:
+  post:
+    summary: Retrieve department assets with filters (Dept Admin)
+    description: |
+      Retrieve assets owned by the department the authenticated user administers and
+      by all of its sub-departments, using advanced discovery filters -- the
+      department-level counterpart of `POST /iudx/v2/cat/organisation/asset`.
+
+      Supports the same property-based, temporal, numeric range, and full-text search
+      filters, and returns items regardless of publication status. Use
+      `departmentScope` to narrow results to the caller's own department (`own`) or
+      to its sub-departments only (`sub`).
+
+      This endpoint is restricted to `dept_admin` users. Assets with no owning
+      department are not returned (they remain an org_admin concern).
+
+      Optionally, set `filter_myassets=true` to exclude assets owned by the
+      authenticated user from the results.
+    operationId: get department assets with filters
+    tags:
+    - Organisation Assets Management
+    security:
+    - authorization: []
+    parameters:
+    - $ref: ../components/parameters.yaml#/DepartmentScopeParam
+    - name: page
+      in: query
+      description: Page number for pagination
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    - name: size
+      in: query
+      description: Page size for pagination
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 100
+    - name: sort
+      in: query
+      description: 'Sort by up to 3 fields separated by `;`, each as `fieldName:asc` or `fieldName:desc`,
+        e.g. `itemCreatedAt:desc;name:asc`.'
+      required: false
+      schema:
+        type: string
+    - name: filter_myassets
+      in: query
+      description: When `true`, excludes assets owned by the authenticated user. Default is `false`.
+      required: false
+      schema:
+        type: boolean
+        default: false
+    requestBody:
+      description: Request body containing unified search filters
+      required: true
+      content:
+        application/json:
+          schema:
+            anyOf:
+            - $ref: ../components/schemas/catalogue.yaml#/TextSearchRequest
+            - $ref: ../components/schemas/catalogue.yaml#/SearchCriteriaRequest
+            - $ref: ../components/schemas/catalogue.yaml#/AutocompleteFuzzyTextSearchRequest
+            - $ref: ../components/schemas/catalogue.yaml#/ComplexSearchRequest
+    responses:
+      '200':
+        description: A successful search response with assets owned by the caller's department subtree
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/catalogue.yaml#/SearchResponse
+      '400':
+        description: Invalid request parameters
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            examples:
+              InvalidDepartmentScope:
+                summary: Invalid departmentScope value
+                value:
+                  type: urn:dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: 'Invalid departmentScope: children (expected one of all, own, sub)'
+              MissingOrMalformedRequest:
+                summary: Missing or malformed request body
+                value:
+                  type: urn:dx:controlPlane:badRequest
+                  title: Bad Request
+                  detail: Missing or malformed request
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller does not hold the dept-asset-management scope (not a department admin)
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not hold the required role
+    x-codeSamples:
+    - lang: cURL
+      label: get department assets with filters
+      source: |
+        curl --location --request POST 'https://${HOSTNAME}/iudx/v2/cat/organisation/department/asset?departmentScope=all&size=100&page=1' \
+        --header 'Authorization: Bearer <token>' \
+        --header 'Content-Type: application/json' \
+        --data '{
+          "searchCriteria": [
+            {
+              "searchType": "term",
+              "field": "publishStatus",
+              "values": ["PENDING"]
+            }
+          ],
+          "filter": ["id", "type", "label", "organizationId", "hierarchyNodeId", "ownerUserId", "itemCreatedAt"]
+        }'

@@ -1,0 +1,780 @@
+/iudx/v2/cat/item:
+  post:
+    tags:
+    - CAT Entity
+    description: |
+      Create a new catalogue item. The request body defines the entity type
+      (e.g., `adex:AiModel`, `adex:DataBank`, `adex:Apps`) and its metadata.
+      Every prefix in the deployment's `itemTypePrefixes` is accepted (e.g. `iudx:DataBank` when
+      `iudx` is configured) and is treated as the same type; the type is stored as sent.
+      `yearRange` is optional for DataBank items.
+
+      ### Backend-managed fields
+      The following fields are automatically set by the backend and must not be modified by the client:
+      - `itemCreatedAt`
+      - `itemStatus`
+      - `publishStatus`
+      - `dataUploadStatus`
+      - `lastUpdated`
+
+      The `id` field may be provided by the client. If supplied, it must be a valid UUID and must not conflict with an existing item.
+
+      ### Token-derived fields
+      The backend populates these fields using the authenticated user's token:
+      - `ownerUserId` (from token `sub`; the delegator when called by a delegate)
+      - `createdBy` (id of the user making the request; the delegate's own id when called by a delegate)
+      - `lastUpdatedBy` (same as `createdBy` on creation)
+      - `department` (organization name)
+      - `uploadedBy` (organization name)
+      - `organizationId` (if present in the token and not already provided)
+
+      ### Default and conditional behavior
+
+      - **itemStatus**
+        - Set to `VERIFIED` if the authenticated user has the `org_admin` role.
+        - Otherwise, set to `UNVERIFIED`.
+
+      - **publishStatus**
+        - Set to `ACTIVE` if the authenticated user has the `cos_admin` role.
+        - Otherwise, set to `PENDING`.
+
+      - **dataUploadStatus**
+        - Defaults to `false`.
+        - Automatically set to `true` if the item metadata contains a non-empty `mediaURL`.
+
+      > `itemStatus`, `publishStatus`, and `dataUploadStatus` cannot be updated via POST or PUT `/item`.
+      > Use the `/organisation/asset` or `/item` PATCH API to update these fields.
+
+      ### Visibility rules
+      An item becomes visible across the platform only when:
+      - `publishStatus = ACTIVE`
+      - `dataUploadStatus = true`
+
+      **Log Type:** `ASSET`
+    operationId: create item
+    security:
+    - authorization: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            oneOf:
+            - $ref: ../components/schemas/common.yaml#/exampleEntityAIModel
+            - $ref: ../components/schemas/common.yaml#/exampleEntityDataBank
+            - $ref: ../components/schemas/common.yaml#/exampleEntityPotentialApps
+    responses:
+      '201':
+        description: Successfully inserted
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - $ref: ../components/schemas/common.yaml#/successResponseForCreateAIModelEntity
+              - $ref: ../components/schemas/common.yaml#/successResponseForCreateDataBankResourceEntity
+              - $ref: ../components/schemas/common.yaml#/successResponseForCreatePotentialAppsEntity
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/invalidIdErrorResponse
+            example:
+              type: urn:dx:controlPlane:badRequest
+              title: Bad Request
+              detail: Missing or malformed request
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+      '403':
+        description: Document doesn't exist to update it
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/updateItemNotFound
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
+    x-codeSamples:
+    - lang: cURL
+      label: create item cURL
+      source: 'curl --location --request POST ''https://${HOSTNAME}/iudx/v2/cat/item/''
+        \
+
+        --header ''Authorization: Bearer <keycloak_token>'' \
+
+        --header ''Content-Type: application/json'' \
+
+        --data-raw ''<payload>''
+
+        '
+  put:
+    tags:
+      - CAT Entity
+    description: |
+      Replace an existing catalogue item.
+
+      The request body must contain a complete, valid catalogue item payload, including the `id`.
+
+      ### Update constraints
+
+      - `PUT` replaces the entire item. Any fields omitted from the request may be removed unless they are managed by the backend.
+      - The following fields are managed by the backend and are automatically maintained. Any values provided for these fields are ignored:
+        - `itemStatus`
+        - `publishStatus`
+        - `dataUploadStatus`
+        - `lastUpdated`
+      - The following fields are immutable and cannot be modified:
+        - `id`
+        - `ownerUserId`
+        - `createdBy`
+        - `organizationId`
+        - `itemCreatedAt`
+        - `metrics`
+        - The first element of the `type` array
+      - `lastUpdated` is automatically updated to the current UTC time.
+      - `lastUpdatedBy` is automatically set to the id of the user making the request (the delegate's own id when called by a delegate).
+      - `itemStatus` can only be updated to `VERIFIED` by an `org_admin`.
+
+      To update only specific metadata fields without replacing the entire item, use the `PATCH /item` API.
+
+      **Log Type:** `ASSET`
+    operationId: update item
+    security:
+    - authorization: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            oneOf:
+            - $ref: ../components/schemas/common.yaml#/exampleEntityAIModel
+            - $ref: ../components/schemas/common.yaml#/exampleEntityDataBank
+            - $ref: ../components/schemas/common.yaml#/exampleEntityPotentialApps
+    responses:
+      '200':
+        description: Successfully inserted
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - $ref: ../components/schemas/common.yaml#/successResponseForUpdateAIModelEntity
+              - $ref: ../components/schemas/common.yaml#/successResponseForUpdateDataBankEntity
+              - $ref: ../components/schemas/common.yaml#/successResponseForUpdateAdexAppsEntity
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/invalidIdErrorResponse
+            example:
+              type: urn:dx:controlPlane:badRequest
+              title: Bad Request
+              detail: Missing or malformed request
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+      '403':
+        description: Forbidden – missing required role, or setting itemStatus to VERIFIED without the org_asset_publish scope
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/updateItemNotFound
+            examples:
+              missingRole:
+                value:
+                  type: urn:dx:controlPlane:forbidden
+                  title: Forbidden
+                  detail: User does not have the required role.
+              itemStatusVerifiedNotAllowed:
+                value:
+                  type: urn:dx:controlPlane:forbidden
+                  title: Forbidden
+                  detail: Only users with org_asset_publish scope can update itemStatus to VERIFIED
+      '404':
+        description: Document doesn't exist to update it
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/updateItemNotFound
+            examples:
+              updateItemNotFound:
+                value:
+                  type: urn:dx:controlPlane:notFound
+                  title: Not Found
+                  detail: Item not found for update
+    x-codeSamples:
+    - lang: cURL
+      label: update item cURL
+      source: 'curl --location --request PUT ''https://${HOSTNAME}/iudx/v2/cat/item/''
+        \
+
+        --header ''token: <token>'' \
+
+        --header ''Content-Type: application/json'' \
+
+        --data-raw ''<payload>''
+
+        '
+  get:
+    tags:
+    - CAT Entity
+    description: |
+      Get an item given the ID.
+
+      If a Bearer token is provided in the Authorization header, the request
+      will be authenticated.
+
+      Audit logging is enabled by default for authenticated requests.
+      To disable audit logging, set `auditEnabled=false`.
+
+      **Log Type:** `ASSET`
+    operationId: get item
+    security:
+    - optionalAuth: []
+    parameters:
+    - name: id
+      in: query
+      description: ID of the DX Entity
+      required: true
+      schema:
+        type: string
+        format: uuid
+        pattern: ^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$
+    - name: auditEnabled
+      in: query
+      required: false
+      description: |
+        Enables or disables audit logging for the request.
+        Defaults to true when not provided.
+      schema:
+        type: boolean
+        default: true
+    responses:
+      '200':
+        description: Found the item.
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - $ref: ../components/schemas/common.yaml#/successResponseForGetAIModelEntity
+              - $ref: ../components/schemas/common.yaml#/successResponseForGetDataBankEntity
+              - $ref: ../components/schemas/common.yaml#/successResponseForGetAdexAppsEntity
+      '400':
+        description: Invalid ID.
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/invalidIdErrorResponse
+            example:
+              type: urn:dx:controlPlane:badRequest
+              title: Bad Request
+              detail: Missing or malformed request
+      '404':
+        description: Didn't find the item.
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/invalidIdErrorResponse
+            example:
+              type: urn:dx:controlPlane:notFound
+              title: Not Found
+              detail: doc doesn't exist
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+    x-codeSamples:
+    - lang: cURL
+      label: item by id
+      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/v2/cat/item?id=uuid''
+
+        '
+  delete:
+    tags:
+    - CAT Entity
+    description: |
+      Delete an item.
+      
+      Before deletion, the Control Plane performs the following validations and operations:
+      
+      - Verifies that the item does not have any active policies. If active policies exist, the deletion request is rejected with a **409 Conflict** response.
+      - Creates a backup of the item in the deleted items index before permanently deleting it, enabling downstream services such as the Audit Server to retrieve deleted item details when required.
+      
+      **Log Type:** `ASSET`
+
+      '
+    operationId: delete item
+    security:
+    - authorization: []
+    parameters:
+    - name: id
+      in: query
+      description: ID of the DX Entity
+      required: true
+      schema:
+        type: string
+        format: uuid
+        pattern: ^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$
+    responses:
+      '200':
+        description: Successfully deleted
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/successResponseWithObjects
+            examples:
+              Delete Success:
+                value:
+                  type: urn:dx:controlPlane:success
+                  title: Success
+                  detail: 'Success: Item deleted successfully'
+      '400':
+        description: Invalid ID.
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/invalidIdErrorResponse
+            example:
+              type: urn:dx:controlPlane:badRequest
+              title: Bad Request
+              detail: Missing or malformed request
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+      '404':
+        description: Didn't find the item
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/unAuthorizedAccess
+            examples:
+              Item not found to Delete:
+                value:
+                  type: urn:dx:controlPlane:notFound
+                  title: Not Found
+                  detail: Item not found for deletion
+      '409':
+        description: Conflict
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/unAuthorizedAccess
+            examples:
+              Item has active policies:
+                value:
+                  type: urn:dx:controlPlane:conflict
+                  title: Conflict
+                  detail: Item cannot be deleted as it has active policies
+    x-codeSamples:
+    - lang: cURL
+      label: delete item
+      source: 'curl --location --request DELETE ''https://${HOSTNAME}/iudx/v2/cat/item?id=uuid''
+        \
+
+        --header ''token: <token>''
+
+        '
+  patch:
+    tags:
+    - CAT Entity
+    description: |
+      Update metadata fields of an owned catalogue item.
+
+      - Asset owners (`provider`) can update any field except `publishStatus` and other restricted fields.
+      - Only `cos_admin` can update `publishStatus`.
+      - `itemStatus` cannot be updated to `VERIFIED` by a `provider`. It can only be updated to `VERIFIED` by an `org_admin`.
+      - The following fields cannot be updated via this API: `ownerUserId`, `createdBy`, `organizationId`, `itemCreatedAt`, and `metrics`.
+      - `lastUpdated` is automatically set to the current UTC time.
+      - `lastUpdatedBy` is automatically set to the id of the user making the request (the delegate's own id when called by a delegate).
+    operationId: patch item metadata
+    security:
+    - authorization: []
+    parameters:
+    - name: id
+      in: query
+      description: ID of the catalogue item to update
+      required: true
+      schema:
+        type: string
+        format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            minProperties: 1
+            description: Fields to update. Any item metadata field is allowed except providerUserId, organizationId, itemCreatedAt, and metrics.
+          example:
+            label: Updated Asset Label
+            shortDescription: Updated short description
+            publishStatus: ACTIVE
+    responses:
+      '200':
+        description: Item metadata updated successfully
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/successResponseWithObjects
+            example:
+              type: urn:dx:controlPlane:success
+              title: Success
+              detail: 'Success: Item patched successfully'
+              results:
+              - id: f5600bf0-7312-4b09-9583-ba742281ebf1
+      '400':
+        description: Invalid request or missing fields
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/invalidIdErrorResponse
+            example:
+              type: urn:dx:controlPlane:badRequest
+              title: Bad Request
+              detail: Missing or malformed request
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+      '403':
+        description: Forbidden – attempting to update a restricted field or publishStatus without admin role, or setting itemStatus to VERIFIED without being org_admin or the item's dept_admin
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            examples:
+              missingRole:
+                value:
+                  type: urn:dx:controlPlane:forbidden
+                  title: Forbidden
+                  detail: User does not have the required role.
+              itemStatusVerifiedNotAllowed:
+                value:
+                  type: urn:dx:controlPlane:forbidden
+                  title: Forbidden
+                  detail: "Only org_admin or the item's dept_admin can update itemStatus to VERIFIED"
+      '404':
+        description: Item not found
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+            example:
+              type: urn:dx:controlPlane:notFound
+              title: Not Found
+              detail: Item not found
+    x-codeSamples:
+    - lang: cURL
+      label: patch item metadata
+      source: |
+        curl --location --request PATCH 'https://${HOSTNAME}/iudx/v2/cat/item?id=uuid' \
+        --header 'Authorization: Bearer <token>' \
+        --header 'Content-Type: application/json' \
+        --data '{
+          "label": "Updated Asset Label",
+          "shortDescription": "Updated short description"
+        }'
+/items/scripts/download/{filename}:
+  get:
+    tags:
+    - CAT Entity
+    summary: Download generated ingestion script
+    description: 'Download a generated Python script for onboarding OGC vector or
+      STAC raster data.
+
+
+      The `filename` path parameter must match the filename returned by the script
+
+      generation APIs (e.g., `/items/scripts/download/<filename>.py`).
+
+      '
+    operationId: download script
+    parameters:
+    - in: path
+      name: filename
+      required: true
+      schema:
+        type: string
+        example: 123e4567-e89b-12d3-a456-426614174000_vector_20250120_120000.py
+      description: Name of the generated script file to download (must end with `.py`).
+    responses:
+      '200':
+        description: Python script file
+        content:
+          text/x-python:
+            schema:
+              type: string
+              format: binary
+      '400':
+        description: Invalid filename
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+      '404':
+        description: Script file not found
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ErrorResponse
+      '500':
+        description: Internal server error while reading the script file
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+/iudx/v2/cat/item/access:
+  get:
+    tags:
+    - CAT Entity
+    description: |
+      Get an item with **access policy enforcement**.
+
+      Access is evaluated based on the item's `accessPolicy` and the identity of the caller.
+
+      - If `accessPolicy=open`, the item is accessible to anyone.
+      - If `accessPolicy=restricted`, access is granted only if the caller:
+        - has an active policy for the item,
+        - is the owner of the item, or
+        - has an administrative role (`org_admin` or `cos_admin`).
+      - If `accessPolicy=private`, access is granted only to:
+        - the owner of the item, or
+        - users with administrative roles (`org_admin` or `cos_admin`).
+
+      If a Bearer token is provided in the Authorization header, the request is authenticated and access checks are performed accordingly.
+
+      For items with `accessPolicy=restricted` or `accessPolicy=private`, a valid token **must** be provided. Otherwise, the request is rejected with **401 Unauthorized**.
+
+      When access is granted, the response may include:
+
+      - Applicable policy details.
+      - Ownership access flag.
+      - Administrative access flag.
+
+      ### Delegator Access
+
+      - If `isDelegator=true`, the caller is treated as a delegator accessing the item on behalf of a delegate.
+      - In this case, `did` is mandatory.
+      - Delegation scopes are validated to ensure the delegator has access to the requested item.
+      - If delegation does not exist or the scope does not permit access, the request is rejected with **403 Forbidden**.
+
+      **Log Type:** `ASSET`
+    operationId: get item with accessPolicy
+    security:
+    - optionalAuth: []
+    parameters:
+    - name: id
+      in: query
+      description: ID of the DX Entity
+      required: true
+      schema:
+        type: string
+        format: uuid
+        pattern: ^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$
+    - name: isDelegator
+      in: query
+      description: 'Indicates whether the caller is accessing the item as a delegator.
+        Defaults to `false` when not provided.
+
+        '
+      required: false
+      schema:
+        type: boolean
+        default: false
+    - name: did
+      in: query
+      description: 'Delegate DID. **Mandatory when `isDelegator=true`**.
+
+        '
+      required: false
+      schema:
+        type: string
+        format: uuid
+    responses:
+      '200':
+        description: Found the item (access granted).
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - $ref: ../components/schemas/common.yaml#/successResponseForGetAIModelEntityWithAccess
+              - $ref: ../components/schemas/common.yaml#/successResponseForGetDataBankEntityWithAccess
+              - $ref: ../components/schemas/common.yaml#/successResponseForGetAdexAppsEntityWithAccess
+      '400':
+        description: Invalid ID.
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/invalidIdErrorResponse
+            example:
+              type: urn:dx:controlPlane:badRequest
+              title: Bad Request
+              detail: Missing or malformed request
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+      '403':
+        description: Forbidden – user does not have access based on `accessPolicy`.
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/errorResponseWithObjects
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
+      '404':
+        description: Didn't find the item.
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/invalidIdErrorResponse
+            example:
+              type: urn:dx:controlPlane:notFound
+              title: Not Found
+              detail: doc doesn't exist
+    x-codeSamples:
+    - lang: cURL
+      label: get item with accessPolicy
+      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/v2/cat/item/access?id=uuid''
+        \
+
+        --header ''Authorization: Bearer <token>''
+
+        '
+    - lang: cURL
+      label: get item with accessPolicy (delegator)
+      source: 'curl --location --request GET
+
+        ''https://${HOSTNAME}/iudx/v2/cat/item/access?id=uuid&isDelegator=true&did=delegate-did''
+        \
+
+        --header ''Authorization: Bearer <token>''
+
+        '
+/iudx/v2/cat/item/available-name:
+  get:
+    tags:
+    - CAT Entity
+    description: 'Check if a given asset name is available for creating a new catalogue
+      item.
+
+      This API is intended for UI clients to perform a pre-validation before submitting
+      a create request.
+
+      The validation checks whether any existing item already uses the same name.
+
+      By default, the check considers items in both ACTIVE and PENDING states to prevent
+      duplicate entries during approval workflows.
+
+      '
+    operationId: validate item name availability
+    security:
+    - optionalAuth: []
+    parameters:
+    - name: name
+      in: query
+      description: Name of the asset to validate
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        description: Name availability result
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: urn:dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                detail:
+                  type: string
+                  example: Asset name is available
+      '400':
+        description: Invalid request parameters
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/invalidIdErrorResponse'
+            example:
+              type: urn:dx:controlPlane:badRequest
+              title: Bad Request
+              detail: Missing or invalid query parameters
+      '401':
+        description: Missing or invalid authentication token
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/Unauthorized'
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+      '409':
+        description: Conflict | Asset Name Already Exists
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+            examples:
+              InvalidToken:
+                summary: Conflict - Asset Name Already Exists
+                value:
+                  type: urn:dx:controlPlane:conflict
+                  title: Conflict
+                  detail: Asset name Already Exists
+    x-codeSamples:
+    - lang: cURL
+      label: validate item name
+      source: 'curl --location --request GET ''https://${HOSTNAME}/iudx/v2/cat/item/available-name?name=
+
+        sandbox item''
+
+        '

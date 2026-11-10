@@ -1,10 +1,15 @@
 package org.cdpg.dx.aaa.token.util;
 
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.time.Instant;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.common.model.DxUser;
 
 public class TokenClaimsBuilder {
+
+  private static final Logger LOGGER = LogManager.getLogger(TokenClaimsBuilder.class);
 
   public static JsonObject buildClaims(DxUser dxUser, String iss, String aud, long expiryMinutes) {
     JsonObject claims = new JsonObject();
@@ -12,6 +17,24 @@ public class TokenClaimsBuilder {
     Instant now = Instant.now();
     long nowEpoch = now.getEpochSecond();
     long expEpoch = now.plusSeconds(expiryMinutes * 60).getEpochSecond();
+    // **************************************************************************************
+
+    JsonObject realmAccess = new JsonObject();
+    JsonArray rolesArray = new JsonArray();
+
+    if (dxUser.roles() != null && !dxUser.roles().isEmpty()) {
+
+      for (String role : dxUser.roles()) {
+        rolesArray.add(role);
+      }
+    }
+
+    LOGGER.info("roles array :{}", rolesArray);
+    realmAccess.put("roles", rolesArray);
+    claims.put("realm_access", realmAccess);
+    LOGGER.info(" realm_access :{}", realmAccess);
+
+    // **********************************************************************************************
 
     // Standard OIDC / JWT claims
     claims.put("sub", dxUser.sub().toString());
@@ -21,17 +44,17 @@ public class TokenClaimsBuilder {
     claims.put("iat", nowEpoch);
 
     // Keycloak-like structure
-    if (dxUser.roles() != null && !dxUser.roles().isEmpty()) {
-      JsonObject realmAccess = new JsonObject().put("roles", dxUser.roles());
-      claims.put("realm_access", realmAccess);
-    }
+    //    if (dxUser.roles() != null && !dxUser.roles().isEmpty()) {
+    //      JsonObject realmAccess = new JsonObject().put("roles", dxUser.roles());
+    //      claims.put("realm_access", realmAccess);
+    //    }
 
     // Resource access (Keycloak-like)
-    if (dxUser.roles() != null && !dxUser.roles().isEmpty()) {
-      JsonObject resourceAccess =
-          new JsonObject().put("account", new JsonObject().put("roles", dxUser.roles()));
-      claims.put("resource_access", resourceAccess);
-    }
+    //    if (dxUser.roles() != null && !dxUser.roles().isEmpty()) {
+    //      JsonObject resourceAccess =
+    //          new JsonObject().put("account", new JsonObject().put("roles", dxUser.roles()));
+    //      claims.put("resource_access", resourceAccess);
+    //    }
 
     // Keycloak-like user fields (only if present)
     putIfNotBlank(claims, "preferred_username", dxUser.preferredUsername());
@@ -44,13 +67,9 @@ public class TokenClaimsBuilder {
     claims.put(
         "account_enabled", dxUser.account_enabled() != null ? dxUser.account_enabled() : true);
 
-    if (dxUser.createdAt() != null) {
-      claims.put("created_at", dxUser.createdAt().toString());
-    }
-
     // Organisation info (only if present)
-    putIfNotBlank(claims, "organisationId", dxUser.organisationId());
-    putIfNotBlank(claims, "organisationName", dxUser.organisationName());
+    putIfNotBlank(claims, "organisation_id", dxUser.organisationId());
+    putIfNotBlank(claims, "organisation_name", dxUser.organisationName());
     if (dxUser.organisation() != null && !dxUser.organisation().isEmpty()) {
       claims.put("organisation", dxUser.organisation());
     }

@@ -1,0 +1,52 @@
+DelegationRole:
+  type: string
+  enum:
+    - cos_admin
+    - org_admin
+    - provider
+    - consumer
+    - compute
+  description: |
+    Role of the delegator. Each role is permitted to delegate only specific scopes.
+
+    | Role        | Allowed Scopes                                                                                                                                                  |
+    |-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+    | `consumer`  | `data-access`                                                                                                                                                   |
+    | `provider`  | `own-asset-management`                                                                                                                                          |
+    | `org_admin` | `org-user-management`, `org-asset-management`, `org-asset-publish`, `own-asset-management`, `org-publisher-management`                                         |
+    | `cos_admin` | `org-management`, `asset-publish`, `asset-management`, `user-management`, `publisher-management`, `role-management`, `credit-management`, `compute-management` |
+    | `compute`   | `compute-management`                                                                                                                                            |
+
+DelegationScope:
+  type: string
+  enum:
+    - data-access
+    - own-asset-management
+    - org-user-management
+    - org-asset-management
+    - org-asset-publish
+    - org-publisher-management
+    - org-management
+    - asset-publish
+    - asset-management
+    - user-management
+    - publisher-management
+    - role-management
+    - credit-management
+    - compute-management
+  description: |
+    Scope of access being delegated. Each scope is restricted to specific roles.Check the roles description for more information.
+
+DelegationEntityType:
+  type: string
+  description: |
+    The type of entity this delegation is scoped to. Item types use the deployment's
+    item type prefixes (`itemTypePrefixes`, e.g. `adex`).
+
+    | Entity Type         | Description                                      |
+    |---------------------|--------------------------------------------------|
+    | `org`               | Organisation-level delegation                    |
+    | `provider`          | Provider-level delegation                        |
+    | `<prefix>:AiModel`  | Delegation scoped to an AI Model asset           |
+    | `<prefix>:DataBank` | Delegation scoped to a DataBank asset            |
+    | `<prefix>:Apps`     | Delegation scoped to an Apps asset               |

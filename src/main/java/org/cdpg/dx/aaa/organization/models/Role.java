@@ -3,6 +3,7 @@ package org.cdpg.dx.aaa.organization.models;
 
 public enum Role {
   ADMIN("admin"),
+  DEPT_ADMIN("dept_admin"),
   USER("member");
 
   private final String roleName;

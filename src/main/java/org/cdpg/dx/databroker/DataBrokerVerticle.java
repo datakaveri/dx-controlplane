@@ -1,119 +1,94 @@
 package org.cdpg.dx.databroker;
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.client.WebClientOptions;
+import static org.cdpg.dx.aaa.common.Constants.DELETED_DOCS_INDEX;
+import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.*;
+
 import io.vertx.rabbitmq.RabbitMQClient;
-import io.vertx.rabbitmq.RabbitMQOptions;
-import io.vertx.serviceproxy.ServiceBinder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.databroker.client.RabbitClient;
-import org.cdpg.dx.databroker.service.DataBrokerService;
-import org.cdpg.dx.databroker.service.DataBrokerServiceImpl;
-import org.cdpg.dx.databroker.util.Vhosts;
+import org.cdpg.dx.aaa.activity.dao.UserActivityLogDao;
+import org.cdpg.dx.aaa.activity.dao.impl.UserActivityLogDaoImpl;
+import org.cdpg.dx.aaa.activity.service.UserActivityAuditLogService;
+import org.cdpg.dx.aaa.activity.service.impl.UserActivityAuditLogServiceImpl;
+import org.cdpg.dx.aaa.common.ItemType;
+import org.cdpg.dx.aaa.item.service.ItemService;
+import org.cdpg.dx.aaa.item.service.ItemServiceImpl;
+import org.cdpg.dx.aaa.leaderboard.dao.LeaderboardWriteDao;
+import org.cdpg.dx.aaa.leaderboard.dao.impl.LeaderboardWriteDaoImpl;
+import org.cdpg.dx.aaa.leaderboard.enrichment.LeaderboardEnrichmentService;
+import org.cdpg.dx.aaa.leaderboard.writer.LeaderboardWriterService;
+import org.cdpg.dx.auditing.v2.enrichment.AssetEnrichmentService;
+import org.cdpg.dx.auditing.v2.enrichment.AuditEnrichmentService;
+import org.cdpg.dx.auditing.v2.enrichment.UserEnrichmentService;
+import org.cdpg.dx.database.elastic.service.ElasticsearchService;
+import org.cdpg.dx.database.postgres.service.PostgresService;
+import org.cdpg.dx.databroker.listeners.AuditMessageConsumer;
+import org.cdpg.dx.databroker.listeners.EmailMessageConsumer;
+import org.cdpg.dx.databroker.listeners.LeaderboardConsumer;
+import org.cdpg.dx.databroker.verticle.BaseDataBrokerVerticle;
+import org.cdpg.dx.email.service.EmailService;
+import org.cdpg.dx.keycloak.service.KeycloakUserService;
+import org.cdpg.dx.keycloak.service.KeycloakUserServiceImpl;
 
-import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DATA_BROKER_SERVICE_ADDRESS;
-
-public class DataBrokerVerticle extends AbstractVerticle {
+/** Controlplane DataBrokerVerticle — sets up audit, email, and leaderboard consumers. */
+public class DataBrokerVerticle extends BaseDataBrokerVerticle {
 
   private static final Logger LOGGER = LogManager.getLogger(DataBrokerVerticle.class);
-  private DataBrokerService dataBrokerService;
-  private RabbitMQOptions rabbitMQOptions;
-  private String dataBrokerIp;
-  private int dataBrokerPort;
-  private int dataBrokerManagementPort;
-  private String dataBrokerUserName;
-  private String dataBrokerPassword;
-  private int connectionTimeout;
-  private int requestedHeartbeat;
-  private int handshakeTimeout;
-  private int requestedChannelMax;
-  private int networkRecoveryInterval;
-  private WebClientOptions webConfig;
-  private ServiceBinder binder;
-  private MessageConsumer<JsonObject> consumer;
-  private RabbitClient rabbitClient;
-  private RabbitMQClient iudxRabbitMqClient;
-  private RabbitMQClient iudxInternalRabbitMqClient;
-  private int amqpPort;
-  private String amqpUrl;
 
   @Override
-  public void start() throws Exception {
+  protected void onBrokerReady(
+      RabbitMQClient internalClient, RabbitMQClient prodClient, RabbitClient rabbitClient) {
+    ItemType.configurePrefix(config());
 
-    /* Read the configuration and set the rabbitMQ server properties. */
-    dataBrokerIp = config().getString("dataBrokerIP");
-    dataBrokerPort = config().getInteger("dataBrokerPort");
-    dataBrokerManagementPort = config().getInteger("dataBrokerManagementPort");
-    dataBrokerUserName = config().getString("dataBrokerUserName");
-    dataBrokerPassword = config().getString("dataBrokerPassword");
-    connectionTimeout = config().getInteger("connectionTimeout");
-    requestedHeartbeat = config().getInteger("requestedHeartbeat");
-    handshakeTimeout = config().getInteger("handshakeTimeout");
-    requestedChannelMax = config().getInteger("requestedChannelMax");
-    networkRecoveryInterval = config().getInteger("networkRecoveryInterval");
-    amqpUrl = config().getString("brokerAmqpIp");
-    amqpPort = config().getInteger("brokerAmqpPort");
+    PostgresService pgService = PostgresService.createProxy(vertx, POSTGRES_SERVICE_ADDRESS);
+    ElasticsearchService esService =
+        ElasticsearchService.createProxy(vertx, ELASTIC_SERVICE_ADDRESS);
+    KeycloakUserService keycloakUserService = new KeycloakUserServiceImpl(config());
 
-    /* Configure the RabbitMQ Data Broker client with input from config files. */
-    rabbitMQOptions = new RabbitMQOptions();
-    rabbitMQOptions.setUser(dataBrokerUserName);
-    rabbitMQOptions.setPassword(dataBrokerPassword);
-    rabbitMQOptions.setHost(dataBrokerIp);
-    rabbitMQOptions.setPort(dataBrokerPort);
-    rabbitMQOptions.setConnectionTimeout(connectionTimeout);
-    rabbitMQOptions.setRequestedHeartbeat(requestedHeartbeat);
-    rabbitMQOptions.setHandshakeTimeout(handshakeTimeout);
-    rabbitMQOptions.setRequestedChannelMax(requestedChannelMax);
-    rabbitMQOptions.setNetworkRecoveryInterval(networkRecoveryInterval);
-    rabbitMQOptions.setAutomaticRecoveryEnabled(true);
+    // Item service for enrichment
+    String docIndex = config().getString("docIndex");
+    String deletedDocsIndex = config().getString(DELETED_DOCS_INDEX);
+    ItemService itemService =
+        new ItemServiceImpl(esService, null, null, null, null, docIndex, deletedDocsIndex, null);
 
-    String externalVhost = config().getString(Vhosts.IUDX_EXTERNAL.value);
+    // Audit consumer
+    AssetEnrichmentService assetEnrichmentService = new AssetEnrichmentService(itemService);
+    UserEnrichmentService userEnrichmentService = new UserEnrichmentService(keycloakUserService);
+    AuditEnrichmentService auditEnrichmentService =
+        new AuditEnrichmentService(assetEnrichmentService, userEnrichmentService);
 
-    RabbitMQOptions iudxConfig = new RabbitMQOptions(rabbitMQOptions);
-    String prodVhost = config().getString(Vhosts.IUDX_PROD.value);
+    UserActivityLogDao userActivityLogDao = new UserActivityLogDaoImpl(pgService);
+    UserActivityAuditLogService userActivityAuditLogService =
+        new UserActivityAuditLogServiceImpl(userActivityLogDao);
 
-    RabbitMQOptions iudxInternalConfig = new RabbitMQOptions(rabbitMQOptions);
-    String iudxInternalVhost = config().getString(Vhosts.IUDX_INTERNAL.value);
+    String auditQueue = config().getString("auditingQueue");
+    AuditMessageConsumer auditConsumer =
+        new AuditMessageConsumer(
+            internalClient,
+            auditQueue,
+            auditEnrichmentService,
+            userActivityAuditLogService,
+            itemService,
+            true);
+    auditConsumer.start();
 
-    iudxConfig.setVirtualHost(prodVhost);
-    iudxInternalConfig.setVirtualHost(iudxInternalVhost);
+    // Leaderboard consumer
+    LeaderboardWriteDao leaderboardWriteDao = new LeaderboardWriteDaoImpl(pgService);
+    LeaderboardConsumer leaderboardConsumer =
+        new LeaderboardConsumer(
+            internalClient,
+            new LeaderboardEnrichmentService(itemService, keycloakUserService),
+            new LeaderboardWriterService(leaderboardWriteDao),
+            config().getString("leaderboardQueue", "leaderboard"));
+    leaderboardConsumer.start();
 
-    webConfig = new WebClientOptions();
-    webConfig.setKeepAlive(true);
-    webConfig.setConnectTimeout(86400000);
-    webConfig.setDefaultHost(dataBrokerIp);
-    webConfig.setDefaultPort(dataBrokerManagementPort);
-    webConfig.setKeepAliveTimeout(86400000);
+    // Email consumer
+    EmailService emailService = EmailService.createProxy(vertx, EMAIL_SERVICE_ADDRESS);
+    String emailQueue = config().getString("emailQueue", "email-notification");
+    EmailMessageConsumer emailMessageConsumer =
+        new EmailMessageConsumer(vertx, internalClient, emailQueue, emailService);
+    emailMessageConsumer.start();
 
-    /* Create a RabbitMQ Clinet with the configuration and vertx cluster instance. */
-    RabbitMQClient.create(vertx, rabbitMQOptions);
-
-    /* Create a Vertx Web Client with the configuration and vertx cluster instance. */
-    WebClient.create(vertx, webConfig);
-
-    /* Call the databroker constructor with the RabbitMQ client. */
-
-    iudxRabbitMqClient = RabbitMQClient.create(vertx, iudxConfig);
-    iudxInternalRabbitMqClient = RabbitMQClient.create(vertx, iudxInternalConfig);
-    rabbitClient = new RabbitClient(iudxInternalRabbitMqClient, iudxRabbitMqClient);
-    binder = new ServiceBinder(vertx);
-
-    dataBrokerService = new DataBrokerServiceImpl(rabbitClient);
-
-    /* Publish the Data Broker service with the Event Bus against an address. */
-
-    consumer =
-        binder
-            .setAddress(DATA_BROKER_SERVICE_ADDRESS)
-            .register(DataBrokerService.class, dataBrokerService);
-  }
-
-  @Override
-  public void stop() throws Exception {
-    binder.unregister(consumer);
+    LOGGER.info("DataBrokerVerticle: audit, leaderboard, and email consumers started");
   }
 }

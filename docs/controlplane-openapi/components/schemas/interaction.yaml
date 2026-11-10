@@ -1,0 +1,770 @@
+UserInteractionRequest:
+  type: object
+  required:
+  - assetId
+  - assetType
+  - actionType
+  properties:
+    assetId:
+      type: string
+      format: uuid
+      description: ID of the entity being voted on
+      example: 7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9
+    assetType:
+      type: string
+      description: Type of entity being vote on
+      enum:
+      - DATABANK
+      - AI_MODEL
+      - USECASE
+      example: DATABANK
+    actionType:
+      type: string
+      description: Type of vote
+      enum:
+      - BOOKMARK
+      - UNBOOKMARK
+      - LIKE
+      - DISLIKE
+      - NEUTRAL
+      example: LIKE
+InteractionResponse:
+  type: object
+  title: Response for internal datasets .
+  description: Example success response for getting internal datasets
+  properties:
+    type:
+      type: string
+      description: 'URN type of the response indicating if the query was successful or if any errors have
+
+        been triggered.
+
+        '
+    title:
+      description: A human readable title to the message response.
+    detail:
+      type: string
+  required:
+  - type
+  example:
+    type: urn:dx:controlPlane:success
+    title: Success
+    detail: Interaction recorded successfully
+UserFeedbackRequest:
+  type: object
+  required:
+  - assetId
+  properties:
+    assetId:
+      type: string
+      format: uuid
+      description: UUID of the asset being rated or acted upon
+    entityRating:
+      type: integer
+      minimum: 1
+      maximum: 5
+      description: Star rating from 1 to 5
+    actionSubtype:
+      type: string
+      description: Type of interaction action such as bookmark, like, dislike
+    actionSubdata:
+      type: object
+      description: Additional structured data associated with the action
+UserFeedbackResult:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: UUID of the feedback
+    userId:
+      type: string
+      format: uuid
+      description: UUID of the user who submitted the feedback
+    userName:
+      type: string
+      nullable: true
+      description: Display name of the user who submitted the feedback, resolved best-effort from the identity provider
+    organisation:
+      type: string
+      nullable: true
+      description: Organisation name of the user who submitted the feedback, when available
+    assetId:
+      type: string
+      format: uuid
+      description: UUID of the asset
+    assetType:
+      type: string
+      description: Type of the asset
+      enum:
+        - DATABANK
+        - AI_MODEL
+        - USECASE
+    entityRating:
+      type: integer
+      minimum: 1
+      maximum: 5
+      description: Star rating from 1 (lowest) to 5 (highest)
+    actionSubtype:
+      type: string
+      description: Structured feedback category
+    actionSubdata:
+      type: object
+      description: Additional structured data associated with the feedback (e.g. a free-text comment)
+    ratingCreatedAt:
+      type: string
+      format: date-time
+      description: >-
+        When this user first gave feedback/rating on this asset. Distinct from
+        the asset's own interaction record, which is also touched by
+        unrelated like/dislike/bookmark activity.
+    ratingUpdatedAt:
+      type: string
+      format: date-time
+      description: When this user's feedback/rating on this asset was last changed
+RatingSummary:
+  type: object
+  description: >-
+    Aggregate rating summary across the full set of feedback rows matching the
+    request's filters (not scoped to the current page).
+  required:
+  - averageRating
+  - totalRatings
+  - ratingDistribution
+  properties:
+    averageRating:
+      type: number
+      format: double
+      description: Average star rating across all matching feedback rows, rounded to 2 decimal places. 0 when there are no ratings.
+      example: 4.5
+    totalRatings:
+      type: integer
+      format: int64
+      description: Total number of feedback rows with a non-null rating in the matching set.
+      example: 2
+    ratingDistribution:
+      type: object
+      description: Count of ratings per star value, keyed "1" through "5".
+      properties:
+        '1':
+          type: integer
+          format: int64
+          example: 0
+        '2':
+          type: integer
+          format: int64
+          example: 0
+        '3':
+          type: integer
+          format: int64
+          example: 0
+        '4':
+          type: integer
+          format: int64
+          example: 1
+        '5':
+          type: integer
+          format: int64
+          example: 1
+UserFeedbackPaginatedResponse:
+  type: object
+  required:
+  - type
+  - title
+  - result
+  - paginationInfo
+  properties:
+    type:
+      type: string
+      example: urn:dx:controlPlane:success
+    title:
+      type: string
+      example: Success
+    summary:
+      $ref: '#/RatingSummary'
+    result:
+      type: array
+      items:
+        $ref: '#/UserFeedbackResult'
+    paginationInfo:
+      $ref: pagination.yaml#/PaginationInfoResponse
+  example:
+    type: urn:dx:controlPlane:success
+    title: Success
+    result:
+      summary:
+        averageRating: 3.8
+        totalRatings: 10
+        ratingDistribution:
+          '1': 2
+          '2': 0
+          '3': 0
+          '4': 4
+          '5': 4
+      data:
+        - id: e564fabd-27a5-40da-88f1-e0c0e8c29822
+          userId: 847d1741-9f1e-4583-89f8-96f254ca6e36
+          userName: Test User Consumer
+          organisation: IUDX - New 2020
+          assetId: dd96f3d9-9654-434d-882b-c35a9fa6fc35
+          assetType: DATABANK
+          assetName: Test DataBank1
+          entityRating: 4
+          feedbackStatus: APPROVED
+          feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
+          ratingCreatedAt: '2026-09-15T05:02:49.906371'
+          ratingUpdatedAt: '2026-09-15T05:02:49.906371'
+          actionSubtype: data_quality
+          actionSubdata:
+            comment: The data is accurate and meets expectations.
+
+        - id: 96b6a2b2-f09f-4a5d-918c-6e66188dcbb8
+          userId: 847d1741-9f1e-4583-89f8-96f254ca6e36
+          userName: Test User Consumer
+          organisation: IUDX - New 2020
+          assetId: 588a71fc-a7b2-46a2-a06c-a3777db5f07e
+          assetType: DATABANK
+          assetName: Test DataBank2
+          entityRating: 5
+          feedbackStatus: APPROVED
+          feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
+          ratingCreatedAt: '2026-09-11T10:53:23.666794'
+          ratingUpdatedAt: '2026-09-11T10:53:23.666794'
+          actionSubdata:
+            comment: 5 star
+
+        - id: 059675ca-a294-4fbe-9679-55ca0c4fb757
+          userId: 847d1741-9f1e-4583-89f8-96f254ca6e36
+          userName: Test User Consumer
+          organisation: IUDX - New 2020
+          assetId: c594efcf-8c3c-4192-b4a3-5411daab69fb
+          assetType: DATABANK
+          assetName: Test DataBank3
+          entityRating: 5
+          feedbackStatus: APPROVED
+          feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
+          ratingCreatedAt: '2026-09-11T10:44:55.252737'
+          ratingUpdatedAt: '2026-09-11T10:45:14.761093'
+          actionSubdata:
+            comment: Rest
+
+        - id: c308abf2-f1ff-44f1-96f7-c6d2c985d0ce
+          userId: 847d1741-9f1e-4583-89f8-96f254ca6e36
+          userName: Test User Consumer
+          organisation: IUDX - New 2020
+          assetId: d28c953c-a363-4ab7-8d6f-38400e08958b
+          assetType: DATABANK
+          assetName: Test DataBank4
+          entityRating: 5
+          feedbackStatus: APPROVED
+          feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
+          ratingCreatedAt: '2026-09-11T05:23:05.136736'
+          ratingUpdatedAt: '2026-09-11T05:23:05.136736'
+          actionSubdata:
+            comment: Heloo Heloo Heloo Heloo Heloo Heloo Heloo
+
+        - id: f75c85d5-ac91-441d-bc0f-23262dbbd447
+          userId: 847d1741-9f1e-4583-89f8-96f254ca6e36
+          userName: Test User Consumer
+          organisation: IUDX - New 2020
+          assetId: d28c953c-a363-4ab7-8d6f-38400e08958b
+          assetType: DATABANK
+          assetName: Test DataBank5
+          entityRating: 5
+          feedbackStatus: APPROVED
+          feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
+          ratingCreatedAt: '2026-09-11T05:11:26.884067'
+          ratingUpdatedAt: '2026-09-11T05:21:57.276971'
+          actionSubdata:
+            comment: Heloo Heloo Heloo Heloo Heloo
+
+        - id: 55713729-6d74-443a-8084-5f80795b5441
+          userId: 847d1741-9f1e-4583-89f8-96f254ca6e36
+          userName: Test User Consumer
+          organisation: IUDX - New 2020
+          assetId: c594efcf-8c3c-4192-b4a3-5411daab69fb
+          assetType: DATABANK
+          assetName: Test DataBank6
+          entityRating: 4
+          feedbackStatus: APPROVED
+          feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
+          ratingCreatedAt: '2026-09-09T11:22:39.369221'
+          ratingUpdatedAt: '2026-09-09T11:22:39.369221'
+          actionSubdata:
+            comment: test test test test test test test
+
+        - id: f6579ab5-e46d-44b4-9e70-9583db242214
+          userId: 847d1741-9f1e-4583-89f8-96f254ca6e36
+          userName: Test User Consumer
+          organisation: IUDX - New 2020
+          assetId: d524c54b-1091-4ac7-b4d5-c117dd09f5ff
+          assetType: DATABANK
+          assetName: Test DataBank7
+          entityRating: 4
+          feedbackStatus: APPROVED
+          feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
+          ratingCreatedAt: '2026-09-08T17:51:12.830709'
+          ratingUpdatedAt: '2026-09-09T14:18:11.544669'
+          actionSubtype: data_quality
+          actionSubdata:
+            comment: The data is accurate and well documented.
+
+        - id: cf2c4f29-a065-4a44-9093-5c79612b0bff
+          userId: 847d1741-9f1e-4583-89f8-96f254ca6e36
+          userName: Test User Consumer
+          organisation: IUDX - New 2020
+          assetId: 363d880e-bbcd-43ec-8bba-22257fe5876b
+          assetType: DATABANK
+          assetName: Test DataBank8
+          entityRating: 1
+          feedbackStatus: APPROVED
+          feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
+          ratingCreatedAt: '2026-09-08T17:51:12.830709'
+          ratingUpdatedAt: '2026-09-08T17:51:12.830709'
+          actionSubtype: feedback
+          actionSubdata:
+            hello: world
+
+        - id: aa98c22d-ddf4-4aed-b95a-94de70ff0320
+          userId: 847d1741-9f1e-4583-89f8-96f254ca6e36
+          userName: Test User Consumer
+          organisation: IUDX - New 2020
+          assetId: 919c31e7-b591-410a-89ad-b9490088e912
+          assetType: DATABANK
+          assetName: Test DataBank9
+          entityRating: 4
+          feedbackStatus: APPROVED
+          feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
+          ratingCreatedAt: '2026-09-08T17:51:12.830709'
+          ratingUpdatedAt: '2026-09-08T17:51:12.830709'
+
+        - id: ec68e7cd-18a2-49e8-a38c-c1972fc748d6
+          userId: 847d1741-9f1e-4583-89f8-96f254ca6e36
+          userName: Test User Consumer
+          organisation: IUDX - New 2020
+          assetId: 4ff7614c-efd2-4bbf-ba07-2cf22acae49d
+          assetType: DATABANK
+          assetName: Test DataBank10
+          entityRating: 1
+          feedbackStatus: APPROVED
+          feedbackStatusUpdatedAt: '2026-09-16T10:52:59.780647'
+          ratingCreatedAt: '2026-09-08T17:51:12.830709'
+          ratingUpdatedAt: '2026-09-08T17:51:12.830709'
+          actionSubtype: testing
+
+      paginationInfo:
+        page: 1
+        size: 1000
+        totalCount: 10
+        totalPages: 1
+        hasNext: false
+        hasPrevious: false
+ProviderFeedbackRequest:
+  type: object
+  required:
+  - assetId
+  - type
+  properties:
+    assetId:
+      type: string
+      format: uuid
+      description: UUID of the asset
+    type:
+      type: string
+      enum:
+      - FAQ
+      - FEEDBACK
+      - INFO
+      - DATA_DESCRIPTION
+      - SUGGESTION
+      description: Type of provider feedback
+    data:
+      type: array
+      description: List of structured feedback entries. Content of each entry varies by feedback type. Replaces the full list for this asset+type; not a partial merge.
+      items:
+        type: object
+        additionalProperties: true
+ProviderFeedbackPaginatedResponse:
+  type: object
+  properties:
+    type:
+      type: string
+      example: urn:dx:controlPlane:success
+    title:
+      type: string
+      example: Success
+    result:
+      type: array
+      description: One entry per asset; totalCount/pagination apply to this list, not to the nested feedback entries.
+      items:
+        type: object
+        properties:
+          assetId:
+            type: string
+            format: uuid
+          feedback:
+            type: array
+            description: Every feedback type recorded for this asset that matches the request's filters.
+            items:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: FEEDBACK
+                data:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+                userId:
+                  type: string
+                  format: uuid
+                  description: UUID of the user who most recently submitted or updated this feedback type for this asset.
+                createdAt:
+                  type: string
+                  format: date-time
+                updatedAt:
+                  type: string
+                  format: date-time
+    paginationInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        size:
+          type: integer
+          example: 10
+        totalCount:
+          type: integer
+          example: 1
+          description: Number of distinct assets matching the request's filters.
+        totalPages:
+          type: integer
+          example: 1
+        hasNext:
+          type: boolean
+          example: false
+        hasPrevious:
+          type: boolean
+          example: false
+  example:
+    type: urn:dx:controlPlane:success
+    title: Success
+    result:
+      - assetId: 8fd42dfc-6a54-46a3-9d5c-ce3f7fb11887
+        feedback:
+          - type: FEEDBACK
+            data:
+              - comment: Thank you for using our dataset.
+            userId: 2f76e6b0-7569-4f30-8bc3-9884ca3d61c2
+            createdAt: "2026-07-01T09:06:28.285092"
+            updatedAt: "2026-07-01T09:06:28.285092"
+          - type: FAQ
+            data:
+              - question: How frequently is this dataset updated?
+                answer: The dataset is updated daily.
+            userId: 2f76e6b0-7569-4f30-8bc3-9884ca3d61c2
+            createdAt: "2026-06-20T11:02:10.001000"
+            updatedAt: "2026-07-02T08:15:44.512000"
+    paginationInfo:
+      page: 1
+      size: 10
+      totalCount: 1
+      totalPages: 1
+      hasNext: false
+      hasPrevious: false
+PostItemVoteRequest:
+  type: object
+  required:
+  - entityId
+  - entityType
+  - voteType
+  properties:
+    entityId:
+      type: string
+      format: uuid
+      description: ID of the entity being voted on
+      example: 7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9
+    entityType:
+      type: string
+      description: Type of entity being vote on
+      enum:
+      - DATABANK
+      - AI_MODEL
+      - USECASE
+      - APP
+      example: DATABANK
+    voteType:
+      type: string
+      description: Type of vote
+      enum:
+      - LIKE
+      - DISLIKE
+      - NEUTRAL
+ItemVoteResponse:
+  type: object
+  title: Vote API Response
+  description: Success response for casting or updating a vote
+  properties:
+    type:
+      type: string
+      description: 'URN type of the response indicating if the query was successful or if any errors have
+
+        been triggered.
+
+        '
+    title:
+      description: A human readable title to the message response.
+    results:
+      type: array
+      description: Results which matched the query. This is an array of objects.
+      items:
+        type: object
+  required:
+  - type
+  - title
+  - results
+  example:
+    type: urn:dx:controlPlane:success
+    title: Success
+    results:
+    - entityId: e74112d5-b58b-401e-a799-712b473279ed
+      entityType: DATABANK
+      voteType: LIKE
+PostBookmarkRequest:
+  type: object
+  required:
+  - entityId
+  - entityType
+  properties:
+    entityId:
+      type: string
+      format: uuid
+      description: Unique identifier of the entity to be bookmarked
+      example: 7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9
+    entityType:
+      type: string
+      description: Type of the entity being bookmarked
+      enum:
+      - DATABANK
+      - AI_MODEL
+      - USECASE
+      - APP
+      example: DATABANK
+BookmarkResponse:
+  type: object
+  required:
+  - type
+  - title
+  - result
+  properties:
+    type:
+      type: string
+      description: URN identifying the response category
+      example: urn:dx:controlPlane:success
+    title:
+      type: string
+      description: Short response title
+      example: Success
+    result:
+      $ref: '#/BookmarkResult'
+BulkSyncFailure:
+  type: object
+  required:
+  - id
+  - reason
+  - message
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Document ID that failed to update
+    reason:
+      type: string
+      description: Elasticsearch failure reason code
+    message:
+      type: string
+      description: Detailed failure message from Elasticsearch
+BulkSyncResult:
+  type: object
+  required:
+  - total
+  - successful
+  - failed
+  - failures
+  properties:
+    total:
+      type: integer
+      description: Total number of documents processed
+      example: 9
+    successful:
+      type: integer
+      description: Number of documents successfully updated
+      example: 7
+    failed:
+      type: integer
+      description: Number of documents that failed to update
+      example: 1
+    failures:
+      type: array
+      description: List of failed document updates
+      items:
+        $ref: '#/BulkSyncFailure'
+UserInteractionSyncResponse:
+  type: object
+  required:
+  - type
+  - title
+  - detail
+  - result
+  properties:
+    type:
+      type: string
+      example: urn:dx:controlPlane:success
+    title:
+      type: string
+      example: Success
+    detail:
+      type: string
+      example: Interaction metrics synced successfully
+    result:
+      $ref: '#/BulkSyncResult'
+UserInteractionResponse:
+  type: object
+  required:
+  - type
+  - title
+  - result
+  - paginationInfo
+  properties:
+    type:
+      type: string
+      description: URN identifying the response category
+      example: urn:dx:controlPlane:success
+    title:
+      type: string
+      description: Short response title
+      example: Success
+    result:
+      type: array
+      items:
+        type: object
+        required:
+        - asset
+        - userInteraction
+        properties:
+          asset:
+            $ref: access.yaml#/AssetSummary
+          userInteraction:
+            $ref: '#/UserInteractionState'
+    paginationInfo:
+      $ref: pagination.yaml#/PaginationInfoResponse
+UserInteractionState:
+  type: object
+  required:
+  - liked
+  - disliked
+  - bookmarked
+  properties:
+    liked:
+      type: boolean
+      description: Whether the user has liked the asset
+    disliked:
+      type: boolean
+      description: Whether the user has disliked the asset
+    bookmarked:
+      type: boolean
+      description: Whether the user has bookmarked the asset
+BookmarkResult:
+  type: object
+  required:
+  - id
+  - userId
+  - entityId
+  - entityType
+  - createdAt
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Internal bookmark identifier
+      example: 210e92ee-ab93-4593-a035-60e2620a8eb8
+    userId:
+      type: string
+      format: uuid
+      description: Identifier of the user who created the bookmark
+      example: 6effed2b-999c-44da-987a-f56a3aba96c2
+    entityId:
+      type: string
+      format: uuid
+      description: Identifier of the bookmarked entity
+      example: 7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9
+    entityType:
+      type: string
+      description: Type of the bookmarked entity
+      enum:
+      - DATABANK
+      - AI_MODEL
+      - USECASE
+      - APP
+      example: DATABANK
+    createdAt:
+      type: string
+      format: date-time
+      description: Timestamp when the bookmark was created
+      example: '2025-12-28T19:01:36.450176'
+GetBookmarksSuccessResponse:
+  type: object
+  required:
+  - type
+  - title
+  - result
+  - paginationInfo
+  properties:
+    type:
+      type: string
+      example: urn:dx:controlPlane:success
+    title:
+      type: string
+      example: Success
+    result:
+      type: array
+      items:
+        $ref: '#/BookmarkSuccessResult'
+    paginationInfo:
+      $ref: pagination.yaml#/PaginationInfoResponse
+BookmarkSuccessResult:
+  type: object
+  required:
+  - id
+  - userId
+  - entityId
+  - entityType
+  - createdAt
+  properties:
+    id:
+      type: string
+      format: uuid
+    userId:
+      type: string
+      format: uuid
+    entityId:
+      type: string
+      format: uuid
+    entityType:
+      type: string
+      enum:
+      - DATABANK
+      - AI_MODEL
+      - USECASE
+      - APP
+    createdAt:
+      type: string
+      format: date-time
+  example:
+    id: db2428e8-ee93-42c4-97c8-7b747cce6521
+    userId: 6effed2b-999c-44da-987a-f56a3aba96c2
+    entityId: 7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9
+    entityType: DATABANK
+    createdAt: '2025-12-29T09:50:21.718568'

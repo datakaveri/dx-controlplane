@@ -1,0 +1,90 @@
+/*
+* Copyright 2014 Red Hat, Inc.
+*
+* Red Hat licenses this file to you under the Apache License, version 2.0
+* (the "License"); you may not use this file except in compliance with the
+* License. You may obtain a copy of the License at:
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
+
+package org.cdpg.dx.catalogueService.service;
+
+import io.vertx.core.eventbus.DeliveryOptions;
+import io.vertx.core.Vertx;
+import io.vertx.core.Future;
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.JsonArray;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.function.Function;
+import io.vertx.serviceproxy.ServiceException;
+import io.vertx.serviceproxy.ServiceExceptionMessageCodec;
+import io.vertx.serviceproxy.ProxyUtils;
+
+import org.cdpg.dx.catalogueService.models.ResourceObj;
+import io.vertx.core.Future;
+import org.cdpg.dx.catalogueService.models.Asset;
+/*
+  Generated Proxy code - DO NOT EDIT
+  @author Roger the Robot
+*/
+
+@SuppressWarnings({"unchecked", "rawtypes"})
+public class CatalogueServiceVertxEBProxy implements CatalogueService {
+  private Vertx _vertx;
+  private String _address;
+  private DeliveryOptions _options;
+  private boolean closed;
+
+  public CatalogueServiceVertxEBProxy(Vertx vertx, String address) {
+    this(vertx, address, null);
+  }
+
+  public CatalogueServiceVertxEBProxy(Vertx vertx, String address, DeliveryOptions options) {
+    this._vertx = vertx;
+    this._address = address;
+    this._options = options;
+    try {
+      this._vertx.eventBus().registerDefaultCodec(ServiceException.class, new ServiceExceptionMessageCodec());
+    } catch (IllegalStateException ex) {
+    }
+  }
+
+  @Override
+  public Future<ResourceObj> fetchItems(String id){
+    if (closed) return io.vertx.core.Future.failedFuture("Proxy is closed");
+    JsonObject _json = new JsonObject();
+    _json.put("id", id);
+
+    DeliveryOptions _deliveryOptions = (_options != null) ? new DeliveryOptions(_options) : new DeliveryOptions();
+    _deliveryOptions.addHeader("action", "fetchItems");
+    _deliveryOptions.getHeaders().set("action", "fetchItems");
+    return _vertx.eventBus().<JsonObject>request(_address, _json, _deliveryOptions).map(msg -> {
+      return msg.body() != null ? new org.cdpg.dx.catalogueService.models.ResourceObj((JsonObject)msg.body()) : null;
+    });
+  }
+  @Override
+  public Future<Asset> fetchAsset(String itemId){
+    if (closed) return io.vertx.core.Future.failedFuture("Proxy is closed");
+    JsonObject _json = new JsonObject();
+    _json.put("itemId", itemId);
+
+    DeliveryOptions _deliveryOptions = (_options != null) ? new DeliveryOptions(_options) : new DeliveryOptions();
+    _deliveryOptions.addHeader("action", "fetchAsset");
+    _deliveryOptions.getHeaders().set("action", "fetchAsset");
+    return _vertx.eventBus().<JsonObject>request(_address, _json, _deliveryOptions).map(msg -> {
+      return msg.body() != null ? new org.cdpg.dx.catalogueService.models.Asset((JsonObject)msg.body()) : null;
+    });
+  }
+}

@@ -1,14 +1,17 @@
 package org.cdpg.dx.database.elastic.model;
 
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_AI_MODEL;
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_APPS;
-import static org.cdpg.dx.aaa.common.Constants.ITEM_TYPE_DATA_BANK;
+import static org.cdpg.dx.aaa.common.Constants.ACTIVE;
+import static org.cdpg.dx.aaa.common.Constants.ITEM_STATUS;
+import static org.cdpg.dx.aaa.common.Constants.VERIFIED;
+import static org.cdpg.dx.aaa.common.Constants.VERIFIED_API;
+import static org.cdpg.dx.aaa.common.Constants.VERIFIED_SFTP;
 import static org.cdpg.dx.database.elastic.util.Constants.*;
 
 import java.util.*;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.aaa.common.ItemType;
+import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxEsException;
 import org.cdpg.dx.database.elastic.util.AggregationType;
 import org.cdpg.dx.database.elastic.util.QueryType;
@@ -48,33 +51,56 @@ public class QueryDecoder {
 
     if (searchType != null && searchType.matches(SEARCH_CRITERIA_REGEX)) {
       LOGGER.debug("Info: searchCriteria block");
-      new SearchCriteriaQueryDecorator(queryMap, request.getSearchCriteriaRequest()).add();
-      isValidQuery = true;
+      try {
+        expandItemTypeCriteria(request.getSearchCriteriaRequest());
+        new SearchCriteriaQueryDecorator(queryMap, request.getSearchCriteriaRequest()).add();
+        isValidQuery = true;
+      } catch (DxEsException e) {
+        LOGGER.error("SearchCriteriaQueryDecorator failed: {}", e.getMessage());
+        throw e;
+      } catch (Exception e) {
+        LOGGER.error("Unexpected error in SearchCriteriaQueryDecorator: {}", e.getMessage());
+        throw new DxEsException("Failed to process searchCriteria block");
+      }
     }
 
     if (searchType != null && searchType.matches(TEXTSEARCH_REGEX)) {
       LOGGER.debug("Info: Text search block");
-      new TextSearchQueryDecorator(queryMap, request.getTextSearchRequest()).add();
-      isValidQuery = true;
+      try {
+        new TextSearchQueryDecorator(queryMap, request.getTextSearchRequest()).add();
+        isValidQuery = true;
+      } catch (DxEsException e) {
+        LOGGER.error("TextSearchQueryDecorator failed: {}", e.getMessage());
+        throw e;
+      } catch (Exception e) {
+        LOGGER.error("Unexpected error in TextSearchQueryDecorator: {}", e.getMessage());
+        throw new DxEsException("Failed to process text search block");
+      }
     }
 
-    if (!searchType.matches(PF_ASSETS_SEARCH_REGEX) && !searchType.matches(ORG_ASSETS_SEARCH_REGEX)) {
-      new AccessPolicyQueryDecorator(queryMap,
-          request.getAccessPolicyRequest()).add();
+    if (!searchType.matches(PF_ASSETS_SEARCH_REGEX)
+        && !searchType.matches(ORG_ASSETS_SEARCH_REGEX)) {
+      try {
+        new AccessPolicyQueryDecorator(queryMap, request.getAccessPolicyRequest()).add();
+      } catch (DxEsException e) {
+        LOGGER.error("AccessPolicyQueryDecorator failed: {}", e.getMessage());
+        throw e;
+      } catch (Exception e) {
+        LOGGER.error("Unexpected error in AccessPolicyQueryDecorator: {}", e.getMessage());
+        throw new DxEsException("Failed to process access policy block");
+      }
     }
 
     // Exclude blocks only if NOT myAssetsAll search
     if (!searchType.matches(MY_ASSETS_SEARCH_REGEX)
         && !searchType.matches(PF_ASSETS_SEARCH_REGEX)
         && !searchType.matches(ORG_ASSETS_SEARCH_REGEX)) {
-      QueryModel excludeDatabankFalse = buildUploadStatusExclusion(ITEM_TYPE_DATA_BANK);
-      QueryModel excludeAiModelFalse = buildUploadStatusExclusion(ITEM_TYPE_AI_MODEL);
-      QueryModel excludePendingApps =
-          buildPendingPublishStatusExclusion(List.of(ITEM_TYPE_DATA_BANK, ITEM_TYPE_AI_MODEL,
-              ITEM_TYPE_APPS));
+      QueryModel excludeDatabankFalse = buildUploadStatusExclusion(ItemType.DATA_BANK.typeValues());
+      QueryModel excludeAiModelFalse = buildUploadStatusExclusion(ItemType.AI_MODEL.typeValues());
+      QueryModel activePublishStatus = buildActivePublishStatusQuery(ItemType.allTypeValues());
       queryMap.get(FilterType.MUST_NOT).add(excludeDatabankFalse);
       queryMap.get(FilterType.MUST_NOT).add(excludeAiModelFalse);
-      queryMap.get(FilterType.MUST_NOT).add(excludePendingApps);
+      queryMap.get(FilterType.MUST).add(activePublishStatus);
     }
 
     if (searchType.matches(MY_ASSETS_SEARCH_REGEX)) {
@@ -95,9 +121,19 @@ public class QueryDecoder {
     }
 
     if (searchType.matches(RESPONSE_FILTER_REGEX)) {
-      new ResponseFilterDecorator(queryMap, request.getResponseFilterRequest()).add();
-      isValidQuery = true;
+      LOGGER.debug("Info: Response filter block");
+      try {
+        new ResponseFilterDecorator(queryMap, request.getResponseFilterRequest()).add();
+        isValidQuery = true;
+      } catch (DxEsException e) {
+        LOGGER.error("ResponseFilterDecorator failed: {}", e.getMessage());
+        throw e;
+      } catch (Exception e) {
+        LOGGER.error("Unexpected error in ResponseFilterDecorator: {}", e.getMessage());
+        throw new DxEsException("Failed to process response filter block");
+      }
     }
+
 
     if (!isValidQuery) {
       throw new DxEsException("Invalid search query");
@@ -108,7 +144,6 @@ public class QueryDecoder {
 
     //Setting source field
     for (QueryModel qm : queryMap.get(FilterType.INCLUDES)) {
-      LOGGER.debug("Qm: " + qm.toJson());
       if (qm.getIncludeFields() != null) {
         q.setIncludeFields(qm.getIncludeFields());
       }
@@ -128,17 +163,47 @@ public class QueryDecoder {
   }
 
   private static QueryModel buildOrganisationFilter(QueryDecoderRequestDTO request) {
+
+    // --- must: organisationId ---
     Map<String, Object> matchParams = new HashMap<>();
     matchParams.put(FIELD, ORGANIZATION_ID_KEYWORD);
     matchParams.put(VALUE, request.getOrganisationId());
 
-    QueryModel matchQuery = new QueryModel(QueryType.MATCH, matchParams);
+    QueryModel orgMatchQuery = new QueryModel(QueryType.MATCH, matchParams);
 
-    // Wrap inside a bool must
     QueryModel boolQuery = new QueryModel(QueryType.BOOL);
     List<QueryModel> mustQueries = new ArrayList<>();
-    mustQueries.add(matchQuery);
+    mustQueries.add(orgMatchQuery);
+
+    // --- must: hierarchyNodeId in subtree (dept_admin callers only) ---
+    // Items with no hierarchyNodeId are intentionally never matched -- same
+    // policy as getItemIdOrgIdNodeIdsQueryModel.
+    if (request.getHierarchyNodeIds() != null) {
+      Map<String, Object> termsParams = new HashMap<>();
+      termsParams.put(FIELD, "hierarchyNodeId" + KEYWORD_KEY);
+      termsParams.put(VALUE, request.getHierarchyNodeIds());
+      mustQueries.add(new QueryModel(QueryType.TERMS, termsParams));
+    }
     boolQuery.setMustQueries(mustQueries);
+
+    // --- must_not: ownerId == sub (only when filter_myassets=true) ---
+    if (request.isFilterMyAssets()) {
+      String sub = request.getAccessPolicyRequest().getSub();
+
+      if (sub != null && !sub.isBlank()) {
+        Map<String, Object> excludeOwnerParams = new HashMap<>();
+        excludeOwnerParams.put(FIELD, OWNER_USER_ID_KEYWORD);
+        excludeOwnerParams.put(VALUE, sub);
+
+        QueryModel excludeOwnerQuery =
+            new QueryModel(QueryType.MATCH, excludeOwnerParams);
+
+        List<QueryModel> mustNotQueries = new ArrayList<>();
+        mustNotQueries.add(excludeOwnerQuery);
+        boolQuery.setMustNotQueries(mustNotQueries);
+      }
+    }
+
     return boolQuery;
   }
 
@@ -179,7 +244,7 @@ public class QueryDecoder {
 
     Map<String, Object> termsParams = new HashMap<>();
     termsParams.put(FIELD, TYPE_KEYWORD);
-    termsParams.put(VALUE, List.of(ITEM_TYPE_DATA_BANK, ITEM_TYPE_AI_MODEL, ITEM_TYPE_APPS));
+    termsParams.put(VALUE, ItemType.allTypeValues());
 
     QueryModel termsQuery = new QueryModel(QueryType.TERMS, termsParams);
 
@@ -219,23 +284,28 @@ public class QueryDecoder {
 
   public QueryModel listMultipleItemTypesQuery(QueryDecoderRequestDTO request) {
     LOGGER.debug("listMultipleItemTypesQuery - {}", request);
+
     Map<FilterType, List<QueryModel>> queryMap = new HashMap<>();
     for (FilterType filterType : FilterType.values()) {
       queryMap.put(filterType, new ArrayList<>());
     }
 
-    new AccessPolicyQueryDecorator(queryMap, request.getAccessPolicyRequest()).add();
-    new SearchCriteriaQueryDecorator(queryMap, request.getSearchCriteriaRequest()).add();
-    new InstanceFilterQueryDecorator(queryMap, request.getInstanceFilterRequest()).add();
+    try {
+      new AccessPolicyQueryDecorator(queryMap, request.getAccessPolicyRequest()).add();
+      expandItemTypeCriteria(request.getSearchCriteriaRequest());
+      new SearchCriteriaQueryDecorator(queryMap, request.getSearchCriteriaRequest()).add();
+      new InstanceFilterQueryDecorator(queryMap, request.getInstanceFilterRequest()).add();
+    } catch (DxEsException ex) {
+      LOGGER.error("Failed while creating ES query: {}", ex.getMessage(), ex);
+      throw new DxBadRequestException(ex.getMessage(), ex);
+    }
 
-    QueryModel excludeDatabankFalse = buildUploadStatusExclusion(ITEM_TYPE_DATA_BANK);
-    QueryModel excludeAiModelFalse = buildUploadStatusExclusion(ITEM_TYPE_AI_MODEL);
-    QueryModel excludePendingApps =
-        buildPendingPublishStatusExclusion(List.of(ITEM_TYPE_DATA_BANK, ITEM_TYPE_AI_MODEL,
-            ITEM_TYPE_APPS));
+    QueryModel excludeDatabankFalse = buildUploadStatusExclusion(ItemType.DATA_BANK.typeValues());
+    QueryModel excludeAiModelFalse = buildUploadStatusExclusion(ItemType.AI_MODEL.typeValues());
+    QueryModel activePublishStatus = buildActivePublishStatusQuery(ItemType.allTypeValues());
     queryMap.get(FilterType.MUST_NOT).add(excludeDatabankFalse);
     queryMap.get(FilterType.MUST_NOT).add(excludeAiModelFalse);
-    queryMap.get(FilterType.MUST_NOT).add(excludePendingApps);
+    queryMap.get(FilterType.MUST).add(activePublishStatus);
 
     QueryModel finalQuery = new QueryModel();
     finalQuery.setQueries(getBoolQuery(queryMap));
@@ -249,7 +319,9 @@ public class QueryDecoder {
 
     if (filters != null) {
       for (String filter : filters) {
-        Map<String, Object> aggParams = Map.of(FIELD, filter + KEYWORD_KEY, SIZE_KEY, size);
+        String aggField = filter.equals(RESOURCE_SVR_URL) ? filter : filter + KEYWORD_KEY;
+        Map<String, Object> aggParams = Map.of(FIELD, aggField, SIZE_KEY, size);
+
         QueryModel agg = new QueryModel();
         agg.setAggregationType(AggregationType.TERMS);
         agg.setAggregationName(filter);
@@ -266,20 +338,26 @@ public class QueryDecoder {
     return finalQuery;
   }
 
-  private QueryModel buildUploadStatusExclusion(String itemType) {
-    return new QueryModel(QueryType.BOOL)
-        .setMustQueries(
-            List.of(
-                new QueryModel(QueryType.TERM)
-                    .setQueryParameters(
-                        Map.of(
-                            FIELD, TYPE_KEYWORD,
-                            VALUE, itemType)),
-                new QueryModel(QueryType.TERM)
-                    .setQueryParameters(Map.of(FIELD, DATA_UPLOAD_STATUS, VALUE, false))));
+  /**
+   * Widens term filters on the item type to every accepted prefix, e.g. a filter on adex:DataBank
+   * also returns iudx:DataBank items when both prefixes are configured.
+   */
+  private static void expandItemTypeCriteria(SearchCriteriaRequestDTO searchCriteriaRequest) {
+    if (searchCriteriaRequest == null || searchCriteriaRequest.getSearchCriteria() == null) {
+      return;
+    }
+    for (SearchCriteriaDTO criterion : searchCriteriaRequest.getSearchCriteria()) {
+      boolean isTypeField =
+          TYPE_KEY.equals(criterion.getField()) || TYPE_KEYWORD.equals(criterion.getField());
+      boolean isTermSearch =
+          criterion.getSearchType() == null || TERM.equals(criterion.getSearchType());
+      if (isTypeField && isTermSearch && criterion.getValues() != null) {
+        criterion.setValues(ItemType.withAliases(criterion.getValues()));
+      }
+    }
   }
 
-  private QueryModel buildPendingPublishStatusExclusion(List<String> itemTypes) {
+  private QueryModel buildUploadStatusExclusion(List<String> itemTypes) {
     return new QueryModel(QueryType.BOOL)
         .setMustQueries(
             List.of(
@@ -289,8 +367,31 @@ public class QueryDecoder {
                             FIELD, TYPE_KEYWORD,
                             VALUE, itemTypes)),
                 new QueryModel(QueryType.TERM)
-                    .setQueryParameters(Map.of(FIELD, PUBLISH_STATUS + KEYWORD_KEY, VALUE,
-                        PENDING))));
+                    .setQueryParameters(Map.of(FIELD, DATA_UPLOAD_STATUS, VALUE, false))));
+  }
+
+  private QueryModel buildActivePublishStatusQuery(List<String> itemTypes) {
+
+    QueryModel verifiedStatuses = new QueryModel(QueryType.BOOL);
+    verifiedStatuses.setShouldQueries(
+        List.of(
+            new QueryModel(QueryType.TERM)
+                .setQueryParameters(Map.of(FIELD, ITEM_STATUS + KEYWORD_KEY, VALUE, VERIFIED)),
+            new QueryModel(QueryType.TERM)
+                .setQueryParameters(Map.of(FIELD, ITEM_STATUS + KEYWORD_KEY, VALUE, VERIFIED_SFTP)),
+            new QueryModel(QueryType.TERM)
+                .setQueryParameters(
+                    Map.of(FIELD, ITEM_STATUS + KEYWORD_KEY, VALUE, VERIFIED_API))));
+    verifiedStatuses.setMinimumShouldMatch(String.valueOf(1));
+
+    return new QueryModel(QueryType.BOOL)
+        .setMustQueries(
+            List.of(
+                new QueryModel(QueryType.TERMS)
+                    .setQueryParameters(Map.of(FIELD, TYPE_KEYWORD, VALUE, itemTypes)),
+                new QueryModel(QueryType.TERM)
+                    .setQueryParameters(Map.of(FIELD, PUBLISH_STATUS + KEYWORD_KEY, VALUE, ACTIVE)),
+                verifiedStatuses));
   }
 
   private QueryModel buildGetParentObjectInfoQuery(QueryDecoderRequestDTO request) {
@@ -319,8 +420,15 @@ public class QueryDecoder {
   }
 
   public QueryModel buildGetItemWithNameExistsQuery(String type, String name) {
-    QueryModel typeMatchQuery = new QueryModel(QueryType.MATCH);
-    typeMatchQuery.setQueryParameters(Map.of(FIELD, TYPE_KEY, VALUE, type));
+    // every accepted prefix of a type shares one namespace, so match any of them
+    List<QueryModel> typeAliasQueries = new ArrayList<>();
+    for (Object alias : ItemType.withAliases(List.of(type))) {
+      typeAliasQueries.add(
+          new QueryModel(QueryType.MATCH).setQueryParameters(Map.of(FIELD, TYPE_KEY, VALUE, alias)));
+    }
+    QueryModel typeMatchQuery = new QueryModel(QueryType.BOOL);
+    typeMatchQuery.setShouldQueries(typeAliasQueries);
+    typeMatchQuery.setMinimumShouldMatch(String.valueOf(1));
     QueryModel nameMatchQuery = new QueryModel(QueryType.MATCH);
     nameMatchQuery.setQueryParameters(Map.of(FIELD, NAME + KEYWORD_KEY, VALUE, name));
 
@@ -342,7 +450,50 @@ public class QueryDecoder {
         return buildBooleanQuery(filterQueries);
     }
 
-    public QueryModel getItemIdQueryModel(String id) {
+  /**
+   * Like {@link #getItemIdOrgIdQueryModel(String, String)}, but additionally
+   * restricts the match to a dept_admin's own department subtree -- used
+   * instead of the plain org-id variant when the caller is a dept_admin
+   * rather than the org_admin. {@code nodeIds} must be the dept_admin's
+   * administered department plus all of its descendants (inclusive);
+   * items with no hierarchyNodeId set are intentionally never matched here,
+   * since an unassigned item remains a root-admin-only concern.
+   */
+  public QueryModel getItemIdOrgIdNodeIdsQueryModel(String id, String orgId, List<String> nodeIds) {
+    List<QueryModel> filterQueries = buildIdTermQuery(id);
+
+    if (orgId != null && !orgId.isBlank()) {
+      QueryModel orgIdTermQuery = new QueryModel(QueryType.TERM);
+      orgIdTermQuery.setQueryParameters(Map.of(FIELD, ORGANIZATION_ID_KEYWORD, VALUE, orgId));
+      filterQueries.add(orgIdTermQuery);
+    }
+
+    // "hierarchyNodeId" has no shared Constants entry (unlike ORGANIZATION_ID_KEYWORD) --
+    // literal field name + the shared KEYWORD_KEY suffix, same convention used
+    // for NAME/ITEM_STATUS/PUBLISH_STATUS above.
+    Map<String, Object> termsParams = new HashMap<>();
+    termsParams.put(FIELD, "hierarchyNodeId" + KEYWORD_KEY);
+    termsParams.put(VALUE, nodeIds);
+    filterQueries.add(new QueryModel(QueryType.TERMS, termsParams));
+
+    return buildBooleanQuery(filterQueries);
+  }
+
+  public QueryModel getItemIdOwnerIdQueryModel(String itemId, String ownerId) {
+    List<QueryModel> filterQueries = buildIdTermQuery(itemId);
+
+    if (ownerId != null && !ownerId.isBlank()) {
+      LOGGER.debug("getItemIdOwnerIdQueryModel - ownerId: {}", ownerId);
+      QueryModel ownerIdTermQuery = new QueryModel(QueryType.TERM);
+      ownerIdTermQuery.setQueryParameters(Map.of(FIELD, PROVIDER_USER_ID + KEYWORD_KEY, VALUE, ownerId));
+      filterQueries.add(ownerIdTermQuery);
+    }
+
+    return buildBooleanQuery(filterQueries);
+  }
+
+
+  public QueryModel getItemIdQueryModel(String id) {
         return buildBooleanQuery(buildIdTermQuery(id));
     }
 

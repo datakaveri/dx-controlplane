@@ -30,4 +30,19 @@ public class OrganizationDAOFactory {
         return new ProviderRoleRequestDAOImpl(postgresService);
     }
 
+    public OrganizationHierarchyNodeDAO organizationHierarchyNodeDAO() {
+        return new OrganizationHierarchyNodeDAOImpl(postgresService);
+    }
+
+    public OrganizationApprovalDAO organizationApprovalDAO() {
+        return new OrganizationApprovalDAOImpl(postgresService);
+    }
+
+    public OrganizationHierarchyDefinitionRequestDAO organizationHierarchyDefinitionRequestDAO() {
+        return new OrganizationHierarchyDefinitionRequestDAOImpl(postgresService);
+    }
+
+    public DeptAdminRequestDAO deptAdminRequestDAO() {
+        return new DeptAdminRequestDAOImpl(postgresService);
+    }
 }

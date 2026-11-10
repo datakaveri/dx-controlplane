@@ -1,0 +1,499 @@
+/iudx/v2/auth/app:
+  post:
+    tags:
+    - App
+    summary: Create an appId
+    operationId: post-appId
+    security:
+    - authorization: []
+    description: |
+      Creates a new App ID for the authenticated user with a defined expiry. The App ID is
+      paired with an App Secret at creation time — together these act as credentials that can
+      be shared with another user or service to grant them restricted access scoped to the
+      roles and permissions defined in this App ID. Requires an authenticated user token.
+
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/app.yaml#/PostAppIdRequest
+    responses:
+      '200':
+        description: AppId created successfully
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/app.yaml#/AppIdResponse
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Create AppId
+      source: "curl --location 'https://${HOSTNAME}/iudx/v2/auth/app' \\\n--header 'Authorization:\
+        \ Bearer <token>' \\\n--header 'Content-Type: application/json' \\\n--data\
+        \ '{\n  \"expiryAt\": \"2026-12-31T23:59:59Z\"\n}'\n"
+  get:
+    tags:
+    - App
+    summary: Get user's appIds
+    operationId: get-appId
+    security:
+    - authorization: []
+    description: |
+
+      Retrieves all App IDs created by the authenticated user, including their current status
+      (active or disabled), expiry timestamps, and associated scopes. Supports pagination via
+      `page` and `size` query parameters and sorting via the `sorting` parameter.
+      Requires an authenticated user token.
+
+
+    parameters:
+    - $ref: ../components/parameters.yaml#/PageParam
+    - $ref: ../components/parameters.yaml#/SizeParam
+    - $ref: ../components/parameters.yaml#/SortingParam
+    responses:
+      '200':
+        description: Successfully retrieved apps
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/app.yaml#/GetAppsSuccessResponse
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Get AppIds
+      source: 'curl --location ''https://${HOSTNAME}/iudx/v2/auth/app'' \
+
+        --header ''Authorization: Bearer <token>''
+
+        '
+/iudx/v2/auth/app/{appId}:
+  delete:
+    tags:
+    - App
+    summary: Delete an appId
+    operationId: delete-appId
+    security:
+    - authorization: []
+    description: |
+      Permanently removes an App ID owned by the authenticated user. Once deleted, any user
+      or service using this `appId` and `appSecret` pair will immediately lose access to all
+      APIs they were accessing through it. This action cannot be undone.
+      Requires an authenticated user token.
+
+    parameters:
+    - name: appId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique identifier of the appId
+    responses:
+      '200':
+        description: AppId status deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: urn:dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                detail:
+                  type: string
+                  example: Deleted app id status successfully
+            example:
+              type: urn:dx:controlPlane:success
+              title: Success
+              detail: Deleted app id status successfully
+      '204':
+        description: AppId deleted successfully
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Delete AppId
+      source: 'curl --location --request DELETE \
+
+        ''https://${HOSTNAME}/iudx/v2/auth/app/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9'' \
+
+        --header ''Authorization: Bearer <token>''
+
+        '
+  patch:
+    tags:
+    - App
+    summary: Update appId status(active/disable)
+    operationId: update-appId-status
+    security:
+    - authorization: []
+    description: |
+      Enables or disables an App ID owned by the authenticated user. Setting status to `disable`
+            temporarily blocks all access for anyone using this `appId` and `appSecret` without
+            permanently deleting it. Setting it back to `active` restores access. Use this to
+            temporarily revoke access without losing the App ID configuration.
+            Requires an authenticated user token.
+    parameters:
+    - name: appId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique identifier of the appId
+    - name: status
+      in: query
+      required: true
+      schema:
+        type: string
+        description: status of the appId
+        enum:
+        - active
+        - disable
+    responses:
+      '200':
+        description: AppId status updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: urn:dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                detail:
+                  type: string
+                  example: App credentials status updated to active successfully
+            example:
+              type: urn:dx:controlPlane:success
+              title: Success
+              detail: App credentials status updated to active successfully
+      '204':
+        description: AppId status updated successfully
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/GenericBadRequestResponse
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/UnauthorizedResponse
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/ForbiddenResponse
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/InternalServerErrorResponse
+    x-codeSamples:
+    - lang: cURL
+      label: Update AppId Status
+      source: 'curl --location --request PATCH \
+
+        ''https://${HOSTNAME}/iudx/v2/auth/app/7db00cd6-89e7-428b-a8d8-3b97bdd1e6b9?status=disable''
+        \
+
+        --header ''Authorization: Bearer <token>''
+
+        '
+/iudx/v2/auth/app/user:
+  post:
+    tags:
+    - App
+    summary: DxUser from App constraints
+    operationId: post-appId-dxUser
+    security:
+    - authorization: []
+    description: |
+      Authenticates a request using an `appId` and `appSecret` pair and returns the resolved
+            user context for that app, including the user's profile, organisation details, and the
+            specific roles and scopes permitted by this App ID. This endpoint is used by any user
+            or service that has been given an `appId` and `appSecret` to obtain a scoped user context
+            before making further API calls. The returned scopes are strictly limited to what was
+            defined when the App ID was created — no additional permissions can be derived from this context.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - appId
+            - appSecret
+            properties:
+              appId:
+                type: string
+                format: uuid
+                example: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+              appSecret:
+                type: string
+                example: s3cr3t-app-key
+          examples:
+            Example 1:
+              value:
+                appId: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+                appSecret: s3cr3t-app-key
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: urn:dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                result:
+                  type: object
+                  properties:
+                    roles:
+                      type: array
+                      items:
+                        type: string
+                    organisationId:
+                      type: string
+                    organisationName:
+                      type: string
+                    sub:
+                      type: string
+                      format: uuid
+                    emailVerified:
+                      type: boolean
+                    kycVerified:
+                      type: boolean
+                    name:
+                      type: string
+                    preferredUsername:
+                      type: string
+                    givenName:
+                      type: string
+                    familyName:
+                      type: string
+                    email:
+                      type: string
+                      format: email
+                    organisation:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        organisationId:
+                          type: string
+                        userId:
+                          type: string
+                        userName:
+                          type: string
+                        status:
+                          type: string
+                        jobTitle:
+                          type: string
+                        empId:
+                          type: string
+                        requestedAt:
+                          type: string
+                        processedAt:
+                          type: string
+                        request_type:
+                          type: string
+                    createdAt:
+                      type: string
+                    kycData:
+                      type: object
+                    scopes:
+                      type: array
+                      items:
+                        type: string
+                      description: App-specific scopes from appConstraints
+            examples:
+              Example 1:
+                value:
+                  type: urn:dx:controlPlane:success
+                  title: Success
+                  result:
+                    roles:
+                    - consumer
+                    organisationId: e87246e2-5da5-40b0-973c-690d2f48f879
+                    organisationName: Test Org
+                    sub: 436cb796-5826-458b-a914-a54721f70997
+                    emailVerified: true
+                    kycVerified: false
+                    name: test test
+                    preferredUsername: test
+                    givenName: test
+                    familyName: test
+                    email: testing@gmail.com
+                    organisation:
+                      id: 98e74f31-4e40-4615-85b8-61256f0bc7c4
+                      organisationId: e87246e2-5da5-40b0-973c-690d2f48f879
+                      userId: 436cb796-5826-458b-a914-a54721f70997
+                      userName: test test
+                      status: granted
+                      jobTitle: Employee
+                      empId: EMP8790
+                      requestedAt: '2025-06-04T06:13:58.917342'
+                      processedAt: '2025-06-04T06:13:58.917342'
+                      request_type: organisation_join
+                    createdAt: '2025-06-04T06:12:48.991'
+                    kycData: {}
+                    scopes:
+                    - user-management
+                    - data-access
+      '400':
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/GenericBadRequestResponse'
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/UnauthorizedResponse'
+            example:
+              type: urn:dx:controlPlane:notAuthorized
+              title: Not Authorized
+              detail: Missing or invalid Bearer token
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ForbiddenResponse'
+            example:
+              type: urn:dx:controlPlane:forbidden
+              title: Forbidden
+              detail: User does not have the required role.
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/InternalServerErrorResponse'
+    x-codeSamples:
+    - lang: cURL
+      label: Authenticate App and Resolve User
+      source: "curl --location 'https://${HOSTNAME}/iudx/v2/auth/app/user' \\\n--header\
+        \ 'Authorization: Bearer <token>' \\\n--header 'Content-Type: application/json'\
+        \ \\\n--data '{\n  \"appId\": \"7c9e6679-7425-40de-944b-e07fc1f90ae7\",\n\
+        \  \"appSecret\": \"s3cr3t-app-key\"\n}'\n"

@@ -34,21 +34,46 @@ DX-AAA is the Authentication, Authorization, and Accounting server for accessing
 
 #### JWT signing key setup
 
-The Current Implementation of JWT in iudx-aaa-server is based on Vert.x `vertx-auth-jwt` library.  The Vert.x JWT implementation or any other  Vertx security  implementations generally requires a creation/implementation of security interface AuthenticationProvider, In JWT case it is JWTAuth as Authentication Provider
+The JWT implementation is based on the Vert.x `vertx-auth-jwt` library, which requires an
+`AuthenticationProvider` — `JWTAuth` in the JWT case. The signing key is read from a JKS keystore at
+startup.
 
-There are multiple types of signature methods used for signing JWT, and each of them either requires buffer or PKI or certificates, or jks for instantiating the Authentication Provider in Vertx.
+The implementation uses the asymmetric key algorithm **ECDSA** (Elliptic Curve Digital Signature
+Algorithm) with signature method **ES256**, which mandates the **P-256** curve (`secp256r1`).
 
-The current implementation is based on asymmetric key algorithm **ECDSA** (Elliptic Curve Digital Signature Algorithm), and the signature method is **ES256**.
-
-The Authentication Provider looks for aliases in the provided Keystore to verify and sign the generated JWT. The keystore and keypair should also be generated and signed using same algorithm which is required to sign and verify the JWT. For Signature algorithm ES256, the keystore alias is ES256. 
-
-The Keytool command to generate ECDSA keystore keypair is:
+The Keytool command to generate the keystore keypair is:
 
 ```
- keytool -genkeypair -keystore keystore-ec.jks -storetype jks -storepass secret -keyalg EC -alias ES256 -keypass secret -sigalg SHA256withECDSA -dname "CN=,OU=,O=,L=,ST=,C=" -validity 360 -deststoretype pkcs12
+keytool -genkeypair \
+  -keystore keystore.jks -storetype JKS \
+  -storepass secret -keypass secret \
+  -keyalg EC -groupname secp256r1 -sigalg SHA256withECDSA \
+  -alias jwt-key-1 \
+  -dname "CN=dx-controlplane" \
+  -validity 365
 ```
 
-The keystore path and the keystore password should then be added to the server config.
+When generating your own keystore, change **only** the password, the validity and the filename.
+Every other flag is load-bearing:
+
+- `-alias jwt-key-1` — the alias the server looks up. A different alias fails at startup with
+  `EC key with alias 'jwt-key-1' not found in keystore`.
+- `-keyalg EC -groupname secp256r1` — ES256 requires P-256. **Omitting `-groupname` is not safe**:
+  keytool defaults to P-384, which is rejected with
+  `Keystore key must use P-256 curve for ES256`.
+- `-storetype JKS` — the server loads the keystore via `JksOptions`.
+- `-sigalg SHA256withECDSA` — matches ES256.
+
+`-storepass` and `-keypass` **must be the same value**. The server has a single `keystorePassword`
+config entry and uses it to open both the keystore and the key, so a keystore built with differing
+passwords cannot be loaded with either one.
+
+The keystore path and the keystore password should then be added to the server config as
+`keystorePath` and `keystorePassword`.
+
+The server logs the certificate's expiry at startup and exposes it as the Prometheus gauge
+`jwt_signing_cert_expiry_timestamp_seconds` on the metrics port (`9000`), so certificate expiry can
+be alerted on ahead of time.
 
 #### Flyway Database setup
 
