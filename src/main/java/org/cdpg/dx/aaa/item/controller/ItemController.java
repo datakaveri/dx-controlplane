@@ -1202,7 +1202,8 @@ public class ItemController implements ApiController {
               }
 
               return delegationService
-                  .checkItemAccess(finalSubId, didFromParam)
+                  // caller (token sub) is the delegate; did is the delegator
+                  .checkItemAccess(didFromParam, finalSubId)
                   .onSuccess(
                       response -> {
                         JsonArray result = response.getJsonArray(RESULT);
