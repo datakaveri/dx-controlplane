@@ -172,10 +172,10 @@ public class AppIdVerificationGrpcService
           Future<CheckItemAccessResponse> work;
           if (hasDid) {
             // Mirror the HTTP /cat/item/access delegation check:
-            // userId = delegator (app owner), did = delegate (acting on their behalf)
+            // userId = delegate (the caller), did = delegator (acting on their behalf)
             work =
                 delegationService
-                    .checkItemAccess(userId, did)
+                    .checkItemAccess(did, userId)
                     .compose(
                         delegResult -> {
                           JsonArray allowed = delegResult.getJsonArray("result");
