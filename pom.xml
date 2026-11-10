@@ -16,7 +16,7 @@
         <apache-log4j2.version>2.23.0</apache-log4j2.version>
         <lmax-disruptor.version>4.0.0</lmax-disruptor.version>
         <jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
-        <guava.version>33.0.0-jre</guava.version>
+        <guava.version>33.7.1-jre</guava.version>
         <checkstyle.version>10.14.0</checkstyle.version>
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-shade-plugin.version>3.5.2</maven-shade-plugin.version>
