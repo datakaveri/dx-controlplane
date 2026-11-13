@@ -361,6 +361,10 @@ public class ItemController implements ApiController {
       return;
     }
 
+    if (!isValidAccessConstraint(ctx, body)) {
+      return;
+    }
+
     String method = ctx.request().method().toString();
     UUID userId = UUID.fromString(ctx.user().subject());
     keycloakUserService
@@ -493,6 +497,10 @@ public class ItemController implements ApiController {
       return;
     }
 
+    if (!isValidAccessConstraint(ctx, body)) {
+      return;
+    }
+
     body.put(LAST_UPDATED, getUtcDatetimeAsString());
     body.put(LAST_UPDATED_BY, getActorId(ctx));
 
@@ -606,6 +614,10 @@ public class ItemController implements ApiController {
       }
     }
 
+    if (!isValidAccessConstraint(ctx, body)) {
+      return;
+    }
+
     body.put(LAST_UPDATED, getUtcDatetimeAsString());
     body.put(LAST_UPDATED_BY, getActorId(ctx));
 
@@ -630,6 +642,29 @@ public class ItemController implements ApiController {
               LOGGER.error("Patch item failed", err);
               ctx.fail(err);
             });
+  }
+
+  /**
+   * {@code accessConstraint} is an optional marker, separate from {@code accessPolicy}, that flags
+   * an item for the sandbox workflow. Only {@code SANDBOX} is accepted; items outside the sandbox
+   * simply omit the field. The value is normalised to upper case in place.
+   *
+   * @return false (after failing the request with 400) when the value is invalid
+   */
+  private boolean isValidAccessConstraint(RoutingContext ctx, JsonObject body) {
+    if (body == null || !body.containsKey(ACCESS_CONSTRAINT)) {
+      return true;
+    }
+    Object value = body.getValue(ACCESS_CONSTRAINT);
+    if (value instanceof String str && SANDBOX.equalsIgnoreCase(str.trim())) {
+      body.put(ACCESS_CONSTRAINT, SANDBOX);
+      return true;
+    }
+    ctx.fail(
+        new DxBadRequestException(
+            "Invalid " + ACCESS_CONSTRAINT + ": allowed value is " + SANDBOX
+                + "; omit the field for non-sandbox items"));
+    return false;
   }
 
   private String extractAndValidateItemType(RoutingContext ctx, JsonObject body) {
