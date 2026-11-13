@@ -777,23 +777,64 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implement
   @Override
   public Future<Boolean> deleteFeedback(UUID userId, UUID assetId) {
 
+    // A user + asset can have several feedback rows (a rejected one followed by a resubmission)
+    // plus at most one like/bookmark "state" row with every feedback column NULL, enforced by the
+    // partial unique index uniq_user_asset_interaction. Only the latest feedback row is deleted:
+    // clearing every feedback row, or clearing one while a state row already exists, would leave
+    // two state rows and violate that index (surfaced to the client as 409).
+    //  - state row already exists -> drop the feedback row
+    //  - no state row yet         -> clear its feedback columns so it becomes the state row,
+    //                                keeping any like/bookmark flags it carries (legacy rows)
     String sql =
         """
-      UPDATE user_interactions
-      SET action_subtype      = NULL,
-          action_subdata      = NULL,
-          entity_rating       = NULL,
-          feedback_created_at = NULL,
-          feedback_updated_at = NULL,
-          feedback_status = NULL,
-          feedback_comment = NULL,
-          feedback_status_updated_at = NULL
-      WHERE user_id = $1
-      AND asset_id = $2
-      AND (
-              entity_rating IS NOT NULL
-              OR action_subtype IS NOT NULL
-          )
+      WITH target AS (
+          SELECT id
+          FROM user_interactions
+          WHERE user_id = $1
+            AND asset_id = $2
+            AND (
+                entity_rating IS NOT NULL
+                OR action_subtype IS NOT NULL
+            )
+          ORDER BY feedback_created_at DESC NULLS LAST
+          LIMIT 1
+          FOR UPDATE
+      ),
+      state_row AS (
+          SELECT EXISTS (
+              SELECT 1
+              FROM user_interactions
+              WHERE user_id = $1
+                AND asset_id = $2
+                AND entity_rating IS NULL
+                AND action_subtype IS NULL
+                AND action_subdata IS NULL
+                AND feedback_created_at IS NULL
+          ) AS present
+      ),
+      removed AS (
+          DELETE FROM user_interactions
+          WHERE id IN (SELECT id FROM target)
+            AND (SELECT present FROM state_row)
+          RETURNING id
+      ),
+      cleared AS (
+          UPDATE user_interactions
+          SET action_subtype             = NULL,
+              action_subdata             = NULL,
+              entity_rating              = NULL,
+              feedback_created_at        = NULL,
+              feedback_updated_at        = NULL,
+              feedback_status            = NULL,
+              feedback_comment           = NULL,
+              feedback_status_updated_at = NULL
+          WHERE id IN (SELECT id FROM target)
+            AND NOT (SELECT present FROM state_row)
+          RETURNING id
+      )
+      SELECT id FROM removed
+      UNION ALL
+      SELECT id FROM cleared
       """;
 
     JsonArray params = new JsonArray().add(userId.toString()).add(assetId.toString());
@@ -801,7 +842,7 @@ public class UserFeedbackDaoImpl extends AbstractBaseDAO<UserFeedback> implement
     LOGGER.debug("SQL: {}", sql);
     LOGGER.debug("Params: {}", params);
 
-    return postgresService.executeQuery(sql, params).map(QueryResult::isRowsAffected);
+    return postgresService.executeQuery(sql, params).map(rows -> !rows.getRows().isEmpty());
   }
 
   @Override
