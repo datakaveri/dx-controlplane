@@ -97,6 +97,8 @@ public class Constants {
     public static final String PRIVATE = "PRIVATE";
     public static final String RESTRICTED = "RESTRICTED";
     public static final String PII = "PII";
+    public static final String ACCESS_CONSTRAINT = "accessConstraint";
+    public static final String SANDBOX = "SANDBOX";
     public static final String VALIDATION_FAILURE_MSG = "Validation failed";
 
     public static final String ITEM_STATUS = "itemStatus";

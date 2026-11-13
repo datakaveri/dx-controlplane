@@ -82,6 +82,16 @@
       "accessObjectInfo": {
         "type": "flattened"
       },
+      "accessConstraint": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256,
+            "normalizer": "case_insensitive_sort"
+          }
+        }
+      },
       "accessPolicy": {
         "type": "text",
         "fields": {

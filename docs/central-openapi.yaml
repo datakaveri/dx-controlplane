@@ -23120,6 +23120,13 @@ components:
         accessPolicy:
           type: string
           pattern: ^(RESTRICTED|OPEN|PRIVATE|PII)$
+        accessConstraint:
+          type: string
+          description: |
+            Optional. Set to `SANDBOX` only for items that follow the sandbox workflow.
+            Omit the field for all other items; they continue to follow the `accessPolicy` workflow.
+          enum:
+            - SANDBOX
         organizationType:
           type: string
           enum:
@@ -23227,6 +23234,13 @@ components:
         accessPolicy:
           type: string
           pattern: ^(RESTRICTED|OPEN|PRIVATE|PII)$
+        accessConstraint:
+          type: string
+          description: |
+            Optional. Set to `SANDBOX` only for items that follow the sandbox workflow.
+            Omit the field for all other items; they continue to follow the `accessPolicy` workflow.
+          enum:
+            - SANDBOX
         organizationType:
           type: string
           enum:
@@ -23473,6 +23487,13 @@ components:
         accessPolicy:
           type: string
           pattern: ^(RESTRICTED|OPEN|PRIVATE|PII)$
+        accessConstraint:
+          type: string
+          description: |
+            Optional. Set to `SANDBOX` only for items that follow the sandbox workflow.
+            Omit the field for all other items; they continue to follow the `accessPolicy` workflow.
+          enum:
+            - SANDBOX
       additionalProperties: true
       example:
         id: 8fd42dfc-6a54-46a3-9d5c-ce3f7fb11887
