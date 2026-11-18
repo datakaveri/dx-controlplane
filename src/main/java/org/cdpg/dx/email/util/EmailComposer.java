@@ -6,6 +6,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mail.MailMessage;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -22,6 +23,7 @@ public class EmailComposer {
   private final JsonObject config;
   private final KeycloakUserService keycloakUserService;
   private final String envSuffix;
+  private final ZoneId displayZone;
 
   public EmailComposer(JsonObject config, KeycloakUserService keycloakUserService) {
     this.config = config;
@@ -32,6 +34,11 @@ public class EmailComposer {
           "Publisher panel URL is not configured or ends with a slash");
     }
     this.envSuffix = config.getString("envSuffix");
+    // Zone that timestamps (stored in UTC) are shown in to email recipients.
+    this.displayZone =
+        ZoneId.of(
+            config.getString(
+                "emailDisplayTimeZone", EmailDateFormatter.DEFAULT_DISPLAY_ZONE.getId()));
   }
 
   /**
@@ -89,7 +96,8 @@ public class EmailComposer {
                         "ASSET_NAME",
                         emailRequest.assetName(),
                         "ASSET_EXPIRY",
-                        emailRequest.expiryAt() == null ? "" : emailRequest.expiryAt(),
+                        EmailDateFormatter.formatUtcForDisplay(
+                            emailRequest.expiryAt(), displayZone),
                         "ASSET_DESCRIPTION",
                         emailRequest.shortDescription(),
                         "ACTION_MESSAGE",
