@@ -339,7 +339,11 @@ public class AppIdVerificationGrpcService
     String itemId = request.getItemId();
     String userId = request.getUserId();
 
-    if (itemId == null || itemId.isBlank()) {
+    // Reject non-UUID ids up front — they can never match a catalogue doc,
+    // so don't spend an Elasticsearch round-trip on them.
+    try {
+      UUID.fromString(itemId);
+    } catch (IllegalArgumentException | NullPointerException e) {
       respond(observer, failGetItem("NOT_FOUND"));
       return;
     }
