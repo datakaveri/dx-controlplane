@@ -59,6 +59,7 @@ public class EmailComposer_new {
   private final String adminPortalUrl;
   private final String senderName;
   private final String platformName;
+  private final String envSuffix;
 
   // All configurable email settings (templates, subjects, static values)
   private final EmailConfig emailConfig;
@@ -81,6 +82,7 @@ public class EmailComposer_new {
     this.adminPortalUrl  = config.getString("TGDxUrl");
     this.senderName      = config.getString("senderName");
     this.platformName    = config.getString("platformName");
+    this.envSuffix       = config.getString("envSuffix");
 
     this.emailConfig = EmailConfig.fromConfig(config);
   }
@@ -418,9 +420,21 @@ public class EmailComposer_new {
       });
   }
 
-  /** Create a new builder pre-configured with the sender email. */
+  /**
+   * Create a new builder pre-configured with the sender email and {@code ENV_SUFFIX}, which
+   * every template title references.
+   */
   private EmailTemplateBuilder newEmail() {
-    return new EmailTemplateBuilder(emailService, senderEmail);
+    return new EmailTemplateBuilder(emailService, senderEmail)
+        .variable("ENV_SUFFIX", envSuffixTag());
+  }
+
+  /**
+   * Environment tag appended to email titles, e.g. {@code " [staging]"}; empty when
+   * {@code envSuffix} is not configured. Never null -- template substitution rejects nulls.
+   */
+  private String envSuffixTag() {
+    return (envSuffix == null || envSuffix.isBlank()) ? "" : " [" + envSuffix + "]";
   }
 
   /** Construct the standard "review and take action" details message. */
