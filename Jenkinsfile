@@ -6,9 +6,9 @@ pipeline {
     GIT_HASH = GIT_COMMIT.take(7)
   }
 
-  agent { 
+  agent {
     node {
-      label 'slave1' 
+      label 'slave1'
     }
   }
 
@@ -26,7 +26,7 @@ pipeline {
             triggeredBy cause: 'UserIdCause'
           }
           expression {
-            return env.BRANCH_NAME == 'dev' || env.BRANCH_NAME.startsWith('PR-');
+            return env.BRANCH_NAME == 'stable/v2.4' || env.BRANCH_NAME.startsWith('PR-');
           }
         }
       }
@@ -46,7 +46,6 @@ pipeline {
         stage('Building images') {
           steps{
             script {
-
               echo 'Pulled - ' + env.GIT_BRANCH
 
               DX_COMMON_COMMIT = sh(
@@ -120,46 +119,25 @@ pipeline {
           }
         }
 
-        stage('Continuous Deployment') {
+        stage('Push Images') {
           when {
             expression {
-              return env.BRANCH_NAME == 'dev'
+              return env.BRANCH_NAME == 'stable/v2.4'
             }
           }
-
-          stages {
-
-            stage('Push Images') {
-              steps {
-                script {
-                  def tagSuffix = ''
-                  if (env.CONFIG_CHANGED == 'true') {
-                    tagSuffix += '-C'
-                  }
-                  if (env.MIGRATION_CHANGED == 'true') {
-                    tagSuffix += '-M'
-                  }
-                  env.IMAGE_TAG = "1.0.0-${env.GIT_HASH}${tagSuffix}"
-                  docker.withRegistry(registryUri, registryCredential) {
-                    devImage.push(env.IMAGE_TAG)
-                  }
-                }
+          steps {
+            script {
+              def tagSuffix = ''
+              if (env.CONFIG_CHANGED == 'true') {
+                tagSuffix += '-C'
+              }
+              if (env.MIGRATION_CHANGED == 'true') {
+                tagSuffix += '-M'
+              }
+              docker.withRegistry(registryUri, registryCredential) {
+                devImage.push("v2.4.RC1-${env.GIT_HASH}${tagSuffix}")
               }
             }
-
-                stage('EKS Helm deployment') {
-                  steps {
-                    script {
-                      sh "ssh ubuntu@dev-eks 'cd v2-deployments/iudx/iudx-installer/K8s-deployment/Charts/controlplane && helm upgrade iudx-control-plane . -n control-plane --atomic --timeout 5m --reuse-values --set image.repository=${devRegistry} --set image.tag=${env.IMAGE_TAG}'"
-                    }
-                  }
-                  post{
-                    failure{
-                      error "Failed to deploy image to EKS via Helm"
-                    }
-                  }
-                }
-
           }
         }
 
@@ -171,13 +149,12 @@ pipeline {
   post{
     failure{
       script{
-        if (env.BRANCH_NAME == 'dev') {
-          emailext recipientProviders: [buildUser(), developers()],
-          to: '$AAA_RECIPIENTS, $DEFAULT_RECIPIENTS',
-          subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!',
-          body: '''$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:
+        if (env.BRANCH_NAME == 'stable/v2.4')
+        emailext recipientProviders: [buildUser(), developers()],
+        to: '$AAA_RECIPIENTS, $DEFAULT_RECIPIENTS',
+        subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!',
+        body: '''$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:
 Check console output at $BUILD_URL to view the results.'''
-        }
       }
     }
   }
