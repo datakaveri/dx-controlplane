@@ -21,9 +21,9 @@ public final class EmailDateFormatter {
 
   public static final ZoneId DEFAULT_DISPLAY_ZONE = ZoneId.of("Asia/Kolkata");
 
-  // e.g. "13 Nov 2026, 11:59 PM IST"
+  // e.g. "13-Nov-2026 23:59" (24-hour, in the display zone)
   private static final DateTimeFormatter DISPLAY_FORMAT =
-      DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a z", Locale.ENGLISH);
+      DateTimeFormatter.ofPattern("dd-MMM-yyyy HH:mm", Locale.ENGLISH);
 
   private EmailDateFormatter() {}
 
