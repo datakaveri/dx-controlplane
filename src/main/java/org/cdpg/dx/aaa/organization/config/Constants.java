@@ -27,7 +27,12 @@ public final class Constants {
   public static final String HIERARCHY_NODE_ID = "hierarchy_node_id";
   public static final String ADMIN_OF_NODE_ID = "admin_of_node_id";
   public static final String REQUESTED_NODE_ID = "requested_node_id";
+  public static final String REQUESTED_ROLE = "requested_role";
+  public static final String PURPOSE = "purpose";
+  // Generated "<requested_role>:<requested_node_id>" column (V95), filter-only.
+  public static final String APPROVAL_SCOPE = "approval_scope";
   public static final String PARENT_ID = "parent_id";
+  public static final String PARENT_NODE_ID = "parent_node_id";
 
   public static final String NODE_NAME = "name";
 

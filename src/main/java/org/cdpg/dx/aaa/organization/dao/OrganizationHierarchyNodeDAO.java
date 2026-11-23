@@ -10,6 +10,9 @@ public interface OrganizationHierarchyNodeDAO extends BaseDAO<OrganizationHierar
 
   Future<List<OrganizationHierarchyNode>> getByOrganizationId(UUID organizationId);
 
+  /** All nodes of the given organizations in one query, ordered by organization then path. */
+  Future<List<OrganizationHierarchyNode>> getByOrganizationIds(List<UUID> organizationIds);
+
   Future<OrganizationHierarchyNode> getByIdAndOrganizationId(UUID nodeId, UUID organizationId);
 
   Future<List<OrganizationHierarchyNode>> getChildren(UUID organizationId, UUID parentId);

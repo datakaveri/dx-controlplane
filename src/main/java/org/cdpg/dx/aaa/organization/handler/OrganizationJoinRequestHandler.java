@@ -15,8 +15,10 @@ import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
 import org.cdpg.dx.aaa.organization.models.DeptAdminScope;
 import org.cdpg.dx.aaa.organization.models.OrganisationAuditOperation;
 import org.cdpg.dx.aaa.organization.models.OrganizationJoinRequest;
+import org.cdpg.dx.aaa.organization.models.Role;
 import org.cdpg.dx.aaa.organization.models.Status;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
+import org.cdpg.dx.aaa.organization.util.DepartmentPaths;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.common.URNGenerator;
@@ -47,13 +49,16 @@ public class OrganizationJoinRequestHandler {
   private final EmailComposer emailComposer;
   private final URNGenerator urnGenerator;
   private final KeycloakUserService keycloakUserService;
+  private final DeptAdminAccessHandler deptAdminAccess;
 
   public OrganizationJoinRequestHandler(
       OrganizationService organizationService,
       UserService userService,
       KeycloakUserService keycloakUserService,
       EmailComposer emailComposer,
-      URNGenerator urnGenerator) {
+      URNGenerator urnGenerator,
+      DeptAdminAccessHandler deptAdminAccess) {
+    this.deptAdminAccess = deptAdminAccess;
     this.organizationService = organizationService;
     this.userService = userService;
     this.emailComposer = emailComposer;
@@ -86,6 +91,14 @@ public class OrganizationJoinRequestHandler {
         String departmentId = orgRequestJson.getString("departmentId");
         if (departmentId != null && !departmentId.isBlank()) {
           orgRequestJson.put(REQUESTED_NODE_ID, departmentId);
+        }
+
+        // Role in the selected department: "member" (default) or "dept_admin";
+        // dept_admin also needs a purpose. Validated by OrganizationJoinRequest.
+        orgRequestJson.remove(REQUESTED_ROLE);
+        String departmentRole = orgRequestJson.getString("departmentRole");
+        if (departmentRole != null) {
+          orgRequestJson.put(REQUESTED_ROLE, departmentRole);
         }
 
         OrganizationJoinRequest organizationJoinRequest =
@@ -154,8 +167,23 @@ public class OrganizationJoinRequestHandler {
       return;
     }
 
-    listJoinRequests(
-      ctx, ALLOWED_FILTER_MAP_FOR_ORG_JOIN_REQUEST, Map.of(ORGANIZATION_ID, orgId.toString()));
+    // Optional ?departmentId= narrows to that department and its sub-departments.
+    deptAdminAccess
+      .departmentNodeIds(ctx, orgId)
+      .onSuccess(
+        nodeIds -> {
+          Map<String, Object> additionalFilters = new HashMap<>();
+          additionalFilters.put(ORGANIZATION_ID, orgId.toString());
+          if (nodeIds != null) {
+            additionalFilters.put(REQUESTED_NODE_ID, nodeIds);
+          }
+          listJoinRequests(
+            ctx,
+            DeptAdminAccessHandler.withDepartmentIdParam(
+              ALLOWED_FILTER_MAP_FOR_ORG_JOIN_REQUEST, REQUESTED_NODE_ID),
+            additionalFilters);
+        })
+      .onFailure(ctx::fail);
   }
 
   /**
@@ -174,13 +202,35 @@ public class OrganizationJoinRequestHandler {
       return;
     }
 
-    listJoinRequests(
-      ctx,
-      DeptAdminAccessHandler.withDepartmentScopeParam(
-        ALLOWED_FILTER_MAP_FOR_ORG_JOIN_REQUEST, REQUESTED_NODE_ID),
-      Map.of(
-        ORGANIZATION_ID, orgId.toString(),
-        REQUESTED_NODE_ID, DeptAdminAccessHandler.requestedNodeIds(ctx, deptAdminScope)));
+    // Always within the caller's subtree; ?departmentScope= / ?departmentId= narrow it.
+    deptAdminAccess
+      .departmentNodeIds(ctx, orgId)
+      .onSuccess(
+        nodeIds ->
+          listJoinRequests(
+            ctx,
+            DeptAdminAccessHandler.withDepartmentParams(
+              ALLOWED_FILTER_MAP_FOR_ORG_JOIN_REQUEST, APPROVAL_SCOPE),
+            Map.of(
+              ORGANIZATION_ID, orgId.toString(),
+              APPROVAL_SCOPE, approvableScopes(nodeIds, deptAdminScope.adminOfNodeId()))))
+      .onFailure(ctx::fail);
+  }
+
+  /**
+   * approval_scope values a dept_admin can act on: member requests anywhere in {@code nodeIds},
+   * but dept_admin requests only below their own department -- one for their own department
+   * needs someone above them, so it is left out of their list.
+   */
+  static List<String> approvableScopes(List<String> nodeIds, UUID adminOfNodeId) {
+    List<String> scopes = new ArrayList<>();
+    for (String nodeId : nodeIds) {
+      scopes.add(Role.USER.getRoleName() + ":" + nodeId);
+      if (!nodeId.equals(adminOfNodeId.toString())) {
+        scopes.add(Role.DEPT_ADMIN.getRoleName() + ":" + nodeId);
+      }
+    }
+    return scopes;
   }
 
   private void listJoinRequests(
@@ -188,26 +238,34 @@ public class OrganizationJoinRequestHandler {
     Map<String, String> allowedFilters,
     Map<String, Object> additionalFilters) {
 
-    PaginatedRequest request =
-      PaginationRequestBuilder.from(ctx)
-        .allowedFiltersDbMap(allowedFilters)
-        .apiToDbMap(API_TO_DB_ORG_JOIN_REQUEST)
-        .additionalFilters(additionalFilters)
-        .allowedTimeFields(Set.of(REQUESTED_AT))
-        .defaultTimeField(REQUESTED_AT)
-        .defaultSort(REQUESTED_AT, DEFAULT_SORTING_ORDER)
-        .allowedSortFields(API_TO_DB_ORG_JOIN_REQUEST.keySet())
-        .build();
+    PaginatedRequest request;
+    try {
+      request =
+        PaginationRequestBuilder.from(ctx)
+          .allowedFiltersDbMap(allowedFilters)
+          .apiToDbMap(API_TO_DB_ORG_JOIN_REQUEST)
+          .additionalFilters(additionalFilters)
+          .allowedTimeFields(Set.of(REQUESTED_AT))
+          .defaultTimeField(REQUESTED_AT)
+          .defaultSort(REQUESTED_AT, DEFAULT_SORTING_ORDER)
+          .allowedSortFields(API_TO_DB_ORG_JOIN_REQUEST.keySet())
+          .build();
+    } catch (RuntimeException e) {
+      // Called from an async callback: fail the request rather than throw.
+      ctx.fail(e);
+      return;
+    }
 
     organizationService
       .getOrganizationPendingJoinRequests(request)
       .compose(
         result ->
-          userService
+          departmentPaths(result.data())
+            .compose(departments -> userService
             .enrichWithUserRoles(
               result.data(),
               OrganizationJoinRequest::userId,
-              OrganizationJoinRequest::toJson)
+              joinRequest -> toJsonWithDepartment(joinRequest, departments)))
             .map(
               enriched ->
                 Map.entry(
@@ -237,13 +295,13 @@ public class OrganizationJoinRequestHandler {
     organizationService
         .getOrganizationJoinRequestsByUser(userId)
         .compose(
-            requests -> {
-              List<JsonObject> result =
-                  requests.stream()
-                      .map(OrganizationJoinRequest::toJson)
-                      .collect(Collectors.toList());
-              return Future.succeededFuture(result);
-            })
+            requests ->
+                departmentPaths(requests)
+                    .map(
+                        departments ->
+                            requests.stream()
+                                .map(request -> toJsonWithDepartment(request, departments))
+                                .collect(Collectors.toList())))
         .onSuccess(
             result -> {
               UserActivityAuditLogBuilder auditLogBuilder =
@@ -261,6 +319,31 @@ public class OrganizationJoinRequestHandler {
                   err.getMessage());
               ctx.fail(err);
             });
+  }
+
+  /** Departments of every organisation the requests belong to, fetched in one query. */
+  private Future<DepartmentPaths> departmentPaths(List<OrganizationJoinRequest> requests) {
+    List<UUID> orgIds =
+        requests.stream()
+            .filter(request -> request.requestedNodeId() != null)
+            .map(OrganizationJoinRequest::organizationId)
+            .distinct()
+            .toList();
+    if (orgIds.isEmpty()) {
+      return Future.succeededFuture(new DepartmentPaths(List.of()));
+    }
+    return organizationService
+        .getHierarchyNodesByOrganizationIds(orgIds)
+        .map(
+            nodesByOrg ->
+                new DepartmentPaths(
+                    nodesByOrg.values().stream().flatMap(List::stream).toList()));
+  }
+
+  /** The request plus {@code "department"} (name and hierarchy) when one was selected. */
+  private static JsonObject toJsonWithDepartment(
+      OrganizationJoinRequest request, DepartmentPaths departments) {
+    return departments.addTo(request.toJson(), request.requestedNodeId());
   }
 
   public void deleteUserJoinOrganisationRequests(RoutingContext ctx) {

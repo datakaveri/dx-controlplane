@@ -201,6 +201,19 @@ DelegatorIdParam:
     type: string
     format: uuid
     pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+DepartmentIdParam:
+  name: departmentId
+  in: query
+  description: |
+    Restricts the list to this department and all of its sub-departments (pick it
+    from the organisation's department tree). A dept_admin may only pick a
+    department inside the subtree they administer (403 otherwise); combined with
+    `departmentScope`, only departments matching both are returned. Not supported
+    for platform admins.
+  required: false
+  schema:
+    type: string
+    format: uuid
 DepartmentScopeParam:
   name: departmentScope
   in: query

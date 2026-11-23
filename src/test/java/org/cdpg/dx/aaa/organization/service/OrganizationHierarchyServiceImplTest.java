@@ -10,6 +10,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.cdpg.dx.aaa.organization.dao.OrganizationDAO;
 import org.cdpg.dx.aaa.organization.dao.OrganizationHierarchyNodeDAO;
@@ -143,5 +144,28 @@ class OrganizationHierarchyServiceImplTest {
 
     VertxFutureAssert.assertFutureFailureType(
         service.bulkCreateTree(orgId, List.of(dept("Finance"))), ctx, DxConflictException.class);
+  }
+
+  @Test
+  @DisplayName("getNodesByOrganizationIds groups one batched query by organization, keeping path order")
+  void groupsNodesByOrganization(VertxTestContext ctx) {
+    UUID otherOrg = UUID.randomUUID();
+    UUID flatOrg = UUID.randomUUID();
+    OrganizationHierarchyNode eng =
+        new OrganizationHierarchyNode(UUID.randomUUID(), orgId, null, "Engineering", 1, "engineering", null, null);
+    OrganizationHierarchyNode data =
+        new OrganizationHierarchyNode(UUID.randomUUID(), orgId, eng.id(), "Data", 2, "engineering.data", null, null);
+    OrganizationHierarchyNode fin =
+        new OrganizationHierarchyNode(UUID.randomUUID(), otherOrg, null, "Finance", 1, "finance", null, null);
+    List<UUID> ids = List.of(orgId, otherOrg, flatOrg);
+    when(hierarchyNodeDAO.getByOrganizationIds(ids))
+        .thenReturn(Future.succeededFuture(List.of(eng, data, fin)));
+
+    VertxFutureAssert.assertFutureSuccess(service.getNodesByOrganizationIds(ids), ctx,
+        (Map<UUID, List<OrganizationHierarchyNode>> byOrg) -> {
+          assertThat(byOrg.get(orgId)).containsExactly(eng, data);
+          assertThat(byOrg.get(otherOrg)).containsExactly(fin);
+          assertThat(byOrg).doesNotContainKey(flatOrg);
+        });
   }
 }

@@ -16,9 +16,11 @@ import static org.cdpg.dx.common.util.DateTimeHelper.parseDateTime;
 import static org.cdpg.dx.common.util.ValidationUtils.requireNonNull;
 
 /**
- * A one-time request to define an organization's entire department tree in
- * one go -- approved/rejected by cos_admin as a single atomic unit. Every
- * organization starts flat; this request is how it becomes hierarchical.
+ * A request to add departments to an organization -- approved/rejected by
+ * cos_admin as a single atomic unit. Every organization starts flat; the first
+ * request makes it hierarchical, later ones add departments either as new
+ * top-level departments ({@code parentNodeId} null) or under an existing
+ * department ({@code parentNodeId}).
  *
  * <p>The organization itself is the implicit top of the tree, so the proposal
  * is the list of its top-level departments (each with nested sub-departments).
@@ -27,6 +29,8 @@ import static org.cdpg.dx.common.util.ValidationUtils.requireNonNull;
 public record OrganizationHierarchyDefinitionRequest(
     UUID id,
     UUID organizationId,
+    // Existing department the proposed departments go under; null = top level.
+    UUID parentNodeId,
     List<ProposedDepartmentNode> departments,
     String status,
     String remarks,
@@ -65,6 +69,9 @@ public record OrganizationHierarchyDefinitionRequest(
           UUID.fromString(
               requireNonNull(
                   json.getString(Constants.ORGANIZATION_ID), Constants.ORGANIZATION_ID)),
+          json.getString(Constants.PARENT_NODE_ID) != null
+              ? UUID.fromString(json.getString(Constants.PARENT_NODE_ID))
+              : null,
           parseDepartments(json),
           json.getString(Constants.STATUS) != null
               ? json.getString(Constants.STATUS)
@@ -83,6 +90,7 @@ public record OrganizationHierarchyDefinitionRequest(
 
     if (id != null) json.put("id", id.toString());
     json.put(Constants.ORGANIZATION_ID, organizationId.toString());
+    if (parentNodeId != null) json.put(Constants.PARENT_NODE_ID, parentNodeId.toString());
     json.put(Constants.PROPOSED_HIERARCHY, proposedHierarchyJson());
     json.put(Constants.STATUS, status);
     if (remarks != null) json.put(Constants.REMARKS, remarks);
@@ -98,6 +106,7 @@ public record OrganizationHierarchyDefinitionRequest(
 
     if (id != null) map.put("id", id.toString());
     map.put(Constants.ORGANIZATION_ID, organizationId.toString());
+    if (parentNodeId != null) map.put(Constants.PARENT_NODE_ID, parentNodeId.toString());
     map.put(Constants.PROPOSED_HIERARCHY, proposedHierarchyJson());
     if (status != null && !status.isEmpty()) map.put(Constants.STATUS, status);
     if (remarks != null) map.put(Constants.REMARKS, remarks);

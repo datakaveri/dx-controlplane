@@ -2,7 +2,9 @@ package org.cdpg.dx.aaa.organization.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -25,10 +27,15 @@ import org.cdpg.dx.aaa.organization.models.Organization;
 import org.cdpg.dx.aaa.organization.models.OrganizationCreateRequest;
 import org.cdpg.dx.aaa.organization.models.OrganizationJoinRequest;
 import org.cdpg.dx.aaa.organization.models.OrganizationUser;
+import org.cdpg.dx.aaa.organization.models.ProposedDepartmentNode;
 import org.cdpg.dx.aaa.organization.models.Role;
 import org.cdpg.dx.aaa.organization.models.Status;
 import org.cdpg.dx.auth.model.DxRole;
+import org.cdpg.dx.common.exception.DxBadRequestException;
+import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
+import org.cdpg.dx.common.exception.NoRowFoundException;
+import org.cdpg.dx.common.exception.DxValidationException;
 import org.cdpg.dx.common.request.PaginatedRequest;
 import org.cdpg.dx.common.util.PaginationInfo;
 import org.cdpg.dx.database.postgres.models.PaginatedResult;
@@ -100,7 +107,199 @@ class OrganizationServiceImplTest {
       VertxFutureAssert.assertFutureSuccess(result, ctx, created -> {
         assertThat(created).isEqualTo(request);
         verify(createRequestDAO).create(request);
+        verify(organizationHierarchyService, never()).validateTree(any());
       });
+    }
+
+    @Test
+    @DisplayName("should validate a proposed hierarchy before persisting the request")
+    void withValidHierarchy(VertxTestContext ctx) {
+      OrganizationCreateRequest request = withDepartments(TestDataFactory.anOrgCreateRequest(),
+          List.of(new ProposedDepartmentNode("Engineering",
+              List.of(new ProposedDepartmentNode("Data Platform", null)))));
+      when(organizationHierarchyService.validateTree(request.departments()))
+          .thenReturn(Future.succeededFuture());
+      when(createRequestDAO.create(request)).thenReturn(Future.succeededFuture(request));
+
+      VertxFutureAssert.assertFutureSuccess(service.createOrganizationRequest(request), ctx,
+          created -> {
+            assertThat(created.departments()).hasSize(1);
+            verify(organizationHierarchyService).validateTree(request.departments());
+            verify(createRequestDAO).create(request);
+          });
+    }
+
+    @Test
+    @DisplayName("should reject an invalid proposed hierarchy without persisting the request")
+    void withInvalidHierarchy(VertxTestContext ctx) {
+      OrganizationCreateRequest request = withDepartments(TestDataFactory.anOrgCreateRequest(),
+          List.of(new ProposedDepartmentNode("Finance", null),
+              new ProposedDepartmentNode("finance", null)));
+      when(organizationHierarchyService.validateTree(request.departments()))
+          .thenReturn(Future.failedFuture(new DxValidationException("Duplicate department name")));
+
+      VertxFutureAssert.assertFutureFailure(service.createOrganizationRequest(request), ctx,
+          err -> {
+            assertThat(err).isInstanceOf(DxValidationException.class);
+            verify(createRequestDAO, never()).create(any());
+          });
+    }
+  }
+
+  private static OrganizationCreateRequest withDepartments(
+      OrganizationCreateRequest r, List<ProposedDepartmentNode> departments) {
+    return new OrganizationCreateRequest(r.id(), r.requestedBy(), r.name(), r.logoPath(),
+        r.entityType(), r.orgSector(), r.websiteLink(), r.address(), r.certificatePath(),
+        r.pancardPath(), r.relevantDocPath(), r.status(), r.userName(), r.empId(), r.jobTitle(),
+        r.orgManagerphoneNo(), r.managerEmail(), r.orgDocuments(), r.createdAt(), r.updatedAt(),
+        departments);
+  }
+
+  private static OrganizationCreateRequest withStatus(OrganizationCreateRequest r, Status status) {
+    return new OrganizationCreateRequest(r.id(), r.requestedBy(), r.name(), r.logoPath(),
+        r.entityType(), r.orgSector(), r.websiteLink(), r.address(), r.certificatePath(),
+        r.pancardPath(), r.relevantDocPath(), status.getStatus(), r.userName(), r.empId(),
+        r.jobTitle(), r.orgManagerphoneNo(), r.managerEmail(), r.orgDocuments(), r.createdAt(),
+        r.updatedAt(), r.departments());
+  }
+
+  private static Map<String, Object> pendingCondition(UUID requestId) {
+    return Map.of(
+        Constants.ORG_CREATE_ID, requestId.toString(),
+        Constants.STATUS, Status.PENDING.getStatus());
+  }
+
+  // ---------------------------------------------------------------------------
+  // withdrawOrganizationCreateRequest
+  // ---------------------------------------------------------------------------
+  @Nested
+  @DisplayName("withdrawOrganizationCreateRequest")
+  class WithdrawOrganizationCreateRequestTests {
+
+    private final UUID requestId = UUID.randomUUID();
+    private final UUID userId = UUID.randomUUID();
+
+    @Test
+    @DisplayName("should mark the requester's pending request as withdrawn, only while pending")
+    void success(VertxTestContext ctx) {
+      OrganizationCreateRequest pending = TestDataFactory.anOrgCreateRequest(requestId, userId);
+      OrganizationCreateRequest withdrawn = withStatus(pending, Status.WITHDRAWN);
+      when(createRequestDAO.get(requestId)).thenReturn(Future.succeededFuture(pending));
+      when(createRequestDAO.update(
+              pendingCondition(requestId),
+              Map.of(Constants.STATUS, Status.WITHDRAWN.getStatus())))
+          .thenReturn(Future.succeededFuture(withdrawn));
+
+      VertxFutureAssert.assertFutureSuccess(
+          service.withdrawOrganizationCreateRequest(userId, requestId), ctx,
+          result -> assertThat(result.status()).isEqualTo(Status.WITHDRAWN.getStatus()));
+    }
+
+    @Test
+    @DisplayName("should report another user's request as not found and leave it untouched")
+    void notOwner(VertxTestContext ctx) {
+      when(createRequestDAO.get(requestId))
+          .thenReturn(Future.succeededFuture(
+              TestDataFactory.anOrgCreateRequest(requestId, UUID.randomUUID())));
+
+      VertxFutureAssert.assertFutureFailure(
+          service.withdrawOrganizationCreateRequest(userId, requestId), ctx, err -> {
+            assertThat(err).isInstanceOf(DxNotFoundException.class);
+            verify(createRequestDAO, never()).update(any(), any());
+          });
+    }
+
+    @Test
+    @DisplayName("should return not found when the request does not exist")
+    void missing(VertxTestContext ctx) {
+      when(createRequestDAO.get(requestId))
+          .thenReturn(Future.failedFuture(new NoRowFoundException("no row")));
+
+      VertxFutureAssert.assertFutureFailureType(
+          service.withdrawOrganizationCreateRequest(userId, requestId), ctx,
+          DxNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("should reject withdrawing a request that is already decided")
+    void notPending(VertxTestContext ctx) {
+      when(createRequestDAO.get(requestId))
+          .thenReturn(Future.succeededFuture(
+              withStatus(TestDataFactory.anOrgCreateRequest(requestId, userId), Status.GRANTED)));
+
+      VertxFutureAssert.assertFutureFailure(
+          service.withdrawOrganizationCreateRequest(userId, requestId), ctx, err -> {
+            assertThat(err).isInstanceOf(DxConflictException.class);
+            verify(createRequestDAO, never()).update(any(), any());
+          });
+    }
+
+    @Test
+    @DisplayName("should return conflict when cos_admin decides the request concurrently")
+    void raceWithApproval(VertxTestContext ctx) {
+      when(createRequestDAO.get(requestId))
+          .thenReturn(Future.succeededFuture(TestDataFactory.anOrgCreateRequest(requestId, userId)));
+      when(createRequestDAO.update(any(), any()))
+          .thenReturn(Future.failedFuture(new NoRowFoundException("no row")));
+
+      VertxFutureAssert.assertFutureFailureType(
+          service.withdrawOrganizationCreateRequest(userId, requestId), ctx,
+          DxConflictException.class);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // updateOrganizationCreateRequestStatus (cos_admin decision)
+  // ---------------------------------------------------------------------------
+  @Nested
+  @DisplayName("updateOrganizationCreateRequestStatus")
+  class UpdateOrganizationCreateRequestStatusTests {
+
+    private final UUID requestId = UUID.randomUUID();
+
+    @Test
+    @DisplayName("should not approve a withdrawn request or create an organisation from it")
+    void withdrawnCannotBeApproved(VertxTestContext ctx) {
+      when(createRequestDAO.get(requestId))
+          .thenReturn(Future.succeededFuture(withStatus(
+              TestDataFactory.anOrgCreateRequest(requestId, UUID.randomUUID()),
+              Status.WITHDRAWN)));
+
+      VertxFutureAssert.assertFutureFailure(
+          service.updateOrganizationCreateRequestStatus(requestId, Status.GRANTED), ctx, err -> {
+            assertThat(err).isInstanceOf(DxConflictException.class);
+            verify(createRequestDAO, never()).update(any(), any());
+            verify(orgDAO, never()).create(any());
+          });
+    }
+
+    @Test
+    @DisplayName("should reject a pending request, conditioned on it still being pending")
+    void rejectPending(VertxTestContext ctx) {
+      OrganizationCreateRequest pending =
+          TestDataFactory.anOrgCreateRequest(requestId, UUID.randomUUID());
+      when(createRequestDAO.get(requestId)).thenReturn(Future.succeededFuture(pending));
+      when(createRequestDAO.update(
+              pendingCondition(requestId),
+              Map.of(Constants.STATUS, Status.REJECTED.getStatus())))
+          .thenReturn(Future.succeededFuture(withStatus(pending, Status.REJECTED)));
+
+      VertxFutureAssert.assertFutureSuccess(
+          service.updateOrganizationCreateRequestStatus(requestId, Status.REJECTED), ctx,
+          result -> {
+            assertThat(result).isTrue();
+            verify(orgDAO, never()).create(any());
+          });
+    }
+
+    @Test
+    @DisplayName("should refuse statuses other than granted or rejected")
+    void invalidStatus(VertxTestContext ctx) {
+      VertxFutureAssert.assertFutureFailure(
+          service.updateOrganizationCreateRequestStatus(requestId, Status.WITHDRAWN), ctx, err -> {
+            assertThat(err).isInstanceOf(DxBadRequestException.class);
+            verify(createRequestDAO, never()).get(any());
+          });
     }
   }
 
@@ -311,7 +510,41 @@ class OrganizationServiceImplTest {
         verify(keycloakUserService).addRoleToUser(userId, DxRole.PROVIDER);
         verify(keycloakUserService).setOrganisationDetails(userId, orgId, orgName);
         verify(orgUserDAO).create(any(OrganizationUser.class));
+        verify(organizationHierarchyService, never()).bulkCreateTree(any(), any());
       });
+    }
+
+    @Test
+    @DisplayName("should apply the proposed hierarchy to the newly created org on approval")
+    void withProposedHierarchy(VertxTestContext ctx) {
+      UUID requestId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+      UUID orgId = UUID.randomUUID();
+      List<ProposedDepartmentNode> departments =
+          List.of(new ProposedDepartmentNode("Engineering", null));
+      OrganizationCreateRequest request =
+          withDepartments(TestDataFactory.anOrgCreateRequest(requestId, userId), departments);
+
+      Organization createdOrg = anOrganization(orgId, request.name());
+
+      when(createRequestDAO.get(requestId)).thenReturn(Future.succeededFuture(request));
+      when(orgDAO.create(any(Organization.class))).thenReturn(Future.succeededFuture(createdOrg));
+      when(keycloakUserService.addRoleToUser(userId, DxRole.ORG_ADMIN))
+          .thenReturn(Future.succeededFuture(true));
+      when(keycloakUserService.addRoleToUser(userId, DxRole.PROVIDER))
+          .thenReturn(Future.succeededFuture(true));
+      when(keycloakUserService.setOrganisationDetails(userId, orgId, request.name()))
+          .thenReturn(Future.succeededFuture(true));
+      when(orgUserDAO.create(any(OrganizationUser.class)))
+          .thenReturn(Future.succeededFuture(mock(OrganizationUser.class)));
+      when(organizationHierarchyService.bulkCreateTree(eq(orgId), eq(departments)))
+          .thenReturn(Future.succeededFuture(List.of()));
+
+      VertxFutureAssert.assertFutureSuccess(service.createOrganizationFromRequest(requestId), ctx,
+          success -> {
+            assertThat(success).isTrue();
+            verify(organizationHierarchyService).bulkCreateTree(orgId, departments);
+          });
     }
   }
 
