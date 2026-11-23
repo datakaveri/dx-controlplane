@@ -25,8 +25,50 @@ public record OrganizationJoinRequest(
     String officialEmail,
     UUID requestedNodeId,
     LocalDateTime requestedAt,
-    LocalDateTime processedAt)
+    LocalDateTime processedAt,
+    // Role the user asks for in the selected department: USER (member) or
+    // DEPT_ADMIN. Never ADMIN -- the org_admin is only created with the org.
+    Role requestedRole,
+    // Why the user should administer the department; required for DEPT_ADMIN.
+    String purpose)
     implements BaseEntity<OrganizationJoinRequest> {
+
+  public static final int MAX_PURPOSE_LENGTH = 1000;
+
+  public OrganizationJoinRequest {
+    requestedRole = requestedRole == null ? Role.USER : requestedRole;
+    if (requestedRole == Role.ADMIN) {
+      throw new DxValidationException("departmentRole must be either member or dept_admin");
+    }
+    purpose = purpose == null || purpose.isBlank() ? null : purpose.strip();
+    if (requestedRole == Role.DEPT_ADMIN) {
+      if (purpose == null) {
+        throw new DxValidationException("purpose is required when requesting the dept_admin role");
+      }
+      if (purpose.length() > MAX_PURPOSE_LENGTH) {
+        throw new DxValidationException(
+            "purpose must be at most " + MAX_PURPOSE_LENGTH + " characters");
+      }
+    } else {
+      // Purpose is only collected for an admin request.
+      purpose = null;
+    }
+  }
+
+  public boolean requestsDeptAdmin() {
+    return requestedRole == Role.DEPT_ADMIN;
+  }
+
+  private static Role parseRole(String role) {
+    if (role == null || role.isBlank()) {
+      return Role.USER;
+    }
+    try {
+      return Role.fromString(role);
+    } catch (IllegalArgumentException e) {
+      throw new DxValidationException("departmentRole must be either member or dept_admin");
+    }
+  }
 
   public static OrganizationJoinRequest fromJson(JsonObject orgJoinRequest) {
     try {
@@ -50,7 +92,11 @@ public record OrganizationJoinRequest(
               ? UUID.fromString(orgJoinRequest.getString(Constants.REQUESTED_NODE_ID))
               : null,
           parseDateTime(orgJoinRequest.getString(Constants.REQUESTED_AT)),
-          parseDateTime(orgJoinRequest.getString(Constants.PROCESSED_AT)));
+          parseDateTime(orgJoinRequest.getString(Constants.PROCESSED_AT)),
+          parseRole(orgJoinRequest.getString(Constants.REQUESTED_ROLE)),
+          orgJoinRequest.getString(Constants.PURPOSE));
+    } catch (DxValidationException e) {
+      throw e;
     } catch (IllegalArgumentException e) {
       throw new DxValidationException("Missing or invalid required field: " + e.getMessage());
     }
@@ -71,6 +117,8 @@ public record OrganizationJoinRequest(
     if (requestedNodeId != null) json.put(Constants.REQUESTED_NODE_ID, requestedNodeId.toString());
     if (requestedAt != null) json.put(Constants.REQUESTED_AT, requestedAt.format(FORMATTER));
     if (processedAt != null) json.put(Constants.PROCESSED_AT, processedAt.format(FORMATTER));
+    json.put(Constants.REQUESTED_ROLE, requestedRole.getRoleName());
+    if (purpose != null) json.put(Constants.PURPOSE, purpose);
 
     return json;
   }
@@ -89,6 +137,8 @@ public record OrganizationJoinRequest(
     if (requestedNodeId != null) json.put("requestedNodeId", requestedNodeId.toString());
     if (requestedAt != null) json.put("requestedAt", requestedAt.format(FORMATTER));
     if (processedAt != null) json.put("processedAt", processedAt.format(FORMATTER));
+    json.put("departmentRole", requestedRole.getRoleName());
+    if (purpose != null) json.put("purpose", purpose);
 
     return json;
   }
@@ -108,6 +158,8 @@ public record OrganizationJoinRequest(
     if (requestedNodeId != null) map.put(Constants.REQUESTED_NODE_ID, requestedNodeId.toString());
     if (requestedAt != null) map.put(Constants.REQUESTED_AT, requestedAt.format(FORMATTER));
     if (processedAt != null) map.put(Constants.PROCESSED_AT, processedAt.format(FORMATTER));
+    map.put(Constants.REQUESTED_ROLE, requestedRole.getRoleName());
+    if (purpose != null) map.put(Constants.PURPOSE, purpose);
 
     return map;
   }

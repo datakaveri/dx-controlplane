@@ -44,6 +44,33 @@ public class OrganizationHierarchyNodeDAOImpl extends AbstractBaseDAO<Organizati
   }
 
   @Override
+  public Future<List<OrganizationHierarchyNode>> getByOrganizationIds(List<UUID> organizationIds) {
+    if (organizationIds == null || organizationIds.isEmpty()) {
+      return Future.succeededFuture(List.of());
+    }
+
+    String sql =
+        """
+            SELECT *
+            FROM organization_hierarchy_nodes
+            WHERE organization_id = ANY(string_to_array($1, ',')::uuid[])
+            ORDER BY organization_id, path
+            """;
+
+    JsonArray params =
+        new JsonArray()
+            .add(String.join(",", organizationIds.stream().map(UUID::toString).toList()));
+
+    return postgresService
+        .executeQuery(sql, params)
+        .map(
+            result ->
+                result.getRows().stream()
+                    .map(row -> OrganizationHierarchyNode.fromJson((JsonObject) row))
+                    .toList());
+  }
+
+  @Override
   public Future<OrganizationHierarchyNode> getByIdAndOrganizationId(
       UUID nodeId, UUID organizationId) {
     String sql =

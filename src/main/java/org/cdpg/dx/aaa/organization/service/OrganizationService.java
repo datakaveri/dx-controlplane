@@ -4,6 +4,7 @@ package org.cdpg.dx.aaa.organization.service;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.cdpg.dx.aaa.organization.models.*;
 import org.cdpg.dx.aaa.organization.models.Role;
@@ -28,6 +29,8 @@ public interface OrganizationService {
   // status enum , adding a new org entry and updating orgCreateRequest
   // update orgUser role
   Future<Boolean> updateOrganizationCreateRequestStatus(UUID requestId, Status status);
+
+  Future<OrganizationCreateRequest> withdrawOrganizationCreateRequest(UUID userId, UUID requestId);
 
 //   ************ ORGANIZATION JOIN REQUEST *********
 
@@ -127,6 +130,9 @@ public interface OrganizationService {
 
   Future<OrganizationHierarchyNode> getHierarchyNode(UUID organizationId, UUID nodeId);
 
+  Future<Map<UUID, List<OrganizationHierarchyNode>>> getHierarchyNodesByOrganizationIds(
+      List<UUID> organizationIds);
+
   Future<List<OrganizationHierarchyNode>> getHierarchyNodeChildren(
       UUID organizationId, UUID nodeId);
 
@@ -138,8 +144,15 @@ public interface OrganizationService {
   Future<Boolean> isAncestorOrSelfNode(
       UUID organizationId, UUID ancestorNodeId, UUID targetNodeId, boolean strict);
 
+  /** See {@link DeptAdminService#getApproverUserIds}. */
+  Future<List<UUID>> getRequestApproverUserIds(
+      UUID organizationId, UUID targetNodeId, boolean strict);
+
   Future<OrganizationHierarchyDefinitionRequest> createHierarchyDefinitionRequest(
-      UUID organizationId, List<ProposedDepartmentNode> departments);
+      UUID organizationId, UUID parentNodeId, List<ProposedDepartmentNode> departments);
+
+  Future<PaginatedResult<OrganizationHierarchyDefinitionRequest>> getHierarchyDefinitionRequests(
+      PaginatedRequest request);
 
   Future<OrganizationHierarchyDefinitionRequest> getHierarchyDefinitionRequestById(UUID requestId);
 

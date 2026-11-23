@@ -1,6 +1,7 @@
 package org.cdpg.dx.aaa.organization.service;
 
 import io.vertx.core.Future;
+import java.util.List;
 import java.util.UUID;
 import org.cdpg.dx.aaa.organization.models.DeptAdminRequest;
 import org.cdpg.dx.aaa.organization.models.OrganizationUser;
@@ -30,4 +31,12 @@ public interface DeptAdminService {
    * Shared by dept_admin assignment and delegated department creation.
    */
   Future<Boolean> isAuthorizedOverNode(UUID organizationId, UUID userId, UUID targetNodeId);
+
+  /**
+   * Users who may approve a request for {@code targetNodeId}, for notifying them: the org_admin,
+   * plus every dept_admin of that department or one above it -- strictly above when {@code
+   * strict} (a request to become that department's admin). Only the org_admin when {@code
+   * targetNodeId} is null (flat organisation).
+   */
+  Future<List<UUID>> getApproverUserIds(UUID organizationId, UUID targetNodeId, boolean strict);
 }

@@ -8,7 +8,7 @@ public class OrganizationApprovalPolicyImpl implements OrganizationApprovalPolic
   @Override
   public boolean isDelegable(OrganizationApprovalType approvalType) {
     return switch (approvalType) {
-      case ORGANIZATION_USER_JOIN, PROVIDER_ROLE, DEPT_ADMIN_SELF_REQUEST -> true;
+      case ORGANIZATION_USER_JOIN, PROVIDER_ROLE, DEPT_ADMIN_SELF_REQUEST, DEPT_ADMIN_JOIN -> true;
     };
   }
 }

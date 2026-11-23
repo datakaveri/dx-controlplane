@@ -66,6 +66,8 @@ public final class TestDataFactory {
         "user@example.com",
         null,
         null,
+        null,
+        null,
         null);
   }
 

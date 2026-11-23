@@ -4,6 +4,7 @@ import static org.cdpg.dx.common.util.DateTimeHelper.FORMATTER;
 
 import io.vertx.core.Future;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -18,6 +19,8 @@ import org.cdpg.dx.aaa.organization.service.OrganizationHierarchyService;
 import org.cdpg.dx.common.exception.DxConflictException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.DxValidationException;
+import org.cdpg.dx.common.request.PaginatedRequest;
+import org.cdpg.dx.database.postgres.models.PaginatedResult;
 
 public class OrganizationHierarchyDefinitionServiceImpl
     implements OrganizationHierarchyDefinitionService {
@@ -37,7 +40,7 @@ public class OrganizationHierarchyDefinitionServiceImpl
 
   @Override
   public Future<OrganizationHierarchyDefinitionRequest> createDefinitionRequest(
-      UUID organizationId, List<ProposedDepartmentNode> departments) {
+      UUID organizationId, UUID parentNodeId, List<ProposedDepartmentNode> departments) {
 
     if (departments == null || departments.isEmpty()) {
       return Future.failedFuture(
@@ -52,16 +55,6 @@ public class OrganizationHierarchyDefinitionServiceImpl
                 return Future.failedFuture(new DxNotFoundException("Organization not found"));
               }
 
-              return hierarchyService.hasHierarchy(organizationId);
-            })
-        .compose(
-            hasHierarchy -> {
-              if (hasHierarchy) {
-                return Future.failedFuture(
-                    new DxConflictException(
-                        "Organization already has a department hierarchy defined"));
-              }
-
               return definitionRequestDAO.getAllWithFilters(
                   Map.of(
                       Constants.ORGANIZATION_ID, organizationId.toString(),
@@ -69,25 +62,30 @@ public class OrganizationHierarchyDefinitionServiceImpl
             })
         .compose(
             pendingRequests -> {
+              // One proposal at a time keeps cos_admin's review simple and avoids
+              // two pending proposals adding the same department name.
               if (!pendingRequests.isEmpty()) {
                 return Future.failedFuture(
                     new DxConflictException(
-                        "A hierarchy definition request is already pending for this"
-                            + " organization"));
+                        "A department request is already pending for this organization"));
               }
 
-              OrganizationHierarchyDefinitionRequest request =
-                  new OrganizationHierarchyDefinitionRequest(
-                      null,
-                      organizationId,
-                      departments,
-                      Status.PENDING.getStatus(),
-                      null,
-                      null,
-                      null);
-
-              return definitionRequestDAO.create(request);
-            });
+              // Checked now so the org_admin hears about a bad parent or a name
+              // clash immediately; checked again when cos_admin approves.
+              return hierarchyService.validateAddition(organizationId, parentNodeId, departments);
+            })
+        .compose(
+            valid ->
+                definitionRequestDAO.create(
+                    new OrganizationHierarchyDefinitionRequest(
+                        null,
+                        organizationId,
+                        parentNodeId,
+                        departments,
+                        Status.PENDING.getStatus(),
+                        null,
+                        null,
+                        null)));
   }
 
   @Override
@@ -103,8 +101,19 @@ public class OrganizationHierarchyDefinitionServiceImpl
   }
 
   @Override
+  public Future<PaginatedResult<OrganizationHierarchyDefinitionRequest>> getDefinitionRequests(
+      PaginatedRequest request) {
+    return definitionRequestDAO.getAllWithFilters(request);
+  }
+
+  @Override
   public Future<OrganizationHierarchyDefinitionRequest> updateDefinitionRequestStatus(
       UUID requestId, Status status, String remarks) {
+
+    if (status != Status.GRANTED && status != Status.REJECTED) {
+      return Future.failedFuture(
+          new DxValidationException("Status must be either granted or rejected"));
+    }
 
     return definitionRequestDAO
         .get(requestId)
@@ -117,32 +126,32 @@ public class OrganizationHierarchyDefinitionServiceImpl
 
               if (!Status.PENDING.getStatus().equalsIgnoreCase(request.status())) {
                 return Future.failedFuture(
-                    new DxConflictException(
-                        "Request has already been " + request.status()));
+                    new DxConflictException("Request has already been " + request.status()));
               }
 
-              Map<String, Object> updateFields =
-                  remarks != null
-                      ? Map.of(
-                          Constants.STATUS, status.getStatus(),
-                          Constants.REMARKS, remarks,
-                          Constants.UPDATED_AT, LocalDateTime.now().format(FORMATTER))
-                      : Map.of(
-                          Constants.STATUS, status.getStatus(),
-                          Constants.UPDATED_AT, LocalDateTime.now().format(FORMATTER));
+              // Add the departments first: if that fails (e.g. a name now clashes)
+              // the request stays pending instead of being marked granted with
+              // nothing applied.
+              Future<?> applied =
+                  status == Status.GRANTED
+                      ? hierarchyService.addDepartments(
+                          request.organizationId(), request.parentNodeId(), request.departments())
+                      : Future.succeededFuture();
 
-              return definitionRequestDAO
-                  .update(Map.of("id", requestId.toString()), updateFields)
-                  .compose(
-                      updatedRequest -> {
-                        if (status != Status.GRANTED) {
-                          return Future.succeededFuture(updatedRequest);
-                        }
+              Map<String, Object> updateFields = new HashMap<>();
+              updateFields.put(Constants.STATUS, status.getStatus());
+              updateFields.put(Constants.UPDATED_AT, LocalDateTime.now().format(FORMATTER));
+              if (remarks != null) {
+                updateFields.put(Constants.REMARKS, remarks);
+              }
 
-                        return hierarchyService
-                            .bulkCreateTree(request.organizationId(), request.departments())
-                            .map(createdNodes -> updatedRequest);
-                      });
+              return applied.compose(
+                  ignored ->
+                      definitionRequestDAO.update(
+                          Map.of(
+                              "id", requestId.toString(),
+                              Constants.STATUS, Status.PENDING.getStatus()),
+                          updateFields));
             });
   }
 }

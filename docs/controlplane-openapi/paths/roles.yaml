@@ -24,7 +24,7 @@
   delete:
     summary: Delete a user from an organisation (Org Admin)
     tags:
-    - Organisation APIs
+    - Organisation – Members
     operationId: delete-auth-v2-organisations-users-id
     description: |
       Allows an organisation admin to permanently delete a user from their organisation.
@@ -84,7 +84,7 @@
   put:
     summary: Update a user's role within an organisation (Org Admin)
     tags:
-    - Organisation APIs
+    - Organisation – Members
     operationId: put-auth-v2-organization-users-role
     description: |
       Allows an organisation admin to update the role of a specific user within their organisation.

@@ -12,6 +12,8 @@ import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -24,6 +26,7 @@ import org.cdpg.dx.aaa.organization.models.OrganisationAuditOperation;
 import org.cdpg.dx.aaa.organization.models.OrganizationUser;
 import org.cdpg.dx.aaa.organization.models.Role;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
+import org.cdpg.dx.aaa.organization.util.DepartmentPaths;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.common.URNGenerator;
@@ -45,12 +48,17 @@ public class OrganizationUserHandler {
   private final OrganizationService organizationService;
   private final UserService userService;
   private final URNGenerator urnGenerator;
+  private final DeptAdminAccessHandler deptAdminAccess;
 
   public OrganizationUserHandler(
-      OrganizationService organizationService, UserService userService, URNGenerator urnGenerator) {
+      OrganizationService organizationService,
+      UserService userService,
+      URNGenerator urnGenerator,
+      DeptAdminAccessHandler deptAdminAccess) {
     this.organizationService = organizationService;
     this.userService = userService;
     this.urnGenerator = urnGenerator;
+    this.deptAdminAccess = deptAdminAccess;
   }
 
   public void getOrganisationUserInfo(RoutingContext ctx) {
@@ -88,7 +96,10 @@ public class OrganizationUserHandler {
     }
 
     listOrganisationUsers(
-        ctx, ALLOWED_FILTER_MAP_FOR_ORG_USERS, Map.of(ORGANIZATION_ID, orgId.toString()));
+        ctx,
+        orgId,
+        DeptAdminAccessHandler.withDepartmentIdParam(
+            ALLOWED_FILTER_MAP_FOR_ORG_USERS, HIERARCHY_NODE_ID));
   }
 
   /**
@@ -108,18 +119,47 @@ public class OrganizationUserHandler {
 
     listOrganisationUsers(
         ctx,
-        DeptAdminAccessHandler.withDepartmentScopeParam(
-            ALLOWED_FILTER_MAP_FOR_ORG_USERS, HIERARCHY_NODE_ID),
-        Map.of(
-            ORGANIZATION_ID, orgId.toString(),
-            HIERARCHY_NODE_ID, DeptAdminAccessHandler.requestedNodeIds(ctx, deptAdminScope)));
+        orgId,
+        DeptAdminAccessHandler.withDepartmentParams(
+            ALLOWED_FILTER_MAP_FOR_ORG_USERS, HIERARCHY_NODE_ID));
+  }
+
+  /**
+   * Organisation members, restricted to {@code ?departmentId=} (and its sub-departments) when
+   * given, and always to the caller's subtree for a dept_admin. Each row carries its department
+   * and, for a dept_admin, the department they administer.
+   */
+  private void listOrganisationUsers(
+      RoutingContext ctx, UUID orgId, Map<String, String> allowedFilters) {
+    deptAdminAccess
+        .departmentNodeIds(ctx, orgId)
+        .compose(
+            nodeIds -> {
+              Map<String, Object> additionalFilters = new HashMap<>();
+              additionalFilters.put(ORGANIZATION_ID, orgId.toString());
+              if (nodeIds != null) {
+                additionalFilters.put(HIERARCHY_NODE_ID, nodeIds);
+              }
+              return organizationService
+                  .getHierarchyNodesByOrganizationIds(List.of(orgId))
+                  .map(
+                      nodesByOrg ->
+                          new DepartmentPaths(nodesByOrg.getOrDefault(orgId, List.of())))
+                  .map(departments -> Map.entry(additionalFilters, departments));
+            })
+        .onSuccess(
+            entry -> listOrganisationUsers(ctx, allowedFilters, entry.getKey(), entry.getValue()))
+        .onFailure(ctx::fail);
   }
 
   private void listOrganisationUsers(
       RoutingContext ctx,
       Map<String, String> allowedFilters,
-      Map<String, Object> additionalFilters) {
-    PaginatedRequest request =
+      Map<String, Object> additionalFilters,
+      DepartmentPaths departments) {
+    PaginatedRequest request;
+    try {
+      request =
         PaginationRequestBuilder.from(ctx)
             .allowedFiltersDbMap(allowedFilters)
             .fuzzyFiltersDbMap(Map.of("userName", USER_NAME))
@@ -130,13 +170,19 @@ public class OrganizationUserHandler {
             .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
             .allowedSortFields(API_TO_DB_ORG_USERS.keySet())
             .build();
+    } catch (RuntimeException e) {
+      ctx.fail(e);
+      return;
+    }
     organizationService
         .getOrganizationUsers(request)
         .compose(
             res ->
                 userService
                     .enrichWithUserRoles(
-                        res.data(), OrganizationUser::userId, OrganizationUser::toJson)
+                        res.data(),
+                        OrganizationUser::userId,
+                        user -> toJsonWithDepartments(user, departments))
                     .map(enriched -> Map.entry(enriched, res.paginationInfo())))
         .onSuccess(
             entry -> {
@@ -149,6 +195,18 @@ public class OrganizationUserHandler {
             })
         .onFailure(ctx::fail);
   }
+
+  /** The member plus {@code "department"} and, for a dept_admin, {@code "adminOfDepartment"}. */
+  static JsonObject toJsonWithDepartments(OrganizationUser user, DepartmentPaths departments) {
+    JsonObject json = departments.addTo(user.toJson(), user.hierarchyNodeId());
+    JsonObject adminOf = departments.describe(user.adminOfNodeId());
+    if (adminOf != null) {
+      json.put(ADMIN_OF_DEPARTMENT, adminOf);
+    }
+    return json;
+  }
+
+  static final String ADMIN_OF_DEPARTMENT = "adminOfDepartment";
 
   public void updateOrganisationUserRole(RoutingContext ctx) {
 

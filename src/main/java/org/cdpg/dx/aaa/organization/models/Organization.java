@@ -94,6 +94,19 @@ public record Organization(
     return json;
   }
 
+  /**
+   * Single-organization view: {@link #toFilteredJson()} plus the document fields. Uses the
+   * same camelCase keys the record previously serialized to, so the get-by-id response shape
+   * is unchanged.
+   */
+  public JsonObject toDetailJson() {
+    JsonObject json = toFilteredJson();
+    if (certificatePath != null) json.put("certificatePath", certificatePath);
+    if (pancardPath != null) json.put("pancardPath", pancardPath);
+    if (orgDocuments != null) json.put("orgDocuments", orgDocuments);
+    return json;
+  }
+
   @Override
   public Map<String, Object> toNonEmptyFieldsMap() {
     Map<String, Object> map = new HashMap<>();
