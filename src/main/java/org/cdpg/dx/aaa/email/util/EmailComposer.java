@@ -973,11 +973,8 @@ public class EmailComposer {
     return organizationService
         .getHierarchyNodesByOrganizationIds(List.of(orgId))
         .map(
-            nodesByOrg -> {
-              JsonObject department =
-                  new DepartmentPaths(nodesByOrg.getOrDefault(orgId, List.of())).describe(nodeId);
-              return department == null ? null : department.getString("hierarchyLabel");
-            })
+            nodesByOrg ->
+                new DepartmentPaths(nodesByOrg.getOrDefault(orgId, List.of())).label(nodeId))
         .otherwise((String) null);
   }
 

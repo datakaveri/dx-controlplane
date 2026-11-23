@@ -548,6 +548,8 @@ components:
       $ref: components/parameters.yaml#/OrgSectorParam
     StatusParam:
       $ref: components/parameters.yaml#/StatusParam
+    OrgRequestStatusParam:
+      $ref: components/parameters.yaml#/OrgRequestStatusParam
   schemas:
     AssetSummary:
       $ref: components/schemas/access.yaml#/AssetSummary
