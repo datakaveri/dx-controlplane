@@ -122,9 +122,12 @@ OrgJoinRequestItem:
       description: |
         Role the applicant asked for in the chosen department (UI: "User" = `member`,
         "Admin" = `dept_admin`). `member` for flat organisations and older requests.
-    purpose:
-      type: string
-      description: Why the applicant should administer the department; only present for `dept_admin`.
+    additional_info:
+      type: object
+      additionalProperties: true
+      description: |
+        Free-form details the UI sent as `additionalInfo` with the request (for example a
+        `purpose` for an Admin request), returned unchanged. Absent when none was sent.
     department:
       $ref: '#/DepartmentRef'
     requested_at:

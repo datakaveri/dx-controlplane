@@ -87,7 +87,8 @@ class EmailComposerApproverTest {
   void adminJoinRequestGoesToEveryApproverWithDetails() {
     OrganizationJoinRequest request = new OrganizationJoinRequest(
         UUID.randomUUID(), orgId, UUID.randomUUID(), "Alice", "pending", "Lead", "E1",
-        "alice@example.com", payments, null, null, Role.DEPT_ADMIN, "I lead <b>payments</b>");
+        "alice@example.com", payments, null, null, Role.DEPT_ADMIN,
+        new io.vertx.core.json.JsonObject().put("purpose", "I lead <b>payments</b>"));
     when(organizationService.getRequestApproverUserIds(orgId, payments, true))
         .thenReturn(Future.succeededFuture(List.of(orgAdmin, platformAdmin)));
 
@@ -100,7 +101,7 @@ class EmailComposerApproverTest {
     assertThat(html)
         .contains("Platform / Payments")
         .contains("Requested role:</strong> Admin")
-        .contains("I lead &lt;b&gt;payments&lt;/b&gt;")
+        .contains("Purpose:</strong> I lead &lt;b&gt;payments&lt;/b&gt;")
         .doesNotContain("<b>payments</b>")
         .doesNotContain("${");
   }

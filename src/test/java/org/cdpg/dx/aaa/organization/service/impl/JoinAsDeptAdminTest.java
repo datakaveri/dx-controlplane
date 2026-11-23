@@ -61,7 +61,8 @@ class JoinAsDeptAdminTest {
   private OrganizationJoinRequest joinRequest(Role role, String purpose, UUID node, Status status) {
     return new OrganizationJoinRequest(
         requestId, orgId, userId, "Test User", status.getStatus(), "Lead", "EMP1",
-        "lead@example.com", node, null, null, role, purpose);
+        "lead@example.com", node, null, null, role,
+        purpose == null ? null : new io.vertx.core.json.JsonObject().put("purpose", purpose));
   }
 
   @Nested
