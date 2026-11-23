@@ -22,6 +22,9 @@ public interface OrganizationLifecycleService {
 
   Future<Boolean> updateOrganizationCreateRequestStatus(UUID requestId, Status status);
 
+  /** Requester withdraws their own pending create request; the row is kept as {@code withdrawn}. */
+  Future<OrganizationCreateRequest> withdrawOrganizationCreateRequest(UUID userId, UUID requestId);
+
   Future<Boolean> createOrganizationFromRequest(UUID requestId);
 
   Future<Organization> getOrganizationById(UUID orgId);

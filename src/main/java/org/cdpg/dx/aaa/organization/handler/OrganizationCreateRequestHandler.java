@@ -1,10 +1,12 @@
 package org.cdpg.dx.aaa.organization.handler;
 
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -15,11 +17,13 @@ import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
 import org.cdpg.dx.aaa.organization.models.OrganisationAuditOperation;
 import org.cdpg.dx.aaa.organization.models.OrganizationCreateRequest;
+import org.cdpg.dx.aaa.organization.models.ProposedDepartmentNode;
 import org.cdpg.dx.aaa.organization.models.Status;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
 import org.cdpg.dx.auditing.v2.model.UserActivityAuditLogBuilder;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.common.util.RequestHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxConflictException;
@@ -39,6 +43,10 @@ import static org.cdpg.dx.database.postgres.util.Constants.DEFAULT_SORTING_ORDER
 
 public class OrganizationCreateRequestHandler {
   private static final Logger LOGGER = LogManager.getLogger(OrganizationCreateRequestHandler.class);
+
+  private static final List<String> COS_ADMIN_VISIBLE_CREATE_REQUEST_STATUSES =
+      List.of(
+          Status.PENDING.getStatus(), Status.GRANTED.getStatus(), Status.REJECTED.getStatus());
 
   private final OrganizationService organizationService;
   private final KeycloakUserService keycloakUserService;
@@ -69,6 +77,28 @@ public class OrganizationCreateRequestHandler {
     User user = ctx.user();
 
     String orgName = orgRequestJson.getString("name");
+
+    // Optional department tree, reviewed and applied together with the request.
+    // Only accepted via "departments"; never trust a client-sent proposed_hierarchy.
+    orgRequestJson.remove(PROPOSED_HIERARCHY);
+    if (orgRequestJson.containsKey(OrganizationCreateRequest.DEPARTMENTS)) {
+      List<ProposedDepartmentNode> departments;
+      try {
+        JsonArray departmentsJson =
+          orgRequestJson.getJsonArray(OrganizationCreateRequest.DEPARTMENTS);
+        if (departmentsJson == null || departmentsJson.isEmpty()) {
+          ctx.fail(new DxBadRequestException(
+            "departments cannot be empty; omit it to create a flat organisation"));
+          return;
+        }
+        departments = ProposedDepartmentNode.listFromJson(departmentsJson);
+      } catch (Exception e) {
+        ctx.fail(new DxBadRequestException("Invalid departments: " + e.getMessage()));
+        return;
+      }
+      orgRequestJson.put(PROPOSED_HIERARCHY, new JsonObject()
+        .put(OrganizationCreateRequest.DEPARTMENTS, ProposedDepartmentNode.listToJson(departments)));
+    }
 
     keycloakUserService.getUserById(userId)
       .compose(keycloakUser -> {
@@ -216,6 +246,37 @@ public class OrganizationCreateRequestHandler {
         .onFailure(ctx::fail);
   }
 
+  /**
+   * Requester withdraws their own pending create request before cos_admin decides on it. Unlike
+   * DELETE, the row is kept with status {@code withdrawn} so it stays in the user's history.
+   */
+  public void withdrawOrganizationCreateRequest(RoutingContext ctx) {
+    UUID requestId = RequestHelper.getPathParamAsUUID(ctx, "id");
+    UUID userId = RoutingContextHelper.fromPrincipal(ctx).sub();
+
+    JsonObject body = ctx.body().asJsonObject();
+    if (body == null || !Status.WITHDRAWN.getStatus().equals(body.getString("status"))) {
+      ctx.fail(new DxBadRequestException("status must be 'withdrawn'"));
+      return;
+    }
+
+    organizationService
+        .withdrawOrganizationCreateRequest(userId, requestId)
+        .onSuccess(
+            withdrawn -> {
+              UserActivityAuditLogBuilder auditLogBuilder =
+                  OrganizationAuditHelper.buildOrganisationAudit(
+                      ctx,
+                      new JsonObject().put(ID, requestId.toString()),
+                      OrganisationAuditOperation.WITHDRAW_PENDING_ORG_CREATE_REQUEST);
+              CpRoutingContextHelper.setAuditingLogV2(ctx, auditLogBuilder);
+
+              ResponseBuilder.sendSuccess(
+                  ctx, "Organisation create request withdrawn successfully", urnGenerator);
+            })
+        .onFailure(ctx::fail);
+  }
+
   public void getUserOrganisationRequest(RoutingContext ctx) {
     DxUser dxUser = RoutingContextHelper.fromPrincipal(ctx);
     UUID userId = dxUser.sub();
@@ -250,9 +311,17 @@ public class OrganizationCreateRequestHandler {
 
   public void getAllOrganisationRequest(RoutingContext ctx) {
 
+    // Withdrawn requests leave the cos_admin queue: hidden unless asked for
+    // explicitly with ?status=withdrawn.
+    Map<String, Object> defaultFilters =
+        ctx.queryParams().contains("status")
+            ? Map.of()
+            : Map.of(STATUS, COS_ADMIN_VISIBLE_CREATE_REQUEST_STATUSES);
+
     PaginatedRequest request =
         PaginationRequestBuilder.from(ctx)
             .allowedFiltersDbMap(ALLOWED_FILTER_MAP_FOR_ORG_CREATE_REQUEST)
+            .additionalFilters(defaultFilters)
             .apiToDbMap(API_TO_DB_ORG_CREATE_REQUEST)
             .allowedTimeFields(Set.of(CREATED_AT))
             .defaultTimeField(CREATED_AT)

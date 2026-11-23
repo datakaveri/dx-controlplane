@@ -1,5 +1,7 @@
 package org.cdpg.dx.aaa.provider.handler;
 
+import java.util.HashMap;
+
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
@@ -14,6 +16,7 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.organization.audit.OrganizationAuditHelper;
 import org.cdpg.dx.aaa.organization.handler.DeptAdminAccessHandler;
+import org.cdpg.dx.aaa.organization.util.DepartmentPaths;
 import org.cdpg.dx.aaa.organization.models.DeptAdminScope;
 import org.cdpg.dx.aaa.organization.models.OrganisationAuditOperation;
 import org.cdpg.dx.aaa.organization.models.OrganizationJoinRequest;
@@ -53,12 +56,15 @@ public class ProviderRoleHandler {
   private final UserService userService;
   private final EmailComposer emailComposer;
   private final URNGenerator urnGenerator;
+  private final DeptAdminAccessHandler deptAdminAccess;
 
   public ProviderRoleHandler(
       OrganizationService organizationService,
       UserService userService,
       EmailComposer emailComposer,
-      URNGenerator urnGenerator) {
+      URNGenerator urnGenerator,
+      DeptAdminAccessHandler deptAdminAccess) {
+    this.deptAdminAccess = deptAdminAccess;
     this.organizationService = organizationService;
     this.userService = userService;
     this.emailComposer = emailComposer;
@@ -215,11 +221,12 @@ public class ProviderRoleHandler {
     }
     UUID resOrgId = UUID.fromString(orgIdStr);
 
+    // Optional ?departmentId= narrows to that department and its sub-departments.
     listOrgProviderRequests(
         ctx,
         resOrgId,
-        ALLOWED_FILTER_MAP_FOR_PROVIDER_ROLE_REQUEST,
-        Map.of(ORGANIZATION_ID, resOrgId.toString()));
+        DeptAdminAccessHandler.withDepartmentIdParam(
+            ALLOWED_FILTER_MAP_FOR_PROVIDER_ROLE_REQUEST, REQUESTED_NODE_ID));
   }
 
   /**
@@ -236,32 +243,69 @@ public class ProviderRoleHandler {
     }
     UUID resOrgId = deptAdminScope.organizationId();
 
+    // Always within the caller's subtree; ?departmentScope= / ?departmentId= narrow it.
     listOrgProviderRequests(
         ctx,
         resOrgId,
-        DeptAdminAccessHandler.withDepartmentScopeParam(
-            ALLOWED_FILTER_MAP_FOR_PROVIDER_ROLE_REQUEST, REQUESTED_NODE_ID),
-        Map.of(
-            ORGANIZATION_ID, resOrgId.toString(),
-            REQUESTED_NODE_ID, DeptAdminAccessHandler.requestedNodeIds(ctx, deptAdminScope)));
+        DeptAdminAccessHandler.withDepartmentParams(
+            ALLOWED_FILTER_MAP_FOR_PROVIDER_ROLE_REQUEST, REQUESTED_NODE_ID));
+  }
+
+  /**
+   * Provider role requests of {@code resOrgId}, restricted to the departments from {@link
+   * DeptAdminAccessHandler#departmentNodeIds} (none for an org_admin without {@code
+   * ?departmentId=}). Each row carries its department and path.
+   */
+  private void listOrgProviderRequests(
+      RoutingContext ctx, UUID resOrgId, Map<String, String> allowedFilters) {
+
+    deptAdminAccess
+        .departmentNodeIds(ctx, resOrgId)
+        .compose(
+            nodeIds -> {
+              Map<String, Object> additionalFilters = new HashMap<>();
+              additionalFilters.put(ORGANIZATION_ID, resOrgId.toString());
+              if (nodeIds != null) {
+                additionalFilters.put(REQUESTED_NODE_ID, nodeIds);
+              }
+              return organizationService
+                  .getHierarchyNodesByOrganizationIds(List.of(resOrgId))
+                  .map(
+                      nodesByOrg ->
+                          new DepartmentPaths(nodesByOrg.getOrDefault(resOrgId, List.of())))
+                  .map(departments -> Map.entry(additionalFilters, departments));
+            })
+        .onSuccess(
+            entry ->
+                listOrgProviderRequests(
+                    ctx, resOrgId, allowedFilters, entry.getKey(), entry.getValue()))
+        .onFailure(ctx::fail);
   }
 
   private void listOrgProviderRequests(
       RoutingContext ctx,
       UUID resOrgId,
       Map<String, String> allowedFilters,
-      Map<String, Object> additionalFilters) {
+      Map<String, Object> additionalFilters,
+      DepartmentPaths departments) {
 
-    PaginatedRequest request =
-        PaginationRequestBuilder.from(ctx)
-            .allowedFiltersDbMap(allowedFilters)
-            .apiToDbMap(API_TO_DB_PROVIDER_ROLE_REQUEST)
-            .additionalFilters(additionalFilters)
-            .allowedTimeFields(Set.of(CREATED_AT))
-            .defaultTimeField(CREATED_AT)
-            .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
-            .allowedSortFields(API_TO_DB_PROVIDER_ROLE_REQUEST.keySet())
-            .build();
+    PaginatedRequest request;
+    try {
+      request =
+          PaginationRequestBuilder.from(ctx)
+              .allowedFiltersDbMap(allowedFilters)
+              .apiToDbMap(API_TO_DB_PROVIDER_ROLE_REQUEST)
+              .additionalFilters(additionalFilters)
+              .allowedTimeFields(Set.of(CREATED_AT))
+              .defaultTimeField(CREATED_AT)
+              .defaultSort(CREATED_AT, DEFAULT_SORTING_ORDER)
+              .allowedSortFields(API_TO_DB_PROVIDER_ROLE_REQUEST.keySet())
+              .build();
+    } catch (RuntimeException e) {
+      // Called from an async callback: fail the request rather than throw.
+      ctx.fail(e);
+      return;
+    }
 
     organizationService
         .getAllPendingProviderRoleRequests(request)
@@ -284,7 +328,9 @@ public class ProviderRoleHandler {
                   .enrichWithUserRoles(
                       providerResult.data(),
                       ProviderRoleRequest::userId,
-                      ProviderRoleRequest::toJson)
+                      providerRequest ->
+                          departments.addTo(
+                              providerRequest.toJson(), providerRequest.requestedNodeId()))
                   .map(
                       enriched -> {
                         List<JsonObject> finalResponse =

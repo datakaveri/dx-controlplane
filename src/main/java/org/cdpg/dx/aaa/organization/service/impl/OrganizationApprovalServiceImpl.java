@@ -186,11 +186,13 @@ public class OrganizationApprovalServiceImpl implements OrganizationApprovalServ
       return Future.succeededFuture(false);
     }
 
-    // A dept_admin self-request's target is the requester's own department --
-    // that department's own (not-yet-existing) admin, i.e. the requester
-    // themself, must not be able to self-approve, so this one case requires a
+    // A request to become a department's admin (a member's self-request, or
+    // joining as dept_admin) must be approved from above: an existing admin
+    // of that same department cannot appoint a peer, so these cases require a
     // *strict* ancestor rather than ancestor-or-self.
-    boolean strict = approvalType == OrganizationApprovalType.DEPT_ADMIN_SELF_REQUEST;
+    boolean strict =
+        approvalType == OrganizationApprovalType.DEPT_ADMIN_SELF_REQUEST
+            || approvalType == OrganizationApprovalType.DEPT_ADMIN_JOIN;
 
     return hierarchyService.isAncestorOrSelf(
         organizationId, context.node().id(), targetNodeId, strict);

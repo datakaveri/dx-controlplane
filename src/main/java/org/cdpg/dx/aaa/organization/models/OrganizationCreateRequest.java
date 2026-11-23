@@ -7,6 +7,7 @@ import org.cdpg.dx.common.exception.DxValidationException;
 import org.cdpg.dx.database.postgres.base.entity.BaseEntity;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.UUID;
@@ -36,8 +37,67 @@ public record OrganizationCreateRequest(
         String managerEmail,
         String orgDocuments,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        // Optional department tree proposed with the request; applied when the
+        // request is granted. Empty means the organisation starts flat.
+        List<ProposedDepartmentNode> departments
 ) implements BaseEntity<OrganizationCreateRequest> {
+
+  public static final String DEPARTMENTS = "departments";
+
+  public OrganizationCreateRequest {
+    departments = departments == null ? List.of() : List.copyOf(departments);
+  }
+
+  /** Request without a proposed hierarchy. */
+  public OrganizationCreateRequest(
+      UUID id,
+      UUID requestedBy,
+      String name,
+      String logoPath,
+      String entityType,
+      String orgSector,
+      String websiteLink,
+      String address,
+      String certificatePath,
+      String pancardPath,
+      String relevantDocPath,
+      String status,
+      String userName,
+      String empId,
+      String jobTitle,
+      String orgManagerphoneNo,
+      String managerEmail,
+      String orgDocuments,
+      LocalDateTime createdAt,
+      LocalDateTime updatedAt) {
+    this(id, requestedBy, name, logoPath, entityType, orgSector, websiteLink, address,
+        certificatePath, pancardPath, relevantDocPath, status, userName, empId, jobTitle,
+        orgManagerphoneNo, managerEmail, orgDocuments, createdAt, updatedAt, List.of());
+  }
+
+  public boolean hasProposedHierarchy() {
+    return !departments.isEmpty();
+  }
+
+  /** Reads the {@code proposed_hierarchy} JSONB column ({@code {"departments": [...]}}). */
+  private static List<ProposedDepartmentNode> parseDepartments(JsonObject json) {
+    Object raw = json.getValue(Constants.PROPOSED_HIERARCHY);
+    JsonObject proposed = null;
+    if (raw instanceof JsonObject jsonObject) {
+      proposed = jsonObject;
+    } else if (raw instanceof String str && !str.isBlank()) {
+      proposed = new JsonObject(str);
+    }
+    if (proposed == null || proposed.getJsonArray(DEPARTMENTS) == null) {
+      return List.of();
+    }
+    return ProposedDepartmentNode.listFromJson(proposed.getJsonArray(DEPARTMENTS));
+  }
+
+  private JsonObject proposedHierarchyJson() {
+    return new JsonObject().put(DEPARTMENTS, ProposedDepartmentNode.listToJson(departments));
+  }
 
   public static OrganizationCreateRequest fromJson(JsonObject json) {
     try {
@@ -67,7 +127,8 @@ public record OrganizationCreateRequest(
         requireNonNull(json.getString(Constants.MANAGER_EMAIL), Constants.MANAGER_EMAIL),
         requireNonNull(json.getString(Constants.ORG_DOCUMENTS), Constants.ORG_DOCUMENTS),
         parseDateTime(json.getString(Constants.CREATED_AT)),
-              parseDateTime(json.getString(Constants.UPDATED_AT))
+              parseDateTime(json.getString(Constants.UPDATED_AT)),
+              parseDepartments(json)
       );
     } catch (IllegalArgumentException e) {
       throw new DxValidationException("Missing or invalid required field: " + e.getMessage());
@@ -97,6 +158,7 @@ public record OrganizationCreateRequest(
     if(orgManagerphoneNo!=null && !orgManagerphoneNo.isEmpty()) json.put(PHONE_NO,orgManagerphoneNo);
     json.put(Constants.MANAGER_EMAIL,managerEmail);
     if (orgDocuments != null && !orgDocuments.isEmpty()) json.put(Constants.ORG_DOCUMENTS, orgDocuments);
+    if (hasProposedHierarchy()) json.put(Constants.PROPOSED_HIERARCHY, proposedHierarchyJson());
     if (createdAt != null) json.put(Constants.CREATED_AT, createdAt.format(FORMATTER));
     if (updatedAt != null) json.put(Constants.UPDATED_AT, updatedAt.format(FORMATTER));
 
@@ -125,6 +187,7 @@ public record OrganizationCreateRequest(
     if(orgManagerphoneNo!=null) json.put(PHONE_NO,orgManagerphoneNo);
     json.put("orgDocuments", orgDocuments);
     json.put("managerEmail",managerEmail);
+    if (hasProposedHierarchy()) json.put("proposedHierarchy", proposedHierarchyJson());
     if (createdAt != null) json.put("createdAt", createdAt.format(FORMATTER));
     if (updatedAt != null) json.put("updatedAt", updatedAt.format(FORMATTER));
 
@@ -152,6 +215,7 @@ public record OrganizationCreateRequest(
     if (!orgManagerphoneNo.isEmpty()) map.put(PHONE_NO, orgManagerphoneNo);
     if (!managerEmail.isEmpty()) map.put(Constants.MANAGER_EMAIL, managerEmail);
     if (!orgDocuments.isEmpty()) map.put(Constants.ORG_DOCUMENTS, orgDocuments);
+    if (hasProposedHierarchy()) map.put(Constants.PROPOSED_HIERARCHY, proposedHierarchyJson());
     if (createdAt != null) map.put(Constants.CREATED_AT, createdAt.format(FORMATTER));
     if (updatedAt != null) map.put(Constants.UPDATED_AT, updatedAt.format(FORMATTER));
 

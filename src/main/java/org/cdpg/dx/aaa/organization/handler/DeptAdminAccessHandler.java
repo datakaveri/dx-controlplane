@@ -5,6 +5,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,7 @@ import org.cdpg.dx.aaa.organization.service.OrganizationHierarchyService;
 import org.cdpg.dx.aaa.organization.service.impl.OrganizationHierarchyServiceImpl;
 import org.cdpg.dx.auth.model.Scopes;
 import org.cdpg.dx.common.exception.DxBadRequestException;
+import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.database.postgres.service.PostgresService;
@@ -50,6 +52,7 @@ public class DeptAdminAccessHandler {
 
   public static final String DEPT_ADMIN_SCOPE_KEY = "deptAdminScope";
   public static final String DEPARTMENT_SCOPE_PARAM = "departmentScope";
+  public static final String DEPARTMENT_ID_PARAM = "departmentId";
 
   private final OrganizationUserDAO organizationUserDAO;
   private final OrganizationHierarchyService hierarchyService;
@@ -100,6 +103,76 @@ public class DeptAdminAccessHandler {
     Map<String, String> filters = new HashMap<>(allowedFilters);
     filters.put(DEPARTMENT_SCOPE_PARAM, nodeColumn);
     return filters;
+  }
+
+  /**
+   * Department ids a Manage-users list should be restricted to, or {@code null} for no
+   * department restriction (an org-level caller that did not pick a department).
+   *
+   * <ul>
+   *   <li>{@code ?departmentId=} -- that department and all of its sub-departments. A dept_admin
+   *       may only pick a department inside their subtree (403 otherwise).
+   *   <li>A dept_admin is always restricted to their subtree, narrowed by {@code
+   *       ?departmentScope=}.
+   * </ul>
+   *
+   * Never an empty list: when nothing matches it is {@link DeptAdminScope#NO_DEPARTMENT}, because
+   * an empty list filter is dropped by the query builders and would widen the result.
+   */
+  public Future<List<String>> departmentNodeIds(RoutingContext ctx, UUID organizationId) {
+    DeptAdminScope scope = scopeOf(ctx);
+    List<String> base;
+    try {
+      base = scope == null ? null : requestedNodeIds(ctx, scope);
+    } catch (DxBadRequestException e) {
+      return Future.failedFuture(e);
+    }
+
+    String raw = ctx.queryParams().get(DEPARTMENT_ID_PARAM);
+    if (raw == null || raw.isBlank()) {
+      return Future.succeededFuture(base);
+    }
+
+    UUID departmentId;
+    try {
+      departmentId = UUID.fromString(raw.trim());
+    } catch (IllegalArgumentException e) {
+      return Future.failedFuture(new DxBadRequestException("departmentId must be a UUID"));
+    }
+    if (scope != null && !scope.covers(departmentId)) {
+      return Future.failedFuture(
+          new DxForbiddenException("Department is outside the departments you administer"));
+    }
+
+    return hierarchyService
+        .getDescendantNodeIds(organizationId, departmentId)
+        .map(
+            ids -> {
+              List<String> nodeIds = new ArrayList<>(ids.stream().map(UUID::toString).toList());
+              if (base != null) {
+                nodeIds.retainAll(base);
+              }
+              return nodeIds.isEmpty() ? List.of(DeptAdminScope.NO_DEPARTMENT) : nodeIds;
+            });
+  }
+
+  /**
+   * {@code allowedFilters} plus {@link #DEPARTMENT_ID_PARAM}, mapped onto {@code nodeColumn} so
+   * PaginationRequestBuilder accepts it. When it is sent, {@link #departmentNodeIds} is non-null
+   * and the handler sets {@code nodeColumn} from it, which overrides the raw value (additional
+   * filters are applied after query filters).
+   */
+  public static Map<String, String> withDepartmentIdParam(
+      Map<String, String> allowedFilters, String nodeColumn) {
+    Map<String, String> filters = new HashMap<>(allowedFilters);
+    filters.put(DEPARTMENT_ID_PARAM, nodeColumn);
+    return filters;
+  }
+
+  /** {@link #withDepartmentIdParam} plus {@link #DEPARTMENT_SCOPE_PARAM}, for dept_admin lists. */
+  public static Map<String, String> withDepartmentParams(
+      Map<String, String> allowedFilters, String nodeColumn) {
+    return withDepartmentIdParam(withDepartmentScopeParam(allowedFilters, nodeColumn), nodeColumn);
   }
 
   /**

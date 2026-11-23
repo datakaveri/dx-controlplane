@@ -3,17 +3,24 @@ package org.cdpg.dx.aaa.email.util;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.credit.models.ComputeRole;
 import org.cdpg.dx.aaa.credit.models.Status;
 import org.cdpg.dx.aaa.credit.service.CreditService;
 import org.cdpg.dx.aaa.organization.models.OrganizationCreateRequest;
+import org.cdpg.dx.aaa.organization.models.OrganizationHierarchyDefinitionRequest;
 import org.cdpg.dx.aaa.organization.models.OrganizationJoinRequest;
 import org.cdpg.dx.aaa.organization.models.OrganizationUser;
+import org.cdpg.dx.aaa.organization.models.ProposedDepartmentNode;
 import org.cdpg.dx.aaa.organization.models.ProviderRoleRequest;
 import org.cdpg.dx.aaa.organization.service.OrganizationService;
+import org.cdpg.dx.aaa.organization.util.DepartmentPaths;
 import org.cdpg.dx.aaa.user.service.UserService;
 import org.cdpg.dx.email.service.EmailService;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
@@ -88,25 +95,96 @@ public class EmailComposer {
         .send();
   }
 
+  /**
+   * Tells cos_admin that an org_admin proposed departments (an organisation's first departments,
+   * or more added later) and what they are.
+   */
+  public Future<Void> sendEmailForDepartmentRequest(
+      OrganizationHierarchyDefinitionRequest request, User user) {
+    String subject = "Department Request" + envSuffixTag();
+    UUID orgId = request.organizationId();
+
+    Future<String> orgName =
+        organizationService
+            .getOrganizationById(orgId)
+            .map(org -> org == null ? orgId.toString() : org.orgName())
+            .otherwise(orgId.toString());
+
+    return orgName.compose(
+        name ->
+            departmentLabel(orgId, request.parentNodeId())
+                .compose(
+                    parentLabel -> {
+                      Map<String, String> rows = new LinkedHashMap<>();
+                      rows.put("Organisation", name);
+                      rows.put(
+                          "Add under",
+                          request.parentNodeId() == null
+                              ? "Top level of the organisation"
+                              : parentLabel == null ? "An existing department" : parentLabel);
+                      String details =
+                          detailsHtml(rows) + departmentTreeHtml(request.departments());
+
+                      return newEmail()
+                          .template("templates/request-department-change.html")
+                          .to(cosAdminEmailId)
+                          .subject(subject)
+                          .variable("ADMIN_FIRST_NAME", "Admin")
+                          .variable("ADMIN_LAST_NAME", "")
+                          .variable("USER_FIRST_NAME", escapeHtml(principalName(user)))
+                          .variable(
+                              "USER_EMAIL_ID",
+                              escapeHtml(user.principal().getString("email", "")))
+                          .variable("ORGANIZATION_NAME", escapeHtml(name))
+                          .variable("REQUEST_DETAILS", details)
+                          .variable("ADMIN_PORTAL_URL", adminPortalUrl)
+                          .variable("SENDER_NAME", senderName)
+                          .variable("DETAILS_MESSAGE", detailsMessage())
+                          .send();
+                    }));
+  }
+
+  /**
+   * Tells everyone who can approve the join request: the org_admin, and in an organisation with
+   * departments every dept_admin of the chosen department or above it (strictly above for an
+   * Admin request). Includes the department path, requested role and purpose.
+   */
   public Future<Void> sendEmailForJoiningOrg(
       OrganizationJoinRequest request, User user) {
-    String subject =
-        "Join Organization Request"
-            + ((envSuffix == null || envSuffix.isBlank()) ? "" : " [" + envSuffix + "]");
-    return getOrgAdminEmail(request.organizationId())
-        .compose(orgAdminEmail ->
-            newEmail()
-                .template("templates/request-join-organization.html")
-                .to(orgAdminEmail)
-                .subject(subject)
-                .variable("ADMIN_FIRST_NAME", "Admin")
-                .variable("ADMIN_LAST_NAME", "")
-                .variable("USER_FIRST_NAME", request.userName())
-                .variable("USER_EMAIL_ID", user.principal().getString("email"))
-                .variable("ADMIN_PORTAL_URL", adminPortalUrl)
-                .variable("SENDER_NAME", senderName)
-                .variable("DETAILS_MESSAGE", detailsMessage())
-                .send());
+    String subject = "Join Organization Request" + envSuffixTag();
+    UUID orgId = request.organizationId();
+
+    return departmentLabel(orgId, request.requestedNodeId())
+        .compose(
+            department -> {
+              Map<String, String> rows = new LinkedHashMap<>();
+              if (department != null) {
+                rows.put("Department", department);
+                rows.put("Requested role", request.requestsDeptAdmin() ? "Admin" : "User");
+              }
+              if (request.purpose() != null) {
+                rows.put("Purpose", request.purpose());
+              }
+              String details = detailsHtml(rows);
+
+              return sendToApprovers(
+                  orgId,
+                  request.requestedNodeId(),
+                  request.requestsDeptAdmin(),
+                  approverEmail ->
+                      newEmail()
+                          .template("templates/request-join-organization.html")
+                          .to(approverEmail)
+                          .subject(subject)
+                          .variable("ADMIN_FIRST_NAME", "Admin")
+                          .variable("ADMIN_LAST_NAME", "")
+                          .variable("USER_FIRST_NAME", request.userName())
+                          .variable("USER_EMAIL_ID", user.principal().getString("email"))
+                          .variable("REQUEST_DETAILS", details)
+                          .variable("ADMIN_PORTAL_URL", adminPortalUrl)
+                          .variable("SENDER_NAME", senderName)
+                          .variable("DETAILS_MESSAGE", detailsMessage()));
+            });
   }
 
   public Future<Void> sendEmailForComputeRole(ComputeRole computeRole, User user) {
@@ -127,24 +205,37 @@ public class EmailComposer {
         .send();
   }
 
+  /**
+   * Tells everyone who can approve the provider role request: the org_admin and, when it is
+   * scoped to a department, every dept_admin of that department or above it.
+   */
   public Future<Void> sendEmailForProviderRole(ProviderRoleRequest request, User user) {
-    String subject =
-        "Provider Role Request"
-            + ((envSuffix == null || envSuffix.isBlank()) ? "" : " [" + envSuffix + "]");
-    return getOrgAdminEmail(request.orgId())
-        .compose(orgAdminEmail ->
-            newEmail()
-                .template("templates/request-provider-role.html")
-                .to(orgAdminEmail)
-                .subject(subject)
-                .variable("ADMIN_FIRST_NAME", "Admin")
-                .variable("ADMIN_LAST_NAME", "")
-                .variable("USER_FIRST_NAME", user.principal().getString("name"))
-                .variable("USER_EMAIL_ID", user.principal().getString("email"))
-                .variable("ADMIN_PORTAL_URL", adminPortalUrl)
-                .variable("SENDER_NAME", senderName)
-                .variable("DETAILS_MESSAGE", detailsMessage())
-                .send());
+    String subject = "Provider Role Request" + envSuffixTag();
+    UUID orgId = request.orgId();
+
+    return departmentLabel(orgId, request.requestedNodeId())
+        .compose(
+            department -> {
+              String details =
+                  department == null ? "" : detailsHtml(Map.of("Department", department));
+              return sendToApprovers(
+                  orgId,
+                  request.requestedNodeId(),
+                  false,
+                  approverEmail ->
+                      newEmail()
+                          .template("templates/request-provider-role.html")
+                          .to(approverEmail)
+                          .subject(subject)
+                          .variable("ADMIN_FIRST_NAME", "Admin")
+                          .variable("ADMIN_LAST_NAME", "")
+                          .variable("USER_FIRST_NAME", user.principal().getString("name"))
+                          .variable("USER_EMAIL_ID", user.principal().getString("email"))
+                          .variable("REQUEST_DETAILS", details)
+                          .variable("ADMIN_PORTAL_URL", adminPortalUrl)
+                          .variable("SENDER_NAME", senderName)
+                          .variable("DETAILS_MESSAGE", detailsMessage()));
+            });
   }
 
   public Future<Void> sendEmailForPlatformProviderRole(ProviderRoleRequest request, User user) {
@@ -152,6 +243,7 @@ public class EmailComposer {
         .template("templates/request-provider-role.html")
         .to(cosAdminEmailId)
         .subject("Platform Provider Role Request")
+        .variable("REQUEST_DETAILS", "")
         .variable("ADMIN_FIRST_NAME", "Admin")
         .variable("ADMIN_LAST_NAME", "")
         .variable("USER_FIRST_NAME", user.principal().getString("name"))
@@ -819,6 +911,128 @@ public class EmailComposer {
    */
   private String envSuffixTag() {
     return (envSuffix == null || envSuffix.isBlank()) ? "" : " [" + envSuffix + "]";
+  }
+
+  /**
+   * Sends {@code email} (built per recipient) to every user who may approve a request for {@code
+   * nodeId}. Falls back to the org_admin alone if the approvers cannot be resolved; one recipient
+   * failing does not stop the others.
+   */
+  private Future<Void> sendToApprovers(
+      UUID orgId,
+      UUID nodeId,
+      boolean strict,
+      Function<String, EmailTemplateBuilder> email) {
+    return approverEmails(orgId, nodeId, strict)
+        .compose(
+            recipients ->
+                Future.join(recipients.stream().map(to -> email.apply(to).send()).toList())
+                    .<Void>mapEmpty());
+  }
+
+  /** Email addresses of the request's approvers; the org_admin's if they cannot be resolved. */
+  Future<List<String>> approverEmails(UUID orgId, UUID nodeId, boolean strict) {
+    return organizationService
+        .getRequestApproverUserIds(orgId, nodeId, strict)
+        .compose(
+            userIds ->
+                Future.join(
+                        userIds.stream()
+                            .map(
+                                id ->
+                                    userService
+                                        .getUserInfoByID(id)
+                                        .map(u -> u == null ? null : u.email())
+                                        .otherwise((String) null))
+                            .toList())
+                    .map(
+                        all ->
+                            all.<String>list().stream()
+                                .filter(e -> e != null && !e.isBlank())
+                                .distinct()
+                                .toList()))
+        .compose(
+            emails ->
+                emails.isEmpty()
+                    ? getOrgAdminEmail(orgId).map(List::of)
+                    : Future.succeededFuture(emails))
+        .recover(
+            err -> {
+              LOGGER.warn(
+                  "Could not resolve approvers for org {} department {}: {}",
+                  orgId, nodeId, err.getMessage());
+              return getOrgAdminEmail(orgId).map(List::of);
+            });
+  }
+
+  /** The department's "A / B / C" path, or null for none (or when it cannot be resolved). */
+  private Future<String> departmentLabel(UUID orgId, UUID nodeId) {
+    if (nodeId == null) {
+      return Future.succeededFuture(null);
+    }
+    return organizationService
+        .getHierarchyNodesByOrganizationIds(List.of(orgId))
+        .map(
+            nodesByOrg ->
+                new DepartmentPaths(nodesByOrg.getOrDefault(orgId, List.of())).label(nodeId))
+        .otherwise((String) null);
+  }
+
+  /** "Label: value" lines, values HTML-escaped (they include user-entered text). */
+  static String detailsHtml(Map<String, String> rows) {
+    if (rows.isEmpty()) {
+      return "";
+    }
+    StringBuilder html = new StringBuilder("<p>");
+    rows.forEach(
+        (label, value) ->
+            html.append("<strong>")
+                .append(escapeHtml(label))
+                .append(":</strong> ")
+                .append(escapeHtml(value))
+                .append("<br/>"));
+    return html.append("</p>").toString();
+  }
+
+  /** The proposed departments as a nested list, names HTML-escaped. */
+  static String departmentTreeHtml(List<ProposedDepartmentNode> departments) {
+    if (departments == null || departments.isEmpty()) {
+      return "";
+    }
+    StringBuilder html = new StringBuilder("<ul>");
+    for (ProposedDepartmentNode department : departments) {
+      html.append("<li>")
+          .append(escapeHtml(department.name()))
+          .append(departmentTreeHtml(department.subDepartments()))
+          .append("</li>");
+    }
+    return html.append("</ul>").toString();
+  }
+
+  static String escapeHtml(String value) {
+    if (value == null) {
+      return "";
+    }
+    StringBuilder out = new StringBuilder(value.length());
+    for (char c : value.toCharArray()) {
+      switch (c) {
+        case '&' -> out.append("&amp;");
+        case '<' -> out.append("&lt;");
+        case '>' -> out.append("&gt;");
+        case '"' -> out.append("&quot;");
+        case '\'' -> out.append("&#39;");
+        default -> out.append(c);
+      }
+    }
+    return out.toString();
+  }
+
+  private static String principalName(User user) {
+    String name = user.principal().getString("name");
+    if (name == null || name.isBlank()) {
+      name = user.principal().getString("preferred_username", "An organisation admin");
+    }
+    return name;
   }
 
   /** Construct the standard "review and take action" details message. */

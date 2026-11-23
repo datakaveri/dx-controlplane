@@ -1,12 +1,13 @@
 /iudx/v2/auth/organisations/requests:
   get:
     tags:
-    - Organisation APIs
+    - Organisation – Creation Requests
     summary: Get all organisation creation requests (COS Admin)
     operationId: get-auth-v2-organisations-request
     description: |
       Returns a paginated list of all organisation creation requests submitted on the platform.
       Supports filtering by status, entity type, org name, sector, and free-text search.
+      Withdrawn requests are omitted unless `status=withdrawn` is passed explicitly.
       Requires `cos_admin` role.
 
       **Log Type:** `USER_ACTION`
@@ -17,7 +18,7 @@
     - $ref: ../components/parameters.yaml#/SizeParam
     - $ref: ../components/parameters.yaml#/SortingParam
     - $ref: ../components/parameters.yaml#/EntityTypeParam
-    - $ref: ../components/parameters.yaml#/StatusParam
+    - $ref: ../components/parameters.yaml#/OrgRequestStatusParam
     - $ref: ../components/parameters.yaml#/OrgNameParam
     - $ref: ../components/parameters.yaml#/OrgSectorParam
     - $ref: ../components/parameters.yaml#/SearchTermParam
@@ -51,29 +52,60 @@
               type: urn:dx:controlPlane:success
               title: Success
               result:
-              - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+              - id: 7e6d5c4b-3a29-4f18-8e07-d6c5b4a39281
                 requestedBy: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                name: Tech Solutions Pvt Ltd
+                name: ABC Technologies
                 entityType: private
                 orgSector: technology
-                websiteLink: https://techsolutions.example.com
-                address: 123 Tech Park, Bengaluru
-                certificatePath: /docs/cert.pdf
-                pancardPath: /docs/pan.pdf
-                empId: EMP001
-                jobTitle: CTO
-                managerEmail: manager@techsolutions.com
-                orgDocuments: /docs/org.pdf
+                websiteLink: https://abctech.example.com
+                address: 4th Floor, Tech Park, Bengaluru
+                certificatePath: /docs/abc/certificate.pdf
+                pancardPath: /docs/abc/pan.pdf
                 status: pending
-                userName: John Doe
-                createdAt: '2025-06-04T10:54:53.301846'
-                updatedAt: '2025-06-04T10:54:53.301846'
+                userName: Asha Rao
+                empId: ABC-0001
+                jobTitle: Chief Technology Officer
+                managerEmail: owner@abctech.example.com
+                orgDocuments: /docs/abc/registration.pdf
+                createdAt: '2026-11-20T09:30:00.000000'
+                updatedAt: '2026-11-20T09:30:00.000000'
+                departments:
+                - name: Google
+                  subDepartments:
+                  - name: Engineering
+                    subDepartments:
+                    - name: Platform
+                      subDepartments:
+                      - name: Data Services
+                        subDepartments: []
+                - name: Finance
+                  subDepartments:
+                  - name: Payments
+                    subDepartments: []
+              - id: 8f7e6d5c-4b3a-4029-9f18-e7d6c5b4a392
+                requestedBy: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                name: Northwind Logistics
+                entityType: private
+                orgSector: technology
+                websiteLink: https://abctech.example.com
+                address: 4th Floor, Tech Park, Bengaluru
+                certificatePath: /docs/abc/certificate.pdf
+                pancardPath: /docs/abc/pan.pdf
+                status: granted
+                userName: Asha Rao
+                empId: ABC-0001
+                jobTitle: Chief Technology Officer
+                managerEmail: owner@abctech.example.com
+                orgDocuments: /docs/abc/registration.pdf
+                createdAt: '2026-11-20T09:30:00.000000'
+                updatedAt: '2026-11-20T09:30:00.000000'
+                departments: []
               paginationInfo:
                 page: 1
                 size: 10
-                totalCount: 42
-                totalPages: 5
-                hasNext: true
+                totalCount: 2
+                totalPages: 1
+                hasNext: false
                 hasPrevious: false
       '401':
         description: Unauthorized
@@ -93,7 +125,7 @@
               detail: User does not have the required role.
   post:
     tags:
-    - Organisation APIs
+    - Organisation – Creation Requests
     summary: Submit an organisation creation request (User)
     operationId: post-auth-v2-organisations-request
     description: |
@@ -105,6 +137,11 @@
       - Organisation name must be unique (case-insensitive, among pending/granted requests)
       - Manager email must not already be in use by another active org request
       - `requested_by` and `user_name` are set automatically from the authenticated token
+      - `departments` (optional) proposes the organisation's department hierarchy along with
+        the request. It is validated on submission (non-empty, no blank names, no duplicate
+        names under the same parent) and applied when the COS Admin grants the request. Omit it
+        to create a flat organisation; the hierarchy can still be defined later via a hierarchy
+        definition request.
 
       **Log Type:** `USER_ACTION`
     security:
@@ -193,6 +230,55 @@
                 type: string
                 nullable: true
                 description: Optional contact phone number.
+              departments:
+                type: array
+                minItems: 1
+                description: |
+                  Optional. The organisation's top-level departments, each with nested
+                  `subDepartments`. The organisation itself is the implicit top of the tree; no ids
+                  are sent. Applied when the request is granted.
+                items:
+                  $ref: ../components/schemas/organisation.yaml#/ProposedDepartment
+          examples:
+            withDepartments:
+              summary: Organisation with a department tree (up to 4 levels deep)
+              value:
+                name: ABC Technologies
+                entity_type: private
+                org_sector: technology
+                website_link: https://abctech.example.com
+                address: 4th Floor, Tech Park, Bengaluru
+                certificate_path: /docs/abc/certificate.pdf
+                pancard_path: /docs/abc/pan.pdf
+                emp_id: ABC-0001
+                job_title: Chief Technology Officer
+                manager_email: owner@abctech.example.com
+                organisation_documents: /docs/abc/registration.pdf
+                departments:
+                - name: Google
+                  subDepartments:
+                  - name: Engineering
+                    subDepartments:
+                    - name: Platform
+                      subDepartments:
+                      - name: Data Services
+                - name: Finance
+                  subDepartments:
+                  - name: Payments
+            flat:
+              summary: Flat organisation (no departments)
+              value:
+                name: ABC Technologies
+                entity_type: private
+                org_sector: technology
+                website_link: https://abctech.example.com
+                address: 4th Floor, Tech Park, Bengaluru
+                certificate_path: /docs/abc/certificate.pdf
+                pancard_path: /docs/abc/pan.pdf
+                emp_id: ABC-0001
+                job_title: Chief Technology Officer
+                manager_email: owner@abctech.example.com
+                organisation_documents: /docs/abc/registration.pdf
     responses:
       '200':
         description: Organisation creation request submitted successfully
@@ -213,23 +299,36 @@
               type: urn:dx:controlPlane:success
               title: Success
               result:
-                id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                id: 7e6d5c4b-3a29-4f18-8e07-d6c5b4a39281
                 requestedBy: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                name: Tech Solutions Pvt Ltd
+                name: ABC Technologies
                 entityType: private
                 orgSector: technology
-                websiteLink: https://techsolutions.example.com
-                address: 123 Tech Park, Bengaluru
-                certificatePath: /docs/cert.pdf
-                pancardPath: /docs/pan.pdf
-                empId: EMP001
-                jobTitle: CTO
-                managerEmail: manager@techsolutions.com
-                orgDocuments: /docs/org.pdf
+                websiteLink: https://abctech.example.com
+                address: 4th Floor, Tech Park, Bengaluru
+                certificatePath: /docs/abc/certificate.pdf
+                pancardPath: /docs/abc/pan.pdf
                 status: pending
-                userName: John Doe
-                createdAt: '2025-06-04T10:54:53.301846'
-                updatedAt: '2025-06-04T10:54:53.301846'
+                userName: Asha Rao
+                empId: ABC-0001
+                jobTitle: Chief Technology Officer
+                managerEmail: owner@abctech.example.com
+                orgDocuments: /docs/abc/registration.pdf
+                createdAt: '2026-11-20T09:30:00.000000'
+                updatedAt: '2026-11-20T09:30:00.000000'
+                departments:
+                - name: Google
+                  subDepartments:
+                  - name: Engineering
+                    subDepartments:
+                    - name: Platform
+                      subDepartments:
+                      - name: Data Services
+                        subDepartments: []
+                - name: Finance
+                  subDepartments:
+                  - name: Payments
+                    subDepartments: []
       '400':
         description: Bad Request - Body missing or invalid
         content:
@@ -251,12 +350,13 @@
 /iudx/v2/auth/organisations/requests/approve:
   post:
     tags:
-    - Organisation APIs
+    - Organisation – Creation Requests
     summary: Approve or reject an organisation creation request (COS Admin)
     operationId: post-auth-v2-approve-create_org
     description: |
       Allows a COS Admin to approve or reject a pending organisation creation request.
-      On approval, the organisation is created and the requester is notified.
+      On approval, the organisation is created and the requester is notified. If the request
+      carries a `proposed_hierarchy`, its department tree is created for the new organisation in the same call.
 
       **Log Type:** `USER_ACTION`
     security:
@@ -294,6 +394,17 @@
                 type: string
                 enum: [granted, rejected]
                 description: New status for the request.
+          examples:
+            approve:
+              summary: 'Approve: creates the organisation and its departments'
+              value:
+                req_id: 7e6d5c4b-3a29-4f18-8e07-d6c5b4a39281
+                status: granted
+            reject:
+              summary: Reject
+              value:
+                req_id: 7e6d5c4b-3a29-4f18-8e07-d6c5b4a39281
+                status: rejected
     responses:
       '200':
         description: Request status updated successfully
@@ -333,10 +444,20 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/NotFound
+      '409':
+        description: Conflict - The request is not pending (already granted, rejected or withdrawn by the requester)
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/generalBadRequest
+            example:
+              type: urn:dx:controlPlane:conflict
+              title: Conflict
+              detail: Request has already been withdrawn
 /iudx/v2/auth/user/organisations/requests:
   get:
     tags:
-    - Organisation APIs
+    - Organisation – Creation Requests
     summary: Get the current user's organisation creation requests
     operationId: get-auth-v2-user-organisations-request
     description: |
@@ -374,11 +495,54 @@
               type: urn:dx:controlPlane:success
               title: Success
               result:
-              - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                requestedBy: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                name: Tech Solutions Pvt Ltd
+              - id: 7e6d5c4b-3a29-4f18-8e07-d6c5b4a39281
+                requested_by: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                name: ABC Technologies
+                entity_type: private
+                org_sector: technology
+                website_link: https://abctech.example.com
+                address: 4th Floor, Tech Park, Bengaluru
+                certificate_path: /docs/abc/certificate.pdf
+                pancard_path: /docs/abc/pan.pdf
                 status: pending
-                createdAt: '2025-06-04T10:54:53.301846'
+                user_name: Asha Rao
+                emp_id: ABC-0001
+                job_title: Chief Technology Officer
+                manager_email: owner@abctech.example.com
+                organisation_documents: /docs/abc/registration.pdf
+                proposed_hierarchy:
+                  departments:
+                  - name: Google
+                    subDepartments:
+                    - name: Engineering
+                      subDepartments:
+                      - name: Platform
+                        subDepartments:
+                        - name: Data Services
+                          subDepartments: []
+                  - name: Finance
+                    subDepartments:
+                    - name: Payments
+                      subDepartments: []
+                created_at: '2026-11-20T09:30:00.000000'
+                updated_at: '2026-11-20T09:30:00.000000'
+              - id: 6d5c4b3a-2918-4e07-9d6c-c5b4a3928170
+                requested_by: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                name: ABC Tech
+                entity_type: private
+                org_sector: technology
+                website_link: https://abctech.example.com
+                address: 4th Floor, Tech Park, Bengaluru
+                certificate_path: /docs/abc/certificate.pdf
+                pancard_path: /docs/abc/pan.pdf
+                status: withdrawn
+                user_name: Asha Rao
+                emp_id: ABC-0001
+                job_title: Chief Technology Officer
+                manager_email: owner@abctech.example.com
+                organisation_documents: /docs/abc/registration.pdf
+                created_at: '2026-11-20T09:30:00.000000'
+                updated_at: '2026-11-21T14:05:12.481920'
       '401':
         description: Unauthorized
         content:
@@ -390,13 +554,13 @@
   - name: id
     in: path
     required: true
-    description: UUID of the organisation creation request to delete
+    description: UUID of the organisation creation request to delete or withdraw
     schema:
       type: string
       format: uuid
   delete:
     tags:
-    - Organisation APIs
+    - Organisation – Creation Requests
     summary: Delete a pending organisation creation request (User)
     operationId: delete-auth-v2-user-organisations-request
     description: |
@@ -451,10 +615,102 @@
               type: urn:dx:controlPlane:forbidden
               title: Forbidden
               detail: User does not have the required role.
+  patch:
+    tags:
+    - Organisation – Creation Requests
+    summary: Withdraw a pending organisation creation request (User)
+    operationId: withdraw-auth-v2-user-organisations-request
+    description: |
+      Lets the requester cancel their own organisation creation request before a
+      COS Admin approves or rejects it. Unlike `DELETE`, the record is kept with
+      status `withdrawn`, so it still shows in the user's own request history.
+
+      A withdrawn request leaves the COS Admin queue: `GET /iudx/v2/auth/organisations/requests`
+      omits withdrawn requests unless called with `?status=withdrawn`, and it can no
+      longer be approved or rejected.
+
+      Only `pending` requests can be withdrawn. A request that is not the caller's own
+      is reported as not found.
+
+      **Log Type:** `USER_ACTION`
+    security:
+    - authorization: []
+    requestBody:
+      required: true
+      description: Only `withdrawn` is allowed.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - status
+            properties:
+              status:
+                type: string
+                enum:
+                - withdrawn
+                description: New status of the request.
+          examples:
+            withdraw:
+              value:
+                status: withdrawn
+    x-codeSamples:
+    - lang: cURL
+      label: Withdraw org creation request
+      source: |
+        curl --location --request PATCH 'https://${HOSTNAME}/iudx/v2/auth/user/organisations/requests/{id}' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"status": "withdrawn"}'
+    responses:
+      '200':
+        description: Organisation creation request withdrawn successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: urn:dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                detail:
+                  type: string
+                  example: Organisation create request withdrawn successfully
+      '400':
+        description: Bad Request - `status` is missing or not `withdrawn`
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/generalBadRequest
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '404':
+        description: Not Found - No request with this ID belongs to the caller
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/NotFound
+      '409':
+        description: Conflict - The request is no longer pending (already granted, rejected or withdrawn)
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/generalBadRequest
+            example:
+              type: urn:dx:controlPlane:conflict
+              title: Conflict
+              detail: Only a pending request can be withdrawn; this request is already granted
 /iudx/v2/auth/user/organisations/join_requests:
   get:
     tags:
-    - Organisation APIs
+    - Organisation – Join Requests
     summary: Get the current user's organisation join requests
     operationId: get-auth-v2-user-organisations-join-requests
     description: |
@@ -492,15 +748,31 @@
               type: urn:dx:controlPlane:success
               title: Success
               result:
-              - id: 7a1b2c3d-4e5f-6789-abcd-ef0123456789
-                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                userId: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                userName: John Doe
+              - id: 7a1b2c3d-4e5f-4789-abcd-ef0123456789
+                organization_id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                user_id: f3c4d5e6-f7a8-4b92-8c1d-2e3f4a5b6c7d
+                user_name: Rahul Verma
                 status: pending
-                jobTitle: Software Engineer
-                empId: EMP001
-                officialEmail: john@techsolutions.com
-                requestedAt: '2025-06-04T10:54:53.301846'
+                job_title: Head of Data Services
+                emp_id: ABC-0057
+                official_email: rahul.verma@abctech.example.com
+                requested_at: '2026-11-20T09:30:00.000000'
+                requested_node_id: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                requested_role: dept_admin
+                purpose: I lead the Data Services team and will review its members, provider requests and datasets.
+                department:
+                  id: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                  name: Data Services
+                  hierarchy:
+                  - id: 1c0e7d5a-3f1b-4a2e-9d8c-7b6a5f4e3d2c
+                    name: Google
+                  - id: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                    name: Engineering
+                  - id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                    name: Platform
+                  - id: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                    name: Data Services
+                  path: google.engineering.platform.data_services
       '401':
         description: Unauthorized
         content:
@@ -518,7 +790,7 @@
       format: uuid
   delete:
     tags:
-    - Organisation APIs
+    - Organisation – Join Requests
     summary: Delete a pending organisation join request (User)
     operationId: delete-auth-v2-user-organisations-join-requests
     description: |
@@ -584,7 +856,7 @@
       format: uuid
   get:
     tags:
-    - Organisation APIs
+    - Organisation – Join Requests
     summary: Get join requests for an organisation (Org Admin)
     operationId: get-auth-v2-organisations-join-requests
     description: |
@@ -596,6 +868,7 @@
     security:
     - authorization: []
     parameters:
+    - $ref: ../components/parameters.yaml#/DepartmentIdParam
     - $ref: ../components/parameters.yaml#/PageParam
     - $ref: ../components/parameters.yaml#/SizeParam
     - $ref: ../components/parameters.yaml#/SortingParam
@@ -632,7 +905,7 @@
                           items:
                             type: string
                           description: Keycloak roles of the user
-                        accountEnabled:
+                        account_enabled:
                           type: boolean
                           description: Whether the user's account is active in Keycloak
                 paginationInfo:
@@ -641,21 +914,61 @@
               type: urn:dx:controlPlane:success
               title: Success
               result:
-              - id: 7a1b2c3d-4e5f-6789-abcd-ef0123456789
-                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                userId: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                userName: John Doe
+              - id: 7a1b2c3d-4e5f-4789-abcd-ef0123456789
+                organization_id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                user_id: f3c4d5e6-f7a8-4b92-8c1d-2e3f4a5b6c7d
+                user_name: Rahul Verma
                 status: pending
-                jobTitle: Software Engineer
-                empId: EMP001
-                officialEmail: john@techsolutions.com
-                requestedAt: '2025-06-04T10:54:53.301846'
-                roles: [consumer]
-                accountEnabled: true
+                job_title: Head of Data Services
+                emp_id: ABC-0057
+                official_email: rahul.verma@abctech.example.com
+                requested_at: '2026-11-20T09:30:00.000000'
+                requested_node_id: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                requested_role: dept_admin
+                purpose: I lead the Data Services team and will review its members, provider requests and datasets.
+                department:
+                  id: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                  name: Data Services
+                  hierarchy:
+                  - id: 1c0e7d5a-3f1b-4a2e-9d8c-7b6a5f4e3d2c
+                    name: Google
+                  - id: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                    name: Engineering
+                  - id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                    name: Platform
+                  - id: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                    name: Data Services
+                  path: google.engineering.platform.data_services
+                roles:
+                - consumer
+                account_enabled: true
+              - id: 8b2c3d4e-5f60-4890-bcde-f01234567890
+                organization_id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                user_id: a4d5e6f7-a8b9-4ca3-9d2e-3f4a5b6c7d8e
+                user_name: Meera Iyer
+                status: pending
+                job_title: Payments Analyst
+                emp_id: ABC-0203
+                official_email: meera.iyer@abctech.example.com
+                requested_at: '2026-11-20T09:30:00.000000'
+                requested_node_id: 6b5d2c0f-8e6a-4f7d-8c3b-2a1f0e9d8c7b
+                requested_role: member
+                department:
+                  id: 6b5d2c0f-8e6a-4f7d-8c3b-2a1f0e9d8c7b
+                  name: Payments
+                  hierarchy:
+                  - id: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
+                    name: Finance
+                  - id: 6b5d2c0f-8e6a-4f7d-8c3b-2a1f0e9d8c7b
+                    name: Payments
+                  path: finance.payments
+                roles:
+                - consumer
+                account_enabled: true
               paginationInfo:
                 page: 1
                 size: 10
-                totalCount: 5
+                totalCount: 2
                 totalPages: 1
                 hasNext: false
                 hasPrevious: false
@@ -677,7 +990,7 @@
               detail: User does not have the required role.
   post:
     tags:
-    - Organisation APIs
+    - Organisation – Join Requests
     summary: Submit an organisation join request (User)
     operationId: post-auth-v2-organisations-join-requests
     description: |
@@ -687,6 +1000,15 @@
       **Validation rules:**
       - User must not already have a pending or granted join request for this org
       - `official_email` must not already be in use by another active join request
+      - If the organisation has departments, `departmentId` is required; otherwise it must be omitted
+      - `departmentRole` is the role asked for in that department: `member` (default) or
+        `dept_admin`. `dept_admin` needs a department and a non-blank `purpose`;
+        `purpose` is ignored for `member`.
+
+      **Who approves:** a `member` request can be approved by the org_admin or the
+      dept_admin of the chosen department or any department above it. A `dept_admin`
+      request can only be approved by the org_admin or the dept_admin of a department
+      *above* the chosen one. On approval the user becomes that department's dept_admin.
 
       **Log Type:** `USER_ACTION`
     security:
@@ -699,6 +1021,13 @@
         --header 'Authorization: Bearer <your-token>' \
         --header 'Content-Type: application/json' \
         --data '{"job_title": "Software Engineer", "emp_id": "EMP001", "official_email": "john@techsolutions.com"}'
+    - lang: cURL
+      label: Join a department as its admin
+      source: |
+        curl --location --request POST 'https://${HOSTNAME}/iudx/v2/auth/organisations/{id}/join_requests' \
+        --header 'Authorization: Bearer <your-token>' \
+        --header 'Content-Type: application/json' \
+        --data '{"job_title": "Lead", "emp_id": "EMP002", "official_email": "lead@techsolutions.com", "departmentId": "9b2e6f1c-1d3a-4c5b-8e7f-0a1b2c3d4e5f", "departmentRole": "dept_admin", "purpose": "I lead the Platform team and will review its members and assets."}'
     requestBody:
       required: true
       content:
@@ -719,6 +1048,47 @@
               official_email:
                 type: string
                 description: Official email of the applicant within the organisation. Must be unique.
+              departmentId:
+                type: string
+                format: uuid
+                description: |
+                  Department to join, picked from the organisation's department tree.
+                  Required when the organisation has departments; must be omitted otherwise.
+              departmentRole:
+                type: string
+                enum: [member, dept_admin]
+                default: member
+                description: |
+                  Role asked for in the chosen department. The UI's "User" is `member`
+                  and "Admin" is `dept_admin`.
+              purpose:
+                type: string
+                maxLength: 1000
+                description: Why the user should administer the department. Required when `departmentRole` is `dept_admin`.
+          examples:
+            member:
+              summary: Join a department as a User (member)
+              value:
+                job_title: Platform Engineer
+                emp_id: ABC-0142
+                official_email: priya.nair@abctech.example.com
+                departmentId: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                departmentRole: member
+            deptAdmin:
+              summary: Join a department as its Admin (purpose required)
+              value:
+                job_title: Head of Data Services
+                emp_id: ABC-0057
+                official_email: rahul.verma@abctech.example.com
+                departmentId: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                departmentRole: dept_admin
+                purpose: I lead the Data Services team and will review its members, provider requests and datasets.
+            flatOrganisation:
+              summary: Organisation without departments
+              value:
+                job_title: Platform Engineer
+                emp_id: ABC-0142
+                official_email: priya.nair@abctech.example.com
     responses:
       '200':
         description: Join request created successfully
@@ -772,7 +1142,7 @@
       format: uuid
   put:
     tags:
-    - Organisation APIs
+    - Organisation – Join Requests
     summary: Approve or reject an organisation join request (Org Admin)
     operationId: put-auth-v2-organisations-join-requests
     description: |
@@ -861,7 +1231,7 @@
       format: uuid
   patch:
     tags:
-    - Organisation APIs
+    - Organisation – Join Requests
     summary: Withdraw an organisation join request (User)
     operationId: withdraw-auth-v2-organisations-join-request
     description: |
@@ -950,7 +1320,7 @@
 /iudx/v2/auth/organisations:
   get:
     tags:
-    - Organisation APIs
+    - Organisation – Management
     summary: List all organisations
     operationId: get-auth-v2-org
     description: |
@@ -1018,6 +1388,21 @@
                       updatedAt:
                         type: string
                         format: date-time
+                      departments:
+                        type: array
+                        description: |
+                          The organisation's departments as a flat list ordered by `path` (the ltree path,
+                          e.g. `engineering.data_platform`). Empty for an organisation without a hierarchy.
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            name:
+                              type: string
+                            path:
+                              type: string
                 paginationInfo:
                   $ref: ../components/schemas/pagination.yaml#/PaginationInfo
             example:
@@ -1025,19 +1410,57 @@
               title: Success
               result:
               - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                orgName: Tech Solutions Pvt Ltd
+                orgName: ABC Technologies
                 entityType: private
                 orgSector: technology
-                websiteLink: https://techsolutions.example.com
-                address: 123 Tech Park, Bengaluru
+                websiteLink: https://abctech.example.com
+                address: 4th Floor, Tech Park, Bengaluru
                 createdAt: '2025-06-04T10:54:53.301846'
                 updatedAt: '2025-06-04T10:54:53.301846'
+                departments:
+                - id: 1c0e7d5a-3f1b-4a2e-9d8c-7b6a5f4e3d2c
+                  name: Google
+                  path: google
+                  level: 1
+                - id: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                  name: Engineering
+                  path: google.engineering
+                  level: 2
+                  parentId: 1c0e7d5a-3f1b-4a2e-9d8c-7b6a5f4e3d2c
+                - id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                  name: Platform
+                  path: google.engineering.platform
+                  level: 3
+                  parentId: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                - id: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                  name: Data Services
+                  path: google.engineering.platform.data_services
+                  level: 4
+                  parentId: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                - id: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
+                  name: Finance
+                  path: finance
+                  level: 1
+                - id: 6b5d2c0f-8e6a-4f7d-8c3b-2a1f0e9d8c7b
+                  name: Payments
+                  path: finance.payments
+                  level: 2
+                  parentId: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
+              - id: 8d7e6f5a-4b3c-4d2e-9f1a-0b9c8d7e6f5a
+                orgName: Northwind Logistics
+                entityType: private
+                orgSector: technology
+                websiteLink: https://northwind.example.com
+                address: Plot 12, Logistics Hub, Hyderabad
+                createdAt: '2025-06-04T10:54:53.301846'
+                updatedAt: '2025-06-04T10:54:53.301846'
+                departments: []
               paginationInfo:
                 page: 1
                 size: 10
-                totalCount: 25
-                totalPages: 3
-                hasNext: true
+                totalCount: 2
+                totalPages: 1
+                hasNext: false
                 hasPrevious: false
       '401':
         description: Unauthorized
@@ -1056,7 +1479,7 @@
       format: uuid
   delete:
     tags:
-    - Organisation APIs
+    - Organisation – Management
     summary: Delete an organisation
     operationId: delete-auth-v2-organisations-id
     description: |
@@ -1114,7 +1537,7 @@
               $ref: ../components/schemas/common.yaml#/NotFound
   put:
     tags:
-    - Organisation APIs
+    - Organisation – Management
     summary: Update an organisation (COS Admin)
     operationId: put-auth-v2-organisations-id
     description: |
@@ -1239,7 +1662,7 @@
               $ref: ../components/schemas/common.yaml#/NotFound
   get:
     tags:
-    - Organisation APIs
+    - Organisation – Management
     summary: Get an organisation by ID
     operationId: get-auth-v2-organisations-id
     description: |
@@ -1303,21 +1726,65 @@
                     updatedAt:
                       type: string
                       format: date-time
+                    departments:
+                      type: array
+                      description: |
+                        The organisation's departments as a flat list ordered by `path` (the ltree path,
+                        e.g. `engineering.data_platform`). Empty for an organisation without a hierarchy.
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                          name:
+                            type: string
+                          path:
+                            type: string
             example:
               type: urn:dx:controlPlane:success
               title: Success
               result:
                 id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                orgName: Tech Solutions Pvt Ltd
+                orgName: ABC Technologies
                 entityType: private
                 orgSector: technology
-                websiteLink: https://techsolutions.example.com
-                address: 123 Tech Park, Bengaluru
+                websiteLink: https://abctech.example.com
+                address: 4th Floor, Tech Park, Bengaluru
                 certificatePath: /docs/cert.pdf
                 pancardPath: /docs/pan.pdf
                 orgDocuments: /docs/org.pdf
                 createdAt: '2025-06-04T10:54:53.301846'
                 updatedAt: '2025-06-04T10:54:53.301846'
+                departments:
+                - id: 1c0e7d5a-3f1b-4a2e-9d8c-7b6a5f4e3d2c
+                  name: Google
+                  path: google
+                  level: 1
+                - id: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                  name: Engineering
+                  path: google.engineering
+                  level: 2
+                  parentId: 1c0e7d5a-3f1b-4a2e-9d8c-7b6a5f4e3d2c
+                - id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                  name: Platform
+                  path: google.engineering.platform
+                  level: 3
+                  parentId: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                - id: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                  name: Data Services
+                  path: google.engineering.platform.data_services
+                  level: 4
+                  parentId: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                - id: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
+                  name: Finance
+                  path: finance
+                  level: 1
+                - id: 6b5d2c0f-8e6a-4f7d-8c3b-2a1f0e9d8c7b
+                  name: Payments
+                  path: finance.payments
+                  level: 2
+                  parentId: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
       '401':
         description: Unauthorized
         content:
@@ -1341,7 +1808,7 @@
       format: uuid
   get:
     tags:
-    - Organisation APIs
+    - Organisation – Members
     summary: Get users in an organisation (Org Admin)
     operationId: get-auth-v2-org-users
     description: |
@@ -1353,6 +1820,7 @@
     security:
     - authorization: []
     parameters:
+    - $ref: ../components/parameters.yaml#/DepartmentIdParam
     - $ref: ../components/parameters.yaml#/PageParam
     - $ref: ../components/parameters.yaml#/SizeParam
     - $ref: ../components/parameters.yaml#/SortingParam
@@ -1379,83 +1847,98 @@
                 result:
                   type: array
                   items:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        format: uuid
-                      organizationId:
-                        type: string
-                        format: uuid
-                      userId:
-                        type: string
-                        format: uuid
-                      userName:
-                        type: string
-                      role:
-                        type: string
-                        enum: [member, admin, dept_admin]
-                        description: |
-                          Role of the user within the organisation. `dept_admin` administers
-                          the department in `adminOfNodeId` and all of its sub-departments.
-                      jobTitle:
-                        type: string
-                      empId:
-                        type: string
-                      orgManagerPhoneNo:
-                        type: string
-                        nullable: true
-                      officialEmail:
-                        type: string
-                      hierarchyNodeId:
-                        type: string
-                        format: uuid
-                        nullable: true
-                        description: |
-                          Department the user belongs to. Omitted for organisations without
-                          departments.
-                      adminOfNodeId:
-                        type: string
-                        format: uuid
-                        nullable: true
-                        description: |
-                          Department the user administers. Only present when `role` is
-                          `dept_admin`.
-                      createdAt:
-                        type: string
-                        format: date-time
-                      updatedAt:
-                        type: string
-                        format: date-time
-                      roles:
-                        type: array
-                        items:
-                          type: string
-                        description: Platform-level Keycloak roles of the user
-                      accountEnabled:
-                        type: boolean
+                    allOf:
+                    - $ref: ../components/schemas/organisation.yaml#/OrgUserItem
+                    - type: object
+                      properties:
+                        roles:
+                          type: array
+                          items:
+                            type: string
+                          description: Platform-level Keycloak roles of the user
+                        account_enabled:
+                          type: boolean
                 paginationInfo:
                   $ref: ../components/schemas/pagination.yaml#/PaginationInfo
             example:
               type: urn:dx:controlPlane:success
               title: Success
               result:
-              - id: 9f1a2b3c-4d5e-6789-abcd-ef0123456789
-                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                userId: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                userName: John Doe
+              - id: 11111111-2222-4333-8444-555555555555
+                organization_id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                user_id: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
+                user_name: Asha Rao
+                role: admin
+                job_title: Chief Technology Officer
+                emp_id: ABC-0001
+                official_email: owner@abctech.example.com
+                created_at: '2026-11-20T09:30:00.000000'
+                updated_at: '2026-11-21T14:05:12.481920'
+                roles:
+                - consumer
+                - provider
+                account_enabled: true
+              - id: 22222222-3333-4444-8555-666666666666
+                organization_id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                user_id: d1a2b3c4-d5e6-4f70-8a9b-0c1d2e3f4a5b
+                user_name: Vikram Shah
+                role: dept_admin
+                job_title: Head of Engineering
+                emp_id: ABC-0010
+                official_email: vikram.shah@abctech.example.com
+                hierarchy_node_id: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                admin_of_node_id: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                created_at: '2026-11-20T09:30:00.000000'
+                updated_at: '2026-11-21T14:05:12.481920'
+                department:
+                  id: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                  name: Engineering
+                  hierarchy:
+                  - id: 1c0e7d5a-3f1b-4a2e-9d8c-7b6a5f4e3d2c
+                    name: Google
+                  - id: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                    name: Engineering
+                  path: google.engineering
+                adminOfDepartment:
+                  id: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                  name: Engineering
+                  hierarchy:
+                  - id: 1c0e7d5a-3f1b-4a2e-9d8c-7b6a5f4e3d2c
+                    name: Google
+                  - id: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                    name: Engineering
+                  path: google.engineering
+                roles:
+                - consumer
+                - provider
+                account_enabled: true
+              - id: 55555555-6666-4777-8888-999999999999
+                organization_id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                user_id: a4d5e6f7-a8b9-4ca3-9d2e-3f4a5b6c7d8e
+                user_name: Meera Iyer
                 role: member
-                jobTitle: Software Engineer
-                empId: EMP001
-                officialEmail: john@techsolutions.com
-                createdAt: '2025-06-04T10:54:53.301846'
-                updatedAt: '2025-06-04T10:54:53.301846'
-                roles: [consumer]
-                accountEnabled: true
+                job_title: Payments Analyst
+                emp_id: ABC-0203
+                official_email: meera.iyer@abctech.example.com
+                hierarchy_node_id: 6b5d2c0f-8e6a-4f7d-8c3b-2a1f0e9d8c7b
+                created_at: '2026-11-20T09:30:00.000000'
+                updated_at: '2026-11-21T14:05:12.481920'
+                department:
+                  id: 6b5d2c0f-8e6a-4f7d-8c3b-2a1f0e9d8c7b
+                  name: Payments
+                  hierarchy:
+                  - id: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
+                    name: Finance
+                  - id: 6b5d2c0f-8e6a-4f7d-8c3b-2a1f0e9d8c7b
+                    name: Payments
+                  path: finance.payments
+                roles:
+                - consumer
+                account_enabled: true
               paginationInfo:
                 page: 1
                 size: 10
-                totalCount: 8
+                totalCount: 3
                 totalPages: 1
                 hasNext: false
                 hasPrevious: false
@@ -1478,7 +1961,7 @@
 /iudx/v2/auth/organization/user/provider_requests:
   get:
     tags:
-    - Organisation APIs
+    - Organisation – Provider Roles
     summary: Get the current user's provider role request (Org Member)
     operationId: get-auth-v2-user-provider-requests
     description: |
@@ -1517,30 +2000,34 @@
                     id:
                       type: string
                       format: uuid
-                    userId:
+                    user_id:
                       type: string
                       format: uuid
-                    orgId:
+                    organization_id:
                       type: string
                       format: uuid
-                      nullable: true
-                    providerType:
+                      description: Absent for platform-track requests.
+                    provider_type:
                       type: string
                       enum: [org, platform]
                     status:
                       type: string
                       enum: [pending, granted, rejected]
-                    createdAt:
+                    requested_node_id:
+                      type: string
+                      format: uuid
+                      description: The department this request is scoped to, if any. Absent otherwise.
+                    created_at:
                       type: string
                       format: date-time
-                    updatedAt:
+                    updated_at:
                       type: string
                       format: date-time
                     roles:
                       type: array
                       items:
                         type: string
-                    accountEnabled:
+                    account_enabled:
                       type: boolean
       '401':
         description: Unauthorized
@@ -1569,7 +2056,7 @@
       format: uuid
   delete:
     tags:
-    - Organisation APIs
+    - Organisation – Provider Roles
     summary: Delete a pending provider role request (Org Member)
     operationId: delete-auth-v2-user-provider-requests
     description: |
@@ -1633,7 +2120,7 @@
 /iudx/v2/auth/organization/user/provider_role/requests:
   post:
     tags:
-    - Organisation APIs
+    - Organisation – Provider Roles
     summary: Submit a provider role request within an organisation (Org Member)
     operationId: post-auth-v2-user-roles
     description: |
@@ -1685,10 +2172,12 @@
               detail: User does not have the required role.
   get:
     tags:
-    - Organisation APIs
+    - Organisation – Provider Roles
     summary: Get all provider role requests in an organisation (Org Admin)
     operationId: get-auth-v2-provider-requests
     description: |
+      Each request carries `department` (name and path) when it is scoped to a department.
+
       Returns a paginated list of all provider role requests within the caller's organisation.
       The org ID is taken from the caller's token. Results are enriched with user roles and
       join request details (`userName`, `jobTitle`, `empId`).
@@ -1697,6 +2186,7 @@
     security:
     - authorization: []
     parameters:
+    - $ref: ../components/parameters.yaml#/DepartmentIdParam
     - $ref: ../components/parameters.yaml#/PageParam
     - $ref: ../components/parameters.yaml#/SizeParam
     - $ref: ../components/parameters.yaml#/SortingParam
@@ -1724,67 +2214,65 @@
                 result:
                   type: array
                   items:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        format: uuid
-                      userId:
-                        type: string
-                        format: uuid
-                      orgId:
-                        type: string
-                        format: uuid
-                        nullable: true
-                      providerType:
-                        type: string
-                        enum: [org, platform]
-                      status:
-                        type: string
-                        enum: [pending, granted, rejected]
-                      createdAt:
-                        type: string
-                        format: date-time
-                      updatedAt:
-                        type: string
-                        format: date-time
-                      roles:
-                        type: array
-                        items:
-                          type: string
-                        description: Platform-level Keycloak roles of the requesting user
-                      accountEnabled:
-                        type: boolean
-                      userName:
-                        type: string
-                        description: User name from join request (if available)
-                      jobTitle:
-                        type: string
-                        description: Job title from join request (if available)
-                      empId:
-                        type: string
-                        description: Employee ID from join request (if available)
+                    $ref: ../components/schemas/organisation.yaml#/ProviderRoleRequestItem
                 paginationInfo:
                   $ref: ../components/schemas/pagination.yaml#/PaginationInfo
             example:
               type: urn:dx:controlPlane:success
               title: Success
               result:
-              - id: 5b6c7d8e-9f0a-1b2c-3d4e-5f6a7b8c9d0e
-                userId: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                orgId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                providerType: org
+              - id: 5b6c7d8e-9f0a-4b2c-8d4e-5f6a7b8c9d0e
+                user_id: e2b3c4d5-e6f7-4a81-9b0c-1d2e3f4a5b6c
+                organization_id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                provider_type: org
                 status: pending
-                createdAt: '2025-06-04T10:54:53.301846'
-                roles: [consumer]
-                accountEnabled: true
-                userName: John Doe
-                jobTitle: Software Engineer
-                empId: EMP001
+                requested_node_id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                created_at: '2026-11-20T09:30:00.000000'
+                updated_at: '2026-11-20T09:30:00.000000'
+                department:
+                  id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                  name: Platform
+                  hierarchy:
+                  - id: 1c0e7d5a-3f1b-4a2e-9d8c-7b6a5f4e3d2c
+                    name: Google
+                  - id: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                    name: Engineering
+                  - id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                    name: Platform
+                  path: google.engineering.platform
+                roles:
+                - consumer
+                account_enabled: true
+                userName: Priya Nair
+                jobTitle: Platform Engineer
+                empId: ABC-0142
+              - id: 6c7d8e9f-0a1b-4c3d-9e5f-6a7b8c9d0e1f
+                user_id: a4d5e6f7-a8b9-4ca3-9d2e-3f4a5b6c7d8e
+                organization_id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                provider_type: org
+                status: pending
+                requested_node_id: 6b5d2c0f-8e6a-4f7d-8c3b-2a1f0e9d8c7b
+                created_at: '2026-11-20T09:30:00.000000'
+                updated_at: '2026-11-20T09:30:00.000000'
+                department:
+                  id: 6b5d2c0f-8e6a-4f7d-8c3b-2a1f0e9d8c7b
+                  name: Payments
+                  hierarchy:
+                  - id: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
+                    name: Finance
+                  - id: 6b5d2c0f-8e6a-4f7d-8c3b-2a1f0e9d8c7b
+                    name: Payments
+                  path: finance.payments
+                roles:
+                - consumer
+                account_enabled: true
+                userName: Meera Iyer
+                jobTitle: Payments Analyst
+                empId: ABC-0203
               paginationInfo:
                 page: 1
                 size: 10
-                totalCount: 3
+                totalCount: 2
                 totalPages: 1
                 hasNext: false
                 hasPrevious: false
@@ -1811,7 +2299,7 @@
       format: uuid
   put:
     tags:
-    - Organisation APIs
+    - Organisation – Provider Roles
     summary: Approve or reject a provider role request (Org Admin)
     operationId: put-auth-v2-user-roles
     description: |
@@ -1890,7 +2378,7 @@
 /iudx/v2/auth/organization/user/provider:
   post:
     tags:
-    - Organisation APIs
+    - Organisation – Provider Roles
     summary: Directly grant provider role to an org member (Org Admin)
     operationId: post-auth-v2-organization-user-provider
     description: |
@@ -1974,7 +2462,7 @@
 /iudx/v2/auth/organisations/requests/report:
   get:
     tags:
-    - Organisation APIs
+    - Organisation – Reports
     summary: Download organisation creation requests report (COS Admin)
     operationId: get-auth-v2-organisations-requests-report
     description: |
@@ -2020,7 +2508,7 @@
 /iudx/v2/auth/organisations/report:
   get:
     tags:
-    - Organisation APIs
+    - Organisation – Reports
     summary: Download organisations list report (COS Admin)
     operationId: get-auth-v2-organisations-report
     description: |
@@ -2069,7 +2557,7 @@
       format: uuid
   get:
     tags:
-    - Organisation APIs
+    - Organisation – Reports
     summary: Download organisation join requests report (COS Admin)
     operationId: get-auth-v2-organisations-join_requests-report
     description: |
@@ -2110,7 +2598,7 @@
 /iudx/v2/auth/organization/user/provider_role/requests/report:
   get:
     tags:
-    - Organisation APIs
+    - Organisation – Reports
     summary: Download provider role requests report (COS Admin)
     operationId: get-auth-v2-organization-user-provider_role-requests-report
     description: |
@@ -2161,7 +2649,7 @@
 
   get:
     tags:
-      - Organisation APIs
+      - Organisation – Departments
     summary: Get all organisation departments
     operationId: get-auth-v2-organisation-hierarchy-departments
     description: |
@@ -2200,22 +2688,52 @@
               type: urn:dx:controlPlane:success
               title: Success
               result:
-                - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                  organizationId: 4fa85f64-5717-4562-b3fc-2c963f66afa7
-                  parentId: null
-                  name: Engineering
-                  level: 1
-                  path: engineering
-                  createdAt: '2026-10-04T10:54:53.301846'
-                  updatedAt: '2026-10-04T10:54:53.301846'
-                - id: 5fa85f64-5717-4562-b3fc-2c963f66afa8
-                  organizationId: 4fa85f64-5717-4562-b3fc-2c963f66afa7
-                  parentId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                  name: Data Platform
-                  level: 2
-                  path: engineering.data_platform
-                  createdAt: '2026-10-04T10:54:53.301846'
-                  updatedAt: '2026-10-04T10:54:53.301846'
+              - id: 1c0e7d5a-3f1b-4a2e-9d8c-7b6a5f4e3d2c
+                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                name: Google
+                level: 1
+                path: google
+                createdAt: '2026-11-20T09:30:00.000000'
+                updatedAt: '2026-11-20T09:30:00.000000'
+              - id: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                parentId: 1c0e7d5a-3f1b-4a2e-9d8c-7b6a5f4e3d2c
+                name: Engineering
+                level: 2
+                path: google.engineering
+                createdAt: '2026-11-20T09:30:00.000000'
+                updatedAt: '2026-11-20T09:30:00.000000'
+              - id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                parentId: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                name: Platform
+                level: 3
+                path: google.engineering.platform
+                createdAt: '2026-11-20T09:30:00.000000'
+                updatedAt: '2026-11-20T09:30:00.000000'
+              - id: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                parentId: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                name: Data Services
+                level: 4
+                path: google.engineering.platform.data_services
+                createdAt: '2026-11-20T09:30:00.000000'
+                updatedAt: '2026-11-20T09:30:00.000000'
+              - id: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
+                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                name: Finance
+                level: 1
+                path: finance
+                createdAt: '2026-11-20T09:30:00.000000'
+                updatedAt: '2026-11-20T09:30:00.000000'
+              - id: 6b5d2c0f-8e6a-4f7d-8c3b-2a1f0e9d8c7b
+                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                parentId: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
+                name: Payments
+                level: 2
+                path: finance.payments
+                createdAt: '2026-11-20T09:30:00.000000'
+                updatedAt: '2026-11-20T09:30:00.000000'
       '401':
         description: Unauthorized
         content:
@@ -2253,7 +2771,7 @@
 
   get:
     tags:
-      - Organisation APIs
+      - Organisation – Departments
     summary: Get an organisation department
     operationId: get-auth-v2-organisation-hierarchy-department
     description: |
@@ -2290,14 +2808,14 @@
               type: urn:dx:controlPlane:success
               title: Success
               result:
-                id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                organizationId: 4fa85f64-5717-4562-b3fc-2c963f66afa7
-                parentId: null
-                name: Engineering
-                level: 1
-                path: engineering
-                createdAt: '2026-10-04T10:54:53.301846'
-                updatedAt: '2026-10-04T10:54:53.301846'
+                id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                parentId: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                name: Platform
+                level: 3
+                path: google.engineering.platform
+                createdAt: '2026-11-20T09:30:00.000000'
+                updatedAt: '2026-11-20T09:30:00.000000'
       '401':
         description: Unauthorized
         content:
@@ -2334,7 +2852,7 @@
         format: uuid
   get:
     tags:
-      - Organisation APIs
+      - Organisation – Departments
     summary: Get child departments
     operationId: get-auth-v2-organisation-hierarchy-department-children
     description: |
@@ -2373,14 +2891,14 @@
               type: urn:dx:controlPlane:success
               title: Success
               result:
-                - id: 5fa85f64-5717-4562-b3fc-2c963f66afa8
-                  organizationId: 4fa85f64-5717-4562-b3fc-2c963f66afa7
-                  parentId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                  name: Data Platform
-                  level: 2
-                  path: engineering.data_platform
-                  createdAt: '2026-10-04T10:54:53.301846'
-                  updatedAt: '2026-10-04T10:54:53.301846'
+              - id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                parentId: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                name: Platform
+                level: 3
+                path: google.engineering.platform
+                createdAt: '2026-11-20T09:30:00.000000'
+                updatedAt: '2026-11-20T09:30:00.000000'
       '401':
         description: Unauthorized
         content:
@@ -2418,7 +2936,7 @@
 
   get:
     tags:
-      - Organisation APIs
+      - Organisation – Departments
     summary: Get descendant departments
     operationId: get-auth-v2-organisation-hierarchy-department-descendants
     description: |
@@ -2459,22 +2977,30 @@
               type: urn:dx:controlPlane:success
               title: Success
               result:
-                - id: 5fa85f64-5717-4562-b3fc-2c963f66afa8
-                  organizationId: 4fa85f64-5717-4562-b3fc-2c963f66afa7
-                  parentId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                  name: Data Platform
-                  level: 2
-                  path: engineering.data_platform
-                  createdAt: '2026-10-04T10:54:53.301846'
-                  updatedAt: '2026-10-04T10:54:53.301846'
-                - id: 6fa85f64-5717-4562-b3fc-2c963f66afa9
-                  organizationId: 4fa85f64-5717-4562-b3fc-2c963f66afa7
-                  parentId: 5fa85f64-5717-4562-b3fc-2c963f66afa8
-                  name: Provider Team
-                  level: 3
-                  path: engineering.data_platform.provider_team
-                  createdAt: '2026-10-04T10:54:53.301846'
-                  updatedAt: '2026-10-04T10:54:53.301846'
+              - id: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                parentId: 1c0e7d5a-3f1b-4a2e-9d8c-7b6a5f4e3d2c
+                name: Engineering
+                level: 2
+                path: google.engineering
+                createdAt: '2026-11-20T09:30:00.000000'
+                updatedAt: '2026-11-20T09:30:00.000000'
+              - id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                parentId: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                name: Platform
+                level: 3
+                path: google.engineering.platform
+                createdAt: '2026-11-20T09:30:00.000000'
+                updatedAt: '2026-11-20T09:30:00.000000'
+              - id: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                parentId: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                name: Data Services
+                level: 4
+                path: google.engineering.platform.data_services
+                createdAt: '2026-11-20T09:30:00.000000'
+                updatedAt: '2026-11-20T09:30:00.000000'
       '401':
         description: Unauthorized
         content:
@@ -2493,6 +3019,108 @@
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/NotFound
+/iudx/v2/auth/admin/organisations/department-requests:
+  get:
+    tags:
+      - Organisation – Hierarchy Definition
+    summary: List department requests across organisations (COS Admin)
+    operationId: get-auth-v2-admin-organisation-department-requests
+    description: |
+      Cos_admin's review queue: department definition / add-department requests from
+      every organisation, newest first. Filter with `status=pending` for the queue, and
+      optionally by `organizationId`. Each item includes `parentDepartment` (name and
+      path) when departments are being added under an existing one.
+      Approve or reject with the definition-request PUT endpoint.
+
+      **Log Type:** `USER_ACTION`
+    security:
+      - authorization: []
+    parameters:
+      - $ref: ../components/parameters.yaml#/PageParam
+      - $ref: ../components/parameters.yaml#/SizeParam
+      - $ref: ../components/parameters.yaml#/SortingParam
+      - $ref: ../components/parameters.yaml#/StatusParam
+      - name: organizationId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Paginated department requests
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: urn:dx:controlPlane:success
+                title:
+                  type: string
+                  example: Success
+                result:
+                  type: array
+                  items:
+                    $ref: ../components/schemas/organisation.yaml#/OrganizationHierarchyDefinitionRequestListItem
+                paginationInfo:
+                  $ref: ../components/schemas/pagination.yaml#/PaginationInfo
+            example:
+              type: urn:dx:controlPlane:success
+              title: Success
+              result:
+              - id: 0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d
+                organization_id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                parent_node_id: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
+                proposed_hierarchy:
+                  departments:
+                  - name: Audit
+                    subDepartments:
+                    - name: Internal Audit
+                      subDepartments: []
+                status: pending
+                created_at: '2026-11-20T09:30:00.000000'
+                updated_at: '2026-11-20T09:30:00.000000'
+                parentDepartment:
+                  id: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
+                  name: Finance
+                  hierarchy:
+                  - id: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
+                    name: Finance
+                  path: finance
+              - id: 1b2c3d4e-5f6a-4b7c-9d8e-0f1a2b3c4d5e
+                organization_id: 8d7e6f5a-4b3c-4d2e-9f1a-0b9c8d7e6f5a
+                proposed_hierarchy:
+                  departments:
+                  - name: Fleet
+                    subDepartments:
+                    - name: Maintenance
+                      subDepartments: []
+                  - name: Warehousing
+                    subDepartments: []
+                status: pending
+                created_at: '2026-11-20T09:30:00.000000'
+                updated_at: '2026-11-20T09:30:00.000000'
+              paginationInfo:
+                page: 1
+                size: 10
+                totalCount: 2
+                totalPages: 1
+                hasNext: false
+                hasPrevious: false
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Unauthorized
+      '403':
+        description: Forbidden - Caller is not a COS Admin
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/common.yaml#/Forbidden
 /iudx/v2/auth/organizations/{organization_id}/hierarchy/definition-requests:
   parameters:
     - name: organization_id
@@ -2505,24 +3133,30 @@
 
   post:
     tags:
-      - Organisation APIs
-    summary: Submit a department hierarchy definition request
+      - Organisation – Hierarchy Definition
+    summary: Propose departments for the organisation (define or add later)
     operationId: post-auth-v2-organisation-hierarchy-definition-requests
     description: |
-      Org_admin submits the organisation's entire proposed department tree in
-      one request. Cos_admin approves or rejects the whole tree as a single
-      atomic unit (see the approve endpoint below) -- there is no per-department
-      approval step.
+      Org_admin proposes departments for their own organisation. Cos_admin approves
+      or rejects the whole proposal as a single atomic unit (see the approve
+      endpoint below) -- there is no per-department approval step.
 
-      Every organisation starts flat. The hierarchy can be defined only once:
-      the organisation must not already have a department tree, and departments
-      cannot be added individually afterwards.
+      Every organisation starts flat. The first request defines its departments.
+      Departments can be **added later** with further requests:
+      - omit `parentDepartmentId` to add new top-level departments, or
+      - set `parentDepartmentId` to an existing department to add departments
+        (each with optional sub-departments) under it.
+
+      Only one request can be pending per organisation at a time. The proposal is
+      checked when submitted and again when approved.
 
       **Tree rules:**
-      - The organisation itself is the top of the tree; the listed departments
-        are its top-level (level 1) departments, each with optional nested
-        `subDepartments`.
-      - Department names must be non-blank and unique among siblings.
+      - The organisation itself is the top of the tree; with no `parentDepartmentId`
+        the listed departments are top-level (level 1) departments, each with
+        optional nested `subDepartments`.
+      - Department names must be non-blank and unique among siblings -- including
+        departments that already exist at the same place.
+      - There is no depth limit in the API; the UI limits trees to 4 levels.
       - The org_admin administers the whole organisation by role and is not
         attached to any department.
 
@@ -2548,6 +3182,16 @@
               { "name": "Finance" }
             ]
           }'
+      - lang: cURL
+        label: Add departments later, under an existing department
+        source: |
+          curl --location --request POST 'https://${HOSTNAME}/iudx/v2/auth/organisations/{organization_id}/hierarchy/definition-requests' \
+          --header 'Authorization: Bearer <your-token>' \
+          --header 'Content-Type: application/json' \
+          --data '{
+            "parentDepartmentId": "2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d",
+            "departments": [ { "name": "Payments", "subDepartments": [ { "name": "Refunds" } ] } ]
+          }'
     requestBody:
       required: true
       content:
@@ -2567,6 +3211,41 @@
                   the tree is applied.
                 items:
                   $ref: ../components/schemas/organisation.yaml#/ProposedDepartment
+              parentDepartmentId:
+                type: string
+                format: uuid
+                description: |
+                  Existing department to add the departments under. Omit to add
+                  top-level departments (and for an organisation's first request).
+          examples:
+            firstDepartments:
+              summary: 'Flat organisation: define its first departments'
+              value:
+                departments:
+                - name: Google
+                  subDepartments:
+                  - name: Engineering
+                    subDepartments:
+                    - name: Platform
+                      subDepartments:
+                      - name: Data Services
+                - name: Finance
+                  subDepartments:
+                  - name: Payments
+            addTopLevel:
+              summary: 'Add later: new top-level departments'
+              value:
+                departments:
+                - name: Legal
+                - name: Human Resources
+            addUnderExisting:
+              summary: 'Add later: departments under an existing department (Finance)'
+              value:
+                parentDepartmentId: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
+                departments:
+                - name: Audit
+                  subDepartments:
+                  - name: Internal Audit
     responses:
       '201':
         description: Hierarchy definition request submitted successfully
@@ -2583,6 +3262,29 @@
                   example: Success
                 result:
                   $ref: ../components/schemas/organisation.yaml#/OrganizationHierarchyDefinitionRequest
+            example:
+              type: urn:dx:controlPlane:success
+              title: Success
+              result:
+                id: 0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d
+                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                parentNodeId: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
+                departments:
+                - name: Audit
+                  subDepartments:
+                  - name: Internal Audit
+                    subDepartments: []
+                status: pending
+                remarks: null
+                createdAt: '2026-11-20T09:30:00.000000'
+                updatedAt: '2026-11-20T09:30:00.000000'
+                parentDepartment:
+                  id: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
+                  name: Finance
+                  hierarchy:
+                  - id: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
+                    name: Finance
+                  path: finance
       '400':
         description: Bad Request - Invalid or empty proposed department tree
         content:
@@ -2602,13 +3304,13 @@
             schema:
               $ref: ../components/schemas/common.yaml#/Forbidden
       '404':
-        description: Not Found - Organisation does not exist
+        description: Not Found - Organisation does not exist, or `parentDepartmentId` is not one of its departments
         content:
           application/json:
             schema:
               $ref: ../components/schemas/common.yaml#/NotFound
       '409':
-        description: Conflict - Organisation already has a hierarchy, or a request is already pending
+        description: Conflict - A request is already pending, or a proposed name already exists at that place
         content:
           application/json:
             schema:
@@ -2616,7 +3318,7 @@
 
   get:
     tags:
-      - Organisation APIs
+      - Organisation – Hierarchy Definition
     summary: Get all hierarchy definition requests for an organisation
     operationId: get-auth-v2-organisation-hierarchy-definition-requests
     description: |
@@ -2649,7 +3351,50 @@
                 result:
                   type: array
                   items:
-                    $ref: ../components/schemas/organisation.yaml#/OrganizationHierarchyDefinitionRequest
+                    $ref: ../components/schemas/organisation.yaml#/OrganizationHierarchyDefinitionRequestListItem
+            example:
+              type: urn:dx:controlPlane:success
+              title: Success
+              result:
+              - id: 0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d
+                organization_id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                parent_node_id: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
+                proposed_hierarchy:
+                  departments:
+                  - name: Audit
+                    subDepartments:
+                    - name: Internal Audit
+                      subDepartments: []
+                status: pending
+                created_at: '2026-11-20T09:30:00.000000'
+                updated_at: '2026-11-20T09:30:00.000000'
+                parentDepartment:
+                  id: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
+                  name: Finance
+                  hierarchy:
+                  - id: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
+                    name: Finance
+                  path: finance
+              - id: 9f8e7d6c-5b4a-4c3d-9e2f-1a0b9c8d7e6f
+                organization_id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                proposed_hierarchy:
+                  departments:
+                  - name: Google
+                    subDepartments:
+                    - name: Engineering
+                      subDepartments:
+                      - name: Platform
+                        subDepartments:
+                        - name: Data Services
+                          subDepartments: []
+                  - name: Finance
+                    subDepartments:
+                    - name: Payments
+                      subDepartments: []
+                status: granted
+                remarks: Approved as proposed
+                created_at: '2026-11-20T09:30:00.000000'
+                updated_at: '2026-11-21T14:05:12.481920'
       '401':
         description: Unauthorized
         content:
@@ -2682,7 +3427,7 @@
 
   get:
     tags:
-      - Organisation APIs
+      - Organisation – Hierarchy Definition
     summary: Get a hierarchy definition request
     operationId: get-auth-v2-organisation-hierarchy-definition-request
     description: |
@@ -2707,6 +3452,29 @@
                   example: Success
                 result:
                   $ref: ../components/schemas/organisation.yaml#/OrganizationHierarchyDefinitionRequest
+            example:
+              type: urn:dx:controlPlane:success
+              title: Success
+              result:
+                id: 0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d
+                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                parentNodeId: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
+                departments:
+                - name: Audit
+                  subDepartments:
+                  - name: Internal Audit
+                    subDepartments: []
+                status: pending
+                remarks: null
+                createdAt: '2026-11-20T09:30:00.000000'
+                updatedAt: '2026-11-20T09:30:00.000000'
+                parentDepartment:
+                  id: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
+                  name: Finance
+                  hierarchy:
+                  - id: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
+                    name: Finance
+                  path: finance
       '401':
         description: Unauthorized
         content:
@@ -2728,7 +3496,7 @@
 
   put:
     tags:
-      - Organisation APIs
+      - Organisation – Hierarchy Definition
     summary: Approve or reject a hierarchy definition request
     operationId: put-auth-v2-organisation-hierarchy-definition-request
     description: |
@@ -2762,6 +3530,17 @@
                 enum: [granted, rejected]
               remarks:
                 type: string
+          examples:
+            approve:
+              summary: 'Approve: the departments are added'
+              value:
+                status: granted
+                remarks: Approved as proposed
+            reject:
+              summary: Reject
+              value:
+                status: rejected
+                remarks: Please merge Audit into Finance instead
     responses:
       '200':
         description: Hierarchy definition request updated successfully
@@ -2778,6 +3557,22 @@
                   example: Success
                 result:
                   $ref: ../components/schemas/organisation.yaml#/OrganizationHierarchyDefinitionRequest
+            example:
+              type: urn:dx:controlPlane:success
+              title: Success
+              result:
+                id: 0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d
+                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                parentNodeId: 5a4c1b9e-7d5f-4e6c-9b2a-1f0e9d8c7b6a
+                departments:
+                - name: Audit
+                  subDepartments:
+                  - name: Internal Audit
+                    subDepartments: []
+                status: granted
+                remarks: Approved as proposed
+                createdAt: '2026-11-20T09:30:00.000000'
+                updatedAt: '2026-11-21T14:05:12.481920'
       '400':
         description: Bad Request - Invalid status
         content:
@@ -2828,7 +3623,7 @@
 
   put:
     tags:
-      - Organisation APIs
+      - Organisation – Department Admins
     summary: Assign a member as department admin
     operationId: put-auth-v2-organisation-dept-admin
     description: |
@@ -2860,6 +3655,11 @@
               departmentId:
                 type: string
                 format: uuid
+          examples:
+            appoint:
+              summary: Make a member the admin of Data Services
+              value:
+                departmentId: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
     responses:
       '200':
         description: Department admin assigned successfully
@@ -2874,6 +3674,23 @@
                 title:
                   type: string
                   example: Success
+            example:
+              type: urn:dx:controlPlane:success
+              title: Success
+              result:
+                id: 44444444-5555-4666-8777-888888888888
+                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                userId: f3c4d5e6-f7a8-4b92-8c1d-2e3f4a5b6c7d
+                userName: Rahul Verma
+                role: DEPT_ADMIN
+                jobTitle: Head of Data Services
+                empId: ABC-0057
+                orgManagerPhoneNo: null
+                officialEmail: rahul.verma@abctech.example.com
+                hierarchyNodeId: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                adminOfNodeId: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                createdAt: '2026-11-20T09:30:00.000000'
+                updatedAt: '2026-11-21T14:05:12.481920'
       '400':
         description: Bad Request - departmentId missing or invalid
         content:
@@ -2911,7 +3728,7 @@
 
   post:
     tags:
-      - Organisation APIs
+      - Organisation – Department Admins
     summary: Request to become admin of my own department
     operationId: post-auth-v2-organisation-dept-admin-requests
     description: |
@@ -2938,6 +3755,17 @@
                   example: Success
                 result:
                   $ref: ../components/schemas/organisation.yaml#/DeptAdminRequest
+            example:
+              type: urn:dx:controlPlane:success
+              title: Success
+              result:
+                id: 2c3d4e5f-6a7b-4c8d-8e9f-1a2b3c4d5e6f
+                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                userId: e2b3c4d5-e6f7-4a81-9b0c-1d2e3f4a5b6c
+                requestedNodeId: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                status: pending
+                createdAt: '2026-11-20T09:30:00.000000'
+                updatedAt: '2026-11-20T09:30:00.000000'
       '401':
         description: Unauthorized
         content:
@@ -2976,7 +3804,7 @@
 
   put:
     tags:
-      - Organisation APIs
+      - Organisation – Department Admins
     summary: Approve or reject a dept_admin self-request
     operationId: put-auth-v2-organisation-dept-admin-request
     description: |
@@ -3000,6 +3828,17 @@
                 enum: [granted, rejected]
               remarks:
                 type: string
+          examples:
+            approve:
+              summary: Approve (only someone above the department may)
+              value:
+                status: granted
+                remarks: Welcome aboard
+            reject:
+              summary: Reject
+              value:
+                status: rejected
+                remarks: Platform already has an admin
     responses:
       '200':
         description: Dept_admin request updated successfully
@@ -3055,7 +3894,7 @@
       format: uuid
   get:
     tags:
-    - Organisation APIs
+    - Organisation – Join Requests
     summary: Get join requests for my department and its sub-departments (Dept Admin)
     operationId: get-auth-v2-organisations-department-join-requests
     description: |
@@ -3064,11 +3903,16 @@
       Restricted to `dept_admin` users; the caller's organisation (from token) must
       match the `{id}` path parameter. Results are enriched with user role information.
 
+      Requests to become the admin (`requested_role: dept_admin`) of the caller's *own*
+      department are left out: only someone above that department can approve them.
+      Such requests for sub-departments are included.
+
       **Log Type:** `USER_ACTION`
     security:
     - authorization: []
     parameters:
     - $ref: ../components/parameters.yaml#/DepartmentScopeParam
+    - $ref: ../components/parameters.yaml#/DepartmentIdParam
     - $ref: ../components/parameters.yaml#/PageParam
     - $ref: ../components/parameters.yaml#/SizeParam
     - $ref: ../components/parameters.yaml#/SortingParam
@@ -3105,11 +3949,75 @@
                           items:
                             type: string
                           description: Keycloak roles of the user
-                        accountEnabled:
+                        account_enabled:
                           type: boolean
                           description: Whether the user's account is active in Keycloak
                 paginationInfo:
                   $ref: ../components/schemas/pagination.yaml#/PaginationInfo
+            example:
+              type: urn:dx:controlPlane:success
+              title: Success
+              result:
+              - id: 9c3d4e5f-6071-49a1-8def-012345678901
+                organization_id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                user_id: e2b3c4d5-e6f7-4a81-9b0c-1d2e3f4a5b6c
+                user_name: Priya Nair
+                status: pending
+                job_title: Platform Engineer
+                emp_id: ABC-0142
+                official_email: priya.nair@abctech.example.com
+                requested_at: '2026-11-20T09:30:00.000000'
+                requested_node_id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                requested_role: member
+                department:
+                  id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                  name: Platform
+                  hierarchy:
+                  - id: 1c0e7d5a-3f1b-4a2e-9d8c-7b6a5f4e3d2c
+                    name: Google
+                  - id: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                    name: Engineering
+                  - id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                    name: Platform
+                  path: google.engineering.platform
+                roles:
+                - consumer
+                account_enabled: true
+              - id: 7a1b2c3d-4e5f-4789-abcd-ef0123456789
+                organization_id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                user_id: f3c4d5e6-f7a8-4b92-8c1d-2e3f4a5b6c7d
+                user_name: Rahul Verma
+                status: pending
+                job_title: Head of Data Services
+                emp_id: ABC-0057
+                official_email: rahul.verma@abctech.example.com
+                requested_at: '2026-11-20T09:30:00.000000'
+                requested_node_id: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                requested_role: dept_admin
+                purpose: I lead the Data Services team and will review its members, provider requests and datasets.
+                department:
+                  id: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                  name: Data Services
+                  hierarchy:
+                  - id: 1c0e7d5a-3f1b-4a2e-9d8c-7b6a5f4e3d2c
+                    name: Google
+                  - id: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                    name: Engineering
+                  - id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                    name: Platform
+                  - id: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                    name: Data Services
+                  path: google.engineering.platform.data_services
+                roles:
+                - consumer
+                account_enabled: true
+              paginationInfo:
+                page: 1
+                size: 10
+                totalCount: 2
+                totalPages: 1
+                hasNext: false
+                hasPrevious: false
       '401':
         description: Unauthorized
         content:
@@ -3133,7 +4041,7 @@
       format: uuid
   get:
     tags:
-    - Organisation APIs
+    - Organisation – Members
     summary: Get users in my department and its sub-departments (Dept Admin)
     operationId: get-auth-v2-org-department-users
     description: |
@@ -3151,6 +4059,7 @@
     - authorization: []
     parameters:
     - $ref: ../components/parameters.yaml#/DepartmentScopeParam
+    - $ref: ../components/parameters.yaml#/DepartmentIdParam
     - $ref: ../components/parameters.yaml#/PageParam
     - $ref: ../components/parameters.yaml#/SizeParam
     - $ref: ../components/parameters.yaml#/SortingParam
@@ -3171,83 +4080,94 @@
                 result:
                   type: array
                   items:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        format: uuid
-                      organizationId:
-                        type: string
-                        format: uuid
-                      userId:
-                        type: string
-                        format: uuid
-                      userName:
-                        type: string
-                      role:
-                        type: string
-                        enum: [member, admin, dept_admin]
-                        description: |
-                          Role of the user within the organisation. `dept_admin` administers
-                          the department in `adminOfNodeId` and all of its sub-departments.
-                      jobTitle:
-                        type: string
-                      empId:
-                        type: string
-                      orgManagerPhoneNo:
-                        type: string
-                        nullable: true
-                      officialEmail:
-                        type: string
-                      hierarchyNodeId:
-                        type: string
-                        format: uuid
-                        nullable: true
-                        description: |
-                          Department the user belongs to. Omitted for organisations without
-                          departments.
-                      adminOfNodeId:
-                        type: string
-                        format: uuid
-                        nullable: true
-                        description: |
-                          Department the user administers. Only present when `role` is
-                          `dept_admin`.
-                      createdAt:
-                        type: string
-                        format: date-time
-                      updatedAt:
-                        type: string
-                        format: date-time
-                      roles:
-                        type: array
-                        items:
-                          type: string
-                        description: Platform-level Keycloak roles of the user
-                      accountEnabled:
-                        type: boolean
+                    allOf:
+                    - $ref: ../components/schemas/organisation.yaml#/OrgUserItem
+                    - type: object
+                      properties:
+                        roles:
+                          type: array
+                          items:
+                            type: string
+                          description: Platform-level Keycloak roles of the user
+                        account_enabled:
+                          type: boolean
                 paginationInfo:
                   $ref: ../components/schemas/pagination.yaml#/PaginationInfo
             example:
               type: urn:dx:controlPlane:success
               title: Success
               result:
-              - id: 9f1a2b3c-4d5e-6789-abcd-ef0123456789
-                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                userId: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                userName: John Doe
+              - id: 33333333-4444-4555-8666-777777777777
+                organization_id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                user_id: e2b3c4d5-e6f7-4a81-9b0c-1d2e3f4a5b6c
+                user_name: Priya Nair
                 role: member
-                jobTitle: Software Engineer
-                empId: EMP001
-                officialEmail: john@techsolutions.com
-                createdAt: '2025-06-04T10:54:53.301846'
-                updatedAt: '2025-06-04T10:54:53.301846'
-                roles: [consumer]
-                accountEnabled: true
+                job_title: Platform Engineer
+                emp_id: ABC-0142
+                official_email: priya.nair@abctech.example.com
+                hierarchy_node_id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                created_at: '2026-11-20T09:30:00.000000'
+                updated_at: '2026-11-21T14:05:12.481920'
+                department:
+                  id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                  name: Platform
+                  hierarchy:
+                  - id: 1c0e7d5a-3f1b-4a2e-9d8c-7b6a5f4e3d2c
+                    name: Google
+                  - id: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                    name: Engineering
+                  - id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                    name: Platform
+                  path: google.engineering.platform
+                roles:
+                - consumer
+                account_enabled: true
+              - id: 44444444-5555-4666-8777-888888888888
+                organization_id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                user_id: f3c4d5e6-f7a8-4b92-8c1d-2e3f4a5b6c7d
+                user_name: Rahul Verma
+                role: dept_admin
+                job_title: Head of Data Services
+                emp_id: ABC-0057
+                official_email: rahul.verma@abctech.example.com
+                hierarchy_node_id: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                admin_of_node_id: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                created_at: '2026-11-20T09:30:00.000000'
+                updated_at: '2026-11-21T14:05:12.481920'
+                department:
+                  id: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                  name: Data Services
+                  hierarchy:
+                  - id: 1c0e7d5a-3f1b-4a2e-9d8c-7b6a5f4e3d2c
+                    name: Google
+                  - id: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                    name: Engineering
+                  - id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                    name: Platform
+                  - id: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                    name: Data Services
+                  path: google.engineering.platform.data_services
+                adminOfDepartment:
+                  id: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                  name: Data Services
+                  hierarchy:
+                  - id: 1c0e7d5a-3f1b-4a2e-9d8c-7b6a5f4e3d2c
+                    name: Google
+                  - id: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                    name: Engineering
+                  - id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                    name: Platform
+                  - id: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                    name: Data Services
+                  path: google.engineering.platform.data_services
+                roles:
+                - consumer
+                - provider
+                account_enabled: true
               paginationInfo:
                 page: 1
                 size: 10
-                totalCount: 8
+                totalCount: 2
                 totalPages: 1
                 hasNext: false
                 hasPrevious: false
@@ -3270,10 +4190,12 @@
 /iudx/v2/auth/organization/department/provider_role/requests:
   get:
     tags:
-    - Organisation APIs
+    - Organisation – Provider Roles
     summary: Get provider role requests for my department and its sub-departments (Dept Admin)
     operationId: get-auth-v2-department-provider-requests
     description: |
+      Each request carries `department` (name and path) when it is scoped to a department.
+
       Returns a paginated list of provider role requests whose requested department
       is the caller's department or one of its sub-departments, enriched with user
       roles and join request details.
@@ -3287,6 +4209,7 @@
     - authorization: []
     parameters:
     - $ref: ../components/parameters.yaml#/DepartmentScopeParam
+    - $ref: ../components/parameters.yaml#/DepartmentIdParam
     - $ref: ../components/parameters.yaml#/PageParam
     - $ref: ../components/parameters.yaml#/SizeParam
     - $ref: ../components/parameters.yaml#/SortingParam
@@ -3308,67 +4231,42 @@
                 result:
                   type: array
                   items:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        format: uuid
-                      userId:
-                        type: string
-                        format: uuid
-                      orgId:
-                        type: string
-                        format: uuid
-                        nullable: true
-                      providerType:
-                        type: string
-                        enum: [org, platform]
-                      status:
-                        type: string
-                        enum: [pending, granted, rejected]
-                      createdAt:
-                        type: string
-                        format: date-time
-                      updatedAt:
-                        type: string
-                        format: date-time
-                      roles:
-                        type: array
-                        items:
-                          type: string
-                        description: Platform-level Keycloak roles of the requesting user
-                      accountEnabled:
-                        type: boolean
-                      userName:
-                        type: string
-                        description: User name from join request (if available)
-                      jobTitle:
-                        type: string
-                        description: Job title from join request (if available)
-                      empId:
-                        type: string
-                        description: Employee ID from join request (if available)
+                    $ref: ../components/schemas/organisation.yaml#/ProviderRoleRequestItem
                 paginationInfo:
                   $ref: ../components/schemas/pagination.yaml#/PaginationInfo
             example:
               type: urn:dx:controlPlane:success
               title: Success
               result:
-              - id: 5b6c7d8e-9f0a-1b2c-3d4e-5f6a7b8c9d0e
-                userId: c908f4ed-69ef-4d27-8e50-8f95f89b6c4d
-                orgId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                providerType: org
+              - id: 5b6c7d8e-9f0a-4b2c-8d4e-5f6a7b8c9d0e
+                user_id: e2b3c4d5-e6f7-4a81-9b0c-1d2e3f4a5b6c
+                organization_id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                provider_type: org
                 status: pending
-                createdAt: '2025-06-04T10:54:53.301846'
-                roles: [consumer]
-                accountEnabled: true
-                userName: John Doe
-                jobTitle: Software Engineer
-                empId: EMP001
+                requested_node_id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                created_at: '2026-11-20T09:30:00.000000'
+                updated_at: '2026-11-20T09:30:00.000000'
+                department:
+                  id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                  name: Platform
+                  hierarchy:
+                  - id: 1c0e7d5a-3f1b-4a2e-9d8c-7b6a5f4e3d2c
+                    name: Google
+                  - id: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                    name: Engineering
+                  - id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                    name: Platform
+                  path: google.engineering.platform
+                roles:
+                - consumer
+                account_enabled: true
+                userName: Priya Nair
+                jobTitle: Platform Engineer
+                empId: ABC-0142
               paginationInfo:
                 page: 1
                 size: 10
-                totalCount: 3
+                totalCount: 1
                 totalPages: 1
                 hasNext: false
                 hasPrevious: false
@@ -3396,7 +4294,7 @@
 
   get:
     tags:
-      - Organisation APIs
+      - Organisation – Departments
     summary: Get my department and its sub-departments (Dept Admin)
     operationId: get-auth-v2-organisation-hierarchy-my-department
     description: |
@@ -3433,22 +4331,30 @@
               type: urn:dx:controlPlane:success
               title: Success
               result:
-                - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                  organizationId: 4fa85f64-5717-4562-b3fc-2c963f66afa7
-                  parentId: null
-                  name: Engineering
-                  level: 1
-                  path: engineering
-                  createdAt: '2026-10-04T10:54:53.301846'
-                  updatedAt: '2026-10-04T10:54:53.301846'
-                - id: 5fa85f64-5717-4562-b3fc-2c963f66afa8
-                  organizationId: 4fa85f64-5717-4562-b3fc-2c963f66afa7
-                  parentId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                  name: Data Platform
-                  level: 2
-                  path: engineering.data_platform
-                  createdAt: '2026-10-04T10:54:53.301846'
-                  updatedAt: '2026-10-04T10:54:53.301846'
+              - id: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                parentId: 1c0e7d5a-3f1b-4a2e-9d8c-7b6a5f4e3d2c
+                name: Engineering
+                level: 2
+                path: google.engineering
+                createdAt: '2026-11-20T09:30:00.000000'
+                updatedAt: '2026-11-20T09:30:00.000000'
+              - id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                parentId: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+                name: Platform
+                level: 3
+                path: google.engineering.platform
+                createdAt: '2026-11-20T09:30:00.000000'
+                updatedAt: '2026-11-20T09:30:00.000000'
+              - id: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+                organizationId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                parentId: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+                name: Data Services
+                level: 4
+                path: google.engineering.platform.data_services
+                createdAt: '2026-11-20T09:30:00.000000'
+                updatedAt: '2026-11-20T09:30:00.000000'
       '401':
         description: Unauthorized
         content:

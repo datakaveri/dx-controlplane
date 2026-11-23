@@ -5,6 +5,8 @@ import org.cdpg.dx.aaa.activity.dao.UserActivityLogDao;
 import org.cdpg.dx.aaa.activity.dao.impl.UserActivityLogDaoImpl;
 import org.cdpg.dx.aaa.activity.service.UserActivityAuditLogService;
 import org.cdpg.dx.aaa.activity.service.impl.UserActivityAuditLogServiceImpl;
+import org.cdpg.dx.aaa.organization.dao.impl.OrganizationUserDAOImpl;
+import org.cdpg.dx.aaa.organization.handler.DeptAdminAccessHandler;
 import org.cdpg.dx.common.URNGenerator;
 import org.cdpg.dx.database.postgres.service.PostgresService;
 
@@ -18,6 +20,8 @@ public class ActivityControllerFactory {
 
     return new ActivityController(
         userActivityAuditLogService,
-        urnGenerator);
+        urnGenerator,
+        DeptAdminAccessHandler.create(postgresService),
+        new OrganizationUserDAOImpl(postgresService));
   }
 }
