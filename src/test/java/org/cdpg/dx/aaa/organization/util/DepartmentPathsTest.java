@@ -38,15 +38,24 @@ class DepartmentPathsTest {
     assertThat(department.getJsonArray("hierarchy").stream()
             .map(step -> ((JsonObject) step).getString("name")))
         .containsExactly("Google", "Engineering", "Platform", "Data Services");
-    assertThat(department.getString("hierarchyLabel"))
+    assertThat(department.getString("path"))
+        .isEqualTo("google.engineering.platform.data_services");
+    assertThat(department.containsKey("hierarchyLabel")).isFalse();
+  }
+
+  @Test
+  void labelJoinsDisplayNamesForEmails() {
+    assertThat(paths().label(dataServices))
         .isEqualTo("Google / Engineering / Platform / Data Services");
+    assertThat(paths().label(null)).isNull();
+    assertThat(paths().label(UUID.randomUUID())).isNull();
   }
 
   @Test
   void topLevelDepartmentIsItsOwnChain() {
     JsonObject department = paths().describe(google);
     assertThat(department.getJsonArray("hierarchy")).hasSize(1);
-    assertThat(department.getString("hierarchyLabel")).isEqualTo("Google");
+    assertThat(department.getString("path")).isEqualTo("google");
   }
 
   @Test
@@ -57,7 +66,7 @@ class DepartmentPathsTest {
     assertThat(json.containsKey(DepartmentPaths.DEPARTMENT)).isFalse();
 
     paths().addTo(json, platform);
-    assertThat(json.getJsonObject(DepartmentPaths.DEPARTMENT).getString("hierarchyLabel"))
-        .isEqualTo("Google / Engineering / Platform");
+    assertThat(json.getJsonObject(DepartmentPaths.DEPARTMENT).getString("path"))
+        .isEqualTo("google.engineering.platform");
   }
 }

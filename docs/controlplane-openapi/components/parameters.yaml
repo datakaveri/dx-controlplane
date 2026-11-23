@@ -184,6 +184,18 @@ StatusParam:
     - pending
     - granted
     - rejected
+OrgRequestStatusParam:
+  name: status
+  in: query
+  description: Filter organisation creation requests by status. Use `pending` for unprocessed requests, `granted` for approved requests, `rejected` for denied requests, or `withdrawn` for requests withdrawn by the requester (withdrawn requests are only returned when explicitly requested).
+  required: false
+  schema:
+    type: string
+    enum:
+    - pending
+    - granted
+    - rejected
+    - withdrawn
 SearchTermParam:
   name: search_term
   in: query

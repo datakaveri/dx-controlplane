@@ -35,10 +35,10 @@ class OrganizationUserDepartmentsTest {
         OrganizationUserHandler.toJsonWithDepartments(
             user(Role.DEPT_ADMIN, metro, transport), departments);
 
-    assertThat(json.getJsonObject("department").getString("hierarchyLabel"))
-        .isEqualTo("Transport / Metro");
-    assertThat(json.getJsonObject("adminOfDepartment").getString("hierarchyLabel"))
-        .isEqualTo("Transport");
+    assertThat(json.getJsonObject("department").getString("path"))
+        .isEqualTo("transport.metro");
+    assertThat(json.getJsonObject("adminOfDepartment").getString("path"))
+        .isEqualTo("transport");
   }
 
   @Test

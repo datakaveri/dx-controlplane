@@ -198,6 +198,13 @@ DepartmentRef:
     name:
       type: string
       example: Data Services
+    path:
+      type: string
+      description: |
+        The department's ltree path as stored: each level's name lowercased with
+        non-alphanumerics replaced by `_`, joined with `.`. Use `hierarchy` for
+        display names.
+      example: google.engineering.platform.data_services
     hierarchy:
       type: array
       description: Departments from the top-level one down to this one (inclusive).
@@ -218,10 +225,6 @@ DepartmentRef:
         name: Platform
       - id: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
         name: Data Services
-    hierarchyLabel:
-      type: string
-      description: The hierarchy names joined with " / ", ready to display.
-      example: Google / Engineering / Platform / Data Services
 OrgItem:
   type: object
   properties:
@@ -258,44 +261,64 @@ OrgItem:
       format: date-time
 ProviderRoleRequestItem:
   type: object
+  description: |
+    A provider role request as returned by the organisation and department
+    provider-request lists. Request fields are snake_case; `userName`, `jobTitle`
+    and `empId` are copied from the user's join request and keep its camelCase.
   properties:
     id:
       type: string
       format: uuid
-    userId:
+    user_id:
       type: string
       format: uuid
-    orgId:
+    organization_id:
       type: string
       format: uuid
-      nullable: true
-      description: null for platform-track requests
-    providerType:
+      description: Absent for platform-track requests.
+    provider_type:
       type: string
       enum: [org, platform]
     status:
       type: string
       enum: [pending, granted, rejected]
-    departmentId:
+    requested_node_id:
       type: string
       format: uuid
-      nullable: true
       description: |
-        Which department this provider-role request is scoped to, if the
-        organisation has departments enabled -- lets a dept_admin approve it.
-    createdAt:
+        The department this request is scoped to, if the organisation has
+        departments. Absent otherwise.
+    created_at:
       type: string
       format: date-time
-    updatedAt:
+    updated_at:
       type: string
       format: date-time
     roles:
       type: array
       items:
         type: string
-      description: Platform-level Keycloak roles of the user
-    accountEnabled:
+      description: Platform-level Keycloak roles of the requesting user.
+    account_enabled:
       type: boolean
+    department:
+      allOf:
+      - $ref: '#/DepartmentRef'
+      description: The department in `requested_node_id`, with its path. Absent when the request is not scoped to a department.
+    userName:
+      type: string
+      description: User name from the join request (if available).
+    jobTitle:
+      type: string
+      description: Job title from the join request (if available).
+    empId:
+      type: string
+      description: Employee ID from the join request (if available).
+  required:
+  - id
+  - user_id
+  - provider_type
+  - status
 OrganizationDepartment:
   type: object
   properties:

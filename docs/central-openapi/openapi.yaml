@@ -665,6 +665,8 @@ components:
       $ref: ../controlplane-openapi/components/parameters.yaml#/OrgSectorParam
     StatusParam:
       $ref: ../controlplane-openapi/components/parameters.yaml#/StatusParam
+    OrgRequestStatusParam:
+      $ref: ../controlplane-openapi/components/parameters.yaml#/OrgRequestStatusParam
   schemas:
     AssetSummary:
       $ref: ../controlplane-openapi/components/schemas/access.yaml#/AssetSummary
