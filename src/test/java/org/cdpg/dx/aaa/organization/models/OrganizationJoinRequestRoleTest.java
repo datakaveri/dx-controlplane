@@ -23,50 +23,80 @@ class OrganizationJoinRequestRoleTest {
   }
 
   @Test
-  void defaultsToMemberAndDropsPurpose() {
-    OrganizationJoinRequest request =
-        OrganizationJoinRequest.fromJson(body().put(Constants.PURPOSE, "not needed"));
+  void defaultsToMemberWithoutAdditionalInfo() {
+    OrganizationJoinRequest request = OrganizationJoinRequest.fromJson(body());
 
     assertThat(request.requestedRole()).isEqualTo(Role.USER);
     assertThat(request.requestsDeptAdmin()).isFalse();
-    assertThat(request.purpose()).isNull();
+    assertThat(request.additionalInfo()).isNull();
     assertThat(request.toJson().getString(Constants.REQUESTED_ROLE)).isEqualTo("member");
-    assertThat(request.toJson().containsKey(Constants.PURPOSE)).isFalse();
+    assertThat(request.toJson().containsKey(Constants.ADDITIONAL_INFO)).isFalse();
+    assertThat(request.toJsonForUsers().containsKey("additionalInfo")).isFalse();
   }
 
   @Test
-  void deptAdminKeepsTrimmedPurpose() {
+  void deptAdminNoLongerNeedsAdditionalInfo() {
     OrganizationJoinRequest request =
-        OrganizationJoinRequest.fromJson(
-            body()
-                .put(Constants.REQUESTED_ROLE, "dept_admin")
-                .put(Constants.PURPOSE, "  I lead this team  "));
+        OrganizationJoinRequest.fromJson(body().put(Constants.REQUESTED_ROLE, "dept_admin"));
 
     assertThat(request.requestsDeptAdmin()).isTrue();
-    assertThat(request.purpose()).isEqualTo("I lead this team");
-    assertThat(request.toJson().getString(Constants.REQUESTED_ROLE)).isEqualTo("dept_admin");
-    assertThat(request.toNonEmptyFieldsMap()).containsEntry(Constants.PURPOSE, "I lead this team");
+    assertThat(request.additionalInfo()).isNull();
   }
 
   @Test
-  void deptAdminRequiresPurpose() {
+  void keepsAdditionalInfoAsIsForAnyRole() {
+    JsonObject info =
+        new JsonObject().put("purpose", "I lead this team").put("teamSize", 12);
+
+    for (String role : new String[] {"member", "dept_admin"}) {
+      OrganizationJoinRequest request =
+          OrganizationJoinRequest.fromJson(
+              body().put(Constants.REQUESTED_ROLE, role).put(Constants.ADDITIONAL_INFO, info.copy()));
+
+      assertThat(request.additionalInfo()).isEqualTo(info);
+      assertThat(request.toJson().getJsonObject(Constants.ADDITIONAL_INFO)).isEqualTo(info);
+      assertThat(request.toJsonForUsers().getJsonObject("additionalInfo")).isEqualTo(info);
+      assertThat(request.toNonEmptyFieldsMap()).containsEntry(Constants.ADDITIONAL_INFO, info);
+    }
+  }
+
+  @Test
+  void readsAdditionalInfoStoredAsJsonbText() {
+    OrganizationJoinRequest request =
+        OrganizationJoinRequest.fromJson(
+            body().put(Constants.ADDITIONAL_INFO, "{\"purpose\":\"from db\"}"));
+
+    assertThat(request.additionalInfo()).isEqualTo(new JsonObject().put("purpose", "from db"));
+  }
+
+  @Test
+  void treatsEmptyAdditionalInfoAsAbsent() {
+    OrganizationJoinRequest request =
+        OrganizationJoinRequest.fromJson(body().put(Constants.ADDITIONAL_INFO, new JsonObject()));
+
+    assertThat(request.additionalInfo()).isNull();
+  }
+
+  @Test
+  void rejectsNonObjectAdditionalInfo() {
     assertThatThrownBy(
             () ->
                 OrganizationJoinRequest.fromJson(
-                    body().put(Constants.REQUESTED_ROLE, "dept_admin").put(Constants.PURPOSE, " ")))
+                    body().put(Constants.ADDITIONAL_INFO, new io.vertx.core.json.JsonArray().add(1))))
         .isInstanceOf(DxValidationException.class)
-        .hasMessageContaining("purpose is required");
+        .hasMessageContaining("additionalInfo must be a JSON object");
   }
 
   @Test
-  void rejectsOverlongPurpose() {
+  void rejectsOversizedAdditionalInfo() {
+    JsonObject huge =
+        new JsonObject()
+            .put("purpose", "x".repeat(OrganizationJoinRequest.MAX_ADDITIONAL_INFO_LENGTH));
+
     assertThatThrownBy(
-            () ->
-                OrganizationJoinRequest.fromJson(
-                    body()
-                        .put(Constants.REQUESTED_ROLE, "dept_admin")
-                        .put(Constants.PURPOSE, "x".repeat(OrganizationJoinRequest.MAX_PURPOSE_LENGTH + 1))))
-        .isInstanceOf(DxValidationException.class);
+            () -> OrganizationJoinRequest.fromJson(body().put(Constants.ADDITIONAL_INFO, huge)))
+        .isInstanceOf(DxValidationException.class)
+        .hasMessageContaining("additionalInfo must be at most");
   }
 
   @Test

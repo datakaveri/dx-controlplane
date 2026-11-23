@@ -93,12 +93,25 @@ public class OrganizationJoinRequestHandler {
           orgRequestJson.put(REQUESTED_NODE_ID, departmentId);
         }
 
-        // Role in the selected department: "member" (default) or "dept_admin";
-        // dept_admin also needs a purpose. Validated by OrganizationJoinRequest.
+        // Role in the selected department: "member" (default) or "dept_admin".
+        // Validated by OrganizationJoinRequest.
         orgRequestJson.remove(REQUESTED_ROLE);
         String departmentRole = orgRequestJson.getString("departmentRole");
         if (departmentRole != null) {
           orgRequestJson.put(REQUESTED_ROLE, departmentRole);
+        }
+
+        // Optional free-form details the UI collects (e.g. a purpose for an
+        // Admin request). Only accepted as "additionalInfo" and must be a JSON
+        // object; stored and returned as-is.
+        orgRequestJson.remove(ADDITIONAL_INFO);
+        Object additionalInfo = orgRequestJson.getValue("additionalInfo");
+        if (additionalInfo != null) {
+          if (!(additionalInfo instanceof JsonObject)) {
+            return Future.failedFuture(
+              new DxBadRequestException("additionalInfo must be a JSON object"));
+          }
+          orgRequestJson.put(ADDITIONAL_INFO, additionalInfo);
         }
 
         OrganizationJoinRequest organizationJoinRequest =

@@ -147,7 +147,7 @@ public class EmailComposer {
   /**
    * Tells everyone who can approve the join request: the org_admin, and in an organisation with
    * departments every dept_admin of the chosen department or above it (strictly above for an
-   * Admin request). Includes the department path, requested role and purpose.
+   * Admin request). Includes the department path, requested role and any additionalInfo fields.
    */
   public Future<Void> sendEmailForJoiningOrg(
       OrganizationJoinRequest request, User user) {
@@ -162,8 +162,16 @@ public class EmailComposer {
                 rows.put("Department", department);
                 rows.put("Requested role", request.requestsDeptAdmin() ? "Admin" : "User");
               }
-              if (request.purpose() != null) {
-                rows.put("Purpose", request.purpose());
+              // Free-form details from the UI (e.g. a purpose), one row per field.
+              if (request.additionalInfo() != null) {
+                request
+                    .additionalInfo()
+                    .forEach(
+                        entry -> {
+                          if (entry.getValue() != null) {
+                            rows.put(humanizeKey(entry.getKey()), String.valueOf(entry.getValue()));
+                          }
+                        });
               }
               String details = detailsHtml(rows);
 
@@ -992,6 +1000,15 @@ public class EmailComposer {
                 .append(escapeHtml(value))
                 .append("<br/>"));
     return html.append("</p>").toString();
+  }
+
+  /** "purpose" / "teamSize" / "team_size" → "Purpose" / "Team size" / "Team size". */
+  static String humanizeKey(String key) {
+    if (key == null || key.isBlank()) {
+      return "Info";
+    }
+    String spaced = key.replace('_', ' ').replaceAll("([a-z0-9])([A-Z])", "$1 $2").trim();
+    return Character.toUpperCase(spaced.charAt(0)) + spaced.substring(1).toLowerCase();
   }
 
   /** The proposed departments as a nested list, names HTML-escaped. */
