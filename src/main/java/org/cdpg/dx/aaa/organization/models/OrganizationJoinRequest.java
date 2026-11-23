@@ -29,29 +29,23 @@ public record OrganizationJoinRequest(
     // Role the user asks for in the selected department: USER (member) or
     // DEPT_ADMIN. Never ADMIN -- the org_admin is only created with the org.
     Role requestedRole,
-    // Why the user should administer the department; required for DEPT_ADMIN.
-    String purpose)
+    // Optional free-form details collected by the UI (e.g. a purpose for an
+    // Admin request). Stored as JSONB and returned unchanged; never interpreted.
+    JsonObject additionalInfo)
     implements BaseEntity<OrganizationJoinRequest> {
 
-  public static final int MAX_PURPOSE_LENGTH = 1000;
+  /** Upper bound on the encoded size of {@code additionalInfo}, in characters. */
+  public static final int MAX_ADDITIONAL_INFO_LENGTH = 10_000;
 
   public OrganizationJoinRequest {
     requestedRole = requestedRole == null ? Role.USER : requestedRole;
     if (requestedRole == Role.ADMIN) {
       throw new DxValidationException("departmentRole must be either member or dept_admin");
     }
-    purpose = purpose == null || purpose.isBlank() ? null : purpose.strip();
-    if (requestedRole == Role.DEPT_ADMIN) {
-      if (purpose == null) {
-        throw new DxValidationException("purpose is required when requesting the dept_admin role");
-      }
-      if (purpose.length() > MAX_PURPOSE_LENGTH) {
-        throw new DxValidationException(
-            "purpose must be at most " + MAX_PURPOSE_LENGTH + " characters");
-      }
-    } else {
-      // Purpose is only collected for an admin request.
-      purpose = null;
+    additionalInfo = additionalInfo == null || additionalInfo.isEmpty() ? null : additionalInfo;
+    if (additionalInfo != null && additionalInfo.encode().length() > MAX_ADDITIONAL_INFO_LENGTH) {
+      throw new DxValidationException(
+          "additionalInfo must be at most " + MAX_ADDITIONAL_INFO_LENGTH + " characters");
     }
   }
 
@@ -68,6 +62,32 @@ public record OrganizationJoinRequest(
     } catch (IllegalArgumentException e) {
       throw new DxValidationException("departmentRole must be either member or dept_admin");
     }
+  }
+
+  /** Reads {@code additional_info}: a JSON object, or its text form from a JSONB column. */
+  private static JsonObject parseAdditionalInfo(Object raw) {
+    if (raw == null) {
+      return null;
+    }
+    if (raw instanceof JsonObject jsonObject) {
+      return jsonObject;
+    }
+    if (raw instanceof String str) {
+      if (str.isBlank()) {
+        return null;
+      }
+      try {
+        return new JsonObject(str);
+      } catch (RuntimeException e) {
+        throw new DxValidationException("additionalInfo must be a JSON object");
+      }
+    }
+    if (raw instanceof Map<?, ?> map) {
+      @SuppressWarnings("unchecked")
+      Map<String, Object> m = (Map<String, Object>) map;
+      return new JsonObject(m);
+    }
+    throw new DxValidationException("additionalInfo must be a JSON object");
   }
 
   public static OrganizationJoinRequest fromJson(JsonObject orgJoinRequest) {
@@ -94,7 +114,7 @@ public record OrganizationJoinRequest(
           parseDateTime(orgJoinRequest.getString(Constants.REQUESTED_AT)),
           parseDateTime(orgJoinRequest.getString(Constants.PROCESSED_AT)),
           parseRole(orgJoinRequest.getString(Constants.REQUESTED_ROLE)),
-          orgJoinRequest.getString(Constants.PURPOSE));
+          parseAdditionalInfo(orgJoinRequest.getValue(Constants.ADDITIONAL_INFO)));
     } catch (DxValidationException e) {
       throw e;
     } catch (IllegalArgumentException e) {
@@ -118,7 +138,7 @@ public record OrganizationJoinRequest(
     if (requestedAt != null) json.put(Constants.REQUESTED_AT, requestedAt.format(FORMATTER));
     if (processedAt != null) json.put(Constants.PROCESSED_AT, processedAt.format(FORMATTER));
     json.put(Constants.REQUESTED_ROLE, requestedRole.getRoleName());
-    if (purpose != null) json.put(Constants.PURPOSE, purpose);
+    if (additionalInfo != null) json.put(Constants.ADDITIONAL_INFO, additionalInfo.copy());
 
     return json;
   }
@@ -138,7 +158,7 @@ public record OrganizationJoinRequest(
     if (requestedAt != null) json.put("requestedAt", requestedAt.format(FORMATTER));
     if (processedAt != null) json.put("processedAt", processedAt.format(FORMATTER));
     json.put("departmentRole", requestedRole.getRoleName());
-    if (purpose != null) json.put("purpose", purpose);
+    if (additionalInfo != null) json.put("additionalInfo", additionalInfo.copy());
 
     return json;
   }
@@ -159,7 +179,7 @@ public record OrganizationJoinRequest(
     if (requestedAt != null) map.put(Constants.REQUESTED_AT, requestedAt.format(FORMATTER));
     if (processedAt != null) map.put(Constants.PROCESSED_AT, processedAt.format(FORMATTER));
     map.put(Constants.REQUESTED_ROLE, requestedRole.getRoleName());
-    if (purpose != null) map.put(Constants.PURPOSE, purpose);
+    if (additionalInfo != null) map.put(Constants.ADDITIONAL_INFO, additionalInfo.copy());
 
     return map;
   }
