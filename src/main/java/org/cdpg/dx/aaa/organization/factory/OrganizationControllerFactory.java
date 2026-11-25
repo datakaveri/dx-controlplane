@@ -82,31 +82,33 @@ public class OrganizationControllerFactory {
         new OrganizationCreateRequestHandler(
             organizationService, keycloakUserService, emailComposer, urnGenerator);
 
-    OrganizationJoinRequestHandler joinRequestHandler =
-        new OrganizationJoinRequestHandler(
-            organizationService,
-            userService,
-            keycloakUserService,
-            emailComposer,
-            urnGenerator);
 
-    OrganizationUserHandler userHandler =
-        new OrganizationUserHandler(organizationService, userService, urnGenerator);
 
-    ProviderRoleHandler providerRoleHandler =
-        new ProviderRoleHandler(
-            organizationService, userService, emailComposer, urnGenerator);
     OrganizationHierarchyHandler organizationHierarchyHandler =
         new OrganizationHierarchyHandler(organizationService, urnGenerator);
 
     OrganizationHierarchyDefinitionHandler organizationHierarchyDefinitionHandler =
-        new OrganizationHierarchyDefinitionHandler(organizationService, urnGenerator);
+        new OrganizationHierarchyDefinitionHandler(
+            organizationService, urnGenerator, emailComposer);
 
     DeptAdminHandler deptAdminHandler = new DeptAdminHandler(organizationService, urnGenerator);
 
     DeptAdminAccessHandler deptAdminAccess =
         new DeptAdminAccessHandler(
             organizationDAOFactory.organizationUserDAO(), organizationHierarchyService);
+
+    OrganizationUserHandler userHandler =
+        new OrganizationUserHandler(
+            organizationService, userService, urnGenerator, deptAdminAccess);
+
+    OrganizationJoinRequestHandler joinRequestHandler =
+        new OrganizationJoinRequestHandler(
+            organizationService,
+            userService,
+            keycloakUserService,
+            emailComposer,
+            urnGenerator,
+            deptAdminAccess);
 
     /* =========================
      * Controller (ONLY wiring)
@@ -135,12 +137,14 @@ public class OrganizationControllerFactory {
       PostgresService pgService,
       Boolean kycRequired) {
 
+    DeptAdminAccessHandler deptAdminAccess = DeptAdminAccessHandler.create(pgService);
     ProviderRoleHandler providerRoleHandler =
-        new ProviderRoleHandler(organizationService, userService, emailComposer, urnGenerator);
+        new ProviderRoleHandler(
+            organizationService, userService, emailComposer, urnGenerator, deptAdminAccess);
 
     return new ProviderController(
         providerRoleHandler,
-        DeptAdminAccessHandler.create(pgService),
+        deptAdminAccess,
         auditingHandler,
         kycRequired);
   }

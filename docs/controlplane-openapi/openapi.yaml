@@ -127,18 +127,71 @@ tags:
   description: |
     Returns the set of attribute-based filter keys that can be used in catalogue
     search queries (e.g. resource type, tags, domains).
-- name: Organisation APIs
+- name: Organisation – Creation Requests
   description: |
-    Full lifecycle management of organisations on the platform.
+    **Step 1 of the organisation workflow.** A user requests a new organisation; a COS Admin
+    approves or rejects it. On approval the organisation is created and the requester becomes
+    its Org Admin.
 
-    **Flows covered:**
-    - Organisation creation requests (submit, admin approval, withdrawal)
-    - Organisation join requests (submit, admin approval, rejection, withdrawal)
-    - Member management (list users, update roles, remove users)
-    - Provider role requests within an organisation
-    - Reports for org create, join, and provider role request activity
+    The request may optionally include the organisation's department tree (`departments`). If
+    it does, approving the request also creates the hierarchy -- no separate
+    **Organisation – Hierarchy Definition** step is needed.
 
-    **Roles involved:** Consumer, Org Admin, COS Admin
+    **Roles:** User (submit, view, withdraw), COS Admin (list, approve/reject)
+- name: Organisation – Management
+  description: |
+    List, view, update and delete organisations once they exist. Organisation responses
+    include the organisation's `departments` (id, name, path).
+
+    **Roles:** any authenticated user (list, view), COS Admin (update), Org Admin / COS Admin
+    (delete)
+- name: Organisation – Hierarchy Definition
+  description: |
+    **Step 2 (optional).** Turns a flat organisation into a hierarchical one. The Org Admin
+    submits the full department tree in one request; a COS Admin approves it, and the tree is
+    created atomically. The hierarchy can be defined only once.
+
+    Skip this step if the tree was already included in the organisation creation request.
+
+    **Roles:** Org Admin (submit, view), COS Admin (approve/reject)
+- name: Organisation – Departments
+  description: |
+    Read-only navigation of an organisation's department tree: all departments, a single
+    department, its children or descendants, and the caller's own department (Dept Admin).
+- name: Organisation – Join Requests
+  description: |
+    **Step 3.** Users ask to join an organisation (optionally a specific department). In a
+    flat organisation the Org Admin decides; in a hierarchical one, the Org Admin or the Dept
+    Admin of the target department (or of any ancestor department) can decide.
+
+    **Roles:** User (submit, view, withdraw), Org Admin / Dept Admin (list, approve/reject)
+- name: Organisation – Members
+  description: |
+    Manage the members of an organisation: list members (whole organisation, or a Dept
+    Admin's department subtree), update a member's role, remove a member.
+
+    **Roles:** Org Admin (whole organisation), Dept Admin (members of their department subtree)
+- name: Organisation – Department Admins
+  description: |
+    **Step 4 (hierarchical organisations).** Delegate administration of a department. The
+    Org Admin can assign a member as Dept Admin directly, or a member can request to become
+    admin of their own department, which an ancestor department's admin or the Org Admin
+    approves.
+
+    **Roles:** Org Admin, Dept Admin, Org Member
+- name: Organisation – Provider Roles
+  description: |
+    **Step 5.** Organisation members request the `PROVIDER` role so they can publish assets;
+    the Org Admin (or the relevant Dept Admin) approves it, or the Org Admin grants it
+    directly. For users outside any organisation, see **Platform Provider Requests**.
+
+    **Roles:** Org Member (submit, view, withdraw), Org Admin / Dept Admin (list, approve/reject)
+- name: Organisation – Reports
+  description: |
+    Downloadable CSV reports of organisation creation requests, organisations, join requests
+    and provider role requests.
+
+    **Roles:** COS Admin
 - name: Organisation Assets Management
   description: |
     Browse and filter assets registered under a specific organisation.
@@ -379,6 +432,8 @@ paths:
     $ref: paths/organisations.yaml#/~1iudx~1v2~1auth~1organizations~1{organization_id}~1hierarchy~1departments~1{department_id}~1children
   /iudx/v2/auth/organizations/{organization_id}/hierarchy/departments/{department_id}/descendants:
     $ref: paths/organisations.yaml#/~1iudx~1v2~1auth~1organizations~1{organization_id}~1hierarchy~1departments~1{department_id}~1descendants
+  /iudx/v2/auth/admin/organisations/department-requests:
+    $ref: paths/organisations.yaml#/~1iudx~1v2~1auth~1admin~1organisations~1department-requests
   /iudx/v2/auth/organizations/{organization_id}/hierarchy/definition-requests:
     $ref: paths/organisations.yaml#/~1iudx~1v2~1auth~1organizations~1{organization_id}~1hierarchy~1definition-requests
   /iudx/v2/auth/organizations/{organization_id}/hierarchy/definition-requests/{request_id}:
@@ -493,6 +548,8 @@ components:
       $ref: components/parameters.yaml#/OrgSectorParam
     StatusParam:
       $ref: components/parameters.yaml#/StatusParam
+    OrgRequestStatusParam:
+      $ref: components/parameters.yaml#/OrgRequestStatusParam
   schemas:
     AssetSummary:
       $ref: components/schemas/access.yaml#/AssetSummary

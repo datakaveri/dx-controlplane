@@ -16,6 +16,9 @@ public final class OperationIds {
   public static final String OP_DELETE_USER_ORG_CREATE_REQUEST =
       "delete-auth-v2-user-organisations-request";
 
+  public static final String OP_WITHDRAW_USER_ORG_CREATE_REQUEST =
+      "withdraw-auth-v2-user-organisations-request";
+
   public static final String OP_CREATE_ORG_REQUEST = "post-auth-v2-organisations-request";
 
   public static final String OP_APPROVE_ORG_CREATE_REQUEST = "post-auth-v2-approve-create_org";
@@ -92,6 +95,8 @@ public final class OperationIds {
       "get-auth-v2-organisation-hierarchy-definition-request";
   public static final String OP_APPROVE_ORG_HIERARCHY_DEFINITION_REQUEST =
       "put-auth-v2-organisation-hierarchy-definition-request";
+  public static final String OP_GET_ALL_ORG_HIERARCHY_DEFINITION_REQUESTS =
+      "get-auth-v2-admin-organisation-department-requests";
 
   /* =====================================================
    * Org Hierarchy – dept_admin assignment / self-request

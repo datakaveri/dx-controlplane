@@ -87,6 +87,11 @@ public class OrganizationMembershipServiceImpl implements OrganizationMembership
                       new DxValidationException(
                           "Hierarchy node cannot be specified for a non-hierarchical organization"));
                 }
+                if (organizationJoinRequest.requestsDeptAdmin()) {
+                  return Future.failedFuture(
+                      new DxValidationException(
+                          "This organisation has no departments; dept_admin cannot be requested"));
+                }
                 // Existing flat organization behaviour.
                 // requestedNodeId should normally be null.
                 return joinRequestDAO.create(organizationJoinRequest);
@@ -121,7 +126,7 @@ public class OrganizationMembershipServiceImpl implements OrganizationMembership
                                       .createApproval(
                                           organizationId,
                                           createdRequest.id(),
-                                          OrganizationApprovalType.ORGANIZATION_USER_JOIN,
+                                          joinApprovalType(createdRequest),
                                           requestedNodeId)
                                       .map(ignored -> createdRequest);
                                 });
@@ -172,6 +177,14 @@ public class OrganizationMembershipServiceImpl implements OrganizationMembership
                 return Future.succeededFuture(false);
               }
 
+              // A withdrawn (or already decided) request must not be approved:
+              // withdrawing only updates the request, so its approval task is
+              // still open and would otherwise add the user.
+              if (!PENDING.getStatus().equals(joinRequest.status())) {
+                return Future.failedFuture(
+                    new DxConflictException("Request has already been " + joinRequest.status()));
+              }
+
               UUID organizationId = joinRequest.organizationId();
 
               return orgDAO
@@ -209,7 +222,7 @@ public class OrganizationMembershipServiceImpl implements OrganizationMembership
                               .approve(
                                   organizationId,
                                   requestId,
-                                  OrganizationApprovalType.ORGANIZATION_USER_JOIN,
+                                  joinApprovalType(joinRequest),
                                   joinRequest.requestedNodeId(),
                                   approverUserId,
                                   null)
@@ -223,7 +236,7 @@ public class OrganizationMembershipServiceImpl implements OrganizationMembership
                               .reject(
                                   organizationId,
                                   requestId,
-                                  OrganizationApprovalType.ORGANIZATION_USER_JOIN,
+                                  joinApprovalType(joinRequest),
                                   joinRequest.requestedNodeId(),
                                   approverUserId,
                                   null)
@@ -236,6 +249,13 @@ public class OrganizationMembershipServiceImpl implements OrganizationMembership
                                 "Only granted or rejected status is allowed"));
                       });
             });
+  }
+
+  /** Joining as a department's admin is approved under the stricter dept_admin rule. */
+  private static OrganizationApprovalType joinApprovalType(OrganizationJoinRequest request) {
+    return request.requestsDeptAdmin()
+        ? OrganizationApprovalType.DEPT_ADMIN_JOIN
+        : OrganizationApprovalType.ORGANIZATION_USER_JOIN;
   }
 
   private Future<Boolean> updateJoinRequestStatus(UUID requestId, Status status) {
@@ -319,19 +339,22 @@ public class OrganizationMembershipServiceImpl implements OrganizationMembership
                               new DxNotFoundException("Organisation not found"));
                         }
 
+                        // Joining as dept_admin makes the user the admin of the
+                        // department they joined.
+                        boolean deptAdmin = joinRequest.requestsDeptAdmin();
                         OrganizationUser organizationUser =
                             new OrganizationUser(
                                 null,
                                 orgId,
                                 userId,
                                 joinRequest.userName(),
-                                Role.USER,
+                                deptAdmin ? Role.DEPT_ADMIN : Role.USER,
                                 joinRequest.jobTitle(),
                                 joinRequest.empId(),
                                 null,
                                 joinRequest.officialEmail(),
                                 joinRequest.requestedNodeId(),
-                                null,
+                                deptAdmin ? joinRequest.requestedNodeId() : null,
                                 null,
                                 null);
 
@@ -349,8 +372,14 @@ public class OrganizationMembershipServiceImpl implements OrganizationMembership
                                                 return Future.failedFuture(
                                                     "Failed to set organization details in Keycloak");
                                               }
-
-                                              return Future.succeededFuture(true);
+                                              if (!deptAdmin) {
+                                                return Future.succeededFuture(true);
+                                              }
+                                              // Publish dept scopes to the token for the UI;
+                                              // the backend authorizes from the database.
+                                              return keycloakUserService
+                                                  .addUserScopes(userId, Scopes.DEPT_ADMIN)
+                                                  .map(true);
                                             }));
                       });
             });

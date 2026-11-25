@@ -3,6 +3,7 @@ package org.cdpg.dx.aaa.organization.service;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.organization.dao.OrganizationDAOFactory;
@@ -51,7 +52,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     OrganizationLifecycleServiceImpl lifecycleImpl = new OrganizationLifecycleServiceImpl(
       factory.organizationCreateRequest(), factory.organizationDAO(), factory.organizationUserDAO(),
-      keycloakUserService);
+      keycloakUserService, organizationHierarchyService);
     OrganizationApprovalService organizationApprovalServiceImpl =
         new OrganizationApprovalServiceImpl(
             factory.organizationApprovalDAO(),
@@ -122,6 +123,12 @@ public class OrganizationServiceImpl implements OrganizationService {
   @Override
   public Future<Boolean> updateOrganizationCreateRequestStatus(UUID requestId, Status status) {
     return lifecycle.updateOrganizationCreateRequestStatus(requestId, status);
+  }
+
+  @Override
+  public Future<OrganizationCreateRequest> withdrawOrganizationCreateRequest(
+      UUID userId, UUID requestId) {
+    return lifecycle.withdrawOrganizationCreateRequest(userId, requestId);
   }
 
   public Future<Boolean> createOrganizationFromRequest(UUID requestId) {
@@ -351,6 +358,12 @@ public class OrganizationServiceImpl implements OrganizationService {
   }
 
   @Override
+  public Future<Map<UUID, List<OrganizationHierarchyNode>>> getHierarchyNodesByOrganizationIds(
+      List<UUID> organizationIds) {
+    return organizationHierarchyService.getNodesByOrganizationIds(organizationIds);
+  }
+
+  @Override
   public Future<List<OrganizationHierarchyNode>> getHierarchyNodeChildren(
       UUID organizationId, UUID nodeId) {
 
@@ -377,9 +390,22 @@ public class OrganizationServiceImpl implements OrganizationService {
   }
 
   @Override
+  public Future<List<UUID>> getRequestApproverUserIds(
+      UUID organizationId, UUID targetNodeId, boolean strict) {
+    return deptAdminService.getApproverUserIds(organizationId, targetNodeId, strict);
+  }
+
+  @Override
   public Future<OrganizationHierarchyDefinitionRequest> createHierarchyDefinitionRequest(
-      UUID organizationId, List<ProposedDepartmentNode> departments) {
-    return hierarchyDefinitionService.createDefinitionRequest(organizationId, departments);
+      UUID organizationId, UUID parentNodeId, List<ProposedDepartmentNode> departments) {
+    return hierarchyDefinitionService.createDefinitionRequest(
+        organizationId, parentNodeId, departments);
+  }
+
+  @Override
+  public Future<PaginatedResult<OrganizationHierarchyDefinitionRequest>>
+      getHierarchyDefinitionRequests(PaginatedRequest request) {
+    return hierarchyDefinitionService.getDefinitionRequests(request);
   }
 
   @Override

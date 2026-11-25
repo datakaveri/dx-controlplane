@@ -61,6 +61,14 @@ OrgCreateRequestItem:
     orgDocuments:
       type: string
       description: Path to supporting organisation documents
+    proposed_hierarchy:
+      type: object
+      description: Department tree proposed with the request (present only when one was submitted)
+      properties:
+        departments:
+          type: array
+          items:
+            $ref: '#/ProposedDepartment'
     createdAt:
       type: string
       format: date-time
@@ -71,52 +79,155 @@ OrgCreateRequestItem:
       description: Timestamp when the request was last updated
 OrgJoinRequestItem:
   type: object
+  description: |
+    An organisation join request as returned by the join-request list endpoints.
+    Keys are snake_case.
   properties:
     id:
       type: string
       format: uuid
       description: Unique identifier of the join request
-    organizationId:
+    organization_id:
       type: string
       format: uuid
       description: UUID of the organisation being joined
-    userId:
+    user_id:
       type: string
       format: uuid
       description: UUID of the user who submitted the request
-    userName:
+    user_name:
       type: string
       description: Display name of the requesting user
     status:
       type: string
       enum: [pending, granted, rejected, withdrawn]
       description: Current status of the join request
-    jobTitle:
+    job_title:
       type: string
       description: Job title of the applicant within the organisation
-    empId:
+    emp_id:
       type: string
       description: Employee ID of the applicant
-    officialEmail:
+    official_email:
       type: string
       description: Official email of the applicant within the organisation
-    departmentId:
+    requested_node_id:
       type: string
       format: uuid
-      nullable: true
       description: |
-        Which department the applicant wants to join, shown to them from the
-        organisation's department tree. Required when the organisation has
-        departments enabled, must be omitted otherwise.
-    requestedAt:
+        Department the applicant chose (sent as `departmentId`). Absent for flat organisations.
+    requested_role:
+      type: string
+      enum: [member, dept_admin]
+      description: |
+        Role the applicant asked for in the chosen department (UI: "User" = `member`,
+        "Admin" = `dept_admin`). `member` for flat organisations and older requests.
+    additional_info:
+      type: object
+      additionalProperties: true
+      description: |
+        Free-form details the UI sent as `additionalInfo` with the request (for example a
+        `purpose` for an Admin request), returned unchanged. Absent when none was sent.
+    department:
+      $ref: '#/DepartmentRef'
+    requested_at:
       type: string
       format: date-time
       description: Timestamp when the request was submitted
-    processedAt:
+    processed_at:
       type: string
       format: date-time
-      nullable: true
-      description: Timestamp when the request was processed, or null if pending
+      description: Timestamp when the request was processed; absent while pending
+OrgUserItem:
+  type: object
+  description: A member of an organisation as returned by the user list endpoints. Keys are snake_case.
+  properties:
+    id:
+      type: string
+      format: uuid
+    organization_id:
+      type: string
+      format: uuid
+    user_id:
+      type: string
+      format: uuid
+    user_name:
+      type: string
+    role:
+      type: string
+      enum: [member, admin, dept_admin]
+      description: |
+        Role of the user within the organisation. `dept_admin` administers the
+        department in `admin_of_node_id` and all of its sub-departments.
+    job_title:
+      type: string
+    emp_id:
+      type: string
+    phone_no:
+      type: string
+    official_email:
+      type: string
+    hierarchy_node_id:
+      type: string
+      format: uuid
+      description: Department the user belongs to. Absent for organisations without departments.
+    admin_of_node_id:
+      type: string
+      format: uuid
+      description: Department the user administers. Only present when `role` is `dept_admin`.
+    department:
+      allOf:
+      - $ref: '#/DepartmentRef'
+      description: The department in `hierarchy_node_id`, with its path.
+    adminOfDepartment:
+      allOf:
+      - $ref: '#/DepartmentRef'
+      description: The department in `admin_of_node_id`, with its path.
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+DepartmentRef:
+  type: object
+  description: |
+    A department and its place in the organisation's tree, from the top-level
+    department down to this one. Absent when no department applies.
+  properties:
+    id:
+      type: string
+      format: uuid
+    name:
+      type: string
+      example: Data Services
+    path:
+      type: string
+      description: |
+        The department's ltree path as stored: each level's name lowercased with
+        non-alphanumerics replaced by `_`, joined with `.`. Use `hierarchy` for
+        display names.
+      example: google.engineering.platform.data_services
+    hierarchy:
+      type: array
+      description: Departments from the top-level one down to this one (inclusive).
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+          name:
+            type: string
+      example:
+      - id: 1c0e7d5a-3f1b-4a2e-9d8c-7b6a5f4e3d2c
+        name: Google
+      - id: 2d1f8e6b-4a2c-4b3f-8e9d-8c7b6a5f4e3d
+        name: Engineering
+      - id: 3e2a9f7c-5b3d-4c4a-9f0e-9d8c7b6a5f4e
+        name: Platform
+      - id: 4f3b0a8d-6c4e-4d5b-8a1f-0e9d8c7b6a5f
+        name: Data Services
 OrgItem:
   type: object
   properties:
@@ -153,44 +264,64 @@ OrgItem:
       format: date-time
 ProviderRoleRequestItem:
   type: object
+  description: |
+    A provider role request as returned by the organisation and department
+    provider-request lists. Request fields are snake_case; `userName`, `jobTitle`
+    and `empId` are copied from the user's join request and keep its camelCase.
   properties:
     id:
       type: string
       format: uuid
-    userId:
+    user_id:
       type: string
       format: uuid
-    orgId:
+    organization_id:
       type: string
       format: uuid
-      nullable: true
-      description: null for platform-track requests
-    providerType:
+      description: Absent for platform-track requests.
+    provider_type:
       type: string
       enum: [org, platform]
     status:
       type: string
       enum: [pending, granted, rejected]
-    departmentId:
+    requested_node_id:
       type: string
       format: uuid
-      nullable: true
       description: |
-        Which department this provider-role request is scoped to, if the
-        organisation has departments enabled -- lets a dept_admin approve it.
-    createdAt:
+        The department this request is scoped to, if the organisation has
+        departments. Absent otherwise.
+    created_at:
       type: string
       format: date-time
-    updatedAt:
+    updated_at:
       type: string
       format: date-time
     roles:
       type: array
       items:
         type: string
-      description: Platform-level Keycloak roles of the user
-    accountEnabled:
+      description: Platform-level Keycloak roles of the requesting user.
+    account_enabled:
       type: boolean
+    department:
+      allOf:
+      - $ref: '#/DepartmentRef'
+      description: The department in `requested_node_id`, with its path. Absent when the request is not scoped to a department.
+    userName:
+      type: string
+      description: User name from the join request (if available).
+    jobTitle:
+      type: string
+      description: Job title from the join request (if available).
+    empId:
+      type: string
+      description: Employee ID from the join request (if available).
+  required:
+  - id
+  - user_id
+  - provider_type
+  - status
 OrganizationDepartment:
   type: object
   properties:
@@ -252,7 +383,51 @@ OrganizationHierarchyDefinitionRequest:
     organizationId:
       type: string
       format: uuid
-    proposedHierarchy:
+    parentNodeId:
+      type: string
+      format: uuid
+      nullable: true
+      description: Existing department the departments are added under; null for top-level departments.
+    parentDepartment:
+      allOf:
+      - $ref: '#/DepartmentRef'
+      description: The department in `parentNodeId`, with its path. Absent for top-level additions.
+    departments:
+      type: array
+      description: The proposed departments, each with nested `subDepartments`.
+      items:
+        $ref: '#/ProposedDepartment'
+    status:
+      type: string
+      enum: [pending, granted, rejected]
+    remarks:
+      type: string
+      nullable: true
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+OrganizationHierarchyDefinitionRequestListItem:
+  type: object
+  description: A department request as returned by the list endpoints. Keys are snake_case.
+  properties:
+    id:
+      type: string
+      format: uuid
+    organization_id:
+      type: string
+      format: uuid
+    parent_node_id:
+      type: string
+      format: uuid
+      description: Existing department the departments are added under; absent for top-level departments.
+    parentDepartment:
+      allOf:
+      - $ref: '#/DepartmentRef'
+      description: The department in `parent_node_id`, with its path.
+    proposed_hierarchy:
       type: object
       properties:
         departments:
@@ -264,11 +439,10 @@ OrganizationHierarchyDefinitionRequest:
       enum: [pending, granted, rejected]
     remarks:
       type: string
-      nullable: true
-    createdAt:
+    created_at:
       type: string
       format: date-time
-    updatedAt:
+    updated_at:
       type: string
       format: date-time
 DeptAdminRequest:

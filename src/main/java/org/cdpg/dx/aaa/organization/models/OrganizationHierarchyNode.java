@@ -22,6 +22,23 @@ public record OrganizationHierarchyNode(
     LocalDateTime updatedAt)
     implements BaseEntity<OrganizationHierarchyNode> {
 
+  /**
+   * Compact department view embedded in organization responses: id, name, path, plus parentId
+   * (absent for a top-level department) and level so a client can build the tree.
+   */
+  public JsonObject toDepartmentSummaryJson() {
+    JsonObject json =
+        new JsonObject()
+            .put("id", id.toString())
+            .put("name", name)
+            .put("path", path)
+            .put("level", level);
+    if (parentId != null) {
+      json.put("parentId", parentId.toString());
+    }
+    return json;
+  }
+
   public static OrganizationHierarchyNode fromJson(JsonObject jsonObject) {
     // The table's own primary key column is literally "id" (see
     // V85__add_organization_hierarchy_support.sql) -- Constants.HIERARCHY_NODE_ID

@@ -1,14 +1,18 @@
 package org.cdpg.dx.aaa.organization.service.impl;
 
 import io.vertx.core.Future;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import org.cdpg.dx.aaa.organization.config.Constants;
 import org.cdpg.dx.aaa.organization.dao.DeptAdminRequestDAO;
 import org.cdpg.dx.aaa.organization.dao.OrganizationUserDAO;
 import org.cdpg.dx.aaa.organization.models.DeptAdminRequest;
 import org.cdpg.dx.aaa.organization.models.OrganizationApprovalType;
+import org.cdpg.dx.aaa.organization.models.OrganizationHierarchyNode;
 import org.cdpg.dx.aaa.organization.models.OrganizationUser;
 import org.cdpg.dx.aaa.organization.models.Role;
 import org.cdpg.dx.aaa.organization.models.Status;
@@ -267,6 +271,55 @@ public class DeptAdminServiceImpl implements DeptAdminService {
                             });
                   });
             });
+  }
+
+  @Override
+  public Future<List<UUID>> getApproverUserIds(
+      UUID organizationId, UUID targetNodeId, boolean strict) {
+
+    Future<Set<UUID>> approvingNodes =
+        targetNodeId == null
+            ? Future.succeededFuture(Set.of())
+            : hierarchyService
+                .getOrganizationNodes(organizationId)
+                .map(nodes -> ancestors(nodes, targetNodeId, strict));
+
+    return approvingNodes.compose(
+        nodeIds ->
+            organizationUserDAO
+                .getAllWithFilters(
+                    Map.of(
+                        Constants.ORGANIZATION_ID, organizationId.toString(),
+                        Constants.ROLE,
+                            List.of(Role.ADMIN.getRoleName(), Role.DEPT_ADMIN.getRoleName())))
+                .map(
+                    admins ->
+                        admins.stream()
+                            .filter(
+                                admin ->
+                                    admin.role() == Role.ADMIN
+                                        || (admin.adminOfNodeId() != null
+                                            && nodeIds.contains(admin.adminOfNodeId())))
+                            .map(OrganizationUser::userId)
+                            .distinct()
+                            .toList()));
+  }
+
+  /** {@code targetNodeId} and every department above it (without the target when strict). */
+  static Set<UUID> ancestors(
+      List<OrganizationHierarchyNode> nodes, UUID targetNodeId, boolean strict) {
+    Map<UUID, OrganizationHierarchyNode> byId = new HashMap<>();
+    nodes.forEach(node -> byId.put(node.id(), node));
+
+    Set<UUID> result = new HashSet<>();
+    OrganizationHierarchyNode current = byId.get(targetNodeId);
+    if (current != null && strict) {
+      current = current.parentId() == null ? null : byId.get(current.parentId());
+    }
+    while (current != null && result.add(current.id())) {
+      current = current.parentId() == null ? null : byId.get(current.parentId());
+    }
+    return result;
   }
 
   /**

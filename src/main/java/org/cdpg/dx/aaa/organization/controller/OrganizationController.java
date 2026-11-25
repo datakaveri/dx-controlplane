@@ -98,6 +98,11 @@ public class OrganizationController implements ApiController {
         .handler(createRequestHandler::deleteOrganizationCreateRequest);
 
     routerBuilder
+        .operation(OP_WITHDRAW_USER_ORG_CREATE_REQUEST)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(createRequestHandler::withdrawOrganizationCreateRequest);
+
+    routerBuilder
         .operation(OP_CREATE_ORG_REQUEST)
         .handler(auditingHandler::handleApiAudit)
         //.handler(selfAccess)
@@ -281,6 +286,13 @@ public class OrganizationController implements ApiController {
         .handler(auditingHandler::handleApiAudit)
         .handler(cosAdminAccess)
         .handler(hierarchyDefinitionHandler::updateDefinitionRequestStatus);
+
+    // cos_admin review queue for department requests across organisations.
+    routerBuilder
+        .operation(OP_GET_ALL_ORG_HIERARCHY_DEFINITION_REQUESTS)
+        .handler(auditingHandler::handleApiAudit)
+        .handler(cosAdminAccess)
+        .handler(hierarchyDefinitionHandler::getAllDefinitionRequests);
 
     /* =========================
      * Dept admin assignment / self-request
