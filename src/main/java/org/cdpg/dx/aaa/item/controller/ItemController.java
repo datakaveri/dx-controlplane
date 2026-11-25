@@ -49,6 +49,7 @@ import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.item.enums.ItemAuditOperation;
 import org.cdpg.dx.aaa.item.model.Item;
+import org.cdpg.dx.aaa.item.service.AssetDeletionCleanupService;
 import org.cdpg.dx.aaa.item.service.CentralSyncedItemPatcher;
 import org.cdpg.dx.aaa.item.service.ItemFetchService;
 import org.cdpg.dx.aaa.item.service.ItemRegistryService;
@@ -110,6 +111,7 @@ public class ItemController implements ApiController {
   private final OrganizationUserDAO organizationUserDAO;
   private final OrganizationHierarchyService organizationHierarchyService;
   private final DeptAdminAccessHandler deptAdminAccess;
+  private final AssetDeletionCleanupService assetDeletionCleanupService;
 
   public ItemController(
       AuditingHandler auditingHandler,
@@ -129,7 +131,8 @@ public class ItemController implements ApiController {
       AccessRequestDao accessRequestDao,
       String apdURL,
       OrganizationUserDAO organizationUserDAO,
-      OrganizationHierarchyService organizationHierarchyService) {
+      OrganizationHierarchyService organizationHierarchyService,
+      AssetDeletionCleanupService assetDeletionCleanupService) {
     this.auditingHandler = auditingHandler;
     this.itemService = itemService;
     this.centralItemService = centralItemService;
@@ -156,6 +159,7 @@ public class ItemController implements ApiController {
     this.organizationHierarchyService = organizationHierarchyService;
     this.deptAdminAccess =
         new DeptAdminAccessHandler(organizationUserDAO, organizationHierarchyService);
+    this.assetDeletionCleanupService = assetDeletionCleanupService;
   }
 
   /**
@@ -1082,6 +1086,10 @@ public class ItemController implements ApiController {
 
                                 ResponseBuilder.sendSuccess(
                                     ctx, "Success: Item deleted successfully", this.urnGenerator);
+
+                                // Async, after the response: drop dependent rows (asset_request,
+                                // ...) so they don't show up as stale N/A entries.
+                                assetDeletionCleanupService.cleanupAsync(ctx.vertx(), assetId);
                               }))
                   .onFailure(ctx::fail);
             });
