@@ -10,6 +10,7 @@ import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.email.util.EmailComposer;
 import org.cdpg.dx.aaa.ingestion.service.IngestionService;
 import org.cdpg.dx.aaa.item.controller.ItemController;
+import org.cdpg.dx.aaa.item.service.AssetDeletionCleanupService;
 import org.cdpg.dx.aaa.item.service.ItemRegistryService;
 import org.cdpg.dx.aaa.item.service.ItemRegistryServiceImpl;
 import org.cdpg.dx.aaa.item.service.ItemService;
@@ -122,6 +123,7 @@ public class ItemControllerFactory {
         accessRequestDao,
         apdURL,
         organizationUserDAO,
-        organizationHierarchyService);
+        organizationHierarchyService,
+        new AssetDeletionCleanupService(pgService));
   }
 }
