@@ -32,7 +32,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxEsException;
-import org.cdpg.dx.common.util.AssetAccessScopes;
 import org.cdpg.dx.database.elastic.model.AccessPolicyRequestDTO;
 import org.cdpg.dx.database.elastic.model.InstanceFilterRequestDTO;
 import org.cdpg.dx.database.elastic.model.TextFieldDTO;
@@ -139,34 +138,7 @@ public class PostSearchRequestBuilder {
               });
     }
 
-    if (!isPFAssetsSearch && !isAssetSearch) {
-      return withCallerAdminContext(dto);
-    }
-
     return Future.succeededFuture(dto);
-  }
-
-  /**
-   * Catalogue search/count: attach the caller's scopes (and, for org admins, their organisation)
-   * so the access-policy filter can also return the PRIVATE items they administer.
-   */
-  private Future<QueryDecoderRequestDTO> withCallerAdminContext(QueryDecoderRequestDTO dto) {
-    if (routingContext.user() == null) {
-      return Future.succeededFuture(dto);
-    }
-    List<String> scopes = AssetAccessScopes.fromPrincipal(routingContext.user().principal());
-    dto.setCallerScopes(scopes);
-
-    if (AssetAccessScopes.hasPlatformAssetScope(scopes)
-        || !AssetAccessScopes.hasOrgAssetScope(scopes)) {
-      return Future.succeededFuture(dto);
-    }
-    return getOrgId(routingContext)
-        .map(
-            orgId -> {
-              dto.setCallerOrganisationId(orgId);
-              return dto;
-            });
   }
 
   public int getSize(MultiMap params) {
