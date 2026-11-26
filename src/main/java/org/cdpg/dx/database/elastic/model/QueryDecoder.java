@@ -81,7 +81,12 @@ public class QueryDecoder {
     if (!searchType.matches(PF_ASSETS_SEARCH_REGEX)
         && !searchType.matches(ORG_ASSETS_SEARCH_REGEX)) {
       try {
-        new AccessPolicyQueryDecorator(queryMap, request.getAccessPolicyRequest()).add();
+        new AccessPolicyQueryDecorator(
+                queryMap,
+                request.getAccessPolicyRequest(),
+                request.getCallerScopes(),
+                request.getCallerOrganisationId())
+            .add();
       } catch (DxEsException e) {
         LOGGER.error("AccessPolicyQueryDecorator failed: {}", e.getMessage());
         throw e;
@@ -291,7 +296,12 @@ public class QueryDecoder {
     }
 
     try {
-      new AccessPolicyQueryDecorator(queryMap, request.getAccessPolicyRequest()).add();
+      new AccessPolicyQueryDecorator(
+                queryMap,
+                request.getAccessPolicyRequest(),
+                request.getCallerScopes(),
+                request.getCallerOrganisationId())
+            .add();
       expandItemTypeCriteria(request.getSearchCriteriaRequest());
       new SearchCriteriaQueryDecorator(queryMap, request.getSearchCriteriaRequest()).add();
       new InstanceFilterQueryDecorator(queryMap, request.getInstanceFilterRequest()).add();

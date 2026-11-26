@@ -12,11 +12,9 @@ import static org.cdpg.dx.catalogueService.config.Constants.*;
 import static org.cdpg.dx.catalogueService.config.Constants.SHORT_DESCRIPTION;
 import static org.cdpg.dx.database.elastic.util.Constants.ACCESS_POLICY;
 import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
-import static org.cdpg.dx.database.elastic.util.Constants.COS_ADMIN;
 import static org.cdpg.dx.database.elastic.util.Constants.DETAIL_ITEM_NOT_FOUND;
 import static org.cdpg.dx.database.elastic.util.Constants.ID_KEYWORD;
 import static org.cdpg.dx.database.elastic.util.Constants.KEYWORD_KEY;
-import static org.cdpg.dx.database.elastic.util.Constants.ORG_ADMIN;
 import static org.cdpg.dx.database.elastic.util.Constants.TYPE;
 import static org.cdpg.dx.database.elastic.util.Constants.TYPE_KEYWORD;
 
@@ -55,6 +53,7 @@ import org.cdpg.dx.catalogueService.models.Asset;
 import org.cdpg.dx.catalogueService.models.ItemType;
 import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.common.util.AssetAccessScopes;
 import org.cdpg.dx.database.elastic.model.BulkScriptUpdate;
 import org.cdpg.dx.database.elastic.model.BulkSyncResult;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
@@ -217,22 +216,14 @@ public class ItemServiceImpl implements ItemService {
     if (ownershipCheck(
         ownerUserId,
         request.getSubId(),
-        request.getRoles(),
+        request.getScopes(),
         itemOrganizationId,
         request.getOrganizationId())) {
 
       boolean isOwner = ownerUserId.equalsIgnoreCase(request.getSubId());
-
-      boolean isCosAdmin =
-          request.getRoles() != null
-              && request.getRoles().stream().anyMatch(role -> role.equalsIgnoreCase(COS_ADMIN));
-
-      boolean isOrgAdmin =
-          request.getRoles() != null
-              && request.getRoles().stream().anyMatch(role -> role.equalsIgnoreCase(ORG_ADMIN))
-              && Objects.equals(itemOrganizationId, request.getOrganizationId());
-
-      boolean isAdmin = isCosAdmin || isOrgAdmin;
+      boolean isAdmin =
+          AssetAccessScopes.isAssetAdminFor(
+              request.getScopes(), itemOrganizationId, request.getOrganizationId());
 
       setAccessFlags(response, isOwner, isAdmin);
 
@@ -243,26 +234,19 @@ public class ItemServiceImpl implements ItemService {
     }
   }
 
+  /**
+   * Grants access to the item owner, a platform admin ({@code asset-management} scope) or an org
+   * admin of the item's organisation ({@code org-asset-management} scope).
+   */
   private boolean ownershipCheck(
       String ownerUserId,
       String subId,
-      List<String> roles,
+      List<String> scopes,
       String ownerOrganizationId,
       String userOrganizationId) {
-    // Allow admin roles to bypass ownership restrictions
-    boolean isCosAdmin =
-        roles != null && roles.stream().anyMatch(role -> role.equalsIgnoreCase(COS_ADMIN));
-
-    if (isCosAdmin) {
-      LOGGER.info("Ownership check bypassed for COS_ADMIN");
+    if (AssetAccessScopes.isAssetAdminFor(scopes, ownerOrganizationId, userOrganizationId)) {
+      LOGGER.info("Ownership check bypassed for asset admin scope");
       return true;
-    }
-
-    boolean isOrgAdmin =
-        roles != null && roles.stream().anyMatch(role -> role.equalsIgnoreCase(ORG_ADMIN));
-
-    if (isOrgAdmin) {
-      return Objects.equals(ownerOrganizationId, userOrganizationId);
     }
 
     if (subId == null || subId.isEmpty()) {
@@ -299,24 +283,17 @@ public class ItemServiceImpl implements ItemService {
     }
 
     boolean isOwner = ownerUserId.equalsIgnoreCase(request.getSubId());
-    boolean isCosAdmin =
-        request.getRoles() != null
-            && request.getRoles().stream().anyMatch(role -> role.equalsIgnoreCase(COS_ADMIN));
-
-    boolean isOrgAdmin =
-        request.getRoles() != null
-            && request.getRoles().stream().anyMatch(role -> role.equalsIgnoreCase(ORG_ADMIN))
-            && Objects.equals(itemOrganizationId, request.getOrganizationId());
-
-    boolean isAdmin = isCosAdmin || isOrgAdmin;
+    boolean isAdmin =
+        AssetAccessScopes.isAssetAdminFor(
+            request.getScopes(), itemOrganizationId, request.getOrganizationId());
 
     setAccessFlags(response, isOwner, isAdmin);
 
-    // Allow the owner direct access
+    // Allow the owner / asset admins direct access
     if (ownershipCheck(
         ownerUserId,
         request.getSubId(),
-        request.getRoles(),
+        request.getScopes(),
         itemOrganizationId,
         request.getOrganizationId())) {
       LOGGER.debug(

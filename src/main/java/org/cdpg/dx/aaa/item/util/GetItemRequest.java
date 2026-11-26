@@ -8,6 +8,8 @@ public class GetItemRequest {
   private String organizationId;
   private String did; // delegator id, if present
   private List<String> roles;
+  // Scopes used for admin visibility checks (asset-management / org-asset-management).
+  private List<String> scopes;
   private String token;
 
   public GetItemRequest(String itemId, String subId) {
@@ -22,6 +24,15 @@ public class GetItemRequest {
   public void setRoles(List<String> roles) {
     this.roles = roles;
   }
+
+  public List<String> getScopes() {
+    return scopes;
+  }
+
+  public void setScopes(List<String> scopes) {
+    this.scopes = scopes;
+  }
+
   public String getItemId() {
     return itemId;
   }
