@@ -1142,6 +1142,7 @@ public class ItemController implements ApiController {
               request.setRoles(finalRoles);
               request.setScopes(finalScopes);
               request.setOrganizationId(organisationId);
+              request.setIncludeSharedAccess(true);
 
               return itemService.getItem(request);
             })
