@@ -11,6 +11,10 @@ public class GetItemRequest {
   // Scopes used for admin visibility checks (asset-management / org-asset-management).
   private List<String> scopes;
   private String token;
+  // When true, a PRIVATE item is also readable by users it was shared with (directly or via
+  // their organisation). Only for read-only metadata views such as GET /item -- never for
+  // write, delete or data-access flows.
+  private boolean includeSharedAccess;
 
   public GetItemRequest(String itemId, String subId) {
     this.itemId = itemId;
@@ -31,6 +35,14 @@ public class GetItemRequest {
 
   public void setScopes(List<String> scopes) {
     this.scopes = scopes;
+  }
+
+  public boolean isIncludeSharedAccess() {
+    return includeSharedAccess;
+  }
+
+  public void setIncludeSharedAccess(boolean includeSharedAccess) {
+    this.includeSharedAccess = includeSharedAccess;
   }
 
   public String getItemId() {
