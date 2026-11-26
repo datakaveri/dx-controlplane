@@ -8,6 +8,7 @@ import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.token.model.DelegationValidationResult;
 import org.cdpg.dx.aaa.token.model.ItemInfo;
 import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.common.util.AssetAccessScopes;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -161,6 +162,7 @@ public class DelegationAccessEvaluator {
         GetItemRequest request =
           new GetItemRequest(itemId.toString(), delegatorId.toString());
         request.setRoles(delegatorUser.roles());
+        request.setScopes(AssetAccessScopes.fromRoles(delegatorUser.roles()));
 
         return itemService.getItemWithAccessChecks(request)
           .compose(response -> {

@@ -23,6 +23,10 @@ public class QueryDecoderRequestDTO {
   // Non-null only for a dept_admin's organisation-asset search: restricts it
   // to items owned by these departments (their subtree).
   private List<String> hierarchyNodeIds;
+  // Caller context for the access-policy filter: lets asset admins see PRIVATE items
+  // (asset-management: all; org-asset-management: their own organisation's).
+  private List<String> callerScopes;
+  private String callerOrganisationId;
 
   public QueryDecoderRequestDTO(
       String searchType,
@@ -209,5 +213,21 @@ public class QueryDecoderRequestDTO {
 
   public void setSharedItemIds(List<String> sharedItemIds) {
     this.sharedItemIds = sharedItemIds;
+  }
+
+  public List<String> getCallerScopes() {
+    return callerScopes;
+  }
+
+  public void setCallerScopes(List<String> callerScopes) {
+    this.callerScopes = callerScopes;
+  }
+
+  public String getCallerOrganisationId() {
+    return callerOrganisationId;
+  }
+
+  public void setCallerOrganisationId(String callerOrganisationId) {
+    this.callerOrganisationId = callerOrganisationId;
   }
 }

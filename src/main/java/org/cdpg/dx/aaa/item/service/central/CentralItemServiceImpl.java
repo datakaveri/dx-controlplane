@@ -13,11 +13,9 @@ import static org.cdpg.dx.acl.accessRequest.dao.config.DbConstants.SHORT_DESCRIP
 import static org.cdpg.dx.catalogueService.config.Constants.*;
 import static org.cdpg.dx.database.elastic.util.Constants.ACCESS_POLICY;
 import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
-import static org.cdpg.dx.database.elastic.util.Constants.COS_ADMIN;
 import static org.cdpg.dx.database.elastic.util.Constants.DETAIL_ITEM_NOT_FOUND;
 import static org.cdpg.dx.database.elastic.util.Constants.ID_KEYWORD;
 import static org.cdpg.dx.database.elastic.util.Constants.KEYWORD_KEY;
-import static org.cdpg.dx.database.elastic.util.Constants.ORG_ADMIN;
 import static org.cdpg.dx.database.elastic.util.Constants.TYPE;
 import static org.cdpg.dx.database.elastic.util.Constants.TYPE_KEYWORD;
 
@@ -59,6 +57,7 @@ import org.cdpg.dx.catalogueService.models.Asset;
 import org.cdpg.dx.catalogueService.models.ItemType;
 import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.common.util.AssetAccessScopes;
 import org.cdpg.dx.database.elastic.model.BulkScriptUpdate;
 import org.cdpg.dx.database.elastic.model.BulkSyncResult;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
@@ -164,9 +163,10 @@ public class CentralItemServiceImpl implements ItemService {
           JsonObject source = elasticResponse.getSource();
           String accessPolicy = source.getString(ACCESS_POLICY);
           String ownerUserId = source.getString(PROVIDER_USER_ID);
+          String itemOrganizationId = source.getString(ORGANIZATION_ID);
           if (accessPolicy.equalsIgnoreCase(PRIVATE)) {
             return getResponseWhenResourceIsPrivate(
-                ownerUserId, request, elasticResponse, totalHits);
+                ownerUserId, itemOrganizationId, request, elasticResponse, totalHits);
           }
           return getResponseWhenResourceIsPublic(accessPolicy, totalHits, elasticResponse);
         });
@@ -194,9 +194,10 @@ public class CentralItemServiceImpl implements ItemService {
           JsonObject source = elasticResponse.getSource();
           String accessPolicy = source.getString(ACCESS_POLICY);
           String ownerUserId = source.getString(PROVIDER_USER_ID);
+          String itemOrganizationId = source.getString(ORGANIZATION_ID);
           if (accessPolicy.equalsIgnoreCase(PRIVATE)) {
             return getResponseWhenResourceIsPrivate(
-                ownerUserId, request, elasticResponse, totalHits);
+                ownerUserId, itemOrganizationId, request, elasticResponse, totalHits);
           } else if (accessPolicy.equalsIgnoreCase(RESTRICTED)
               || accessPolicy.equalsIgnoreCase(PII)) {
             return getResponseWhenResourceIsRestricted(
@@ -207,13 +208,22 @@ public class CentralItemServiceImpl implements ItemService {
   }
 
   public Future<ResponseModel> getResponseWhenResourceIsPrivate(
-      String ownerUserId, GetItemRequest request, ElasticsearchResponse response, int totalHits) {
+      String ownerUserId,
+      String itemOrganizationId,
+      GetItemRequest request,
+      ElasticsearchResponse response,
+      int totalHits) {
     if (request.getSubId() == null || request.getSubId().isEmpty()) {
       LOGGER.warn("Private item access denied: Missing token (subId is null/empty)");
       return Future.failedFuture(
           new DxUnauthorizedException("Authorization token is required for private item"));
     }
-    if (ownershipCheck(ownerUserId, request.getSubId(), request.getRoles())) {
+    if (ownershipCheck(
+        ownerUserId,
+        request.getSubId(),
+        request.getScopes(),
+        itemOrganizationId,
+        request.getOrganizationId())) {
       LOGGER.debug("Ownership check passed for item with ID: {}", request.getItemId());
       ResponseModel responseModel = new ResponseModel(List.of(response), 1, 1, totalHits);
       return Future.succeededFuture(responseModel);
@@ -223,17 +233,22 @@ public class CentralItemServiceImpl implements ItemService {
     }
   }
 
-  private boolean ownershipCheck(String ownerUserId, String subId, List<String> roles) {
-    // Allow admin roles to bypass ownership restrictions
-    if (roles != null
-        && roles.stream()
-            .anyMatch(
-                role -> role.equalsIgnoreCase(COS_ADMIN) || role.equalsIgnoreCase(ORG_ADMIN))) {
-      LOGGER.info("Ownership check bypassed for admin role(s):");
+  /**
+   * Grants access to the item owner, a platform admin ({@code asset-management} scope) or an org
+   * admin of the item's organisation ({@code org-asset-management} scope).
+   */
+  private boolean ownershipCheck(
+      String ownerUserId,
+      String subId,
+      List<String> scopes,
+      String ownerOrganizationId,
+      String userOrganizationId) {
+    if (AssetAccessScopes.isAssetAdminFor(scopes, ownerOrganizationId, userOrganizationId)) {
+      LOGGER.info("Ownership check bypassed for asset admin scope");
       return true;
     }
 
-    if (subId.isEmpty()) {
+    if (subId == null || subId.isEmpty()) {
       LOGGER.warn("Ownership check failed: No subId provided for private access policy");
       return false;
     }
